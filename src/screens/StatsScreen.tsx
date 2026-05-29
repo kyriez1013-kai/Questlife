@@ -21,6 +21,8 @@ import { getQuestTheme } from '../design/tokens';
 import QuestCard from '../components/ui/QuestCard';
 import QuestEntityIcon from '../components/ui/QuestEntityIcon';
 import { getSkillSemanticIcon } from '../design/entityIcons';
+import { generateInsightsSummary, InsightsSummaryResult } from '../utils/insightsEngine';
+import { InsightCardsBlock } from './StatsScreenInsights';
 
 const WEEKDAY_KEYS = ['weekdaySun', 'weekdayMon', 'weekdayTue', 'weekdayWed', 'weekdayThu', 'weekdayFri', 'weekdaySat'];
 
@@ -292,6 +294,16 @@ export default function StatsScreen() {
     return n;
   }, [logs]);
 
+  // ── 新增：引擎分析结果（不影响现有卡片）─────────────────────────────────
+  const engineInsights = useMemo(
+    (): InsightsSummaryResult => generateInsightsSummary(
+      logs,
+      data.stateCheckIns || [],
+      data.skills,
+    ),
+    [logs, data.stateCheckIns, data.skills],
+  );
+
   return (
     <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
       <ScrollView
@@ -352,6 +364,9 @@ export default function StatsScreen() {
             </>
           )}
         </QuestCard>
+
+        {/* ── 新增：引擎分析卡片（异常/成长曲线/能力地图/多因子/月度/明日预测）── */}
+        <InsightCardsBlock insights={engineInsights} questTheme={questTheme} lang={lang} />
 
         <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'rescueStarts')}</Text>
         <QuestCard questTheme={questTheme} variant="flat" style={[styles.insightCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]} className="rescue-summary-card insight-card">

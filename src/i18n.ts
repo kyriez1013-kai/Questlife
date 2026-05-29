@@ -792,6 +792,77 @@ const zh: Record<string, string> = {
   low: '低',
   medium: '中',
   high: '高',
+
+  // ── Insights Engine (ie_) ─────────────────────────────────────────────────
+  ieGenericRef: '通用参考',
+  ieYourData: '你的数据',
+  ieWhyTitle: '为什么？',
+  ieWhyHide: '收起',
+  ieWhyDisclaimer: '以上基于行为记录推断，仅供参考，不是医学建议。',
+  ieSampleN: '基于 {n} 条',
+  ieInsufficient: '继续记录后解锁分析',
+  ieConfLow: '低置信',
+  ieConfMed: '中置信',
+  ieConfHigh: '高置信',
+
+  // 能力地图
+  ieAbilityRadar: '能力地图',
+  ieRadarExecution: '执行力',
+  ieRadarConsistency: '坚持率',
+  ieRadarQuality: '质量',
+  ieRadarSelfAware: '自我认知',
+  ieRadarResilience: '恢复力',
+  ieRadarBaseline: '虚线 = 通用参考 (50%)',
+  ieRadarWhyBody: '5 个维度各用 0–1 分表示：执行力 = 近 30 天日均分钟/45；坚持率 = 活跃天/30；质量 = 均分/5；自我认知 = 1 - 时长预测误差/60；恢复力 = 短间隔恢复率。',
+
+  // 多因子交叉分析
+  ieCombinationEffect: '多因子交叉分析',
+  ieCombBest: '质量最高组合',
+  ieCombWorst: '质量最低组合',
+  ieCombHighEnergy: '高精力',
+  ieCombLowEnergy: '低精力',
+  ieCombHighFocus: '高专注',
+  ieCombLowFocus: '低专注',
+  ieCombAvgQ: '均质 {q}',
+  ieCombCount: '{n} 次',
+  ieCombWhyBody: '精力和专注各分为高/低两档，组成 4 个组合，比较各组合的平均 qualityRating。精力 ≥3 算高，<3 算低；专注同理。',
+
+  // 月度纵向对比
+  ieMonthlyTrend: '月度纵向对比',
+  ieMonthHours: '投入时长',
+  ieMonthQuality: '质量',
+  ieMonthConsistency: '坚持率',
+  ieMonthImproved: '↑ 提升',
+  ieMonthDeclined: '↓ 下滑',
+  ieMonthVsPrev: '较上月',
+  ieMonthCur: '本月',
+  ieMonthPrev: '上月',
+  ieMonthWhyBody: '按月份分组汇总投入时长、质量均值、活跃天数，对比最近两个月。超过阈值（时长±0.5h / 质量±0.2 / 坚持率±5%）才标出变化。',
+
+  // 明日状态预测
+  ieTomorrowPredict: '明日状态预测',
+  ieTomorrowEnergy: '精力',
+  ieTomorrowFocus: '专注',
+  ieTomorrowConfPct: '置信度 {pct}%',
+  ieTomorrowBaseline: '通用参考：明日精力/专注取决于当日恢复情况',
+  ieTomorrowWhyBody: '取最近 7 条状态打卡（StateCheckIn）的精力/专注均值，做简单平滑预测。数据越多，置信度越高（最高 85%）。',
+
+  // 复利成长曲线
+  ieGrowthCurve: '复利成长曲线',
+  ieGrowthMonthRateUp: '本月 ↑{pct}%',
+  ieGrowthMonthRateDown: '本月 ↓{pct}%',
+  ieGrowthAccel: '↑ 在加速',
+  ieGrowthSteady: '→ 稳步成长',
+  ieGrowthSlow: '↓ 放缓',
+  ieGrowthNoData: '继续记录 8 周后解锁',
+  ieGrowthWhyBody: '把所有执行记录按周汇总分钟数，取最近 8 周画折线。月增率 = (近 4 周均值 - 前 4 周均值) / 前 4 周均值。',
+
+  // 异常检测
+  ieAnomalyAlert: '检测到异常',
+  ieAnomalyNone: '近期状态正常',
+  ieAnomalyQualityDrop: '质量下滑：近期比均值低 {pct}%',
+  ieAnomalyGap: '已 {days} 天未记录',
+  ieAnomalyOverload: '连续高强度 {days} 天（≥90min）',
 };
 
 const en: Record<string, string> = {
@@ -1584,6 +1655,77 @@ const en: Record<string, string> = {
   low: 'Low',
   medium: 'Medium',
   high: 'High',
+
+  // ── Insights Engine (ie_) ─────────────────────────────────────────────────
+  ieGenericRef: 'Generic Ref',
+  ieYourData: 'Your Data',
+  ieWhyTitle: 'Why?',
+  ieWhyHide: 'Hide',
+  ieWhyDisclaimer: 'Based on logged behavior — for reference only, not medical advice.',
+  ieSampleN: '{n} records',
+  ieInsufficient: 'Keep logging to unlock this analysis',
+  ieConfLow: 'Low confidence',
+  ieConfMed: 'Moderate confidence',
+  ieConfHigh: 'High confidence',
+
+  // Ability Map
+  ieAbilityRadar: 'Ability Map',
+  ieRadarExecution: 'Execution',
+  ieRadarConsistency: 'Consistency',
+  ieRadarQuality: 'Quality',
+  ieRadarSelfAware: 'Self-Awareness',
+  ieRadarResilience: 'Resilience',
+  ieRadarBaseline: 'Dashed = generic reference (50%)',
+  ieRadarWhyBody: '5 dimensions scored 0–1: Execution = avg daily mins / 45; Consistency = active days / 30; Quality = avg rating / 5; Self-Awareness = 1 − duration error / 60; Resilience = quick-recovery rate after gaps.',
+
+  // Combination Effect
+  ieCombinationEffect: 'Multi-Factor Analysis',
+  ieCombBest: 'Best combo',
+  ieCombWorst: 'Worst combo',
+  ieCombHighEnergy: 'High energy',
+  ieCombLowEnergy: 'Low energy',
+  ieCombHighFocus: 'High focus',
+  ieCombLowFocus: 'Low focus',
+  ieCombAvgQ: 'Avg {q}',
+  ieCombCount: '{n}×',
+  ieCombWhyBody: 'Energy and focus are each bucketed as high (≥3) or low (<3), forming 4 combos. Average qualityRating is compared across combos.',
+
+  // Monthly Trend
+  ieMonthlyTrend: 'Monthly Trend',
+  ieMonthHours: 'Hours',
+  ieMonthQuality: 'Quality',
+  ieMonthConsistency: 'Consistency',
+  ieMonthImproved: '↑ Improved',
+  ieMonthDeclined: '↓ Declined',
+  ieMonthVsPrev: 'vs last month',
+  ieMonthCur: 'This month',
+  ieMonthPrev: 'Last month',
+  ieMonthWhyBody: 'Logs grouped by month. Changes flagged when hours differ by >0.5h, quality by >0.2, or consistency by >5%.',
+
+  // Tomorrow Prediction
+  ieTomorrowPredict: "Tomorrow's State Prediction",
+  ieTomorrowEnergy: 'Energy',
+  ieTomorrowFocus: 'Focus',
+  ieTomorrowConfPct: 'Confidence {pct}%',
+  ieTomorrowBaseline: 'Generic ref: tomorrow depends on today\'s recovery',
+  ieTomorrowWhyBody: 'Smoothed average of the last 7 StateCheckIn entries for energy and focus. Confidence grows with more check-in history (max 85%).',
+
+  // Growth Curve
+  ieGrowthCurve: 'Compound Growth Curve',
+  ieGrowthMonthRateUp: 'This month ↑{pct}%',
+  ieGrowthMonthRateDown: 'This month ↓{pct}%',
+  ieGrowthAccel: '↑ Accelerating',
+  ieGrowthSteady: '→ Steady growth',
+  ieGrowthSlow: '↓ Slowing',
+  ieGrowthNoData: 'Log for 8 weeks to unlock',
+  ieGrowthWhyBody: '8 weekly totals of logged minutes. Month rate = (avg of recent 4 weeks − avg of prior 4) / prior 4.',
+
+  // Anomaly Detection
+  ieAnomalyAlert: 'Anomaly Detected',
+  ieAnomalyNone: 'No anomalies detected',
+  ieAnomalyQualityDrop: 'Quality drop: {pct}% below your average',
+  ieAnomalyGap: '{days} days since last log',
+  ieAnomalyOverload: '{days} consecutive high-intensity days (≥90 min)',
 };
 
 const dict: Record<Lang, Record<string, string>> = { zh, en };
