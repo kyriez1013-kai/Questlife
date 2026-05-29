@@ -1,0 +1,188 @@
+// V2: "设置" Tab
+// 提醒已移到每个技能内, 这里只保留版本号 + 本地存储说明
+import React, { useState } from 'react';
+import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import ColorPicker from '../components/ColorPicker';
+import { useStore } from '../store';
+import { getLanguage, t } from '../i18n';
+import { appAccent, theme } from '../theme';
+import { getQuestTheme, themeOptions } from '../design/tokens';
+import { trackEvent } from '../utils/analytics';
+
+export default function SettingsScreen() {
+  const { data, setSettings, runIntegrityCheck, repairSafeIntegrityIssues, rebuildDerivedData } = useStore();
+  const questTheme = getQuestTheme(data.settings.selectedThemeId);
+  const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
+  const lang = getLanguage(data.settings.language);
+  const [integrityIssueCount, setIntegrityIssueCount] = useState<number | null>(null);
+
+  return (
+    <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
+      <ScrollView
+        style={[styles.container, { backgroundColor: questTheme.colors.background }]}
+        contentContainerStyle={{ padding: 16, paddingBottom: 110, maxWidth: 960, width: '100%', alignSelf: 'center' }}
+      >
+        <Text style={[styles.h1, { color: questTheme.colors.text }]}>{t(lang, 'settings')}</Text>
+        <Text style={[styles.sub, { color: questTheme.colors.textMuted }]}>{t(lang, 'settingsSubtitle')}</Text>
+
+        <View style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, shadowColor: questTheme.colors.cardShadow }]}>
+          <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'language')}</Text>
+          <View style={styles.languageRow}>
+            {[
+              { value: 'zh' as const, label: '中文' },
+              { value: 'en' as const, label: 'English' },
+            ].map((opt) => {
+              const on = lang === opt.value;
+              return (
+                <TouchableOpacity
+                  key={opt.value}
+                  style={[styles.languageBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }, on && { backgroundColor: accent, borderColor: accent }]}
+                  onPress={() => setSettings({ language: opt.value })}
+                >
+                  <Text style={[styles.languageText, { color: questTheme.colors.text }, on && styles.languageTextOn]}>{opt.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        <View style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, shadowColor: questTheme.colors.cardShadow }]}>
+          <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'interfaceTheme')}</Text>
+          <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>{t(lang, 'visualStyle')}</Text>
+          <View style={styles.themeGrid}>
+            {themeOptions.map((opt) => {
+              const on = questTheme.id === opt.id;
+              const preview = getQuestTheme(opt.id);
+              return (
+                <TouchableOpacity
+                  key={opt.id}
+                  style={[
+                    styles.themeOption,
+                    { backgroundColor: preview.colors.surfaceSoft, borderColor: on ? preview.colors.primary : questTheme.colors.border },
+                    on && { borderWidth: 2 },
+                  ]}
+                  onPress={() => {
+                    setSettings({ selectedThemeId: opt.id });
+                    trackEvent('theme_changed', { themeId: opt.id }, { page: 'settings' });
+                  }}
+                >
+                  <View style={styles.themeSwatches}>
+                    <View style={[styles.themeSwatch, { backgroundColor: preview.colors.background }]} />
+                    <View style={[styles.themeSwatch, { backgroundColor: preview.colors.primary }]} />
+                    <View style={[styles.themeSwatch, { backgroundColor: preview.colors.accent }]} />
+                  </View>
+                  <Text style={[styles.languageText, { color: preview.colors.text }]}>{t(lang, opt.i18nKey)}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        <View style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, shadowColor: questTheme.colors.cardShadow }]}>
+          <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'accentColor')}</Text>
+          <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>{t(lang, 'accentColorDesc')}</Text>
+          <View style={styles.colorPreviewRow}>
+            <View style={[styles.colorPreview, { backgroundColor: accent }]} />
+            <Text style={[styles.colorValue, { color: accent }]}>{accent}</Text>
+          </View>
+          <ColorPicker
+            colors={theme.accentPalette}
+            value={accent}
+            onChange={(color) => setSettings({ accentColor: color })}
+          />
+        </View>
+
+        <View style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, shadowColor: questTheme.colors.cardShadow }]}>
+          <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'reminders')}</Text>
+          <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>{t(lang, 'remindersText')}</Text>
+        </View>
+
+        <View style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, shadowColor: questTheme.colors.cardShadow }]}>
+          <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'restartOnboarding')}</Text>
+          <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>{t(lang, 'restartOnboardingDesc')}</Text>
+          <TouchableOpacity
+            style={[styles.debugBtn, { alignSelf: 'flex-start', marginTop: 12, borderColor: accent, backgroundColor: questTheme.colors.primarySoft }]}
+            onPress={() => setSettings({ onboardingRestartRequested: true })}
+          >
+            <Text style={[styles.debugBtnText, { color: accent }]}>{t(lang, 'restartOnboarding')}</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, shadowColor: questTheme.colors.cardShadow }]}>
+          <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'storage')}</Text>
+          <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>{t(lang, 'storageText')}</Text>
+        </View>
+
+        {__DEV__ ? (
+          <View style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, shadowColor: questTheme.colors.cardShadow }]}>
+            <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'dataIntegrity')}</Text>
+            <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>
+              {t(lang, 'goals')}: {data.categories.length} · {t(lang, 'modules')}: {(data.modules || []).length} · {t(lang, 'skills')}: {data.skills.length}{'\n'}
+              {t(lang, 'executionLogs')}: {(data.executionLogs || []).length} · {t(lang, 'totalEfforts')}: {(data.effortUnits || []).length} · {t(lang, 'contributionLinks')}: {(data.contributionLinks || []).length}{'\n'}
+              {integrityIssueCount == null ? t(lang, 'runIntegrityCheck') : integrityIssueCount === 0 ? t(lang, 'noIntegrityIssues') : `${t(lang, 'orphanDataFound')}: ${integrityIssueCount}`}
+            </Text>
+            <View style={styles.debugActions}>
+              <TouchableOpacity
+                style={[styles.debugBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}
+                onPress={() => {
+                  const result = runIntegrityCheck();
+                  setIntegrityIssueCount(result.issues.length);
+                }}
+              >
+                <Text style={[styles.debugBtnText, { color: questTheme.colors.text }]}>{t(lang, 'runIntegrityCheck')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.debugBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}
+                onPress={() => {
+                  const result = repairSafeIntegrityIssues();
+                  setIntegrityIssueCount(result.issues.length);
+                }}
+              >
+                <Text style={[styles.debugBtnText, { color: questTheme.colors.text }]}>{t(lang, 'repairSafeIssues')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.debugBtn, { borderColor: questTheme.colors.warning, backgroundColor: questTheme.colors.warningSoft }]}
+                onPress={() => Alert.alert(t(lang, 'rebuildDerivedData'), t(lang, 'rebuildWarning'), [
+                  { text: t(lang, 'cancel'), style: 'cancel' },
+                  { text: t(lang, 'rebuildDerivedData'), onPress: () => rebuildDerivedData() },
+                ])}
+              >
+                <Text style={[styles.debugBtnText, { color: questTheme.colors.text }]}>{t(lang, 'rebuildDerivedData')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : null}
+
+        <View style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, shadowColor: questTheme.colors.cardShadow }]}>
+          <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'version')}</Text>
+          <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>{t(lang, 'versionText')}</Text>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: theme.bg },
+  container: { flex: 1, backgroundColor: theme.bg },
+  h1: { color: theme.text, fontSize: 34, fontWeight: '800' },
+  sub: { color: theme.textDim, marginTop: 4, marginBottom: 18 },
+  card: { backgroundColor: theme.card, padding: 18, borderRadius: theme.radius.lg, marginBottom: 12, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
+  label: { color: theme.text, fontSize: 16, fontWeight: '800', marginBottom: 8 },
+  value: { color: theme.textDim, fontSize: 13, lineHeight: 20 },
+  colorPreviewRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 14, marginBottom: 14 },
+  colorPreview: { width: 34, height: 34, borderRadius: 17 },
+  colorValue: { fontSize: 13, fontWeight: '800' },
+  languageRow: { flexDirection: 'row', gap: 10 },
+  languageBtn: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.border, backgroundColor: theme.cardAlt },
+  languageText: { color: theme.text, fontWeight: '800' },
+  languageTextOn: { color: '#fff' },
+  themeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 12 },
+  themeOption: { width: '48%', minWidth: 142, padding: 12, borderRadius: theme.radius.md, borderWidth: 1 },
+  themeSwatches: { flexDirection: 'row', gap: 6, marginBottom: 8 },
+  themeSwatch: { width: 18, height: 18, borderRadius: 9, borderWidth: 1, borderColor: 'rgba(0,0,0,0.08)' },
+  debugActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  debugBtn: { borderWidth: 1, borderRadius: theme.radius.md, paddingHorizontal: 10, paddingVertical: 9 },
+  debugBtnText: { fontSize: 12, fontWeight: '800' },
+});

@@ -1,0 +1,56 @@
+import React from 'react';
+import { StyleSheet, View, ViewStyle } from 'react-native';
+import { getQuestTheme, QuestTheme } from '../../design/tokens';
+import { getSurfaceStyle } from '../../design/surfaces';
+import { guardDarkSurfaceStyle, SurfaceRole } from '../../design/darkSurfaceGuard';
+
+type Props = {
+  children: React.ReactNode;
+  variant?: 'hero' | 'action' | 'data' | 'emergency' | 'flat';
+  questTheme?: QuestTheme;
+  style?: ViewStyle | ViewStyle[];
+  className?: string;
+};
+
+export default function QuestCard({ children, variant = 'data', questTheme, style, className }: Props) {
+  const q = questTheme ?? getQuestTheme();
+  const surfaceRole: SurfaceRole =
+    variant === 'hero' ? 'elevated'
+      : variant === 'action' ? 'row'
+        : variant === 'flat' ? 'soft'
+          : 'card';
+  const variantSurface: ViewStyle =
+    variant === 'hero'
+      ? getSurfaceStyle(q, 'elevated')
+      : variant === 'action'
+        ? getSurfaceStyle(q, 'row')
+        : variant === 'emergency'
+          ? { backgroundColor: q.colors.warningSoft, borderColor: q.colors.warning }
+        : variant === 'flat'
+            ? { ...getSurfaceStyle(q, 'soft'), shadowOpacity: 0, elevation: 0 }
+            : getSurfaceStyle(q, 'card');
+  const variantPadding: ViewStyle =
+    variant === 'hero' || variant === 'data'
+      ? { padding: q.spacing.lg }
+      : { padding: q.spacing.md };
+  const legacyStyle = guardDarkSurfaceStyle(StyleSheet.flatten(style), q, surfaceRole);
+  const resolvedStyle: ViewStyle = {
+    borderRadius: q.radius.lg,
+    borderWidth: 1,
+    shadowColor: q.colors.cardShadow,
+    shadowOpacity: variant === 'flat' ? 0 : 0.07,
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 18,
+    elevation: variant === 'flat' ? 0 : 3,
+    ...variantPadding,
+    ...legacyStyle,
+    ...variantSurface,
+  };
+  const CardView = View as any;
+  const webClassName = ['quest-card', `quest-card-${variant}`, className].filter(Boolean).join(' ');
+  return (
+    <CardView className={webClassName} style={resolvedStyle}>
+      {children}
+    </CardView>
+  );
+}

@@ -1,0 +1,117 @@
+.questlife-theme-dark {
+  --ql-bg: #070d1a;
+  --ql-surface: #101a2a;
+  --ql-surface-elevated: #132238;
+  --ql-surface-soft: #1e293b;
+  --ql-border: rgba(148, 163, 184, 0.22);
+  --ql-text: #f8fafc;
+  --ql-text-muted: #cbd5e1;
+  --ql-text-subtle: #94a3b8;
+  --ql-primary: #38bdf8;
+}
+
+.questlife-theme-dark .quest-card,
+.questlife-theme-dark .card,
+.questlife-theme-dark .surface,
+.questlife-theme-dark .panel,
+.questlife-theme-dark .section-card,
+.questlife-theme-dark .stat-card,
+.questlife-theme-dark .metric-card,
+.questlife-theme-dark .summary-card,
+.questlife-theme-dark .goal-card,
+.questlife-theme-dark .module-card,
+.questlife-theme-dark .skill-card,
+.questlife-theme-dark .skill-row,
+.questlife-theme-dark .goal-row,
+.questlife-theme-dark .module-row,
+.questlife-theme-dark .insight-card,
+.questlife-theme-dark .empty-state,
+.questlife-theme-dark .schedule-card,
+.questlife-theme-dark .current-next-card,
+.questlife-theme-dark .goal-detail-card,
+.questlife-theme-dark .goal-loop-card,
+.questlife-theme-dark .suggested-modules-card,
+.questlife-theme-dark .system-loop-card,
+.questlife-theme-dark .self-awareness-card,
+.questlife-theme-dark .rescue-summary-card {
+  background-color: var(--ql-surface, #101a2a) !important;
+  border-color: var(--ql-border, rgba(148, 163, 184, 0.22)) !important;
+  color: var(--ql-text, #f8fafc) !important;
+}
+
+.questlife-theme-dark .quest-card-hero,
+.questlife-theme-dark .quest-card-data,
+.questlife-theme-dark .surface-elevated {
+  background-color: var(--ql-surface-elevated, #132238) !important;
+}
+
+.questlife-theme-dark .quest-card-flat,
+.questlife-theme-dark .quest-card-action,
+.questlife-theme-dark .surface-soft {
+  background-color: var(--ql-surface-soft, #1e293b) !important;
+}
+
+.questlife-theme-dark .bg-white,
+.questlife-theme-dark .bg-gray-50,
+.questlife-theme-dark .bg-slate-50,
+.questlife-theme-dark .bg-zinc-50 {
+  background-color: var(--ql-surface, #101a2a) !important;
+  color: var(--ql-text, #f8fafc) !important;
+}
+
+.questlife-theme-dark [style*="background-color: rgb(255, 255, 255)"],
+.questlife-theme-dark [style*="background-color: rgba(255, 255, 255, 1)"],
+.questlife-theme-dark [style*="background-color:#fff"],
+.questlife-theme-dark [style*="background-color: #fff"],
+.questlife-theme-dark [style*="background-color:#ffffff"],
+.questlife-theme-dark [style*="background-color: #ffffff"],
+.questlife-theme-dark [style*="background-color: rgb(249, 250, 251)"],
+.questlife-theme-dark [style*="background-color: rgb(248, 250, 252)"],
+.questlife-theme-dark [style*="background-color: rgb(243, 244, 246)"],
+.questlife-theme-dark [style*="background-color: rgb(241, 245, 249)"] {
+  background-color: var(--ql-surface, #101a2a) !important;
+  border-color: var(--ql-border, rgba(148, 163, 184, 0.22)) !important;
+  color: var(--ql-text, #f8fafc) !important;
+}
+
+.questlife-theme-dark [style*="color: rgb(17, 24, 39)"],
+.questlife-theme-dark [style*="color:#111827"],
+.questlife-theme-dark [style*="color: #111827"],
+.questlife-theme-dark [style*="color: black"],
+.questlife-theme-dark [style*="color:#000"],
+.questlife-theme-dark [style*="color: #000"] {
+  color: var(--ql-text, #f8fafc) !important;
+}
+
+.questlife-theme-dark [style*="color: rgb(107, 114, 128)"],
+.questlife-theme-dark [style*="color:#6b7280"],
+.questlife-theme-dark [style*="color: #6b7280"] {
+  color: var(--ql-text-muted, #cbd5e1) !important;
+}
+
+.questlife-theme-dark .text-gray-100,
+.questlife-theme-dark .text-slate-100,
+.questlife-theme-dark .text-zinc-100 {
+  color: var(--ql-text, #f8fafc) !important;
+}
+
+.questlife-theme-dark .text-gray-200,
+.questlife-theme-dark .text-slate-200,
+.questlife-theme-dark .text-zinc-200,
+.questlife-theme-dark .text-gray-300,
+.questlife-theme-dark .text-slate-300,
+.questlife-theme-dark .text-zinc-300 {
+  color: var(--ql-text-muted, #cbd5e1) !important;
+}
+
+.questlife-theme-dark .ql-title {
+  color: var(--ql-text, #f8fafc) !important;
+}
+
+.questlife-theme-dark .ql-muted {
+  color: var(--ql-text-muted, #cbd5e1) !important;
+}
+
+.questlife-theme-dark .ql-subtle {
+  color: var(--ql-text-subtle, #94a3b8) !important;
+}
