@@ -12,7 +12,7 @@ declare const process: any;
 
 const DEEPSEEK_BASE  = 'https://api.deepseek.com';
 const DEEPSEEK_MODEL = 'deepseek-chat';
-const TIMEOUT_MS     = 3000;
+const TIMEOUT_MS     = 8000;   // 8s: Vercel Hobby 函数上限 10s，留 2s 给函数本身开销
 
 function send(res: any, status: number, body: Record<string, unknown>) {
   res.status(status).json(body);
