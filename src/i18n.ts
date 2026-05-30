@@ -793,6 +793,20 @@ const zh: Record<string, string> = {
   medium: '中',
   high: '高',
 
+  // ── Smart Capture (Spec B-1) ─────────────────────────────────────────────
+  scPlaceholder: '记一句话：练了什么 / 读了什么 / 现在状态如何',
+  scSend: '发',
+  scParsing: '解析中…',
+  scParseFailed: '解析失败，原文已保存',
+  scRetry: '重试',
+  scCrossLinked: '关联到历史记录',
+  scDefaultGreeting: '今天怎么样？记一句你觉得有意思的事吧。',
+  scGreetingMorning: '早上好！今天准备做什么？',
+  scGreetingAfternoon: '下午了，上午做了哪些进展？',
+  scGreetingEvening: '晚上了，今天完成了什么值得记录的事？',
+  scGreetingNight: '快睡了，把今天最重要的一件事记下来？',
+  scTodayCaptures: '今日记录',
+
   // ── Insights Engine (ie_) ─────────────────────────────────────────────────
   ieGenericRef: '通用参考',
   ieYourData: '你的数据',
@@ -1655,6 +1669,20 @@ const en: Record<string, string> = {
   low: 'Low',
   medium: 'Medium',
   high: 'High',
+
+  // ── Smart Capture (Spec B-1) ─────────────────────────────────────────────
+  scPlaceholder: 'One line: what you trained, read, or how you feel',
+  scSend: 'Send',
+  scParsing: 'Analyzing…',
+  scParseFailed: 'Parse failed — your text is saved',
+  scRetry: 'Retry',
+  scCrossLinked: 'Linked to past entry',
+  scDefaultGreeting: "What's on your mind? Log it in one line.",
+  scGreetingMorning: "Good morning! What's your plan today?",
+  scGreetingAfternoon: 'Afternoon check — what have you done so far?',
+  scGreetingEvening: 'Evening! What did you accomplish today?',
+  scGreetingNight: "Before sleep — what's the one thing worth logging today?",
+  scTodayCaptures: "Today's captures",
 
   // ── Insights Engine (ie_) ─────────────────────────────────────────────────
   ieGenericRef: 'Generic Ref',

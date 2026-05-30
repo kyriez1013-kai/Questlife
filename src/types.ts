@@ -653,6 +653,20 @@ export interface Action {
   quality?: Quality;       // V2.2 新增, 可选, 老数据为 undefined
 }
 
+// ───── Smart Capture (Spec B-1) ─────
+export interface RawCapture {
+  id: string;
+  text: string;            // 用户原文，一字不改，永久保留
+  createdAt: string;       // ISO，本地时间
+  parseStatus: 'pending' | 'done' | 'failed';
+  parsed?: {
+    type: 'training' | 'reading' | 'state' | 'misc';
+    fields: Record<string, any>;
+    crossLinks: { captureId: string; reason: string }[];
+    insight: { zh: string; en: string };
+  };
+}
+
 export interface AppData {
   goals: Goal[];
   categories: Category[];     // V2 新
@@ -666,6 +680,7 @@ export interface AppData {
   rescueLogs: RescueLog[];
   stateCheckIns: StateCheckIn[];
   scheduleBlocks: ScheduleBlock[];
+  rawCaptures: RawCapture[];   // Spec B-1: smart capture loop
   settings: {
     // 全局提醒已弃用, 字段保留兼容; UI 不再暴露
     reminderHour?: number;
@@ -696,6 +711,7 @@ export const DEFAULT_DATA: AppData = {
   rescueLogs: [],
   stateCheckIns: [],
   scheduleBlocks: [],
+  rawCaptures: [],
   settings: { selectedThemeId: 'cleanFocus' },
 };
 

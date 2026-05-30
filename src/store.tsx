@@ -4,7 +4,7 @@
 //   2) 在 reducer 内部直接调 persist(newData) 立刻写入 AsyncStorage
 // 这样无论 App 后续是否被 kill / 刷新, 数据都已经落盘.
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
-import { AppData, DEFAULT_DATA, Goal, Skill, Action, Category, UNCATEGORIZED_ID, ScheduleBlock, QuestModule, ModuleSkillLink, ExecutionLog, RescueLog, StateCheckIn, EffortUnit, ContributionLink } from './types';
+import { AppData, DEFAULT_DATA, Goal, Skill, Action, Category, UNCATEGORIZED_ID, ScheduleBlock, QuestModule, ModuleSkillLink, ExecutionLog, RescueLog, StateCheckIn, EffortUnit, ContributionLink, RawCapture } from './types';
 import { loadData, persist, uid, today } from './storage';
 import { scheduleSkillReminder, cancelSkillReminder, rescheduleAllReminders } from './notifications';
 import { calculateModuleProgress, calculatePredictionDelta, skillsForModule } from './progress';
@@ -82,6 +82,9 @@ interface Ctx {
   runIntegrityCheck: () => CoreFlowIntegrityResult;
   repairSafeIntegrityIssues: () => CoreFlowIntegrityResult;
   rebuildDerivedData: () => { effortUnitCount: number; contributionLinkCount: number };
+  // Spec B-1: Smart Capture Loop
+  addRawCapture: (text: string) => RawCapture;
+  updateRawCapture: (id: string, patch: Partial<RawCapture>) => void;
 }
 
 function applyExecutionLogToSkillProgress(skill: Skill, log: ExecutionLog): Skill {
@@ -1009,6 +1012,25 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return result;
   }, [data, mutate]);
 
+  // ── Spec B-1: Smart Capture Loop ────────────────────────────────────────────
+  const addRawCapture: Ctx['addRawCapture'] = useCallback((text: string): RawCapture => {
+    const capture: RawCapture = {
+      id: `rc-${uid()}`,
+      text,
+      createdAt: new Date().toISOString(),
+      parseStatus: 'pending',
+    };
+    mutate((d) => ({ ...d, rawCaptures: [...(d.rawCaptures || []), capture] }));
+    return capture;
+  }, [mutate]);
+
+  const updateRawCapture: Ctx['updateRawCapture'] = useCallback((id: string, patch: Partial<RawCapture>) => {
+    mutate((d) => ({
+      ...d,
+      rawCaptures: (d.rawCaptures || []).map((c) => (c.id === id ? { ...c, ...patch } : c)),
+    }));
+  }, [mutate]);
+
   const rebuildDerivedData: Ctx['rebuildDerivedData'] = useCallback(() => {
     let counts = { effortUnitCount: 0, contributionLinkCount: 0 };
     mutate((d) => {
@@ -1081,6 +1103,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         runIntegrityCheck,
         repairSafeIntegrityIssues,
         rebuildDerivedData,
+        addRawCapture,
+        updateRawCapture,
       }}
     >
       {children}

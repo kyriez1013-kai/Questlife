@@ -41,6 +41,7 @@ import QuestEntityIcon from '../components/ui/QuestEntityIcon';
 import { getSkillSemanticIcon } from '../design/entityIcons';
 import { getPredictionSchemaForSkill, isStrengthPredictionSkill, strengthVolume } from '../utils/prediction';
 import { getRecordingFieldsForSkill } from '../domainTemplates';
+import HomeSmartCapture from './HomeSmartCapture';
 
 // 晨间状态选项
 const DAILY_STATE_OPTIONS = [
@@ -1463,6 +1464,9 @@ export default function HomeScreen() {
         style={[styles.container, { backgroundColor: questTheme.colors.background }]}
         contentContainerStyle={{ padding: 16, paddingBottom: 154, maxWidth: 960, width: '100%', alignSelf: 'center' }}
       >
+        {/* ── Smart Capture Loop (Spec B-1) — 开场白 + 一句话输入 + 今日记录 ── */}
+        <HomeSmartCapture />
+
         <Text style={[styles.h1, { color: questTheme.colors.text }]}>{t(lang, 'today')}</Text>
         <Text style={[styles.sub, { color: questTheme.colors.textMuted }]}>
           {todayStr} · {t(lang, 'todayInvested')} {todayMinutes} {t(lang, 'minutes')} · {todayLogs.length} {t(lang, 'logsToday')}
