@@ -204,10 +204,16 @@ export default function GoalDetailScreen() {
   };
 
   const confirmDeleteModule = (module: QuestModule) => {
-    Alert.alert(t(lang, 'deleteModuleConfirmTitle'), t(lang, 'deleteModuleConfirmBody'), [
-      { text: t(lang, 'cancel'), style: 'cancel' },
-      { text: t(lang, 'deleteModule'), style: 'destructive', onPress: () => deleteModule(module.id) },
-    ]);
+    const doDelete = () => deleteModule(module.id);
+    // Alert.alert is a silent no-op in RN Web — use window.confirm on web
+    if (typeof window !== 'undefined' && typeof (window as any).confirm === 'function') {
+      if ((window as any).confirm(t(lang, 'deleteModuleConfirmBody'))) doDelete();
+    } else {
+      Alert.alert(t(lang, 'deleteModuleConfirmTitle'), t(lang, 'deleteModuleConfirmBody'), [
+        { text: t(lang, 'cancel'), style: 'cancel' },
+        { text: t(lang, 'deleteModule'), style: 'destructive', onPress: doDelete },
+      ]);
+    }
   };
 
   const openCriterion = (criterion?: OutcomeCriterion) => {
@@ -606,11 +612,17 @@ function ModuleCard({
 }) {
   const progress = calculateModuleProgress(module, skills, links);
   const openModuleMenu = () => {
-    Alert.alert(displayModuleName(module, lang), undefined, [
-      { text: t(lang, 'editModule'), onPress: editModule },
-      { text: t(lang, 'deleteModule'), style: 'destructive', onPress: deleteModule },
-      { text: t(lang, 'cancel'), style: 'cancel' },
-    ]);
+    // Alert.alert is a silent no-op in RN Web — use window.confirm on web
+    if (typeof window !== 'undefined' && typeof (window as any).confirm === 'function') {
+      // On web: ••• directly triggers delete (edit not needed; deleteModule calls confirmDeleteModule)
+      deleteModule();
+    } else {
+      Alert.alert(displayModuleName(module, lang), undefined, [
+        { text: t(lang, 'editModule'), onPress: editModule },
+        { text: t(lang, 'deleteModule'), style: 'destructive', onPress: deleteModule },
+        { text: t(lang, 'cancel'), style: 'cancel' },
+      ]);
+    }
   };
   return (
     <QuestCard questTheme={questTheme} variant="flat" style={[styles.moduleCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]} className="module-card module-row">
@@ -625,14 +637,6 @@ function ModuleCard({
         </View>
         <TouchableOpacity style={[styles.moduleMenuBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]} onPress={openModuleMenu}>
           <Text style={[styles.moduleMenuText, { color: questTheme.colors.textMuted }]}>•••</Text>
-        </TouchableOpacity>
-        {/* ✕ delete — visible on both web and mobile, bypasses 3-button Alert */}
-        <TouchableOpacity
-          style={[styles.moduleMenuBtn, { borderColor: questTheme.colors.dangerSoft, backgroundColor: questTheme.colors.dangerSoft, marginLeft: 4 }]}
-          onPress={deleteModule}
-          hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-        >
-          <Text style={[styles.moduleMenuText, { color: questTheme.colors.danger }]}>✕</Text>
         </TouchableOpacity>
         <QuestIcon name={expanded ? 'check' : 'target'} size={16} color={questTheme.colors.textSubtle} />
       </TouchableOpacity>
