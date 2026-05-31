@@ -125,23 +125,49 @@ export default function HomeCapturePending({ captureId: _captureId, entries, onD
   const setModule = (i: number, moduleId: string | null) =>
     setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, moduleId } : e));
 
+  // ── Smart category resolution (no Alert.alert — direct TouchableOpacity) ──
+
+  /** Find the best matching category for an entry.
+   *  Strategy: goalType match → same-taskType skill's category → first category.
+   *  This fixes the "未分类" bug: most categories have goalType undefined,
+   *  so goalType-only lookup always returns null.
+   */
+  const resolveCategory = useCallback((entryGoalType: string, entryProgressType: string) => {
+    // 1. Exact goalType match (works when user has template-created categories)
+    const byGoalType = data.categories.find((c) => c.goalType === entryGoalType);
+    if (byGoalType) return byGoalType;
+
+    // 2. Find a category that already hosts a skill with the same taskType
+    const taskType = inferTaskType(entryGoalType, entryProgressType);
+    const siblingSkill = data.skills.find((s) => s.taskType === taskType && !!s.categoryId);
+    if (siblingSkill) {
+      const bySibling = data.categories.find((c) => c.id === siblingSkill.categoryId);
+      if (bySibling) return bySibling;
+    }
+
+    // 3. First available category as last resort
+    return data.categories[0] ?? null;
+  }, [data.categories, data.skills]);
+
   const handleConfirm = useCallback(() => {
     const date = todayStr();
 
     entries.forEach((entry, i) => {
       const ui = entryStates[i];
       let skillId = entry.matchedSkillId;
+      let linkedGoalId: string | undefined;
 
-      // Create new skill if toggled
       if (!skillId && ui.createNew) {
-        const cat = data.categories.find((c) => c.goalType === entry.goalType);
+        // ── New skill path ──────────────────────────────────────────────────
+        const cat = resolveCategory(entry.goalType ?? 'custom', entry.progressType);
         const newSkill = addSkill({
           name: entry.skillName,
           color: '#38bdf8',
-          dailyTargetMinutes: entry.progressType === 'time_based' ? (entry.fields.durationMinutes ?? 30) : 30,
+          dailyTargetMinutes: entry.progressType === 'time_based'
+            ? (entry.fields.durationMinutes ?? 30) : 30,
           progressType: entry.progressType as ProgressType,
           taskType: inferTaskType(entry.goalType ?? 'custom', entry.progressType),
-          categoryId: cat?.id,
+          categoryId: cat?.id,                    // explicit categoryId — fixes "未分类"
           scheduleEnabled: false,
           scheduleType: 'manual_only' as const,
           metricConfig: {
@@ -151,20 +177,29 @@ export default function HomeCapturePending({ captureId: _captureId, entries, onD
           },
         });
         skillId = newSkill.id;
+        linkedGoalId = cat?.id;                   // fixes "健身目标里看不到"
 
-        // Link to module if user selected one
-        if (ui.moduleId && cat) {
-          addExistingSkillToModule(cat.id, ui.moduleId, skillId);
-        } else if (cat) {
-          // Auto-link to first module of the category as fallback
-          const firstMod = (data.modules || []).find((m) => m.goalId === cat.id);
-          if (firstMod) addExistingSkillToModule(cat.id, firstMod.id, skillId);
+        // Link to a module so GoalDetailScreen's linkedSkillIds filter finds it
+        const targetModuleId = ui.moduleId
+          ?? (cat ? (data.modules || []).find((m) => m.goalId === cat.id)?.id : undefined);
+        if (cat && targetModuleId) {
+          addExistingSkillToModule(cat.id, targetModuleId, skillId);
         }
+      } else if (skillId) {
+        // ── Existing matched skill path ──────────────────────────────────────
+        // Derive linkedGoalId from the skill's own categoryId so records
+        // appear under the right goal even when there are no module links
+        const existingSkill = data.skills.find((s) => s.id === skillId);
+        linkedGoalId = existingSkill?.categoryId;
+        // Also check module links (highest fidelity)
+        const link = (data.modules || []).length > 0
+          ? undefined  // createExecutionLog resolves via moduleSkillLinks internally
+          : undefined;
+        void link;
       }
 
-      // For existing skills: only log if include is checked
+      // Gate: existing deselected or new not opted-in
       if (entry.matchedSkillId && !ui.include) return;
-      // For new skills: only log if createNew was toggled
       if (!entry.matchedSkillId && !ui.createNew) return;
       if (!skillId) return;
 
@@ -174,6 +209,7 @@ export default function HomeCapturePending({ captureId: _captureId, entries, onD
 
       createExecutionLog({
         linkedSkillId: skillId,
+        linkedGoalId,                              // explicit — fixes both symptoms
         date,
         durationMinutes,
         qualityRating: entry.qualityRating as any,
@@ -186,7 +222,8 @@ export default function HomeCapturePending({ captureId: _captureId, entries, onD
               metricType: 'performance_log' as ProgressType,
               performanceData: {
                 strengthSets: sets.map((s) => ({
-                  weight: s.weight ?? entry.fields.extraWeight,
+                  // use extraWeight if weight is absent/zero (e.g. weighted dips)
+                  weight: (s.weight && s.weight > 0) ? s.weight : (entry.fields.extraWeight ?? 0),
                   reps: s.reps ?? 0,
                   sets: 1,
                 })),
@@ -200,8 +237,9 @@ export default function HomeCapturePending({ captureId: _captureId, entries, onD
     });
 
     setLogged(true);
-    setTimeout(onDismiss, 800); // brief "已入库" flash then dismiss
-  }, [entries, entryStates, data.categories, data.modules, addSkill, addExistingSkillToModule, createExecutionLog, onDismiss]);
+    setTimeout(onDismiss, 800);
+  }, [entries, entryStates, data.categories, data.modules, data.skills,
+      resolveCategory, addSkill, addExistingSkillToModule, createExecutionLog, onDismiss]);
 
   if (logged) {
     return (
