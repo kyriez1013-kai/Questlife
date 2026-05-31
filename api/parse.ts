@@ -41,7 +41,7 @@ async function callDeepSeek(
           { role: 'user',   content: userPrompt   },
         ],
         temperature: 0.3,
-        max_tokens: 600,  // B-2: larger schema needs more output tokens
+        max_tokens: 900,  // B-3: entries[] adds significant output tokens for multi-set logs
       }),
       signal: controller.signal,
     });
@@ -67,26 +67,45 @@ Required JSON schema:
   "linkedGoalId": null,
   "insightType": "skill_progress" | "goal_link" | "cross_link" | "encourage",
   "crossLinks": [{ "captureId": "string", "reason": "string" }],
-  "insight": { "zh": "...", "en": "..." }
+  "insight": { "zh": "...", "en": "..." },
+  "entries": []
 }
 
 Additional context provided in the user message (may be absent for new users — handle gracefully):
-• skillsCatalog: [{id, name}] — the user's skills. Match the log entry to skill IDs → matchedSkillIds.
-• goalsSnapshot: [{id, name, progressPercent, targetSummary}] — active goals. If this entry advances a goal, set linkedGoalId.
-• skillHistory: [{skillId, skillName, recentLogs:[{date, durationMinutes, qualityRating?}]}] — recent execution logs for candidate skills (≤5 per skill). Use for longitudinal comparison.
+• skillsCatalog: [{id, name}] — match each action to a skill id → matchedSkillId per entry.
+• goalsSnapshot: [{id, name, progressPercent, targetSummary}] — active goals.
+• skillHistory: [{skillId, skillName, recentLogs:[{date, durationMinutes, qualityRating?}]}] — for longitudinal comparison.
 
-Rules:
-• type: classify as training/reading/state/misc.
-• fields: extract structured data (numbers as numbers). E.g. for training: {exercise, reps, weight, duration}; for reading: {title, pages, topic}; for state: {energy, mood, stress}.
-• matchedSkillIds: from skillsCatalog, identify which skill(s) this entry is about. Return their IDs. Empty array if none match.
-• linkedGoalId: if entry clearly advances a goal from goalsSnapshot, return that goal's id. Otherwise null.
-• insightType (choose the HIGHEST applicable):
-  1. "skill_progress" — matched skill has history in skillHistory. MUST use specific numbers: compare today's metric to past records (e.g. weight went from 75→80kg, or duration increased). This is the highest-value insight.
-  2. "goal_link" — entry connects to a goal and linkedGoalId is set. Show how it moves the needle toward the goal.
-  3. "cross_link" — crossLinks is non-empty. Connect this entry to the related past entry.
-  4. "encourage" — insufficient data for the above. Confirm + encourage with a specific hook about what to log next.
-• crossLinks: from provided history entries, find semantically meaningful connections. Empty if none.
-• insight: 1–2 sentences, MUST use specific numbers/names from the entry AND history when available. Never start with "It seems" or "It appears". Match language of the log entry (Chinese or English).
+Rules for insight fields (unchanged from before):
+• type, fields, matchedSkillIds, linkedGoalId, insightType, crossLinks: same rules as before.
+• insight: 1-2 sentences, specific numbers/names, match entry language (Chinese or English).
+
+Rules for entries (Spec B-3 — structured execution items for data entry confirmation):
+entries is an array of executable actions. Each entry object:
+{
+  "skillName": "...",           // exact action name from the log
+  "matchedSkillId": "id|null",  // id from skillsCatalog if name matches, else null
+  "goalType": "fitness|study|exam|project|custom",
+  "progressType": "performance_log|time_based|target_value|quality_score",
+  "fields": {
+    // performance_log (strength / resistance training):
+    //   "sets": [{"weight":80,"reps":5},{"weight":80,"reps":4}]
+    //   "extraWeight": 15  (for weighted dips: the added plate weight)
+    //
+    // time_based (study, reading, cardio by duration):
+    //   "durationMinutes": 45, "note": "chapter 3"
+    //
+    // target_value:
+    //   "value": 150, "unit": "kg"
+  },
+  "qualityRating": 4  // omit if unknown
+}
+
+CRITICAL safety rules for entries (prevents data pollution):
+1. ONLY create entries for real physical/cognitive execution: training sets actually done, study sessions, practice reps.
+2. Do NOT create entries for: conversational references ("今天聊到了卧推"), state-only logs ("没睡好"), future plans ("明天练"), or vague mentions without concrete metrics.
+3. Strength sets: extract EACH set separately. "3x5最后一组4个" → [{reps:5},{reps:5},{reps:4}]. "dip+15kg 3x8" → [{weight:15,reps:8},{weight:15,reps:8},{weight:15,reps:8}] with extraWeight:15.
+4. If no concrete execution data → "entries": [].
 `;
 
 const GREETING_SYSTEM = `\
@@ -194,6 +213,20 @@ export default async function handler(req: any, res: any) {
     }
 
     const VALID_INSIGHT_TYPES = new Set(['skill_progress', 'goal_link', 'cross_link', 'encourage']);
+    const VALID_PROGRESS_TYPES = new Set(['performance_log', 'time_based', 'target_value', 'quality_score', 'frequency', 'none']);
+
+    // Sanitise entries array — strip anything without a skillName
+    const rawEntries: any[] = Array.isArray(parsed.entries) ? parsed.entries : [];
+    const entries = rawEntries
+      .filter((e: any) => typeof e?.skillName === 'string' && e.skillName.trim())
+      .map((e: any) => ({
+        skillName:       String(e.skillName).trim(),
+        matchedSkillId:  typeof e.matchedSkillId === 'string' ? e.matchedSkillId : null,
+        goalType:        typeof e.goalType === 'string' ? e.goalType : 'custom',
+        progressType:    VALID_PROGRESS_TYPES.has(e.progressType) ? e.progressType : 'time_based',
+        fields:          e.fields && typeof e.fields === 'object' ? e.fields : {},
+        ...(typeof e.qualityRating === 'number' ? { qualityRating: Math.max(1, Math.min(5, Math.round(e.qualityRating))) } : {}),
+      }));
 
     return send(res, 200, {
       ok:               true,
@@ -206,6 +239,7 @@ export default async function handler(req: any, res: any) {
       insight:          parsed.insight && typeof parsed.insight === 'object'
         ? { zh: String(parsed.insight.zh ?? ''), en: String(parsed.insight.en ?? '') }
         : { zh: '', en: '' },
+      entries,          // B-3: structured execution items
     });
 
   } catch (error: any) {

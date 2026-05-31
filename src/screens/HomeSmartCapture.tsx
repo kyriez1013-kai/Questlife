@@ -23,6 +23,7 @@ import { getQuestTheme } from '../design/tokens';
 import { getLanguage, t } from '../i18n';
 import { RawCapture } from '../types';
 import QuestCard from '../components/ui/QuestCard';
+import HomeCapturePending from './HomeCapturePending';
 
 // ── Local time block ─────────────────────────────────────────────────────────
 
@@ -298,6 +299,8 @@ export default function HomeSmartCapture() {
             matchedSkillIds: result.matchedSkillIds ?? [],
             linkedGoalId:    result.linkedGoalId ?? undefined,
             insightType:     result.insightType ?? 'encourage',
+            entries:         Array.isArray(result.entries) ? result.entries : [],
+            entriesDismissed: false,
           },
         });
       } else {
@@ -447,14 +450,27 @@ export default function HomeSmartCapture() {
       {allCaptures.length > 0 && (
         <View style={{ marginTop: questTheme.spacing.xs }}>
           {todayCaptures.map((c) => (
-            <CaptureCard
-              key={c.id}
-              capture={c}
-              lang={lang}
-              questTheme={questTheme}
-              onRetry={handleRetry}
-              onDelete={handleDelete}
-            />
+            <View key={c.id}>
+              <CaptureCard
+                capture={c}
+                lang={lang}
+                questTheme={questTheme}
+                onRetry={handleRetry}
+                onDelete={handleDelete}
+              />
+              {/* B-3: show confirmation card when entries are pending */}
+              {c.parseStatus === 'done' &&
+                (c.parsed?.entries?.length ?? 0) > 0 &&
+                !c.parsed?.entriesDismissed && (
+                <HomeCapturePending
+                  captureId={c.id}
+                  entries={c.parsed!.entries!}
+                  onDismiss={() => updateRawCapture(c.id, {
+                    parsed: { ...c.parsed!, entriesDismissed: true },
+                  })}
+                />
+              )}
+            </View>
           ))}
 
           {/* Expand / collapse button */}

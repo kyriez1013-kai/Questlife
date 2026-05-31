@@ -653,7 +653,39 @@ export interface Action {
   quality?: Quality;       // V2.2 新增, 可选, 老数据为 undefined
 }
 
-// ───── Smart Capture (Spec B-1) ─────
+// ───── Smart Capture (Spec B-1/B-2/B-3) ─────
+
+/** One strength-training set, component of ParsedEntry.fields.sets */
+export interface ParsedStrengthSet {
+  weight?: number;   // kg (or bodyweight if undefined)
+  reps?: number;
+}
+
+/**
+ * One structured execution item extracted from a natural-language capture.
+ * LLM fills only known fields from the template; no invented structure.
+ */
+export interface ParsedEntry {
+  skillName: string;           // exact name from the log
+  matchedSkillId: string | null; // existing Skill.id, or null = new action
+  goalType?: string;           // inferred GoalType ('fitness'|'study'|…)
+  progressType: string;        // aligns to ProgressType
+  fields: {
+    // performance_log (strength training)
+    sets?: ParsedStrengthSet[];
+    extraWeight?: number;      // e.g. +15kg for weighted dips
+    // time_based (study/reading)
+    durationMinutes?: number;
+    note?: string;
+    // target_value
+    value?: number;
+    unit?: string;
+    // fallback
+    [key: string]: any;
+  };
+  qualityRating?: number;      // 1-5 if discernible from text
+}
+
 export interface RawCapture {
   id: string;
   text: string;            // 用户原文，一字不改，永久保留
@@ -668,6 +700,9 @@ export interface RawCapture {
     matchedSkillIds?: string[];
     linkedGoalId?: string;
     insightType?: 'skill_progress' | 'goal_link' | 'cross_link' | 'encourage';
+    // Spec B-3: structured entries for confirmation + data entry
+    entries?: ParsedEntry[];
+    entriesDismissed?: boolean; // true once user confirms or ignores
   };
 }
 
