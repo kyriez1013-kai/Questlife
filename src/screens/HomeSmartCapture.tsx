@@ -60,6 +60,38 @@ async function callParseAPI(body: object): Promise<any> {
   return res.json();
 }
 
+// ── Insight-type helpers ────────────────────────────────────────────────────
+
+type InsightType = 'skill_progress' | 'goal_link' | 'cross_link' | 'encourage';
+
+function insightBorderColor(type: InsightType | undefined, questTheme: ReturnType<typeof getQuestTheme>): string {
+  switch (type) {
+    case 'skill_progress': return questTheme.colors.success;
+    case 'goal_link':      return questTheme.colors.primary;
+    case 'cross_link':     return questTheme.colors.accent;
+    case 'encourage':
+    default:               return questTheme.colors.border;
+  }
+}
+
+function insightTagKey(type: InsightType | undefined): string {
+  switch (type) {
+    case 'skill_progress': return 'scInsightSkillProgress';
+    case 'goal_link':      return 'scInsightGoalLink';
+    case 'cross_link':     return 'scInsightCrossLink';
+    default:               return 'scInsightEncourage';
+  }
+}
+
+function insightBgColor(type: InsightType | undefined, questTheme: ReturnType<typeof getQuestTheme>): string {
+  switch (type) {
+    case 'skill_progress': return questTheme.colors.successSoft;
+    case 'goal_link':      return questTheme.colors.primarySoft;
+    case 'cross_link':     return questTheme.colors.accentSoft;
+    default:               return questTheme.colors.surfaceSoft;
+  }
+}
+
 // ── Capture card ──────────────────────────────────────────────────────────────
 
 function CaptureCard({
@@ -73,7 +105,7 @@ function CaptureCard({
   questTheme: ReturnType<typeof getQuestTheme>;
   onRetry: (id: string) => void;
 }) {
-  const hasCrossLinks = (capture.parsed?.crossLinks ?? []).length > 0;
+  const insightType = capture.parsed?.insightType as InsightType | undefined;
   const insightText = capture.parsed?.insight?.[lang] ?? '';
 
   return (
@@ -83,7 +115,7 @@ function CaptureCard({
       style={{
         marginTop: questTheme.spacing.sm,
         borderLeftWidth: 3,
-        borderLeftColor: hasCrossLinks ? questTheme.colors.accent : questTheme.colors.border,
+        borderLeftColor: insightBorderColor(insightType, questTheme),
       }}
     >
       {/* Original text — always visible */}
@@ -102,12 +134,11 @@ function CaptureCard({
       )}
 
       {capture.parseStatus === 'done' && insightText ? (
-        <View style={[styles.insightBox, { backgroundColor: questTheme.colors.accentSoft }]}>
-          {hasCrossLinks && (
-            <Text style={[styles.crossLinkTag, { color: questTheme.colors.accent }]}>
-              🔗 {t(lang, 'scCrossLinked')}
-            </Text>
-          )}
+        <View style={[styles.insightBox, { backgroundColor: insightBgColor(insightType, questTheme) }]}>
+          {/* Insight-type tag */}
+          <Text style={[styles.crossLinkTag, { color: insightBorderColor(insightType, questTheme) }]}>
+            {t(lang, insightTagKey(insightType))}
+          </Text>
           <Text style={[styles.insightText, { color: questTheme.colors.text, fontSize: questTheme.typography.bodySize }]}>
             {insightText}
           </Text>
@@ -161,21 +192,93 @@ export default function HomeSmartCapture() {
   // ── Async parse helper ────────────────────────────────────────────────────
 
   const triggerParse = useCallback(async (captureId: string, captureText: string) => {
+    // 1. Recent capture history (raw, for cross-link detection)
     const history = (data.rawCaptures || [])
       .filter((c) => c.parseStatus === 'done' && c.id !== captureId)
       .slice(-20)
       .map((c) => ({ id: c.id, text: c.text, type: c.parsed?.type }));
 
+    // 2. Skills catalog — bounded by total skill count (names only)
+    const skillsCatalog = (data.skills || []).map((s) => ({ id: s.id, name: s.name }));
+
+    // 3. Goals snapshot — bounded by total category count (4 fields only, no full text)
+    const goalsSnapshot = (data.categories || []).map((cat) => {
+      const catSkills = (data.skills || []).filter((s) => s.categoryId === cat.id);
+      let progressPercent = 0;
+      if (cat.manualProgress != null) {
+        progressPercent = Math.round(cat.manualProgress);
+      } else if (catSkills.length > 0) {
+        const avg = catSkills.reduce((sum, s) => {
+          const done   = s.metricConfig?.completedHours ?? s.completedHours ?? 0;
+          const target = s.metricConfig?.targetHours ?? s.targetHours ?? 100;
+          return sum + (target > 0 ? Math.min(100, (done / target) * 100) : 0);
+        }, 0) / catSkills.length;
+        progressPercent = Math.round(avg);
+      }
+      return {
+        id:              cat.id,
+        name:            cat.name,
+        progressPercent,
+        targetSummary:   (cat.vision ?? cat.name).slice(0, 60),
+      };
+    });
+
+    // 4. Skill history — BOUNDED: rough-match candidates by name in text, then ≤5 skills × ≤5 logs
+    const normalizedText = captureText.toLowerCase();
+    const candidateSkillIds = new Set<string>();
+    // Name-match first
+    (data.skills || []).forEach((s) => {
+      if (s.name.length >= 2 && normalizedText.includes(s.name.toLowerCase())) {
+        candidateSkillIds.add(s.id);
+      }
+    });
+    // Fallback: most recently used skills (up to 3) if no name match
+    if (candidateSkillIds.size === 0) {
+      const seen = new Set<string>();
+      for (const log of (data.executionLogs || []).slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 15)) {
+        if (log.linkedSkillId && !seen.has(log.linkedSkillId)) {
+          seen.add(log.linkedSkillId);
+          candidateSkillIds.add(log.linkedSkillId);
+          if (seen.size >= 3) break;
+        }
+      }
+    }
+
+    const skillHistory = [...candidateSkillIds].slice(0, 5).flatMap((skillId) => {
+      const skill = (data.skills || []).find((s) => s.id === skillId);
+      if (!skill) return [];
+      const recentLogs = (data.executionLogs || [])
+        .filter((l) => l.linkedSkillId === skillId)
+        .slice()
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+        .slice(0, 5)
+        .map((l) => ({
+          date: l.date,
+          durationMinutes: l.durationMinutes,
+          ...(l.qualityRating != null ? { qualityRating: l.qualityRating } : {}),
+        }));
+      return [{ skillId, skillName: skill.name, recentLogs }];
+    });
+
     try {
-      const result = await callParseAPI({ text: captureText, history });
+      const result = await callParseAPI({
+        text: captureText,
+        history,
+        skillsCatalog,
+        goalsSnapshot,
+        skillHistory,
+      });
       if (result.ok) {
         updateRawCapture(captureId, {
           parseStatus: 'done',
           parsed: {
-            type: result.type,
-            fields: result.fields,
-            crossLinks: result.crossLinks,
-            insight: result.insight,
+            type:            result.type,
+            fields:          result.fields,
+            crossLinks:      result.crossLinks,
+            insight:         result.insight,
+            matchedSkillIds: result.matchedSkillIds ?? [],
+            linkedGoalId:    result.linkedGoalId ?? undefined,
+            insightType:     result.insightType ?? 'encourage',
           },
         });
       } else {
@@ -184,7 +287,7 @@ export default function HomeSmartCapture() {
     } catch {
       updateRawCapture(captureId, { parseStatus: 'failed' });
     }
-  }, [data.rawCaptures, updateRawCapture]);
+  }, [data.rawCaptures, data.skills, data.categories, data.executionLogs, updateRawCapture]);
 
   // ── Fetch greeting once per focus ─────────────────────────────────────────
 

@@ -664,6 +664,10 @@ export interface RawCapture {
     fields: Record<string, any>;
     crossLinks: { captureId: string; reason: string }[];
     insight: { zh: string; en: string };
+    // Spec B-2 additions (optional, backward-compatible)
+    matchedSkillIds?: string[];
+    linkedGoalId?: string;
+    insightType?: 'skill_progress' | 'goal_link' | 'cross_link' | 'encourage';
   };
 }
 

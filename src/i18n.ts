@@ -806,6 +806,10 @@ const zh: Record<string, string> = {
   scGreetingEvening: '晚上了，今天完成了什么值得记录的事？',
   scGreetingNight: '快睡了，把今天最重要的一件事记下来？',
   scTodayCaptures: '今日记录',
+  scInsightSkillProgress: '📈 技能进展',
+  scInsightGoalLink: '🎯 目标关联',
+  scInsightCrossLink: '🔗 关联历史',
+  scInsightEncourage: '💡 观察',
 
   // ── Insights Engine (ie_) ─────────────────────────────────────────────────
   ieGenericRef: '通用参考',
@@ -1683,6 +1687,10 @@ const en: Record<string, string> = {
   scGreetingEvening: 'Evening! What did you accomplish today?',
   scGreetingNight: "Before sleep — what's the one thing worth logging today?",
   scTodayCaptures: "Today's captures",
+  scInsightSkillProgress: '📈 Skill Progress',
+  scInsightGoalLink: '🎯 Goal Link',
+  scInsightCrossLink: '🔗 Linked History',
+  scInsightEncourage: '💡 Observation',
 
   // ── Insights Engine (ie_) ─────────────────────────────────────────────────
   ieGenericRef: 'Generic Ref',
