@@ -313,6 +313,9 @@ export default function StatsScreen() {
         <Text style={[styles.h1, { color: questTheme.colors.text }]}>{t(lang, 'insights')}</Text>
         <Text style={[styles.sub, { color: questTheme.colors.textMuted }]}>{t(lang, 'settingsSubtitle')}</Text>
 
+        {/* ── 重排后顺序：有行动价值的分析在上，系统自检在下 ──────────────── */}
+
+        {/* 1. 即时快览（今日概况）*/}
         <View style={styles.instantGrid}>
           <QuestCard questTheme={questTheme} variant="data" style={[styles.instantCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.border }]} className="summary-card insight-card">
             <Text style={[styles.instantTitle, { color: questTheme.colors.text }]}>{t(lang, 'weeklyOverview')}</Text>
@@ -327,26 +330,30 @@ export default function StatsScreen() {
             <Text style={[styles.instantText, { color: questTheme.colors.textMuted }]}>{instantInsight.done} {t(lang, 'completed')} · {instantInsight.remaining} {t(lang, 'remaining')}</Text>
           </QuestCard>
         </View>
-        <QuestCard questTheme={questTheme} variant="flat" style={[styles.encourageCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]} className="summary-card insight-card">
-          <Text style={[styles.instantTitle, { color: questTheme.colors.text }]}>{t(lang, 'dayCount').replace('{count}', String(instantInsight.firstInsightProgress))}</Text>
-          <Text style={[styles.instantText, { color: questTheme.colors.textMuted }]}>{t(lang, 'moreDaysToInsight').replace('{count}', String(instantInsight.daysToFirstInsight))}</Text>
-          <View style={[styles.encourageBarBg, { backgroundColor: questTheme.colors.surfaceSoft }]}>
-            <View style={[styles.encourageBarFg, { width: `${(instantInsight.firstInsightProgress / 7) * 100}%`, backgroundColor: questTheme.colors.primary }]} />
-          </View>
-        </QuestCard>
 
-        <QuestCard questTheme={questTheme} variant="data" style={[styles.loopCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.border }]} className="system-loop-card insight-card">
-          <Text style={[styles.h2Inline, { color: questTheme.colors.text }]}>{t(lang, 'systemLoopOverview')}</Text>
-          <View style={styles.loopGrid}>
-            <LoopStat questTheme={questTheme} label={t(lang, 'goalsWithSkills')} value={`${appLoop.activeGoals} / ${appLoop.totalGoals}`} />
-            <LoopStat questTheme={questTheme} label={t(lang, 'skillsWithMetrics')} value={`${appLoop.skillsWithMetrics} / ${appLoop.totalSkills}`} />
-            <LoopStat questTheme={questTheme} label={t(lang, 'skillsWithLogs')} value={`${appLoop.skillsWithLogs} / ${appLoop.totalSkills}`} />
-            <LoopStat questTheme={questTheme} label={t(lang, 'scheduledBlocksThisWeek')} value={String(appLoop.scheduledBlocksThisWeek)} />
-            <LoopStat questTheme={questTheme} label={t(lang, 'executionLogsThisWeek')} value={String(appLoop.executionLogsThisWeek)} />
-          </View>
-          <Text style={[styles.loopNext, { color: questTheme.colors.primary }]}>{t(lang, 'next')}: {appLoop.nextBestAction || t(lang, 'keepLoggingForInsights')}</Text>
-        </QuestCard>
+        {/* 2. 本周平均状态 */}
+        {weeklyQuality && (
+          <>
+            <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'weeklyAverageState')}</Text>
+            <View style={[styles.qCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>
+              <Text style={[styles.qBig, { color: questTheme.colors.text }]}>
+                {weeklyQuality.avg.toFixed(1)} <Text style={[styles.qOf, { color: questTheme.colors.textMuted }]}>/ 5.0</Text>{' '}
+                <Text style={styles.qEmoji}>{emojiForAvgQuality(weeklyQuality.avg)}</Text>
+              </Text>
+              <Text style={[styles.qSub, { color: questTheme.colors.textMuted }]}>{t(lang, 'total')} {weeklyQuality.count} {t(lang, 'validRecords')}</Text>
+            </View>
+          </>
+        )}
 
+        {/* 3. 近 7 天柱图 */}
+        <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'last7Days')}</Text>
+        <DailyBarChart days={last7} accent={accent} lang={lang} questTheme={questTheme} />
+
+        {/* 4. 深度分析卡片（能力地图/成长曲线/多因子/月度/明日预测/异常检测）*/}
+        {/* ── 上移：对用户有行动价值的分析，原在 selfKnowledge 之后 ── */}
+        <InsightCardsBlock insights={engineInsights} questTheme={questTheme} lang={lang} />
+
+        {/* 5. 自我认知精度 */}
         <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'selfKnowledgeAccuracy')}</Text>
         <QuestCard questTheme={questTheme} variant="flat" style={[styles.insightCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]} className="self-awareness-card insight-card">
           {!selfKnowledge ? (
@@ -365,9 +372,7 @@ export default function StatsScreen() {
           )}
         </QuestCard>
 
-        {/* ── 新增：引擎分析卡片（异常/成长曲线/能力地图/多因子/月度/明日预测）── */}
-        <InsightCardsBlock insights={engineInsights} questTheme={questTheme} lang={lang} />
-
+        {/* 6. 启动救援统计 */}
         <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'rescueStarts')}</Text>
         <QuestCard questTheme={questTheme} variant="flat" style={[styles.insightCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]} className="rescue-summary-card insight-card">
           <Text style={[styles.insightLine, { color: questTheme.colors.text }]}>
@@ -382,6 +387,7 @@ export default function StatsScreen() {
           </Text>
         </QuestCard>
 
+        {/* 7. 历史统计数字 */}
         <View style={styles.statRow}>
           <Stat questTheme={questTheme} label={t(lang, 'weeklyExecutionTime')} value={fmt(last7.reduce((s, d) => s + d.minutes, 0))} accent={accent} />
           <Stat questTheme={questTheme} label={t(lang, 'totalHours')} value={(totalMin / 60).toFixed(1)} accent={accent} />
@@ -392,25 +398,7 @@ export default function StatsScreen() {
           <Stat questTheme={questTheme} label={t(lang, 'weeklyHit')} value={`${weeklyHitDays}/7`} accent={accent} />
         </View>
 
-        {/* 1. 本周平均状态 */}
-        {weeklyQuality && (
-          <>
-            <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'weeklyAverageState')}</Text>
-            <View style={[styles.qCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>
-              <Text style={[styles.qBig, { color: questTheme.colors.text }]}>
-                {weeklyQuality.avg.toFixed(1)} <Text style={[styles.qOf, { color: questTheme.colors.textMuted }]}>/ 5.0</Text>{' '}
-                <Text style={styles.qEmoji}>{emojiForAvgQuality(weeklyQuality.avg)}</Text>
-              </Text>
-              <Text style={[styles.qSub, { color: questTheme.colors.textMuted }]}>{t(lang, 'total')} {weeklyQuality.count} {t(lang, 'validRecords')}</Text>
-            </View>
-          </>
-        )}
-
-        {/* 2. 近 7 天柱图 */}
-        <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'last7Days')}</Text>
-        <DailyBarChart days={last7} accent={accent} lang={lang} questTheme={questTheme} />
-
-        {/* 3. 本周规律洞察 */}
+        {/* 8. 本周规律洞察 */}
         <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'weeklyPatterns')}</Text>
         <View style={[styles.insightCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>
           {insight.locked ? (
@@ -492,9 +480,33 @@ export default function StatsScreen() {
           </View>
         )}
 
-        {/* 8 周热力图 (移到最底, 缩小) */}
+        {/* 8 周热力图 */}
         <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'heatmap8Weeks')}</Text>
         <Heatmap cells={heat} lang={lang} questTheme={questTheme} accent={accent} />
+
+        {/* ── 系统自检（下沉：不是用户每次关心的信息）─────────────────────── */}
+
+        {/* 解锁进度提示（新用户友好，老用户可忽略）*/}
+        <QuestCard questTheme={questTheme} variant="flat" style={[styles.encourageCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]} className="summary-card insight-card">
+          <Text style={[styles.instantTitle, { color: questTheme.colors.text }]}>{t(lang, 'dayCount').replace('{count}', String(instantInsight.firstInsightProgress))}</Text>
+          <Text style={[styles.instantText, { color: questTheme.colors.textMuted }]}>{t(lang, 'moreDaysToInsight').replace('{count}', String(instantInsight.daysToFirstInsight))}</Text>
+          <View style={[styles.encourageBarBg, { backgroundColor: questTheme.colors.surfaceSoft }]}>
+            <View style={[styles.encourageBarFg, { width: `${(instantInsight.firstInsightProgress / 7) * 100}%`, backgroundColor: questTheme.colors.primary }]} />
+          </View>
+        </QuestCard>
+
+        {/* 系统闭环概览（系统健康度，开发者/高级用户参考）*/}
+        <QuestCard questTheme={questTheme} variant="data" style={[styles.loopCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.border }]} className="system-loop-card insight-card">
+          <Text style={[styles.h2Inline, { color: questTheme.colors.text }]}>{t(lang, 'systemLoopOverview')}</Text>
+          <View style={styles.loopGrid}>
+            <LoopStat questTheme={questTheme} label={t(lang, 'goalsWithSkills')} value={`${appLoop.activeGoals} / ${appLoop.totalGoals}`} />
+            <LoopStat questTheme={questTheme} label={t(lang, 'skillsWithMetrics')} value={`${appLoop.skillsWithMetrics} / ${appLoop.totalSkills}`} />
+            <LoopStat questTheme={questTheme} label={t(lang, 'skillsWithLogs')} value={`${appLoop.skillsWithLogs} / ${appLoop.totalSkills}`} />
+            <LoopStat questTheme={questTheme} label={t(lang, 'scheduledBlocksThisWeek')} value={String(appLoop.scheduledBlocksThisWeek)} />
+            <LoopStat questTheme={questTheme} label={t(lang, 'executionLogsThisWeek')} value={String(appLoop.executionLogsThisWeek)} />
+          </View>
+          <Text style={[styles.loopNext, { color: questTheme.colors.primary }]}>{t(lang, 'next')}: {appLoop.nextBestAction || t(lang, 'keepLoggingForInsights')}</Text>
+        </QuestCard>
       </ScrollView>
     </SafeAreaView>
   );

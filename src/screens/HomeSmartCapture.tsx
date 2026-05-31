@@ -197,15 +197,15 @@ export default function HomeSmartCapture() {
   const [showAll, setShowAll]             = useState(false);
   const greetingFetchedRef                = useRef(false);
 
-  // All today's captures sorted newest first
-  const allTodayCaptures: RawCapture[] = (data.rawCaptures || [])
-    .filter((c) => c.createdAt.startsWith(todayStr()))
+  // ALL captures sorted newest first — not filtered to today,
+  // so users can always access historical entries via expand
+  const allCaptures: RawCapture[] = (data.rawCaptures || [])
     .slice()
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
-  // Collapsed view: default 3, expandable
-  const todayCaptures = showAll ? allTodayCaptures : allTodayCaptures.slice(0, DEFAULT_VISIBLE);
-  const hiddenCount   = allTodayCaptures.length - DEFAULT_VISIBLE;
+  // Collapsed view: default 3 newest, expandable to all history
+  const todayCaptures = showAll ? allCaptures : allCaptures.slice(0, DEFAULT_VISIBLE);
+  const hiddenCount   = allCaptures.length - DEFAULT_VISIBLE;
   const hasMore       = hiddenCount > 0;
 
   // ── Async parse helper ────────────────────────────────────────────────────
@@ -443,8 +443,8 @@ export default function HomeSmartCapture() {
         </View>
       </QuestCard>
 
-      {/* Today's captures (collapsed to DEFAULT_VISIBLE, expandable) */}
-      {allTodayCaptures.length > 0 && (
+      {/* All captures (collapsed to DEFAULT_VISIBLE, expandable to full history) */}
+      {allCaptures.length > 0 && (
         <View style={{ marginTop: questTheme.spacing.xs }}>
           {todayCaptures.map((c) => (
             <CaptureCard

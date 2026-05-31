@@ -626,6 +626,14 @@ function ModuleCard({
         <TouchableOpacity style={[styles.moduleMenuBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]} onPress={openModuleMenu}>
           <Text style={[styles.moduleMenuText, { color: questTheme.colors.textMuted }]}>•••</Text>
         </TouchableOpacity>
+        {/* ✕ delete — visible on both web and mobile, bypasses 3-button Alert */}
+        <TouchableOpacity
+          style={[styles.moduleMenuBtn, { borderColor: questTheme.colors.dangerSoft, backgroundColor: questTheme.colors.dangerSoft, marginLeft: 4 }]}
+          onPress={deleteModule}
+          hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+        >
+          <Text style={[styles.moduleMenuText, { color: questTheme.colors.danger }]}>✕</Text>
+        </TouchableOpacity>
         <QuestIcon name={expanded ? 'check' : 'target'} size={16} color={questTheme.colors.textSubtle} />
       </TouchableOpacity>
       <QuestProgressBar questTheme={questTheme} value={progress} style={{ marginTop: 12 }} />
