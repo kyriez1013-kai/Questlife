@@ -15,7 +15,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet,
+  View, Text, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet, Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useStore } from '../store';
@@ -99,11 +99,13 @@ function CaptureCard({
   lang,
   questTheme,
   onRetry,
+  onDelete,
 }: {
   capture: RawCapture;
   lang: 'zh' | 'en';
   questTheme: ReturnType<typeof getQuestTheme>;
   onRetry: (id: string) => void;
+  onDelete: (id: string) => void;
 }) {
   const insightType = capture.parsed?.insightType as InsightType | undefined;
   const insightText = capture.parsed?.insight?.[lang] ?? '';
@@ -118,6 +120,21 @@ function CaptureCard({
         borderLeftColor: insightBorderColor(insightType, questTheme),
       }}
     >
+      {/* Header row: timestamp + delete button — works on both web & mobile */}
+      <View style={styles.cardHeader}>
+        <Text style={[styles.timestamp, { color: questTheme.colors.textSubtle }]}>
+          {new Date(capture.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </Text>
+        <TouchableOpacity
+          onPress={() => onDelete(capture.id)}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          style={[styles.deleteBtn, { borderColor: questTheme.colors.border }]}
+          activeOpacity={0.6}
+        >
+          <Text style={[styles.deleteBtnText, { color: questTheme.colors.textSubtle }]}>✕</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Original text — always visible */}
       <Text style={[styles.captureText, { color: questTheme.colors.text, fontSize: questTheme.typography.bodySize }]}>
         {capture.text}
@@ -161,33 +178,35 @@ function CaptureCard({
           </TouchableOpacity>
         </View>
       )}
-
-      {/* Timestamp */}
-      <Text style={[styles.timestamp, { color: questTheme.colors.textSubtle }]}>
-        {new Date(capture.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-      </Text>
     </QuestCard>
   );
 }
 
 // ── Main exported component ──────────────────────────────────────────────────
 
+const DEFAULT_VISIBLE = 3;
+
 export default function HomeSmartCapture() {
-  const { data, addRawCapture, updateRawCapture } = useStore();
+  const { data, addRawCapture, updateRawCapture, deleteRawCapture } = useStore();
   const lang = getLanguage(data.settings.language ?? data.settings.preferredLanguage);
   const questTheme = getQuestTheme(data.settings.selectedThemeId);
 
   const [inputText, setInputText]         = useState('');
   const [isPosting, setIsPosting]         = useState(false);
   const [greeting, setGreeting]           = useState('');
+  const [showAll, setShowAll]             = useState(false);
   const greetingFetchedRef                = useRef(false);
 
-  // Today's captures (sorted newest first, max 5 shown)
-  const todayCaptures: RawCapture[] = (data.rawCaptures || [])
+  // All today's captures sorted newest first
+  const allTodayCaptures: RawCapture[] = (data.rawCaptures || [])
     .filter((c) => c.createdAt.startsWith(todayStr()))
     .slice()
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    .slice(0, 5);
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+  // Collapsed view: default 3, expandable
+  const todayCaptures = showAll ? allTodayCaptures : allTodayCaptures.slice(0, DEFAULT_VISIBLE);
+  const hiddenCount   = allTodayCaptures.length - DEFAULT_VISIBLE;
+  const hasMore       = hiddenCount > 0;
 
   // ── Async parse helper ────────────────────────────────────────────────────
 
@@ -345,6 +364,23 @@ export default function HomeSmartCapture() {
     triggerParse(captureId, capture.text);
   }, [data.rawCaptures, updateRawCapture, triggerParse]);
 
+  // ── Delete handler — Alert works on both web (window.confirm) and native ──
+
+  const handleDelete = useCallback((captureId: string) => {
+    Alert.alert(
+      t(lang, 'deleteRecord'),
+      t(lang, 'scDeleteCaptureBody'),
+      [
+        { text: t(lang, 'cancel'), style: 'cancel' },
+        {
+          text: t(lang, 'delete'),
+          style: 'destructive',
+          onPress: () => deleteRawCapture(captureId),
+        },
+      ],
+    );
+  }, [lang, deleteRawCapture]);
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
@@ -407,8 +443,8 @@ export default function HomeSmartCapture() {
         </View>
       </QuestCard>
 
-      {/* Today's captures */}
-      {todayCaptures.length > 0 && (
+      {/* Today's captures (collapsed to DEFAULT_VISIBLE, expandable) */}
+      {allTodayCaptures.length > 0 && (
         <View style={{ marginTop: questTheme.spacing.xs }}>
           {todayCaptures.map((c) => (
             <CaptureCard
@@ -417,8 +453,24 @@ export default function HomeSmartCapture() {
               lang={lang}
               questTheme={questTheme}
               onRetry={handleRetry}
+              onDelete={handleDelete}
             />
           ))}
+
+          {/* Expand / collapse button */}
+          {hasMore && (
+            <TouchableOpacity
+              onPress={() => setShowAll((v) => !v)}
+              style={[styles.expandBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.expandBtnText, { color: questTheme.colors.textMuted }]}>
+                {showAll
+                  ? t(lang, 'scCollapse')
+                  : t(lang, 'scShowMore').replace('{n}', String(hiddenCount))}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
     </View>
@@ -452,6 +504,27 @@ const styles = StyleSheet.create({
   },
   sendBtnText: {
     fontWeight: '700',
+  },
+  // Card header: timestamp (left) + delete button (right)
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  timestamp: {
+    fontSize: 11,
+  },
+  deleteBtn: {
+    borderWidth: 1,
+    borderRadius: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+  },
+  deleteBtnText: {
+    fontSize: 11,
+    fontWeight: '600',
+    lineHeight: 16,
   },
   captureText: {
     lineHeight: 20,
@@ -488,8 +561,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  timestamp: {
-    fontSize: 11,
-    marginTop: 6,
+  // Expand / collapse button
+  expandBtn: {
+    marginTop: 8,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 7,
+    alignItems: 'center',
+  },
+  expandBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

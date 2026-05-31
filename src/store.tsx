@@ -85,6 +85,7 @@ interface Ctx {
   // Spec B-1: Smart Capture Loop
   addRawCapture: (text: string) => RawCapture;
   updateRawCapture: (id: string, patch: Partial<RawCapture>) => void;
+  deleteRawCapture: (id: string) => void;
 }
 
 function applyExecutionLogToSkillProgress(skill: Skill, log: ExecutionLog): Skill {
@@ -1031,6 +1032,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }));
   }, [mutate]);
 
+  const deleteRawCapture: Ctx['deleteRawCapture'] = useCallback((id: string) => {
+    // Only removes the RawCapture — skills, execution logs, goals untouched
+    mutate((d) => ({
+      ...d,
+      rawCaptures: (d.rawCaptures || []).filter((c) => c.id !== id),
+    }));
+  }, [mutate]);
+
   const rebuildDerivedData: Ctx['rebuildDerivedData'] = useCallback(() => {
     let counts = { effortUnitCount: 0, contributionLinkCount: 0 };
     mutate((d) => {
@@ -1105,6 +1114,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         rebuildDerivedData,
         addRawCapture,
         updateRawCapture,
+        deleteRawCapture,
       }}
     >
       {children}
