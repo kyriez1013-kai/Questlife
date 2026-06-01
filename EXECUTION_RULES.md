@@ -22,6 +22,9 @@
 13. 验收必须在真实 web UI 上端到端实测。"API 测试通过""tsc 零报错""单元逻辑正确"都不等于完成——必须在部署后的线上 web 页面，用真实用户操作走完整条链路（点击→确认→数据真正写入→刷新后仍在），亲自验证后才算完成。报告里要写明"已在真实 web UI 实测"及具体操作步骤与结果。
 14. 注意 web 与原生差异。本项目通过浏览器(RN Web)访问，部分 React Native API 在 web 上行为不同或失效（已知：Alert.alert 在 web 是空实现 no-op）。涉及确认弹窗、原生交互、存储等功能时，必须确认其在 web 环境真正生效，web 不可用的 API 要提供 web 等价实现（如 window.confirm）。
 
+## 部署规则
+本项目用 git push 部署（已连接 GitHub，push 后 Vercel 自动构建部署）。完成任务后运行：git add -A && git commit -m '描述' && git push
+
 ## 不可触碰区（除非任务点名）
 数据模型(types.ts)、导航、Today/Goals/Schedule/Settings 各屏。
 
