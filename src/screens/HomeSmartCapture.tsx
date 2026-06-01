@@ -204,7 +204,7 @@ export default function HomeSmartCapture() {
   const [isPosting, setIsPosting]         = useState(false);
   const [greeting, setGreeting]           = useState('');
   const [showAll, setShowAll]             = useState(false);
-  const greetingFetchedRef                = useRef(false);
+  const greetingRequestRef                = useRef(0);
   const activeCaptureHistory = useMemo(() => (
     (data.rawCaptures || []).filter((capture) => captureHasLiveContext(capture, data.executionLogs || []))
   ), [data.rawCaptures, data.executionLogs]);
@@ -326,27 +326,32 @@ export default function HomeSmartCapture() {
 
   useFocusEffect(
     useCallback(() => {
-      if (greetingFetchedRef.current) return;
-      greetingFetchedRef.current = true;
-
       const recentHistory = activeCaptureHistory
         .slice(-3)
         .map((c) => ({ text: c.text }));
       const timeBlock = currentTimeBlock();
+      const requestId = greetingRequestRef.current + 1;
+      greetingRequestRef.current = requestId;
 
       // Fallback greeting from i18n (shown immediately while API is in flight)
       setGreeting(t(lang, greetingKeyForBlock(timeBlock)));
 
+      if (recentHistory.length === 0) {
+        return () => {
+          greetingRequestRef.current += 1;
+        };
+      }
+
       callParseAPI({ mode: 'greeting', history: recentHistory, timeBlock })
         .then((result) => {
-          if (result.ok && result.greeting) setGreeting(result.greeting);
+          if (greetingRequestRef.current === requestId && result.ok && result.greeting) setGreeting(result.greeting);
         })
         .catch(() => {
           // Already set fallback above — no-op
         });
 
       return () => {
-        greetingFetchedRef.current = false;
+        greetingRequestRef.current += 1;
       };
     }, [activeCaptureHistory, lang]),
   );
