@@ -1,7 +1,7 @@
 // V2: "设置" Tab
 // 提醒已移到每个技能内, 这里只保留版本号 + 本地存储说明
 import React, { useState } from 'react';
-import { Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ColorPicker from '../components/ColorPicker';
 import { useStore } from '../store';
@@ -9,6 +9,7 @@ import { getLanguage, t } from '../i18n';
 import { appAccent, theme } from '../theme';
 import { getQuestTheme, themeOptions } from '../design/tokens';
 import { trackEvent } from '../utils/analytics';
+import { confirmAction } from '../utils/confirm';
 
 export default function SettingsScreen() {
   const { data, setSettings, runIntegrityCheck, repairSafeIntegrityIssues, rebuildDerivedData } = useStore();
@@ -143,10 +144,13 @@ export default function SettingsScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.debugBtn, { borderColor: questTheme.colors.warning, backgroundColor: questTheme.colors.warningSoft }]}
-                onPress={() => Alert.alert(t(lang, 'rebuildDerivedData'), t(lang, 'rebuildWarning'), [
-                  { text: t(lang, 'cancel'), style: 'cancel' },
-                  { text: t(lang, 'rebuildDerivedData'), onPress: () => rebuildDerivedData() },
-                ])}
+                onPress={() => confirmAction({
+                  title: t(lang, 'rebuildDerivedData'),
+                  message: t(lang, 'rebuildWarning'),
+                  cancelText: t(lang, 'cancel'),
+                  confirmText: t(lang, 'rebuildDerivedData'),
+                  onConfirm: () => rebuildDerivedData(),
+                })}
               >
                 <Text style={[styles.debugBtnText, { color: questTheme.colors.text }]}>{t(lang, 'rebuildDerivedData')}</Text>
               </TouchableOpacity>

@@ -42,6 +42,7 @@ import { getSkillSemanticIcon } from '../design/entityIcons';
 import { getPredictionSchemaForSkill, isStrengthPredictionSkill, strengthVolume } from '../utils/prediction';
 import { getRecordingFieldsForSkill } from '../domainTemplates';
 import HomeSmartCapture from './HomeSmartCapture';
+import { confirmAction } from '../utils/confirm';
 
 // 晨间状态选项
 const DAILY_STATE_OPTIONS = [
@@ -1803,10 +1804,13 @@ export default function HomeScreen() {
                     key={a.id}
                     style={[styles.actionCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}
                     onLongPress={() => {
-                      Alert.alert(t(lang, 'deleteRecord'), '', [
-                        { text: t(lang, 'cancel') },
-                        { text: t(lang, 'delete'), style: 'destructive', onPress: () => deleteExecutionLog(a.id) },
-                      ]);
+                      confirmAction({
+                        title: t(lang, 'deleteRecord'),
+                        cancelText: t(lang, 'cancel'),
+                        confirmText: t(lang, 'delete'),
+                        destructive: true,
+                        onConfirm: () => deleteExecutionLog(a.id),
+                      });
                     }}
                   >
                     <View style={[styles.dot, { backgroundColor: skill?.color ?? accent }]} />
@@ -1815,7 +1819,9 @@ export default function HomeScreen() {
                         {skill?.name ?? a.orphanedSkillName ?? a.title ?? `(${t(lang, 'deleted')})`} · {formatMetricUpdateSummary(a, skill, lang)}
                         {a.qualityRating ? ` · ${t(lang, 'quality')} ${a.qualityRating}/5` : ''}
                       </Text>
-                      <Text style={[styles.actionNote, { color: questTheme.colors.textMuted }]}>{a.durationMinutes} {t(lang, 'minutes')}</Text>
+                      <Text style={[styles.actionNote, { color: questTheme.colors.textMuted }]}>
+                        {(a.durationMinutes ?? 0) > 0 ? `${a.durationMinutes} ${t(lang, 'minutes')}` : t(lang, 'scDurationNotRecorded')}
+                      </Text>
                       {contributionLabels.length > 0 ? (
                         <Text style={[styles.actionNote, { color: questTheme.colors.textMuted }]}>
                           {t(lang, 'contributesTo')}: {contributionLabels.join(' · ')}
@@ -1823,6 +1829,18 @@ export default function HomeScreen() {
                       ) : null}
                       {a.note ? <Text style={[styles.actionNote, { color: questTheme.colors.textMuted }]}>{a.note}</Text> : null}
                     </View>
+                    <TouchableOpacity
+                      onPress={() => confirmAction({
+                        title: t(lang, 'deleteRecord'),
+                        cancelText: t(lang, 'cancel'),
+                        confirmText: t(lang, 'delete'),
+                        destructive: true,
+                        onConfirm: () => deleteExecutionLog(a.id),
+                      })}
+                      style={[styles.logDeleteBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}
+                    >
+                      <Text style={[styles.logDeleteText, { color: questTheme.colors.textMuted }]}>×</Text>
+                    </TouchableOpacity>
                   </TouchableOpacity>
                 );
               })}
@@ -2999,6 +3017,8 @@ const styles = StyleSheet.create({
   dot: { width: 10, height: 10, borderRadius: 5 },
   actionTitle: { color: theme.text, fontSize: 15, fontWeight: '600' },
   actionNote: { color: theme.textDim, marginTop: 4, fontSize: 13 },
+  logDeleteBtn: { width: 28, height: 28, borderRadius: 14, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  logDeleteText: { fontSize: 16, fontWeight: '900', lineHeight: 19 },
   tip: { color: theme.textDim, fontSize: 11, textAlign: 'center', marginTop: 12 },
 
   // 顶部横幅 (成就 / Streak 共用基础样式)

@@ -5,7 +5,7 @@
 // 底部 stats: 本周投入 / 平均质量 / 连续天数
 import React, { useMemo, useState } from 'react';
 import {
-  Alert, View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -30,6 +30,7 @@ import QuestIcon from '../components/ui/QuestIcon';
 import QuestPill from '../components/ui/QuestPill';
 import QuestProgressBar from '../components/ui/QuestProgressBar';
 import { compareEffortToPrevious, formatEffortUnitSummary, getComparableHistory } from '../utils/effort';
+import { confirmAction } from '../utils/confirm';
 
 type Range = 'day' | 'week' | 'month' | 'all';
 const WEEKDAY_KEYS = ['weekdaySun', 'weekdayMon', 'weekdayTue', 'weekdayWed', 'weekdayThu', 'weekdayFri', 'weekdaySat'];
@@ -227,21 +228,17 @@ export default function SkillDetailScreen() {
     const extra = linkedLocations.length > 0
       ? `\n\n${fill(t(lang, 'linkedLocationsCount'), { count: linkedLocations.length })}`
       : '';
-    Alert.alert(
-      t(lang, 'deleteSkillPermanentTitle'),
-      `${t(lang, 'deleteSkillPermanentBody')}${extra}`,
-      [
-        { text: t(lang, 'cancel'), style: 'cancel' },
-        {
-          text: t(lang, 'deletePermanently'),
-          style: 'destructive',
-          onPress: () => {
-            deleteSkillFromLibrary(skill.id);
-            nav.goBack();
-          },
-        },
-      ]
-    );
+    confirmAction({
+      title: t(lang, 'deleteSkillPermanentTitle'),
+      message: `${t(lang, 'deleteSkillPermanentBody')}${extra}`,
+      cancelText: t(lang, 'cancel'),
+      confirmText: t(lang, 'deletePermanently'),
+      destructive: true,
+      onConfirm: () => {
+        deleteSkillFromLibrary(skill.id);
+        nav.goBack();
+      },
+    });
   };
 
   return (

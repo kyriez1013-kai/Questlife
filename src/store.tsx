@@ -667,6 +667,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           ...log.metricUpdate,
         },
       };
+      if ((d.executionLogs || []).some((existing) => existing.id === normalizedLog.id)) {
+        return d;
+      }
       const linkedGoal = normalizedLog.linkedGoalId
         ? (d.categories || []).find((goal) => goal.id === normalizedLog.linkedGoalId)
         : undefined;

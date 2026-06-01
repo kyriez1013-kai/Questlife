@@ -941,3 +941,38 @@ Known limitations:
 
 Validation:
 - `npx tsc --noEmit`: passed.
+
+## B-3 Stabilisation Bug Sweep
+
+Status: Implemented focused bugfix pass; production UI validation is pending if Vercel remains SSO-protected.
+
+Root causes found:
+- Smart Capture confirmation used a real `TouchableOpacity` callback, not `Alert.alert`, so the confirm button itself was not the web no-op breakpoint.
+- Parsed entries did not carry a stable source-capture link into saved logs, and the confirm button had no processing guard, so repeated confirm / refresh windows could duplicate logs.
+- B-3 date handling always used today's date in the client, so natural language like `昨天 / yesterday` was saved under today.
+- Semantic routing still had unsafe fallbacks that could put SQL/data entries into the first available goal, including fitness.
+- Strength entries stored detailed set data inconsistently and could display as a single set even when the text said `3x5`.
+- Strength/performance entries without explicit duration still risked default-looking duration display rather than a clear no-duration state.
+- Several delete flows still relied directly on `Alert.alert`, which is a no-op in RN Web.
+
+Fixes:
+- Added `src/utils/confirm.ts` with `window.confirm` on web and `Alert.alert` on native.
+- Smart Capture pending cards now default to showing only 1 capture, with the existing expand-more flow preserved.
+- `HomeCapturePending` now parses `今天/today` and `昨天/yesterday` client-side for `ExecutionLog.date`.
+- `HomeCapturePending` now writes deterministic log ids and `structuredData.sourceCaptureId/sourceCaptureEntryIndex` so the same capture entry is not converted twice.
+- Added a processing guard to the confirm action and immediately marks entries dismissed after save.
+- Added a minimal rule-based semantic router for SQL/Python/BI/data, chest/push movements, and back/pull movements.
+- SQL/data entries avoid fitness goals and prefer data/study/coding goals/modules when available.
+- Bench/incline/dip route toward chest/push modules; rows/pull-ups route toward back/pull modules.
+- Strength set parsing now expands compact forms and stores a compact `{ weight, reps, sets }` summary plus detailed sets.
+- Today logs now show `未记录时长 / Duration not recorded` instead of implying a fake duration when duration is 0.
+- Goal delete, Skill Library delete, Skill Detail delete, Goal Detail module/remove-link actions, pending capture delete, Today execution-log delete, and derived-data rebuild confirmation now use the web-safe confirm helper.
+
+Known limitations:
+- Production UI validation requires an accessible deployed web URL. If Vercel SSO/protection returns 401, local UI can only be used as auxiliary validation and production remains pending.
+- Deleting an ExecutionLog removes the log and derived effort/contribution rows, but existing skill progress is not reverse-adjusted, matching the current store safety rule.
+- The semantic router is intentionally v1 rule-based and covers the current SQL/chest/back cases, not every possible exercise or study domain.
+
+Validation:
+- `npx tsc --noEmit`: passed.
+- `npm run build`: passed after approved rerun because the sandbox blocked unlinking `dist/index.html`.

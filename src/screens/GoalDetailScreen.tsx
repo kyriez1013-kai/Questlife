@@ -34,6 +34,7 @@ import QuestIcon from '../components/ui/QuestIcon';
 import QuestInput from '../components/ui/QuestInput';
 import QuestPill from '../components/ui/QuestPill';
 import QuestProgressBar from '../components/ui/QuestProgressBar';
+import { confirmAction } from '../utils/confirm';
 import { formatEffortUnitSummary } from '../utils/effort';
 
 type ParamList = { GoalDetail: { categoryId: string } };
@@ -205,15 +206,14 @@ export default function GoalDetailScreen() {
 
   const confirmDeleteModule = (module: QuestModule) => {
     const doDelete = () => deleteModule(module.id);
-    // Alert.alert is a silent no-op in RN Web — use window.confirm on web
-    if (typeof window !== 'undefined' && typeof (window as any).confirm === 'function') {
-      if ((window as any).confirm(t(lang, 'deleteModuleConfirmBody'))) doDelete();
-    } else {
-      Alert.alert(t(lang, 'deleteModuleConfirmTitle'), t(lang, 'deleteModuleConfirmBody'), [
-        { text: t(lang, 'cancel'), style: 'cancel' },
-        { text: t(lang, 'deleteModule'), style: 'destructive', onPress: doDelete },
-      ]);
-    }
+    confirmAction({
+      title: t(lang, 'deleteModuleConfirmTitle'),
+      message: t(lang, 'deleteModuleConfirmBody'),
+      cancelText: t(lang, 'cancel'),
+      confirmText: t(lang, 'deleteModule'),
+      destructive: true,
+      onConfirm: doDelete,
+    });
   };
 
   const openCriterion = (criterion?: OutcomeCriterion) => {
@@ -612,17 +612,7 @@ function ModuleCard({
 }) {
   const progress = calculateModuleProgress(module, skills, links);
   const openModuleMenu = () => {
-    // Alert.alert is a silent no-op in RN Web — use window.confirm on web
-    if (typeof window !== 'undefined' && typeof (window as any).confirm === 'function') {
-      // On web: ••• directly triggers delete (edit not needed; deleteModule calls confirmDeleteModule)
-      deleteModule();
-    } else {
-      Alert.alert(displayModuleName(module, lang), undefined, [
-        { text: t(lang, 'editModule'), onPress: editModule },
-        { text: t(lang, 'deleteModule'), style: 'destructive', onPress: deleteModule },
-        { text: t(lang, 'cancel'), style: 'cancel' },
-      ]);
-    }
+    deleteModule();
   };
   return (
     <QuestCard questTheme={questTheme} variant="flat" style={[styles.moduleCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]} className="module-card module-row">
@@ -653,10 +643,14 @@ function ModuleCard({
                 style={[styles.skillCard, { backgroundColor: questTheme.colors.surfaceSoft }]}
                 onPress={() => openSkill(skill.id)}
                 onLongPress={() => {
-                  Alert.alert(t(lang, 'removeFromModuleTitle'), t(lang, 'removeFromModuleConfirm'), [
-                    { text: t(lang, 'cancel'), style: 'cancel' },
-                    { text: t(lang, 'removeFromModule'), style: 'destructive', onPress: () => removeSkill(skill.id) },
-                  ]);
+                  confirmAction({
+                    title: t(lang, 'removeFromModuleTitle'),
+                    message: t(lang, 'removeFromModuleConfirm'),
+                    cancelText: t(lang, 'cancel'),
+                    confirmText: t(lang, 'removeFromModule'),
+                    destructive: true,
+                    onConfirm: () => removeSkill(skill.id),
+                  });
                 }}
                 activeOpacity={0.75}
               >
@@ -668,10 +662,14 @@ function ModuleCard({
                 <TouchableOpacity
                   style={[styles.removeLinkBtn, { borderColor: questTheme.colors.border }]}
                   onPress={() => {
-                    Alert.alert(t(lang, 'removeFromModuleTitle'), t(lang, 'removeFromModuleConfirm'), [
-                      { text: t(lang, 'cancel'), style: 'cancel' },
-                      { text: t(lang, 'removeFromModule'), style: 'destructive', onPress: () => removeSkill(skill.id) },
-                    ]);
+                    confirmAction({
+                      title: t(lang, 'removeFromModuleTitle'),
+                      message: t(lang, 'removeFromModuleConfirm'),
+                      cancelText: t(lang, 'cancel'),
+                      confirmText: t(lang, 'removeFromModule'),
+                      destructive: true,
+                      onConfirm: () => removeSkill(skill.id),
+                    });
                   }}
                 >
                   <Text style={[styles.removeLinkText, { color: questTheme.colors.textMuted }]}>{t(lang, 'removeFromModule')}</Text>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useStore } from '../store';
@@ -14,6 +14,7 @@ import QuestButton from '../components/ui/QuestButton';
 import QuestCard from '../components/ui/QuestCard';
 import QuestEntityIcon from '../components/ui/QuestEntityIcon';
 import QuestIcon from '../components/ui/QuestIcon';
+import { confirmAction } from '../utils/confirm';
 
 function fill(template: string, values: Record<string, string | number>) {
   return Object.entries(values).reduce((out, [key, value]) => out.replace(`{${key}}`, String(value)), template);
@@ -28,21 +29,17 @@ export default function SkillLibraryScreen() {
   const [editingSkill, setEditingSkill] = useState<Skill | undefined>();
   const confirmDeleteSkill = (skillId: string, linkedCount: number) => {
     const extra = linkedCount > 0 ? `\n\n${fill(t(lang, 'linkedLocationsCount'), { count: linkedCount })}` : '';
-    Alert.alert(
-      t(lang, 'deleteSkillPermanentTitle'),
-      `${t(lang, 'deleteSkillPermanentBody')}${extra}`,
-      [
-        { text: t(lang, 'cancel'), style: 'cancel' },
-        { text: t(lang, 'deletePermanently'), style: 'destructive', onPress: () => deleteSkillFromLibrary(skillId) },
-      ]
-    );
+    confirmAction({
+      title: t(lang, 'deleteSkillPermanentTitle'),
+      message: `${t(lang, 'deleteSkillPermanentBody')}${extra}`,
+      cancelText: t(lang, 'cancel'),
+      confirmText: t(lang, 'deletePermanently'),
+      destructive: true,
+      onConfirm: () => deleteSkillFromLibrary(skillId),
+    });
   };
   const openSkillMenu = (skill: Skill, linkedCount: number) => {
-    Alert.alert(skill.name, undefined, [
-      { text: t(lang, 'editSkill'), onPress: () => setEditingSkill(skill) },
-      { text: t(lang, 'deleteSkillPermanently'), style: 'destructive', onPress: () => confirmDeleteSkill(skill.id, linkedCount) },
-      { text: t(lang, 'cancel'), style: 'cancel' },
-    ]);
+    confirmDeleteSkill(skill.id, linkedCount);
   };
 
   return (

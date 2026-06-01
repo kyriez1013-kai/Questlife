@@ -15,7 +15,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet, Alert,
+  View, Text, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useStore } from '../store';
@@ -24,6 +24,7 @@ import { getLanguage, t } from '../i18n';
 import { RawCapture } from '../types';
 import QuestCard from '../components/ui/QuestCard';
 import HomeCapturePending from './HomeCapturePending';
+import { confirmAction } from '../utils/confirm';
 
 // ── Local time block ─────────────────────────────────────────────────────────
 
@@ -185,7 +186,7 @@ function CaptureCard({
 
 // ── Main exported component ──────────────────────────────────────────────────
 
-const DEFAULT_VISIBLE = 3;
+const DEFAULT_VISIBLE = 1;
 
 export default function HomeSmartCapture() {
   const { data, addRawCapture, updateRawCapture, deleteRawCapture } = useStore();
@@ -367,21 +368,17 @@ export default function HomeSmartCapture() {
     triggerParse(captureId, capture.text);
   }, [data.rawCaptures, updateRawCapture, triggerParse]);
 
-  // ── Delete handler — Alert works on both web (window.confirm) and native ──
+  // ── Delete handler — RN Web Alert.alert is a no-op, so use confirmAction ──
 
   const handleDelete = useCallback((captureId: string) => {
-    Alert.alert(
-      t(lang, 'deleteRecord'),
-      t(lang, 'scDeleteCaptureBody'),
-      [
-        { text: t(lang, 'cancel'), style: 'cancel' },
-        {
-          text: t(lang, 'delete'),
-          style: 'destructive',
-          onPress: () => deleteRawCapture(captureId),
-        },
-      ],
-    );
+    confirmAction({
+      title: t(lang, 'deleteRecord'),
+      message: t(lang, 'scDeleteCaptureBody'),
+      cancelText: t(lang, 'cancel'),
+      confirmText: t(lang, 'delete'),
+      destructive: true,
+      onConfirm: () => deleteRawCapture(captureId),
+    });
   }, [lang, deleteRawCapture]);
 
   // ── Render ────────────────────────────────────────────────────────────────

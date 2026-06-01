@@ -12,9 +12,9 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useStore } from '../store';
-import { getQuestTheme, getStateToneColor } from '../design/tokens';
+import { getQuestTheme } from '../design/tokens';
 import { getLanguage, t } from '../i18n';
-import { ParsedEntry, ProgressType, TaskType } from '../types';
+import { Category, ParsedEntry, ProgressType, QuestModule, TaskType } from '../types';
 import QuestCard from '../components/ui/QuestCard';
 
 // ── Per-entry UI state ────────────────────────────────────────────────────────
@@ -25,11 +25,40 @@ type EntryUI = {
   moduleId: string | null;
 };
 
+type SemanticRoute = {
+  route: 'chest' | 'back' | 'data' | 'fitness' | 'study' | 'custom';
+  goalType: 'fitness' | 'study' | 'project' | 'career' | 'custom';
+  taskType: TaskType;
+  progressType: ProgressType;
+  goalKeywords: string[];
+  moduleKeywords: string[];
+  avoidGoalKeywords?: string[];
+};
+
+type NormalizedStrengthSet = {
+  weight?: number;
+  reps?: number;
+  sets?: number;
+  rpe?: number;
+};
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function todayStr(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+function addDays(date: Date, days: number): Date {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function dateStr(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function parseTargetDate(text?: string): string {
+  const normalized = String(text ?? '').toLowerCase();
+  const now = new Date();
+  if (normalized.includes('昨天') || normalized.includes('yesterday')) return dateStr(addDays(now, -1));
+  return dateStr(now);
 }
 
 function inferTaskType(goalType: string, progressType: string): TaskType {
@@ -45,9 +74,175 @@ function normalizeName(value?: string): string {
     .replace(/[^\w\u4e00-\u9fff]/g, '');
 }
 
+function containsAny(text: string, keywords: string[]): boolean {
+  return keywords.some((keyword) => text.includes(normalizeName(keyword)));
+}
+
+function inferSemanticRoute(entry: ParsedEntry, captureText?: string): SemanticRoute {
+  const text = normalizeName(`${entry.skillName} ${entry.fields?.note ?? ''} ${captureText ?? ''}`);
+
+  if (containsAny(text, ['sql', 'python', 'tableau', 'excel', 'bi', 'analytics', '数据', '编程', '学习'])) {
+    return {
+      route: 'data',
+      goalType: containsAny(text, ['app', '项目', 'project', 'coding']) ? 'project' : 'study',
+      taskType: 'deep_study',
+      progressType: entry.progressType === 'time_based' ? 'time_based' : (entry.progressType as ProgressType),
+      goalKeywords: ['data', '数据', 'sql', 'python', 'bi', 'analytics', '分析', '学习', '编程', 'coding', 'study'],
+      moduleKeywords: ['data', '数据', 'sql', 'python', 'bi', 'analytics', '练习', '概念', '学习', '编程', 'practice', 'concepts'],
+      avoidGoalKeywords: ['健身', '胸', '背', '腿', 'fitness', 'gym', 'strength'],
+    };
+  }
+
+  if (containsAny(text, ['上斜卧推', '卧推', 'benchpress', 'flatbench', 'inclinebench', 'inclinepress', 'dip', 'dips', '双杠臂屈伸'])) {
+    return {
+      route: 'chest',
+      goalType: 'fitness',
+      taskType: 'strength_training',
+      progressType: 'performance_log',
+      goalKeywords: ['健身', '力量', '胸', '上肢', 'fitness', 'strength', 'physique', 'gym'],
+      moduleKeywords: ['练胸', '胸部', '胸', 'push', 'pushing', 'upperpush', 'upper', 'chest'],
+    };
+  }
+
+  if (containsAny(text, ['划船', '引体向上', 'pullup', 'pull-up', 'chinup', 'chin-up', 'barbellrow', 'cablerow', 'row'])) {
+    return {
+      route: 'back',
+      goalType: 'fitness',
+      taskType: 'strength_training',
+      progressType: 'performance_log',
+      goalKeywords: ['健身', '力量', '背', '上肢', 'fitness', 'strength', 'physique', 'gym'],
+      moduleKeywords: ['练背', '背部', '背', 'pull', 'pulling', 'back', 'row'],
+    };
+  }
+
+  if (entry.progressType === 'performance_log' || entry.goalType === 'fitness') {
+    return {
+      route: 'fitness',
+      goalType: 'fitness',
+      taskType: 'strength_training',
+      progressType: 'performance_log',
+      goalKeywords: ['健身', '力量', 'fitness', 'strength', 'physique', 'gym'],
+      moduleKeywords: ['训练', '力量', 'fitness', 'strength', 'workout'],
+    };
+  }
+
+  if (entry.progressType === 'time_based' || entry.goalType === 'study') {
+    return {
+      route: 'study',
+      goalType: 'study',
+      taskType: 'deep_study',
+      progressType: 'time_based',
+      goalKeywords: ['学习', '课程', 'study', 'course', 'skill'],
+      moduleKeywords: ['学习', '概念', '练习', '复习', 'study', 'concepts', 'practice', 'review'],
+    };
+  }
+
+  return {
+    route: 'custom',
+    goalType: 'custom',
+    taskType: inferTaskType(entry.goalType ?? 'custom', entry.progressType),
+    progressType: entry.progressType as ProgressType,
+    goalKeywords: [],
+    moduleKeywords: [],
+  };
+}
+
+function scoreByKeywords(value: string | undefined, keywords: string[]): number {
+  const normalized = normalizeName(value);
+  if (!normalized) return 0;
+  return keywords.reduce((score, keyword) => score + (normalized.includes(normalizeName(keyword)) ? 1 : 0), 0);
+}
+
+function selectBestCategory(categories: Category[], route: SemanticRoute): Category | null {
+  const scored = categories
+    .map((category) => {
+      const haystack = `${category.name} ${category.description ?? ''} ${category.goalType ?? ''} ${category.domain ?? ''}`;
+      const avoid = route.avoidGoalKeywords && scoreByKeywords(haystack, route.avoidGoalKeywords) > 0;
+      if (avoid) return { category, score: -100 };
+      let score = scoreByKeywords(haystack, route.goalKeywords);
+      if (category.goalType === route.goalType) score += 2;
+      if (route.goalType === 'fitness' && String(category.domain ?? '').startsWith('fitness')) score += 3;
+      if ((route.route === 'data' || route.route === 'study') && ['study_course', 'exam_prep', 'coding_project', 'career_skill'].includes(String(category.domain ?? ''))) score += 3;
+      return { category, score };
+    })
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score);
+  return scored[0]?.category ?? null;
+}
+
+function categoryMatchesRoute(category: Category, route: SemanticRoute): boolean {
+  const haystack = `${category.name} ${category.description ?? ''} ${category.goalType ?? ''} ${category.domain ?? ''}`;
+  if (route.avoidGoalKeywords && scoreByKeywords(haystack, route.avoidGoalKeywords) > 0) return false;
+  if (route.route === 'custom') return true;
+  return scoreByKeywords(haystack, route.goalKeywords) > 0
+    || category.goalType === route.goalType
+    || (route.goalType === 'fitness' && String(category.domain ?? '').startsWith('fitness'))
+    || ((route.route === 'data' || route.route === 'study') && ['study_course', 'exam_prep', 'coding_project', 'career_skill'].includes(String(category.domain ?? '')));
+}
+
+function selectBestModule(modules: QuestModule[], route: SemanticRoute): QuestModule | null {
+  const scored = modules
+    .map((module) => ({
+      module,
+      score: scoreByKeywords(`${module.name} ${module.description ?? ''}`, route.moduleKeywords),
+    }))
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score);
+  if (scored[0]) return scored[0].module;
+  if (modules.length === 1 || route.route === 'data' || route.route === 'study') return modules[0] ?? null;
+  return null;
+}
+
+function expandStrengthSets(entry: ParsedEntry): NormalizedStrengthSet[] {
+  const fields: any = entry.fields ?? {};
+  const baseWeight = Number.isFinite(Number(fields.weight)) ? Number(fields.weight)
+    : Number.isFinite(Number(fields.value)) ? Number(fields.value)
+      : Number.isFinite(Number(fields.extraWeight)) ? Number(fields.extraWeight)
+        : undefined;
+  const rawSets = fields.sets;
+  if (Array.isArray(rawSets)) {
+    return rawSets.flatMap((set: any) => {
+      const count = Math.max(1, Math.round(Number(set.sets ?? set.count ?? 1)));
+      const weight = Number.isFinite(Number(set.weight)) ? Number(set.weight) : baseWeight;
+      const reps = Number.isFinite(Number(set.reps)) ? Number(set.reps) : undefined;
+      return Array.from({ length: count }, () => ({ weight, reps, sets: 1, rpe: Number.isFinite(Number(set.rpe)) ? Number(set.rpe) : undefined }));
+    });
+  }
+  const compactMatch = typeof rawSets === 'string' ? rawSets.match(/(\d+)\s*[x×]\s*(\d+)/i) : null;
+  const count = Number.isFinite(Number(fields.sets)) ? Number(fields.sets)
+    : compactMatch ? Number(compactMatch[1])
+      : undefined;
+  const reps = Number.isFinite(Number(fields.reps)) ? Number(fields.reps)
+    : compactMatch ? Number(compactMatch[2])
+      : undefined;
+  if (count && reps) {
+    return Array.from({ length: Math.max(1, Math.round(count)) }, () => ({ weight: baseWeight, reps, sets: 1 }));
+  }
+  return [];
+}
+
+function compactStrengthSet(sets: NormalizedStrengthSet[]): NormalizedStrengthSet | undefined {
+  if (sets.length === 0) return undefined;
+  const first = sets[0];
+  const sameWeight = sets.every((set) => set.weight === first.weight);
+  const sameReps = sets.every((set) => set.reps === first.reps);
+  if (sameWeight && sameReps) {
+    return { weight: first.weight, reps: first.reps, sets: sets.length, rpe: first.rpe };
+  }
+  const top = sets.reduce((best, set) => ((set.weight ?? 0) > (best.weight ?? 0) ? set : best), first);
+  return { ...top, sets: sets.length };
+}
+
 function setsSummary(entry: ParsedEntry, lang: 'zh' | 'en'): string {
-  const sets: { weight?: number; reps?: number }[] = entry.fields.sets ?? [];
+  const sets = expandStrengthSets(entry);
   if (sets.length === 0) return '';
+  const compact = compactStrengthSet(sets);
+  if (compact?.weight != null && compact.reps != null && compact.sets != null) {
+    return t(lang, 'scEntryWeightSets')
+      .replace('{w}', String(compact.weight))
+      .replace('{r}', String(compact.reps))
+      .replace('{s}', String(compact.sets));
+  }
   // Group by weight to get compact representation
   const count = sets.length;
   const byWeight = new Map<number | undefined, number[]>();
@@ -101,10 +296,12 @@ type Props = {
   onDismiss: () => void;  // called after confirm or ignore (marks entriesDismissed)
 };
 
-export default function HomeCapturePending({ captureId: _captureId, entries, onDismiss }: Props) {
+export default function HomeCapturePending({ captureId, entries, onDismiss }: Props) {
   const { data, addSkill, createExecutionLog, addExistingSkillToModule } = useStore();
   const lang = getLanguage(data.settings.language ?? data.settings.preferredLanguage);
   const questTheme = getQuestTheme(data.settings.selectedThemeId);
+  const capture = (data.rawCaptures || []).find((item) => item.id === captureId);
+  const captureText = capture?.text ?? '';
 
   const [entryStates, setEntryStates] = useState<EntryUI[]>(() =>
     entries.map((e) => ({
@@ -114,6 +311,7 @@ export default function HomeCapturePending({ captureId: _captureId, entries, onD
     })),
   );
   const [logged, setLogged] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   // Modules available for new-skill assignment
   const modulesFor = useCallback((goalType: string) => {
@@ -156,47 +354,47 @@ export default function HomeCapturePending({ captureId: _captureId, entries, onD
     return (data.moduleSkillLinks || []).find((link) => link.skillId === skillId);
   }, [data.moduleSkillLinks]);
 
-  const resolveCategory = useCallback((entryGoalType: string, entryProgressType: string, skillId?: string) => {
+  const resolveCategory = useCallback((entry: ParsedEntry, skillId?: string) => {
+    const route = inferSemanticRoute(entry, captureText);
     const existingSkill = skillId ? data.skills.find((s) => s.id === skillId) : undefined;
     if (existingSkill?.categoryId) {
       const bySkill = data.categories.find((c) => c.id === existingSkill.categoryId);
-      if (bySkill) return bySkill;
+      if (bySkill && categoryMatchesRoute(bySkill, route)) return bySkill;
     }
     const linkedGoalId = resolvePrimaryLink(skillId)?.goalId;
     if (linkedGoalId) {
       const byLink = data.categories.find((c) => c.id === linkedGoalId);
-      if (byLink) return byLink;
+      if (byLink && categoryMatchesRoute(byLink, route)) return byLink;
     }
 
-    // 1. Exact goalType match (works when user has template-created categories)
-    const byGoalType = data.categories.find((c) => c.goalType === entryGoalType);
-    if (byGoalType) return byGoalType;
+    const semanticMatch = selectBestCategory(data.categories || [], route);
+    if (semanticMatch) return semanticMatch;
 
-    // 1b. Domain/name fallback for older goals that have no goalType
-    if (entryGoalType === 'fitness') {
-      const byFitnessDomain = data.categories.find((c) => String(c.domain ?? '').startsWith('fitness'));
-      if (byFitnessDomain) return byFitnessDomain;
-      const byFitnessName = data.categories.find((c) => {
-        const name = normalizeName(c.name);
-        return name.includes('健身') || name.includes('力量') || name.includes('fitness') || name.includes('gym');
-      });
-      if (byFitnessName) return byFitnessName;
-    }
-
-    // 2. Find a category that already hosts a skill with the same taskType
-    const taskType = inferTaskType(entryGoalType, entryProgressType);
+    // Find a category that already hosts a skill with the same taskType, but never
+    // use this fallback for data/study routes if it would incorrectly pick fitness.
+    const taskType = route.taskType;
     const siblingSkill = data.skills.find((s) => s.taskType === taskType && !!s.categoryId);
     if (siblingSkill) {
       const bySibling = data.categories.find((c) => c.id === siblingSkill.categoryId);
       if (bySibling) return bySibling;
     }
 
-    // 3. First available category as last resort
-    return data.categories[0] ?? null;
-  }, [data.categories, data.skills, resolvePrimaryLink]);
+    // Unknown semantic route may use the first category as a last resort; known
+    // semantic routes should stay unlinked rather than polluting the wrong goal.
+    return route.route === 'custom' ? data.categories[0] ?? null : null;
+  }, [captureText, data.categories, data.skills, resolvePrimaryLink]);
+
+  const resolveModule = useCallback((goalId: string | undefined, entry: ParsedEntry) => {
+    if (!goalId) return undefined;
+    const route = inferSemanticRoute(entry, captureText);
+    const modules = (data.modules || []).filter((module) => module.goalId === goalId);
+    return selectBestModule(modules, route)?.id;
+  }, [captureText, data.modules]);
 
   const handleConfirm = useCallback(() => {
-    const date = todayStr();
+    if (confirming || logged) return;
+    setConfirming(true);
+    const date = parseTargetDate(captureText);
 
     entries.forEach((entry, i) => {
       const ui = entryStates[i];
@@ -204,24 +402,33 @@ export default function HomeCapturePending({ captureId: _captureId, entries, onD
       let skillId = matchedSkill?.id ?? null;
       let linkedGoalId: string | undefined;
       let linkedModuleId: string | undefined;
+      const sourceKey = `${captureId}:${i}`;
+      const alreadyLogged = (data.executionLogs || []).some((log) => (
+        log.structuredData?.sourceCaptureId === captureId
+        && log.structuredData?.sourceCaptureEntryIndex === i
+      ));
+      if (alreadyLogged) return;
+      const semanticRoute = inferSemanticRoute(entry, captureText);
 
       if (!skillId && ui.createNew) {
         // ── New skill path ──────────────────────────────────────────────────
-        const cat = resolveCategory(entry.goalType ?? 'custom', entry.progressType);
+        const cat = resolveCategory(entry);
+        const newSkillTaskType = semanticRoute.taskType;
+        const newSkillProgressType = semanticRoute.progressType;
         const newSkill = addSkill({
           name: entry.skillName,
           color: questTheme.colors.primary,
           dailyTargetMinutes: entry.progressType === 'time_based'
             ? (entry.fields.durationMinutes ?? 30) : 30,
-          progressType: entry.progressType as ProgressType,
-          taskType: inferTaskType(entry.goalType ?? 'custom', entry.progressType),
+          progressType: newSkillProgressType,
+          taskType: newSkillTaskType,
           categoryId: cat?.id,                    // explicit categoryId — fixes "未分类"
           scheduleEnabled: false,
           scheduleType: 'manual_only' as const,
           metricConfig: {
-            metricType: entry.progressType as ProgressType,
-            performanceType: entry.progressType === 'performance_log' ? 'strength' : undefined,
-            primaryMetric: entry.progressType === 'performance_log' ? 'weight' : undefined,
+            metricType: newSkillProgressType,
+            performanceType: newSkillProgressType === 'performance_log' ? 'strength' : undefined,
+            primaryMetric: newSkillProgressType === 'performance_log' ? 'weight' : undefined,
           },
         });
         skillId = newSkill.id;
@@ -229,7 +436,7 @@ export default function HomeCapturePending({ captureId: _captureId, entries, onD
 
         // Link to a module so GoalDetailScreen's linkedSkillIds filter finds it
         const targetModuleId = ui.moduleId
-          ?? (cat ? (data.modules || []).find((m) => m.goalId === cat.id)?.id : undefined);
+          ?? resolveModule(cat?.id, entry);
         linkedModuleId = targetModuleId;
         if (cat && targetModuleId) {
           addExistingSkillToModule(cat.id, targetModuleId, skillId);
@@ -237,10 +444,18 @@ export default function HomeCapturePending({ captureId: _captureId, entries, onD
       } else if (skillId) {
         // ── Existing matched skill path ──────────────────────────────────────
         const link = resolvePrimaryLink(skillId);
-        linkedGoalId = link?.goalId ?? matchedSkill?.categoryId;
-        linkedModuleId = link?.moduleId;
+        const linkedGoal = link?.goalId ? data.categories.find((goal) => goal.id === link.goalId) : undefined;
+        const skillGoal = matchedSkill?.categoryId ? data.categories.find((goal) => goal.id === matchedSkill.categoryId) : undefined;
+        linkedGoalId = linkedGoal && categoryMatchesRoute(linkedGoal, semanticRoute)
+          ? linkedGoal.id
+          : skillGoal && categoryMatchesRoute(skillGoal, semanticRoute)
+            ? skillGoal.id
+            : undefined;
+        linkedModuleId = linkedGoalId === link?.goalId ? link?.moduleId : undefined;
+        linkedModuleId = linkedModuleId ?? resolveModule(linkedGoalId, entry);
         if (!linkedGoalId) {
-          linkedGoalId = resolveCategory(entry.goalType ?? 'custom', entry.progressType, skillId)?.id;
+          linkedGoalId = resolveCategory(entry, skillId)?.id;
+          linkedModuleId = resolveModule(linkedGoalId, entry);
         }
       }
 
@@ -250,23 +465,23 @@ export default function HomeCapturePending({ captureId: _captureId, entries, onD
       if (!skillId) return;
 
       const durationMinutes = estimateDuration(entry);
-      const isStrength = entry.progressType === 'performance_log';
-      const sets: { weight?: number; reps?: number }[] = Array.isArray(entry.fields.sets) ? entry.fields.sets : [];
-      const strengthSets = sets.map((s) => ({
-        weight: (s.weight && s.weight > 0) ? s.weight : entry.fields.extraWeight,
-        reps: s.reps ?? 0,
-        sets: 1,
-      }));
-      const topWeight = strengthSets.reduce((best, set) => Math.max(best, set.weight ?? 0), 0) || undefined;
-      const totalVolume = strengthSets.reduce((sum, set) => sum + (set.weight ?? 0) * (set.reps ?? 0) * (set.sets ?? 1), 0) || undefined;
-      const firstReps = strengthSets.find((set) => set.reps)?.reps;
+      const isStrength = semanticRoute.progressType === 'performance_log';
+      const detailedStrengthSets = expandStrengthSets(entry);
+      const compactSet = compactStrengthSet(detailedStrengthSets);
+      const strengthSets = compactSet ? [compactSet] : [];
+      const topWeight = detailedStrengthSets.reduce((best, set) => Math.max(best, set.weight ?? 0), 0) || compactSet?.weight;
+      const totalVolume = detailedStrengthSets.reduce((sum, set) => sum + (set.weight ?? 0) * (set.reps ?? 0) * (set.sets ?? 1), 0) || undefined;
+      const firstReps = compactSet?.reps ?? detailedStrengthSets.find((set) => set.reps)?.reps;
       const performanceData = isStrength ? {
         performanceType: 'strength',
         strengthSets,
+        detailedStrengthSets,
         totalVolume,
+        sourceCaptureId: captureId,
       } : undefined;
 
       createExecutionLog({
+        id: `capture-${captureId}-${i}`,
         linkedSkillId: skillId,
         linkedGoalId,                              // explicit — fixes both symptoms
         linkedModuleId,
@@ -275,7 +490,7 @@ export default function HomeCapturePending({ captureId: _captureId, entries, onD
         qualityRating: entry.qualityRating as any,
         source: 'manual',
         title: entry.skillName,
-        taskType: inferTaskType(entry.goalType ?? 'custom', entry.progressType),
+        taskType: semanticRoute.taskType,
         ...(entry.progressType === 'time_based' ? { note: entry.fields.note } : {}),
         actualData: isStrength ? {
           kind: 'strength_training',
@@ -286,14 +501,25 @@ export default function HomeCapturePending({ captureId: _captureId, entries, onD
             sets: strengthSets.length || undefined,
             volume: totalVolume,
           },
+          sets: detailedStrengthSets,
         } : undefined,
         structuredData: isStrength ? {
           exerciseName: entry.skillName,
           weight: topWeight,
-          sets: strengthSets.length || undefined,
+          sets: compactSet?.sets ?? (detailedStrengthSets.length || undefined),
           reps: firstReps,
           durationMinutes,
-        } : entry.fields,
+          sourceCaptureId: captureId,
+          sourceCaptureEntryIndex: i,
+          sourceCaptureEntryKey: sourceKey,
+          route: semanticRoute.route,
+        } : {
+          ...entry.fields,
+          sourceCaptureId: captureId,
+          sourceCaptureEntryIndex: i,
+          sourceCaptureEntryKey: sourceKey,
+          route: semanticRoute.route,
+        },
         metricUpdate: isStrength
           ? {
               metricType: 'performance_log' as ProgressType,
@@ -303,16 +529,16 @@ export default function HomeCapturePending({ captureId: _captureId, entries, onD
               performanceData,
             }
           : {
-              metricType: entry.progressType as ProgressType,
+              metricType: semanticRoute.progressType,
               minutesAdded: entry.progressType === 'time_based' ? durationMinutes : undefined,
             },
       });
     });
 
     setLogged(true);
-    setTimeout(onDismiss, 800);
-  }, [entries, entryStates, data.modules, questTheme.colors.primary,
-      resolveSkill, resolvePrimaryLink, resolveCategory, addSkill, addExistingSkillToModule, createExecutionLog, onDismiss]);
+    onDismiss();
+  }, [confirming, logged, captureText, entries, entryStates, captureId, data.executionLogs, questTheme.colors.primary,
+      resolveSkill, resolvePrimaryLink, resolveCategory, resolveModule, addSkill, addExistingSkillToModule, createExecutionLog, onDismiss]);
 
   if (logged) {
     return (

@@ -4,7 +4,7 @@
 // - + 大目标 → GoalForm (创建)
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -20,6 +20,7 @@ import QuestCard from '../components/ui/QuestCard';
 import QuestEmptyState from '../components/ui/QuestEmptyState';
 import QuestEntityIcon from '../components/ui/QuestEntityIcon';
 import QuestIcon from '../components/ui/QuestIcon';
+import { confirmAction } from '../utils/confirm';
 
 export default function GoalTreeScreen() {
   const { data, deleteCategory } = useStore();
@@ -35,34 +36,24 @@ export default function GoalTreeScreen() {
   const askDelete = (c: Category) => {
     const children = Array.from(new Set((data.moduleSkillLinks || []).filter((l) => l.goalId === c.id).map((l) => l.skillId)));
     if (children.length === 0) {
-      Alert.alert(t(lang, 'delete'), `${t(lang, 'confirmDelete')}「${c.name}」?`, [
-        { text: t(lang, 'cancel') },
-        { text: t(lang, 'delete'), style: 'destructive', onPress: () => deleteCategory(c.id, 'transfer') },
-      ]);
+      confirmAction({
+        title: t(lang, 'delete'),
+        message: `${t(lang, 'confirmDelete')}「${c.name}」?`,
+        cancelText: t(lang, 'cancel'),
+        confirmText: t(lang, 'delete'),
+        destructive: true,
+        onConfirm: () => deleteCategory(c.id, 'transfer'),
+      });
       return;
     }
-    Alert.alert(
-      `${t(lang, 'delete')}「${c.name}」`,
-      `${children.length} ${t(lang, 'skillCount')}`,
-      [
-        { text: t(lang, 'cancel'), style: 'cancel' },
-        { text: t(lang, 'delete'), onPress: () => deleteCategory(c.id, 'transfer') },
-        {
-          text: `${t(lang, 'delete')} (${children.length})`,
-          style: 'destructive',
-          onPress: () => {
-            Alert.alert(
-              t(lang, 'confirmDelete'),
-              `${t(lang, 'confirmDelete')}「${c.name}」?`,
-              [
-                { text: t(lang, 'cancel'), style: 'cancel' },
-                { text: t(lang, 'delete'), style: 'destructive', onPress: () => deleteCategory(c.id, 'cascade') },
-              ]
-            );
-          },
-        },
-      ]
-    );
+    confirmAction({
+      title: `${t(lang, 'delete')}「${c.name}」`,
+      message: `${children.length} ${t(lang, 'skillCount')}`,
+      cancelText: t(lang, 'cancel'),
+      confirmText: t(lang, 'delete'),
+      destructive: true,
+      onConfirm: () => deleteCategory(c.id, 'transfer'),
+    });
   };
 
   return (
@@ -105,6 +96,15 @@ export default function GoalTreeScreen() {
                 {c.description ? <Text style={[styles.desc, { color: questTheme.colors.textMuted }]} numberOfLines={2}>{c.description}</Text> : null}
                   <Text style={[styles.meta, { color: accent }]}>{childCount} {t(lang, 'skillCount')}</Text>
                 </View>
+                <TouchableOpacity
+                  onPress={(event) => {
+                    event.stopPropagation?.();
+                    askDelete(c);
+                  }}
+                  style={[styles.deleteBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}
+                >
+                  <Text style={[styles.deleteBtnText, { color: questTheme.colors.textMuted }]}>×</Text>
+                </TouchableOpacity>
                 <QuestIcon name="target" size={18} color={questTheme.colors.textSubtle} />
               </QuestCard>
             </TouchableOpacity>
@@ -137,5 +137,7 @@ const styles = StyleSheet.create({
   name: { color: theme.text, fontSize: 17, fontWeight: '600' },
   desc: { color: theme.textDim, fontSize: 12, marginTop: 4 },
   meta: { color: theme.accent, fontSize: 11, marginTop: 4 },
+  deleteBtn: { width: 30, height: 30, borderRadius: 15, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  deleteBtnText: { fontSize: 17, fontWeight: '900', lineHeight: 20 },
   chev: { color: theme.textDim, fontSize: 24 },
 });
