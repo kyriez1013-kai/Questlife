@@ -13,7 +13,7 @@
  * - 保存原文与模型解析完全解耦；模型失败原文不受影响
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet,
 } from 'react-native';
@@ -188,6 +188,13 @@ function CaptureCard({
 
 const DEFAULT_VISIBLE = 1;
 
+function captureHasLiveContext(capture: RawCapture, executionLogs: { structuredData?: Record<string, any> }[]): boolean {
+  const generatedLiveLog = executionLogs.some((log) => log.structuredData?.sourceCaptureId === capture.id);
+  if (generatedLiveLog) return true;
+  if (capture.parsed?.entriesDismissed) return false;
+  return capture.parseStatus !== 'done' || (capture.parsed?.entries?.length ?? 0) === 0;
+}
+
 export default function HomeSmartCapture() {
   const { data, addRawCapture, updateRawCapture, deleteRawCapture } = useStore();
   const lang = getLanguage(data.settings.language ?? data.settings.preferredLanguage);
@@ -198,6 +205,9 @@ export default function HomeSmartCapture() {
   const [greeting, setGreeting]           = useState('');
   const [showAll, setShowAll]             = useState(false);
   const greetingFetchedRef                = useRef(false);
+  const activeCaptureHistory = useMemo(() => (
+    (data.rawCaptures || []).filter((capture) => captureHasLiveContext(capture, data.executionLogs || []))
+  ), [data.rawCaptures, data.executionLogs]);
 
   // ALL captures sorted newest first — not filtered to today,
   // so users can always access historical entries via expand
@@ -214,7 +224,7 @@ export default function HomeSmartCapture() {
 
   const triggerParse = useCallback(async (captureId: string, captureText: string) => {
     // 1. Recent capture history (raw, for cross-link detection)
-    const history = (data.rawCaptures || [])
+    const history = activeCaptureHistory
       .filter((c) => c.parseStatus === 'done' && c.id !== captureId)
       .slice(-20)
       .map((c) => ({ id: c.id, text: c.text, type: c.parsed?.type }));
@@ -310,7 +320,7 @@ export default function HomeSmartCapture() {
     } catch {
       updateRawCapture(captureId, { parseStatus: 'failed' });
     }
-  }, [data.rawCaptures, data.skills, data.categories, data.executionLogs, updateRawCapture]);
+  }, [activeCaptureHistory, data.skills, data.categories, data.executionLogs, updateRawCapture]);
 
   // ── Fetch greeting once per focus ─────────────────────────────────────────
 
@@ -319,7 +329,7 @@ export default function HomeSmartCapture() {
       if (greetingFetchedRef.current) return;
       greetingFetchedRef.current = true;
 
-      const recentHistory = (data.rawCaptures || [])
+      const recentHistory = activeCaptureHistory
         .slice(-3)
         .map((c) => ({ text: c.text }));
       const timeBlock = currentTimeBlock();
@@ -338,7 +348,7 @@ export default function HomeSmartCapture() {
       return () => {
         greetingFetchedRef.current = false;
       };
-    }, [data.rawCaptures, lang]),
+    }, [activeCaptureHistory, lang]),
   );
 
   // ── Send handler ──────────────────────────────────────────────────────────

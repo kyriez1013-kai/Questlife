@@ -1019,3 +1019,29 @@ Known limitations:
 Validation:
 - `npx tsc --noEmit`: passed.
 - `npm run build`: passed after approved rerun because the sandbox blocked unlinking `dist/favicon.ico`.
+
+## B-3.0.2 Residual Data Cleanup
+
+Status: Implemented focused residual-data cleanup for Smart Capture opening context.
+
+Root cause:
+- The Today opening line is rendered by `HomeSmartCapture` and generated from `/api/parse` in `mode: greeting`.
+- Its local payload used recent `rawCaptures`, not Insights state. If a capture had already been confirmed and its generated execution logs were later deleted, the raw text could still be sent as greeting history and resurface deleted topics such as SQL.
+- The Smart Capture parser history used the same raw capture source for cross-link context, so stale confirmed captures could also influence later parsing.
+
+Files changed:
+- `src/screens/HomeSmartCapture.tsx`
+
+Fixes:
+- Added a local live-context filter for Smart Capture history.
+- Greeting history now excludes captures whose parsed entries were dismissed/confirmed and no longer have any live `ExecutionLog` with `structuredData.sourceCaptureId`.
+- Parse cross-link history uses the same filtered capture list, so deleted confirmed captures stop influencing new parse results.
+- Raw captures that are still pending/failed/unconfirmed can still appear in the capture list and parser context.
+- Existing B-3.0.1 deletion behavior remains intact: deleting raw only preserves logs; deleting raw with linked logs cascades logs, effort units, and contribution links.
+
+Validation:
+- `npx tsc --noEmit`: passed.
+- `npm run build`: passed.
+
+Known limitations:
+- Production UI validation still requires user access if the deployed web page is Vercel-protected.
