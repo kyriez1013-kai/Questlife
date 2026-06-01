@@ -377,9 +377,24 @@ export default function HomeSmartCapture() {
       cancelText: t(lang, 'cancel'),
       confirmText: t(lang, 'delete'),
       destructive: true,
-      onConfirm: () => deleteRawCapture(captureId),
+      onConfirm: () => {
+        const linkedCount = (data.executionLogs || []).filter((log) => log.structuredData?.sourceCaptureId === captureId).length;
+        if (linkedCount <= 0) {
+          deleteRawCapture(captureId);
+          return;
+        }
+        confirmAction({
+          title: t(lang, 'scDeleteLinkedLogsTitle'),
+          message: t(lang, 'scDeleteLinkedLogsBody').replace('{n}', String(linkedCount)),
+          cancelText: t(lang, 'scDeleteRawOnly'),
+          confirmText: t(lang, 'scDeleteRawAndLogs'),
+          destructive: true,
+          onCancel: () => deleteRawCapture(captureId),
+          onConfirm: () => deleteRawCapture(captureId, { deleteLinkedExecutionLogs: true }),
+        });
+      },
     });
-  }, [lang, deleteRawCapture]);
+  }, [data.executionLogs, lang, deleteRawCapture]);
 
   // ── Render ────────────────────────────────────────────────────────────────
 

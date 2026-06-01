@@ -7,6 +7,7 @@ type ConfirmOptions = {
   cancelText: string;
   destructive?: boolean;
   onConfirm: () => void;
+  onCancel?: () => void;
 };
 
 export function confirmAction(options: ConfirmOptions) {
@@ -14,11 +15,12 @@ export function confirmAction(options: ConfirmOptions) {
   if (Platform.OS === 'web' && typeof window !== 'undefined' && typeof window.confirm === 'function') {
     const body = message ? `${options.title}\n\n${message}` : options.title;
     if (window.confirm(body)) options.onConfirm();
+    else options.onCancel?.();
     return;
   }
 
   Alert.alert(options.title, message, [
-    { text: options.cancelText, style: 'cancel' },
+    { text: options.cancelText, style: 'cancel', onPress: options.onCancel },
     {
       text: options.confirmText,
       style: options.destructive ? 'destructive' : 'default',

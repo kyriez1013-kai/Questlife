@@ -976,3 +976,46 @@ Known limitations:
 Validation:
 - `npx tsc --noEmit`: passed.
 - `npm run build`: passed after approved rerun because the sandbox blocked unlinking `dist/index.html`.
+
+## B-3.0.1 Data Consistency + Routing Fix
+
+Status: Implemented focused data-consistency patch; production UI validation still requires user access to the deployed web page if Vercel protection blocks automated access.
+
+Root causes addressed:
+- New Smart Capture skills could still write `categoryId` from the older fallback category while the new routing helper resolved a better goal/module, causing records to appear detached or under the wrong goal.
+- SQL/Python/data-like entries needed a stricter semantic route guard so they do not fall through to fitness/health/strength goals.
+- Strength/performance captures without an explicit duration should not enter time-allocation statistics or appear as fake default-duration work.
+- RawCapture deletion previously removed only the raw text, leaving generated execution logs and derived rows in place.
+- ExecutionLog deletion removed direct contribution links but did not guard against links reachable through deleted effort unit ids.
+- Multi-entry confirmation needed a bulk select/deselect control while keeping all detected entries active by default.
+- Slug-like labels such as `bench_press` needed display normalization in Today and Insights allocation surfaces.
+
+Files changed:
+- `src/screens/HomeCapturePending.tsx`
+- `src/screens/HomeSmartCapture.tsx`
+- `src/screens/HomeScreen.tsx`
+- `src/screens/StatsScreen.tsx`
+- `src/store.tsx`
+- `src/utils/confirm.ts`
+- `src/utils/displayName.ts`
+- `src/i18n.ts`
+
+Fixes:
+- `HomeCapturePending` now resolves a single routing result per entry and uses `routing.linkedGoalId` / `routing.linkedModuleId` for new skill `categoryId`, module linking, and execution log links.
+- Known semantic routes no longer fall back to unrelated goals; sibling-skill fallback must match the semantic route before it can be used.
+- Saved logs include `routeConfidence`, `routeReason`, `needsUserChoice`, and raw parsed fields for easier diagnosis.
+- Confirmation cards default to all entries active and now provide select-all / deselect-all controls.
+- Strength captures keep parsed strength fields and zero-duration entries remain non-time logs unless the user text includes a real duration.
+- Insights time distribution, heatmap, total hours, weekly hit days, and the insight engine now use only logs with `durationMinutes > 0`.
+- Today and Insights normalize common slug-like display names through `displayEntityName`.
+- `deleteRawCapture(id, { deleteLinkedExecutionLogs: true })` cascades to linked execution logs, effort units, and contribution links; deleting raw text only remains available.
+- `deleteExecutionLog` now also removes contribution links tied to the deleted log's effort unit ids.
+- Web/native confirm supports an optional cancel action so the raw-only delete path works on web as well as native.
+
+Known limitations:
+- ExecutionLog deletion still does not reverse previously applied skill progress, following the existing safety rule.
+- Production end-to-end UI validation must be completed by a user with access if the deployed web app is protected by Vercel authentication.
+
+Validation:
+- `npx tsc --noEmit`: passed.
+- `npm run build`: passed after approved rerun because the sandbox blocked unlinking `dist/favicon.ico`.

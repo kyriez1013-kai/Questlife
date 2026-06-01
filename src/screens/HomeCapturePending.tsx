@@ -42,6 +42,15 @@ type NormalizedStrengthSet = {
   rpe?: number;
 };
 
+type RoutingResult = {
+  linkedGoalId?: string;
+  linkedModuleId?: string;
+  linkedSkillId?: string;
+  confidence: 'high' | 'medium' | 'low';
+  reason: string;
+  needsUserChoice: boolean;
+};
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function addDays(date: Date, days: number): Date {
@@ -376,7 +385,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
     const siblingSkill = data.skills.find((s) => s.taskType === taskType && !!s.categoryId);
     if (siblingSkill) {
       const bySibling = data.categories.find((c) => c.id === siblingSkill.categoryId);
-      if (bySibling) return bySibling;
+      if (bySibling && categoryMatchesRoute(bySibling, route)) return bySibling;
     }
 
     // Unknown semantic route may use the first category as a last resort; known
@@ -390,6 +399,50 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
     const modules = (data.modules || []).filter((module) => module.goalId === goalId);
     return selectBestModule(modules, route)?.id;
   }, [captureText, data.modules]);
+
+  const resolveRouting = useCallback((entry: ParsedEntry): RoutingResult => {
+    const matchedSkill = resolveSkill(entry);
+    const route = inferSemanticRoute(entry, captureText);
+    let linkedGoalId: string | undefined;
+    let linkedModuleId: string | undefined;
+
+    if (matchedSkill?.id) {
+      const link = resolvePrimaryLink(matchedSkill.id);
+      const linkedGoal = link?.goalId ? data.categories.find((goal) => goal.id === link.goalId) : undefined;
+      const skillGoal = matchedSkill.categoryId ? data.categories.find((goal) => goal.id === matchedSkill.categoryId) : undefined;
+      linkedGoalId = linkedGoal && categoryMatchesRoute(linkedGoal, route)
+        ? linkedGoal.id
+        : skillGoal && categoryMatchesRoute(skillGoal, route)
+          ? skillGoal.id
+          : undefined;
+      linkedModuleId = linkedGoalId === link?.goalId ? link?.moduleId : undefined;
+    }
+
+    if (!linkedGoalId) linkedGoalId = resolveCategory(entry, matchedSkill?.id)?.id;
+    linkedModuleId = linkedModuleId ?? resolveModule(linkedGoalId, entry);
+
+    return {
+      linkedGoalId,
+      linkedModuleId,
+      linkedSkillId: matchedSkill?.id,
+      confidence: linkedGoalId && linkedModuleId ? 'high' : linkedGoalId ? 'medium' : 'low',
+      reason: route.route,
+      needsUserChoice: !linkedGoalId,
+    };
+  }, [captureText, data.categories, resolveCategory, resolveModule, resolvePrimaryLink, resolveSkill]);
+
+  const allActive = entryStates.every((state, index) => {
+    const existing = !!resolveSkill(entries[index]);
+    return existing ? state.include : state.createNew;
+  });
+
+  const setAllActive = (active: boolean) => {
+    setEntryStates((states) => states.map((state) => ({
+      ...state,
+      include: active,
+      createNew: active,
+    })));
+  };
 
   const handleConfirm = useCallback(() => {
     if (confirming || logged) return;
@@ -409,10 +462,15 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
       ));
       if (alreadyLogged) return;
       const semanticRoute = inferSemanticRoute(entry, captureText);
+      const routing = resolveRouting(entry);
 
       if (!skillId && ui.createNew) {
         // ── New skill path ──────────────────────────────────────────────────
         const cat = resolveCategory(entry);
+        const resolvedGoalId = routing.linkedGoalId ?? cat?.id;
+        const resolvedGoal = resolvedGoalId
+          ? data.categories.find((goal) => goal.id === resolvedGoalId)
+          : undefined;
         const newSkillTaskType = semanticRoute.taskType;
         const newSkillProgressType = semanticRoute.progressType;
         const newSkill = addSkill({
@@ -422,7 +480,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
             ? (entry.fields.durationMinutes ?? 30) : 30,
           progressType: newSkillProgressType,
           taskType: newSkillTaskType,
-          categoryId: cat?.id,                    // explicit categoryId — fixes "未分类"
+          categoryId: resolvedGoalId,                    // explicit categoryId — fixes "未分类"
           scheduleEnabled: false,
           scheduleType: 'manual_only' as const,
           metricConfig: {
@@ -432,27 +490,28 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
           },
         });
         skillId = newSkill.id;
-        linkedGoalId = cat?.id;                   // fixes "健身目标里看不到"
+        linkedGoalId = resolvedGoalId;                   // fixes "健身目标里看不到"
 
         // Link to a module so GoalDetailScreen's linkedSkillIds filter finds it
         const targetModuleId = ui.moduleId
-          ?? resolveModule(cat?.id, entry);
+          ?? routing.linkedModuleId
+          ?? resolveModule(resolvedGoalId, entry);
         linkedModuleId = targetModuleId;
-        if (cat && targetModuleId) {
-          addExistingSkillToModule(cat.id, targetModuleId, skillId);
+        if (resolvedGoal && targetModuleId) {
+          addExistingSkillToModule(resolvedGoal.id, targetModuleId, skillId);
         }
       } else if (skillId) {
         // ── Existing matched skill path ──────────────────────────────────────
         const link = resolvePrimaryLink(skillId);
         const linkedGoal = link?.goalId ? data.categories.find((goal) => goal.id === link.goalId) : undefined;
         const skillGoal = matchedSkill?.categoryId ? data.categories.find((goal) => goal.id === matchedSkill.categoryId) : undefined;
-        linkedGoalId = linkedGoal && categoryMatchesRoute(linkedGoal, semanticRoute)
+        linkedGoalId = routing.linkedGoalId ?? (linkedGoal && categoryMatchesRoute(linkedGoal, semanticRoute)
           ? linkedGoal.id
           : skillGoal && categoryMatchesRoute(skillGoal, semanticRoute)
             ? skillGoal.id
-            : undefined;
+            : undefined);
         linkedModuleId = linkedGoalId === link?.goalId ? link?.moduleId : undefined;
-        linkedModuleId = linkedModuleId ?? resolveModule(linkedGoalId, entry);
+        linkedModuleId = linkedModuleId ?? routing.linkedModuleId ?? resolveModule(linkedGoalId, entry);
         if (!linkedGoalId) {
           linkedGoalId = resolveCategory(entry, skillId)?.id;
           linkedModuleId = resolveModule(linkedGoalId, entry);
@@ -502,6 +561,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
             volume: totalVolume,
           },
           sets: detailedStrengthSets,
+          rawParsedFields: entry.fields,
         } : undefined,
         structuredData: isStrength ? {
           exerciseName: entry.skillName,
@@ -513,12 +573,19 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
           sourceCaptureEntryIndex: i,
           sourceCaptureEntryKey: sourceKey,
           route: semanticRoute.route,
+          routeConfidence: routing.confidence,
+          routeReason: routing.reason,
+          needsUserChoice: routing.needsUserChoice,
+          rawParsedFields: entry.fields,
         } : {
           ...entry.fields,
           sourceCaptureId: captureId,
           sourceCaptureEntryIndex: i,
           sourceCaptureEntryKey: sourceKey,
           route: semanticRoute.route,
+          routeConfidence: routing.confidence,
+          routeReason: routing.reason,
+          needsUserChoice: routing.needsUserChoice,
         },
         metricUpdate: isStrength
           ? {
@@ -538,7 +605,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
     setLogged(true);
     onDismiss();
   }, [confirming, logged, captureText, entries, entryStates, captureId, data.executionLogs, questTheme.colors.primary,
-      resolveSkill, resolvePrimaryLink, resolveCategory, resolveModule, addSkill, addExistingSkillToModule, createExecutionLog, onDismiss]);
+      resolveSkill, resolvePrimaryLink, resolveCategory, resolveModule, resolveRouting, addSkill, addExistingSkillToModule, createExecutionLog, onDismiss]);
 
   if (logged) {
     return (
@@ -556,12 +623,30 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
       <Text style={[pendStyles.header, { color: questTheme.colors.text, fontSize: questTheme.typography.bodySize }]}>
         {t(lang, 'scEntryDetected').replace('{n}', String(entries.length))}
       </Text>
+      {entries.length > 1 ? (
+        <TouchableOpacity
+          onPress={() => setAllActive(!allActive)}
+          style={[pendStyles.bulkBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}
+        >
+          <Text style={[pendStyles.bulkText, { color: questTheme.colors.primary }]}>
+            {allActive ? t(lang, 'scDeselectAll') : t(lang, 'scSelectAll')}
+          </Text>
+        </TouchableOpacity>
+      ) : null}
 
       {/* Entry rows */}
       {entries.map((entry, i) => {
         const ui = entryStates[i];
         const isExisting = !!resolveSkill(entry);
-        const mods = isExisting ? [] : modulesFor(entry.goalType ?? '');
+        const routing = resolveRouting(entry);
+        const selectedGoal = routing.linkedGoalId ? data.categories.find((goal) => goal.id === routing.linkedGoalId) : undefined;
+        const selectedModule = routing.linkedModuleId ? (data.modules || []).find((module) => module.id === routing.linkedModuleId) : undefined;
+        const routeForModules = inferSemanticRoute(entry, captureText);
+        const mods = isExisting ? [] : (
+          routing.linkedGoalId
+            ? (data.modules || []).filter((module) => module.goalId === routing.linkedGoalId)
+            : modulesFor(routeForModules.goalType)
+        );
         const summary = entrySummary(entry, lang);
         const active = isExisting ? ui.include : ui.createNew;
         const tagColor = isExisting ? questTheme.colors.success : questTheme.colors.accent;
@@ -601,6 +686,11 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                   {summary}
                 </Text>
               ) : null}
+              <Text style={[pendStyles.routeLine, { color: routing.needsUserChoice ? questTheme.colors.warning : questTheme.colors.textMuted }]}>
+                {t(lang, 'scEntryRouteTarget')}: {selectedGoal?.name ?? t(lang, 'scEntryUnassigned')}
+                {' · '}
+                {t(lang, 'scEntryRouteModule')}: {selectedModule?.name ?? t(lang, 'scEntryUnassigned')}
+              </Text>
               {/* Module selector for new skills */}
               {!isExisting && ui.createNew && mods.length > 0 && (
                 <View style={pendStyles.moduleRow}>
@@ -686,6 +776,9 @@ const pendStyles = StyleSheet.create({
   tag: { borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
   tagText: { fontSize: 11, fontWeight: '600' },
   summary: { fontSize: 12, lineHeight: 17 },
+  routeLine: { fontSize: 11, lineHeight: 16 },
+  bulkBtn: { alignSelf: 'flex-start', borderWidth: 1, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4, marginBottom: 6 },
+  bulkText: { fontSize: 11, fontWeight: '700' },
   moduleRow: { flexDirection: 'row', alignItems: 'center', gap: 5, flexWrap: 'wrap', marginTop: 3 },
   moduleLabel: { fontSize: 11 },
   moduleChip: { borderWidth: 1, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 2 },

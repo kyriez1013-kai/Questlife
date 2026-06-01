@@ -43,6 +43,7 @@ import { getPredictionSchemaForSkill, isStrengthPredictionSkill, strengthVolume 
 import { getRecordingFieldsForSkill } from '../domainTemplates';
 import HomeSmartCapture from './HomeSmartCapture';
 import { confirmAction } from '../utils/confirm';
+import { displayEntityName } from '../utils/displayName';
 
 // 晨间状态选项
 const DAILY_STATE_OPTIONS = [
@@ -589,13 +590,13 @@ export default function HomeScreen() {
     const labels = (data.contributionLinks || [])
       .filter((link) => link.executionLogId === logId || effortIds.includes(link.effortUnitId))
       .map((link) => {
-        if (link.targetType === 'skill') return data.skills.find((skill) => skill.id === link.targetId)?.name;
-        if (link.targetType === 'module') return data.modules.find((module) => module.id === link.targetId)?.name;
-        return data.categories.find((goal) => goal.id === link.targetId)?.name;
+        if (link.targetType === 'skill') return displayEntityName(data.skills.find((skill) => skill.id === link.targetId)?.name, lang);
+        if (link.targetType === 'module') return displayEntityName(data.modules.find((module) => module.id === link.targetId)?.name, lang);
+        return displayEntityName(data.categories.find((goal) => goal.id === link.targetId)?.name, lang);
       })
       .filter((value): value is string => Boolean(value));
     return Array.from(new Set(labels)).slice(0, 3);
-  }, [data.categories, data.contributionLinks, data.effortUnits, data.modules, data.skills]);
+  }, [data.categories, data.contributionLinks, data.effortUnits, data.modules, data.skills, lang]);
 
   // ───────── 执行记录弹窗 ─────────
   const openModal = useCallback((presetSkillId?: string, preset?: Partial<{
@@ -1816,7 +1817,7 @@ export default function HomeScreen() {
                     <View style={[styles.dot, { backgroundColor: skill?.color ?? accent }]} />
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.actionTitle, { color: questTheme.colors.text }]}>
-                        {skill?.name ?? a.orphanedSkillName ?? a.title ?? `(${t(lang, 'deleted')})`} · {formatMetricUpdateSummary(a, skill, lang)}
+                        {displayEntityName(skill?.name ?? a.orphanedSkillName ?? a.title ?? `(${t(lang, 'deleted')})`, lang)} · {formatMetricUpdateSummary(a, skill, lang)}
                         {a.qualityRating ? ` · ${t(lang, 'quality')} ${a.qualityRating}/5` : ''}
                       </Text>
                       <Text style={[styles.actionNote, { color: questTheme.colors.textMuted }]}>

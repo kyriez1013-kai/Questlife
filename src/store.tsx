@@ -85,7 +85,7 @@ interface Ctx {
   // Spec B-1: Smart Capture Loop
   addRawCapture: (text: string) => RawCapture;
   updateRawCapture: (id: string, patch: Partial<RawCapture>) => void;
-  deleteRawCapture: (id: string) => void;
+  deleteRawCapture: (id: string, options?: { deleteLinkedExecutionLogs?: boolean }) => void;
 }
 
 function applyExecutionLogToSkillProgress(skill: Skill, log: ExecutionLog): Skill {
@@ -825,13 +825,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [mutate]);
 
   const deleteExecutionLog: Ctx['deleteExecutionLog'] = useCallback((id) => {
-    mutate((d) => ({
-      ...d,
-      // First version keeps skill progress as-is after deletion to avoid unsafe reverse math.
-      executionLogs: (d.executionLogs || []).filter((log) => log.id !== id),
-      effortUnits: (d.effortUnits || []).filter((unit) => unit.executionLogId !== id),
-      contributionLinks: (d.contributionLinks || []).filter((link) => link.executionLogId !== id),
-    }));
+    mutate((d) => {
+      const removedEffortIds = new Set((d.effortUnits || [])
+        .filter((unit) => unit.executionLogId === id)
+        .map((unit) => unit.id));
+      return {
+        ...d,
+        // First version keeps skill progress as-is after deletion to avoid unsafe reverse math.
+        executionLogs: (d.executionLogs || []).filter((log) => log.id !== id),
+        effortUnits: (d.effortUnits || []).filter((unit) => unit.executionLogId !== id),
+        contributionLinks: (d.contributionLinks || []).filter((link) => link.executionLogId !== id && !removedEffortIds.has(link.effortUnitId)),
+      };
+    });
   }, [mutate]);
 
   const getExecutionLogsByDate: Ctx['getExecutionLogsByDate'] = useCallback((date) => (
@@ -1035,12 +1040,28 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }));
   }, [mutate]);
 
-  const deleteRawCapture: Ctx['deleteRawCapture'] = useCallback((id: string) => {
-    // Only removes the RawCapture — skills, execution logs, goals untouched
-    mutate((d) => ({
-      ...d,
-      rawCaptures: (d.rawCaptures || []).filter((c) => c.id !== id),
-    }));
+  const deleteRawCapture: Ctx['deleteRawCapture'] = useCallback((id: string, options) => {
+    mutate((d) => {
+      const linkedLogIds = new Set((d.executionLogs || [])
+        .filter((log) => log.structuredData?.sourceCaptureId === id)
+        .map((log) => log.id));
+      if (!options?.deleteLinkedExecutionLogs || linkedLogIds.size === 0) {
+        return {
+          ...d,
+          rawCaptures: (d.rawCaptures || []).filter((c) => c.id !== id),
+        };
+      }
+      const linkedEffortIds = new Set((d.effortUnits || [])
+        .filter((unit) => linkedLogIds.has(unit.executionLogId))
+        .map((unit) => unit.id));
+      return {
+        ...d,
+        rawCaptures: (d.rawCaptures || []).filter((c) => c.id !== id),
+        executionLogs: (d.executionLogs || []).filter((log) => !linkedLogIds.has(log.id)),
+        effortUnits: (d.effortUnits || []).filter((unit) => !linkedLogIds.has(unit.executionLogId)),
+        contributionLinks: (d.contributionLinks || []).filter((link) => !linkedLogIds.has(link.executionLogId) && !linkedEffortIds.has(link.effortUnitId)),
+      };
+    });
   }, [mutate]);
 
   const rebuildDerivedData: Ctx['rebuildDerivedData'] = useCallback(() => {

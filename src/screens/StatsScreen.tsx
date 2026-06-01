@@ -23,6 +23,7 @@ import QuestEntityIcon from '../components/ui/QuestEntityIcon';
 import { getSkillSemanticIcon } from '../design/entityIcons';
 import { generateInsightsSummary, InsightsSummaryResult } from '../utils/insightsEngine';
 import { InsightCardsBlock } from './StatsScreenInsights';
+import { displayEntityName } from '../utils/displayName';
 
 const WEEKDAY_KEYS = ['weekdaySun', 'weekdayMon', 'weekdayTue', 'weekdayWed', 'weekdayThu', 'weekdayFri', 'weekdaySat'];
 
@@ -35,6 +36,7 @@ export default function StatsScreen() {
   const questTheme = getQuestTheme(data.settings.selectedThemeId);
   const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
   const logs = data.executionLogs || [];
+  const timeLogs = useMemo(() => logs.filter((log) => (log.durationMinutes ?? 0) > 0), [logs]);
   const appLoop = useMemo(() => getAppCoreLoopStatus(data, lang), [data, lang]);
   useEffect(() => {
     const now = new Date();
@@ -65,7 +67,8 @@ export default function StatsScreen() {
       d.setDate(today.getDate() - i);
       const ds = fmtDate(d);
       const dayActions = logs.filter((a) => a.date === ds);
-      const minutes = dayActions.reduce((s, a) => s + a.durationMinutes, 0);
+      const dayTimeActions = timeLogs.filter((a) => a.date === ds);
+      const minutes = dayTimeActions.reduce((s, a) => s + (a.durationMinutes ?? 0), 0);
       const rated = dayActions.filter((a) => a.qualityRating != null);
       const avgQuality = rated.length > 0
         ? rated.reduce((s, a) => s + (a.qualityRating as number), 0) / rated.length
@@ -79,7 +82,7 @@ export default function StatsScreen() {
       });
     }
     return days;
-  }, [logs, lang]);
+  }, [logs, timeLogs, lang]);
 
   // ───────── 本周平均状态 (过去 7 天) ─────────
   const weeklyQuality = useMemo(() => {
@@ -111,22 +114,22 @@ export default function StatsScreen() {
   // ───────── 本周技能分配 ─────────
   const weeklySkillShare = useMemo(() => {
     const dates = new Set(last7.map((d) => d.date));
-    const inWindow = logs.filter((a) => dates.has(a.date));
-    const totalMin = inWindow.reduce((s, a) => s + a.durationMinutes, 0);
+    const inWindow = timeLogs.filter((a) => dates.has(a.date));
+    const totalMin = inWindow.reduce((s, a) => s + (a.durationMinutes ?? 0), 0);
     if (totalMin === 0) return null;
     const bySkill = new Map<string, number>();
     inWindow.forEach((a) => {
       const sid = a.linkedSkillId ?? a.orphanedSkillName ?? a.title ?? t(lang, 'customLog');
-      bySkill.set(sid, (bySkill.get(sid) ?? 0) + a.durationMinutes);
+      bySkill.set(sid, (bySkill.get(sid) ?? 0) + (a.durationMinutes ?? 0));
     });
     const rows = (Array.from(bySkill.entries())
       .map(([sid, min]) => {
         const skill = data.skills.find((s) => s.id === sid);
-        return { skill, label: skill?.name ?? sid, icon: skill?.icon, color: skill?.color ?? accent, minutes: min, percent: min / totalMin };
+        return { skill, label: displayEntityName(skill?.name ?? sid, lang), icon: skill?.icon, color: skill?.color ?? accent, minutes: min, percent: min / totalMin };
       }) as { skill?: Skill; label: string; icon?: string; color: string; minutes: number; percent: number }[]);
     rows.sort((a, b) => b.minutes - a.minutes);
     return { rows, totalMin };
-  }, [logs, data.skills, last7, lang, accent]);
+  }, [timeLogs, data.skills, last7, lang, accent]);
 
   const instantInsight = useMemo(() => {
     const weeklyMinutes = last7.reduce((sum, day) => sum + day.minutes, 0);
@@ -204,39 +207,39 @@ export default function StatsScreen() {
 
   const weeklyTaskTypeShare = useMemo(() => {
     const dates = new Set(last7.map((d) => d.date));
-    const inWindow = logs.filter((a) => dates.has(a.date));
-    const totalMin = inWindow.reduce((s, a) => s + a.durationMinutes, 0);
+    const inWindow = timeLogs.filter((a) => dates.has(a.date));
+    const totalMin = inWindow.reduce((s, a) => s + (a.durationMinutes ?? 0), 0);
     if (totalMin === 0) return null;
     const byType = new Map<string, number>();
     inWindow.forEach((log) => {
       const skill = log.linkedSkillId ? data.skills.find((s) => s.id === log.linkedSkillId) : undefined;
       const type = log.taskType ?? skill?.taskType ?? 'deep_study';
-      byType.set(type, (byType.get(type) ?? 0) + log.durationMinutes);
+      byType.set(type, (byType.get(type) ?? 0) + (log.durationMinutes ?? 0));
     });
     return {
       rows: Array.from(byType.entries()).map(([type, minutes]) => ({ type, minutes, percent: minutes / totalMin })).sort((a, b) => b.minutes - a.minutes),
       totalMin,
     };
-  }, [logs, data.skills, last7]);
+  }, [timeLogs, data.skills, last7]);
 
   const weeklyMetricShare = useMemo(() => {
     const dates = new Set(last7.map((d) => d.date));
-    const inWindow = logs.filter((a) => dates.has(a.date));
-    const totalMin = inWindow.reduce((s, a) => s + a.durationMinutes, 0);
+    const inWindow = timeLogs.filter((a) => dates.has(a.date));
+    const totalMin = inWindow.reduce((s, a) => s + (a.durationMinutes ?? 0), 0);
     if (inWindow.length === 0) return null;
     const byMetric = new Map<string, { minutes: number; count: number }>();
     inWindow.forEach((log) => {
       const skill = log.linkedSkillId ? data.skills.find((s) => s.id === log.linkedSkillId) : undefined;
       const metric = log.metricUpdate?.metricType ?? log.progressUpdate?.progressType ?? skill?.metricConfig?.metricType ?? skill?.progressType ?? 'none';
       const row = byMetric.get(metric) ?? { minutes: 0, count: 0 };
-      row.minutes += log.durationMinutes;
+      row.minutes += log.durationMinutes ?? 0;
       row.count += 1;
       byMetric.set(metric, row);
     });
     return Array.from(byMetric.entries())
       .map(([metric, row]) => ({ metric, ...row, percent: totalMin > 0 ? row.minutes / totalMin : 0 }))
       .sort((a, b) => b.minutes - a.minutes);
-  }, [logs, data.skills, last7]);
+  }, [timeLogs, data.skills, last7]);
 
   // ───────── 本周达标天数 ─────────
   const weeklyHitDays = useMemo(() => {
@@ -244,21 +247,21 @@ export default function StatsScreen() {
     for (const d of last7) {
       const hit = data.skills.some((sk) => {
         if (sk.dailyTargetMinutes <= 0) return false;
-        const sumThisDay = logs
+        const sumThisDay = timeLogs
           .filter((a) => a.date === d.date && a.linkedSkillId === sk.id)
-          .reduce((s, a) => s + a.durationMinutes, 0);
+          .reduce((s, a) => s + (a.durationMinutes ?? 0), 0);
         return sumThisDay >= sk.dailyTargetMinutes;
       });
       if (hit) n++;
     }
     return n;
-  }, [logs, data.skills, last7]);
+  }, [timeLogs, data.skills, last7]);
 
   // ───────── 8 周热力图 (8x7 = 56 天) ─────────
   const heat = useMemo(() => {
     const days = 56;
     const map = new Map<string, number>();
-    logs.forEach((a) => map.set(a.date, (map.get(a.date) ?? 0) + a.durationMinutes));
+    timeLogs.forEach((a) => map.set(a.date, (map.get(a.date) ?? 0) + (a.durationMinutes ?? 0)));
     const cells: { date: string; value: number }[] = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -269,10 +272,10 @@ export default function StatsScreen() {
       cells.push({ date: ds, value: map.get(ds) ?? 0 });
     }
     return cells;
-  }, [logs]);
+  }, [timeLogs]);
 
   // ───────── 顶部 stats ─────────
-  const totalMin = logs.reduce((s, a) => s + a.durationMinutes, 0);
+  const totalMin = timeLogs.reduce((s, a) => s + (a.durationMinutes ?? 0), 0);
   const activeDays = new Set(logs.map((a) => a.date)).size;
   const streak = useMemo(() => {
     const set = new Set(logs.map((a) => a.date));
@@ -297,11 +300,11 @@ export default function StatsScreen() {
   // ── 新增：引擎分析结果（不影响现有卡片）─────────────────────────────────
   const engineInsights = useMemo(
     (): InsightsSummaryResult => generateInsightsSummary(
-      logs,
+      timeLogs,
       data.stateCheckIns || [],
       data.skills,
     ),
-    [logs, data.stateCheckIns, data.skills],
+    [timeLogs, data.stateCheckIns, data.skills],
   );
 
   return (
