@@ -38,6 +38,13 @@ function inferTaskType(goalType: string, progressType: string): TaskType {
   return 'deep_study';
 }
 
+function normalizeName(value?: string): string {
+  return String(value ?? '')
+    .toLowerCase()
+    .replace(/\s+/g, '')
+    .replace(/[^\w\u4e00-\u9fff]/g, '');
+}
+
 function setsSummary(entry: ParsedEntry, lang: 'zh' | 'en'): string {
   const sets: { weight?: number; reps?: number }[] = entry.fields.sets ?? [];
   if (sets.length === 0) return '';
@@ -79,12 +86,11 @@ function entrySummary(entry: ParsedEntry, lang: 'zh' | 'en'): string {
 
 // Estimate execution duration for totalXP (durationMinutes required by store)
 function estimateDuration(entry: ParsedEntry): number {
-  if (entry.progressType === 'time_based') return entry.fields.durationMinutes ?? 30;
+  if (entry.progressType === 'time_based') return entry.fields.durationMinutes ?? 0;
   if (entry.progressType === 'performance_log') {
-    const sets: any[] = entry.fields.sets ?? [];
-    return Math.max(10, sets.length * 5); // ~5 min per set incl. rest
+    return entry.fields.durationMinutes ?? 0;
   }
-  return 20;
+  return entry.fields.durationMinutes ?? 0;
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -102,8 +108,8 @@ export default function HomeCapturePending({ captureId: _captureId, entries, onD
 
   const [entryStates, setEntryStates] = useState<EntryUI[]>(() =>
     entries.map((e) => ({
-      include:   e.matchedSkillId != null,   // existing → pre-checked
-      createNew: false,                       // new → user must opt in
+      include:   true,                         // confirmation card means user can opt out before writing
+      createNew: e.matchedSkillId == null,     // unmatched concrete entries should be written after confirm
       moduleId:  null,
     })),
   );
@@ -132,10 +138,50 @@ export default function HomeCapturePending({ captureId: _captureId, entries, onD
    *  This fixes the "未分类" bug: most categories have goalType undefined,
    *  so goalType-only lookup always returns null.
    */
-  const resolveCategory = useCallback((entryGoalType: string, entryProgressType: string) => {
+  const resolveSkill = useCallback((entry: ParsedEntry) => {
+    if (entry.matchedSkillId) {
+      const direct = data.skills.find((s) => s.id === entry.matchedSkillId);
+      if (direct) return direct;
+    }
+    const wanted = normalizeName(entry.skillName);
+    if (!wanted) return undefined;
+    return data.skills.find((s) => {
+      const current = normalizeName(s.name);
+      return current === wanted || current.includes(wanted) || wanted.includes(current);
+    });
+  }, [data.skills]);
+
+  const resolvePrimaryLink = useCallback((skillId?: string) => {
+    if (!skillId) return undefined;
+    return (data.moduleSkillLinks || []).find((link) => link.skillId === skillId);
+  }, [data.moduleSkillLinks]);
+
+  const resolveCategory = useCallback((entryGoalType: string, entryProgressType: string, skillId?: string) => {
+    const existingSkill = skillId ? data.skills.find((s) => s.id === skillId) : undefined;
+    if (existingSkill?.categoryId) {
+      const bySkill = data.categories.find((c) => c.id === existingSkill.categoryId);
+      if (bySkill) return bySkill;
+    }
+    const linkedGoalId = resolvePrimaryLink(skillId)?.goalId;
+    if (linkedGoalId) {
+      const byLink = data.categories.find((c) => c.id === linkedGoalId);
+      if (byLink) return byLink;
+    }
+
     // 1. Exact goalType match (works when user has template-created categories)
     const byGoalType = data.categories.find((c) => c.goalType === entryGoalType);
     if (byGoalType) return byGoalType;
+
+    // 1b. Domain/name fallback for older goals that have no goalType
+    if (entryGoalType === 'fitness') {
+      const byFitnessDomain = data.categories.find((c) => String(c.domain ?? '').startsWith('fitness'));
+      if (byFitnessDomain) return byFitnessDomain;
+      const byFitnessName = data.categories.find((c) => {
+        const name = normalizeName(c.name);
+        return name.includes('健身') || name.includes('力量') || name.includes('fitness') || name.includes('gym');
+      });
+      if (byFitnessName) return byFitnessName;
+    }
 
     // 2. Find a category that already hosts a skill with the same taskType
     const taskType = inferTaskType(entryGoalType, entryProgressType);
@@ -147,22 +193,24 @@ export default function HomeCapturePending({ captureId: _captureId, entries, onD
 
     // 3. First available category as last resort
     return data.categories[0] ?? null;
-  }, [data.categories, data.skills]);
+  }, [data.categories, data.skills, resolvePrimaryLink]);
 
   const handleConfirm = useCallback(() => {
     const date = todayStr();
 
     entries.forEach((entry, i) => {
       const ui = entryStates[i];
-      let skillId = entry.matchedSkillId;
+      const matchedSkill = resolveSkill(entry);
+      let skillId = matchedSkill?.id ?? null;
       let linkedGoalId: string | undefined;
+      let linkedModuleId: string | undefined;
 
       if (!skillId && ui.createNew) {
         // ── New skill path ──────────────────────────────────────────────────
         const cat = resolveCategory(entry.goalType ?? 'custom', entry.progressType);
         const newSkill = addSkill({
           name: entry.skillName,
-          color: '#38bdf8',
+          color: questTheme.colors.primary,
           dailyTargetMinutes: entry.progressType === 'time_based'
             ? (entry.fields.durationMinutes ?? 30) : 30,
           progressType: entry.progressType as ProgressType,
@@ -182,34 +230,46 @@ export default function HomeCapturePending({ captureId: _captureId, entries, onD
         // Link to a module so GoalDetailScreen's linkedSkillIds filter finds it
         const targetModuleId = ui.moduleId
           ?? (cat ? (data.modules || []).find((m) => m.goalId === cat.id)?.id : undefined);
+        linkedModuleId = targetModuleId;
         if (cat && targetModuleId) {
           addExistingSkillToModule(cat.id, targetModuleId, skillId);
         }
       } else if (skillId) {
         // ── Existing matched skill path ──────────────────────────────────────
-        // Derive linkedGoalId from the skill's own categoryId so records
-        // appear under the right goal even when there are no module links
-        const existingSkill = data.skills.find((s) => s.id === skillId);
-        linkedGoalId = existingSkill?.categoryId;
-        // Also check module links (highest fidelity)
-        const link = (data.modules || []).length > 0
-          ? undefined  // createExecutionLog resolves via moduleSkillLinks internally
-          : undefined;
-        void link;
+        const link = resolvePrimaryLink(skillId);
+        linkedGoalId = link?.goalId ?? matchedSkill?.categoryId;
+        linkedModuleId = link?.moduleId;
+        if (!linkedGoalId) {
+          linkedGoalId = resolveCategory(entry.goalType ?? 'custom', entry.progressType, skillId)?.id;
+        }
       }
 
       // Gate: existing deselected or new not opted-in
-      if (entry.matchedSkillId && !ui.include) return;
-      if (!entry.matchedSkillId && !ui.createNew) return;
+      if (matchedSkill && !ui.include) return;
+      if (!matchedSkill && !ui.createNew) return;
       if (!skillId) return;
 
       const durationMinutes = estimateDuration(entry);
       const isStrength = entry.progressType === 'performance_log';
-      const sets: { weight?: number; reps?: number }[] = entry.fields.sets ?? [];
+      const sets: { weight?: number; reps?: number }[] = Array.isArray(entry.fields.sets) ? entry.fields.sets : [];
+      const strengthSets = sets.map((s) => ({
+        weight: (s.weight && s.weight > 0) ? s.weight : entry.fields.extraWeight,
+        reps: s.reps ?? 0,
+        sets: 1,
+      }));
+      const topWeight = strengthSets.reduce((best, set) => Math.max(best, set.weight ?? 0), 0) || undefined;
+      const totalVolume = strengthSets.reduce((sum, set) => sum + (set.weight ?? 0) * (set.reps ?? 0) * (set.sets ?? 1), 0) || undefined;
+      const firstReps = strengthSets.find((set) => set.reps)?.reps;
+      const performanceData = isStrength ? {
+        performanceType: 'strength',
+        strengthSets,
+        totalVolume,
+      } : undefined;
 
       createExecutionLog({
         linkedSkillId: skillId,
         linkedGoalId,                              // explicit — fixes both symptoms
+        linkedModuleId,
         date,
         durationMinutes,
         qualityRating: entry.qualityRating as any,
@@ -217,17 +277,30 @@ export default function HomeCapturePending({ captureId: _captureId, entries, onD
         title: entry.skillName,
         taskType: inferTaskType(entry.goalType ?? 'custom', entry.progressType),
         ...(entry.progressType === 'time_based' ? { note: entry.fields.note } : {}),
+        actualData: isStrength ? {
+          kind: 'strength_training',
+          exerciseName: entry.skillName,
+          strength: {
+            weight: topWeight,
+            reps: firstReps,
+            sets: strengthSets.length || undefined,
+            volume: totalVolume,
+          },
+        } : undefined,
+        structuredData: isStrength ? {
+          exerciseName: entry.skillName,
+          weight: topWeight,
+          sets: strengthSets.length || undefined,
+          reps: firstReps,
+          durationMinutes,
+        } : entry.fields,
         metricUpdate: isStrength
           ? {
               metricType: 'performance_log' as ProgressType,
-              performanceData: {
-                strengthSets: sets.map((s) => ({
-                  // use extraWeight if weight is absent/zero (e.g. weighted dips)
-                  weight: (s.weight && s.weight > 0) ? s.weight : (entry.fields.extraWeight ?? 0),
-                  reps: s.reps ?? 0,
-                  sets: 1,
-                })),
-              } as any,
+              performanceValue: topWeight,
+              performanceUnit: topWeight != null ? 'kg' : undefined,
+              performanceNote: entry.fields.note,
+              performanceData,
             }
           : {
               metricType: entry.progressType as ProgressType,
@@ -238,8 +311,8 @@ export default function HomeCapturePending({ captureId: _captureId, entries, onD
 
     setLogged(true);
     setTimeout(onDismiss, 800);
-  }, [entries, entryStates, data.categories, data.modules, data.skills,
-      resolveCategory, addSkill, addExistingSkillToModule, createExecutionLog, onDismiss]);
+  }, [entries, entryStates, data.modules, questTheme.colors.primary,
+      resolveSkill, resolvePrimaryLink, resolveCategory, addSkill, addExistingSkillToModule, createExecutionLog, onDismiss]);
 
   if (logged) {
     return (
@@ -261,7 +334,7 @@ export default function HomeCapturePending({ captureId: _captureId, entries, onD
       {/* Entry rows */}
       {entries.map((entry, i) => {
         const ui = entryStates[i];
-        const isExisting = entry.matchedSkillId != null;
+        const isExisting = !!resolveSkill(entry);
         const mods = isExisting ? [] : modulesFor(entry.goalType ?? '');
         const summary = entrySummary(entry, lang);
         const active = isExisting ? ui.include : ui.createNew;
