@@ -10,13 +10,14 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
 import { useStore } from '../store';
 import { getQuestTheme } from '../design/tokens';
 import { getLanguage, t } from '../i18n';
 import { Category, ParsedEntry, ProgressType, QuestModule, TaskType } from '../types';
 import QuestCard from '../components/ui/QuestCard';
 import { assessCaptureCompletion } from '../utils/captureCompletion';
+import { getSmartRouteResult, SmartRouteResult } from '../utils/smartRouting';
 
 // ── Per-entry UI state ────────────────────────────────────────────────────────
 
@@ -29,6 +30,20 @@ type EntryUI = {
   rpe?: number;
   selectedSkillName?: string;
   selectedSkillId?: string | null;
+  selectedGoalId?: string;
+  selectedModuleId?: string;
+  selectedExerciseNames?: string[];
+  customExerciseName?: string;
+  exerciseDetails?: Record<string, ExerciseDetailUI>;
+  scope?: string;
+  studyNote?: string;
+};
+
+type ExerciseDetailUI = {
+  weight?: string;
+  sets?: string;
+  reps?: string;
+  rpe?: number | null;
 };
 
 type SemanticRoute = {
@@ -308,6 +323,8 @@ function entryWithCompletion(entry: ParsedEntry, ui: EntryUI): ParsedEntry {
     ...entry.fields,
     ...(ui.durationMinutes !== undefined ? { durationMinutes: ui.durationMinutes ?? undefined } : {}),
     ...(ui.rpe != null ? { rpe: ui.rpe } : {}),
+    ...(ui.scope ? { scope: ui.scope } : {}),
+    ...(ui.studyNote ? { note: ui.studyNote } : {}),
   };
   return {
     ...entry,
@@ -316,6 +333,24 @@ function entryWithCompletion(entry: ParsedEntry, ui: EntryUI): ParsedEntry {
     qualityRating: ui.qualityRating ?? entry.qualityRating,
     fields,
   };
+}
+
+function parseOptionalNumber(value?: string): number | undefined {
+  if (value == null || value.trim() === '') return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function selectedExercisesFor(ui: EntryUI): string[] {
+  const selected = ui.selectedExerciseNames ?? [];
+  const custom = ui.customExerciseName?.trim();
+  return custom && !selected.includes(custom) ? [...selected, custom] : selected;
+}
+
+function displayRouteConfidenceKey(confidence: SmartRouteResult['confidence']) {
+  if (confidence === 'high') return 'routeConfidenceHigh';
+  if (confidence === 'medium') return 'routeConfidenceMedium';
+  return 'routeConfidenceLow';
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -370,6 +405,51 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
 
   const setSelectedSkill = (i: number, skillName: string, skillId?: string) =>
     setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, selectedSkillName: skillName, selectedSkillId: skillId ?? null, createNew: !skillId } : e));
+
+  const setSelectedGoal = (i: number, goalId?: string) =>
+    setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, selectedGoalId: goalId, selectedModuleId: undefined } : e));
+
+  const setSelectedModule = (i: number, moduleId?: string) =>
+    setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, selectedModuleId: moduleId, moduleId: moduleId ?? e.moduleId } : e));
+
+  const toggleExercise = (i: number, exerciseName: string) =>
+    setEntryStates((s) => s.map((e, idx) => {
+      if (idx !== i) return e;
+      const current = e.selectedExerciseNames ?? [];
+      const exists = current.includes(exerciseName);
+      const next = exists ? current.filter((name) => name !== exerciseName) : [...current, exerciseName];
+      return {
+        ...e,
+        selectedExerciseNames: next,
+        selectedSkillName: next[0] ?? e.selectedSkillName,
+        createNew: true,
+      };
+    }));
+
+  const setCustomExercise = (i: number, exerciseName: string) =>
+    setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, customExerciseName: exerciseName } : e));
+
+  const setExerciseDetail = (i: number, exerciseName: string, key: keyof ExerciseDetailUI, value: string | number | null) =>
+    setEntryStates((s) => s.map((e, idx) => {
+      if (idx !== i) return e;
+      const current = e.exerciseDetails ?? {};
+      return {
+        ...e,
+        exerciseDetails: {
+          ...current,
+          [exerciseName]: {
+            ...(current[exerciseName] ?? {}),
+            [key]: value,
+          },
+        },
+      };
+    }));
+
+  const setScope = (i: number, scope: string) =>
+    setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, scope } : e));
+
+  const setStudyNote = (i: number, studyNote: string) =>
+    setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, studyNote } : e));
 
   // ── Smart category resolution (no Alert.alert — direct TouchableOpacity) ──
 
@@ -486,8 +566,10 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
       const ui = entryStates[i];
       const assessment = assessCaptureCompletion(captureText, entry, { goals: data.categories, modules: data.modules || [], skills: data.skills, lang });
       if (assessment.status === 'not_recordable') return;
-      if (assessment.missingFields.includes('targetSkill') && !ui.selectedSkillName && !resolveSkill(entry)) return;
       const completedEntry = entryWithCompletion(entry, ui);
+      const smartRoute = getSmartRouteResult({ rawText: captureText, entry: completedEntry, goals: data.categories, modules: data.modules || [], skills: data.skills, lang });
+      const multiExercises = smartRoute.domain === 'fitness' ? selectedExercisesFor(ui) : [];
+      if (assessment.missingFields.includes('targetSkill') && multiExercises.length === 0 && !ui.selectedSkillName && !resolveSkill(entry)) return;
       const matchedSkill = resolveSkill(completedEntry);
       let skillId = matchedSkill?.id ?? null;
       let linkedGoalId: string | undefined;
@@ -501,10 +583,107 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
       const semanticRoute = inferSemanticRoute(completedEntry, captureText);
       const routing = resolveRouting(completedEntry);
 
+      if (smartRoute.domain === 'fitness' && multiExercises.length > 0) {
+        if (matchedSkill && !ui.include) return;
+        if (!matchedSkill && !ui.createNew) return;
+        const selectedGoalId = ui.selectedGoalId ?? smartRoute.selectedGoalId ?? routing.linkedGoalId;
+        const selectedModuleId = ui.selectedModuleId ?? ui.moduleId ?? smartRoute.selectedModuleId ?? routing.linkedModuleId;
+        const sessionDuration = estimateDuration(completedEntry);
+        const perActionDuration = sessionDuration > 0 ? Math.max(1, Math.round(sessionDuration / multiExercises.length)) : 0;
+
+        multiExercises.forEach((exerciseName, actionIndex) => {
+          const actionKey = `${captureId}:${i}:${normalizeName(exerciseName)}`;
+          const actionAlreadyLogged = (data.executionLogs || []).some((log) => log.structuredData?.sourceCaptureEntryKey === actionKey);
+          if (actionAlreadyLogged) return;
+          const existingSkill = data.skills.find((skill) => normalizeName(skill.name) === normalizeName(exerciseName));
+          let actionSkillId = existingSkill?.id;
+          if (!actionSkillId && ui.createNew) {
+            const created = addSkill({
+              name: exerciseName,
+              color: questTheme.colors.primary,
+              dailyTargetMinutes: 30,
+              progressType: 'performance_log',
+              taskType: 'strength_training',
+              categoryId: selectedGoalId,
+              scheduleEnabled: false,
+              scheduleType: 'manual_only' as const,
+              metricConfig: {
+                metricType: 'performance_log',
+                performanceType: 'strength',
+                primaryMetric: 'weight',
+                trackRPE: true,
+              },
+            });
+            actionSkillId = created.id;
+            if (selectedGoalId && selectedModuleId) {
+              addExistingSkillToModule(selectedGoalId, selectedModuleId, actionSkillId);
+            }
+          }
+          if (!actionSkillId) return;
+          const detail = ui.exerciseDetails?.[exerciseName] ?? {};
+          const weight = parseOptionalNumber(detail.weight);
+          const sets = parseOptionalNumber(detail.sets);
+          const reps = parseOptionalNumber(detail.reps);
+          const rpe = typeof detail.rpe === 'number' ? detail.rpe : ui.rpe;
+          const totalVolume = weight && sets && reps ? weight * sets * reps : undefined;
+          const strengthSet = (weight || sets || reps || rpe)
+            ? { weight, sets, reps, rpe: rpe ?? undefined }
+            : undefined;
+          createExecutionLog({
+            id: `capture-${captureId}-${i}-${actionIndex}`,
+            linkedSkillId: actionSkillId,
+            linkedGoalId: selectedGoalId,
+            linkedModuleId: selectedModuleId,
+            date,
+            durationMinutes: perActionDuration,
+            qualityRating: completedEntry.qualityRating as any,
+            source: 'manual',
+            title: exerciseName,
+            taskType: 'strength_training',
+            actualData: {
+              kind: 'strength_training',
+              exerciseName,
+              strength: { weight, reps, sets, volume: totalVolume, rpe },
+              sets: strengthSet ? [strengthSet] : [],
+              rawParsedFields: completedEntry.fields,
+            },
+            structuredData: {
+              exerciseName,
+              weight,
+              sets,
+              reps,
+              rpe,
+              sessionDurationMinutes: sessionDuration || undefined,
+              durationMinutes: perActionDuration,
+              sourceCaptureId: captureId,
+              sourceCaptureEntryIndex: i,
+              sourceCaptureEntryKey: actionKey,
+              route: smartRoute.domain,
+              routeConfidence: smartRoute.confidence,
+              routeReason: smartRoute.reason,
+              selectedExerciseCount: multiExercises.length,
+              rawParsedFields: completedEntry.fields,
+            },
+            metricUpdate: {
+              metricType: 'performance_log',
+              performanceValue: weight,
+              performanceUnit: weight != null ? 'kg' : undefined,
+              performanceData: {
+                performanceType: 'strength',
+                strengthSets: strengthSet ? [strengthSet] : [],
+                totalVolume,
+                sourceCaptureId: captureId,
+              },
+            },
+          });
+        });
+        return;
+      }
+
       if (!skillId && ui.createNew) {
         // ── New skill path ──────────────────────────────────────────────────
         const cat = resolveCategory(completedEntry);
-        const resolvedGoalId = routing.linkedGoalId ?? cat?.id;
+        const resolvedGoalId = ui.selectedGoalId ?? smartRoute.selectedGoalId ?? routing.linkedGoalId ?? cat?.id;
         const resolvedGoal = resolvedGoalId
           ? data.categories.find((goal) => goal.id === resolvedGoalId)
           : undefined;
@@ -531,6 +710,8 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
 
         // Link to a module so GoalDetailScreen's linkedSkillIds filter finds it
         const targetModuleId = ui.moduleId
+          ?? ui.selectedModuleId
+          ?? smartRoute.selectedModuleId
           ?? routing.linkedModuleId
           ?? resolveModule(resolvedGoalId, completedEntry);
         linkedModuleId = targetModuleId;
@@ -542,13 +723,13 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
         const link = resolvePrimaryLink(skillId);
         const linkedGoal = link?.goalId ? data.categories.find((goal) => goal.id === link.goalId) : undefined;
         const skillGoal = matchedSkill?.categoryId ? data.categories.find((goal) => goal.id === matchedSkill.categoryId) : undefined;
-        linkedGoalId = routing.linkedGoalId ?? (linkedGoal && categoryMatchesRoute(linkedGoal, semanticRoute)
+        linkedGoalId = ui.selectedGoalId ?? smartRoute.selectedGoalId ?? routing.linkedGoalId ?? (linkedGoal && categoryMatchesRoute(linkedGoal, semanticRoute)
           ? linkedGoal.id
           : skillGoal && categoryMatchesRoute(skillGoal, semanticRoute)
             ? skillGoal.id
             : undefined);
         linkedModuleId = linkedGoalId === link?.goalId ? link?.moduleId : undefined;
-        linkedModuleId = linkedModuleId ?? routing.linkedModuleId ?? resolveModule(linkedGoalId, completedEntry);
+        linkedModuleId = ui.selectedModuleId ?? smartRoute.selectedModuleId ?? linkedModuleId ?? routing.linkedModuleId ?? resolveModule(linkedGoalId, completedEntry);
         if (!linkedGoalId) {
           linkedGoalId = resolveCategory(completedEntry, skillId)?.id;
           linkedModuleId = resolveModule(linkedGoalId, completedEntry);
@@ -684,25 +865,30 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
         const ui = entryStates[i];
         const completedEntry = entryWithCompletion(entry, ui);
         const assessment = assessCaptureCompletion(captureText, completedEntry, { goals: data.categories, modules: data.modules || [], skills: data.skills, lang });
+        const smartRoute = getSmartRouteResult({ rawText: captureText, entry: completedEntry, goals: data.categories, modules: data.modules || [], skills: data.skills, lang });
         const isRecordable = assessment.status !== 'not_recordable';
         const isExisting = !!resolveSkill(completedEntry);
         const routing = resolveRouting(completedEntry);
-        const selectedGoal = routing.linkedGoalId ? data.categories.find((goal) => goal.id === routing.linkedGoalId) : undefined;
-        const selectedModule = routing.linkedModuleId ? (data.modules || []).find((module) => module.id === routing.linkedModuleId) : undefined;
+        const selectedGoalId = ui.selectedGoalId ?? smartRoute.selectedGoalId ?? routing.linkedGoalId;
+        const selectedModuleId = ui.selectedModuleId ?? smartRoute.selectedModuleId ?? routing.linkedModuleId;
+        const selectedGoal = selectedGoalId ? data.categories.find((goal) => goal.id === selectedGoalId) : undefined;
+        const selectedModule = selectedModuleId ? (data.modules || []).find((module) => module.id === selectedModuleId) : undefined;
         const routeForModules = inferSemanticRoute(completedEntry, captureText);
         const mods = isExisting ? [] : (
-          routing.linkedGoalId
-            ? (data.modules || []).filter((module) => module.goalId === routing.linkedGoalId)
+          selectedGoalId
+            ? (data.modules || []).filter((module) => module.goalId === selectedGoalId)
             : modulesFor(routeForModules.goalType)
         );
         const summary = entrySummary(completedEntry, lang);
-        const active = isRecordable && (isExisting ? ui.include : ui.createNew);
+        const selectedExerciseNames = selectedExercisesFor(ui);
+        const active = isRecordable && (smartRoute.domain === 'fitness' && selectedExerciseNames.length > 0 ? true : (isExisting ? ui.include : ui.createNew));
         const tagColor = isExisting ? questTheme.colors.success : questTheme.colors.accent;
         const tagBg = isExisting ? questTheme.colors.successSoft : questTheme.colors.accentSoft;
         const durationSuggestions = assessment.suggestedActions.filter((item) => item.kind === 'duration');
         const qualitySuggestions = assessment.suggestedActions.filter((item) => item.kind === 'quality');
         const rpeSuggestions = assessment.suggestedActions.filter((item) => item.kind === 'rpe');
         const exerciseSuggestions = assessment.suggestedActions.filter((item) => item.kind === 'exercise');
+        const scopeOptions = ['practice', 'project', 'debug', 'course', 'custom'];
 
         return (
           <View key={i} style={[pendStyles.entryRow, { borderColor: questTheme.colors.border }]}>
@@ -744,9 +930,10 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
               ) : null}
               {isRecordable ? (
                 <Text style={[pendStyles.routeLine, { color: routing.needsUserChoice ? questTheme.colors.warning : questTheme.colors.textMuted }]}>
-                  {t(lang, 'scEntryRouteTarget')}: {selectedGoal?.name ?? t(lang, 'scEntryUnassigned')}
+                  {t(lang, selectedGoal && selectedModule ? 'recordToPath' : 'confirmRoute')}: {selectedGoal?.name ?? t(lang, smartRoute.domain === 'learning' ? 'unassignedLearning' : 'scEntryUnassigned')}
+                  {selectedModule ? ` → ${selectedModule.name}` : ''}
                   {' · '}
-                  {t(lang, 'scEntryRouteModule')}: {selectedModule?.name ?? t(lang, 'scEntryUnassigned')}
+                  {t(lang, displayRouteConfidenceKey(smartRoute.confidence))}
                 </Text>
               ) : null}
               {assessment.status === 'not_recordable' ? (
@@ -763,16 +950,64 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                   <Text style={[pendStyles.completionTitle, { color: questTheme.colors.text }]}>
                     {t(lang, 'scCompleteRecord')}
                   </Text>
-                  {assessment.missingFields.includes('targetSkill') && exerciseSuggestions.length > 0 ? (
+                  {smartRoute.goalCandidates.length > 0 ? (
                     <>
-                      <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>{t(lang, 'scChooseAction')}</Text>
+                      <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>{t(lang, 'chooseGoal')}</Text>
+                      <View style={pendStyles.chipRow}>
+                        {smartRoute.goalCandidates.map((candidate) => {
+                          const selected = !!candidate.id && selectedGoalId === candidate.id;
+                          return (
+                            <TouchableOpacity
+                              key={`${candidate.type}:${candidate.id ?? candidate.name}`}
+                              onPress={() => setSelectedGoal(i, candidate.id)}
+                              style={[pendStyles.optionChip, {
+                                borderColor: selected ? questTheme.colors.primary : questTheme.colors.border,
+                                backgroundColor: selected ? questTheme.colors.primarySoft : 'transparent',
+                              }]}
+                            >
+                              <Text style={[pendStyles.optionText, { color: selected ? questTheme.colors.primary : questTheme.colors.textMuted }]}>{candidate.name}</Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </>
+                  ) : null}
+                  {smartRoute.moduleCandidates.length > 0 ? (
+                    <>
+                      <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>{t(lang, 'chooseModule')}</Text>
+                      <View style={pendStyles.chipRow}>
+                        {smartRoute.moduleCandidates.map((candidate) => {
+                          const selected = !!candidate.id && selectedModuleId === candidate.id;
+                          return (
+                            <TouchableOpacity
+                              key={`${candidate.type}:${candidate.id ?? candidate.name}`}
+                              onPress={() => setSelectedModule(i, candidate.id)}
+                              style={[pendStyles.optionChip, {
+                                borderColor: selected ? questTheme.colors.primary : questTheme.colors.border,
+                                backgroundColor: selected ? questTheme.colors.primarySoft : 'transparent',
+                              }]}
+                            >
+                              <Text style={[pendStyles.optionText, { color: selected ? questTheme.colors.primary : questTheme.colors.textMuted }]}>{candidate.name}</Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </>
+                  ) : null}
+                  {smartRoute.domain === 'fitness' && exerciseSuggestions.length > 0 ? (
+                    <>
+                      <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>{t(lang, 'chooseExercises')}</Text>
                       <View style={pendStyles.chipRow}>
                         {exerciseSuggestions.map((item) => {
-                          const selected = ui.selectedSkillName === item.value;
+                          const name = String(item.value);
+                          const selected = selectedExerciseNames.includes(name);
                           return (
                             <TouchableOpacity
                               key={item.id}
-                              onPress={() => setSelectedSkill(i, String(item.value), item.skillId)}
+                              onPress={() => {
+                                if (smartRoute.domain === 'fitness') toggleExercise(i, name);
+                                else setSelectedSkill(i, name, item.skillId);
+                              }}
                               style={[pendStyles.optionChip, {
                                 borderColor: selected ? questTheme.colors.primary : questTheme.colors.border,
                                 backgroundColor: selected ? questTheme.colors.primarySoft : 'transparent',
@@ -783,6 +1018,105 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                           );
                         })}
                       </View>
+                      <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>{t(lang, 'customExercise')}</Text>
+                      <TextInput
+                        value={ui.customExerciseName ?? ''}
+                        onChangeText={(value) => setCustomExercise(i, value)}
+                        placeholder={t(lang, 'addCustomExercise')}
+                        placeholderTextColor={questTheme.colors.textSubtle}
+                        style={[pendStyles.compactInput, { color: questTheme.colors.text, borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}
+                      />
+                      {selectedExerciseNames.length > 0 ? (
+                        <View style={pendStyles.exerciseDetailsWrap}>
+                          <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>{t(lang, 'exerciseDetails')}</Text>
+                          {selectedExerciseNames.map((exerciseName) => {
+                            const details = ui.exerciseDetails?.[exerciseName] ?? {};
+                            return (
+                              <View key={exerciseName} style={[pendStyles.exerciseDetailCard, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}>
+                                <Text style={[pendStyles.completionTitle, { color: questTheme.colors.text }]}>{exerciseName}</Text>
+                                <View style={pendStyles.detailInputRow}>
+                                  <TextInput
+                                    value={details.weight ?? ''}
+                                    onChangeText={(value) => setExerciseDetail(i, exerciseName, 'weight', value)}
+                                    placeholder={t(lang, 'weight')}
+                                    placeholderTextColor={questTheme.colors.textSubtle}
+                                    keyboardType="numeric"
+                                    style={[pendStyles.miniInput, { color: questTheme.colors.text, borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}
+                                  />
+                                  <TextInput
+                                    value={details.sets ?? ''}
+                                    onChangeText={(value) => setExerciseDetail(i, exerciseName, 'sets', value)}
+                                    placeholder={t(lang, 'sets')}
+                                    placeholderTextColor={questTheme.colors.textSubtle}
+                                    keyboardType="numeric"
+                                    style={[pendStyles.miniInput, { color: questTheme.colors.text, borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}
+                                  />
+                                  <TextInput
+                                    value={details.reps ?? ''}
+                                    onChangeText={(value) => setExerciseDetail(i, exerciseName, 'reps', value)}
+                                    placeholder={t(lang, 'reps')}
+                                    placeholderTextColor={questTheme.colors.textSubtle}
+                                    keyboardType="numeric"
+                                    style={[pendStyles.miniInput, { color: questTheme.colors.text, borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}
+                                  />
+                                </View>
+                                <View style={pendStyles.chipRow}>
+                                  {[6, 7, 8, 9, 10].map((rpeValue) => {
+                                    const selected = details.rpe === rpeValue;
+                                    return (
+                                      <TouchableOpacity
+                                        key={rpeValue}
+                                        onPress={() => setExerciseDetail(i, exerciseName, 'rpe', rpeValue)}
+                                        style={[pendStyles.optionChip, {
+                                          borderColor: selected ? questTheme.colors.primary : questTheme.colors.border,
+                                          backgroundColor: selected ? questTheme.colors.primarySoft : 'transparent',
+                                        }]}
+                                      >
+                                        <Text style={[pendStyles.optionText, { color: selected ? questTheme.colors.primary : questTheme.colors.textMuted }]}>{`${t(lang, 'rpe')} ${rpeValue}`}</Text>
+                                      </TouchableOpacity>
+                                    );
+                                  })}
+                                  <TouchableOpacity
+                                    onPress={() => setExerciseDetail(i, exerciseName, 'rpe', null)}
+                                    style={[pendStyles.optionChip, { borderColor: questTheme.colors.border, backgroundColor: 'transparent' }]}
+                                  >
+                                    <Text style={[pendStyles.optionText, { color: questTheme.colors.textMuted }]}>{t(lang, 'scSkip')}</Text>
+                                  </TouchableOpacity>
+                                </View>
+                              </View>
+                            );
+                          })}
+                        </View>
+                      ) : null}
+                    </>
+                  ) : null}
+                  {smartRoute.domain === 'learning' ? (
+                    <>
+                      <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>{t(lang, 'scope')}</Text>
+                      <View style={pendStyles.chipRow}>
+                        {scopeOptions.map((scope) => {
+                          const selected = ui.scope === scope;
+                          return (
+                            <TouchableOpacity
+                              key={scope}
+                              onPress={() => setScope(i, scope)}
+                              style={[pendStyles.optionChip, {
+                                borderColor: selected ? questTheme.colors.primary : questTheme.colors.border,
+                                backgroundColor: selected ? questTheme.colors.primarySoft : 'transparent',
+                              }]}
+                            >
+                              <Text style={[pendStyles.optionText, { color: selected ? questTheme.colors.primary : questTheme.colors.textMuted }]}>{t(lang, scope)}</Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                      <TextInput
+                        value={ui.studyNote ?? ''}
+                        onChangeText={(value) => setStudyNote(i, value)}
+                        placeholder={t(lang, 'whatDidYouStudy')}
+                        placeholderTextColor={questTheme.colors.textSubtle}
+                        style={[pendStyles.compactInput, { color: questTheme.colors.text, borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}
+                      />
                     </>
                   ) : null}
                   {durationSuggestions.length > 0 ? (
@@ -955,6 +1289,11 @@ const pendStyles = StyleSheet.create({
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   optionChip: { borderWidth: 1, borderRadius: 7, paddingHorizontal: 8, paddingVertical: 4 },
   optionText: { fontSize: 11, fontWeight: '700' },
+  compactInput: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, fontSize: 12, fontWeight: '600' },
+  exerciseDetailsWrap: { gap: 8, marginTop: 4 },
+  exerciseDetailCard: { borderWidth: 1, borderRadius: 8, padding: 8, gap: 7 },
+  detailInputRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  miniInput: { minWidth: 72, flexGrow: 1, borderWidth: 1, borderRadius: 7, paddingHorizontal: 8, paddingVertical: 6, fontSize: 12, fontWeight: '700' },
   bulkBtn: { alignSelf: 'flex-start', borderWidth: 1, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4, marginBottom: 6 },
   bulkText: { fontSize: 11, fontWeight: '700' },
   moduleRow: { flexDirection: 'row', alignItems: 'center', gap: 5, flexWrap: 'wrap', marginTop: 3 },

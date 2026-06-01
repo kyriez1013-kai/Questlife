@@ -1078,3 +1078,37 @@ Known limitations:
 Validation:
 - `npx tsc --noEmit`: passed.
 - `npm run build`: passed.
+
+## B-3.2 Smart Routing + Multi-Action Completion v1
+
+Status: Implemented focused smart-routing and multi-action completion upgrade for Smart Capture pending cards.
+
+Files changed:
+- `src/utils/smartRouting.ts`
+- `src/screens/HomeCapturePending.tsx`
+- `src/i18n.ts`
+
+What changed:
+- Added a rule-based `getSmartRouteResult` helper that classifies captures as fitness, learning, reading, state, food, project, or unknown.
+- Smart route results now provide goal, module, and skill candidates with confidence and safe create/unassigned options.
+- Fitness routing recognises chest/push, back/pull, shoulder, and legs language and prefers existing fitness goals/modules when present.
+- Learning/coding routing recognises SQL/Python/data/coding terms and avoids fitness goals.
+- Food/life-factor and state-like captures remain non-execution contexts in this pass.
+- Fitness pending cards now support multi-select exercises instead of single-action selection.
+- Fitness pending cards support a custom exercise input.
+- Each selected exercise can store lightweight details: weight, sets, reps, and RPE.
+- Confirming a multi-action fitness capture writes one ExecutionLog per selected exercise through the existing `createExecutionLog` chain.
+- Strength logs include `exerciseName`, `weight`, `sets`, `reps`, `rpe`, `sourceCaptureId`, and `sourceCaptureEntryIndex` in structured data.
+- Missing duration remains zero/undefined and does not create fake 15-minute time.
+- Learning pending cards now show scope chips and an optional study-content field, with duration/quality completion preserved.
+
+Remaining:
+- Richer auto goal/module creation is still deferred.
+- B-4 visual feedback layer is not implemented in this pass.
+- Sports/book/project domain-specific completion templates remain future work.
+- Food/life factor modelling remains future work.
+- HealthKit / Apple Watch integration remains future work.
+
+Validation:
+- `npx tsc --noEmit`: passed.
+- `npm run build`: passed after approved rerun because the sandbox blocked unlinking `dist/favicon.ico`.
