@@ -7,7 +7,7 @@ import React, { createContext, useContext, useEffect, useRef, useState, useCallb
 import { AppData, DEFAULT_DATA, Goal, Skill, Action, Category, UNCATEGORIZED_ID, ScheduleBlock, QuestModule, ModuleSkillLink, ExecutionLog, RescueLog, StateCheckIn, EffortUnit, ContributionLink, RawCapture } from './types';
 import { loadData, persist, uid, today } from './storage';
 import { scheduleSkillReminder, cancelSkillReminder, rescheduleAllReminders } from './notifications';
-import { calculateModuleProgress, calculatePredictionDelta, skillsForModule } from './progress';
+import { calculateModuleProgress, calculatePredictionDelta, progressTypeForSkill, skillsForModule } from './progress';
 import { trackEvent } from './utils/analytics';
 import { createEffortUnitsFromExecutionLog, generateContributionLinks } from './utils/effort';
 import { DOMAIN_TEMPLATES, createGoalStructureFromTemplate, templateProgressModel } from './domainTemplates';
@@ -174,6 +174,70 @@ function applyExecutionLogToSkillProgress(skill: Skill, log: ExecutionLog): Skil
     return { ...skill, metricConfig: { ...config, metricType: progressType, completed: update?.markCompleted ?? legacy?.completed ?? true } };
   }
   return skill;
+}
+
+/**
+ * Recompute a skill's cached progress fields from scratch using all remaining
+ * execution logs. Called after any log deletion so that skill progress bars,
+ * completedHours, totalXP, bestValue etc. stay in sync (single source of truth).
+ *
+ * Resets all accumulator fields to 0, then re-applies each log in chronological
+ * order — identical logic to the add path but starting from zero.
+ *
+ * Special cases:
+ *  • frequency — only counts logs from the current ISO week (Mon-Sun) to match
+ *    the "completedThisWeek" semantics.
+ *  • All other types — all remaining logs applied in full.
+ */
+function recomputeSkillFromLogs(skill: Skill, logsForSkill: ExecutionLog[]): Skill {
+  const type = progressTypeForSkill(skill);
+
+  // Current ISO-week Monday in "YYYY-MM-DD"
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const mondayOffset = (now.getDay() + 6) % 7;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - mondayOffset);
+  const weekStartStr = monday.toISOString().slice(0, 10);
+
+  const logsToApply = type === 'frequency'
+    ? logsForSkill.filter((l) => l.date >= weekStartStr)
+    : logsForSkill;
+
+  const sorted = logsToApply
+    .slice()
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+
+  // Zero out all accumulated fields
+  const zeroed: Skill = {
+    ...skill,
+    totalXP: 0,
+    completedHours: 0,
+    completedThisWeek: 0,
+    currentValue: 0,
+    metricConfig: skill.metricConfig
+      ? {
+          ...skill.metricConfig,
+          completedHours:    0,
+          completedThisWeek: 0,
+          currentValue:      0,
+          currentAmount:     0,
+          bestValue:         0,
+          bestEstimated1RM:  0,
+          bestVolume:        0,
+          currentBest:       0,
+          averageQuality:    0,
+          averageStateValue: 0,
+          completed:         false,
+        }
+      : undefined,
+  };
+
+  // Re-apply every remaining log
+  return sorted.reduce(
+    (s, log) => applyExecutionLogToSkillProgress(s, { ...log, appliedToProgress: false }),
+    zeroed,
+  );
 }
 
 const StoreContext = createContext<Ctx | null>(null);
@@ -826,13 +890,29 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const deleteExecutionLog: Ctx['deleteExecutionLog'] = useCallback((id) => {
     mutate((d) => {
+      const removedLog = (d.executionLogs || []).find((log) => log.id === id);
       const removedEffortIds = new Set((d.effortUnits || [])
         .filter((unit) => unit.executionLogId === id)
         .map((unit) => unit.id));
+
+      const remainingLogs = (d.executionLogs || []).filter((log) => log.id !== id);
+
+      // Recompute the linked skill's progress from all remaining logs so that
+      // skill bars / completedHours / totalXP stay in sync (single source of truth).
+      let skills = d.skills;
+      if (removedLog?.linkedSkillId) {
+        const affectedSkill = d.skills.find((s) => s.id === removedLog.linkedSkillId);
+        if (affectedSkill) {
+          const skillLogs = remainingLogs.filter((l) => l.linkedSkillId === removedLog.linkedSkillId);
+          const recomputed = recomputeSkillFromLogs(affectedSkill, skillLogs);
+          skills = d.skills.map((s) => (s.id === removedLog.linkedSkillId ? recomputed : s));
+        }
+      }
+
       return {
         ...d,
-        // First version keeps skill progress as-is after deletion to avoid unsafe reverse math.
-        executionLogs: (d.executionLogs || []).filter((log) => log.id !== id),
+        skills,
+        executionLogs: remainingLogs,
         effortUnits: (d.effortUnits || []).filter((unit) => unit.executionLogId !== id),
         contributionLinks: (d.contributionLinks || []).filter((link) => link.executionLogId !== id && !removedEffortIds.has(link.effortUnitId)),
       };
@@ -1051,13 +1131,35 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           rawCaptures: (d.rawCaptures || []).filter((c) => c.id !== id),
         };
       }
+
+      // Collect affected skill IDs before removing logs
+      const affectedSkillIds = new Set(
+        (d.executionLogs || [])
+          .filter((log) => linkedLogIds.has(log.id) && log.linkedSkillId)
+          .map((log) => log.linkedSkillId as string),
+      );
+
       const linkedEffortIds = new Set((d.effortUnits || [])
         .filter((unit) => linkedLogIds.has(unit.executionLogId))
         .map((unit) => unit.id));
+
+      const remainingLogs = (d.executionLogs || []).filter((log) => !linkedLogIds.has(log.id));
+
+      // Recompute each affected skill from remaining logs
+      let skills = d.skills;
+      if (affectedSkillIds.size > 0) {
+        skills = d.skills.map((s) => {
+          if (!affectedSkillIds.has(s.id)) return s;
+          const skillLogs = remainingLogs.filter((l) => l.linkedSkillId === s.id);
+          return recomputeSkillFromLogs(s, skillLogs);
+        });
+      }
+
       return {
         ...d,
+        skills,
         rawCaptures: (d.rawCaptures || []).filter((c) => c.id !== id),
-        executionLogs: (d.executionLogs || []).filter((log) => !linkedLogIds.has(log.id)),
+        executionLogs: remainingLogs,
         effortUnits: (d.effortUnits || []).filter((unit) => !linkedLogIds.has(unit.executionLogId)),
         contributionLinks: (d.contributionLinks || []).filter((link) => !linkedLogIds.has(link.executionLogId) && !linkedEffortIds.has(link.effortUnitId)),
       };
