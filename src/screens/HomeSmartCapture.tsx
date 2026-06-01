@@ -25,6 +25,7 @@ import { RawCapture } from '../types';
 import QuestCard from '../components/ui/QuestCard';
 import HomeCapturePending from './HomeCapturePending';
 import { confirmAction } from '../utils/confirm';
+import { buildFallbackEntriesFromRawText } from '../utils/captureCompletion';
 
 // ── Local time block ─────────────────────────────────────────────────────────
 
@@ -476,29 +477,47 @@ export default function HomeSmartCapture() {
       {/* All captures (collapsed to DEFAULT_VISIBLE, expandable to full history) */}
       {allCaptures.length > 0 && (
         <View style={{ marginTop: questTheme.spacing.xs }}>
-          {todayCaptures.map((c) => (
-            <View key={c.id}>
-              <CaptureCard
-                capture={c}
-                lang={lang}
-                questTheme={questTheme}
-                onRetry={handleRetry}
-                onDelete={handleDelete}
-              />
-              {/* B-3: show confirmation card when entries are pending */}
-              {c.parseStatus === 'done' &&
-                (c.parsed?.entries?.length ?? 0) > 0 &&
-                !c.parsed?.entriesDismissed && (
-                <HomeCapturePending
-                  captureId={c.id}
-                  entries={c.parsed!.entries!}
-                  onDismiss={() => updateRawCapture(c.id, {
-                    parsed: { ...c.parsed!, entriesDismissed: true },
-                  })}
+          {todayCaptures.map((c) => {
+            const parsedEntries = c.parsed?.entries ?? [];
+            const fallbackEntries = buildFallbackEntriesFromRawText(c.text);
+            const entriesForConfirmation = parsedEntries.length > 0 ? parsedEntries : fallbackEntries;
+            const canShowConfirmation =
+              (c.parseStatus === 'done' || c.parseStatus === 'failed') &&
+              entriesForConfirmation.length > 0 &&
+              !c.parsed?.entriesDismissed;
+
+            return (
+              <View key={c.id}>
+                <CaptureCard
+                  capture={c}
+                  lang={lang}
+                  questTheme={questTheme}
+                  onRetry={handleRetry}
+                  onDelete={handleDelete}
                 />
-              )}
-            </View>
-          ))}
+                {/* B-3: show confirmation card when parsed or rule-based fallback entries are pending. */}
+                {canShowConfirmation && (
+                  <HomeCapturePending
+                    captureId={c.id}
+                    entries={entriesForConfirmation}
+                    onDismiss={() => updateRawCapture(c.id, {
+                      parsed: {
+                        type: c.parsed?.type ?? 'misc',
+                        fields: c.parsed?.fields ?? {},
+                        crossLinks: c.parsed?.crossLinks ?? [],
+                        insight: c.parsed?.insight ?? { zh: '', en: '' },
+                        matchedSkillIds: c.parsed?.matchedSkillIds ?? [],
+                        linkedGoalId: c.parsed?.linkedGoalId,
+                        insightType: c.parsed?.insightType ?? 'encourage',
+                        entries: c.parsed?.entries ?? entriesForConfirmation,
+                        entriesDismissed: true,
+                      },
+                    })}
+                  />
+                )}
+              </View>
+            );
+          })}
 
           {/* Expand / collapse button */}
           {hasMore && (

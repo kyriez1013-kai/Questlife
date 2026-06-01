@@ -16,6 +16,7 @@ import { getQuestTheme } from '../design/tokens';
 import { getLanguage, t } from '../i18n';
 import { Category, ParsedEntry, ProgressType, QuestModule, TaskType } from '../types';
 import QuestCard from '../components/ui/QuestCard';
+import { assessCaptureCompletion } from '../utils/captureCompletion';
 
 // ── Per-entry UI state ────────────────────────────────────────────────────────
 
@@ -23,6 +24,11 @@ type EntryUI = {
   include: boolean;    // for existing skills: include in log (default true)
   createNew: boolean;  // for new skills: create it (default false, user opts in)
   moduleId: string | null;
+  durationMinutes?: number | null;
+  qualityRating?: number;
+  rpe?: number;
+  selectedSkillName?: string;
+  selectedSkillId?: string | null;
 };
 
 type SemanticRoute = {
@@ -297,6 +303,21 @@ function estimateDuration(entry: ParsedEntry): number {
   return entry.fields.durationMinutes ?? 0;
 }
 
+function entryWithCompletion(entry: ParsedEntry, ui: EntryUI): ParsedEntry {
+  const fields = {
+    ...entry.fields,
+    ...(ui.durationMinutes !== undefined ? { durationMinutes: ui.durationMinutes ?? undefined } : {}),
+    ...(ui.rpe != null ? { rpe: ui.rpe } : {}),
+  };
+  return {
+    ...entry,
+    skillName: ui.selectedSkillName ?? entry.skillName,
+    matchedSkillId: ui.selectedSkillId !== undefined ? ui.selectedSkillId : entry.matchedSkillId,
+    qualityRating: ui.qualityRating ?? entry.qualityRating,
+    fields,
+  };
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 type Props = {
@@ -337,6 +358,18 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
 
   const setModule = (i: number, moduleId: string | null) =>
     setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, moduleId } : e));
+
+  const setDuration = (i: number, durationMinutes: number | null) =>
+    setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, durationMinutes } : e));
+
+  const setQuality = (i: number, qualityRating: number) =>
+    setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, qualityRating } : e));
+
+  const setRpe = (i: number, rpe: number) =>
+    setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, rpe } : e));
+
+  const setSelectedSkill = (i: number, skillName: string, skillId?: string) =>
+    setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, selectedSkillName: skillName, selectedSkillId: skillId ?? null, createNew: !skillId } : e));
 
   // ── Smart category resolution (no Alert.alert — direct TouchableOpacity) ──
 
@@ -451,7 +484,11 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
 
     entries.forEach((entry, i) => {
       const ui = entryStates[i];
-      const matchedSkill = resolveSkill(entry);
+      const assessment = assessCaptureCompletion(captureText, entry, { goals: data.categories, modules: data.modules || [], skills: data.skills, lang });
+      if (assessment.status === 'not_recordable') return;
+      if (assessment.missingFields.includes('targetSkill') && !ui.selectedSkillName && !resolveSkill(entry)) return;
+      const completedEntry = entryWithCompletion(entry, ui);
+      const matchedSkill = resolveSkill(completedEntry);
       let skillId = matchedSkill?.id ?? null;
       let linkedGoalId: string | undefined;
       let linkedModuleId: string | undefined;
@@ -461,12 +498,12 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
         && log.structuredData?.sourceCaptureEntryIndex === i
       ));
       if (alreadyLogged) return;
-      const semanticRoute = inferSemanticRoute(entry, captureText);
-      const routing = resolveRouting(entry);
+      const semanticRoute = inferSemanticRoute(completedEntry, captureText);
+      const routing = resolveRouting(completedEntry);
 
       if (!skillId && ui.createNew) {
         // ── New skill path ──────────────────────────────────────────────────
-        const cat = resolveCategory(entry);
+        const cat = resolveCategory(completedEntry);
         const resolvedGoalId = routing.linkedGoalId ?? cat?.id;
         const resolvedGoal = resolvedGoalId
           ? data.categories.find((goal) => goal.id === resolvedGoalId)
@@ -474,10 +511,10 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
         const newSkillTaskType = semanticRoute.taskType;
         const newSkillProgressType = semanticRoute.progressType;
         const newSkill = addSkill({
-          name: entry.skillName,
+          name: completedEntry.skillName,
           color: questTheme.colors.primary,
-          dailyTargetMinutes: entry.progressType === 'time_based'
-            ? (entry.fields.durationMinutes ?? 30) : 30,
+          dailyTargetMinutes: completedEntry.progressType === 'time_based'
+            ? (completedEntry.fields.durationMinutes ?? 30) : 30,
           progressType: newSkillProgressType,
           taskType: newSkillTaskType,
           categoryId: resolvedGoalId,                    // explicit categoryId — fixes "未分类"
@@ -495,7 +532,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
         // Link to a module so GoalDetailScreen's linkedSkillIds filter finds it
         const targetModuleId = ui.moduleId
           ?? routing.linkedModuleId
-          ?? resolveModule(resolvedGoalId, entry);
+          ?? resolveModule(resolvedGoalId, completedEntry);
         linkedModuleId = targetModuleId;
         if (resolvedGoal && targetModuleId) {
           addExistingSkillToModule(resolvedGoal.id, targetModuleId, skillId);
@@ -511,10 +548,10 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
             ? skillGoal.id
             : undefined);
         linkedModuleId = linkedGoalId === link?.goalId ? link?.moduleId : undefined;
-        linkedModuleId = linkedModuleId ?? routing.linkedModuleId ?? resolveModule(linkedGoalId, entry);
+        linkedModuleId = linkedModuleId ?? routing.linkedModuleId ?? resolveModule(linkedGoalId, completedEntry);
         if (!linkedGoalId) {
-          linkedGoalId = resolveCategory(entry, skillId)?.id;
-          linkedModuleId = resolveModule(linkedGoalId, entry);
+          linkedGoalId = resolveCategory(completedEntry, skillId)?.id;
+          linkedModuleId = resolveModule(linkedGoalId, completedEntry);
         }
       }
 
@@ -523,9 +560,9 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
       if (!matchedSkill && !ui.createNew) return;
       if (!skillId) return;
 
-      const durationMinutes = estimateDuration(entry);
+      const durationMinutes = estimateDuration(completedEntry);
       const isStrength = semanticRoute.progressType === 'performance_log';
-      const detailedStrengthSets = expandStrengthSets(entry);
+      const detailedStrengthSets = expandStrengthSets(completedEntry);
       const compactSet = compactStrengthSet(detailedStrengthSets);
       const strengthSets = compactSet ? [compactSet] : [];
       const topWeight = detailedStrengthSets.reduce((best, set) => Math.max(best, set.weight ?? 0), 0) || compactSet?.weight;
@@ -546,14 +583,14 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
         linkedModuleId,
         date,
         durationMinutes,
-        qualityRating: entry.qualityRating as any,
+        qualityRating: completedEntry.qualityRating as any,
         source: 'manual',
-        title: entry.skillName,
+        title: completedEntry.skillName,
         taskType: semanticRoute.taskType,
-        ...(entry.progressType === 'time_based' ? { note: entry.fields.note } : {}),
+        ...(completedEntry.progressType === 'time_based' ? { note: completedEntry.fields.note } : {}),
         actualData: isStrength ? {
           kind: 'strength_training',
-          exerciseName: entry.skillName,
+          exerciseName: completedEntry.skillName,
           strength: {
             weight: topWeight,
             reps: firstReps,
@@ -561,10 +598,10 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
             volume: totalVolume,
           },
           sets: detailedStrengthSets,
-          rawParsedFields: entry.fields,
+          rawParsedFields: completedEntry.fields,
         } : undefined,
         structuredData: isStrength ? {
-          exerciseName: entry.skillName,
+          exerciseName: completedEntry.skillName,
           weight: topWeight,
           sets: compactSet?.sets ?? (detailedStrengthSets.length || undefined),
           reps: firstReps,
@@ -576,9 +613,9 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
           routeConfidence: routing.confidence,
           routeReason: routing.reason,
           needsUserChoice: routing.needsUserChoice,
-          rawParsedFields: entry.fields,
+          rawParsedFields: completedEntry.fields,
         } : {
-          ...entry.fields,
+          ...completedEntry.fields,
           sourceCaptureId: captureId,
           sourceCaptureEntryIndex: i,
           sourceCaptureEntryKey: sourceKey,
@@ -592,19 +629,19 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
               metricType: 'performance_log' as ProgressType,
               performanceValue: topWeight,
               performanceUnit: topWeight != null ? 'kg' : undefined,
-              performanceNote: entry.fields.note,
+              performanceNote: completedEntry.fields.note,
               performanceData,
             }
           : {
               metricType: semanticRoute.progressType,
-              minutesAdded: entry.progressType === 'time_based' ? durationMinutes : undefined,
+              minutesAdded: completedEntry.progressType === 'time_based' ? durationMinutes : undefined,
             },
       });
     });
 
     setLogged(true);
     onDismiss();
-  }, [confirming, logged, captureText, entries, entryStates, captureId, data.executionLogs, questTheme.colors.primary,
+  }, [confirming, logged, captureText, entries, entryStates, captureId, data.categories, data.modules, data.skills, data.executionLogs, lang, questTheme.colors.primary,
       resolveSkill, resolvePrimaryLink, resolveCategory, resolveModule, resolveRouting, addSkill, addExistingSkillToModule, createExecutionLog, onDismiss]);
 
   if (logged) {
@@ -617,11 +654,19 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
     );
   }
 
+  const entryAssessments = entries.map((entry, index) => {
+    const completedEntry = entryWithCompletion(entry, entryStates[index]);
+    return assessCaptureCompletion(captureText, completedEntry, { goals: data.categories, modules: data.modules || [], skills: data.skills, lang });
+  });
+  const recordableCount = entryAssessments.filter((assessment) => assessment.status !== 'not_recordable').length;
+
   return (
     <QuestCard questTheme={questTheme} variant="flat" style={{ marginTop: questTheme.spacing.sm }}>
       {/* Header */}
       <Text style={[pendStyles.header, { color: questTheme.colors.text, fontSize: questTheme.typography.bodySize }]}>
-        {t(lang, 'scEntryDetected').replace('{n}', String(entries.length))}
+        {recordableCount > 0
+          ? t(lang, 'scEntryDetected').replace('{n}', String(recordableCount))
+          : t(lang, 'scContextDetected')}
       </Text>
       {entries.length > 1 ? (
         <TouchableOpacity
@@ -637,20 +682,27 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
       {/* Entry rows */}
       {entries.map((entry, i) => {
         const ui = entryStates[i];
-        const isExisting = !!resolveSkill(entry);
-        const routing = resolveRouting(entry);
+        const completedEntry = entryWithCompletion(entry, ui);
+        const assessment = assessCaptureCompletion(captureText, completedEntry, { goals: data.categories, modules: data.modules || [], skills: data.skills, lang });
+        const isRecordable = assessment.status !== 'not_recordable';
+        const isExisting = !!resolveSkill(completedEntry);
+        const routing = resolveRouting(completedEntry);
         const selectedGoal = routing.linkedGoalId ? data.categories.find((goal) => goal.id === routing.linkedGoalId) : undefined;
         const selectedModule = routing.linkedModuleId ? (data.modules || []).find((module) => module.id === routing.linkedModuleId) : undefined;
-        const routeForModules = inferSemanticRoute(entry, captureText);
+        const routeForModules = inferSemanticRoute(completedEntry, captureText);
         const mods = isExisting ? [] : (
           routing.linkedGoalId
             ? (data.modules || []).filter((module) => module.goalId === routing.linkedGoalId)
             : modulesFor(routeForModules.goalType)
         );
-        const summary = entrySummary(entry, lang);
-        const active = isExisting ? ui.include : ui.createNew;
+        const summary = entrySummary(completedEntry, lang);
+        const active = isRecordable && (isExisting ? ui.include : ui.createNew);
         const tagColor = isExisting ? questTheme.colors.success : questTheme.colors.accent;
         const tagBg = isExisting ? questTheme.colors.successSoft : questTheme.colors.accentSoft;
+        const durationSuggestions = assessment.suggestedActions.filter((item) => item.kind === 'duration');
+        const qualitySuggestions = assessment.suggestedActions.filter((item) => item.kind === 'quality');
+        const rpeSuggestions = assessment.suggestedActions.filter((item) => item.kind === 'rpe');
+        const exerciseSuggestions = assessment.suggestedActions.filter((item) => item.kind === 'exercise');
 
         return (
           <View key={i} style={[pendStyles.entryRow, { borderColor: questTheme.colors.border }]}>
@@ -673,7 +725,11 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
             <View style={{ flex: 1, gap: 3 }}>
               <View style={pendStyles.nameRow}>
                 <Text style={[pendStyles.skillName, { color: questTheme.colors.text }]}>
-                  {entry.skillName}
+                  {assessment.status === 'not_recordable'
+                    ? assessment.domain === 'state'
+                      ? t(lang, 'scStateCandidate')
+                      : t(lang, 'scFoodCandidate')
+                    : entry.skillName}
                 </Text>
                 <View style={[pendStyles.tag, { backgroundColor: tagBg }]}>
                   <Text style={[pendStyles.tagText, { color: tagColor }]}>
@@ -686,13 +742,127 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                   {summary}
                 </Text>
               ) : null}
-              <Text style={[pendStyles.routeLine, { color: routing.needsUserChoice ? questTheme.colors.warning : questTheme.colors.textMuted }]}>
-                {t(lang, 'scEntryRouteTarget')}: {selectedGoal?.name ?? t(lang, 'scEntryUnassigned')}
-                {' · '}
-                {t(lang, 'scEntryRouteModule')}: {selectedModule?.name ?? t(lang, 'scEntryUnassigned')}
-              </Text>
+              {isRecordable ? (
+                <Text style={[pendStyles.routeLine, { color: routing.needsUserChoice ? questTheme.colors.warning : questTheme.colors.textMuted }]}>
+                  {t(lang, 'scEntryRouteTarget')}: {selectedGoal?.name ?? t(lang, 'scEntryUnassigned')}
+                  {' · '}
+                  {t(lang, 'scEntryRouteModule')}: {selectedModule?.name ?? t(lang, 'scEntryUnassigned')}
+                </Text>
+              ) : null}
+              {assessment.status === 'not_recordable' ? (
+                <View style={[pendStyles.completionBox, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}>
+                  <Text style={[pendStyles.completionTitle, { color: questTheme.colors.text }]}>
+                    {assessment.domain === 'state' ? t(lang, 'scStateCandidate') : t(lang, 'scFoodCandidate')}
+                  </Text>
+                  <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>
+                    {assessment.domain === 'state' ? t(lang, 'scStateCandidateHint') : t(lang, 'scFoodCandidateHint')}
+                  </Text>
+                </View>
+              ) : assessment.status === 'needs_completion' ? (
+                <View style={[pendStyles.completionBox, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}>
+                  <Text style={[pendStyles.completionTitle, { color: questTheme.colors.text }]}>
+                    {t(lang, 'scCompleteRecord')}
+                  </Text>
+                  {assessment.missingFields.includes('targetSkill') && exerciseSuggestions.length > 0 ? (
+                    <>
+                      <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>{t(lang, 'scChooseAction')}</Text>
+                      <View style={pendStyles.chipRow}>
+                        {exerciseSuggestions.map((item) => {
+                          const selected = ui.selectedSkillName === item.value;
+                          return (
+                            <TouchableOpacity
+                              key={item.id}
+                              onPress={() => setSelectedSkill(i, String(item.value), item.skillId)}
+                              style={[pendStyles.optionChip, {
+                                borderColor: selected ? questTheme.colors.primary : questTheme.colors.border,
+                                backgroundColor: selected ? questTheme.colors.primarySoft : 'transparent',
+                              }]}
+                            >
+                              <Text style={[pendStyles.optionText, { color: selected ? questTheme.colors.primary : questTheme.colors.textMuted }]}>{item.label}</Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </>
+                  ) : null}
+                  {durationSuggestions.length > 0 ? (
+                    <>
+                      <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>{t(lang, 'scTrainingDuration')}</Text>
+                      <View style={pendStyles.chipRow}>
+                        {durationSuggestions.map((item) => {
+                          const value = typeof item.value === 'number' ? item.value : null;
+                          const selected = ui.durationMinutes === value;
+                          return (
+                            <TouchableOpacity
+                              key={item.id}
+                              onPress={() => setDuration(i, value)}
+                              style={[pendStyles.optionChip, {
+                                borderColor: selected ? questTheme.colors.primary : questTheme.colors.border,
+                                backgroundColor: selected ? questTheme.colors.primarySoft : 'transparent',
+                              }]}
+                            >
+                              <Text style={[pendStyles.optionText, { color: selected ? questTheme.colors.primary : questTheme.colors.textMuted }]}>
+                                {value == null ? t(lang, 'scSkip') : `${value}`}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </>
+                  ) : null}
+                  {qualitySuggestions.length > 0 ? (
+                    <>
+                      <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>{t(lang, 'scCompletionQuality')}</Text>
+                      <View style={pendStyles.chipRow}>
+                        {qualitySuggestions.map((item) => {
+                          const value = Number(item.value);
+                          const selected = ui.qualityRating === value;
+                          return (
+                            <TouchableOpacity
+                              key={item.id}
+                              onPress={() => setQuality(i, value)}
+                              style={[pendStyles.optionChip, {
+                                borderColor: selected ? questTheme.colors.primary : questTheme.colors.border,
+                                backgroundColor: selected ? questTheme.colors.primarySoft : 'transparent',
+                              }]}
+                            >
+                              <Text style={[pendStyles.optionText, { color: selected ? questTheme.colors.primary : questTheme.colors.textMuted }]}>{value}</Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </>
+                  ) : null}
+                  {rpeSuggestions.length > 0 ? (
+                    <>
+                      <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>{t(lang, 'scRpe')}</Text>
+                      <View style={pendStyles.chipRow}>
+                        {rpeSuggestions.map((item) => {
+                          const value = Number(item.value);
+                          const selected = ui.rpe === value;
+                          return (
+                            <TouchableOpacity
+                              key={item.id}
+                              onPress={() => setRpe(i, value)}
+                              style={[pendStyles.optionChip, {
+                                borderColor: selected ? questTheme.colors.primary : questTheme.colors.border,
+                                backgroundColor: selected ? questTheme.colors.primarySoft : 'transparent',
+                              }]}
+                            >
+                              <Text style={[pendStyles.optionText, { color: selected ? questTheme.colors.primary : questTheme.colors.textMuted }]}>{value}</Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </>
+                  ) : null}
+                  <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>
+                    {routing.needsUserChoice ? t(lang, 'scNeedsRouteConfirm') : t(lang, 'scAutoMatched')}
+                  </Text>
+                </View>
+              ) : null}
               {/* Module selector for new skills */}
-              {!isExisting && ui.createNew && mods.length > 0 && (
+              {isRecordable && !isExisting && ui.createNew && mods.length > 0 && (
                 <View style={pendStyles.moduleRow}>
                   <Text style={[pendStyles.moduleLabel, { color: questTheme.colors.textMuted }]}>
                     {t(lang, 'scEntryModule')}
@@ -731,15 +901,17 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
 
       {/* Action buttons */}
       <View style={pendStyles.actions}>
-        <TouchableOpacity
-          onPress={handleConfirm}
-          style={[pendStyles.confirmBtn, { backgroundColor: questTheme.colors.primary, borderRadius: questTheme.radius.sm }]}
-          activeOpacity={0.8}
-        >
-          <Text style={[pendStyles.confirmText, { color: questTheme.colors.primaryText }]}>
-            {t(lang, 'scEntryConfirm')}
-          </Text>
-        </TouchableOpacity>
+        {recordableCount > 0 ? (
+          <TouchableOpacity
+            onPress={handleConfirm}
+            style={[pendStyles.confirmBtn, { backgroundColor: questTheme.colors.primary, borderRadius: questTheme.radius.sm }]}
+            activeOpacity={0.8}
+          >
+            <Text style={[pendStyles.confirmText, { color: questTheme.colors.primaryText }]}>
+              {t(lang, 'scEntryConfirm')}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
         <TouchableOpacity onPress={onDismiss} style={pendStyles.ignoreBtn} activeOpacity={0.7}>
           <Text style={[pendStyles.ignoreText, { color: questTheme.colors.textMuted }]}>
             {t(lang, 'scEntryIgnore')}
@@ -777,6 +949,12 @@ const pendStyles = StyleSheet.create({
   tagText: { fontSize: 11, fontWeight: '600' },
   summary: { fontSize: 12, lineHeight: 17 },
   routeLine: { fontSize: 11, lineHeight: 16 },
+  completionBox: { borderWidth: 1, borderRadius: 8, padding: 8, gap: 6, marginTop: 4 },
+  completionTitle: { fontSize: 12, fontWeight: '800' },
+  completionHint: { fontSize: 11, lineHeight: 15 },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  optionChip: { borderWidth: 1, borderRadius: 7, paddingHorizontal: 8, paddingVertical: 4 },
+  optionText: { fontSize: 11, fontWeight: '700' },
   bulkBtn: { alignSelf: 'flex-start', borderWidth: 1, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4, marginBottom: 6 },
   bulkText: { fontSize: 11, fontWeight: '700' },
   moduleRow: { flexDirection: 'row', alignItems: 'center', gap: 5, flexWrap: 'wrap', marginTop: 3 },

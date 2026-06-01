@@ -1045,3 +1045,36 @@ Validation:
 
 Known limitations:
 - Production UI validation still requires user access if the deployed web page is Vercel-protected.
+
+## B-3.1 Guided Completion v1
+
+Status: Implemented lightweight rule-based guided completion inside Smart Capture pending confirmation.
+
+Files changed:
+- `src/utils/captureCompletion.ts`
+- `src/screens/HomeCapturePending.tsx`
+- `src/screens/HomeSmartCapture.tsx`
+- `src/i18n.ts`
+
+What changed:
+- Added a pure `assessCaptureCompletion(rawText, entry, context)` helper.
+- Added fallback pending entries for incomplete raw captures when the parser returns no `entries`, covering fitness, learning/project, reading, state, and food/life-factor cases.
+- Pending confirmation cards now show a compact "Complete this record" area when fields are missing.
+- Duration, quality, RPE, and action/skill suggestions are chip-based and mobile-friendly.
+- Fitness vague inputs such as chest/back training now ask the user to choose an action before logging instead of creating a vague skill automatically.
+- Learning/data inputs such as SQL/Python avoid fitness routing and can be completed with duration/quality without forcing a target.
+- Reading inputs can be held as simple reading progress with optional duration.
+- State and food/life-factor inputs are recognized as not recordable execution logs in this pass, so they do not pollute skill progress.
+- Completion merges back into the existing `createExecutionLog` chain; no second save path was added.
+- Skipping duration preserves `durationMinutes` as undefined/0, so it stays out of time distribution.
+
+Known limitations:
+- Food/life-factor modelling remains explicitly deferred.
+- State check-in integration is only recognized, not fully wired into the detailed StateCheckIn flow.
+- Goal/module chooser is still lightweight; richer route selection can be expanded later.
+- No HealthKit / Apple Watch integration.
+- No full workout planner or multi-exercise workout builder.
+
+Validation:
+- `npx tsc --noEmit`: passed.
+- `npm run build`: passed.
