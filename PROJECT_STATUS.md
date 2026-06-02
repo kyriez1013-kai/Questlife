@@ -1165,3 +1165,29 @@ Remaining:
 Validation:
 - `npx tsc --noEmit`: passed.
 - `npm run build`: passed after approved rerun because the sandbox blocked unlinking `dist/favicon.ico`.
+
+## B-3.2 Custom Action Completion Fix
+
+Status: Implemented focused custom-action fix for pending completion cards.
+
+Files changed:
+- `src/screens/HomeCapturePending.tsx`
+- `src/i18n.ts`
+
+Root cause:
+- The custom action input only stored transient text in `customExerciseName`.
+- There was no explicit Add action that merged the text into selected actions/scopes, so the input felt like a dead field in production.
+
+What changed:
+- Added an explicit Add button next to the custom action input.
+- Adding a custom fitness action merges it into `selectedExerciseNames`, clears the input, shows it as a selected chip, and allows deselection.
+- Adding a custom learning/coding scope stores it as the selected scope/study note and uses it as the pending action name.
+- Duplicate custom actions are not added again.
+- Confirmed custom actions continue through the existing `createExecutionLog` chain and are marked in `structuredData` with `sourceActionType: "customAction"`.
+
+Remaining:
+- Domain expansion and B-4 progress feedback remain future work.
+
+Validation:
+- `npx tsc --noEmit`: passed.
+- `npm run build`: passed after approved rerun because the sandbox blocked unlinking `dist/favicon.ico`.

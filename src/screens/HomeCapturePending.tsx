@@ -33,6 +33,7 @@ type EntryUI = {
   selectedGoalId?: string;
   selectedModuleId?: string;
   selectedExerciseNames?: string[];
+  customExerciseNames?: string[];
   customExerciseName?: string;
   exerciseDetails?: Record<string, ExerciseDetailUI>;
   scope?: string;
@@ -343,8 +344,7 @@ function parseOptionalNumber(value?: string): number | undefined {
 
 function selectedExercisesFor(ui: EntryUI): string[] {
   const selected = ui.selectedExerciseNames ?? [];
-  const custom = ui.customExerciseName?.trim();
-  return custom && !selected.includes(custom) ? [...selected, custom] : selected;
+  return selected;
 }
 
 function displayRouteConfidenceKey(confidence: SmartRouteResult['confidence']) {
@@ -455,6 +455,38 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
 
   const setCustomExercise = (i: number, exerciseName: string) =>
     setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, customExerciseName: exerciseName } : e));
+
+  const addCustomAction = (i: number, domain: string) =>
+    setEntryStates((s) => s.map((e, idx) => {
+      if (idx !== i) return e;
+      const customName = e.customExerciseName?.trim();
+      if (!customName) return e;
+      if (domain === 'learning') {
+        const currentCustom = e.customExerciseNames ?? [];
+        const customExists = currentCustom.some((name) => normalizeName(name) === normalizeName(customName));
+        return {
+          ...e,
+          scope: customName,
+          studyNote: customName,
+          customExerciseNames: customExists ? currentCustom : [...currentCustom, customName],
+          customExerciseName: '',
+          selectedSkillName: customName,
+          createNew: true,
+        };
+      }
+      const current = e.selectedExerciseNames ?? [];
+      const exists = current.some((name) => normalizeName(name) === normalizeName(customName));
+      const currentCustom = e.customExerciseNames ?? [];
+      const customExists = currentCustom.some((name) => normalizeName(name) === normalizeName(customName));
+      return {
+        ...e,
+        selectedExerciseNames: exists ? current : [...current, customName],
+        customExerciseNames: customExists ? currentCustom : [...currentCustom, customName],
+        selectedSkillName: customName,
+        createNew: true,
+        customExerciseName: '',
+      };
+    }));
 
   const setExerciseDetail = (i: number, exerciseName: string, key: keyof ExerciseDetailUI, value: string | number | null) =>
     setEntryStates((s) => s.map((e, idx) => {
@@ -620,6 +652,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
         const perActionDuration = sessionDuration > 0 ? Math.max(1, Math.round(sessionDuration / multiExercises.length)) : 0;
 
         multiExercises.forEach((exerciseName, actionIndex) => {
+          const isCustomAction = (ui.customExerciseNames ?? []).some((name) => normalizeName(name) === normalizeName(exerciseName));
           const actionKey = `${captureId}:${i}:${normalizeName(exerciseName)}`;
           const actionAlreadyLogged = (data.executionLogs || []).some((log) => log.structuredData?.sourceCaptureEntryKey === actionKey);
           if (actionAlreadyLogged) return;
@@ -686,6 +719,8 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
               sourceCaptureId: captureId,
               sourceCaptureEntryIndex: i,
               sourceCaptureEntryKey: actionKey,
+              sourceActionType: isCustomAction ? 'customAction' : 'suggestedAction',
+              customAction: isCustomAction ? exerciseName : undefined,
               route: smartRoute.domain,
               routeConfidence: smartRoute.confidence,
               routeReason: smartRoute.reason,
@@ -784,6 +819,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
         totalVolume,
         sourceCaptureId: captureId,
       } : undefined;
+      const isCustomAction = (ui.customExerciseNames ?? []).some((name) => normalizeName(name) === normalizeName(completedEntry.skillName));
 
       createExecutionLog({
         id: `capture-${captureId}-${i}`,
@@ -822,6 +858,8 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
           routeConfidence: routing.confidence,
           routeReason: routing.reason,
           needsUserChoice: routing.needsUserChoice,
+          sourceActionType: isCustomAction ? 'customAction' : 'suggestedAction',
+          customAction: isCustomAction ? completedEntry.skillName : undefined,
           rawParsedFields: completedEntry.fields,
         } : {
           ...completedEntry.fields,
@@ -832,6 +870,8 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
           routeConfidence: routing.confidence,
           routeReason: routing.reason,
           needsUserChoice: routing.needsUserChoice,
+          sourceActionType: isCustomAction ? 'customAction' : 'suggestedAction',
+          customAction: isCustomAction ? completedEntry.skillName : undefined,
         },
         metricUpdate: isStrength
           ? {
@@ -1080,15 +1120,39 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                             </TouchableOpacity>
                           );
                         })}
+                        {selectedExerciseNames
+                          .filter((name) => !exerciseSuggestions.some((item) => normalizeName(String((item as any).value ?? item.id)) === normalizeName(name)))
+                          .map((name) => (
+                            <TouchableOpacity
+                              key={`custom:${normalizeName(name)}`}
+                              onPress={() => toggleExercise(i, name)}
+                              style={[pendStyles.optionChip, {
+                                borderColor: questTheme.colors.primary,
+                                backgroundColor: questTheme.colors.primarySoft,
+                              }]}
+                            >
+                              <Text style={[pendStyles.optionText, { color: questTheme.colors.primary }]}>{name}</Text>
+                            </TouchableOpacity>
+                          ))}
                       </View>
                       <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>{t(lang, 'customExercise')}</Text>
-                      <TextInput
-                        value={ui.customExerciseName ?? ''}
-                        onChangeText={(value) => setCustomExercise(i, value)}
-                        placeholder={t(lang, 'addCustomExercise')}
-                        placeholderTextColor={questTheme.colors.textSubtle}
-                        style={[pendStyles.compactInput, { color: questTheme.colors.text, borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}
-                      />
+                      <View style={pendStyles.customActionRow}>
+                        <TextInput
+                          value={ui.customExerciseName ?? ''}
+                          onChangeText={(value) => setCustomExercise(i, value)}
+                          placeholder={t(lang, 'addCustomExercise')}
+                          placeholderTextColor={questTheme.colors.textSubtle}
+                          onSubmitEditing={() => addCustomAction(i, llmDomain)}
+                          style={[pendStyles.compactInput, { flex: 1, color: questTheme.colors.text, borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}
+                        />
+                        <TouchableOpacity
+                          onPress={() => addCustomAction(i, llmDomain)}
+                          style={[pendStyles.addCustomBtn, { borderColor: questTheme.colors.primary, backgroundColor: questTheme.colors.primarySoft }]}
+                          activeOpacity={0.75}
+                        >
+                          <Text style={[pendStyles.optionText, { color: questTheme.colors.primary }]}>{t(lang, 'addCustomAction')}</Text>
+                        </TouchableOpacity>
+                      </View>
                       {selectedExerciseNames.length > 0 ? (
                         <View style={pendStyles.exerciseDetailsWrap}>
                           <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>{t(lang, 'exerciseDetails')}</Text>
@@ -1173,13 +1237,36 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                           );
                         })}
                       </View>
-                      <TextInput
-                        value={ui.studyNote ?? ''}
-                        onChangeText={(value) => setStudyNote(i, value)}
-                        placeholder={t(lang, 'whatDidYouStudy')}
-                        placeholderTextColor={questTheme.colors.textSubtle}
-                        style={[pendStyles.compactInput, { color: questTheme.colors.text, borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}
-                      />
+                      {ui.scope && !scopeOptions.includes(ui.scope) ? (
+                        <View style={pendStyles.chipRow}>
+                          <TouchableOpacity
+                            onPress={() => setScope(i, '')}
+                            style={[pendStyles.optionChip, {
+                              borderColor: questTheme.colors.primary,
+                              backgroundColor: questTheme.colors.primarySoft,
+                            }]}
+                          >
+                            <Text style={[pendStyles.optionText, { color: questTheme.colors.primary }]}>{ui.scope}</Text>
+                          </TouchableOpacity>
+                        </View>
+                      ) : null}
+                      <View style={pendStyles.customActionRow}>
+                        <TextInput
+                          value={ui.customExerciseName ?? ''}
+                          onChangeText={(value) => setCustomExercise(i, value)}
+                          placeholder={t(lang, 'whatDidYouStudy')}
+                          placeholderTextColor={questTheme.colors.textSubtle}
+                          onSubmitEditing={() => addCustomAction(i, llmDomain)}
+                          style={[pendStyles.compactInput, { flex: 1, color: questTheme.colors.text, borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}
+                        />
+                        <TouchableOpacity
+                          onPress={() => addCustomAction(i, llmDomain)}
+                          style={[pendStyles.addCustomBtn, { borderColor: questTheme.colors.primary, backgroundColor: questTheme.colors.primarySoft }]}
+                          activeOpacity={0.75}
+                        >
+                          <Text style={[pendStyles.optionText, { color: questTheme.colors.primary }]}>{t(lang, 'addCustomAction')}</Text>
+                        </TouchableOpacity>
+                      </View>
                     </>
                   ) : null}
                   {durationSuggestions.length > 0 ? (
@@ -1353,6 +1440,8 @@ const pendStyles = StyleSheet.create({
   optionChip: { borderWidth: 1, borderRadius: 7, paddingHorizontal: 8, paddingVertical: 4 },
   optionText: { fontSize: 11, fontWeight: '700' },
   compactInput: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, fontSize: 12, fontWeight: '600' },
+  customActionRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  addCustomBtn: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8 },
   exerciseDetailsWrap: { gap: 8, marginTop: 4 },
   exerciseDetailCard: { borderWidth: 1, borderRadius: 8, padding: 8, gap: 7 },
   detailInputRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
