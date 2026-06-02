@@ -32,6 +32,19 @@ export type QuestTheme = {
     navActive: string;
     navInactive: string;
     cardShadow: string;
+    // ── New card system tokens ──────────────────────────────────────────────
+    cardBorder: string;         // subtle card border (theme-aware)
+    cardSurface: string;        // glass-style card fill
+    cardSurfaceHover: string;   // card hover / pressed state
+    // ── New text hierarchy tokens ───────────────────────────────────────────
+    textPrimary: string;        // core numbers and headings
+    textSecondary: string;      // body copy
+    textDisabled: string;       // disabled / placeholder
+    // ── New semantic color tokens ───────────────────────────────────────────
+    positive: string;           // growth, completion, on-target
+    negative: string;           // decline, warning
+    predicted: string;          // predicted / inferred values (purple)
+    neutral: string;            // neutral data, in-progress
   };
   radius: {
     sm: number;
@@ -60,6 +73,8 @@ export type QuestTheme = {
   };
 };
 
+// ── Global design scale (shared across all themes) ──────────────────────────
+
 const baseScale = {
   radius: { sm: 8, md: 12, lg: 16, xl: 22, xxl: 28, pill: 999 },
   spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 },
@@ -73,6 +88,36 @@ const baseScale = {
     weightBold: '800',
   },
 } as const;
+
+/**
+ * Global spacing scale — use for margin/padding values.
+ * Prefer these over inline numbers so components stay consistent.
+ */
+export const spacing = {
+  xs: 4,
+  sm: 8,
+  md: 16,
+  lg: 20,
+  xl: 32,
+} as const;
+
+/**
+ * Global font-size scale — covers the full visual hierarchy.
+ *   display → core big numbers (3.5h, 90kg, +179%)
+ *   title   → section/page titles
+ *   body    → regular content
+ *   label   → uppercase metadata labels
+ *   micro   → smallest annotations
+ */
+export const fontSize = {
+  display: 36,
+  title:   24,
+  body:    15,
+  label:   11,
+  micro:   10,
+} as const;
+
+// ── Theme definitions ────────────────────────────────────────────────────────
 
 export const questThemes: Record<QuestThemeId, QuestTheme> = {
   cleanFocus: {
@@ -106,6 +151,17 @@ export const questThemes: Record<QuestThemeId, QuestTheme> = {
       navActive: '#132238',
       navInactive: '#8A94A6',
       cardShadow: '#111827',
+      // light theme → dark-overlay card tokens
+      cardBorder: 'rgba(0,0,0,0.08)',
+      cardSurface: 'rgba(0,0,0,0.03)',
+      cardSurfaceHover: 'rgba(0,0,0,0.06)',
+      textPrimary: '#111318',
+      textSecondary: 'rgba(17,19,24,0.6)',
+      textDisabled: 'rgba(17,19,24,0.15)',
+      positive: '#16A34A',
+      negative: '#DC2626',
+      predicted: '#7C3AED',
+      neutral: '#2F80ED',
     },
     ...baseScale,
   },
@@ -140,6 +196,17 @@ export const questThemes: Record<QuestThemeId, QuestTheme> = {
       navActive: '#38BDF8',
       navInactive: '#9DABC0',
       cardShadow: '#000000',
+      // dark theme → white-overlay card tokens
+      cardBorder: 'rgba(255,255,255,0.06)',
+      cardSurface: 'rgba(255,255,255,0.03)',
+      cardSurfaceHover: 'rgba(255,255,255,0.06)',
+      textPrimary: '#FFFFFF',
+      textSecondary: 'rgba(255,255,255,0.6)',
+      textDisabled: 'rgba(255,255,255,0.15)',
+      positive: '#4ADE80',
+      negative: '#F87171',
+      predicted: '#A78BFA',
+      neutral: '#5CC8FF',
     },
     ...baseScale,
   },
@@ -174,6 +241,17 @@ export const questThemes: Record<QuestThemeId, QuestTheme> = {
       navActive: '#1F5E3B',
       navInactive: '#87968C',
       cardShadow: '#1F3D2B',
+      // light theme → dark-overlay card tokens
+      cardBorder: 'rgba(0,0,0,0.06)',
+      cardSurface: 'rgba(0,0,0,0.02)',
+      cardSurfaceHover: 'rgba(0,0,0,0.05)',
+      textPrimary: '#17251D',
+      textSecondary: 'rgba(23,37,29,0.6)',
+      textDisabled: 'rgba(23,37,29,0.15)',
+      positive: '#168A43',
+      negative: '#B42318',
+      predicted: '#6D28D9',
+      neutral: '#7A9E35',
     },
     ...baseScale,
   },
@@ -208,6 +286,17 @@ export const questThemes: Record<QuestThemeId, QuestTheme> = {
       navActive: '#0E7490',
       navInactive: '#78919E',
       cardShadow: '#0E3B4A',
+      // light theme → dark-overlay card tokens
+      cardBorder: 'rgba(0,0,0,0.07)',
+      cardSurface: 'rgba(0,0,0,0.02)',
+      cardSurfaceHover: 'rgba(0,0,0,0.05)',
+      textPrimary: '#102A36',
+      textSecondary: 'rgba(16,42,54,0.6)',
+      textDisabled: 'rgba(16,42,54,0.15)',
+      positive: '#059669',
+      negative: '#E11D48',
+      predicted: '#6D28D9',
+      neutral: '#0E7490',
     },
     ...baseScale,
   },
@@ -242,6 +331,17 @@ export const questThemes: Record<QuestThemeId, QuestTheme> = {
       navActive: '#8A4B22',
       navInactive: '#9B8978',
       cardShadow: '#5B3C25',
+      // light theme → dark-overlay card tokens
+      cardBorder: 'rgba(0,0,0,0.07)',
+      cardSurface: 'rgba(0,0,0,0.02)',
+      cardSurfaceHover: 'rgba(0,0,0,0.05)',
+      textPrimary: '#2E2118',
+      textSecondary: 'rgba(46,33,24,0.6)',
+      textDisabled: 'rgba(46,33,24,0.15)',
+      positive: '#3F8F4A',
+      negative: '#B42318',
+      predicted: '#6D28D9',
+      neutral: '#C77824',
     },
     ...baseScale,
   },
