@@ -41,7 +41,7 @@ async function callDeepSeek(
           { role: 'user',   content: userPrompt   },
         ],
         temperature: 0.3,
-        max_tokens: 1400, // B-3 entries[] + completionSchema both need output tokens
+        max_tokens: 1800, // completionSchema suggestedActions can truncate at 1400
       }),
       signal: controller.signal,
     });
@@ -294,6 +294,8 @@ export default async function handler(req: any, res: any) {
         : [],
       askDuration:       typeof cs.askDuration === 'boolean' ? cs.askDuration : false,
     } : null;
+
+    console.log('[parse] completionSchema:', JSON.stringify(completionSchema ?? null));
 
     return send(res, 200, {
       ok:               true,
