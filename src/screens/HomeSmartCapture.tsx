@@ -63,6 +63,17 @@ async function callParseAPI(body: object): Promise<any> {
   return res.json();
 }
 
+function shouldDebugParse(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('debugParse') === '1' || params.get('debugParse') === 'true') return true;
+    return window.localStorage?.getItem('questlife_debug_parse') === 'true';
+  } catch {
+    return false;
+  }
+}
+
 // ── Insight-type helpers ────────────────────────────────────────────────────
 
 type InsightType = 'skill_progress' | 'goal_link' | 'cross_link' | 'encourage';
@@ -293,14 +304,30 @@ export default function HomeSmartCapture() {
     });
 
     try {
+      const debugParse = shouldDebugParse();
       const result = await callParseAPI({
         text: captureText,
         history,
         skillsCatalog,
         goalsSnapshot,
         skillHistory,
+        ...(debugParse ? { debugParse: true } : {}),
       });
       if (result.ok) {
+        if (debugParse) {
+          console.log('[parse result final]', JSON.stringify({
+            ok: result.ok,
+            completionSchema: result.completionSchema,
+            entries: Array.isArray(result.entries)
+              ? result.entries.map((entry: any) => ({
+                  skillName: entry.skillName,
+                  goalType: entry.goalType,
+                  progressType: entry.progressType,
+                  completionSchema: entry.completionSchema,
+                }))
+              : undefined,
+          }, null, 2));
+        }
         updateRawCapture(captureId, {
           parseStatus: 'done',
           parsed: {

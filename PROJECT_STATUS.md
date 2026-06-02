@@ -1112,3 +1112,26 @@ Remaining:
 Validation:
 - `npx tsc --noEmit`: passed.
 - `npm run build`: passed after approved rerun because the sandbox blocked unlinking `dist/favicon.ico`.
+
+## B-3.2 CompletionSchema Diagnostics
+
+Status: Diagnostic instrumentation added only; no product behavior fix in this pass.
+
+Files changed:
+- `api/parse.ts`
+- `src/screens/HomeSmartCapture.tsx`
+
+What changed:
+- Added gated server-side parse diagnostics behind `debugParse === true`.
+- Server diagnostics report raw DeepSeek response preview, whether raw output contains `completionSchema`, `suggestedActions`, and `needsCompletion`, parsed object keys, top-level completion schema, entry-level completion schema if present, and final response shape.
+- Removed the previous unconditional completionSchema server log.
+- Added a safe client debug trigger through `?debugParse=1` / `?debugParse=true` or `localStorage.questlife_debug_parse = "true"`.
+- Client diagnostics log the final parse result shape only when the debug flag is explicitly enabled.
+
+Known limitations:
+- This pass does not fix Smart Routing, completion fallback, pending-card UI, or save/write behavior.
+- Production log collection still requires testing the deployed web UI with the explicit debug flag enabled.
+
+Validation:
+- `npx tsc --noEmit`: passed.
+- `npm run build`: passed after approved rerun because the sandbox blocked unlinking `dist/index.html`.

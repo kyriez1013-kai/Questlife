@@ -188,6 +188,7 @@ export default async function handler(req: any, res: any) {
     const body    = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
     const mode    = body?.mode === 'greeting' ? 'greeting' : 'capture';
     const text    = typeof body?.text === 'string' ? body.text.trim() : '';
+    const debugParse = body?.debugParse === true;
     const apiKey  = process.env.DEEPSEEK_API_KEY;
 
     if (!apiKey) {
@@ -249,11 +250,40 @@ export default async function handler(req: any, res: any) {
     const userPrompt = `Log entry: "${text}"${historyStr}${skillsStr}${goalsStr}${histSkillStr}`;
 
     const raw    = await callDeepSeek(CAPTURE_SYSTEM, userPrompt, apiKey);
+    if (debugParse) {
+      console.log('[parse debug raw]', JSON.stringify({
+        rawPreview: raw.slice(0, 2000),
+        hasCompletionSchema: raw.includes('completionSchema'),
+        hasSuggestedActions: raw.includes('suggestedActions'),
+        hasNeedsCompletion: raw.includes('needsCompletion'),
+      }));
+    }
     const parsed = safeParseJSON(raw);
 
     if (!parsed) {
+      if (debugParse) {
+        console.log('[parse debug parsed]', JSON.stringify({
+          parsed: null,
+          reason: 'safeParseJSON returned null',
+        }));
+      }
       console.warn('[parse] DeepSeek returned unparseable response:', raw.slice(0, 200));
       return send(res, 422, { ok: false, error: 'parse_failed' });
+    }
+
+    if (debugParse) {
+      console.log('[parse debug parsed]', JSON.stringify({
+        keys: Object.keys(parsed),
+        topLevelCompletionSchema: parsed.completionSchema ?? null,
+        entries: Array.isArray(parsed.entries)
+          ? parsed.entries.map((e: any) => ({
+              skillName: e?.skillName,
+              goalType: e?.goalType,
+              progressType: e?.progressType,
+              completionSchema: e?.completionSchema,
+            }))
+          : undefined,
+      }));
     }
 
     const VALID_INSIGHT_TYPES = new Set(['skill_progress', 'goal_link', 'cross_link', 'encourage']);
@@ -295,9 +325,7 @@ export default async function handler(req: any, res: any) {
       askDuration:       typeof cs.askDuration === 'boolean' ? cs.askDuration : false,
     } : null;
 
-    console.log('[parse] completionSchema:', JSON.stringify(completionSchema ?? null));
-
-    return send(res, 200, {
+    const responseBody = {
       ok:               true,
       type:             typeof parsed.type === 'string' ? parsed.type : 'misc',
       fields:           parsed.fields && typeof parsed.fields === 'object' ? parsed.fields : {},
@@ -310,7 +338,25 @@ export default async function handler(req: any, res: any) {
         : { zh: '', en: '' },
       entries,
       completionSchema, // LLM-driven domain + suggestedActions + goal routing
-    });
+    };
+
+    if (debugParse) {
+      console.log('[parse debug final]', JSON.stringify({
+        ok: responseBody.ok,
+        captureType: responseBody.type,
+        completionSchema: responseBody.completionSchema,
+        entriesLength: responseBody.entries.length,
+        entries: responseBody.entries.map((e: any) => ({
+          skillName: e.skillName,
+          matchedSkillId: e.matchedSkillId,
+          goalType: e.goalType,
+          progressType: e.progressType,
+          completionSchema: e.completionSchema,
+        })),
+      }));
+    }
+
+    return send(res, 200, responseBody);
 
   } catch (error: any) {
     const isTimeout = error?.name === 'AbortError';
