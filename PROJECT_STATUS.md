@@ -1020,6 +1020,30 @@ Validation:
 - `npx tsc --noEmit`: passed.
 - `npm run build`: passed after approved rerun because the sandbox blocked unlinking `dist/favicon.ico`.
 
+## B-3.3 Completion Goal / Module Routing
+
+Status: Implemented focused routing selector for Smart Capture completion cards.
+
+Files changed:
+- `src/screens/HomeCapturePending.tsx`
+- `src/i18n.ts`
+
+What changed:
+- Completion cards now expose an editable routing section for each recordable entry.
+- Users can select an existing goal, choose no goal, or create a new goal from the pending card.
+- Users can select an existing module under the selected goal, choose no module, or create a new module.
+- Save resolution now creates the goal first, then creates the module under that goal, then creates or links the skill and execution log with the resolved ids.
+- New skills use the resolved goal id as `categoryId` instead of falling back to an unrelated default goal.
+- Existing skills can be linked into the selected goal/module before writing the execution log.
+- CompletionSchema matches are preferred over local fallback routing unless the user overrides them.
+
+Remaining:
+- This pass does not expand DeepSeek prompts, domain coverage, or B-4 feedback.
+- Production UI verification is required after GitHub push and Vercel deployment.
+
+Validation:
+- `npx tsc --noEmit`: passed.
+
 ## B-3.0.2 Residual Data Cleanup
 
 Status: Implemented focused residual-data cleanup for Smart Capture opening context.

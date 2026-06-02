@@ -14,7 +14,7 @@ import { View, Text, TouchableOpacity, StyleSheet, TextInput } from 'react-nativ
 import { useStore } from '../store';
 import { getQuestTheme } from '../design/tokens';
 import { getLanguage, t } from '../i18n';
-import { Category, CompletionSchema, ParsedEntry, ProgressType, QuestModule, TaskType } from '../types';
+import { Category, CompletionSchema, GoalType, ParsedEntry, ProgressType, QuestModule, TaskType } from '../types';
 import QuestCard from '../components/ui/QuestCard';
 import { assessCaptureCompletion } from '../utils/captureCompletion';
 import { getSmartRouteResult, SmartRouteResult } from '../utils/smartRouting';
@@ -30,8 +30,12 @@ type EntryUI = {
   rpe?: number;
   selectedSkillName?: string;
   selectedSkillId?: string | null;
-  selectedGoalId?: string;
-  selectedModuleId?: string;
+  selectedGoalId?: string | null;
+  selectedModuleId?: string | null;
+  createNewGoal?: boolean;
+  newGoalName?: string;
+  createNewModule?: boolean;
+  newModuleName?: string;
   selectedExerciseNames?: string[];
   customExerciseNames?: string[];
   customExerciseName?: string;
@@ -359,6 +363,72 @@ function progressTypeFromCompletionDomain(domain?: CompletionSchema['domain']): 
   return 'qualitative';
 }
 
+function goalTypeForRouteDomain(domain?: string): GoalType {
+  if (domain === 'fitness') return 'fitness';
+  if (domain === 'learning' || domain === 'reading') return 'study';
+  if (domain === 'project') return 'project';
+  if (domain === 'state') return 'health';
+  return 'custom';
+}
+
+function suggestedGoalName(domain: string | undefined, rawText: string, lang: 'zh' | 'en'): string {
+  const text = normalizeName(rawText);
+  if (domain === 'fitness') {
+    if (containsAny(text, ['篮球', 'basketball'])) return lang === 'zh' ? '篮球训练' : 'Basketball Training';
+    return lang === 'zh' ? '健身' : 'Fitness';
+  }
+  if (domain === 'learning') {
+    if (containsAny(text, ['c', 'c++', 'code', 'coding', '编程'])) return lang === 'zh' ? '编程学习' : 'Coding';
+    return lang === 'zh' ? '学习' : 'Learning';
+  }
+  if (domain === 'reading') return lang === 'zh' ? '阅读' : 'Reading';
+  return lang === 'zh' ? '新目标' : 'New Goal';
+}
+
+function suggestedModuleName(domain: string | undefined, rawText: string, entryName: string, lang: 'zh' | 'en'): string {
+  const text = normalizeName(`${rawText} ${entryName}`);
+  if (domain === 'fitness') {
+    if (containsAny(text, ['篮球', 'basketball', '投篮', '运球'])) return lang === 'zh' ? '篮球' : 'Basketball';
+    if (containsAny(text, ['肩', 'shoulder', '推举', '侧平举'])) return lang === 'zh' ? '肩' : 'Shoulders';
+    if (containsAny(text, ['背', 'back', 'pull', '划船', '引体'])) return lang === 'zh' ? '背' : 'Back';
+    if (containsAny(text, ['腿', 'legs', 'squat', '深蹲'])) return lang === 'zh' ? '腿' : 'Legs';
+    return lang === 'zh' ? '胸' : 'Chest';
+  }
+  if (domain === 'learning') {
+    if (containsAny(text, ['sql', 'data', '数据'])) return lang === 'zh' ? '数据' : 'Data';
+    if (containsAny(text, ['c++', 'code', 'coding', '编程', 'python'])) return lang === 'zh' ? '编程' : 'Coding';
+    return lang === 'zh' ? '学习' : 'Learning';
+  }
+  if (domain === 'reading') return lang === 'zh' ? '阅读' : 'Reading';
+  return lang === 'zh' ? '默认模块' : 'Default Module';
+}
+
+function orderedGoals(goals: Category[], preferredIds: Array<string | undefined | null>): Category[] {
+  const seen = new Set<string>();
+  const ordered: Category[] = [];
+  preferredIds.forEach((id) => {
+    const goal = id ? goals.find((item) => item.id === id) : undefined;
+    if (goal && !seen.has(goal.id)) {
+      seen.add(goal.id);
+      ordered.push(goal);
+    }
+  });
+  goals.forEach((goal) => {
+    if (!seen.has(goal.id)) {
+      seen.add(goal.id);
+      ordered.push(goal);
+    }
+  });
+  return ordered;
+}
+
+function orderedModules(modules: QuestModule[], goalId: string | undefined, preferredId?: string | null): QuestModule[] {
+  const scoped = goalId ? modules.filter((module) => module.goalId === goalId) : [];
+  if (!preferredId) return scoped;
+  const preferred = scoped.find((module) => module.id === preferredId);
+  return preferred ? [preferred, ...scoped.filter((module) => module.id !== preferred.id)] : scoped;
+}
+
 function goalTypeFromCompletionDomain(domain?: CompletionSchema['domain']): string {
   if (domain === 'fitness') return 'fitness';
   if (domain === 'learning') return 'study';
@@ -387,7 +457,7 @@ type Props = {
 };
 
 export default function HomeCapturePending({ captureId, entries, onDismiss }: Props) {
-  const { data, addSkill, createExecutionLog, addExistingSkillToModule } = useStore();
+  const { data, addCategory, addModule, addSkill, createExecutionLog, addExistingSkillToModule } = useStore();
   const lang = getLanguage(data.settings.language ?? data.settings.preferredLanguage);
   const questTheme = getQuestTheme(data.settings.selectedThemeId);
   const capture = (data.rawCaptures || []).find((item) => item.id === captureId);
@@ -406,20 +476,11 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
   const [confirming, setConfirming] = useState(false);
 
   // Modules available for new-skill assignment
-  const modulesFor = useCallback((goalType: string) => {
-    const cat = data.categories.find((c) => c.goalType === goalType);
-    if (!cat) return [];
-    return (data.modules || []).filter((m) => m.goalId === cat.id);
-  }, [data.categories, data.modules]);
-
   const toggleInclude = (i: number) =>
     setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, include: !e.include } : e));
 
   const toggleCreateNew = (i: number) =>
     setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, createNew: !e.createNew } : e));
-
-  const setModule = (i: number, moduleId: string | null) =>
-    setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, moduleId } : e));
 
   const setDuration = (i: number, durationMinutes: number | null) =>
     setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, durationMinutes } : e));
@@ -434,10 +495,62 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
     setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, selectedSkillName: skillName, selectedSkillId: skillId ?? null, createNew: !skillId } : e));
 
   const setSelectedGoal = (i: number, goalId?: string) =>
-    setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, selectedGoalId: goalId, selectedModuleId: undefined } : e));
+    setEntryStates((s) => s.map((e, idx) => idx === i ? {
+      ...e,
+      selectedGoalId: goalId,
+      createNewGoal: false,
+      selectedModuleId: undefined,
+      createNewModule: false,
+    } : e));
+
+  const setNoGoal = (i: number) =>
+    setEntryStates((s) => s.map((e, idx) => idx === i ? {
+      ...e,
+      selectedGoalId: null,
+      createNewGoal: false,
+      selectedModuleId: null,
+      createNewModule: false,
+    } : e));
+
+  const setCreateGoal = (i: number, name: string) =>
+    setEntryStates((s) => s.map((e, idx) => idx === i ? {
+      ...e,
+      selectedGoalId: undefined,
+      createNewGoal: true,
+      newGoalName: e.newGoalName ?? name,
+      selectedModuleId: undefined,
+      createNewModule: false,
+    } : e));
+
+  const setNewGoalName = (i: number, name: string) =>
+    setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, newGoalName: name } : e));
 
   const setSelectedModule = (i: number, moduleId?: string) =>
-    setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, selectedModuleId: moduleId, moduleId: moduleId ?? e.moduleId } : e));
+    setEntryStates((s) => s.map((e, idx) => idx === i ? {
+      ...e,
+      selectedModuleId: moduleId,
+      createNewModule: false,
+      moduleId: moduleId ?? e.moduleId,
+    } : e));
+
+  const setNoModule = (i: number) =>
+    setEntryStates((s) => s.map((e, idx) => idx === i ? {
+      ...e,
+      selectedModuleId: null,
+      createNewModule: false,
+      moduleId: null,
+    } : e));
+
+  const setCreateModule = (i: number, name: string) =>
+    setEntryStates((s) => s.map((e, idx) => idx === i ? {
+      ...e,
+      selectedModuleId: undefined,
+      createNewModule: true,
+      newModuleName: e.newModuleName ?? name,
+    } : e));
+
+  const setNewModuleName = (i: number, name: string) =>
+    setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, newModuleName: name } : e));
 
   const toggleExercise = (i: number, exerciseName: string) =>
     setEntryStates((s) => s.map((e, idx) => {
@@ -616,6 +729,59 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
     })));
   };
 
+  const resolveGoalForSave = useCallback((
+    ui: EntryUI,
+    domain: string,
+    entry: ParsedEntry,
+    smartRoute: SmartRouteResult,
+    routing: RoutingResult,
+  ): Category | undefined => {
+    if (ui.createNewGoal) {
+      const name = ui.newGoalName?.trim() || suggestedGoalName(domain, captureText, lang);
+      return addCategory({
+        name,
+        color: questTheme.colors.primary,
+        goalType: goalTypeForRouteDomain(domain),
+        progressModel: 'module_average',
+      });
+    }
+    if (ui.selectedGoalId === null) return undefined;
+    const goalId = ui.selectedGoalId
+      ?? completionSchema?.matchedGoalId
+      ?? smartRoute.selectedGoalId
+      ?? routing.linkedGoalId
+      ?? resolveCategory(entry)?.id;
+    return goalId ? data.categories.find((goal) => goal.id === goalId) : undefined;
+  }, [addCategory, captureText, completionSchema?.matchedGoalId, data.categories, lang, questTheme.colors.primary, resolveCategory]);
+
+  const resolveModuleForSave = useCallback((
+    ui: EntryUI,
+    domain: string,
+    entry: ParsedEntry,
+    goal: Category | undefined,
+    smartRoute: SmartRouteResult,
+    routing: RoutingResult,
+  ): QuestModule | undefined => {
+    if (!goal) return undefined;
+    if (ui.createNewModule) {
+      const name = ui.newModuleName?.trim() || suggestedModuleName(domain, captureText, entry.skillName, lang);
+      return addModule({
+        goalId: goal.id,
+        name,
+        progress: 0,
+      });
+    }
+    if (ui.selectedModuleId === null) return undefined;
+    const moduleId = ui.selectedModuleId
+      ?? completionSchema?.matchedModuleId
+      ?? smartRoute.selectedModuleId
+      ?? routing.linkedModuleId
+      ?? ui.moduleId
+      ?? resolveModule(goal.id, entry);
+    const module = moduleId ? (data.modules || []).find((item) => item.id === moduleId && item.goalId === goal.id) : undefined;
+    return module;
+  }, [addModule, captureText, completionSchema?.matchedModuleId, data.modules, lang, resolveModule]);
+
   const handleConfirm = useCallback(() => {
     if (confirming || logged) return;
     setConfirming(true);
@@ -642,12 +808,15 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
       if (alreadyLogged) return;
       const semanticRoute = inferSemanticRoute(completedEntry, captureText);
       const routing = resolveRouting(completedEntry);
+      const saveDomain = completionSchema?.domain ?? smartRoute.domain;
+      const resolvedGoalForEntry = resolveGoalForSave(ui, saveDomain, completedEntry, smartRoute, routing);
+      const resolvedModuleForEntry = resolveModuleForSave(ui, saveDomain, completedEntry, resolvedGoalForEntry, smartRoute, routing);
 
       if (smartRoute.domain === 'fitness' && multiExercises.length > 0) {
         if (matchedSkill && !ui.include) return;
         if (!matchedSkill && !ui.createNew) return;
-        const selectedGoalId = ui.selectedGoalId ?? smartRoute.selectedGoalId ?? routing.linkedGoalId;
-        const selectedModuleId = ui.selectedModuleId ?? ui.moduleId ?? smartRoute.selectedModuleId ?? routing.linkedModuleId;
+        const selectedGoalId = resolvedGoalForEntry?.id;
+        const selectedModuleId = resolvedModuleForEntry?.id;
         const sessionDuration = estimateDuration(completedEntry);
         const perActionDuration = sessionDuration > 0 ? Math.max(1, Math.round(sessionDuration / multiExercises.length)) : 0;
 
@@ -747,11 +916,8 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
 
       if (!skillId && ui.createNew) {
         // ── New skill path ──────────────────────────────────────────────────
-        const cat = resolveCategory(completedEntry);
-        const resolvedGoalId = ui.selectedGoalId ?? smartRoute.selectedGoalId ?? routing.linkedGoalId ?? cat?.id;
-        const resolvedGoal = resolvedGoalId
-          ? data.categories.find((goal) => goal.id === resolvedGoalId)
-          : undefined;
+        const resolvedGoalId = resolvedGoalForEntry?.id;
+        const resolvedGoal = resolvedGoalForEntry;
         const newSkillTaskType = semanticRoute.taskType;
         const newSkillProgressType = semanticRoute.progressType;
         const newSkill = addSkill({
@@ -774,30 +940,17 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
         linkedGoalId = resolvedGoalId;                   // fixes "健身目标里看不到"
 
         // Link to a module so GoalDetailScreen's linkedSkillIds filter finds it
-        const targetModuleId = ui.moduleId
-          ?? ui.selectedModuleId
-          ?? smartRoute.selectedModuleId
-          ?? routing.linkedModuleId
-          ?? resolveModule(resolvedGoalId, completedEntry);
+        const targetModuleId = resolvedModuleForEntry?.id;
         linkedModuleId = targetModuleId;
         if (resolvedGoal && targetModuleId) {
           addExistingSkillToModule(resolvedGoal.id, targetModuleId, skillId);
         }
       } else if (skillId) {
         // ── Existing matched skill path ──────────────────────────────────────
-        const link = resolvePrimaryLink(skillId);
-        const linkedGoal = link?.goalId ? data.categories.find((goal) => goal.id === link.goalId) : undefined;
-        const skillGoal = matchedSkill?.categoryId ? data.categories.find((goal) => goal.id === matchedSkill.categoryId) : undefined;
-        linkedGoalId = ui.selectedGoalId ?? smartRoute.selectedGoalId ?? routing.linkedGoalId ?? (linkedGoal && categoryMatchesRoute(linkedGoal, semanticRoute)
-          ? linkedGoal.id
-          : skillGoal && categoryMatchesRoute(skillGoal, semanticRoute)
-            ? skillGoal.id
-            : undefined);
-        linkedModuleId = linkedGoalId === link?.goalId ? link?.moduleId : undefined;
-        linkedModuleId = ui.selectedModuleId ?? smartRoute.selectedModuleId ?? linkedModuleId ?? routing.linkedModuleId ?? resolveModule(linkedGoalId, completedEntry);
-        if (!linkedGoalId) {
-          linkedGoalId = resolveCategory(completedEntry, skillId)?.id;
-          linkedModuleId = resolveModule(linkedGoalId, completedEntry);
+        linkedGoalId = resolvedGoalForEntry?.id;
+        linkedModuleId = resolvedModuleForEntry?.id;
+        if (linkedGoalId && linkedModuleId) {
+          addExistingSkillToModule(linkedGoalId, linkedModuleId, skillId);
         }
       }
 
@@ -897,7 +1050,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
     setLogged(true);
     onDismiss();
   }, [confirming, logged, captureText, effectiveEntries, entryStates, captureId, data.categories, data.modules, data.skills, data.executionLogs, lang, questTheme.colors.primary,
-      resolveSkill, resolvePrimaryLink, resolveCategory, resolveModule, resolveRouting, addSkill, addExistingSkillToModule, createExecutionLog, onDismiss]);
+      completionSchema?.domain, resolveSkill, resolveGoalForSave, resolveModuleForSave, resolveRouting, addSkill, addExistingSkillToModule, createExecutionLog, onDismiss]);
 
   if (logged) {
     return (
@@ -954,17 +1107,20 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
           : assessment.status !== 'not_recordable';
         const isExisting = !!resolveSkill(completedEntry);
         const routing = resolveRouting(completedEntry);
-        // Prefer LLM goal id → user selection → local routing → smartRoute
-        const selectedGoalId   = ui.selectedGoalId ?? llmGoalId ?? smartRoute.selectedGoalId ?? routing.linkedGoalId;
-        const selectedModuleId = ui.selectedModuleId ?? llmModuleId ?? smartRoute.selectedModuleId ?? routing.linkedModuleId;
-        const selectedGoal   = selectedGoalId   ? data.categories.find((goal)   => goal.id === selectedGoalId)   : undefined;
-        const selectedModule = selectedModuleId ? (data.modules || []).find((m)  => m.id    === selectedModuleId) : undefined;
-        const routeForModules = inferSemanticRoute(completedEntry, captureText);
-        const mods = isExisting ? [] : (
-          selectedGoalId
-            ? (data.modules || []).filter((module) => module.goalId === selectedGoalId)
-            : modulesFor(routeForModules.goalType)
-        );
+        const activeGoalId = ui.createNewGoal || ui.selectedGoalId === null
+          ? undefined
+          : ui.selectedGoalId ?? llmGoalId ?? smartRoute.selectedGoalId ?? routing.linkedGoalId;
+        const selectedGoal = activeGoalId ? data.categories.find((goal) => goal.id === activeGoalId) : undefined;
+        const activeModuleId = ui.createNewModule || ui.selectedModuleId === null
+          ? undefined
+          : ui.selectedModuleId ?? llmModuleId ?? smartRoute.selectedModuleId ?? routing.linkedModuleId;
+        const selectedModule = activeModuleId && selectedGoal
+          ? (data.modules || []).find((m) => m.id === activeModuleId && m.goalId === selectedGoal.id)
+          : undefined;
+        const goalOptions = orderedGoals(data.categories || [], [activeGoalId, llmGoalId, smartRoute.selectedGoalId, routing.linkedGoalId]).slice(0, 6);
+        const moduleOptions = orderedModules(data.modules || [], selectedGoal?.id, activeModuleId).slice(0, 6);
+        const suggestedGoal = suggestedGoalName(llmDomain, captureText, lang);
+        const suggestedModule = suggestedModuleName(llmDomain, captureText, completedEntry.skillName, lang);
         const summary = entrySummary(completedEntry, lang);
         const selectedExerciseNames = selectedExercisesFor(ui);
         const active = isRecordable && (llmDomain === 'fitness' && selectedExerciseNames.length > 0 ? true : (isExisting ? ui.include : ui.createNew));
@@ -1058,50 +1214,126 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                   <Text style={[pendStyles.completionTitle, { color: questTheme.colors.text }]}>
                     {t(lang, 'scCompleteRecord')}
                   </Text>
-                  {smartRoute.goalCandidates.length > 0 ? (
-                    <>
-                      <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>{t(lang, 'chooseGoal')}</Text>
-                      <View style={pendStyles.chipRow}>
-                        {smartRoute.goalCandidates.map((candidate) => {
-                          const selected = !!candidate.id && selectedGoalId === candidate.id;
-                          return (
-                            <TouchableOpacity
-                              key={`${candidate.type}:${candidate.id ?? candidate.name}`}
-                              onPress={() => setSelectedGoal(i, candidate.id)}
-                              style={[pendStyles.optionChip, {
-                                borderColor: selected ? questTheme.colors.primary : questTheme.colors.border,
-                                backgroundColor: selected ? questTheme.colors.primarySoft : 'transparent',
-                              }]}
-                            >
-                              <Text style={[pendStyles.optionText, { color: selected ? questTheme.colors.primary : questTheme.colors.textMuted }]}>{candidate.name}</Text>
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </View>
-                    </>
-                  ) : null}
-                  {smartRoute.moduleCandidates.length > 0 ? (
-                    <>
-                      <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>{t(lang, 'chooseModule')}</Text>
-                      <View style={pendStyles.chipRow}>
-                        {smartRoute.moduleCandidates.map((candidate) => {
-                          const selected = !!candidate.id && selectedModuleId === candidate.id;
-                          return (
-                            <TouchableOpacity
-                              key={`${candidate.type}:${candidate.id ?? candidate.name}`}
-                              onPress={() => setSelectedModule(i, candidate.id)}
-                              style={[pendStyles.optionChip, {
-                                borderColor: selected ? questTheme.colors.primary : questTheme.colors.border,
-                                backgroundColor: selected ? questTheme.colors.primarySoft : 'transparent',
-                              }]}
-                            >
-                              <Text style={[pendStyles.optionText, { color: selected ? questTheme.colors.primary : questTheme.colors.textMuted }]}>{candidate.name}</Text>
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </View>
-                    </>
-                  ) : null}
+                  <View style={[pendStyles.routingBox, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}>
+                    <Text style={[pendStyles.completionTitle, { color: questTheme.colors.text }]}>
+                      {t(lang, 'routing')}
+                    </Text>
+                    <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>
+                      {t(lang, 'autoSuggestedEditable')}
+                    </Text>
+                    <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>
+                      {t(lang, 'suggestedGoal')}
+                    </Text>
+                    <View style={pendStyles.chipRow}>
+                      {goalOptions.map((goal) => {
+                        const selected = !ui.createNewGoal && ui.selectedGoalId !== null && selectedGoal?.id === goal.id;
+                        return (
+                          <TouchableOpacity
+                            key={goal.id}
+                            onPress={() => setSelectedGoal(i, goal.id)}
+                            style={[pendStyles.optionChip, {
+                              borderColor: selected ? questTheme.colors.primary : questTheme.colors.border,
+                              backgroundColor: selected ? questTheme.colors.primarySoft : 'transparent',
+                            }]}
+                            activeOpacity={0.75}
+                          >
+                            <Text style={[pendStyles.optionText, { color: selected ? questTheme.colors.primary : questTheme.colors.textMuted }]}>{goal.name}</Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                      <TouchableOpacity
+                        onPress={() => setNoGoal(i)}
+                        style={[pendStyles.optionChip, {
+                          borderColor: ui.selectedGoalId === null ? questTheme.colors.primary : questTheme.colors.border,
+                          backgroundColor: ui.selectedGoalId === null ? questTheme.colors.primarySoft : 'transparent',
+                        }]}
+                        activeOpacity={0.75}
+                      >
+                        <Text style={[pendStyles.optionText, { color: ui.selectedGoalId === null ? questTheme.colors.primary : questTheme.colors.textMuted }]}>
+                          {t(lang, 'noGoal')}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => setCreateGoal(i, suggestedGoal)}
+                        style={[pendStyles.optionChip, {
+                          borderColor: ui.createNewGoal ? questTheme.colors.primary : questTheme.colors.border,
+                          backgroundColor: ui.createNewGoal ? questTheme.colors.primarySoft : 'transparent',
+                        }]}
+                        activeOpacity={0.75}
+                      >
+                        <Text style={[pendStyles.optionText, { color: ui.createNewGoal ? questTheme.colors.primary : questTheme.colors.textMuted }]}>
+                          {t(lang, 'createNewGoal')}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                    {ui.createNewGoal ? (
+                      <TextInput
+                        value={ui.newGoalName ?? suggestedGoal}
+                        onChangeText={(value) => setNewGoalName(i, value)}
+                        placeholder={t(lang, 'goalName')}
+                        placeholderTextColor={questTheme.colors.textSubtle}
+                        style={[pendStyles.compactInput, { color: questTheme.colors.text, borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}
+                      />
+                    ) : null}
+                    {(selectedGoal || ui.createNewGoal) && ui.selectedGoalId !== null ? (
+                      <>
+                        <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>
+                          {t(lang, 'suggestedModule')}
+                        </Text>
+                        <View style={pendStyles.chipRow}>
+                          {moduleOptions.map((module) => {
+                            const selected = !ui.createNewModule && ui.selectedModuleId !== null && selectedModule?.id === module.id;
+                            return (
+                              <TouchableOpacity
+                                key={module.id}
+                                onPress={() => setSelectedModule(i, module.id)}
+                                style={[pendStyles.optionChip, {
+                                  borderColor: selected ? questTheme.colors.primary : questTheme.colors.border,
+                                  backgroundColor: selected ? questTheme.colors.primarySoft : 'transparent',
+                                }]}
+                                activeOpacity={0.75}
+                              >
+                                <Text style={[pendStyles.optionText, { color: selected ? questTheme.colors.primary : questTheme.colors.textMuted }]}>{module.name}</Text>
+                              </TouchableOpacity>
+                            );
+                          })}
+                          <TouchableOpacity
+                            onPress={() => setNoModule(i)}
+                            style={[pendStyles.optionChip, {
+                              borderColor: ui.selectedModuleId === null ? questTheme.colors.primary : questTheme.colors.border,
+                              backgroundColor: ui.selectedModuleId === null ? questTheme.colors.primarySoft : 'transparent',
+                            }]}
+                            activeOpacity={0.75}
+                          >
+                            <Text style={[pendStyles.optionText, { color: ui.selectedModuleId === null ? questTheme.colors.primary : questTheme.colors.textMuted }]}>
+                              {t(lang, 'noModule')}
+                            </Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={() => setCreateModule(i, suggestedModule)}
+                            style={[pendStyles.optionChip, {
+                              borderColor: ui.createNewModule ? questTheme.colors.primary : questTheme.colors.border,
+                              backgroundColor: ui.createNewModule ? questTheme.colors.primarySoft : 'transparent',
+                            }]}
+                            activeOpacity={0.75}
+                          >
+                            <Text style={[pendStyles.optionText, { color: ui.createNewModule ? questTheme.colors.primary : questTheme.colors.textMuted }]}>
+                              {t(lang, 'createModule')}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+                        {ui.createNewModule ? (
+                          <TextInput
+                            value={ui.newModuleName ?? suggestedModule}
+                            onChangeText={(value) => setNewModuleName(i, value)}
+                            placeholder={t(lang, 'moduleName')}
+                            placeholderTextColor={questTheme.colors.textSubtle}
+                            style={[pendStyles.compactInput, { color: questTheme.colors.text, borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}
+                          />
+                        ) : null}
+                      </>
+                    ) : null}
+                  </View>
                   {llmDomain === 'fitness' && exerciseSuggestions.length > 0 ? (
                     <>
                       <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>{t(lang, 'chooseExercises')}</Text>
@@ -1351,39 +1583,6 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                   </Text>
                 </View>
               ) : null}
-              {/* Module selector for new skills */}
-              {isRecordable && !isExisting && ui.createNew && mods.length > 0 && (
-                <View style={pendStyles.moduleRow}>
-                  <Text style={[pendStyles.moduleLabel, { color: questTheme.colors.textMuted }]}>
-                    {t(lang, 'scEntryModule')}
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => setModule(i, null)}
-                    style={[pendStyles.moduleChip, {
-                      borderColor: ui.moduleId == null ? questTheme.colors.primary : questTheme.colors.border,
-                      backgroundColor: ui.moduleId == null ? questTheme.colors.primarySoft : 'transparent',
-                    }]}
-                  >
-                    <Text style={[pendStyles.moduleChipText, { color: ui.moduleId == null ? questTheme.colors.primary : questTheme.colors.textMuted }]}>
-                      {t(lang, 'scEntryNoModule')}
-                    </Text>
-                  </TouchableOpacity>
-                  {mods.slice(0, 3).map((mod) => (
-                    <TouchableOpacity
-                      key={mod.id}
-                      onPress={() => setModule(i, mod.id)}
-                      style={[pendStyles.moduleChip, {
-                        borderColor: ui.moduleId === mod.id ? questTheme.colors.primary : questTheme.colors.border,
-                        backgroundColor: ui.moduleId === mod.id ? questTheme.colors.primarySoft : 'transparent',
-                      }]}
-                    >
-                      <Text style={[pendStyles.moduleChipText, { color: ui.moduleId === mod.id ? questTheme.colors.primary : questTheme.colors.textMuted }]}>
-                        {mod.name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
             </View>
           </View>
         );
@@ -1440,6 +1639,7 @@ const pendStyles = StyleSheet.create({
   summary: { fontSize: 12, lineHeight: 17 },
   routeLine: { fontSize: 11, lineHeight: 16 },
   completionBox: { borderWidth: 1, borderRadius: 8, padding: 8, gap: 6, marginTop: 4 },
+  routingBox: { borderWidth: 1, borderRadius: 8, padding: 8, gap: 6 },
   completionTitle: { fontSize: 12, fontWeight: '800' },
   completionHint: { fontSize: 11, lineHeight: 15 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
