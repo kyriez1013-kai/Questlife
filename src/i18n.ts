@@ -957,6 +957,14 @@ const zh: Record<string, string> = {
   ieAnomalyQualityDrop: '质量下滑：近期比均值低 {pct}%',
   ieAnomalyGap: '已 {days} 天未记录',
   ieAnomalyOverload: '连续高强度 {days} 天（≥90min）',
+  // today-page linear flow
+  nowFocusDo: '现在做这个',
+  scMoreCaptures: '查看更多记录 · {n}条',
+  collapseTap: '▸',
+  expandTap: '▾',
+  sectionStateCard: '当前状态',
+  sectionBudgetCard: '执行预算',
+  sectionPlanCard: '今日计划',
 };
 
 const en: Record<string, string> = {
@@ -1914,6 +1922,14 @@ const en: Record<string, string> = {
   ieAnomalyQualityDrop: 'Quality drop: {pct}% below your average',
   ieAnomalyGap: '{days} days since last log',
   ieAnomalyOverload: '{days} consecutive high-intensity days (≥90 min)',
+  // today-page linear flow
+  nowFocusDo: 'Do This Now',
+  scMoreCaptures: 'More records · {n}',
+  collapseTap: '▸',
+  expandTap: '▾',
+  sectionStateCard: 'Current State',
+  sectionBudgetCard: 'Execution Budget',
+  sectionPlanCard: "Today's Plan",
 };
 
 const dict: Record<Lang, Record<string, string>> = { zh, en };

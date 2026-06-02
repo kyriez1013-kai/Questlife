@@ -444,11 +444,11 @@ export default function HomeSmartCapture() {
 
   return (
     <View>
-      {/* Greeting */}
+      {/* Greeting — smaller font so it doesn't compete with the input */}
       {greeting ? (
         <Text style={[styles.greeting, {
-          color: questTheme.colors.textMuted,
-          fontSize: questTheme.typography.bodySize,
+          color: questTheme.colors.textSubtle,
+          fontSize: questTheme.typography.captionSize,
         }]}>
           {greeting}
         </Text>
@@ -559,7 +559,7 @@ export default function HomeSmartCapture() {
               <Text style={[styles.expandBtnText, { color: questTheme.colors.textMuted }]}>
                 {showAll
                   ? t(lang, 'scCollapse')
-                  : t(lang, 'scShowMore').replace('{n}', String(hiddenCount))}
+                  : t(lang, 'scMoreCaptures').replace('{n}', String(hiddenCount))}
               </Text>
             </TouchableOpacity>
           )}

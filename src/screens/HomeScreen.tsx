@@ -477,6 +477,10 @@ export default function HomeScreen() {
   const [contextCaffeine, setContextCaffeine] = useState(false);
   const [contextSocialDrain, setContextSocialDrain] = useState(false);
   const [planExpanded, setPlanExpanded] = useState(false);
+  // zone-3 section collapse state (default collapsed for clean first-screen view)
+  const [stateCardOpen,  setStateCardOpen]  = useState(false);
+  const [budgetCardOpen, setBudgetCardOpen] = useState(false);
+  const [planCardOpen,   setPlanCardOpen]   = useState(false);
   const [rescueOpen, setRescueOpen] = useState(false);
   const [rescueStep, setRescueStep] = useState<'intro' | 'body' | 'activation' | 'done'>('intro');
   const [activeRescueId, setActiveRescueId] = useState<string | null>(null);
@@ -1466,17 +1470,10 @@ export default function HomeScreen() {
         style={[styles.container, { backgroundColor: questTheme.colors.background }]}
         contentContainerStyle={{ padding: 16, paddingBottom: 154, maxWidth: 960, width: '100%', alignSelf: 'center' }}
       >
-        {/* ── Smart Capture Loop (Spec B-1) — 开场白 + 一句话输入 + 今日记录 ── */}
+        {/* ═══ ZONE 1: Smart Capture (input always first) ═══════════════════ */}
         <HomeSmartCapture />
 
-        <Text style={[styles.h1, { color: questTheme.colors.text }]}>{t(lang, 'today')}</Text>
-        <Text style={[styles.sub, { color: questTheme.colors.textMuted }]}>
-          {todayStr} · {t(lang, 'todayInvested')} {todayMinutes} {t(lang, 'minutes')} · {todayLogs.length} {t(lang, 'logsToday')}
-        </Text>
-        <Text style={[styles.sub, { color: questTheme.colors.textMuted }]}>
-          {t(lang, 'currentState')}: {stateSummaryLabel}{stateSummaryTime ? ` · ${stateSummaryTime}` : ''} · {t(lang, currentTimeBlock)}
-        </Text>
-
+        {/* ═══ ZONE 2: Now Focus — timer if active, else top-priority action ═ */}
         {data.settings.firstQuestCreated && !data.settings.firstSystemWelcomeDismissed ? (
           <View style={[styles.welcomeCard, themedCard]}>
             <View style={{ flex: 1 }}>
@@ -1518,7 +1515,7 @@ export default function HomeScreen() {
               <QuestIcon name={nowFocus.type === 'active_session' ? 'activity' : nowFocus.type === 'schedule_block' ? 'calendar' : 'target'} size={22} color={accent} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.strategyKicker, { color: questTheme.colors.textMuted }]}>{t(lang, 'nowFocus')}</Text>
+              <Text style={[styles.strategyKicker, { color: questTheme.colors.textMuted }]}>{t(lang, 'nowFocusDo')}</Text>
               <Text style={[styles.nowFocusTitle, { color: questTheme.colors.text }]}>{nowFocus.title}</Text>
             </View>
           </View>
@@ -1572,6 +1569,25 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {/* ═══ ZONE 3: Today data — header always visible, cards collapsible ═ */}
+        <Text style={[styles.h1, { color: questTheme.colors.text, marginTop: questTheme.spacing.xl }]}>{t(lang, 'today')}</Text>
+        <Text style={[styles.sub, { color: questTheme.colors.textMuted }]}>
+          {todayStr} · {t(lang, 'todayInvested')} {todayMinutes} {t(lang, 'minutes')} · {todayLogs.length} {t(lang, 'logsToday')}
+        </Text>
+        <Text style={[styles.sub, { color: questTheme.colors.textMuted }]}>
+          {t(lang, 'currentState')}: {stateSummaryLabel}{stateSummaryTime ? ` · ${stateSummaryTime}` : ''} · {t(lang, currentTimeBlock)}
+        </Text>
+
+        {/* ── Plan card (collapsible) ─────────────────────────────────────── */}
+        <TouchableOpacity
+          onPress={() => setPlanCardOpen((v) => !v)}
+          style={[styles.sectionToggleRow, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}
+          activeOpacity={0.75}
+        >
+          <Text style={[styles.sectionToggleLabel, { color: questTheme.colors.text }]}>{t(lang, 'sectionPlanCard')}</Text>
+          <Text style={[styles.sectionToggleChev, { color: questTheme.colors.textMuted }]}>{planCardOpen ? t(lang, 'expandTap') : t(lang, 'collapseTap')}</Text>
+        </TouchableOpacity>
+        {planCardOpen && (
         <View style={[styles.compactPlanCard, themedCard]}>
           <Text style={[styles.planTitle, { color: questTheme.colors.text }]}>{t(lang, 'todayPlan')}</Text>
           {(todayScheduleBlocks.length > 0 ? todayScheduleBlocks : data.skills).slice(0, planExpanded ? undefined : 3).map((item: any) => {
@@ -1627,7 +1643,18 @@ export default function HomeScreen() {
             </TouchableOpacity>
           ) : null}
         </View>
+        )}
 
+        {/* ── State card (collapsible) ────────────────────────────────────── */}
+        <TouchableOpacity
+          onPress={() => setStateCardOpen((v) => !v)}
+          style={[styles.sectionToggleRow, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}
+          activeOpacity={0.75}
+        >
+          <Text style={[styles.sectionToggleLabel, { color: questTheme.colors.text }]}>{t(lang, 'sectionStateCard')}</Text>
+          <Text style={[styles.sectionToggleChev, { color: questTheme.colors.textMuted }]}>{stateSummaryLabel} {stateCardOpen ? t(lang, 'expandTap') : t(lang, 'collapseTap')}</Text>
+        </TouchableOpacity>
+        {stateCardOpen && (
         <View style={[styles.stateCheckInCard, themedCard]}>
           <View style={styles.currentStateTop}>
             <View style={{ flex: 1 }}>
@@ -1651,6 +1678,7 @@ export default function HomeScreen() {
             ))}
           </View>
         </View>
+        )}
 
         <TouchableOpacity
           style={[styles.rescueStrip, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.warningSoft }]}
@@ -1706,6 +1734,16 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {/* ── Budget card (collapsible) ────────────────────────────────────── */}
+        <TouchableOpacity
+          onPress={() => setBudgetCardOpen((v) => !v)}
+          style={[styles.sectionToggleRow, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}
+          activeOpacity={0.75}
+        >
+          <Text style={[styles.sectionToggleLabel, { color: questTheme.colors.text }]}>{t(lang, 'sectionBudgetCard')}</Text>
+          <Text style={[styles.sectionToggleChev, { color: questTheme.colors.textMuted }]}>{energyBudgetRows.allocated}% {budgetCardOpen ? t(lang, 'expandTap') : t(lang, 'collapseTap')}</Text>
+        </TouchableOpacity>
+        {budgetCardOpen && (
         <View style={[styles.energyCard, themedCard]}>
           <View style={styles.sectionTitleRow}>
             <QuestIcon name="activity" size={18} color={accent} />
@@ -1730,6 +1768,7 @@ export default function HomeScreen() {
           })}
           <Text style={[styles.planNote, { color: questTheme.colors.textMuted }]}>{t(lang, 'energyBudgetHint')}</Text>
         </View>
+        )}
 
         <View style={styles.statRow}>
           <Stat questTheme={questTheme} accent={accent} label={t(lang, 'logsToday')} value={String(todayLogs.length)} />
@@ -2937,6 +2976,14 @@ const styles = StyleSheet.create({
   iconActionText: { color: theme.text, fontSize: 14, fontWeight: '900' },
   statRow: { flexDirection: 'row', gap: 10, marginTop: 16 },
   stat: { flex: 1, backgroundColor: theme.card, padding: 14, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
+  // zone-3 collapsible section toggle rows
+  sectionToggleRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    marginTop: 12, paddingHorizontal: 14, paddingVertical: 10,
+    borderRadius: theme.radius.md, borderWidth: 1,
+  },
+  sectionToggleLabel: { fontSize: 14, fontWeight: '700' },
+  sectionToggleChev: { fontSize: 13 },
   statValue: { color: theme.primary, fontSize: 22, fontWeight: '700' },
   statLabel: { color: theme.textDim, fontSize: 12, marginTop: 2 },
   // 晨间状态横幅
