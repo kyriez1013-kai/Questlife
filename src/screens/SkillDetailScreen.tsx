@@ -570,8 +570,10 @@ function WeekView({ skill, actions, lang }: { skill: Skill; actions: Action[]; l
             </View>
             <View style={styles.barWrap}>
               <View style={[styles.barFg, {
-                height: `${(d.minutes / maxMin) * 100}%`,
+                // min 4px so zero-bars still show; opacity distinguishes has-data vs empty
+                height: d.minutes > 0 ? `${Math.max(4, (d.minutes / maxMin) * 100)}%` : 4,
                 backgroundColor: d.minutes >= skill.dailyTargetMinutes ? theme.success : skill.color,
+                opacity: d.minutes > 0 ? 1 : 0.15,
               }]} />
             </View>
             <Text style={styles.barLabel}>{lang === 'zh' ? `周${d.label}` : d.label}</Text>

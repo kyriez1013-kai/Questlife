@@ -151,6 +151,7 @@ export default function SkillForm({ visible, onClose, initial, presetCategoryId,
   const [remHour, setRemHour] = useState(21);
   const [remMin, setRemMin] = useState(0);
   const [customIcon, setCustomIcon] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   // 每次弹窗打开时, 按 initial 重置表单 (避免上一次的脏数据残留)
   useEffect(() => {
@@ -710,6 +711,18 @@ export default function SkillForm({ visible, onClose, initial, presetCategoryId,
         </View>
       </View>
 
+      {/* Advanced settings — collapsed by default */}
+      <TouchableOpacity
+        onPress={() => setAdvancedOpen((v) => !v)}
+        style={[styles.advancedToggleRow, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}
+        activeOpacity={0.75}
+      >
+        <Text style={[styles.advancedToggleText, { color: questTheme.colors.textMuted }]}>
+          {advancedOpen ? t(lang, 'advancedSettingsHide') : t(lang, 'advancedSettings')}
+        </Text>
+        <Text style={{ color: questTheme.colors.textMuted }}>{advancedOpen ? '▲' : '▼'}</Text>
+      </TouchableOpacity>
+      {advancedOpen && (
       <View style={[styles.sectionCard, { backgroundColor: questTheme.colors.surfaceSoft }]}>
         <Text style={[styles.label2, { color: questTheme.colors.text }]}>{t(lang, 'costProfile')}</Text>
         {[
@@ -739,6 +752,7 @@ export default function SkillForm({ visible, onClose, initial, presetCategoryId,
           })}
         </View>
       </View>
+      )}
 
       <View style={[styles.row, { marginTop: 18 }]}>
         <Text style={[styles.label2, { color: questTheme.colors.text }]}>{t(lang, 'dailyReminder')}</Text>
@@ -772,6 +786,8 @@ const styles = StyleSheet.create({
   chip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 1, borderColor: theme.border, backgroundColor: theme.card },
   chipText: { color: theme.text, fontSize: 13 },
   sectionCard: { backgroundColor: theme.cardAlt, borderRadius: theme.radius.lg, padding: 12, marginTop: 16 },
+  advancedToggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, padding: 12, borderRadius: theme.radius.md, borderWidth: 1 },
+  advancedToggleText: { fontSize: 12, fontWeight: '600' },
   profileRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10 },
   profileLabel: { color: theme.text, flex: 1, fontWeight: '700' },
   profileInput: { width: 72, backgroundColor: theme.card, borderRadius: theme.radius.md, padding: 10, color: theme.text, borderWidth: 1, borderColor: theme.border, textAlign: 'center' },

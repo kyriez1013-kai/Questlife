@@ -542,8 +542,10 @@ function DailyBarChart({
                   style={[
                     styles.barFg,
                     {
-                      height: `${hPct}%`,
-                      backgroundColor: d.minutes > 0 ? accent : 'transparent',
+                      // min 4px placeholder so zero-bars are visible; primary color with full opacity when data present
+                      height: d.minutes > 0 ? `${Math.max(4, hPct)}%` : 4,
+                      backgroundColor: questTheme.colors.primary,
+                      opacity: d.minutes > 0 ? 1 : 0.15,
                     },
                   ]}
                 />
