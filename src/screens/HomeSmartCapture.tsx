@@ -509,9 +509,10 @@ export default function HomeSmartCapture() {
             const parsedEntries = c.parsed?.entries ?? [];
             const fallbackEntries = buildFallbackEntriesFromRawText(c.text);
             const entriesForConfirmation = parsedEntries.length > 0 ? parsedEntries : fallbackEntries;
+            const hasTopLevelCompletion = c.parsed?.completionSchema?.needsCompletion === true;
             const canShowConfirmation =
               (c.parseStatus === 'done' || c.parseStatus === 'failed') &&
-              entriesForConfirmation.length > 0 &&
+              (entriesForConfirmation.length > 0 || hasTopLevelCompletion) &&
               !c.parsed?.entriesDismissed;
 
             return (

@@ -14,7 +14,7 @@ import { View, Text, TouchableOpacity, StyleSheet, TextInput } from 'react-nativ
 import { useStore } from '../store';
 import { getQuestTheme } from '../design/tokens';
 import { getLanguage, t } from '../i18n';
-import { Category, ParsedEntry, ProgressType, QuestModule, TaskType } from '../types';
+import { Category, CompletionSchema, ParsedEntry, ProgressType, QuestModule, TaskType } from '../types';
 import QuestCard from '../components/ui/QuestCard';
 import { assessCaptureCompletion } from '../utils/captureCompletion';
 import { getSmartRouteResult, SmartRouteResult } from '../utils/smartRouting';
@@ -353,6 +353,31 @@ function displayRouteConfidenceKey(confidence: SmartRouteResult['confidence']) {
   return 'routeConfidenceLow';
 }
 
+function progressTypeFromCompletionDomain(domain?: CompletionSchema['domain']): ProgressType {
+  if (domain === 'fitness') return 'performance_log';
+  if (domain === 'learning') return 'time_based';
+  return 'qualitative';
+}
+
+function goalTypeFromCompletionDomain(domain?: CompletionSchema['domain']): string {
+  if (domain === 'fitness') return 'fitness';
+  if (domain === 'learning') return 'study';
+  if (domain === 'state') return 'health';
+  return 'custom';
+}
+
+function entryFromTopLevelCompletion(schema: CompletionSchema | undefined, captureText: string): ParsedEntry[] {
+  if (!schema?.needsCompletion) return [];
+  const progressType = progressTypeFromCompletionDomain(schema.domain);
+  return [{
+    skillName: captureText.trim() || schema.suggestedActions[0] || 'capture',
+    matchedSkillId: null,
+    goalType: goalTypeFromCompletionDomain(schema.domain),
+    progressType,
+    fields: {},
+  }];
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 type Props = {
@@ -367,9 +392,11 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
   const questTheme = getQuestTheme(data.settings.selectedThemeId);
   const capture = (data.rawCaptures || []).find((item) => item.id === captureId);
   const captureText = capture?.text ?? '';
+  const completionSchema = capture?.parsed?.completionSchema;
+  const effectiveEntries = entries.length > 0 ? entries : entryFromTopLevelCompletion(completionSchema, captureText);
 
   const [entryStates, setEntryStates] = useState<EntryUI[]>(() =>
-    entries.map((e) => ({
+    effectiveEntries.map((e) => ({
       include:   true,                         // confirmation card means user can opt out before writing
       createNew: e.matchedSkillId == null,     // unmatched concrete entries should be written after confirm
       moduleId:  null,
@@ -545,7 +572,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
   }, [captureText, data.categories, resolveCategory, resolveModule, resolvePrimaryLink, resolveSkill]);
 
   const allActive = entryStates.every((state, index) => {
-    const existing = !!resolveSkill(entries[index]);
+    const existing = !!resolveSkill(effectiveEntries[index]);
     return existing ? state.include : state.createNew;
   });
 
@@ -562,7 +589,8 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
     setConfirming(true);
     const date = parseTargetDate(captureText);
 
-    entries.forEach((entry, i) => {
+    effectiveEntries.forEach((entry, i) => {
+      if (completionSchema && (completionSchema.domain === 'state' || completionSchema.domain === 'food')) return;
       const ui = entryStates[i];
       const assessment = assessCaptureCompletion(captureText, entry, { goals: data.categories, modules: data.modules || [], skills: data.skills, lang });
       if (assessment.status === 'not_recordable') return;
@@ -822,7 +850,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
 
     setLogged(true);
     onDismiss();
-  }, [confirming, logged, captureText, entries, entryStates, captureId, data.categories, data.modules, data.skills, data.executionLogs, lang, questTheme.colors.primary,
+  }, [confirming, logged, captureText, effectiveEntries, entryStates, captureId, data.categories, data.modules, data.skills, data.executionLogs, lang, questTheme.colors.primary,
       resolveSkill, resolvePrimaryLink, resolveCategory, resolveModule, resolveRouting, addSkill, addExistingSkillToModule, createExecutionLog, onDismiss]);
 
   if (logged) {
@@ -835,7 +863,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
     );
   }
 
-  const entryAssessments = entries.map((entry, index) => {
+  const entryAssessments = effectiveEntries.map((entry, index) => {
     const completedEntry = entryWithCompletion(entry, entryStates[index]);
     return assessCaptureCompletion(captureText, completedEntry, { goals: data.categories, modules: data.modules || [], skills: data.skills, lang });
   });
@@ -849,7 +877,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
           ? t(lang, 'scEntryDetected').replace('{n}', String(recordableCount))
           : t(lang, 'scContextDetected')}
       </Text>
-      {entries.length > 1 ? (
+      {effectiveEntries.length > 1 ? (
         <TouchableOpacity
           onPress={() => setAllActive(!allActive)}
           style={[pendStyles.bulkBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}
@@ -861,7 +889,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
       ) : null}
 
       {/* Entry rows */}
-      {entries.map((entry, i) => {
+      {effectiveEntries.map((entry, i) => {
         const ui = entryStates[i];
         const completedEntry = entryWithCompletion(entry, ui);
         const assessment = assessCaptureCompletion(captureText, completedEntry, { goals: data.categories, modules: data.modules || [], skills: data.skills, lang });

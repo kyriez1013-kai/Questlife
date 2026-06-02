@@ -1135,3 +1135,33 @@ Known limitations:
 Validation:
 - `npx tsc --noEmit`: passed.
 - `npm run build`: passed after approved rerun because the sandbox blocked unlinking `dist/index.html`.
+
+## B-3.2 Top-Level CompletionSchema Empty-Entries Flow
+
+Status: Implemented focused frontend routing fix.
+
+Files changed:
+- `src/screens/HomeSmartCapture.tsx`
+- `src/screens/HomeCapturePending.tsx`
+
+Diagnostic finding carried forward:
+- `/api/parse` final response already returns top-level `completionSchema`.
+- Inputs such as `练肩`, `chest`, `back`, and `C++` can return `completionSchema.needsCompletion === true` with `entries.length === 0`.
+- The previous frontend branch only opened the pending confirmation card when concrete entries existed, so top-level-only completion schema results fell through to the ordinary observation card.
+
+What changed:
+- `HomeSmartCapture` now opens `HomeCapturePending` when `parsed.completionSchema.needsCompletion === true`, even if `entries` is empty.
+- `HomeCapturePending` now creates a temporary completion entry from the top-level schema when no parsed entries exist.
+- Fitness schema-only captures use `performance_log` and show schema-provided action suggestions.
+- Learning schema-only captures use `time_based` and show schema-provided learning/coding suggestions.
+- Food/state schema-only captures remain non-execution contexts and are not written as ExecutionLogs.
+- Existing `debugParse` gated diagnostics remain gated and are not expanded.
+
+Remaining:
+- Full route candidate richness remains future work.
+- B-4 progress feedback remains future work.
+- Food/life-factor modelling remains future work.
+
+Validation:
+- `npx tsc --noEmit`: passed.
+- `npm run build`: passed after approved rerun because the sandbox blocked unlinking `dist/favicon.ico`.
