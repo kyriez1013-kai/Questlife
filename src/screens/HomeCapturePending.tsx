@@ -720,6 +720,8 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
               sourceCaptureEntryIndex: i,
               sourceCaptureEntryKey: actionKey,
               sourceActionType: isCustomAction ? 'customAction' : 'suggestedAction',
+              source: isCustomAction ? 'customAction' : 'suggestedAction',
+              isCustomAction,
               customAction: isCustomAction ? exerciseName : undefined,
               route: smartRoute.domain,
               routeConfidence: smartRoute.confidence,
@@ -859,6 +861,8 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
           routeReason: routing.reason,
           needsUserChoice: routing.needsUserChoice,
           sourceActionType: isCustomAction ? 'customAction' : 'suggestedAction',
+          source: isCustomAction ? 'customAction' : 'suggestedAction',
+          isCustomAction,
           customAction: isCustomAction ? completedEntry.skillName : undefined,
           rawParsedFields: completedEntry.fields,
         } : {
@@ -871,6 +875,8 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
           routeReason: routing.reason,
           needsUserChoice: routing.needsUserChoice,
           sourceActionType: isCustomAction ? 'customAction' : 'suggestedAction',
+          source: isCustomAction ? 'customAction' : 'suggestedAction',
+          isCustomAction,
           customAction: isCustomAction ? completedEntry.skillName : undefined,
         },
         metricUpdate: isStrength

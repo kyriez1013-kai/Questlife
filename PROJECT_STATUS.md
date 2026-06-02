@@ -1183,7 +1183,7 @@ What changed:
 - Adding a custom fitness action merges it into `selectedExerciseNames`, clears the input, shows it as a selected chip, and allows deselection.
 - Adding a custom learning/coding scope stores it as the selected scope/study note and uses it as the pending action name.
 - Duplicate custom actions are not added again.
-- Confirmed custom actions continue through the existing `createExecutionLog` chain and are marked in `structuredData` with `sourceActionType: "customAction"`.
+- Confirmed custom actions continue through the existing `createExecutionLog` chain and are marked in `structuredData` with `sourceActionType: "customAction"`, `source: "customAction"`, and `isCustomAction: true`.
 
 Remaining:
 - Domain expansion and B-4 progress feedback remain future work.
