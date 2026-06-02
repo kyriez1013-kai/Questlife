@@ -866,13 +866,25 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
         const completedEntry = entryWithCompletion(entry, ui);
         const assessment = assessCaptureCompletion(captureText, completedEntry, { goals: data.categories, modules: data.modules || [], skills: data.skills, lang });
         const smartRoute = getSmartRouteResult({ rawText: captureText, entry: completedEntry, goals: data.categories, modules: data.modules || [], skills: data.skills, lang });
-        const isRecordable = assessment.status !== 'not_recordable';
+
+        // ── LLM-driven completionSchema overrides hardcoded routing ──────────
+        const cs = capture?.parsed?.completionSchema;
+        // Goal routing: LLM wins when available, falls back to local smartRoute
+        const llmGoalId     = cs?.matchedGoalId ?? null;
+        const llmModuleId   = cs?.matchedModuleId ?? null;
+        const llmConfidence = cs?.goalConfidence ?? smartRoute.confidence;
+        const llmDomain     = cs?.domain ?? (smartRoute.domain as string);
+
+        const isRecordable = cs
+          ? (cs.domain !== 'state' && cs.domain !== 'food')
+          : assessment.status !== 'not_recordable';
         const isExisting = !!resolveSkill(completedEntry);
         const routing = resolveRouting(completedEntry);
-        const selectedGoalId = ui.selectedGoalId ?? smartRoute.selectedGoalId ?? routing.linkedGoalId;
-        const selectedModuleId = ui.selectedModuleId ?? smartRoute.selectedModuleId ?? routing.linkedModuleId;
-        const selectedGoal = selectedGoalId ? data.categories.find((goal) => goal.id === selectedGoalId) : undefined;
-        const selectedModule = selectedModuleId ? (data.modules || []).find((module) => module.id === selectedModuleId) : undefined;
+        // Prefer LLM goal id → user selection → local routing → smartRoute
+        const selectedGoalId   = ui.selectedGoalId ?? llmGoalId ?? smartRoute.selectedGoalId ?? routing.linkedGoalId;
+        const selectedModuleId = ui.selectedModuleId ?? llmModuleId ?? smartRoute.selectedModuleId ?? routing.linkedModuleId;
+        const selectedGoal   = selectedGoalId   ? data.categories.find((goal)   => goal.id === selectedGoalId)   : undefined;
+        const selectedModule = selectedModuleId ? (data.modules || []).find((m)  => m.id    === selectedModuleId) : undefined;
         const routeForModules = inferSemanticRoute(completedEntry, captureText);
         const mods = isExisting ? [] : (
           selectedGoalId
@@ -881,14 +893,32 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
         );
         const summary = entrySummary(completedEntry, lang);
         const selectedExerciseNames = selectedExercisesFor(ui);
-        const active = isRecordable && (smartRoute.domain === 'fitness' && selectedExerciseNames.length > 0 ? true : (isExisting ? ui.include : ui.createNew));
+        const active = isRecordable && (llmDomain === 'fitness' && selectedExerciseNames.length > 0 ? true : (isExisting ? ui.include : ui.createNew));
         const tagColor = isExisting ? questTheme.colors.success : questTheme.colors.accent;
         const tagBg = isExisting ? questTheme.colors.successSoft : questTheme.colors.accentSoft;
-        const durationSuggestions = assessment.suggestedActions.filter((item) => item.kind === 'duration');
+
+        // Duration/quality/rpe suggestions: keep assessment for quality/rpe; duration comes from LLM durationOptions
+        const durationSuggestions = cs?.durationOptions?.length
+          ? cs.durationOptions.map((min) => ({
+              id: String(min), label: `${min}min`, labelZh: `${min}分钟`,
+              kind: 'duration' as const, value: min,
+            }))
+          : assessment.suggestedActions.filter((item) => item.kind === 'duration');
         const qualitySuggestions = assessment.suggestedActions.filter((item) => item.kind === 'quality');
-        const rpeSuggestions = assessment.suggestedActions.filter((item) => item.kind === 'rpe');
-        const exerciseSuggestions = assessment.suggestedActions.filter((item) => item.kind === 'exercise');
-        const scopeOptions = ['practice', 'project', 'debug', 'course', 'custom'];
+        const rpeSuggestions     = assessment.suggestedActions.filter((item) => item.kind === 'rpe');
+        // Exercise/scope chips: LLM suggestedActions replaces hardcoded lists
+        const exerciseSuggestions = cs?.suggestedActions?.length
+          ? cs.suggestedActions.map((name) => ({
+              id: name, label: name, labelZh: name,
+              kind: llmDomain === 'learning' ? ('scope' as const) : ('exercise' as const),
+            }))
+          : assessment.suggestedActions.filter((item) => item.kind === 'exercise' || item.kind === 'scope');
+        const scopeOptions = cs?.suggestedActions?.length
+          ? cs.suggestedActions
+          : ['practice', 'project', 'debug', 'course', 'custom'];
+
+        // Goal confidence display: suppress "需要确认归属" when LLM says high confidence
+        const goalConfidenceKey = llmConfidence === 'high' ? 'routeConfidenceHigh' : displayRouteConfidenceKey(llmConfidence as any);
 
         return (
           <View key={i} style={[pendStyles.entryRow, { borderColor: questTheme.colors.border }]}>
@@ -929,11 +959,15 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                 </Text>
               ) : null}
               {isRecordable ? (
-                <Text style={[pendStyles.routeLine, { color: routing.needsUserChoice ? questTheme.colors.warning : questTheme.colors.textMuted }]}>
-                  {t(lang, selectedGoal && selectedModule ? 'recordToPath' : 'confirmRoute')}: {selectedGoal?.name ?? t(lang, smartRoute.domain === 'learning' ? 'unassignedLearning' : 'scEntryUnassigned')}
+                <Text style={[pendStyles.routeLine, {
+                  // high-confidence LLM match: show in muted (no warning); otherwise warn if routing is ambiguous
+                  color: llmConfidence === 'high'
+                    ? questTheme.colors.textMuted
+                    : (routing.needsUserChoice ? questTheme.colors.warning : questTheme.colors.textMuted),
+                }]}>
+                  {t(lang, selectedGoal && selectedModule ? 'recordToPath' : 'confirmRoute')}: {selectedGoal?.name ?? t(lang, llmDomain === 'learning' ? 'unassignedLearning' : 'scEntryUnassigned')}
                   {selectedModule ? ` → ${selectedModule.name}` : ''}
-                  {' · '}
-                  {t(lang, displayRouteConfidenceKey(smartRoute.confidence))}
+                  {llmConfidence !== 'high' ? ` · ${t(lang, goalConfidenceKey)}` : ''}
                 </Text>
               ) : null}
               {assessment.status === 'not_recordable' ? (
@@ -994,19 +1028,20 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                       </View>
                     </>
                   ) : null}
-                  {smartRoute.domain === 'fitness' && exerciseSuggestions.length > 0 ? (
+                  {llmDomain === 'fitness' && exerciseSuggestions.length > 0 ? (
                     <>
                       <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>{t(lang, 'chooseExercises')}</Text>
                       <View style={pendStyles.chipRow}>
                         {exerciseSuggestions.map((item) => {
-                          const name = String(item.value);
+                          // LLM suggestions use item.id as the exercise name; legacy uses item.value
+                          const name = String((item as any).value ?? item.id);
                           const selected = selectedExerciseNames.includes(name);
                           return (
                             <TouchableOpacity
                               key={item.id}
                               onPress={() => {
-                                if (smartRoute.domain === 'fitness') toggleExercise(i, name);
-                                else setSelectedSkill(i, name, item.skillId);
+                                if (llmDomain === 'fitness') toggleExercise(i, name);
+                                else setSelectedSkill(i, name, (item as any).skillId);
                               }}
                               style={[pendStyles.optionChip, {
                                 borderColor: selected ? questTheme.colors.primary : questTheme.colors.border,

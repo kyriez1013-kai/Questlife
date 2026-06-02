@@ -48,16 +48,23 @@ function scoreText(value: string | undefined, words: string[]): number {
   return words.reduce((sum, word) => sum + (text.includes(normalize(word)) ? 1 : 0), 0);
 }
 
+/**
+ * DEPRECATED: Domain inference is now handled by the LLM (completionSchema.domain).
+ * This function is kept only as a fallback for captures that have no completionSchema
+ * (e.g., parsed before this feature was deployed). New entries should use
+ * capture.parsed.completionSchema.domain instead.
+ */
 export function inferSmartRouteDomain(rawText: string, entry?: ParsedEntry): SmartRouteDomain {
-  const text = normalize(`${rawText} ${entry?.skillName ?? ''} ${entry?.fields?.note ?? ''}`);
-  if (hasAny(text, ['巧克力', '吃了', '喝了', 'meal', 'food', 'chocolate', 'snack'])) return 'food';
-  if (hasAny(text, ['累', '疲惫', '焦虑', '状态差', '精力低', '状态', 'tired', 'stress', 'mood'])) return 'state';
-  if (hasAny(text, ['读了', '阅读', '箴言', '圣经', 'reading', 'book', 'chapter'])) return 'reading';
-  if (hasAny(text, ['sql', 'python', 'excel', 'tableau', 'statistics', 'finance', 'accounting', '学习', '学了', '课程', 'debug'])) return 'learning';
-  if (hasAny(text, ['项目', 'feature', 'bug', 'app', 'project'])) return 'project';
-  if (hasAny(text, ['练胸', '练背', '练肩', '练腿', '卧推', '上斜', '划船', '引体', '下拉', '深蹲', '硬拉', 'dips', 'bench', 'pull', 'push', 'workout'])) return 'fitness';
+  // LLM-first: if the entry carries goalType from a parse result, trust it
   if (entry?.goalType === 'fitness' || entry?.progressType === 'performance_log') return 'fitness';
   if (entry?.goalType === 'study' || entry?.progressType === 'time_based') return 'learning';
+  // Minimal fallback keyword set — broad recognition only, not exhaustive
+  const text = normalize(`${rawText} ${entry?.skillName ?? ''}`);
+  if (hasAny(text, ['food', 'meal', 'eat', '吃', '喝'])) return 'food';
+  if (hasAny(text, ['tired', 'stress', '累', '疲', '状态', '焦虑'])) return 'state';
+  if (hasAny(text, ['read', 'book', '读', '阅读'])) return 'reading';
+  if (hasAny(text, ['sql', 'python', 'code', '学', 'study', 'debug'])) return 'learning';
+  if (hasAny(text, ['workout', 'gym', 'bench', 'squat', '练', '推', '拉', '卧', '硬'])) return 'fitness';
   return 'unknown';
 }
 

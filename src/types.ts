@@ -686,6 +686,21 @@ export interface ParsedEntry {
   qualityRating?: number;      // 1-5 if discernible from text
 }
 
+/** LLM-driven completion schema — replaces hardcoded smartRouting domain logic */
+export interface CompletionSchema {
+  needsCompletion: boolean;
+  domain: 'fitness' | 'learning' | 'state' | 'food' | 'other';
+  /** Dynamic action/exercise/scope candidates from LLM — NOT a hardcoded list */
+  suggestedActions: string[];
+  matchedGoalId: string | null;
+  matchedModuleId: string | null;
+  goalConfidence: 'high' | 'medium' | 'low';
+  shouldCreateGoal: boolean;
+  newGoalSuggestion: { name: string; domain: string } | null;
+  durationOptions: number[];
+  askDuration: boolean;
+}
+
 export interface RawCapture {
   id: string;
   text: string;            // 用户原文，一字不改，永久保留
@@ -703,6 +718,8 @@ export interface RawCapture {
     // Spec B-3: structured entries for confirmation + data entry
     entries?: ParsedEntry[];
     entriesDismissed?: boolean; // true once user confirms or ignores
+    // LLM-driven completion schema (replaces hardcoded smartRouting)
+    completionSchema?: CompletionSchema;
   };
 }
 

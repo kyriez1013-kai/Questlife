@@ -41,7 +41,7 @@ async function callDeepSeek(
           { role: 'user',   content: userPrompt   },
         ],
         temperature: 0.3,
-        max_tokens: 900,  // B-3: entries[] adds significant output tokens for multi-set logs
+        max_tokens: 1400, // B-3 entries[] + completionSchema both need output tokens
       }),
       signal: controller.signal,
     });
@@ -68,7 +68,19 @@ Required JSON schema:
   "insightType": "skill_progress" | "goal_link" | "cross_link" | "encourage",
   "crossLinks": [{ "captureId": "string", "reason": "string" }],
   "insight": { "zh": "...", "en": "..." },
-  "entries": []
+  "entries": [],
+  "completionSchema": {
+    "needsCompletion": true,
+    "domain": "fitness",
+    "suggestedActions": [],
+    "matchedGoalId": null,
+    "matchedModuleId": null,
+    "goalConfidence": "low",
+    "shouldCreateGoal": false,
+    "newGoalSuggestion": null,
+    "durationOptions": [],
+    "askDuration": false
+  }
 }
 
 Additional context provided in the user message (may be absent for new users — handle gracefully):
@@ -76,36 +88,68 @@ Additional context provided in the user message (may be absent for new users —
 • goalsSnapshot: [{id, name, progressPercent, targetSummary}] — active goals.
 • skillHistory: [{skillId, skillName, recentLogs:[{date, durationMinutes, qualityRating?}]}] — for longitudinal comparison.
 
-Rules for insight fields (unchanged from before):
+Rules for insight fields (unchanged):
 • type, fields, matchedSkillIds, linkedGoalId, insightType, crossLinks: same rules as before.
-• insight: 1-2 sentences, specific numbers/names, match entry language (Chinese or English).
+• insight: 1-2 sentences, specific numbers/names, match entry language.
 
-Rules for entries (Spec B-3 — structured execution items for data entry confirmation):
-entries is an array of executable actions. Each entry object:
+Rules for entries (Spec B-3 — unchanged):
+entries is an array of executable actions. Each entry:
 {
-  "skillName": "...",           // exact action name from the log
-  "matchedSkillId": "id|null",  // id from skillsCatalog if name matches, else null
-  "goalType": "fitness|study|exam|project|custom",
+  "skillName": "...", "matchedSkillId": "id|null", "goalType": "fitness|study|exam|project|custom",
   "progressType": "performance_log|time_based|target_value|quality_score",
-  "fields": {
-    // performance_log (strength / resistance training):
-    //   "sets": [{"weight":80,"reps":5},{"weight":80,"reps":4}]
-    //   "extraWeight": 15  (for weighted dips: the added plate weight)
-    //
-    // time_based (study, reading, cardio by duration):
-    //   "durationMinutes": 45, "note": "chapter 3"
-    //
-    // target_value:
-    //   "value": 150, "unit": "kg"
-  },
-  "qualityRating": 4  // omit if unknown
+  "fields": { /* sets/durationMinutes/value etc */ }, "qualityRating": 4
 }
+CRITICAL: ONLY create entries for real execution (done sets, study sessions). NOT for state logs, future plans, or vague mentions. If no concrete execution → "entries": [].
 
-CRITICAL safety rules for entries (prevents data pollution):
-1. ONLY create entries for real physical/cognitive execution: training sets actually done, study sessions, practice reps.
-2. Do NOT create entries for: conversational references ("今天聊到了卧推"), state-only logs ("没睡好"), future plans ("明天练"), or vague mentions without concrete metrics.
-3. Strength sets: extract EACH set separately. "3x5最后一组4个" → [{reps:5},{reps:5},{reps:4}]. "dip+15kg 3x8" → [{weight:15,reps:8},{weight:15,reps:8},{weight:15,reps:8}] with extraWeight:15.
-4. If no concrete execution data → "entries": [].
+Rules for completionSchema (replaces all hardcoded domain/routing logic on the client):
+
+• needsCompletion: true if entries is non-empty OR domain is fitness/learning. false for state/food/other.
+
+• domain: classify input semantics:
+  - "fitness": ANY physical training activity in ANY language — exercises, body parts, workouts
+    (卧推/bench/push/练胸/练背/练肩/练腿/练臀/硬拉/深蹲/引体/back/shoulder/legs/arms/cardio/chest/dips/squat/deadlift/rows/pull/plank... and any other sport or training term)
+  - "learning": study, programming, reading tech docs, flashcards, coding, debugging, math, sciences, languages, any subject in any language (Python/SQL/C++/数学/物理/history/...)
+  - "state": mood, energy, emotions, sleep quality, tiredness, stress ("没睡好", "状态差", "累", "焦虑")
+  - "food": meals, snacks, drinks, eating ("吃了", "喝了", "meal", "chocolate", "巧克力")
+  - "other": everything else
+
+• suggestedActions — THIS IS THE MOST IMPORTANT FIELD. Generate dynamically based on input context:
+  FITNESS — generate 5-8 exercises/movements relevant to the body part or workout type mentioned:
+    - chest/push/练胸 → [卧推, 上斜卧推, 下斜卧推, 飞鸟, 夹胸, 双杠撑臂, 俯卧撑, chest press]
+    - back/pull/练背 → [引体向上, 宽距高位下拉, 坐姿划船, 单臂哑铃划船, 面拉, 硬拉, 反手引体, 俯身划船]
+    - shoulder/练肩 → [肩上推举, 侧平举, 前平举, 俯身飞鸟, 保加利亚深蹲, 直立划船, 面拉, 阿诺德推举]
+    - legs/练腿 → [深蹲, 罗马尼亚硬拉, 腿举, 腿弯举, 腿伸展, 保加利亚分腿蹲, 箱式深蹲, 哈克深蹲]
+    - arms/练臂 → [弯举, 锤式弯举, 窄距卧推, 三头下压, 过头三头伸展, 21s弯举, Preacher弯举]
+    - glutes/练臀 → [臀推, 深蹲, 臀部后踢, 侧卧髋外展, 罗马尼亚硬拉, 俯卧髋后伸, 跨步蹲]
+    - cardio → [跑步, 跳绳, 游泳, 骑车, 爬楼梯, 椭圆机, 划船机, HIIT]
+    - core/腹部 → [平板支撑, 卷腹, 悬垂举腿, 俄罗斯转体, 死虫, 山地爬行, 侧平板]
+    - If user mentioned a specific exercise (e.g. "卧推"), put it FIRST in the list
+    - IMPORTANT: Infer body part from the input — "back" → back exercises, "shoulder" → shoulder exercises
+    - DO NOT return a fixed generic list regardless of input
+  LEARNING — generate 5-8 scope candidates relevant to the subject:
+    ["练习/刷题", "项目实战", "debug", "课程学习", "复习/复盘", "阅读文档", "刷视频教程", "做笔记"]
+    (or similar scope options in the language of the input)
+
+• matchedGoalId: from goalsSnapshot, find the best-matching goal id:
+  - fitness domain → look for goals with name/description containing: 健身/训练/gym/fitness/运动/力量/physique
+  - learning domain → look for goals with name/description containing: 学习/编程/study/coding/课程/读书
+  - Match found → return the goal id and set goalConfidence to "high" if name strongly matches, "medium" if partial
+  - No match → null, shouldCreateGoal: true, goalConfidence: "low"
+
+• matchedModuleId: if matchedGoalId is set, look for a module under that goal matching the workout type:
+  - fitness chest → module containing "胸"/"chest"/"push"
+  - fitness back → module containing "背"/"back"/"pull"
+  - fitness shoulder → module containing "肩"/"shoulder"
+  - fitness legs → module containing "腿"/"legs"/"squat"
+  - Return module id if found, null otherwise
+
+• goalConfidence: "high" (clear name match) | "medium" (partial match) | "low" (no match)
+
+• shouldCreateGoal: true only when no matching goal found (matchedGoalId is null)
+
+• durationOptions: [15, 30, 45, 60] for fitness/learning; [] for state/food/other
+
+• askDuration: true when no duration info in the input; false when input contains duration ("30分钟", "1小时", "30min", etc.)
 `;
 
 const GREETING_SYSTEM = `\
@@ -228,6 +272,29 @@ export default async function handler(req: any, res: any) {
         ...(typeof e.qualityRating === 'number' ? { qualityRating: Math.max(1, Math.min(5, Math.round(e.qualityRating))) } : {}),
       }));
 
+    // ── Sanitise completionSchema ─────────────────────────────────────────────
+    const VALID_DOMAINS = new Set(['fitness', 'learning', 'state', 'food', 'other']);
+    const VALID_CONF    = new Set(['high', 'medium', 'low']);
+    const cs = parsed.completionSchema;
+    const completionSchema = cs && typeof cs === 'object' ? {
+      needsCompletion:   typeof cs.needsCompletion === 'boolean' ? cs.needsCompletion : entries.length > 0,
+      domain:            VALID_DOMAINS.has(cs.domain) ? cs.domain : 'other',
+      suggestedActions:  Array.isArray(cs.suggestedActions)
+        ? cs.suggestedActions.filter((v: any) => typeof v === 'string').slice(0, 10)
+        : [],
+      matchedGoalId:     typeof cs.matchedGoalId === 'string' ? cs.matchedGoalId : null,
+      matchedModuleId:   typeof cs.matchedModuleId === 'string' ? cs.matchedModuleId : null,
+      goalConfidence:    VALID_CONF.has(cs.goalConfidence) ? cs.goalConfidence : 'low',
+      shouldCreateGoal:  typeof cs.shouldCreateGoal === 'boolean' ? cs.shouldCreateGoal : false,
+      newGoalSuggestion: cs.newGoalSuggestion && typeof cs.newGoalSuggestion === 'object'
+        ? { name: String(cs.newGoalSuggestion.name ?? ''), domain: String(cs.newGoalSuggestion.domain ?? '') }
+        : null,
+      durationOptions:   Array.isArray(cs.durationOptions)
+        ? cs.durationOptions.filter((v: any) => typeof v === 'number').slice(0, 6)
+        : [],
+      askDuration:       typeof cs.askDuration === 'boolean' ? cs.askDuration : false,
+    } : null;
+
     return send(res, 200, {
       ok:               true,
       type:             typeof parsed.type === 'string' ? parsed.type : 'misc',
@@ -239,7 +306,8 @@ export default async function handler(req: any, res: any) {
       insight:          parsed.insight && typeof parsed.insight === 'object'
         ? { zh: String(parsed.insight.zh ?? ''), en: String(parsed.insight.en ?? '') }
         : { zh: '', en: '' },
-      entries,          // B-3: structured execution items
+      entries,
+      completionSchema, // LLM-driven domain + suggestedActions + goal routing
     });
 
   } catch (error: any) {

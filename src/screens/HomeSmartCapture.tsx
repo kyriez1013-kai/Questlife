@@ -311,8 +311,9 @@ export default function HomeSmartCapture() {
             matchedSkillIds: result.matchedSkillIds ?? [],
             linkedGoalId:    result.linkedGoalId ?? undefined,
             insightType:     result.insightType ?? 'encourage',
-            entries:         Array.isArray(result.entries) ? result.entries : [],
+            entries:          Array.isArray(result.entries) ? result.entries : [],
             entriesDismissed: false,
+            completionSchema: result.completionSchema ?? undefined,
           },
         });
       } else {
@@ -511,6 +512,7 @@ export default function HomeSmartCapture() {
                         insightType: c.parsed?.insightType ?? 'encourage',
                         entries: c.parsed?.entries ?? entriesForConfirmation,
                         entriesDismissed: true,
+                        completionSchema: c.parsed?.completionSchema,
                       },
                     })}
                   />
