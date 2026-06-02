@@ -1020,6 +1020,34 @@ Validation:
 - `npx tsc --noEmit`: passed.
 - `npm run build`: passed after approved rerun because the sandbox blocked unlinking `dist/favicon.ico`.
 
+## B-4 Post-save Progress Feedback v1
+
+Status: Implemented lightweight post-save feedback for Smart Capture pending confirmations.
+
+Files changed:
+- `src/utils/progressFeedback.ts`
+- `src/screens/HomeCapturePending.tsx`
+- `src/i18n.ts`
+
+What changed:
+- Added a pure `buildPostSaveFeedback({ savedLogs, data, lang })` helper.
+- The helper reads existing execution logs, skills, goals, and modules without changing stored data.
+- Confirmation saves now collect the `ExecutionLog` objects returned by `createExecutionLog`.
+- After successful save, the pending card is replaced by a lightweight success feedback card instead of immediately dismissing.
+- Feedback shows what was saved, the selected goal/module path, record type, duration, quality, baseline/trend status, and a next action.
+- Fitness/performance records compare volume or weight against the previous comparable record when available.
+- Time-based records compare duration against the previous comparable record when available.
+- If there is no previous comparable record, the feedback marks it as the first structured baseline rather than claiming progress.
+- Multi-action saves show up to 3 feedback items and a compact overflow count.
+
+Known limitations:
+- v1 does not implement a full coaching model or HealthKit/Apple Watch integration.
+- Different actions are not compared against each other.
+- Production UI verification is required after GitHub push and Vercel deployment.
+
+Validation:
+- `npx tsc --noEmit`: passed.
+
 ## B-3.3 Completion Goal / Module Routing
 
 Status: Implemented focused routing selector for Smart Capture completion cards.

@@ -14,10 +14,11 @@ import { View, Text, TouchableOpacity, StyleSheet, TextInput } from 'react-nativ
 import { useStore } from '../store';
 import { getQuestTheme } from '../design/tokens';
 import { getLanguage, t } from '../i18n';
-import { Category, CompletionSchema, GoalType, ParsedEntry, ProgressType, QuestModule, TaskType } from '../types';
+import { Category, CompletionSchema, ExecutionLog, GoalType, ParsedEntry, ProgressType, QuestModule, TaskType } from '../types';
 import QuestCard from '../components/ui/QuestCard';
 import { assessCaptureCompletion } from '../utils/captureCompletion';
 import { getSmartRouteResult, SmartRouteResult } from '../utils/smartRouting';
+import { buildPostSaveFeedback, PostSaveFeedback } from '../utils/progressFeedback';
 
 // ── Per-entry UI state ────────────────────────────────────────────────────────
 
@@ -473,6 +474,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
     })),
   );
   const [logged, setLogged] = useState(false);
+  const [postSaveFeedback, setPostSaveFeedback] = useState<PostSaveFeedback | null>(null);
   const [confirming, setConfirming] = useState(false);
 
   // Modules available for new-skill assignment
@@ -786,6 +788,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
     if (confirming || logged) return;
     setConfirming(true);
     const date = parseTargetDate(captureText);
+    const savedLogs: ExecutionLog[] = [];
 
     effectiveEntries.forEach((entry, i) => {
       if (completionSchema && (completionSchema.domain === 'state' || completionSchema.domain === 'food')) return;
@@ -859,7 +862,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
           const strengthSet = (weight || sets || reps || rpe)
             ? { weight, sets, reps, rpe: rpe ?? undefined }
             : undefined;
-          createExecutionLog({
+          const savedLog = createExecutionLog({
             id: `capture-${captureId}-${i}-${actionIndex}`,
             linkedSkillId: actionSkillId,
             linkedGoalId: selectedGoalId,
@@ -910,6 +913,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
               },
             },
           });
+          savedLogs.push(savedLog);
         });
         return;
       }
@@ -976,7 +980,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
       } : undefined;
       const isCustomAction = (ui.customExerciseNames ?? []).some((name) => normalizeName(name) === normalizeName(completedEntry.skillName));
 
-      createExecutionLog({
+      const savedLog = createExecutionLog({
         id: `capture-${captureId}-${i}`,
         linkedSkillId: skillId,
         linkedGoalId,                              // explicit — fixes both symptoms
@@ -1045,19 +1049,88 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
               minutesAdded: completedEntry.progressType === 'time_based' ? durationMinutes : undefined,
             },
       });
+      savedLogs.push(savedLog);
     });
 
+    if (savedLogs.length > 0) {
+      setPostSaveFeedback(buildPostSaveFeedback({ savedLogs, data, lang }));
+    }
     setLogged(true);
-    onDismiss();
-  }, [confirming, logged, captureText, effectiveEntries, entryStates, captureId, data.categories, data.modules, data.skills, data.executionLogs, lang, questTheme.colors.primary,
+  }, [confirming, logged, captureText, effectiveEntries, entryStates, captureId, data, data.categories, data.modules, data.skills, data.executionLogs, lang, questTheme.colors.primary,
       completionSchema?.domain, resolveSkill, resolveGoalForSave, resolveModuleForSave, resolveRouting, addSkill, addExistingSkillToModule, createExecutionLog, onDismiss]);
 
   if (logged) {
+    if (postSaveFeedback?.items.length) {
+      const recordTypeKey = {
+        time: 'savedRecordTypeTime',
+        performance: 'savedRecordTypePerformance',
+        quality: 'savedRecordTypeQuality',
+        custom: 'savedRecordTypeCustom',
+        unknown: 'savedRecordTypeUnknown',
+      } as const;
+      return (
+        <QuestCard questTheme={questTheme} variant="flat" style={{ marginTop: questTheme.spacing.sm }}>
+          <Text style={[pendStyles.header, { color: questTheme.colors.text, fontSize: questTheme.typography.bodySize }]}>
+            {t(lang, 'savedFeedbackTitle')}
+          </Text>
+          <Text style={[pendStyles.summary, { color: questTheme.colors.textMuted }]}>
+            {t(lang, 'savedFeedbackSubtitle')}
+          </Text>
+          <View style={pendStyles.feedbackList}>
+            {postSaveFeedback.items.map((item) => {
+              const path = [item.goalName, item.moduleName].filter(Boolean).join(' / ');
+              return (
+                <View key={item.logId} style={[pendStyles.feedbackItem, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}>
+                  <Text style={[pendStyles.completionTitle, { color: questTheme.colors.text }]}>
+                    {item.title}
+                  </Text>
+                  <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>
+                    {t(lang, 'recordToPath')}: {path || t(lang, 'scEntryUnassigned')} · {t(lang, recordTypeKey[item.recordType])}
+                    {item.durationMinutes && item.durationMinutes > 0 ? ` · ${t(lang, 'duration')}: ${item.durationMinutes}${lang === 'zh' ? '分钟' : ' min'}` : ''}
+                    {item.qualityRating ? ` · ${t(lang, 'quality')}: ${item.qualityRating}/5` : ''}
+                  </Text>
+                  {item.comparison ? (
+                    <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>
+                      {t(lang, 'feedbackPrevious')}: {item.comparison.previousLabel} · {t(lang, 'feedbackCurrent')}: {item.comparison.currentLabel}
+                    </Text>
+                  ) : null}
+                  <Text style={[pendStyles.completionHint, { color: questTheme.colors.success }]}>
+                    {t(lang, item.summaryKey)}
+                  </Text>
+                  <Text style={[pendStyles.completionHint, { color: questTheme.colors.primary }]}>
+                    {t(lang, item.nextActionKey)}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+          {postSaveFeedback.overflowCount > 0 ? (
+            <Text style={[pendStyles.summary, { color: questTheme.colors.textMuted }]}>
+              {t(lang, 'moreSavedItems').replace('{n}', String(postSaveFeedback.overflowCount))}
+            </Text>
+          ) : null}
+          <TouchableOpacity
+            onPress={onDismiss}
+            style={[pendStyles.confirmBtn, { backgroundColor: questTheme.colors.primary, borderRadius: questTheme.radius.sm, alignSelf: 'flex-start' }]}
+            activeOpacity={0.8}
+          >
+            <Text style={[pendStyles.confirmText, { color: questTheme.colors.primaryText }]}>
+              {t(lang, 'done')}
+            </Text>
+          </TouchableOpacity>
+        </QuestCard>
+      );
+    }
     return (
       <View style={[pendStyles.loggedRow, { backgroundColor: questTheme.colors.successSoft, borderRadius: questTheme.radius.sm }]}>
         <Text style={[pendStyles.loggedText, { color: questTheme.colors.success }]}>
           {t(lang, 'scEntryLogged')}
         </Text>
+        <TouchableOpacity onPress={onDismiss} style={[pendStyles.ignoreBtn, { marginTop: 6 }]} activeOpacity={0.7}>
+          <Text style={[pendStyles.ignoreText, { color: questTheme.colors.textMuted }]}>
+            {t(lang, 'done')}
+          </Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -1650,6 +1723,8 @@ const pendStyles = StyleSheet.create({
   addCustomBtn: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8 },
   exerciseDetailsWrap: { gap: 8, marginTop: 4 },
   exerciseDetailCard: { borderWidth: 1, borderRadius: 8, padding: 8, gap: 7 },
+  feedbackList: { gap: 8, marginTop: 8, marginBottom: 8 },
+  feedbackItem: { borderWidth: 1, borderRadius: 8, padding: 8, gap: 5 },
   detailInputRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   miniInput: { minWidth: 72, flexGrow: 1, borderWidth: 1, borderRadius: 7, paddingHorizontal: 8, paddingVertical: 6, fontSize: 12, fontWeight: '700' },
   bulkBtn: { alignSelf: 'flex-start', borderWidth: 1, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4, marginBottom: 6 },
