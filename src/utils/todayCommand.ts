@@ -91,6 +91,17 @@ export function buildTodayCommand({
     };
   }
 
+  if (isLowState(latestState)) {
+    return {
+      type: 'rescue',
+      titleKey: 'rescueTwoMinutes',
+      reasonKey: (latestState?.focus ?? latestState?.overall ?? 3) <= 2 ? 'currentStateLowFocusReason' : 'currentStateLowEnergyReason',
+      primaryAction: 'rescue',
+      secondaryActions: ['log'],
+      confidence: 'medium',
+    };
+  }
+
   if (latestFeedback) {
     const log = todayLogs.find((item) => item.id === latestFeedback.executionLogId) ?? todayLogs.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
     return {
@@ -128,17 +139,6 @@ export function buildTodayCommand({
       scheduleBlockId: nextBlock.id,
       plannedMinutes: nextBlock.plannedMinutes,
       confidence: currentBlock ? 'high' : 'medium',
-    };
-  }
-
-  if (isLowState(latestState)) {
-    return {
-      type: 'rescue',
-      titleKey: 'rescueTwoMinutes',
-      reasonKey: (latestState?.focus ?? latestState?.overall ?? 3) <= 2 ? 'currentStateLowFocusReason' : 'currentStateLowEnergyReason',
-      primaryAction: 'rescue',
-      secondaryActions: ['log'],
-      confidence: 'medium',
     };
   }
 
