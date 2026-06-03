@@ -44,6 +44,7 @@ import { getRecordingFieldsForSkill } from '../domainTemplates';
 import HomeSmartCapture from './HomeSmartCapture';
 import { confirmAction } from '../utils/confirm';
 import { displayEntityName } from '../utils/displayName';
+import { buildTodayCommand, TodayCommandAction } from '../utils/todayCommand';
 
 // 晨间状态选项
 const DAILY_STATE_OPTIONS = [
@@ -477,6 +478,8 @@ export default function HomeScreen() {
   const [contextCaffeine, setContextCaffeine] = useState(false);
   const [contextSocialDrain, setContextSocialDrain] = useState(false);
   const [planExpanded, setPlanExpanded] = useState(false);
+  const [recordsExpanded, setRecordsExpanded] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   // zone-3 section collapse state (default collapsed for clean first-screen view)
   const [stateCardOpen,  setStateCardOpen]  = useState(false);
   const [budgetCardOpen, setBudgetCardOpen] = useState(false);
@@ -566,9 +569,14 @@ export default function HomeScreen() {
   const todayStrategy = todayModeStrategy[todayMode];
 
   // 今日执行记录按 category 分组
+  const displayedTodayLogs = useMemo(() => {
+    const sorted = todayLogs.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return recordsExpanded ? sorted : sorted.slice(0, 3);
+  }, [recordsExpanded, todayLogs]);
+
   const groupedToday = useMemo(() => {
     const map = new Map<string, ExecutionLog[]>();
-    todayLogs.forEach((log) => {
+    displayedTodayLogs.forEach((log) => {
       const sk = data.skills.find((s) => s.id === log.linkedSkillId);
       const catId = log.linkedGoalId ?? sk?.categoryId ?? 'unknown';
       const arr = map.get(catId) ?? [];
@@ -577,9 +585,9 @@ export default function HomeScreen() {
     });
     return Array.from(map.entries()).map(([catId, logs]) => ({
       cat: data.categories.find((c) => c.id === catId),
-      logs: logs.slice().reverse(),
+      logs,
     }));
-  }, [todayLogs, data.categories, data.skills]);
+  }, [displayedTodayLogs, data.categories, data.skills]);
 
   const findPrimaryLink = useCallback((sid?: string) => {
     if (!sid) return undefined;
@@ -1280,6 +1288,33 @@ export default function HomeScreen() {
     };
   }, [activeSession, data.skills, findPrimaryLink, lang, timerNow, todayLogs, todayScheduleBlocks]);
 
+  const latestFeedbackLog = useMemo(() => {
+    const latest = todayLogs.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+    if (!latest) return undefined;
+    const ageMs = Date.now() - new Date(latest.createdAt).getTime();
+    return ageMs <= 30 * 60 * 1000 ? latest : undefined;
+  }, [todayLogs]);
+
+  const todayCommand = useMemo(() => buildTodayCommand({
+    data,
+    now: new Date(),
+    scheduleBlocks: todayScheduleBlocks,
+    todayLogs,
+    latestFeedback: latestFeedbackLog ? { executionLogId: latestFeedbackLog.id } : undefined,
+    latestState: latestStateCheckIn,
+    activeSession,
+  }), [activeSession, data, latestFeedbackLog, latestStateCheckIn, todayLogs, todayScheduleBlocks]);
+
+  const formatCommandCopy = useCallback((key: string, values?: Record<string, string | number>) => {
+    let copy = t(lang, key);
+    Object.entries(values || {}).forEach(([name, value]) => {
+      copy = copy.replace(`{${name}}`, String(value));
+    });
+    return copy;
+  }, [lang]);
+
+  const commandTargetSkill = todayCommand.linkedSkillId ? data.skills.find((item) => item.id === todayCommand.linkedSkillId) : undefined;
+
   const trackNowFocusAction = useCallback((action: 'start_timer' | 'one_tap' | 'log_progress') => {
     trackEvent('today_now_focus_clicked', {
       focusType: nowFocus.type,
@@ -1452,6 +1487,40 @@ export default function HomeScreen() {
   }, [activeRescueId, completeActivationStep, getRescueTarget, rescueActivationAction]);
 
   const goToGoals = () => navigation.navigate('Quest');
+  const runTodayCommand = useCallback((action: TodayCommandAction = todayCommand.primaryAction) => {
+    if (action === 'create_goal') {
+      goToGoals();
+      return;
+    }
+    if (action === 'rescue') {
+      openRescueFlow(unfinishedRescue?.id);
+      return;
+    }
+    if (action === 'review_feedback') {
+      setRecordsExpanded(true);
+      return;
+    }
+    if (action === 'finish_pending_capture') {
+      return;
+    }
+    if (action === 'log') {
+      openModal(todayCommand.linkedSkillId, {
+        logType: todayCommand.scheduleBlockId ? 'schedule' : todayCommand.linkedSkillId ? 'skill' : 'custom',
+        scheduleBlockId: todayCommand.scheduleBlockId ?? null,
+        minutes: todayCommand.plannedMinutes,
+      });
+      return;
+    }
+    startSession({
+      linkedSkillId: todayCommand.linkedSkillId,
+      linkedGoalId: todayCommand.linkedGoalId,
+      linkedModuleId: todayCommand.linkedModuleId,
+      linkedScheduleBlockId: todayCommand.scheduleBlockId,
+      title: commandTargetSkill?.name ?? formatCommandCopy(todayCommand.titleKey, todayCommand.titleValues),
+      taskType: commandTargetSkill?.taskType,
+    });
+  }, [commandTargetSkill, formatCommandCopy, openModal, openRescueFlow, startSession, todayCommand, unfinishedRescue?.id]);
+
   const modalSkill = skillId ? data.skills.find((item) => item.id === skillId) : undefined;
   const modalPredictionSchema = getPredictionSchemaForSkill(modalSkill);
   const modalIsStrength = isStrengthPredictionSkill(modalSkill);
@@ -1509,65 +1578,85 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        <View style={[styles.nowFocusCard, themedCard, { borderColor: questTheme.colors.borderStrong }]}>
+        <View style={[styles.nowFocusCard, themedCard, { borderColor: todayCommand.type === 'rescue' ? questTheme.colors.warning : questTheme.colors.borderStrong }]}>
           <View style={styles.nowFocusHeading}>
-            <View style={[styles.nowFocusIconShell, { backgroundColor: questTheme.colors.primarySoft }]}>
-              <QuestIcon name={nowFocus.type === 'active_session' ? 'activity' : nowFocus.type === 'schedule_block' ? 'calendar' : 'target'} size={22} color={accent} />
+            <View style={[styles.nowFocusIconShell, { backgroundColor: todayCommand.type === 'rescue' ? questTheme.colors.warningSoft : questTheme.colors.primarySoft }]}>
+              <QuestIcon
+                name={todayCommand.type === 'rescue' ? 'lifeBuoy' : todayCommand.type === 'continue_plan' ? 'calendar' : todayCommand.type === 'review_feedback' ? 'barChart' : 'target'}
+                size={22}
+                color={todayCommand.type === 'rescue' ? questTheme.colors.warning : accent}
+              />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.strategyKicker, { color: questTheme.colors.textMuted }]}>{t(lang, 'nowFocusDo')}</Text>
-              <Text style={[styles.nowFocusTitle, { color: questTheme.colors.text }]}>{nowFocus.title}</Text>
+              <Text style={[styles.strategyKicker, { color: questTheme.colors.textMuted }]}>{t(lang, 'commandCenter')}</Text>
+              <Text style={[styles.nowFocusTitle, { color: questTheme.colors.text }]}>{formatCommandCopy(todayCommand.titleKey, todayCommand.titleValues)}</Text>
             </View>
           </View>
-          <Text style={[styles.nextActionText, { color: questTheme.colors.textMuted }]}>{nowFocus.suggestionText}</Text>
+          <Text style={[styles.nextActionText, { color: questTheme.colors.textMuted }]}>
+            {t(lang, 'because')} {formatCommandCopy(todayCommand.reasonKey, todayCommand.reasonValues)}
+          </Text>
+          <Text style={[styles.commandStateLine, { color: questTheme.colors.textMuted }]}>
+            {t(lang, 'currentState')}: {stateSummaryLabel}{stateSummaryTime ? ` · ${stateSummaryTime}` : ''}
+          </Text>
           <View style={styles.nowFocusActions}>
             <QuestButton
               questTheme={questTheme}
+              variant={todayCommand.primaryAction === 'rescue' ? 'emergency' : 'primary'}
+              icon={todayCommand.primaryAction === 'rescue' ? 'lifeBuoy' : todayCommand.primaryAction === 'create_goal' ? 'plus' : todayCommand.primaryAction === 'review_feedback' ? 'barChart' : 'play'}
+              label={t(lang, todayCommand.primaryAction === 'rescue'
+                ? 'rescueTwoMinutes'
+                : todayCommand.primaryAction === 'create_goal'
+                  ? 'createFirstGoal'
+                  : todayCommand.primaryAction === 'review_feedback'
+                    ? 'reviewLatestFeedback'
+                    : todayCommand.primaryAction === 'finish_pending_capture'
+                      ? 'finishCurrentCapture'
+                      : 'startNow')}
+              onPress={() => runTodayCommand()}
+            />
+            <QuestButton
+              questTheme={questTheme}
               variant="secondary"
-              icon={nowFocus.type === 'active_session' ? 'check' : 'play'}
-              label={nowFocus.type === 'active_session' ? t(lang, 'finish') : t(lang, 'startAction')}
-              onPress={() => {
-                trackNowFocusAction('start_timer');
-                if (nowFocus.type === 'active_session') finishSession();
-                else startSession({
-                  linkedSkillId: nowFocus.linkedSkillId,
-                  linkedGoalId: nowFocus.linkedGoalId,
-                  linkedModuleId: nowFocus.linkedModuleId,
-                  linkedScheduleBlockId: nowFocus.linkedScheduleBlockId,
-                  title: nowFocus.title,
-                  taskType: nowFocus.taskType as TaskType | undefined,
-                });
-              }}
-            />
-            <QuestButton
-              questTheme={questTheme}
-              variant="ghost"
-              icon="check"
-              label={t(lang, 'done')}
-              onPress={() => {
-                trackNowFocusAction('one_tap');
-                const block = nowFocus.linkedScheduleBlockId ? todayScheduleBlocks.find((item) => item.id === nowFocus.linkedScheduleBlockId) : undefined;
-                const skill = nowFocus.linkedSkillId ? data.skills.find((item) => item.id === nowFocus.linkedSkillId) : undefined;
-                oneTapComplete({ block, skill, defaultMinutes: nowFocus.plannedMinutes });
-              }}
-            />
-            <QuestButton
-              questTheme={questTheme}
-              variant="primary"
               icon="plus"
-              label={t(lang, 'logProgress')}
-              onPress={() => {
-                trackNowFocusAction('log_progress');
-                openModal(nowFocus.linkedSkillId, {
-                  logType: nowFocus.linkedScheduleBlockId ? 'schedule' : nowFocus.linkedSkillId ? 'skill' : 'custom',
-                  scheduleBlockId: nowFocus.linkedScheduleBlockId ?? null,
-                  minutes: nowFocus.plannedMinutes,
-                  title: nowFocus.title,
-                });
-              }}
+              label={t(lang, 'logSomething')}
+              onPress={() => runTodayCommand('log')}
             />
+            {todayCommand.linkedSkillId ? (
+              <QuestButton
+                questTheme={questTheme}
+                variant="ghost"
+                icon="activity"
+                label={t(lang, 'reduceToFiveMinutes')}
+                onPress={() => {
+                  openModal(todayCommand.linkedSkillId, {
+                    logType: todayCommand.scheduleBlockId ? 'schedule' : 'skill',
+                    scheduleBlockId: todayCommand.scheduleBlockId ?? null,
+                    minutes: 5,
+                  });
+                }}
+              />
+            ) : null}
           </View>
         </View>
+
+        <TouchableOpacity
+          style={[styles.rescueStrip, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.warningSoft }]}
+          onPress={() => openRescueFlow(unfinishedRescue?.id)}
+          activeOpacity={0.82}
+        >
+          <View style={[styles.rescueIconShell, { backgroundColor: questTheme.colors.warningSoft }]}>
+            <QuestIcon name="lifeBuoy" size={16} color={questTheme.colors.warning} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.rescueStripTitle, { color: questTheme.colors.text }]}>{t(lang, 'cantStartCompactTitle')}</Text>
+            <Text style={[styles.rescueStripText, { color: questTheme.colors.textMuted }]}>
+              {t(lang, 'cantStartCompactSubtitle')} · {t(lang, 'rescueTodayCount').replace('{count}', String(completedRescuesToday))}
+            </Text>
+          </View>
+          <View style={[styles.rescueMiniButton, { borderColor: questTheme.colors.warningSoft }]}>
+            <Text style={[styles.rescueMiniButtonText, { color: questTheme.colors.warning }]}>{t(lang, 'rescueStartAction')}</Text>
+          </View>
+        </TouchableOpacity>
 
         {/* ═══ ZONE 3: Today data — header always visible, cards collapsible ═ */}
         <Text style={[styles.h1, { color: questTheme.colors.text, marginTop: questTheme.spacing.xl }]}>{t(lang, 'today')}</Text>
@@ -1680,25 +1769,96 @@ export default function HomeScreen() {
         </View>
         )}
 
-        <TouchableOpacity
-          style={[styles.rescueStrip, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.warningSoft }]}
-          onPress={() => openRescueFlow(unfinishedRescue?.id)}
-          activeOpacity={0.82}
-        >
-          <View style={[styles.rescueIconShell, { backgroundColor: questTheme.colors.warningSoft }]}>
-            <QuestIcon name="lifeBuoy" size={16} color={questTheme.colors.warning} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.rescueStripTitle, { color: questTheme.colors.text }]}>{t(lang, 'cantStartCompactTitle')}</Text>
-            <Text style={[styles.rescueStripText, { color: questTheme.colors.textMuted }]}>
-              {t(lang, 'cantStartCompactSubtitle')} · {t(lang, 'rescueTodayCount').replace('{count}', String(completedRescuesToday))}
-            </Text>
-          </View>
-          <View style={[styles.rescueMiniButton, { borderColor: questTheme.colors.warningSoft }]}>
-            <Text style={[styles.rescueMiniButtonText, { color: questTheme.colors.warning }]}>{t(lang, 'rescueStartAction')}</Text>
-          </View>
-        </TouchableOpacity>
 
+
+        {/* 今日记录 */}
+        <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'todayLogs')}</Text>
+        {data.categories.length === 0 ? (
+          <TouchableOpacity style={[styles.emptyCta, { borderColor: accent, backgroundColor: questTheme.colors.surface }]} onPress={goToGoals}>
+            <Text style={[styles.emptyCtaText, { color: accent }]}>{t(lang, 'noSkillsMsg')}</Text>
+          </TouchableOpacity>
+        ) : todayLogs.length === 0 ? (
+          <Text style={[styles.empty, { color: questTheme.colors.textMuted, backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>{t(lang, 'noLogsToday')}</Text>
+        ) : (
+          groupedToday.map(({ cat, logs }) => (
+            <View key={cat?.id ?? 'unknown'} style={styles.groupBox}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <QuestEntityIcon icon={cat?.emoji} systemIcon="target" color={cat?.color} questTheme={questTheme} size="sm" />
+                <Text style={[styles.groupHeader, { color: questTheme.colors.text }]}>{cat?.name ?? t(lang, 'uncategorized')}</Text>
+              </View>
+              {logs.map((a) => {
+                const skill = data.skills.find((s) => s.id === a.linkedSkillId);
+                const contributionLabels = contributionLabelsForLog(a.id);
+                return (
+                  <TouchableOpacity
+                    key={a.id}
+                    style={[styles.actionCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}
+                    onLongPress={() => {
+                      confirmAction({
+                        title: t(lang, 'deleteRecord'),
+                        cancelText: t(lang, 'cancel'),
+                        confirmText: t(lang, 'delete'),
+                        destructive: true,
+                        onConfirm: () => deleteExecutionLog(a.id),
+                      });
+                    }}
+                  >
+                    <View style={[styles.dot, { backgroundColor: skill?.color ?? accent }]} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.actionTitle, { color: questTheme.colors.text }]}>
+                        {displayEntityName(skill?.name ?? a.orphanedSkillName ?? a.title ?? `(${t(lang, 'deleted')})`, lang)} · {formatMetricUpdateSummary(a, skill, lang)}
+                        {a.qualityRating ? ` · ${t(lang, 'quality')} ${a.qualityRating}/5` : ''}
+                      </Text>
+                      <Text style={[styles.actionNote, { color: questTheme.colors.textMuted }]}>
+                        {(a.durationMinutes ?? 0) > 0 ? `${a.durationMinutes} ${t(lang, 'minutes')}` : t(lang, 'scDurationNotRecorded')}
+                      </Text>
+                      {contributionLabels.length > 0 ? (
+                        <Text style={[styles.actionNote, { color: questTheme.colors.textMuted }]}>
+                          {t(lang, 'contributesTo')}: {contributionLabels.join(' · ')}
+                        </Text>
+                      ) : null}
+                      {a.note ? <Text style={[styles.actionNote, { color: questTheme.colors.textMuted }]}>{a.note}</Text> : null}
+                    </View>
+                    <TouchableOpacity
+                      onPress={() => confirmAction({
+                        title: t(lang, 'deleteRecord'),
+                        cancelText: t(lang, 'cancel'),
+                        confirmText: t(lang, 'delete'),
+                        destructive: true,
+                        onConfirm: () => deleteExecutionLog(a.id),
+                      })}
+                      style={[styles.logDeleteBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}
+                    >
+                      <Text style={[styles.logDeleteText, { color: questTheme.colors.textMuted }]}>×</Text>
+                    </TouchableOpacity>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ))
+        )}
+        {todayLogs.length > 3 ? (
+          <TouchableOpacity
+            style={[styles.expandPlanBtn, { alignSelf: 'flex-start' }]}
+            onPress={() => setRecordsExpanded((value) => !value)}
+          >
+            <Text style={[styles.expandPlanText, { color: accent }]}> 
+              {recordsExpanded ? t(lang, 'hideDetails') : t(lang, 'showMoreRecords').replace('{count}', String(todayLogs.length - 3))}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+        {todayLogs.length > 0 && <Text style={[styles.tip, { color: questTheme.colors.textMuted }]}>{t(lang, 'longPressDelete')}</Text>}
+
+        <TouchableOpacity
+          onPress={() => setDetailsOpen((v) => !v)}
+          style={[styles.sectionToggleRow, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}
+          activeOpacity={0.75}
+        >
+          <Text style={[styles.sectionToggleLabel, { color: questTheme.colors.text }]}>{t(lang, 'detailedData')}</Text>
+          <Text style={[styles.sectionToggleChev, { color: questTheme.colors.textMuted }]}>{detailsOpen ? t(lang, 'hideDetails') : t(lang, 'showAdvancedFields')}</Text>
+        </TouchableOpacity>
+        {detailsOpen ? (
+          <View>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -1821,73 +1981,8 @@ export default function HomeScreen() {
           </>
         )}
 
-        {/* 今日记录 */}
-        <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'todayLogs')}</Text>
-        {data.categories.length === 0 ? (
-          <TouchableOpacity style={[styles.emptyCta, { borderColor: accent, backgroundColor: questTheme.colors.surface }]} onPress={goToGoals}>
-            <Text style={[styles.emptyCtaText, { color: accent }]}>{t(lang, 'noSkillsMsg')}</Text>
-          </TouchableOpacity>
-        ) : todayLogs.length === 0 ? (
-          <Text style={[styles.empty, { color: questTheme.colors.textMuted, backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>{t(lang, 'noLogsToday')}</Text>
-        ) : (
-          groupedToday.map(({ cat, logs }) => (
-            <View key={cat?.id ?? 'unknown'} style={styles.groupBox}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <QuestEntityIcon icon={cat?.emoji} systemIcon="target" color={cat?.color} questTheme={questTheme} size="sm" />
-                <Text style={[styles.groupHeader, { color: questTheme.colors.text }]}>{cat?.name ?? t(lang, 'uncategorized')}</Text>
-              </View>
-              {logs.map((a) => {
-                const skill = data.skills.find((s) => s.id === a.linkedSkillId);
-                const contributionLabels = contributionLabelsForLog(a.id);
-                return (
-                  <TouchableOpacity
-                    key={a.id}
-                    style={[styles.actionCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}
-                    onLongPress={() => {
-                      confirmAction({
-                        title: t(lang, 'deleteRecord'),
-                        cancelText: t(lang, 'cancel'),
-                        confirmText: t(lang, 'delete'),
-                        destructive: true,
-                        onConfirm: () => deleteExecutionLog(a.id),
-                      });
-                    }}
-                  >
-                    <View style={[styles.dot, { backgroundColor: skill?.color ?? accent }]} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.actionTitle, { color: questTheme.colors.text }]}>
-                        {displayEntityName(skill?.name ?? a.orphanedSkillName ?? a.title ?? `(${t(lang, 'deleted')})`, lang)} · {formatMetricUpdateSummary(a, skill, lang)}
-                        {a.qualityRating ? ` · ${t(lang, 'quality')} ${a.qualityRating}/5` : ''}
-                      </Text>
-                      <Text style={[styles.actionNote, { color: questTheme.colors.textMuted }]}>
-                        {(a.durationMinutes ?? 0) > 0 ? `${a.durationMinutes} ${t(lang, 'minutes')}` : t(lang, 'scDurationNotRecorded')}
-                      </Text>
-                      {contributionLabels.length > 0 ? (
-                        <Text style={[styles.actionNote, { color: questTheme.colors.textMuted }]}>
-                          {t(lang, 'contributesTo')}: {contributionLabels.join(' · ')}
-                        </Text>
-                      ) : null}
-                      {a.note ? <Text style={[styles.actionNote, { color: questTheme.colors.textMuted }]}>{a.note}</Text> : null}
-                    </View>
-                    <TouchableOpacity
-                      onPress={() => confirmAction({
-                        title: t(lang, 'deleteRecord'),
-                        cancelText: t(lang, 'cancel'),
-                        confirmText: t(lang, 'delete'),
-                        destructive: true,
-                        onConfirm: () => deleteExecutionLog(a.id),
-                      })}
-                      style={[styles.logDeleteBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}
-                    >
-                      <Text style={[styles.logDeleteText, { color: questTheme.colors.textMuted }]}>×</Text>
-                    </TouchableOpacity>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          ))
-        )}
-        {todayLogs.length > 0 && <Text style={[styles.tip, { color: questTheme.colors.textMuted }]}>{t(lang, 'longPressDelete')}</Text>}
+          </View>
+        ) : null}
       </ScrollView>
 
       {/* 顶部横幅: 成就 / Streak — pointerEvents none 不挡交互 */}
@@ -2940,6 +3035,7 @@ const styles = StyleSheet.create({
   },
   nextActionTitle: { color: theme.text, fontSize: 18, fontWeight: '900' },
   nextActionText: { color: theme.textDim, fontSize: 13, lineHeight: 20, marginTop: 6 },
+  commandStateLine: { color: theme.textDim, fontSize: 12, fontWeight: '700', marginTop: 8 },
   nextActionBtn: { alignSelf: 'flex-start', borderWidth: 1, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8, marginTop: 12 },
   nextActionBtnText: { fontSize: 12, fontWeight: '900' },
   schedulePreviewCard: {

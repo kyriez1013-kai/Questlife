@@ -1253,3 +1253,33 @@ Remaining:
 Validation:
 - `npx tsc --noEmit`: passed.
 - `npm run build`: passed after approved rerun because the sandbox blocked unlinking `dist/favicon.ico`.
+
+
+## Today Command Center v1
+
+Status: Implemented and ready for production verification.
+
+Files changed:
+- `src/utils/todayCommand.ts`
+- `src/screens/HomeScreen.tsx`
+- `src/i18n.ts`
+- `PROJECT_STATUS.md`
+
+What changed:
+- Added a rule-based Today Command helper with no LLM calls.
+- Today now prioritises Smart Capture input, latest pending/feedback capture, a compact Command Card, compact Rescue Strip, Today Plan, Current State, Today Records, and folded detailed data.
+- Command Card combines current plan, latest state, recent feedback, active skills, and empty-state fallback into one current-action recommendation.
+- Current state is lightly integrated into command reasoning, including reduced-load/rescue suggestions for low energy or low focus.
+- Today Records now show the latest 3 records by default, with a compact expand control for more.
+- Execution budget, mode strategy, stats, and skill progress are folded under Detailed Data by default.
+
+Validation:
+- `npx tsc --noEmit`: passed.
+- `npm run build`: passed.
+
+Remaining:
+- Richer LLM-based command generation later.
+- HealthKit objective signals later.
+- Full UI visual language upgrade later.
+- Food/life factor modelling later.
+- Production web UI verification is still required after GitHub push and Vercel deployment.
