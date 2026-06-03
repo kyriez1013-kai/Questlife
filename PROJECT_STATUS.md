@@ -1022,7 +1022,7 @@ Validation:
 
 ## B-4 Post-save Progress Feedback v1
 
-Status: Implemented lightweight post-save feedback for Smart Capture pending confirmations.
+Status: Implemented lightweight post-save feedback for Smart Capture pending confirmations; production manually validated.
 
 Files changed:
 - `src/utils/progressFeedback.ts`
@@ -1043,10 +1043,20 @@ What changed:
 Known limitations:
 - v1 does not implement a full coaching model or HealthKit/Apple Watch integration.
 - Different actions are not compared against each other.
-- Production UI verification is required after GitHub push and Vercel deployment.
 
 Validation:
 - `npx tsc --noEmit`: passed.
+- `npm run build`: passed.
+- Commit `2c422ee` accepted.
+- Production manual verification passed on `https://questlife-alpha-orpin.vercel.app`.
+- Verified `卧推 80kg 3x5` saves and shows first baseline feedback.
+- Verified `卧推 82.5kg 3x5` compares against previous bench record and shows improvement.
+- Verified `SQL 20分钟` shows learning/time feedback and does not route to fitness.
+- Verified `打篮球` + custom `三分投篮` shows the custom action in feedback.
+- Verified `吃了点巧克力` does not create an `ExecutionLog` and does not show false progress feedback.
+
+Next suggested priority:
+- Real-use polish / feedback quality tuning, not a new major feature.
 
 ## B-3.3 Completion Goal / Module Routing
 
