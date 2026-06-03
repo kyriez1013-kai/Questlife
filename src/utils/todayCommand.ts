@@ -50,7 +50,9 @@ function minuteOfDay(time: string) {
 
 function hasPendingCapture(data: AppData) {
   return (data.rawCaptures || []).some((capture) => {
-    const hasGeneratedLog = (data.executionLogs || []).some((log) => log.structuredData?.sourceCaptureId === capture.id);
+    const hasGeneratedLog = (data.executionLogs || []).some((log) => (
+      log.structuredData?.sourceCaptureId === capture.id || log.id.startsWith(`capture-${capture.id}`)
+    ));
     if (hasGeneratedLog) return false;
     if (capture.parsed?.entriesDismissed) return false;
     if (capture.parseStatus === 'pending' || capture.parseStatus === 'failed') return true;
