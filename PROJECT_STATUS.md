@@ -1283,3 +1283,30 @@ Remaining:
 - Full UI visual language upgrade later.
 - Food/life factor modelling later.
 - Production web UI verification is still required after GitHub push and Vercel deployment.
+
+## UI Foundation + Visual Consistency v1
+
+Status: Implemented foundation pass; production verification pending after GitHub/Vercel deployment.
+
+Files changed:
+- `src/design/tokens.ts`
+- `src/design/surfaces.ts`
+- `src/components/ui/QuestButton.tsx`
+- `src/components/ui/QuestInput.tsx`
+- `src/components/ui/QuestPill.tsx`
+- `src/screens/HomeCapturePending.tsx`
+
+What changed:
+- Added explicit theme token aliases for subtle surfaces, chip states, input states, overlays, dividers, stronger accent, info tones, and disabled/control readability.
+- Updated shared surface resolution so rows, stats, empty states, and inputs resolve to consistent theme-aware surfaces.
+- Updated shared button, input, and pill primitives to use the new control-state tokens instead of ad hoc surface choices.
+- Stabilised the Smart Capture pending completion card visual states: routing chips, action chips, custom-action input, strength detail inputs, duration/quality/RPE chips, and add buttons now share consistent selected/unselected/input states.
+- Kept B-3.3 save logic, B4 feedback logic, ExecutionLog shape, AsyncStorage/migration logic, navigation, and product routing unchanged.
+
+Validation:
+- `npx tsc --noEmit`: passed.
+- `npm run build`: passed.
+
+Known limitations:
+- This pass is a visual foundation pass, not a full UI redesign.
+- Production web UI verification is still required at `https://questlife-alpha-orpin.vercel.app` after deployment.

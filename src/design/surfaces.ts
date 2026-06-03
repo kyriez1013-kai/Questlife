@@ -72,8 +72,12 @@ export function resolveSurfaceColor(theme: QuestTheme, variant: SurfaceVariant =
       ? theme.colors.background
       : variant === 'elevated' || variant === 'modal'
         ? theme.colors.surfaceElevated
-        : variant === 'soft' || variant === 'input'
+        : variant === 'input'
+          ? theme.colors.inputBg
+        : variant === 'soft' || variant === 'empty'
           ? theme.colors.surfaceSoft
+          : variant === 'row' || variant === 'stat'
+            ? theme.colors.surfaceMuted
           : theme.colors.surface;
   if (dark && isLightSurfaceColor(color)) return theme.colors.surface;
   return color;
@@ -83,7 +87,7 @@ export function getSurfaceStyle(theme: QuestTheme, variant: SurfaceVariant = 'ca
   const backgroundColor = resolveSurfaceColor(theme, variant);
   return {
     backgroundColor,
-    borderColor: variant === 'elevated' || variant === 'modal' ? theme.colors.borderStrong : theme.colors.border,
+    borderColor: variant === 'input' ? theme.colors.inputBorder : variant === 'elevated' || variant === 'modal' ? theme.colors.borderStrong : theme.colors.border,
   };
 }
 

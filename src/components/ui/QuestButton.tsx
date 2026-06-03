@@ -1,7 +1,6 @@
 import React from 'react';
 import { Text, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { getQuestTheme, QuestTheme } from '../../design/tokens';
-import { getSurfaceStyle } from '../../design/surfaces';
 import QuestIcon, { QuestIconName } from './QuestIcon';
 
 type Props = {
@@ -32,10 +31,14 @@ export default function QuestButton({
       : variant === 'danger' ? q.colors.danger
       : variant === 'success' ? q.colors.success
         : variant === 'emergency' ? q.colors.warning
-          : variant === 'secondary' ? q.colors.primarySoft
-            : variant === 'ghost' ? 'transparent'
+          : variant === 'secondary' ? q.colors.chipSelectedBg
+            : variant === 'ghost' ? q.colors.chipBg
               : q.colors.primary;
   const fg = disabled ? q.colors.disabledText : filled ? q.colors.primaryText : q.colors.primary;
+  const borderColor =
+    disabled ? q.colors.inputBorder
+      : variant === 'ghost' || variant === 'secondary' ? q.colors.chipBorder
+        : q.colors.borderStrong;
   return (
     <TouchableOpacity
       activeOpacity={0.78}
@@ -47,8 +50,8 @@ export default function QuestButton({
           borderRadius: q.radius.pill,
           paddingHorizontal: 13,
           paddingVertical: 9,
-          borderWidth: variant === 'ghost' ? 1 : 0,
-          borderColor: variant === 'ghost' ? getSurfaceStyle(q, 'outline').borderColor : q.colors.borderStrong,
+          borderWidth: variant === 'ghost' || variant === 'secondary' || disabled ? 1 : 0,
+          borderColor,
           backgroundColor: bg,
           opacity: 1,
           alignItems: 'center',

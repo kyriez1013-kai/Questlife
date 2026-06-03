@@ -10,11 +10,13 @@ export type QuestTheme = {
     surfaceElevated: string;
     surfaceSoft: string;
     surfaceMuted: string;
+    surfaceSubtle: string;
     primary: string;
     primarySoft: string;
     primaryText: string;
     accent: string;
     accentSoft: string;
+    accentStrong: string;
     text: string;
     textMuted: string;
     textSubtle: string;
@@ -40,11 +42,21 @@ export type QuestTheme = {
     textPrimary: string;        // core numbers and headings
     textSecondary: string;      // body copy
     textDisabled: string;       // disabled / placeholder
+    // ── New control-state tokens ────────────────────────────────────────────
+    chipBg: string;
+    chipSelectedBg: string;
+    chipBorder: string;
+    inputBg: string;
+    inputBorder: string;
+    overlay: string;
+    divider: string;
     // ── New semantic color tokens ───────────────────────────────────────────
     positive: string;           // growth, completion, on-target
     negative: string;           // decline, warning
     predicted: string;          // predicted / inferred values (purple)
     neutral: string;            // neutral data, in-progress
+    info: string;
+    infoSoft: string;
   };
   radius: {
     sm: number;
@@ -129,11 +141,13 @@ export const questThemes: Record<QuestThemeId, QuestTheme> = {
       surfaceElevated: '#FFFFFF',
       surfaceSoft: '#EEF2F7',
       surfaceMuted: '#E7ECF3',
+      surfaceSubtle: '#F8FAFC',
       primary: '#132238',
       primarySoft: '#E7EEF8',
       primaryText: '#FFFFFF',
       accent: '#2F80ED',
       accentSoft: '#DDEBFF',
+      accentStrong: '#1D4ED8',
       text: '#111827',
       textMuted: '#667085',
       textSubtle: '#98A2B3',
@@ -158,10 +172,19 @@ export const questThemes: Record<QuestThemeId, QuestTheme> = {
       textPrimary: '#111318',
       textSecondary: 'rgba(17,19,24,0.6)',
       textDisabled: 'rgba(17,19,24,0.15)',
+      chipBg: '#EEF2F7',
+      chipSelectedBg: '#E7EEF8',
+      chipBorder: '#CBD5E1',
+      inputBg: '#FFFFFF',
+      inputBorder: '#CBD5E1',
+      overlay: 'rgba(15,23,42,0.46)',
+      divider: '#E4E7EC',
       positive: '#16A34A',
       negative: '#DC2626',
       predicted: '#7C3AED',
       neutral: '#2F80ED',
+      info: '#2F80ED',
+      infoSoft: '#DDEBFF',
     },
     ...baseScale,
   },
@@ -174,11 +197,13 @@ export const questThemes: Record<QuestThemeId, QuestTheme> = {
       surfaceElevated: '#18253A',
       surfaceSoft: '#23324C',
       surfaceMuted: '#1B2940',
+      surfaceSubtle: '#0E1624',
       primary: '#5CC8FF',
       primarySoft: '#183D56',
       primaryText: '#07111F',
       accent: '#A78BFA',
       accentSoft: '#302654',
+      accentStrong: '#C4B5FD',
       text: '#F8FAFC',
       textMuted: '#C4CEDD',
       textSubtle: '#93A2B8',
@@ -203,10 +228,19 @@ export const questThemes: Record<QuestThemeId, QuestTheme> = {
       textPrimary: '#FFFFFF',
       textSecondary: 'rgba(255,255,255,0.6)',
       textDisabled: 'rgba(255,255,255,0.15)',
+      chipBg: '#1B2940',
+      chipSelectedBg: '#183D56',
+      chipBorder: '#526480',
+      inputBg: '#121B2B',
+      inputBorder: '#526480',
+      overlay: 'rgba(3,7,18,0.68)',
+      divider: '#33435F',
       positive: '#4ADE80',
       negative: '#F87171',
       predicted: '#A78BFA',
       neutral: '#5CC8FF',
+      info: '#5CC8FF',
+      infoSoft: '#183D56',
     },
     ...baseScale,
   },
@@ -219,11 +253,13 @@ export const questThemes: Record<QuestThemeId, QuestTheme> = {
       surfaceElevated: '#FBFEFA',
       surfaceSoft: '#E3F0E4',
       surfaceMuted: '#D9E8DB',
+      surfaceSubtle: '#F7FBF6',
       primary: '#1F5E3B',
       primarySoft: '#DCEFE3',
       primaryText: '#FFFFFF',
       accent: '#7A9E35',
       accentSoft: '#EEF6D8',
+      accentStrong: '#4D7C0F',
       text: '#17251D',
       textMuted: '#64756B',
       textSubtle: '#91A196',
@@ -248,10 +284,19 @@ export const questThemes: Record<QuestThemeId, QuestTheme> = {
       textPrimary: '#17251D',
       textSecondary: 'rgba(23,37,29,0.6)',
       textDisabled: 'rgba(23,37,29,0.15)',
+      chipBg: '#E3F0E4',
+      chipSelectedBg: '#DCEFE3',
+      chipBorder: '#B7CEBA',
+      inputBg: '#FFFFFF',
+      inputBorder: '#B7CEBA',
+      overlay: 'rgba(23,37,29,0.42)',
+      divider: '#D7E5D8',
       positive: '#168A43',
       negative: '#B42318',
       predicted: '#6D28D9',
       neutral: '#7A9E35',
+      info: '#1F5E3B',
+      infoSoft: '#DCEFE3',
     },
     ...baseScale,
   },
@@ -264,11 +309,13 @@ export const questThemes: Record<QuestThemeId, QuestTheme> = {
       surfaceElevated: '#F9FEFF',
       surfaceSoft: '#DDF2F7',
       surfaceMuted: '#D2EAF1',
+      surfaceSubtle: '#F5FCFE',
       primary: '#0E7490',
       primarySoft: '#CFF4FC',
       primaryText: '#FFFFFF',
       accent: '#2563EB',
       accentSoft: '#DBEAFE',
+      accentStrong: '#1D4ED8',
       text: '#102A36',
       textMuted: '#5D7280',
       textSubtle: '#92A5B0',
@@ -293,10 +340,19 @@ export const questThemes: Record<QuestThemeId, QuestTheme> = {
       textPrimary: '#102A36',
       textSecondary: 'rgba(16,42,54,0.6)',
       textDisabled: 'rgba(16,42,54,0.15)',
+      chipBg: '#DDF2F7',
+      chipSelectedBg: '#CFF4FC',
+      chipBorder: '#A9CED8',
+      inputBg: '#FFFFFF',
+      inputBorder: '#A9CED8',
+      overlay: 'rgba(14,59,74,0.42)',
+      divider: '#CDE7EE',
       positive: '#059669',
       negative: '#E11D48',
       predicted: '#6D28D9',
       neutral: '#0E7490',
+      info: '#0E7490',
+      infoSoft: '#CFF4FC',
     },
     ...baseScale,
   },
@@ -309,11 +365,13 @@ export const questThemes: Record<QuestThemeId, QuestTheme> = {
       surfaceElevated: '#FFFFFF',
       surfaceSoft: '#F3E9DC',
       surfaceMuted: '#ECDDCB',
+      surfaceSubtle: '#FFF8F2',
       primary: '#8A4B22',
       primarySoft: '#F6E2D0',
       primaryText: '#FFFFFF',
       accent: '#C77824',
       accentSoft: '#FBE7C8',
+      accentStrong: '#9A3412',
       text: '#2E2118',
       textMuted: '#78685A',
       textSubtle: '#A69484',
@@ -338,10 +396,19 @@ export const questThemes: Record<QuestThemeId, QuestTheme> = {
       textPrimary: '#2E2118',
       textSecondary: 'rgba(46,33,24,0.6)',
       textDisabled: 'rgba(46,33,24,0.15)',
+      chipBg: '#F3E9DC',
+      chipSelectedBg: '#F6E2D0',
+      chipBorder: '#D6C2AD',
+      inputBg: '#FFFDFC',
+      inputBorder: '#D6C2AD',
+      overlay: 'rgba(91,60,37,0.42)',
+      divider: '#EADCCD',
       positive: '#3F8F4A',
       negative: '#B42318',
       predicted: '#6D28D9',
       neutral: '#C77824',
+      info: '#8A4B22',
+      infoSoft: '#F6E2D0',
     },
     ...baseScale,
   },

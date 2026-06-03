@@ -14,12 +14,12 @@ export default function QuestInput({ questTheme, style, placeholderTextColor, ..
       placeholderTextColor={placeholderTextColor ?? q.colors.textSubtle}
       style={[
         {
-          backgroundColor: q.colors.surface,
+          backgroundColor: q.colors.inputBg,
           borderRadius: q.radius.md,
           padding: 12,
           color: q.colors.text,
           borderWidth: 1,
-          borderColor: q.colors.border,
+          borderColor: q.colors.inputBorder,
           fontSize: 14,
         },
         style,

@@ -1,7 +1,6 @@
 import React from 'react';
 import { Text, TouchableOpacity, ViewStyle } from 'react-native';
 import { getQuestTheme, QuestTheme } from '../../design/tokens';
-import { getSurfaceStyle } from '../../design/surfaces';
 
 type Props = {
   label: string;
@@ -29,13 +28,13 @@ export default function QuestPill({ label, active, variant = 'default', questThe
           paddingVertical: 8,
           borderRadius: q.radius.pill,
           borderWidth: 1,
-          borderColor: active ? color : q.colors.border,
-          backgroundColor: active ? color : getSurfaceStyle(q, variant === 'muted' ? 'soft' : 'row').backgroundColor,
+          borderColor: active ? color : q.colors.chipBorder,
+          backgroundColor: active ? q.colors.chipSelectedBg : q.colors.chipBg,
         },
         style,
       ]}
     >
-      <Text style={{ color: active ? q.colors.primaryText : q.colors.textMuted, fontSize: 12, fontWeight: '800' }}>{label}</Text>
+      <Text style={{ color: active ? color : q.colors.textMuted, fontSize: 12, fontWeight: '800' }}>{label}</Text>
     </TouchableOpacity>
   );
 }
