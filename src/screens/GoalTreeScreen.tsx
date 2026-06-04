@@ -87,7 +87,12 @@ export default function GoalTreeScreen() {
               <QuestCard
                 questTheme={questTheme}
                 variant="action"
-                style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}
+                style={[styles.card, {
+                  backgroundColor: questTheme.colors.surfaceElevated,
+                  borderColor: questTheme.colors.borderStrong,
+                  borderLeftWidth: 3,
+                  borderLeftColor: c.color ?? accent,
+                }]}
                 className="goal-card goal-row"
               >
                 <QuestEntityIcon icon={c.emoji} systemIcon={getGoalSemanticIcon(c)} color={c.color ?? accent} questTheme={questTheme} size="lg" />

@@ -1310,3 +1310,36 @@ Validation:
 Known limitations:
 - This pass is a visual foundation pass, not a full UI redesign.
 - Production web UI verification is still required at `https://questlife-alpha-orpin.vercel.app` after deployment.
+
+## Visual Language Upgrade v1
+
+Status: Implemented targeted cockpit-style visual refinement; production verification pending after GitHub/Vercel deployment.
+
+Files changed:
+- `src/components/ui/QuestCard.tsx`
+- `src/design/tokens.ts`
+- `src/screens/HomeSmartCapture.tsx`
+- `src/screens/HomeCapturePending.tsx`
+- `src/screens/HomeScreen.tsx`
+- `src/screens/GoalTreeScreen.tsx`
+- `src/screens/GoalDetailScreen.tsx`
+- `src/screens/StatsScreen.tsx`
+- `PROJECT_STATUS.md`
+
+What changed:
+- Adjusted cleanFocus/deepWork tokens for clearer financial-dashboard style hierarchy: stronger borders, more readable secondary/disabled text, stronger input/chip boundaries, and calmer surface layers.
+- Fixed `QuestCard` style precedence so page-level theme-aware surface overrides are not hidden by the variant default.
+- Upgraded the Today smart-capture command input into a stronger cockpit input surface with elevated card styling, primary left rail, clearer input border, and disabled button readability.
+- Refined HomeCapturePending completion cards with elevated outer panels, semantic left rails, clearer routing/detail subpanels, and stronger feedback item surfaces.
+- Refined Today command center cards, rescue strip, section toggles, and recent-record rows for more consistent dark/light card hierarchy.
+- Refined Goal list/detail cards with semantic left rails, stronger module/skill row separation, and more coherent suggested-module / goal-loop panels.
+- Refined Insights top summary cards, self-knowledge, rescue, unlock, and system-loop cards with subtle dashboard accents while preserving the existing information architecture.
+
+Validation:
+- `npx tsc --noEmit`: passed locally.
+- `npm run build`: passed locally.
+- Production web UI verification is still required at `https://questlife-alpha-orpin.vercel.app`.
+
+Known limitations:
+- This is a visual-language refinement, not a page rewrite.
+- No B-3.3 save logic, B4 feedback logic, smart capture routing, ExecutionLog model, AsyncStorage migration, or information architecture changes were made.

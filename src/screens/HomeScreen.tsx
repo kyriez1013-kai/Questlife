@@ -365,7 +365,7 @@ export default function HomeScreen() {
   const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
   const lang = getLanguage(data.settings.language);
   const themedCard = {
-    ...getSurfaceStyle(questTheme, 'card'),
+    ...getSurfaceStyle(questTheme, 'elevated'),
     shadowColor: questTheme.colors.cardShadow,
   };
 
@@ -1578,7 +1578,11 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        <View style={[styles.nowFocusCard, themedCard, { borderColor: todayCommand.type === 'rescue' ? questTheme.colors.warning : questTheme.colors.borderStrong }]}>
+        <View style={[styles.nowFocusCard, themedCard, {
+          borderColor: todayCommand.type === 'rescue' ? questTheme.colors.warning : questTheme.colors.borderStrong,
+          borderLeftWidth: 4,
+          borderLeftColor: todayCommand.type === 'rescue' ? questTheme.colors.warning : questTheme.colors.primary,
+        }]}>
           <View style={styles.nowFocusHeading}>
             <View style={[styles.nowFocusIconShell, { backgroundColor: todayCommand.type === 'rescue' ? questTheme.colors.warningSoft : questTheme.colors.primarySoft }]}>
               <QuestIcon
@@ -1640,7 +1644,12 @@ export default function HomeScreen() {
         </View>
 
         <TouchableOpacity
-          style={[styles.rescueStrip, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.warningSoft }]}
+          style={[styles.rescueStrip, {
+            backgroundColor: questTheme.colors.surfaceSubtle,
+            borderColor: questTheme.colors.warningSoft,
+            borderLeftWidth: 2,
+            borderLeftColor: questTheme.colors.warning,
+          }]}
           onPress={() => openRescueFlow(unfinishedRescue?.id)}
           activeOpacity={0.82}
         >
@@ -1670,7 +1679,7 @@ export default function HomeScreen() {
         {/* ── Plan card (collapsible) ─────────────────────────────────────── */}
         <TouchableOpacity
           onPress={() => setPlanCardOpen((v) => !v)}
-          style={[styles.sectionToggleRow, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}
+          style={[styles.sectionToggleRow, { borderColor: questTheme.colors.divider, backgroundColor: questTheme.colors.surfaceSubtle }]}
           activeOpacity={0.75}
         >
           <Text style={[styles.sectionToggleLabel, { color: questTheme.colors.text }]}>{t(lang, 'sectionPlanCard')}</Text>
@@ -1737,7 +1746,7 @@ export default function HomeScreen() {
         {/* ── State card (collapsible) ────────────────────────────────────── */}
         <TouchableOpacity
           onPress={() => setStateCardOpen((v) => !v)}
-          style={[styles.sectionToggleRow, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}
+          style={[styles.sectionToggleRow, { borderColor: questTheme.colors.divider, backgroundColor: questTheme.colors.surfaceSubtle }]}
           activeOpacity={0.75}
         >
           <Text style={[styles.sectionToggleLabel, { color: questTheme.colors.text }]}>{t(lang, 'sectionStateCard')}</Text>
@@ -1792,7 +1801,7 @@ export default function HomeScreen() {
                 return (
                   <TouchableOpacity
                     key={a.id}
-                    style={[styles.actionCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}
+                    style={[styles.actionCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.border }]}
                     onLongPress={() => {
                       confirmAction({
                         title: t(lang, 'deleteRecord'),
@@ -1851,7 +1860,7 @@ export default function HomeScreen() {
 
         <TouchableOpacity
           onPress={() => setDetailsOpen((v) => !v)}
-          style={[styles.sectionToggleRow, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}
+          style={[styles.sectionToggleRow, { borderColor: questTheme.colors.divider, backgroundColor: questTheme.colors.surfaceSubtle }]}
           activeOpacity={0.75}
         >
           <Text style={[styles.sectionToggleLabel, { color: questTheme.colors.text }]}>{t(lang, 'detailedData')}</Text>
@@ -1897,7 +1906,7 @@ export default function HomeScreen() {
         {/* ── Budget card (collapsible) ────────────────────────────────────── */}
         <TouchableOpacity
           onPress={() => setBudgetCardOpen((v) => !v)}
-          style={[styles.sectionToggleRow, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}
+          style={[styles.sectionToggleRow, { borderColor: questTheme.colors.divider, backgroundColor: questTheme.colors.surfaceSubtle }]}
           activeOpacity={0.75}
         >
           <Text style={[styles.sectionToggleLabel, { color: questTheme.colors.text }]}>{t(lang, 'sectionBudgetCard')}</Text>

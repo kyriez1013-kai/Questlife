@@ -320,15 +320,15 @@ export default function StatsScreen() {
 
         {/* 1. 即时快览（今日概况）*/}
         <View style={styles.instantGrid}>
-          <QuestCard questTheme={questTheme} variant="data" style={[styles.instantCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.border }]} className="summary-card insight-card">
+          <QuestCard questTheme={questTheme} variant="data" style={[styles.instantCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong, borderTopWidth: 2, borderTopColor: questTheme.colors.info }]} className="summary-card insight-card">
             <Text style={[styles.instantTitle, { color: questTheme.colors.text }]}>{t(lang, 'weeklyOverview')}</Text>
             <Text style={[styles.instantText, { color: questTheme.colors.textMuted }]}>{(instantInsight.weeklyMinutes / 60).toFixed(1)}h · {instantInsight.weeklyLogCount} {t(lang, 'logsToday')} · {streak} {t(lang, 'days')}</Text>
           </QuestCard>
-          <QuestCard questTheme={questTheme} variant="data" style={[styles.instantCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.border }]} className="summary-card insight-card">
+          <QuestCard questTheme={questTheme} variant="data" style={[styles.instantCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong, borderTopWidth: 2, borderTopColor: questTheme.colors.accent }]} className="summary-card insight-card">
             <Text style={[styles.instantTitle, { color: questTheme.colors.text }]}>{t(lang, 'mostFocusedSkill')}</Text>
             <Text style={[styles.instantText, { color: questTheme.colors.textMuted }]}>{instantInsight.topSkill ? `${instantInsight.topSkill.label} · ${(instantInsight.topSkill.percent * 100).toFixed(0)}%` : t(lang, 'notEnoughDataYet')}</Text>
           </QuestCard>
-          <QuestCard questTheme={questTheme} variant="data" style={[styles.instantCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.border }]} className="summary-card insight-card">
+          <QuestCard questTheme={questTheme} variant="data" style={[styles.instantCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong, borderTopWidth: 2, borderTopColor: questTheme.colors.success }]} className="summary-card insight-card">
             <Text style={[styles.instantTitle, { color: questTheme.colors.text }]}>{t(lang, 'todayCompletion')}</Text>
             <Text style={[styles.instantText, { color: questTheme.colors.textMuted }]}>{instantInsight.done} {t(lang, 'completed')} · {instantInsight.remaining} {t(lang, 'remaining')}</Text>
           </QuestCard>
@@ -338,7 +338,7 @@ export default function StatsScreen() {
         {weeklyQuality && (
           <>
             <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'weeklyAverageState')}</Text>
-            <View style={[styles.qCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>
+            <View style={[styles.qCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong }]}>
               <Text style={[styles.qBig, { color: questTheme.colors.text }]}>
                 {weeklyQuality.avg.toFixed(1)} <Text style={[styles.qOf, { color: questTheme.colors.textMuted }]}>/ 5.0</Text>{' '}
                 <Text style={styles.qEmoji}>{emojiForAvgQuality(weeklyQuality.avg)}</Text>
@@ -358,7 +358,7 @@ export default function StatsScreen() {
 
         {/* 5. 自我认知精度 */}
         <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'selfKnowledgeAccuracy')}</Text>
-        <QuestCard questTheme={questTheme} variant="flat" style={[styles.insightCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]} className="self-awareness-card insight-card">
+        <QuestCard questTheme={questTheme} variant="flat" style={[styles.insightCard, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.borderStrong, borderLeftWidth: 3, borderLeftColor: questTheme.colors.predicted }]} className="self-awareness-card insight-card">
           {!selfKnowledge ? (
             <Text style={[styles.insightLocked, { color: questTheme.colors.textMuted }]}>{t(lang, 'needPredictions')}</Text>
           ) : (
@@ -377,7 +377,7 @@ export default function StatsScreen() {
 
         {/* 6. 启动救援统计 */}
         <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'rescueStarts')}</Text>
-        <QuestCard questTheme={questTheme} variant="flat" style={[styles.insightCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]} className="rescue-summary-card insight-card">
+        <QuestCard questTheme={questTheme} variant="flat" style={[styles.insightCard, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.borderStrong, borderLeftWidth: 3, borderLeftColor: questTheme.colors.warning }]} className="rescue-summary-card insight-card">
           <Text style={[styles.insightLine, { color: questTheme.colors.text }]}>
             {t(lang, 'week')}: <Text style={[styles.insightStrong, { color: questTheme.colors.primary }]}>{rescueStats.total}</Text>
             {' · '}{t(lang, 'rescueCompletionRate')}: <Text style={[styles.insightStrong, { color: questTheme.colors.primary }]}>{rescueStats.completionRate}%</Text>
@@ -490,7 +490,7 @@ export default function StatsScreen() {
         {/* ── 系统自检（下沉：不是用户每次关心的信息）─────────────────────── */}
 
         {/* 解锁进度提示（新用户友好，老用户可忽略）*/}
-        <QuestCard questTheme={questTheme} variant="flat" style={[styles.encourageCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]} className="summary-card insight-card">
+        <QuestCard questTheme={questTheme} variant="flat" style={[styles.encourageCard, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.borderStrong }]} className="summary-card insight-card">
           <Text style={[styles.instantTitle, { color: questTheme.colors.text }]}>{t(lang, 'dayCount').replace('{count}', String(instantInsight.firstInsightProgress))}</Text>
           <Text style={[styles.instantText, { color: questTheme.colors.textMuted }]}>{t(lang, 'moreDaysToInsight').replace('{count}', String(instantInsight.daysToFirstInsight))}</Text>
           <View style={[styles.encourageBarBg, { backgroundColor: questTheme.colors.surfaceSoft }]}>
@@ -499,7 +499,7 @@ export default function StatsScreen() {
         </QuestCard>
 
         {/* 系统闭环概览（系统健康度，开发者/高级用户参考）*/}
-        <QuestCard questTheme={questTheme} variant="data" style={[styles.loopCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.border }]} className="system-loop-card insight-card">
+        <QuestCard questTheme={questTheme} variant="data" style={[styles.loopCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong, borderLeftWidth: 3, borderLeftColor: questTheme.colors.primary }]} className="system-loop-card insight-card">
           <Text style={[styles.h2Inline, { color: questTheme.colors.text }]}>{t(lang, 'systemLoopOverview')}</Text>
           <View style={styles.loopGrid}>
             <LoopStat questTheme={questTheme} label={t(lang, 'goalsWithSkills')} value={`${appLoop.activeGoals} / ${appLoop.totalGoals}`} />

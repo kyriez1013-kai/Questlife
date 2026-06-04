@@ -309,7 +309,7 @@ export default function GoalDetailScreen() {
             <QuestPill questTheme={questTheme} label={`${t(lang, 'targetDate')}: ${cat.targetDate}`} variant="muted" />
           ) : null}
         </View>
-        <QuestCard questTheme={questTheme} variant="flat" style={[styles.visionCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]} className="goal-detail-card">
+        <QuestCard questTheme={questTheme} variant="flat" style={[styles.visionCard, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.borderStrong }]} className="goal-detail-card">
           <Text style={[styles.metaLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'vision')}</Text>
           <Text style={[styles.visionText, { color: questTheme.colors.text }]}>{cat.vision || t(lang, 'noVision')}</Text>
         </QuestCard>
@@ -317,7 +317,7 @@ export default function GoalDetailScreen() {
         <QuestProgressBar questTheme={questTheme} value={goalProgress} style={{ marginTop: 12 }} />
 
         {goalLoopStatus ? (
-          <QuestCard questTheme={questTheme} variant="data" style={[styles.loopCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.border }]} className="goal-loop-card">
+          <QuestCard questTheme={questTheme} variant="data" style={[styles.loopCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong, borderLeftWidth: 3, borderLeftColor: questTheme.colors.primary }]} className="goal-loop-card">
             <View style={styles.loopHeader}>
               <View style={styles.cardTitleRow}>
                 <QuestIcon name={systemIcons.progress} size={18} color={questTheme.colors.primary} />
@@ -374,7 +374,7 @@ export default function GoalDetailScreen() {
         )}
 
         {suggestedModules.length > 0 ? (
-          <QuestCard questTheme={questTheme} variant="data" style={[styles.suggestedCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.border }]} className="suggested-modules-card">
+          <QuestCard questTheme={questTheme} variant="data" style={[styles.suggestedCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong, borderLeftWidth: 3, borderLeftColor: questTheme.colors.accent }]} className="suggested-modules-card">
             <View style={styles.cardTitleRow}>
               <QuestIcon name={systemIcons.suggestedModules} size={18} color={questTheme.colors.primary} />
               <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'suggestedModules')}</Text>
@@ -615,7 +615,7 @@ function ModuleCard({
     deleteModule();
   };
   return (
-    <QuestCard questTheme={questTheme} variant="flat" style={[styles.moduleCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]} className="module-card module-row">
+    <QuestCard questTheme={questTheme} variant="flat" style={[styles.moduleCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong, borderLeftWidth: 3, borderLeftColor: questTheme.colors.primary }]} className="module-card module-row">
       <TouchableOpacity style={styles.moduleHeader} onPress={toggle} activeOpacity={0.75}>
         <QuestEntityIcon icon={module.icon} systemIcon={getModuleSemanticIcon(module)} questTheme={questTheme} />
         <View style={{ flex: 1 }}>
@@ -640,7 +640,7 @@ function ModuleCard({
             skills.map((skill) => (
               <TouchableOpacity
                 key={skill.id}
-                style={[styles.skillCard, { backgroundColor: questTheme.colors.surfaceSoft }]}
+                style={[styles.skillCard, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.border, borderWidth: 1 }]}
                 onPress={() => openSkill(skill.id)}
                 onLongPress={() => {
                   confirmAction({

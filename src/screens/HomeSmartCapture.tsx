@@ -455,7 +455,17 @@ export default function HomeSmartCapture() {
       ) : null}
 
       {/* One-line input */}
-      <QuestCard questTheme={questTheme} variant="data" style={{ marginTop: questTheme.spacing.sm }}>
+      <QuestCard
+        questTheme={questTheme}
+        variant="hero"
+        style={{
+          marginTop: questTheme.spacing.sm,
+          borderColor: questTheme.colors.borderStrong,
+          borderLeftWidth: 3,
+          borderLeftColor: questTheme.colors.primary,
+          backgroundColor: questTheme.colors.surfaceElevated,
+        }}
+      >
         <View style={styles.inputRow}>
           <TextInput
             style={[
@@ -463,9 +473,9 @@ export default function HomeSmartCapture() {
               {
                 color: questTheme.colors.text,
                 fontSize: questTheme.typography.bodySize,
-                borderColor: questTheme.colors.border,
-                borderRadius: questTheme.radius.sm,
-                backgroundColor: questTheme.colors.surfaceSoft,
+                borderColor: questTheme.colors.inputBorder,
+                borderRadius: questTheme.radius.md,
+                backgroundColor: questTheme.colors.inputBg,
               },
             ]}
             value={inputText}
@@ -486,7 +496,10 @@ export default function HomeSmartCapture() {
                 backgroundColor: inputText.trim()
                   ? questTheme.colors.primary
                   : questTheme.colors.disabledBg,
-                borderRadius: questTheme.radius.sm,
+                borderRadius: questTheme.radius.md,
+                borderColor: inputText.trim()
+                  ? questTheme.colors.primary
+                  : questTheme.colors.inputBorder,
               },
             ]}
             activeOpacity={0.8}
@@ -553,7 +566,7 @@ export default function HomeSmartCapture() {
           {hasMore && (
             <TouchableOpacity
               onPress={() => setShowAll((v) => !v)}
-              style={[styles.expandBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}
+              style={[styles.expandBtn, { borderColor: questTheme.colors.borderStrong, backgroundColor: questTheme.colors.surfaceMuted }]}
               activeOpacity={0.7}
             >
               <Text style={[styles.expandBtnText, { color: questTheme.colors.textMuted }]}>
@@ -588,6 +601,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   sendBtn: {
+    borderWidth: 1,
     paddingHorizontal: 14,
     paddingVertical: 9,
     alignItems: 'center',

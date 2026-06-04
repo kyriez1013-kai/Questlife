@@ -42,9 +42,9 @@ export default function QuestCard({ children, variant = 'data', questTheme, styl
     shadowOffset: { width: 0, height: 8 },
     shadowRadius: 18,
     elevation: variant === 'flat' ? 0 : 3,
+    ...variantSurface,
     ...variantPadding,
     ...legacyStyle,
-    ...variantSurface,
   };
   const CardView = View as any;
   const webClassName = ['quest-card', `quest-card-${variant}`, className].filter(Boolean).join(' ');

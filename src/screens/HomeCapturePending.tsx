@@ -1086,7 +1086,17 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
         unknown: 'savedRecordTypeUnknown',
       } as const;
       return (
-        <QuestCard questTheme={questTheme} variant="flat" style={{ marginTop: questTheme.spacing.sm }}>
+        <QuestCard
+          questTheme={questTheme}
+          variant="data"
+          style={{
+            marginTop: questTheme.spacing.sm,
+            borderColor: questTheme.colors.borderStrong,
+            borderLeftWidth: 3,
+            borderLeftColor: questTheme.colors.success,
+            backgroundColor: questTheme.colors.surfaceElevated,
+          }}
+        >
           <Text style={[pendStyles.header, { color: questTheme.colors.text, fontSize: questTheme.typography.bodySize }]}>
             {t(lang, 'savedFeedbackTitle')}
           </Text>
@@ -1097,7 +1107,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
             {postSaveFeedback.items.map((item) => {
               const path = [item.goalName, item.moduleName].filter(Boolean).join(' / ');
               return (
-                <View key={item.logId} style={[pendStyles.feedbackItem, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}>
+                <View key={item.logId} style={[pendStyles.feedbackItem, { borderColor: questTheme.colors.borderStrong, backgroundColor: questTheme.colors.surfaceMuted }]}>
                   <Text style={[pendStyles.completionTitle, { color: questTheme.colors.text }]}>
                     {item.title}
                   </Text>
@@ -1159,7 +1169,17 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
   const recordableCount = entryAssessments.filter((assessment) => assessment.status !== 'not_recordable').length;
 
   return (
-    <QuestCard questTheme={questTheme} variant="flat" style={{ marginTop: questTheme.spacing.sm }}>
+    <QuestCard
+      questTheme={questTheme}
+      variant="data"
+      style={{
+        marginTop: questTheme.spacing.sm,
+        borderColor: questTheme.colors.borderStrong,
+        borderLeftWidth: 3,
+        borderLeftColor: questTheme.colors.info,
+        backgroundColor: questTheme.colors.surfaceElevated,
+      }}
+    >
       {/* Header */}
       <Text style={[pendStyles.header, { color: questTheme.colors.text, fontSize: questTheme.typography.bodySize }]}>
         {recordableCount > 0
@@ -1169,7 +1189,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
       {effectiveEntries.length > 1 ? (
         <TouchableOpacity
           onPress={() => setAllActive(!allActive)}
-          style={[pendStyles.bulkBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}
+          style={[pendStyles.bulkBtn, { borderColor: questTheme.colors.borderStrong, backgroundColor: questTheme.colors.surfaceMuted }]}
         >
           <Text style={[pendStyles.bulkText, { color: questTheme.colors.primary }]}>
             {allActive ? t(lang, 'scDeselectAll') : t(lang, 'scSelectAll')}
@@ -1291,7 +1311,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                 </Text>
               ) : null}
               {assessment.status === 'not_recordable' ? (
-                <View style={[pendStyles.completionBox, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}>
+                <View style={[pendStyles.completionBox, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.borderStrong }]}>
                   <Text style={[pendStyles.completionTitle, { color: questTheme.colors.text }]}>
                     {assessment.domain === 'state' ? t(lang, 'scStateCandidate') : t(lang, 'scFoodCandidate')}
                   </Text>
@@ -1300,11 +1320,11 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                   </Text>
                 </View>
               ) : assessment.status === 'needs_completion' ? (
-                <View style={[pendStyles.completionBox, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}>
+                <View style={[pendStyles.completionBox, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.borderStrong }]}>
                   <Text style={[pendStyles.completionTitle, { color: questTheme.colors.text }]}>
                     {t(lang, 'scCompleteRecord')}
                   </Text>
-                  <View style={[pendStyles.routingBox, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}>
+                  <View style={[pendStyles.routingBox, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSubtle }]}>
                     <Text style={[pendStyles.completionTitle, { color: questTheme.colors.text }]}>
                       {t(lang, 'routing')}
                     </Text>
@@ -1472,7 +1492,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                           {selectedExerciseNames.map((exerciseName) => {
                             const details = ui.exerciseDetails?.[exerciseName] ?? {};
                             return (
-                              <View key={exerciseName} style={[pendStyles.exerciseDetailCard, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceElevated }]}>
+                              <View key={exerciseName} style={[pendStyles.exerciseDetailCard, { borderColor: questTheme.colors.borderStrong, backgroundColor: questTheme.colors.surfaceSubtle }]}>
                                 <Text style={[pendStyles.completionTitle, { color: questTheme.colors.text }]}>{exerciseName}</Text>
                                 <View style={pendStyles.detailInputRow}>
                                   <TextInput
