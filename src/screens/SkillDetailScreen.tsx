@@ -249,7 +249,7 @@ export default function SkillDetailScreen() {
         <QuestButton questTheme={questTheme} variant="secondary" icon="plus" label={t(lang, 'edit')} onPress={() => setEditing(true)} />
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 130, maxWidth: 960, width: '100%', alignSelf: 'center' }}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 180, maxWidth: 960, width: '100%', alignSelf: 'center' }}>
         {/* 技能标题 */}
         <View style={styles.titleRow}>
           <QuestEntityIcon icon={skill.icon} systemIcon={getSkillSemanticIcon(skill)} color={skill.color} questTheme={questTheme} size="xl" />

@@ -306,15 +306,76 @@ export default function StatsScreen() {
     ),
     [timeLogs, data.stateCheckIns, data.skills],
   );
+  const dataHealthLevel = logs.length >= 20 && activeDays >= 7
+    ? 'high'
+    : logs.length >= 7 || activeDays >= 3
+      ? 'medium'
+      : 'low';
+  const dataHealthLabelKey = dataHealthLevel === 'high'
+    ? 'confidenceHigh'
+    : dataHealthLevel === 'medium'
+      ? 'confidenceMedium'
+      : 'confidenceLow';
+  const dataHealthColor = dataHealthLevel === 'high'
+    ? questTheme.colors.success
+    : dataHealthLevel === 'medium'
+      ? questTheme.colors.warning
+      : questTheme.colors.textSubtle;
+  const keySignalText = instantInsight.topSkill
+    ? t(lang, 'keySignalSkill')
+      .replace('{skill}', instantInsight.topSkill.label)
+      .replace('{percent}', String(Math.round(instantInsight.topSkill.percent * 100)))
+    : t(lang, 'keySignalMoreRecords').replace('{count}', String(Math.max(0, 7 - instantInsight.activeDayCount)));
 
   return (
     <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
       <ScrollView
         style={[styles.container, { backgroundColor: questTheme.colors.background }]}
-        contentContainerStyle={{ padding: 16, paddingBottom: 130, maxWidth: 960, width: '100%', alignSelf: 'center' }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 170, maxWidth: 960, width: '100%', alignSelf: 'center' }}
       >
         <Text style={[styles.h1, { color: questTheme.colors.text }]}>{t(lang, 'insights')}</Text>
         <Text style={[styles.sub, { color: questTheme.colors.textMuted }]}>{t(lang, 'settingsSubtitle')}</Text>
+
+        <QuestCard
+          questTheme={questTheme}
+          variant="hero"
+          style={[styles.decisionCard, {
+            backgroundColor: questTheme.colors.surfaceElevated,
+            borderColor: questTheme.colors.borderStrong,
+            borderLeftWidth: 4,
+            borderLeftColor: dataHealthColor,
+          }]}
+          className="insight-card summary-card"
+        >
+          <View style={styles.decisionHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.decisionKicker, { color: questTheme.colors.textMuted }]}>{t(lang, 'structuralDashboard')}</Text>
+              <Text style={[styles.decisionTitle, { color: questTheme.colors.text }]}>{t(lang, 'coreSignals')}</Text>
+            </View>
+            <View style={[styles.dataHealthPill, { borderColor: dataHealthColor, backgroundColor: dataHealthColor + '22' }]}>
+              <Text style={[styles.dataHealthText, { color: dataHealthColor }]}>{t(lang, 'dataHealth')}: {t(lang, dataHealthLabelKey)}</Text>
+            </View>
+          </View>
+          <Text style={[styles.keySignal, { color: questTheme.colors.text }]}>{t(lang, 'keySignal')}: {keySignalText}</Text>
+          <View style={styles.decisionGrid}>
+            <View style={[styles.decisionMetric, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.border }]}>
+              <Text style={[styles.decisionValue, { color: questTheme.colors.primary }]}>{(instantInsight.weeklyMinutes / 60).toFixed(1)}h</Text>
+              <Text style={[styles.decisionLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'weeklyOverview')}</Text>
+            </View>
+            <View style={[styles.decisionMetric, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.border }]}>
+              <Text style={[styles.decisionValue, { color: questTheme.colors.accent }]}>{instantInsight.weeklyLogCount}</Text>
+              <Text style={[styles.decisionLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'logsToday')}</Text>
+            </View>
+            <View style={[styles.decisionMetric, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.border }]}>
+              <Text style={[styles.decisionValue, { color: questTheme.colors.success }]}>{streak}</Text>
+              <Text style={[styles.decisionLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'streak')}</Text>
+            </View>
+            <View style={[styles.decisionMetric, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.border }]}>
+              <Text style={[styles.decisionValue, { color: questTheme.colors.warning }]}>{instantInsight.done}/{instantInsight.done + instantInsight.remaining}</Text>
+              <Text style={[styles.decisionLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'todayCompletion')}</Text>
+            </View>
+          </View>
+        </QuestCard>
 
         {/* ── 重排后顺序：有行动价值的分析在上，系统自检在下 ──────────────── */}
 
@@ -655,6 +716,17 @@ const styles = StyleSheet.create({
   h1: { color: theme.text, fontSize: 34, fontWeight: '800' },
   h2: { color: theme.text, fontSize: 18, fontWeight: '600', marginTop: 24, marginBottom: 12 },
   sub: { color: theme.textDim, marginTop: 4 },
+  decisionCard: { marginTop: 16 },
+  decisionHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  decisionKicker: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase' },
+  decisionTitle: { fontSize: 22, fontWeight: '900', marginTop: 2 },
+  dataHealthPill: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
+  dataHealthText: { fontSize: 11, fontWeight: '900' },
+  keySignal: { fontSize: 14, fontWeight: '800', lineHeight: 20, marginTop: 14 },
+  decisionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
+  decisionMetric: { width: '23.5%', minWidth: 120, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 },
+  decisionValue: { fontSize: 20, fontWeight: '900' },
+  decisionLabel: { fontSize: 11, fontWeight: '800', marginTop: 3 },
   statRow: { flexDirection: 'row', gap: 10, marginTop: 16 },
   stat: { flex: 1, backgroundColor: theme.card, padding: 14, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
   statValue: { fontSize: 22, fontWeight: '800' },

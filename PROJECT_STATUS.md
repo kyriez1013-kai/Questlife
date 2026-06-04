@@ -1343,3 +1343,39 @@ Validation:
 Known limitations:
 - This is a visual-language refinement, not a page rewrite.
 - No B-3.3 save logic, B4 feedback logic, smart capture routing, ExecutionLog model, AsyncStorage migration, or information architecture changes were made.
+
+## Visual System Upgrade v2
+
+Status: Implemented structural UI lift; production verification pending after GitHub/Vercel deployment.
+
+Files changed:
+- `src/screens/StatsScreen.tsx`
+- `src/screens/StatsScreenInsights.tsx`
+- `src/screens/HomeScreen.tsx`
+- `src/screens/GoalTreeScreen.tsx`
+- `src/screens/GoalDetailScreen.tsx`
+- `src/screens/SkillDetailScreen.tsx`
+- `src/i18n.ts`
+- `PROJECT_STATUS.md`
+
+What changed:
+- Insights now has a top decision layer: data-health confidence, key signal, and compact weekly dashboard metrics.
+- Insights engine cards are now split into Core Signals and Deep Analysis, making the page feel more like a self-data cockpit than a card stack.
+- Ability Map was redesigned with a larger stable radar chart, no clipped SVG labels, a separate metric stat grid, and a low-confidence explanatory note.
+- Confidence/data-source tags were made more consistent with bordered subtle pills.
+- Monthly comparison rows were made denser and more dashboard-like instead of sparse text rows.
+- Explanation panels were made subtler and more consistent.
+- Today, Goals, Goal Detail, and Skill Detail bottom padding were increased so bottom navigation is less likely to cover important content.
+- Goal/Skill hierarchy retains the v1 semantic rails while gaining better scroll safety.
+
+Validation:
+- `npx tsc --noEmit`: passed locally.
+- `npm run build`: passed locally.
+- Production web UI verification is still required at `https://questlife-alpha-orpin.vercel.app`.
+
+Known limitations:
+- Full icon-system expansion remains future work.
+- Deeper dashboard personalisation remains future work.
+- LLM-generated command reasoning remains future work.
+- Mobile-specific polish should continue after real-use feedback.
+- Advanced analytics quality tuning remains future work.

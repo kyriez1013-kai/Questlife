@@ -1537,7 +1537,7 @@ export default function HomeScreen() {
     <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
       <ScrollView
         style={[styles.container, { backgroundColor: questTheme.colors.background }]}
-        contentContainerStyle={{ padding: 16, paddingBottom: 154, maxWidth: 960, width: '100%', alignSelf: 'center' }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 190, maxWidth: 960, width: '100%', alignSelf: 'center' }}
       >
         {/* ═══ ZONE 1: Smart Capture (input always first) ═══════════════════ */}
         <HomeSmartCapture />

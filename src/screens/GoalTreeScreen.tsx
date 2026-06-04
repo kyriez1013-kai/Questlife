@@ -60,7 +60,7 @@ export default function GoalTreeScreen() {
     <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
       <ScrollView
         style={[styles.container, { backgroundColor: questTheme.colors.background }]}
-        contentContainerStyle={{ padding: 16, paddingBottom: 130, maxWidth: 960, width: '100%', alignSelf: 'center' }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 180, maxWidth: 960, width: '100%', alignSelf: 'center' }}
       >
         <View style={styles.headerRow}>
           <Text style={[styles.h1, { color: questTheme.colors.text }]}>{t(lang, 'quest')}</Text>

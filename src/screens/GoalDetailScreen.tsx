@@ -291,7 +291,7 @@ export default function GoalDetailScreen() {
         <QuestButton questTheme={questTheme} variant="secondary" icon="plus" label={t(lang, 'edit')} onPress={() => setEditing(true)} />
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 130, maxWidth: 960, width: '100%', alignSelf: 'center' }}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 180, maxWidth: 960, width: '100%', alignSelf: 'center' }}>
         <View style={styles.titleRow}>
           <QuestEntityIcon icon={cat.emoji} systemIcon={getGoalSemanticIcon(cat)} color={cat.color} questTheme={questTheme} size="xl" />
           <View style={{ flex: 1 }}>
