@@ -1,106 +1,227 @@
-# 🌱 QuestLife
+# QuestLife
 
-把人生变成可量化、可视化的成长游戏。
-**目标树 → 技能 → 每日打卡 → 经验值 → 等级 → 终极成就**
+QuestLife is an AI-driven personal behavior data system that turns natural language input into structured goals, skills, execution logs, and feedback.
 
-## ✨ MVP 功能
+**Live Demo:** https://questlife-alpha-orpin.vercel.app
 
-- 🏠 **今日** - 看到今天要做的事 + 一键打卡 + 写笔记
-- 🌳 **目标树** - 终极成就 / 大目标 / 每日目标 三层拆解
-- 🧩 **技能** - 像 RPG 一样升级 (1 分钟 = 1 XP, 60 × 当前级别 = 升级所需)
-- 📊 **数据** - GitHub 风格热力图 + 技能雷达图 + 连续天数
-- ⚙️ **设置** - 每日定时推送提醒
+## Overview
 
-数据 100% 存在手机本地 (AsyncStorage)，不上传任何服务器。
+QuestLife turns short, messy real-life inputs into structured behavior data and immediate feedback.
 
----
+Core product loop:
 
-## 🚀 怎么在手机上跑起来
-
-### 第 1 步：手机装 Expo Go
-
-- iPhone: App Store 搜 **Expo Go** 下载
-- Android: Play Store 搜 **Expo Go** 下载
-
-### 第 2 步：电脑启动项目
-
-打开终端，进入项目目录：
-
-```bash
-cd "/Users/kyrie/Documents/Cladue app project/QuestLife"
-npx expo start
+```text
+Natural language input
+→ AI parsing
+→ Guided completion
+→ Goal / module / skill routing
+→ Execution log
+→ Progress feedback
+→ Next action recommendation
 ```
 
-会出现一个二维码。
+Users can record actions through short inputs such as:
 
-### 第 3 步：扫码预览
+- Bench press 80kg 3x5
+- Studied SQL for 20 minutes
+- Played basketball
+- Ate some chocolate
 
-- **iPhone**: 用相机 App 扫二维码 → 点弹出的 Expo Go 链接
-- **Android**: 打开 Expo Go → 点 "Scan QR code"
+QuestLife decides whether an input should become a structured execution record, a completion prompt, or a non-execution observation.
 
-> 📶 注意：电脑和手机要在**同一个 WiFi** 下！
-> 如果连不上，可以在终端按 `s` 切换到 "Tunnel" 模式（更慢但不依赖同一 WiFi）
+## Core Features
 
-### 第 4 步：开始使用
+### Natural Language Capture
 
-1. 先到 **🧩 技能** 页添加几个技能（比如：React、健身、阅读）
-2. 到 **🌳 目标** 页：
-   - 先建一个"终极成就"（如：成为独立开发者）
-   - 在它下面建几个"大目标"（如：上线第一款产品）
-   - 在大目标下建"每日目标"，关联技能
-3. 回到 **🏠 今日** 页打卡
-4. 到 **📊 数据** 看你的热力图和技能雷达
-5. 到 **⚙️ 设置** 开启每日提醒
+Users can type short natural language records. QuestLife classifies the input, extracts useful fields, and determines whether the entry should become a structured execution record.
 
----
+### Goal → Module → Skill Structure
 
-## 🧠 等级公式
+QuestLife organizes behavior through a layered system:
 
-```
-Lv 1 → Lv 2 : 需要 60 分钟
-Lv 2 → Lv 3 : 需要 120 分钟
-Lv 3 → Lv 4 : 需要 180 分钟
-Lv N → Lv N+1: 需要 60 × N 分钟
+```text
+Goal
+→ Module
+→ Skill
+→ ExecutionLog
+→ Insight / Feedback
 ```
 
-每个技能独立等级。投入的每一分钟都会自动加到对应技能上。
+Example:
 
----
-
-## 📁 项目结构
-
-```
-QuestLife/
-├── App.tsx                  # 入口 + 底部导航
-├── app.json                 # Expo 配置
-├── src/
-│   ├── types.ts             # 数据模型 (Goal / Skill / Action)
-│   ├── storage.ts           # 本地存储读写
-│   ├── store.tsx            # 全局状态 (Context)
-│   ├── theme.ts             # 颜色 / 主题
-│   ├── notifications.ts     # 每日提醒
-│   └── screens/
-│       ├── HomeScreen.tsx
-│       ├── GoalTreeScreen.tsx
-│       ├── SkillsScreen.tsx
-│       ├── StatsScreen.tsx
-│       └── SettingsScreen.tsx
+```text
+Goal: Fitness
+Module: Chest
+Skill: Bench Press
+ExecutionLog: 80kg × 5 × 3
 ```
 
----
+### Guided Completion Flow
 
-## 🔭 之后可以加什么
+When information is incomplete, QuestLife opens a completion card instead of saving vague data.
 
-下一阶段可以加的功能（按优先级）：
+The completion flow supports:
 
-- [ ] **数据导出/导入** (JSON 备份)
-- [ ] **iCloud / Google Drive 同步**
-- [ ] **每周回顾报告** (本周累计、最活跃技能、未完成目标)
-- [ ] **目标进度预测** (按当前节奏，还需多少天完成?)
-- [ ] **多个提醒时间** (早起 / 午后 / 晚上)
-- [ ] **AI 教练** (基于你的数据给建议)
-- [ ] **徽章 / 成就解锁系统**
-- [ ] **小组件** (在手机主屏看今日进度)
-- [ ] **番茄钟集成** (打卡的时候直接计时)
+- suggested actions
+- custom actions
+- goal selection
+- goal creation
+- module selection
+- module creation
+- duration input
+- quality rating
+- performance fields such as weight, sets, reps, and RPE
 
-如果想加，告诉我做哪个就行。
+### AI-Assisted Parsing
+
+QuestLife integrates AI parsing through a server-side API route.
+
+The parser supports:
+
+- domain classification
+- task / skill extraction
+- goal and module suggestions
+- completion schema generation
+- structured execution entry generation
+- local fallback logic when AI parsing fails or returns incomplete data
+
+### Post-Save Progress Feedback
+
+After saving a record, QuestLife generates immediate feedback, including:
+
+- what was recorded
+- goal / module / skill contribution
+- first baseline detection
+- comparison with previous records
+- simple trend detection
+- suggested next action
+
+### Today Command Center
+
+The Today page acts as a lightweight action dashboard.
+
+It brings together:
+
+- smart capture input
+- latest feedback or pending completion
+- current recommended action
+- rescue mode for low-energy situations
+- today’s plan
+- current state
+- recent execution records
+- detailed data section
+
+## Tech Stack
+
+| Area | Technology |
+| --- | --- |
+| Frontend | React Native, Expo, TypeScript |
+| Deployment | Vercel |
+| Version Control | GitHub |
+| AI Parsing | DeepSeek API |
+| Storage | AsyncStorage |
+| Architecture | Goal / Module / Skill / ExecutionLog data model |
+| UI | Token-based theme system |
+
+## System Architecture
+
+```text
+User Input
+↓
+Smart Capture
+↓
+AI Parse API / Local Fallback
+↓
+Completion Card
+↓
+Goal + Module Routing
+↓
+Skill Creation / Matching
+↓
+ExecutionLog Storage
+↓
+Progress Feedback
+↓
+Today Command Recommendation
+↓
+Insights
+```
+
+## Key Data Concepts
+
+- **Goal:** A long-term direction or outcome, such as fitness, learning, or a project.
+- **Module:** A meaningful sub-area inside a goal, such as Chest, Practice, or Frontend.
+- **Skill:** A repeatable executable capability or action, such as Bench Press or SQL Practice.
+- **ExecutionLog:** A structured record of what happened, including performance, duration, quality, and routing metadata.
+
+Bench Press example:
+
+```json
+{
+  "skillName": "Bench Press",
+  "metricType": "performance_log",
+  "structuredData": {
+    "weight": 80,
+    "sets": 3,
+    "reps": 5
+  },
+  "qualityRating": 4
+}
+```
+
+SQL example:
+
+```json
+{
+  "skillName": "SQL",
+  "metricType": "time_based",
+  "durationMinutes": 20,
+  "qualityRating": 3
+}
+```
+
+## Current Status
+
+QuestLife is an actively developed prototype.
+
+Completed core flows include:
+
+- natural language capture
+- AI parsing
+- guided completion
+- custom action creation
+- goal / module routing
+- structured execution logging
+- post-save progress feedback
+- Today Command Center
+- basic insights and trend analysis
+- GitHub + Vercel deployment workflow
+
+## Roadmap
+
+Planned improvements:
+
+- more accurate domain-specific completion templates
+- better learning, coding, and sport-specific tracking fields
+- richer progress visualization
+- health data integration such as sleep and recovery signals
+- more advanced AI-generated next-action recommendations
+- better mobile UI polish
+- cloud sync and user accounts
+- exportable personal behavior data
+
+## Why This Project Matters
+
+QuestLife explores how personal behavior can be transformed into structured data.
+
+The deeper loop is:
+
+```text
+Self-observation
+→ Structured data
+→ Feedback
+→ Better decisions
+→ Better execution
+```
+
+The project is an experiment in making everyday effort visible, comparable, and actionable without forcing users into rigid forms.
