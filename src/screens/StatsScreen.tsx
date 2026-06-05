@@ -24,72 +24,21 @@ import { getSkillSemanticIcon } from '../design/entityIcons';
 import { generateInsightsSummary, InsightsSummaryResult } from '../utils/insightsEngine';
 import { InsightCardsBlock } from './StatsScreenInsights';
 import { displayEntityName } from '../utils/displayName';
+import { buildMetacognitionSummary, getLiveExecutionLogs, MetacognitionSummary } from '../utils/metacognition';
 
 const WEEKDAY_KEYS = ['weekdaySun', 'weekdayMon', 'weekdayTue', 'weekdayWed', 'weekdayThu', 'weekdayFri', 'weekdaySat'];
 
 const fmtDate = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-type PrimaryInsight = {
-  titleKey: string;
-  bodyKey: string;
-  nextActionKey: string;
-  confidence: 'low' | 'medium' | 'high';
-  signalType: 'building' | 'skill' | 'friction' | 'rhythm';
-  skillName?: string;
-};
-
-function buildPrimaryInsight(input: {
-  logCount: number;
-  topSkillLabel?: string;
-  lowStateCheckIns: number;
-  activeDays: number;
-}): PrimaryInsight {
-  if (input.logCount < 3) {
-    return {
-      titleKey: 'dataStillBuilding',
-      bodyKey: 'primaryInsightBuildingBody',
-      nextActionKey: 'recordOneRealAction',
-      confidence: 'low',
-      signalType: 'building',
-    };
-  }
-  if (input.lowStateCheckIns >= 2) {
-    return {
-      titleKey: 'lowerFrictionNeeded',
-      bodyKey: 'primaryInsightFrictionBody',
-      nextActionKey: 'primaryInsightFrictionNext',
-      confidence: 'medium',
-      signalType: 'friction',
-    };
-  }
-  if (input.topSkillLabel) {
-    return {
-      titleKey: 'currentClearestSignal',
-      bodyKey: 'primaryInsightSkillBody',
-      nextActionKey: 'continueOneMoreRecord',
-      confidence: input.activeDays >= 5 ? 'high' : 'medium',
-      signalType: 'skill',
-      skillName: input.topSkillLabel,
-    };
-  }
-  return {
-    titleKey: 'rhythmForming',
-    bodyKey: 'primaryInsightRhythmBody',
-    nextActionKey: 'primaryInsightRhythmNext',
-    confidence: input.activeDays >= 5 ? 'medium' : 'low',
-    signalType: 'rhythm',
-  };
-}
-
 export default function StatsScreen() {
   const { data } = useStore();
   const lang = getLanguage(data.settings.language);
   const questTheme = getQuestTheme(data.settings.selectedThemeId);
   const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
-  const logs = data.executionLogs || [];
+  const logs = useMemo(() => getLiveExecutionLogs(data.executionLogs || [], { skills: data.skills }), [data.executionLogs, data.skills]);
   const timeLogs = useMemo(() => logs.filter((log) => (log.durationMinutes ?? 0) > 0), [logs]);
-  const appLoop = useMemo(() => getAppCoreLoopStatus(data, lang), [data, lang]);
+  const appLoop = useMemo(() => getAppCoreLoopStatus({ ...data, executionLogs: logs }, lang), [data, logs, lang]);
   useEffect(() => {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
@@ -373,27 +322,17 @@ export default function StatsScreen() {
     : dataHealthLevel === 'medium'
       ? questTheme.colors.warning
       : questTheme.colors.textSubtle;
-  const keySignalText = instantInsight.topSkill
-    ? t(lang, 'keySignalSkill')
-      .replace('{skill}', instantInsight.topSkill.label)
-      .replace('{percent}', String(Math.round(instantInsight.topSkill.percent * 100)))
-    : t(lang, 'keySignalMoreRecords').replace('{count}', String(Math.max(0, 7 - instantInsight.activeDayCount)));
-  const lowStateCheckIns = (data.stateCheckIns || []).filter((checkIn) => (
-    last7.some((day) => day.date === checkIn.date) && (checkIn.overall ?? 3) <= 2
-  )).length;
-  const primaryInsight = buildPrimaryInsight({
-    logCount: logs.length,
-    topSkillLabel: instantInsight.topSkill?.label,
-    lowStateCheckIns,
-    activeDays,
-  });
-  const primaryConfidenceColor = primaryInsight.confidence === 'high'
+  const metacognition = useMemo(() => buildMetacognitionSummary({
+    executionLogs: logs,
+    stateCheckIns: data.stateCheckIns || [],
+    skills: data.skills,
+    goals: data.categories,
+  }), [data.categories, data.skills, data.stateCheckIns, logs]);
+  const metaConfidenceColor = metacognition.currentPattern.confidence === 'high'
     ? questTheme.colors.success
-    : primaryInsight.confidence === 'medium'
+    : metacognition.currentPattern.confidence === 'medium'
       ? questTheme.colors.warning
       : questTheme.colors.textSubtle;
-  const primaryBody = t(lang, primaryInsight.bodyKey)
-    .replace('{skill}', primaryInsight.skillName ?? t(lang, 'notEnoughDataYet'));
 
   return (
     <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
@@ -413,6 +352,38 @@ export default function StatsScreen() {
         <Text style={[styles.dashboardMeta, { color: questTheme.colors.textMuted }]}>
           {t(lang, 'dashboardSummary')} · {logs.length} {t(lang, 'logsToday')} · {activeDays} {t(lang, 'activeDays')} · {t(lang, 'last7Days')}
         </Text>
+
+        <QuestCard
+          questTheme={questTheme}
+          variant="hero"
+          style={[styles.primaryPanel, {
+            backgroundColor: questTheme.colors.surfaceElevated,
+            borderColor: questTheme.colors.borderStrong,
+            borderLeftWidth: 4,
+            borderLeftColor: metaConfidenceColor,
+          }]}
+          className="insight-card metacognition-summary-card"
+        >
+          <View style={styles.primaryHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.decisionKicker, { color: questTheme.colors.textMuted }]}>{t(lang, 'metacognitionSummary')}</Text>
+              <Text style={[styles.primaryTitle, { color: questTheme.colors.text }]}>{t(lang, 'howYouOperate')}</Text>
+            </View>
+            <View style={[styles.dataHealthPill, { borderColor: metaConfidenceColor, backgroundColor: metaConfidenceColor + '22' }]}>
+              <Text style={[styles.dataHealthText, { color: metaConfidenceColor }]}>{t(lang, metacognition.currentPattern.confidence === 'high' ? 'confidenceHigh' : metacognition.currentPattern.confidence === 'medium' ? 'confidenceMedium' : 'confidenceLow')}</Text>
+            </View>
+          </View>
+          <Text style={[styles.primaryBody, { color: questTheme.colors.text }]}>{t(lang, metacognition.currentPattern.titleKey)}</Text>
+          <Text style={[styles.metaBody, { color: questTheme.colors.textMuted }]}>{t(lang, metacognition.currentPattern.bodyKey)}</Text>
+          <PredictionGapLine metacognition={metacognition} questTheme={questTheme} lang={lang} />
+          <View style={[styles.nextActionBox, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.border }]}>
+            <Text style={[styles.nextActionLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'next')}</Text>
+            <Text style={[styles.nextActionText, { color: questTheme.colors.primary }]}>{t(lang, metacognition.currentPattern.nextActionKey)}</Text>
+          </View>
+        </QuestCard>
+
+        <StateTrendStrip metacognition={metacognition} questTheme={questTheme} lang={lang} />
+        <BehaviorLinksPanel metacognition={metacognition} questTheme={questTheme} lang={lang} />
 
         <View style={[styles.commandStrip, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong }]}>
           <View style={styles.commandCell}>
@@ -434,33 +405,6 @@ export default function StatsScreen() {
             <Text style={[styles.commandLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'todayCompletion')}</Text>
           </View>
         </View>
-
-        <QuestCard
-          questTheme={questTheme}
-          variant="hero"
-          style={[styles.primaryPanel, {
-            backgroundColor: questTheme.colors.surfaceElevated,
-            borderColor: questTheme.colors.borderStrong,
-            borderLeftWidth: 4,
-            borderLeftColor: primaryConfidenceColor,
-          }]}
-          className="insight-card primary-insight-card"
-        >
-          <View style={styles.primaryHeader}>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.decisionKicker, { color: questTheme.colors.textMuted }]}>{t(lang, 'primaryInsight')}</Text>
-              <Text style={[styles.primaryTitle, { color: questTheme.colors.text }]}>{t(lang, primaryInsight.titleKey)}</Text>
-            </View>
-            <View style={[styles.dataHealthPill, { borderColor: primaryConfidenceColor, backgroundColor: primaryConfidenceColor + '22' }]}>
-              <Text style={[styles.dataHealthText, { color: primaryConfidenceColor }]}>{t(lang, primaryInsight.confidence === 'high' ? 'confidenceHigh' : primaryInsight.confidence === 'medium' ? 'confidenceMedium' : 'confidenceLow')}</Text>
-            </View>
-          </View>
-          <Text style={[styles.primaryBody, { color: questTheme.colors.text }]}>{primaryBody}</Text>
-          <View style={[styles.nextActionBox, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.border }]}>
-            <Text style={[styles.nextActionLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'next')}</Text>
-            <Text style={[styles.nextActionText, { color: questTheme.colors.primary }]}>{t(lang, primaryInsight.nextActionKey)}</Text>
-          </View>
-        </QuestCard>
 
         {/* ── 重排后顺序：有行动价值的分析在上，系统自检在下 ──────────────── */}
         <InsightCardsBlock insights={engineInsights} questTheme={questTheme} lang={lang} selfKnowledge={selfKnowledge} />
@@ -623,6 +567,125 @@ export default function StatsScreen() {
   );
 }
 
+function trendLabelKey(direction: MetacognitionSummary['stateTrend']['direction']) {
+  if (direction === 'improving') return 'stateImproving';
+  if (direction === 'declining') return 'stateDeclining';
+  if (direction === 'stable') return 'stateStable';
+  if (direction === 'mixed') return 'stateMixed';
+  return 'dataNotEnoughForMetacognition';
+}
+
+function deltaText(value?: number, inverse = false) {
+  if (value == null || !Number.isFinite(value)) return '—';
+  const effective = inverse ? -value : value;
+  if (Math.abs(effective) < 0.1) return '→ 0';
+  return `${effective > 0 ? '↑' : '↓'} ${Math.abs(value).toFixed(1)}`;
+}
+
+function PredictionGapLine({
+  metacognition,
+  questTheme,
+  lang,
+}: {
+  metacognition: MetacognitionSummary;
+  questTheme: ReturnType<typeof getQuestTheme>;
+  lang: 'zh' | 'en';
+}) {
+  const { predictionGap } = metacognition;
+  const tendencyKey = predictionGap.tendency === 'overestimate'
+    ? 'likelyOverestimating'
+    : predictionGap.tendency === 'underestimate'
+      ? 'likelyUnderestimating'
+      : 'planningAccurate';
+  const details = predictionGap.status === 'ok'
+    ? [
+      predictionGap.durationErrorAvg != null ? `${t(lang, 'durationChange')}: ${Math.abs(predictionGap.durationErrorAvg).toFixed(0)}m` : null,
+      predictionGap.qualityErrorAvg != null ? `${t(lang, 'qualityChange')}: ${Math.abs(predictionGap.qualityErrorAvg).toFixed(1)}` : null,
+    ].filter(Boolean).join(' · ')
+    : t(lang, 'dataNotEnoughForMetacognition');
+
+  return (
+    <View style={[styles.predictionGapLine, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.border }]}>
+      <Text style={[styles.predictionGapLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'predictionGap')}</Text>
+      <Text style={[styles.predictionGapText, { color: questTheme.colors.text }]}>{t(lang, tendencyKey)} · {details}</Text>
+    </View>
+  );
+}
+
+function StateTrendStrip({
+  metacognition,
+  questTheme,
+  lang,
+}: {
+  metacognition: MetacognitionSummary;
+  questTheme: ReturnType<typeof getQuestTheme>;
+  lang: 'zh' | 'en';
+}) {
+  const rows = [
+    { key: 'energy', labelKey: 'energy', value: metacognition.stateTrend.energyDelta },
+    { key: 'focus', labelKey: 'focus', value: metacognition.stateTrend.focusDelta },
+    { key: 'mood', labelKey: 'mood', value: metacognition.stateTrend.moodDelta },
+    { key: 'stress', labelKey: 'stress', value: metacognition.stateTrend.stressDelta, inverse: true },
+  ];
+  return (
+    <QuestCard questTheme={questTheme} variant="flat" style={[styles.metaStrip, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.borderStrong }]} className="state-trend-card insight-card">
+      <View style={styles.metaSectionHeader}>
+        <Text style={[styles.metaSectionTitle, { color: questTheme.colors.text }]}>{t(lang, 'stateTrend')}</Text>
+        <Text style={[styles.metaSectionMeta, { color: questTheme.colors.textMuted }]}>{t(lang, trendLabelKey(metacognition.stateTrend.direction))}</Text>
+      </View>
+      <View style={styles.stateDeltaGrid}>
+        {rows.map((row) => (
+          <View key={row.key} style={[styles.stateDelta, { backgroundColor: questTheme.colors.surfaceSubtle, borderColor: questTheme.colors.border }]}>
+            <Text style={[styles.stateDeltaLabel, { color: questTheme.colors.textMuted }]}>{t(lang, row.labelKey)}</Text>
+            <Text style={[styles.stateDeltaValue, { color: questTheme.colors.text }]}>{deltaText(row.value, row.inverse)}</Text>
+          </View>
+        ))}
+      </View>
+    </QuestCard>
+  );
+}
+
+function BehaviorLinksPanel({
+  metacognition,
+  questTheme,
+  lang,
+}: {
+  metacognition: MetacognitionSummary;
+  questTheme: ReturnType<typeof getQuestTheme>;
+  lang: 'zh' | 'en';
+}) {
+  return (
+    <QuestCard questTheme={questTheme} variant="flat" style={[styles.metaStrip, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.borderStrong }]} className="behavior-links-card insight-card">
+      <View style={styles.metaSectionHeader}>
+        <Text style={[styles.metaSectionTitle, { color: questTheme.colors.text }]}>{t(lang, 'behaviorLinks')}</Text>
+        <Text style={[styles.metaSectionMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'associatedNotCausal')}</Text>
+      </View>
+      {metacognition.behaviorLinks.length === 0 ? (
+        <Text style={[styles.metaEmpty, { color: questTheme.colors.textMuted }]}>{t(lang, 'noBehaviorLinkYet')} · {t(lang, 'whatToRecordNext')}</Text>
+      ) : (
+        <View style={styles.behaviorList}>
+          {metacognition.behaviorLinks.map((link) => {
+            const [count, avgQuality, avgDuration] = link.evidence.split('|');
+            const tone = link.type === 'positive' ? questTheme.colors.success : link.type === 'negative' ? questTheme.colors.warning : questTheme.colors.textMuted;
+            return (
+              <View key={`${link.label}-${link.evidence}`} style={[styles.behaviorItem, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSubtle }]}>
+                <Text style={[styles.behaviorTitle, { color: tone }]}>{link.label}</Text>
+                <Text style={[styles.behaviorEvidence, { color: questTheme.colors.textMuted }]}>
+                  {t(lang, 'behaviorEvidence')
+                    .replace('{count}', count)
+                    .replace('{quality}', avgQuality)
+                    .replace('{duration}', avgDuration)}
+                </Text>
+                <Text style={[styles.behaviorEvidence, { color: questTheme.colors.textSubtle }]}>{t(lang, link.confidence === 'high' ? 'confidenceHigh' : link.confidence === 'medium' ? 'confidenceMedium' : 'confidenceLow')}</Text>
+              </View>
+            );
+          })}
+        </View>
+      )}
+    </QuestCard>
+  );
+}
+
 // ───────── 近 7 天柱图 ─────────
 function DailyBarChart({
   days, accent, lang, questTheme,
@@ -773,9 +836,26 @@ const styles = StyleSheet.create({
   primaryHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   primaryTitle: { fontSize: 24, fontWeight: '900', lineHeight: 30, marginTop: 2 },
   primaryBody: { fontSize: 15, fontWeight: '800', lineHeight: 22, marginTop: 12 },
+  metaBody: { fontSize: 13, fontWeight: '800', lineHeight: 20, marginTop: 6 },
+  predictionGapLine: { borderWidth: 1, borderRadius: 12, padding: 10, marginTop: 12, gap: 3 },
+  predictionGapLabel: { fontSize: 10, fontWeight: '900', textTransform: 'uppercase' },
+  predictionGapText: { fontSize: 12, fontWeight: '900', lineHeight: 18 },
   nextActionBox: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, marginTop: 14 },
   nextActionLabel: { fontSize: 11, fontWeight: '900', textTransform: 'uppercase' },
   nextActionText: { fontSize: 14, fontWeight: '900', lineHeight: 20, marginTop: 3 },
+  metaStrip: { marginTop: 10, borderWidth: 1 },
+  metaSectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  metaSectionTitle: { fontSize: 15, fontWeight: '900' },
+  metaSectionMeta: { fontSize: 11, fontWeight: '900', flexShrink: 1, textAlign: 'right' },
+  stateDeltaGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
+  stateDelta: { flex: 1, minWidth: 104, borderWidth: 1, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8 },
+  stateDeltaLabel: { fontSize: 11, fontWeight: '900' },
+  stateDeltaValue: { fontSize: 14, fontWeight: '900', marginTop: 3 },
+  metaEmpty: { fontSize: 12, fontWeight: '800', lineHeight: 18, marginTop: 10 },
+  behaviorList: { gap: 8, marginTop: 10 },
+  behaviorItem: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8 },
+  behaviorTitle: { fontSize: 13, fontWeight: '900' },
+  behaviorEvidence: { fontSize: 11, fontWeight: '800', lineHeight: 16, marginTop: 3 },
   decisionCard: { marginTop: 16 },
   decisionHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   decisionKicker: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase' },

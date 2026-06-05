@@ -1407,3 +1407,32 @@ Known limitations:
 - Primary insight is v1 rule-based, not LLM-generated.
 - Signal widgets still use existing analysis outputs and do not introduce new algorithms.
 - Further copy tuning may be needed after real-use feedback.
+
+## Meta-cognition Loop v1
+
+Status: Implemented code/build pass; production verification pending after GitHub/Vercel deployment.
+
+Files changed:
+- `src/utils/metacognition.ts`
+- `src/screens/StatsScreen.tsx`
+- `src/i18n.ts`
+- `PROJECT_STATUS.md`
+
+What changed:
+- Added a pure meta-cognition helper that derives a 7-day summary from existing `ExecutionLog`, `StateCheckIn`, skills, and goals.
+- Added live-log filtering for Insights so deleted/orphaned records and deleted-skill residue are excluded from meta-cognition, time allocation, data health, and app-loop summaries.
+- Added state trend detection for energy, focus, mood, stress, and overall direction.
+- Added behavior-link summaries that show repeated behavior patterns as associations, explicitly not causal claims.
+- Added lightweight prediction-gap display using existing prediction/actual fields when enough data exists.
+- Reordered the Insights top section so Meta-cognition Summary, State Change Strip, and Behavior Links appear before the broader Ability Map / Signal Grid / Deep Analysis sections.
+- Added zh/en i18n keys for the new meta-cognition copy.
+
+Validation:
+- `npx tsc --noEmit`: passed locally.
+- `npm run build`: passed locally.
+- Production web UI verification is still required at `https://questlife-alpha-orpin.vercel.app`.
+
+Known limitations:
+- Meta-cognition v1 is deterministic/rule-based, not AI-generated.
+- Behavior links are association signals only and do not claim causality.
+- No ExecutionLog data model, AsyncStorage migration, navigation, or B-3/B4 save logic changes were made.
