@@ -241,10 +241,10 @@ export function GrowthCurveCard({ result, questTheme, lang, isExpanded, onToggle
 // 3. Ability Radar Card
 // ─────────────────────────────────────────────────────────────────────────────
 
-const R_SIZE  = 280;
+const R_SIZE  = 320;
 const R_CX    = R_SIZE / 2;
 const R_CY    = R_SIZE / 2;
-const R_OUTER = 98;
+const R_OUTER = 112;
 const R_N     = 5;
 
 function radarPt(score: number, idx: number, scale = R_OUTER): { x: number; y: number } {
@@ -265,8 +265,16 @@ export function AbilityRadarCard({ result, questTheme, lang, isExpanded, onToggl
 }) {
   const isBaseline = result.status === 'insufficient';
 
+  const meaningKeys: Record<string, string> = {
+    ieRadarExecution: 'executionPowerMeaning',
+    ieRadarConsistency: 'consistencyMeaning',
+    ieRadarQuality: 'qualityMeaning',
+    ieRadarSelfAware: 'selfKnowledgeMeaning',
+    ieRadarResilience: 'recoveryPowerMeaning',
+  };
+
   return (
-    <QuestCard questTheme={questTheme} variant="data" style={{ marginTop: questTheme.spacing.md, borderColor: questTheme.colors.borderStrong, borderLeftWidth: 3, borderLeftColor: questTheme.colors.accent }}>
+    <QuestCard questTheme={questTheme} variant="data" style={{ marginTop: questTheme.spacing.md, borderColor: questTheme.colors.borderStrong, borderTopWidth: 2, borderTopColor: questTheme.colors.accent }}>
       <CardTitle
         titleKey="ieAbilityRadar"
         isBaseline={isBaseline}
@@ -274,6 +282,10 @@ export function AbilityRadarCard({ result, questTheme, lang, isExpanded, onToggl
         questTheme={questTheme}
         lang={lang}
       />
+
+      <Text style={[cardStyles.caption, { color: questTheme.colors.textMuted, marginTop: questTheme.spacing.xs }]}>
+        {t(lang, 'abilityMapExplanation')}
+      </Text>
 
       <View style={[radarStyles.dashboard, { marginTop: questTheme.spacing.md }]}>
         <View style={[radarStyles.chartPanel, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSubtle }]}>
@@ -314,27 +326,32 @@ export function AbilityRadarCard({ result, questTheme, lang, isExpanded, onToggl
             {t(lang, 'ieRadarBaseline')}
           </Text>
         </View>
-      </View>
 
-      <View style={[cardStyles.scoreGrid, { marginTop: questTheme.spacing.md }]}>
-        {result.dimensions.map((d) => {
-          const pct = Math.round(d.score * 100);
-          const color = d.isBaseline
-            ? questTheme.colors.textSubtle
-            : getStateToneColor(Math.round(d.score * 5), questTheme);
-          return (
-            <View key={d.key} style={[cardStyles.scoreItem, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSubtle }]}>
-              <Text style={[cardStyles.scoreVal, { color }]}>{pct}</Text>
-              <Text style={[cardStyles.scoreLabel, { color: questTheme.colors.textMuted }]}>
-                {t(lang, d.key)}
-              </Text>
-            </View>
-          );
-        })}
+        <View style={cardStyles.scoreGrid}>
+          {result.dimensions.map((d) => {
+            const pct = Math.round(d.score * 100);
+            const color = d.isBaseline
+              ? questTheme.colors.textSubtle
+              : getStateToneColor(Math.round(d.score * 5), questTheme);
+            return (
+              <View key={d.key} style={[cardStyles.scoreItem, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSubtle }]}>
+                <View style={cardStyles.scoreHeader}>
+                  <Text style={[cardStyles.scoreVal, { color }]}>{pct}</Text>
+                  <Text style={[cardStyles.scoreLabel, { color: questTheme.colors.text }]}>
+                    {t(lang, d.key)}
+                  </Text>
+                </View>
+                <Text style={[cardStyles.scoreMeaning, { color: questTheme.colors.textMuted }]}>
+                  {t(lang, meaningKeys[d.key] ?? 'abilityMapExplanation')}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
       </View>
       {result.conclusion.confidence === 'low' ? (
         <Text style={[cardStyles.insufficientText, { color: questTheme.colors.textMuted }]}>
-          {t(lang, 'abilityMapNoteLowConfidence')}
+          {t(lang, 'lowConfidenceAbilityMap')}
         </Text>
       ) : null}
 
@@ -565,14 +582,73 @@ export function TomorrowPredictionCard({ result, questTheme, lang, isExpanded, o
   );
 }
 
+function AnomalySignalCard({ result, questTheme, lang }: {
+  result: InsightsSummaryResult['anomalies'];
+  questTheme: QuestTheme;
+  lang: Lang;
+}) {
+  const topAnomaly = result.status === 'insufficient' ? null : result.anomalies[0];
+  const tone = topAnomaly?.severity === 'high' ? questTheme.colors.danger : topAnomaly ? questTheme.colors.warning : questTheme.colors.success;
+  const desc = topAnomaly
+    ? t(lang, topAnomaly.descKey)
+      .replace('{pct}', topAnomaly.descValues.pct ?? '')
+      .replace('{days}', topAnomaly.descValues.days ?? '')
+    : t(lang, result.status === 'insufficient' ? 'ieInsufficient' : 'noAnomalyDetected');
+  return (
+    <QuestCard questTheme={questTheme} variant="data" style={{ borderColor: questTheme.colors.borderStrong, borderTopWidth: 2, borderTopColor: tone }}>
+      <Text style={[widgetStyles.title, { color: questTheme.colors.text }]}>{t(lang, 'ieAnomalyAlert')}</Text>
+      <Text style={[widgetStyles.big, { color: tone }]}>
+        {result.status === 'insufficient' ? '—' : String(result.anomalies.length)}
+      </Text>
+      <Text style={[widgetStyles.body, { color: questTheme.colors.textMuted }]}>{desc}</Text>
+    </QuestCard>
+  );
+}
+
+function SelfKnowledgeSignalCard({ selfKnowledge, questTheme, lang }: {
+  selfKnowledge?: {
+    durationError: number;
+    qualityError: number | null;
+    level: string;
+    weeks: { week: string; error: number }[];
+  } | null;
+  questTheme: QuestTheme;
+  lang: Lang;
+}) {
+  return (
+    <QuestCard questTheme={questTheme} variant="data" style={{ borderColor: questTheme.colors.borderStrong, borderTopWidth: 2, borderTopColor: questTheme.colors.predicted }}>
+      <Text style={[widgetStyles.title, { color: questTheme.colors.text }]}>{t(lang, 'selfKnowledgeAccuracy')}</Text>
+      {!selfKnowledge ? (
+        <Text style={[widgetStyles.body, { color: questTheme.colors.textMuted }]}>{t(lang, 'needPredictions')}</Text>
+      ) : (
+        <>
+          <Text style={[widgetStyles.big, { color: questTheme.colors.predicted }]}>{selfKnowledge.level}</Text>
+          <Text style={[widgetStyles.body, { color: questTheme.colors.textMuted }]}>
+            {t(lang, 'durationPredictionError')} ±{selfKnowledge.durationError.toFixed(0)} {t(lang, 'minutes')}
+          </Text>
+          <Text style={[widgetStyles.body, { color: questTheme.colors.textMuted }]}>
+            {t(lang, 'qualityPredictionError')} {selfKnowledge.qualityError == null ? '—' : `±${selfKnowledge.qualityError.toFixed(1)}`}
+          </Text>
+        </>
+      )}
+    </QuestCard>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Master wrapper — renders all 6 new cards
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function InsightCardsBlock({ insights, questTheme, lang }: {
+export function InsightCardsBlock({ insights, questTheme, lang, selfKnowledge }: {
   insights: InsightsSummaryResult;
   questTheme: QuestTheme;
   lang: Lang;
+  selfKnowledge?: {
+    durationError: number;
+    qualityError: number | null;
+    level: string;
+    weeks: { week: string; error: number }[];
+  } | null;
 }) {
   const [expandedWhys, setExpandedWhys] = useState<Set<string>>(new Set());
   const toggle = (key: string) => setExpandedWhys((prev) => {
@@ -583,7 +659,6 @@ export function InsightCardsBlock({ insights, questTheme, lang }: {
 
   return (
     <>
-      <AnomalyStrip result={insights.anomalies} questTheme={questTheme} lang={lang} />
       <Text style={[sectionStyles.title, { color: questTheme.colors.text }]}>{t(lang, 'coreSignals')}</Text>
       <AbilityRadarCard
         result={insights.abilityRadar}
@@ -592,28 +667,43 @@ export function InsightCardsBlock({ insights, questTheme, lang }: {
         isExpanded={expandedWhys.has('radar')}
         onToggle={() => toggle('radar')}
       />
-      <TomorrowPredictionCard
-        result={insights.tomorrowPrediction}
-        questTheme={questTheme}
-        lang={lang}
-        isExpanded={expandedWhys.has('tomorrow')}
-        onToggle={() => toggle('tomorrow')}
-      />
-      <MonthlyTrendCard
-        result={insights.monthlyTrend}
-        questTheme={questTheme}
-        lang={lang}
-        isExpanded={expandedWhys.has('monthly')}
-        onToggle={() => toggle('monthly')}
-      />
+      <Text style={[sectionStyles.title, { color: questTheme.colors.text }]}>{t(lang, 'signalGrid')}</Text>
+      <View style={dashboardStyles.signalGrid}>
+        <View style={dashboardStyles.signalItem}>
+          <TomorrowPredictionCard
+            result={insights.tomorrowPrediction}
+            questTheme={questTheme}
+            lang={lang}
+            isExpanded={expandedWhys.has('tomorrow')}
+            onToggle={() => toggle('tomorrow')}
+          />
+        </View>
+        <View style={dashboardStyles.signalItem}>
+          <MonthlyTrendCard
+            result={insights.monthlyTrend}
+            questTheme={questTheme}
+            lang={lang}
+            isExpanded={expandedWhys.has('monthly')}
+            onToggle={() => toggle('monthly')}
+          />
+        </View>
+        <View style={dashboardStyles.signalItem}>
+          <SelfKnowledgeSignalCard selfKnowledge={selfKnowledge} questTheme={questTheme} lang={lang} />
+        </View>
+        <View style={dashboardStyles.signalItem}>
+          <GrowthCurveCard
+            result={insights.growthCurve}
+            questTheme={questTheme}
+            lang={lang}
+            isExpanded={expandedWhys.has('growth')}
+            onToggle={() => toggle('growth')}
+          />
+        </View>
+        <View style={dashboardStyles.signalItem}>
+          <AnomalySignalCard result={insights.anomalies} questTheme={questTheme} lang={lang} />
+        </View>
+      </View>
       <Text style={[sectionStyles.title, { color: questTheme.colors.text }]}>{t(lang, 'deepAnalysis')}</Text>
-      <GrowthCurveCard
-        result={insights.growthCurve}
-        questTheme={questTheme}
-        lang={lang}
-        isExpanded={expandedWhys.has('growth')}
-        onToggle={() => toggle('growth')}
-      />
       <CombinationEffectCard
         result={insights.combination}
         questTheme={questTheme}
@@ -661,16 +751,18 @@ const cardStyles = StyleSheet.create({
   accentVal: { fontSize: 16, fontWeight: '800', marginRight: 8 },
   dimLabel: { fontSize: 13 },
   caption: { fontSize: 11, marginTop: 6 },
-  scoreGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  scoreItem: { width: '48%', borderWidth: 1, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8 },
-  scoreVal: { fontSize: 18, fontWeight: '800' },
-  scoreLabel: { fontSize: 11, marginTop: 2 },
+  scoreGrid: { flex: 1.2, minWidth: 260, flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  scoreItem: { width: '48%', minWidth: 120, borderWidth: 1, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8 },
+  scoreHeader: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
+  scoreVal: { fontSize: 20, fontWeight: '900' },
+  scoreLabel: { fontSize: 12, fontWeight: '900' },
+  scoreMeaning: { fontSize: 11, lineHeight: 16, marginTop: 4 },
   bigVal: { fontSize: 28, fontWeight: '800' },
 });
 
 const radarStyles = StyleSheet.create({
-  dashboard: { alignItems: 'center' },
-  chartPanel: { width: '100%', maxWidth: 360, borderWidth: 1, borderRadius: 14, padding: 10, alignItems: 'center' },
+  dashboard: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'stretch', gap: 12 },
+  chartPanel: { flex: 1, minWidth: 260, maxWidth: 420, borderWidth: 1, borderRadius: 14, padding: 10, alignItems: 'center', justifyContent: 'center' },
 });
 
 const monthStyles = StyleSheet.create({
@@ -679,6 +771,17 @@ const monthStyles = StyleSheet.create({
 
 const sectionStyles = StyleSheet.create({
   title: { fontSize: 18, fontWeight: '800', marginTop: 22, marginBottom: 2 },
+});
+
+const dashboardStyles = StyleSheet.create({
+  signalGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 8 },
+  signalItem: { width: '48%', minWidth: 280 },
+});
+
+const widgetStyles = StyleSheet.create({
+  title: { fontSize: 14, fontWeight: '900' },
+  big: { fontSize: 22, fontWeight: '900', marginTop: 8 },
+  body: { fontSize: 12, fontWeight: '700', lineHeight: 18, marginTop: 6 },
 });
 
 const combStyles = StyleSheet.create({

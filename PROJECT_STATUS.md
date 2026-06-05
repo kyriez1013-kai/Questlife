@@ -1379,3 +1379,31 @@ Known limitations:
 - LLM-generated command reasoning remains future work.
 - Mobile-specific polish should continue after real-use feedback.
 - Advanced analytics quality tuning remains future work.
+
+## Insights Page Template Redesign v1
+
+Status: Implemented dashboard-layout redesign; production verification pending after GitHub/Vercel deployment.
+
+Files changed:
+- `src/screens/StatsScreen.tsx`
+- `src/screens/StatsScreenInsights.tsx`
+- `src/i18n.ts`
+- `PROJECT_STATUS.md`
+
+What changed:
+- Reworked Insights from a vertical card-stack feel into a dashboard template with a compact header, data-health summary, command strip, and primary insight panel.
+- Added a rule-based primary insight helper for data-building, clearest-signal, low-friction, and rhythm-forming states without adding LLM calls or changing analytics semantics.
+- Promoted Ability Map into the main analytical panel with a larger radar surface, separate metric explanation cards, and low-confidence explanatory copy.
+- Added a Signal Grid zone for tomorrow prediction, monthly comparison, self-knowledge accuracy, growth curve, and anomaly detection widgets.
+- Moved multi-factor analysis under Deep Analysis so lower-confidence/deeper modules no longer dominate the first screen.
+- Kept ExecutionLog, B-3.3 save logic, B4 feedback, AsyncStorage/migration, navigation, and non-Insights screens unchanged.
+
+Validation:
+- `npx tsc --noEmit`: passed locally.
+- `npm run build`: passed locally.
+- Production web UI verification is still required at `https://questlife-alpha-orpin.vercel.app`.
+
+Known limitations:
+- Primary insight is v1 rule-based, not LLM-generated.
+- Signal widgets still use existing analysis outputs and do not introduce new algorithms.
+- Further copy tuning may be needed after real-use feedback.

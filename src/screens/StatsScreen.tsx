@@ -30,6 +30,58 @@ const WEEKDAY_KEYS = ['weekdaySun', 'weekdayMon', 'weekdayTue', 'weekdayWed', 'w
 const fmtDate = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
+type PrimaryInsight = {
+  titleKey: string;
+  bodyKey: string;
+  nextActionKey: string;
+  confidence: 'low' | 'medium' | 'high';
+  signalType: 'building' | 'skill' | 'friction' | 'rhythm';
+  skillName?: string;
+};
+
+function buildPrimaryInsight(input: {
+  logCount: number;
+  topSkillLabel?: string;
+  lowStateCheckIns: number;
+  activeDays: number;
+}): PrimaryInsight {
+  if (input.logCount < 3) {
+    return {
+      titleKey: 'dataStillBuilding',
+      bodyKey: 'primaryInsightBuildingBody',
+      nextActionKey: 'recordOneRealAction',
+      confidence: 'low',
+      signalType: 'building',
+    };
+  }
+  if (input.lowStateCheckIns >= 2) {
+    return {
+      titleKey: 'lowerFrictionNeeded',
+      bodyKey: 'primaryInsightFrictionBody',
+      nextActionKey: 'primaryInsightFrictionNext',
+      confidence: 'medium',
+      signalType: 'friction',
+    };
+  }
+  if (input.topSkillLabel) {
+    return {
+      titleKey: 'currentClearestSignal',
+      bodyKey: 'primaryInsightSkillBody',
+      nextActionKey: 'continueOneMoreRecord',
+      confidence: input.activeDays >= 5 ? 'high' : 'medium',
+      signalType: 'skill',
+      skillName: input.topSkillLabel,
+    };
+  }
+  return {
+    titleKey: 'rhythmForming',
+    bodyKey: 'primaryInsightRhythmBody',
+    nextActionKey: 'primaryInsightRhythmNext',
+    confidence: input.activeDays >= 5 ? 'medium' : 'low',
+    signalType: 'rhythm',
+  };
+}
+
 export default function StatsScreen() {
   const { data } = useStore();
   const lang = getLanguage(data.settings.language);
@@ -326,6 +378,22 @@ export default function StatsScreen() {
       .replace('{skill}', instantInsight.topSkill.label)
       .replace('{percent}', String(Math.round(instantInsight.topSkill.percent * 100)))
     : t(lang, 'keySignalMoreRecords').replace('{count}', String(Math.max(0, 7 - instantInsight.activeDayCount)));
+  const lowStateCheckIns = (data.stateCheckIns || []).filter((checkIn) => (
+    last7.some((day) => day.date === checkIn.date) && (checkIn.overall ?? 3) <= 2
+  )).length;
+  const primaryInsight = buildPrimaryInsight({
+    logCount: logs.length,
+    topSkillLabel: instantInsight.topSkill?.label,
+    lowStateCheckIns,
+    activeDays,
+  });
+  const primaryConfidenceColor = primaryInsight.confidence === 'high'
+    ? questTheme.colors.success
+    : primaryInsight.confidence === 'medium'
+      ? questTheme.colors.warning
+      : questTheme.colors.textSubtle;
+  const primaryBody = t(lang, primaryInsight.bodyKey)
+    .replace('{skill}', primaryInsight.skillName ?? t(lang, 'notEnoughDataYet'));
 
   return (
     <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
@@ -333,67 +401,69 @@ export default function StatsScreen() {
         style={[styles.container, { backgroundColor: questTheme.colors.background }]}
         contentContainerStyle={{ padding: 16, paddingBottom: 170, maxWidth: 960, width: '100%', alignSelf: 'center' }}
       >
-        <Text style={[styles.h1, { color: questTheme.colors.text }]}>{t(lang, 'insights')}</Text>
-        <Text style={[styles.sub, { color: questTheme.colors.textMuted }]}>{t(lang, 'settingsSubtitle')}</Text>
+        <View style={styles.dashboardHeader}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.h1, { color: questTheme.colors.text }]}>{t(lang, 'insights')}</Text>
+            <Text style={[styles.sub, { color: questTheme.colors.textMuted }]}>{t(lang, 'settingsSubtitle')}</Text>
+          </View>
+          <View style={[styles.dataHealthPill, { borderColor: dataHealthColor, backgroundColor: dataHealthColor + '22' }]}>
+            <Text style={[styles.dataHealthText, { color: dataHealthColor }]}>{t(lang, 'dataHealth')}: {t(lang, dataHealthLabelKey)}</Text>
+          </View>
+        </View>
+        <Text style={[styles.dashboardMeta, { color: questTheme.colors.textMuted }]}>
+          {t(lang, 'dashboardSummary')} · {logs.length} {t(lang, 'logsToday')} · {activeDays} {t(lang, 'activeDays')} · {t(lang, 'last7Days')}
+        </Text>
+
+        <View style={[styles.commandStrip, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong }]}>
+          <View style={styles.commandCell}>
+            <Text style={[styles.commandValue, { color: questTheme.colors.primary }]}>{(instantInsight.weeklyMinutes / 60).toFixed(1)}h</Text>
+            <Text style={[styles.commandLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'weeklyOverview')}</Text>
+          </View>
+          <View style={styles.commandCell}>
+            <Text style={[styles.commandValue, { color: questTheme.colors.accent }]} numberOfLines={1}>
+              {instantInsight.topSkill ? instantInsight.topSkill.label : t(lang, 'notEnoughDataYet')}
+            </Text>
+            <Text style={[styles.commandLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'keySignal')}</Text>
+          </View>
+          <View style={styles.commandCell}>
+            <Text style={[styles.commandValue, { color: dataHealthColor }]}>{t(lang, dataHealthLabelKey)}</Text>
+            <Text style={[styles.commandLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'dataHealth')}</Text>
+          </View>
+          <View style={styles.commandCell}>
+            <Text style={[styles.commandValue, { color: questTheme.colors.warning }]}>{instantInsight.done}/{instantInsight.done + instantInsight.remaining}</Text>
+            <Text style={[styles.commandLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'todayCompletion')}</Text>
+          </View>
+        </View>
 
         <QuestCard
           questTheme={questTheme}
           variant="hero"
-          style={[styles.decisionCard, {
+          style={[styles.primaryPanel, {
             backgroundColor: questTheme.colors.surfaceElevated,
             borderColor: questTheme.colors.borderStrong,
             borderLeftWidth: 4,
-            borderLeftColor: dataHealthColor,
+            borderLeftColor: primaryConfidenceColor,
           }]}
-          className="insight-card summary-card"
+          className="insight-card primary-insight-card"
         >
-          <View style={styles.decisionHeader}>
+          <View style={styles.primaryHeader}>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.decisionKicker, { color: questTheme.colors.textMuted }]}>{t(lang, 'structuralDashboard')}</Text>
-              <Text style={[styles.decisionTitle, { color: questTheme.colors.text }]}>{t(lang, 'coreSignals')}</Text>
+              <Text style={[styles.decisionKicker, { color: questTheme.colors.textMuted }]}>{t(lang, 'primaryInsight')}</Text>
+              <Text style={[styles.primaryTitle, { color: questTheme.colors.text }]}>{t(lang, primaryInsight.titleKey)}</Text>
             </View>
-            <View style={[styles.dataHealthPill, { borderColor: dataHealthColor, backgroundColor: dataHealthColor + '22' }]}>
-              <Text style={[styles.dataHealthText, { color: dataHealthColor }]}>{t(lang, 'dataHealth')}: {t(lang, dataHealthLabelKey)}</Text>
+            <View style={[styles.dataHealthPill, { borderColor: primaryConfidenceColor, backgroundColor: primaryConfidenceColor + '22' }]}>
+              <Text style={[styles.dataHealthText, { color: primaryConfidenceColor }]}>{t(lang, primaryInsight.confidence === 'high' ? 'confidenceHigh' : primaryInsight.confidence === 'medium' ? 'confidenceMedium' : 'confidenceLow')}</Text>
             </View>
           </View>
-          <Text style={[styles.keySignal, { color: questTheme.colors.text }]}>{t(lang, 'keySignal')}: {keySignalText}</Text>
-          <View style={styles.decisionGrid}>
-            <View style={[styles.decisionMetric, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.border }]}>
-              <Text style={[styles.decisionValue, { color: questTheme.colors.primary }]}>{(instantInsight.weeklyMinutes / 60).toFixed(1)}h</Text>
-              <Text style={[styles.decisionLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'weeklyOverview')}</Text>
-            </View>
-            <View style={[styles.decisionMetric, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.border }]}>
-              <Text style={[styles.decisionValue, { color: questTheme.colors.accent }]}>{instantInsight.weeklyLogCount}</Text>
-              <Text style={[styles.decisionLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'logsToday')}</Text>
-            </View>
-            <View style={[styles.decisionMetric, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.border }]}>
-              <Text style={[styles.decisionValue, { color: questTheme.colors.success }]}>{streak}</Text>
-              <Text style={[styles.decisionLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'streak')}</Text>
-            </View>
-            <View style={[styles.decisionMetric, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.border }]}>
-              <Text style={[styles.decisionValue, { color: questTheme.colors.warning }]}>{instantInsight.done}/{instantInsight.done + instantInsight.remaining}</Text>
-              <Text style={[styles.decisionLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'todayCompletion')}</Text>
-            </View>
+          <Text style={[styles.primaryBody, { color: questTheme.colors.text }]}>{primaryBody}</Text>
+          <View style={[styles.nextActionBox, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.border }]}>
+            <Text style={[styles.nextActionLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'next')}</Text>
+            <Text style={[styles.nextActionText, { color: questTheme.colors.primary }]}>{t(lang, primaryInsight.nextActionKey)}</Text>
           </View>
         </QuestCard>
 
         {/* ── 重排后顺序：有行动价值的分析在上，系统自检在下 ──────────────── */}
-
-        {/* 1. 即时快览（今日概况）*/}
-        <View style={styles.instantGrid}>
-          <QuestCard questTheme={questTheme} variant="data" style={[styles.instantCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong, borderTopWidth: 2, borderTopColor: questTheme.colors.info }]} className="summary-card insight-card">
-            <Text style={[styles.instantTitle, { color: questTheme.colors.text }]}>{t(lang, 'weeklyOverview')}</Text>
-            <Text style={[styles.instantText, { color: questTheme.colors.textMuted }]}>{(instantInsight.weeklyMinutes / 60).toFixed(1)}h · {instantInsight.weeklyLogCount} {t(lang, 'logsToday')} · {streak} {t(lang, 'days')}</Text>
-          </QuestCard>
-          <QuestCard questTheme={questTheme} variant="data" style={[styles.instantCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong, borderTopWidth: 2, borderTopColor: questTheme.colors.accent }]} className="summary-card insight-card">
-            <Text style={[styles.instantTitle, { color: questTheme.colors.text }]}>{t(lang, 'mostFocusedSkill')}</Text>
-            <Text style={[styles.instantText, { color: questTheme.colors.textMuted }]}>{instantInsight.topSkill ? `${instantInsight.topSkill.label} · ${(instantInsight.topSkill.percent * 100).toFixed(0)}%` : t(lang, 'notEnoughDataYet')}</Text>
-          </QuestCard>
-          <QuestCard questTheme={questTheme} variant="data" style={[styles.instantCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong, borderTopWidth: 2, borderTopColor: questTheme.colors.success }]} className="summary-card insight-card">
-            <Text style={[styles.instantTitle, { color: questTheme.colors.text }]}>{t(lang, 'todayCompletion')}</Text>
-            <Text style={[styles.instantText, { color: questTheme.colors.textMuted }]}>{instantInsight.done} {t(lang, 'completed')} · {instantInsight.remaining} {t(lang, 'remaining')}</Text>
-          </QuestCard>
-        </View>
+        <InsightCardsBlock insights={engineInsights} questTheme={questTheme} lang={lang} selfKnowledge={selfKnowledge} />
 
         {/* 2. 本周平均状态 */}
         {weeklyQuality && (
@@ -412,29 +482,6 @@ export default function StatsScreen() {
         {/* 3. 近 7 天柱图 */}
         <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'last7Days')}</Text>
         <DailyBarChart days={last7} accent={accent} lang={lang} questTheme={questTheme} />
-
-        {/* 4. 深度分析卡片（能力地图/成长曲线/多因子/月度/明日预测/异常检测）*/}
-        {/* ── 上移：对用户有行动价值的分析，原在 selfKnowledge 之后 ── */}
-        <InsightCardsBlock insights={engineInsights} questTheme={questTheme} lang={lang} />
-
-        {/* 5. 自我认知精度 */}
-        <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'selfKnowledgeAccuracy')}</Text>
-        <QuestCard questTheme={questTheme} variant="flat" style={[styles.insightCard, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.borderStrong, borderLeftWidth: 3, borderLeftColor: questTheme.colors.predicted }]} className="self-awareness-card insight-card">
-          {!selfKnowledge ? (
-            <Text style={[styles.insightLocked, { color: questTheme.colors.textMuted }]}>{t(lang, 'needPredictions')}</Text>
-          ) : (
-            <>
-              <Text style={[styles.insightStrong, { color: questTheme.colors.text }]}>{selfKnowledge.level}</Text>
-              <Text style={[styles.insightLine, { color: questTheme.colors.text }]}>{t(lang, 'durationPredictionError')} ±{selfKnowledge.durationError.toFixed(0)} {t(lang, 'minutes')}</Text>
-              <Text style={[styles.insightLine, { color: questTheme.colors.text }]}>{t(lang, 'qualityPredictionError')} {selfKnowledge.qualityError == null ? '—' : `±${selfKnowledge.qualityError.toFixed(1)}`}</Text>
-              <Text style={[styles.insightLine, { color: questTheme.colors.text }]}>{t(lang, 'last8WeeksTrend')}</Text>
-              {selfKnowledge.weeks.map((week) => {
-                const bars = Math.max(1, Math.min(8, Math.round(week.error / 5)));
-                return <Text key={week.week} style={[styles.insightLine, { color: questTheme.colors.text }]}>{week.week.slice(5)} {'█'.repeat(bars)} ±{week.error.toFixed(0)}m</Text>;
-              })}
-            </>
-          )}
-        </QuestCard>
 
         {/* 6. 启动救援统计 */}
         <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'rescueStarts')}</Text>
@@ -716,6 +763,19 @@ const styles = StyleSheet.create({
   h1: { color: theme.text, fontSize: 34, fontWeight: '800' },
   h2: { color: theme.text, fontSize: 18, fontWeight: '600', marginTop: 24, marginBottom: 12 },
   sub: { color: theme.textDim, marginTop: 4 },
+  dashboardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
+  dashboardMeta: { fontSize: 12, fontWeight: '800', marginTop: 8, lineHeight: 18 },
+  commandStrip: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, borderWidth: 1, borderRadius: 16, padding: 10, marginTop: 16 },
+  commandCell: { flex: 1, minWidth: 132, paddingHorizontal: 8, paddingVertical: 8 },
+  commandValue: { fontSize: 16, fontWeight: '900', lineHeight: 22 },
+  commandLabel: { fontSize: 11, fontWeight: '800', marginTop: 2 },
+  primaryPanel: { marginTop: 12 },
+  primaryHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  primaryTitle: { fontSize: 24, fontWeight: '900', lineHeight: 30, marginTop: 2 },
+  primaryBody: { fontSize: 15, fontWeight: '800', lineHeight: 22, marginTop: 12 },
+  nextActionBox: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, marginTop: 14 },
+  nextActionLabel: { fontSize: 11, fontWeight: '900', textTransform: 'uppercase' },
+  nextActionText: { fontSize: 14, fontWeight: '900', lineHeight: 20, marginTop: 3 },
   decisionCard: { marginTop: 16 },
   decisionHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   decisionKicker: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase' },
