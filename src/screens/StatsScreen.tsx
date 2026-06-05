@@ -115,12 +115,14 @@ export default function StatsScreen() {
   // ───────── 本周技能分配 ─────────
   const weeklySkillShare = useMemo(() => {
     const dates = new Set(last7.map((d) => d.date));
-    const inWindow = timeLogs.filter((a) => dates.has(a.date));
+    const skillIds = new Set(data.skills.map((skill) => skill.id));
+    const inWindow = timeLogs.filter((a) => dates.has(a.date) && a.linkedSkillId && skillIds.has(a.linkedSkillId));
     const totalMin = inWindow.reduce((s, a) => s + (a.durationMinutes ?? 0), 0);
     if (totalMin === 0) return null;
     const bySkill = new Map<string, number>();
     inWindow.forEach((a) => {
-      const sid = a.linkedSkillId ?? a.orphanedSkillName ?? a.title ?? t(lang, 'customLog');
+      const sid = a.linkedSkillId;
+      if (!sid) return;
       bySkill.set(sid, (bySkill.get(sid) ?? 0) + (a.durationMinutes ?? 0));
     });
     const rows = (Array.from(bySkill.entries())

@@ -1421,6 +1421,7 @@ Files changed:
 What changed:
 - Added a pure meta-cognition helper that derives a 7-day summary from existing `ExecutionLog`, `StateCheckIn`, skills, and goals.
 - Added live-log filtering for Insights so deleted/orphaned records and deleted-skill residue are excluded from meta-cognition, time allocation, data health, and app-loop summaries.
+- Tightened weekly skill time allocation so it only groups logs with a valid existing `linkedSkillId`; orphan/title fallback entries no longer appear as skills.
 - Added state trend detection for energy, focus, mood, stress, and overall direction.
 - Added behavior-link summaries that show repeated behavior patterns as associations, explicitly not causal claims.
 - Added lightweight prediction-gap display using existing prediction/actual fields when enough data exists.
