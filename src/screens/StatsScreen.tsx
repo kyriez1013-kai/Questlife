@@ -329,6 +329,7 @@ export default function StatsScreen() {
     stateCheckIns: data.stateCheckIns || [],
     skills: data.skills,
     goals: data.categories,
+    contextLogs: [],
   }), [data.categories, data.skills, data.stateCheckIns, logs]);
   const metaConfidenceColor = metacognition.currentPattern.confidence === 'high'
     ? questTheme.colors.success
@@ -668,10 +669,18 @@ function BehaviorLinksPanel({
         <View style={styles.behaviorList}>
           {metacognition.behaviorLinks.map((link) => {
             const [count, avgQuality, avgDuration] = link.evidence.split('|');
-            const tone = link.type === 'positive' ? questTheme.colors.success : link.type === 'negative' ? questTheme.colors.warning : questTheme.colors.textMuted;
+            const tone = link.direction === 'positive' ? questTheme.colors.success : link.direction === 'negative' ? questTheme.colors.warning : questTheme.colors.textMuted;
+            const linkTypeKey = link.linkType === 'context_state'
+              ? 'contextStateLink'
+              : link.linkType === 'context_execution'
+                ? 'contextExecutionLink'
+                : link.linkType === 'context_state_execution'
+                  ? 'possibleContextLink'
+                  : 'executionStateLink';
             return (
               <View key={`${link.label}-${link.evidence}`} style={[styles.behaviorItem, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSubtle }]}>
                 <Text style={[styles.behaviorTitle, { color: tone }]}>{link.label}</Text>
+                <Text style={[styles.behaviorEvidence, { color: questTheme.colors.textSubtle }]}>{t(lang, 'observedAssociation')} · {t(lang, linkTypeKey)}</Text>
                 <Text style={[styles.behaviorEvidence, { color: questTheme.colors.textMuted }]}>
                   {t(lang, 'behaviorEvidence')
                     .replace('{count}', count)

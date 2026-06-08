@@ -2,6 +2,18 @@ import { Category, ExecutionLog, Skill, StateCheckIn } from '../types';
 
 type Confidence = 'low' | 'medium' | 'high';
 
+export type ContextLog = {
+  id: string;
+  date?: string;
+  createdAt?: string;
+  type: 'sleep' | 'food' | 'environment' | 'body' | 'weather' | 'symptom' | 'custom';
+  label: string;
+  value?: number | string;
+  unit?: string;
+  intensity?: number;
+  source?: 'manual' | 'healthkit' | 'sensor' | 'import' | 'unknown';
+};
+
 export type MetacognitionSummary = {
   status: 'insufficient' | 'ok';
   windowDays: 7;
@@ -14,10 +26,12 @@ export type MetacognitionSummary = {
     direction: 'improving' | 'declining' | 'stable' | 'mixed' | 'unknown';
   };
   behaviorLinks: {
-    type: 'positive' | 'negative' | 'neutral';
+    linkType: 'execution_state' | 'context_state' | 'context_execution' | 'context_state_execution';
+    direction: 'positive' | 'negative' | 'neutral';
     label: string;
     evidence: string;
     confidence: Confidence;
+    sourceIds?: string[];
   }[];
   predictionGap: {
     status: 'insufficient' | 'ok';
@@ -137,7 +151,7 @@ function taskLabel(taskType?: string) {
 
 function buildBehaviorLinks(logs: ExecutionLog[], skills: Skill[]): MetacognitionSummary['behaviorLinks'] {
   const skillMap = new Map(skills.map((skill) => [skill.id, skill]));
-  const groups = new Map<string, { label: string; taskType?: string; qualities: number[]; durations: number[]; count: number }>();
+  const groups = new Map<string, { label: string; taskType?: string; qualities: number[]; durations: number[]; count: number; sourceIds: string[] }>();
   logs.forEach((log) => {
     const skill = log.linkedSkillId ? skillMap.get(log.linkedSkillId) : undefined;
     const key = skill?.id ?? log.taskType ?? 'unlinked';
@@ -147,8 +161,10 @@ function buildBehaviorLinks(logs: ExecutionLog[], skills: Skill[]): Metacognitio
       qualities: [],
       durations: [],
       count: 0,
+      sourceIds: [],
     };
     row.count += 1;
+    row.sourceIds.push(log.id);
     if (log.qualityRating != null) row.qualities.push(log.qualityRating);
     if ((log.durationMinutes ?? 0) > 0) row.durations.push(log.durationMinutes ?? 0);
     groups.set(key, row);
@@ -158,18 +174,20 @@ function buildBehaviorLinks(logs: ExecutionLog[], skills: Skill[]): Metacognitio
     .map((row) => {
       const avgQuality = avg(row.qualities);
       const avgDuration = avg(row.durations);
-      const type: MetacognitionSummary['behaviorLinks'][number]['type'] = avgQuality == null ? 'neutral' : avgQuality >= 4 ? 'positive' : avgQuality <= 2.5 ? 'negative' : 'neutral';
+      const direction: MetacognitionSummary['behaviorLinks'][number]['direction'] = avgQuality == null ? 'neutral' : avgQuality >= 4 ? 'positive' : avgQuality <= 2.5 ? 'negative' : 'neutral';
       const confidence: Confidence = row.count >= 5 ? 'high' : row.count >= 3 ? 'medium' : 'low';
       return {
-        type,
+        linkType: 'execution_state' as const,
+        direction,
         label: row.label,
         evidence: `${row.count}|${avgQuality?.toFixed(1) ?? 'NA'}|${avgDuration?.toFixed(0) ?? 'NA'}`,
         confidence,
+        sourceIds: row.sourceIds.slice(0, 5),
       };
     })
     .sort((a, b) => {
-      const rank: Record<MetacognitionSummary['behaviorLinks'][number]['type'], number> = { positive: 0, negative: 1, neutral: 2 };
-      return rank[a.type] - rank[b.type];
+      const rank: Record<MetacognitionSummary['behaviorLinks'][number]['direction'], number> = { positive: 0, negative: 1, neutral: 2 };
+      return rank[a.direction] - rank[b.direction];
     })
     .slice(0, 3);
 }
@@ -179,12 +197,14 @@ export function buildMetacognitionSummary({
   stateCheckIns,
   skills,
   goals,
+  contextLogs = [],
   now = new Date(),
 }: {
   executionLogs: ExecutionLog[];
   stateCheckIns: StateCheckIn[];
   skills: Skill[];
   goals: Category[];
+  contextLogs?: ContextLog[];
   now?: Date;
 }): MetacognitionSummary {
   const windowDays = 7;
@@ -192,10 +212,12 @@ export function buildMetacognitionSummary({
   const logs = getLiveExecutionLogs(executionLogs, { skills })
     .filter((log) => log.date >= startStr);
   const states = (stateCheckIns || []).filter((row) => row.date >= startStr);
+  const contexts = (contextLogs || []).filter((row) => (row.date ?? row.createdAt ?? '') >= startStr);
   const stateTrend = buildStateTrend(states);
   const behaviorLinks = buildBehaviorLinks(logs, skills);
   const predictionGap = buildPredictionGap(logs);
   const insufficient = logs.length < 3 || states.length < 3;
+  void contexts;
 
   let currentPattern: MetacognitionSummary['currentPattern'];
   if (insufficient) {
@@ -219,7 +241,7 @@ export function buildMetacognitionSummary({
       nextActionKey: 'recordBeforeAfterAction',
       confidence: 'medium',
     };
-  } else if (behaviorLinks.some((link) => link.type === 'positive')) {
+  } else if (behaviorLinks.some((link) => link.direction === 'positive')) {
     currentPattern = {
       titleKey: 'stateImproving',
       bodyKey: 'associatedNotCausal',

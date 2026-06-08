@@ -1424,9 +1424,12 @@ What changed:
 - Tightened weekly skill time allocation so it only groups logs with a valid existing `linkedSkillId`; orphan/title fallback entries no longer appear as skills.
 - Added state trend detection for energy, focus, mood, stress, and overall direction.
 - Added behavior-link summaries that show repeated behavior patterns as associations, explicitly not causal claims.
+- Extended behavior links with stable linkType, direction, and optional sourceIds so future context-state and context-execution links can use the same structure.
+- Added an optional local ContextLog input shape for sleep, food, environment, body, weather, symptom, and custom context observations without adding a global schema or storage migration.
+- Insights behavior links now label observed associations and distinguish execution-state links from future context link types.
 - Added lightweight prediction-gap display using existing prediction/actual fields when enough data exists.
 - Reordered the Insights top section so Meta-cognition Summary, State Change Strip, and Behavior Links appear before the broader Ability Map / Signal Grid / Deep Analysis sections.
-- Added zh/en i18n keys for the new meta-cognition copy.
+- Added zh/en i18n keys for the new meta-cognition copy, including observed-association and context-link labels.
 
 Validation:
 - `npx tsc --noEmit`: passed locally.
@@ -1436,6 +1439,7 @@ Validation:
 Known limitations:
 - Meta-cognition v1 is deterministic/rule-based, not AI-generated.
 - Behavior links are association signals only and do not claim causality.
+- Context logs are accepted as an optional input placeholder, but no HealthKit, food, sleep, weather, or sensor ingestion exists yet.
 - No ExecutionLog data model, AsyncStorage migration, navigation, or B-3/B4 save logic changes were made.
 
 ## Data Residue Diagnosis + Deletion Chain Fix v1
