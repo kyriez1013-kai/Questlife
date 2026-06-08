@@ -1437,3 +1437,30 @@ Known limitations:
 - Meta-cognition v1 is deterministic/rule-based, not AI-generated.
 - Behavior links are association signals only and do not claim causality.
 - No ExecutionLog data model, AsyncStorage migration, navigation, or B-3/B4 save logic changes were made.
+
+## Data Residue Diagnosis + Deletion Chain Fix v1
+
+Status: Implemented code/build pass; production verification pending after GitHub/Vercel deployment.
+
+Files changed:
+- `src/utils/dataResidueAudit.ts`
+- `App.tsx`
+- `src/store.tsx`
+- `PROJECT_STATUS.md`
+
+What changed:
+- Added a pure data residue audit helper for execution logs, skills, effort units, contribution links, and raw captures.
+- Added gated debug logging for `[data residue audit]`, enabled only by `?debugDataResidue=1` or `localStorage.questlife_debug_data_residue === "true"`.
+- `deleteExecutionLog` now removes associated `EffortUnit` and `ContributionLink` rows through the shared derived-data cleanup helper.
+- `deleteRawCapture` now detects linked execution logs by both `structuredData.sourceCaptureId` and legacy/top-level source capture fields before deleting associated logs and derived data.
+- `deleteSkillFromLibrary` now detaches historical logs from the deleted skill, clears the deleted skill as an effort primary skill, and removes contribution links targeting the deleted skill.
+- Insights skill time allocation already uses live logs and filters deleted/orphan skill links; task/metric allocation, ability map inputs, monthly/self-knowledge summaries, and meta-cognition are all fed from the same live log set.
+
+Validation:
+- `npx tsc --noEmit`: passed locally.
+- `npm run build`: passed locally.
+- Production web UI verification is still required at `https://questlife-alpha-orpin.vercel.app/?debugDataResidue=1`.
+
+Known limitations:
+- The audit helper reports SQL-like IDs/relationships for diagnosis; it does not mutate or hide data.
+- If a SQL entry still has a valid skill and execution log, it is intentionally reported as valid data rather than hidden.

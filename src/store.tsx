@@ -12,6 +12,7 @@ import { trackEvent } from './utils/analytics';
 import { createEffortUnitsFromExecutionLog, generateContributionLinks } from './utils/effort';
 import { DOMAIN_TEMPLATES, createGoalStructureFromTemplate, templateProgressModel } from './domainTemplates';
 import { rebuildDerivedDataFromLogs, repairAppDataIntegrity, validateAppDataIntegrity, CoreFlowIntegrityResult } from './utils/coreFlow';
+import { getLinkedExecutionLogIdsForCapture, removeDerivedForLogs } from './utils/dataResidueAudit';
 
 function metricTypeForAnalytics(skill?: Skill) {
   return skill?.metricConfig?.metricType ?? skill?.progressType;
@@ -631,6 +632,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             ? { ...log, linkedSkillId: undefined, orphanedSkillName: log.orphanedSkillName ?? deletedSkill?.name }
             : log
         )),
+        effortUnits: (d.effortUnits || []).map((unit) => (
+          unit.primarySkillId === id ? { ...unit, primarySkillId: undefined, updatedAt: new Date().toISOString() } : unit
+        )),
+        contributionLinks: (d.contributionLinks || []).filter((link) => !(link.targetType === 'skill' && link.targetId === id)),
       };
     });
     cancelSkillReminder(id).catch((e) => console.warn('[notify] cancel failed', e));
@@ -891,11 +896,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const deleteExecutionLog: Ctx['deleteExecutionLog'] = useCallback((id) => {
     mutate((d) => {
       const removedLog = (d.executionLogs || []).find((log) => log.id === id);
-      const removedEffortIds = new Set((d.effortUnits || [])
-        .filter((unit) => unit.executionLogId === id)
-        .map((unit) => unit.id));
-
+      const logIdsToRemove = new Set([id]);
       const remainingLogs = (d.executionLogs || []).filter((log) => log.id !== id);
+      const derived = removeDerivedForLogs(d, logIdsToRemove);
 
       // Recompute the linked skill's progress from all remaining logs so that
       // skill bars / completedHours / totalXP stay in sync (single source of truth).
@@ -913,8 +916,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         ...d,
         skills,
         executionLogs: remainingLogs,
-        effortUnits: (d.effortUnits || []).filter((unit) => unit.executionLogId !== id),
-        contributionLinks: (d.contributionLinks || []).filter((link) => link.executionLogId !== id && !removedEffortIds.has(link.effortUnitId)),
+        effortUnits: derived.effortUnits,
+        contributionLinks: derived.contributionLinks,
       };
     });
   }, [mutate]);
@@ -1122,9 +1125,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const deleteRawCapture: Ctx['deleteRawCapture'] = useCallback((id: string, options) => {
     mutate((d) => {
-      const linkedLogIds = new Set((d.executionLogs || [])
-        .filter((log) => log.structuredData?.sourceCaptureId === id)
-        .map((log) => log.id));
+      const linkedLogIds = getLinkedExecutionLogIdsForCapture(d.executionLogs || [], id);
       if (!options?.deleteLinkedExecutionLogs || linkedLogIds.size === 0) {
         return {
           ...d,
@@ -1139,11 +1140,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           .map((log) => log.linkedSkillId as string),
       );
 
-      const linkedEffortIds = new Set((d.effortUnits || [])
-        .filter((unit) => linkedLogIds.has(unit.executionLogId))
-        .map((unit) => unit.id));
-
       const remainingLogs = (d.executionLogs || []).filter((log) => !linkedLogIds.has(log.id));
+      const derived = removeDerivedForLogs(d, linkedLogIds);
 
       // Recompute each affected skill from remaining logs
       let skills = d.skills;
@@ -1160,8 +1158,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         skills,
         rawCaptures: (d.rawCaptures || []).filter((c) => c.id !== id),
         executionLogs: remainingLogs,
-        effortUnits: (d.effortUnits || []).filter((unit) => !linkedLogIds.has(unit.executionLogId)),
-        contributionLinks: (d.contributionLinks || []).filter((link) => !linkedLogIds.has(link.executionLogId) && !linkedEffortIds.has(link.effortUnitId)),
+        effortUnits: derived.effortUnits,
+        contributionLinks: derived.contributionLinks,
       };
     });
   }, [mutate]);

@@ -24,6 +24,7 @@ import StatsScreen from './src/screens/StatsScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import OnboardingScreen from './src/screens/OnboardingScreen';
 import { trackEvent } from './src/utils/analytics';
+import { auditDataResidue, isDataResidueDebugEnabled } from './src/utils/dataResidueAudit';
 
 const Tab = createBottomTabNavigator();
 const SkillsStack = createNativeStackNavigator();
@@ -102,6 +103,14 @@ function AppContent() {
       trackEvent('app_opened', { route: data.categories.length === 0 ? 'Onboarding' : 'Today' }, { page: 'app' });
     }
   }, [loading, data.categories.length]);
+  useEffect(() => {
+    if (loading || !isDataResidueDebugEnabled()) return;
+    try {
+      console.log('[data residue audit]', JSON.stringify(auditDataResidue(data), null, 2));
+    } catch (error) {
+      console.warn('[data residue audit] failed', error);
+    }
+  }, [loading, data]);
   useEffect(() => {
     if (typeof document === 'undefined') return;
     const targets = [document.documentElement, document.body].filter(Boolean);
