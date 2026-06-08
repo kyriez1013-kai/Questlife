@@ -1473,3 +1473,36 @@ Validation:
 Known limitations:
 - The audit helper reports SQL-like IDs/relationships for diagnosis; it does not mutate or hide data.
 - If a SQL entry still has a valid skill and execution log, it is intentionally reported as valid data rather than hidden.
+
+## Meta-cognition Loop v1.1 - Before/After State Capture
+
+Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+
+Files changed:
+- `src/screens/HomeCapturePending.tsx`
+- `src/utils/metacognition.ts`
+- `src/screens/StatsScreen.tsx`
+- `src/i18n.ts`
+- `PROJECT_STATUS.md`
+
+What changed:
+- Added lightweight after-action state capture inside the B4 post-save feedback card.
+- Users can mark energy, focus, and mood as down/same/up after saving an execution record, or skip without blocking the saved record.
+- The state delta is stored on each saved `ExecutionLog.structuredData.afterStateDelta` without adding a schema migration or changing the ExecutionLog type.
+- Multi-log saves apply the same after-state delta to all logs from that confirmation card.
+- `buildMetacognitionSummary` now reads `afterStateDelta` and prioritizes execution-state behavior links derived from repeated after-action state responses.
+- Insights behavior links can now show after-state associations before generic quality associations.
+- Context logs remain an optional placeholder for future sleep, food, environment, body, weather, symptom, and custom signals.
+- Added zh/en i18n keys for the after-state capture and association copy.
+
+Validation:
+- `npx tsc --noEmit`: pending.
+- `npm run build`: pending.
+- Production web UI verification is required at `https://questlife-alpha-orpin.vercel.app`.
+
+Known limitations:
+- No real `contextLogs` source exists yet.
+- No sleep, food, HealthKit, weather, or sensor ingestion exists yet.
+- State association is deterministic/rule-based and does not claim causality.
+- Per-action after-state capture for multi-action saves is intentionally deferred.
+- Richer causal explanation and LLM interpretation are intentionally deferred.

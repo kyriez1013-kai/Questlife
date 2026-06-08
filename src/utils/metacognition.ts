@@ -1,6 +1,7 @@
 import { Category, ExecutionLog, Skill, StateCheckIn } from '../types';
 
 type Confidence = 'low' | 'medium' | 'high';
+type StateDeltaValue = 'down' | 'same' | 'up' | 'unknown';
 
 export type ContextLog = {
   id: string;
@@ -32,6 +33,12 @@ export type MetacognitionSummary = {
     evidence: string;
     confidence: Confidence;
     sourceIds?: string[];
+    stateEffects?: {
+      energy?: StateDeltaValue;
+      focus?: StateDeltaValue;
+      mood?: StateDeltaValue;
+      body?: StateDeltaValue;
+    };
   }[];
   predictionGap: {
     status: 'insufficient' | 'ok';
@@ -149,6 +156,91 @@ function taskLabel(taskType?: string) {
   return taskType.replace(/_/g, ' ');
 }
 
+function normalizeDelta(value: unknown): StateDeltaValue | undefined {
+  return value === 'down' || value === 'same' || value === 'up' || value === 'unknown' ? value : undefined;
+}
+
+function dominantDelta(values: StateDeltaValue[]): StateDeltaValue | undefined {
+  const useful = values.filter((value) => value !== 'unknown');
+  if (useful.length === 0) return undefined;
+  const counts = useful.reduce<Record<StateDeltaValue, number>>((acc, value) => {
+    acc[value] += 1;
+    return acc;
+  }, { down: 0, same: 0, up: 0, unknown: 0 });
+  const ordered: StateDeltaValue[] = ['up', 'same', 'down'];
+  return ordered.sort((a, b) => counts[b] - counts[a])[0];
+}
+
+function directionFromStateEffects(effects: NonNullable<MetacognitionSummary['behaviorLinks'][number]['stateEffects']>) {
+  const values = [effects.energy, effects.focus, effects.mood, effects.body].filter(Boolean) as StateDeltaValue[];
+  const positive = values.filter((value) => value === 'up').length;
+  const negative = values.filter((value) => value === 'down').length;
+  if (positive > negative) return 'positive';
+  if (negative > positive) return 'negative';
+  return 'neutral';
+}
+
+function buildAfterStateLinks(logs: ExecutionLog[], skills: Skill[]): MetacognitionSummary['behaviorLinks'] {
+  const skillMap = new Map(skills.map((skill) => [skill.id, skill]));
+  const groups = new Map<string, {
+    label: string;
+    count: number;
+    sourceIds: string[];
+    energy: StateDeltaValue[];
+    focus: StateDeltaValue[];
+    mood: StateDeltaValue[];
+    body: StateDeltaValue[];
+  }>();
+  logs.forEach((log) => {
+    const delta = log.structuredData?.afterStateDelta as Record<string, unknown> | undefined;
+    if (!delta || delta.skipped) return;
+    const energy = normalizeDelta(delta.energy);
+    const focus = normalizeDelta(delta.focus);
+    const mood = normalizeDelta(delta.mood);
+    const body = normalizeDelta(delta.body);
+    if (!energy && !focus && !mood && !body) return;
+    const skill = log.linkedSkillId ? skillMap.get(log.linkedSkillId) : undefined;
+    const key = skill?.id ?? log.taskType ?? 'unlinked';
+    const row = groups.get(key) ?? {
+      label: skill?.name ?? taskLabel(log.taskType),
+      count: 0,
+      sourceIds: [],
+      energy: [],
+      focus: [],
+      mood: [],
+      body: [],
+    };
+    row.count += 1;
+    row.sourceIds.push(log.id);
+    if (energy) row.energy.push(energy);
+    if (focus) row.focus.push(focus);
+    if (mood) row.mood.push(mood);
+    if (body) row.body.push(body);
+    groups.set(key, row);
+  });
+  return Array.from(groups.values())
+    .filter((row) => row.count >= 2)
+    .map((row) => {
+      const stateEffects = {
+        energy: dominantDelta(row.energy),
+        focus: dominantDelta(row.focus),
+        mood: dominantDelta(row.mood),
+        body: dominantDelta(row.body),
+      };
+      const direction = directionFromStateEffects(stateEffects);
+      const confidence: Confidence = row.count >= 5 ? 'high' : row.count >= 3 ? 'medium' : 'low';
+      return {
+        linkType: 'execution_state' as const,
+        direction,
+        label: row.label,
+        evidence: `after|${row.count}`,
+        confidence,
+        sourceIds: row.sourceIds.slice(0, 5),
+        stateEffects,
+      };
+    });
+}
+
 function buildBehaviorLinks(logs: ExecutionLog[], skills: Skill[]): MetacognitionSummary['behaviorLinks'] {
   const skillMap = new Map(skills.map((skill) => [skill.id, skill]));
   const groups = new Map<string, { label: string; taskType?: string; qualities: number[]; durations: number[]; count: number; sourceIds: string[] }>();
@@ -169,7 +261,7 @@ function buildBehaviorLinks(logs: ExecutionLog[], skills: Skill[]): Metacognitio
     if ((log.durationMinutes ?? 0) > 0) row.durations.push(log.durationMinutes ?? 0);
     groups.set(key, row);
   });
-  return Array.from(groups.values())
+  const genericLinks = Array.from(groups.values())
     .filter((row) => row.count >= 2 || row.qualities.length >= 2)
     .map((row) => {
       const avgQuality = avg(row.qualities);
@@ -190,6 +282,8 @@ function buildBehaviorLinks(logs: ExecutionLog[], skills: Skill[]): Metacognitio
       return rank[a.direction] - rank[b.direction];
     })
     .slice(0, 3);
+  const afterStateLinks = buildAfterStateLinks(logs, skills);
+  return [...afterStateLinks, ...genericLinks].slice(0, 3);
 }
 
 export function buildMetacognitionSummary({

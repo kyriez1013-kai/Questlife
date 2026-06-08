@@ -457,8 +457,15 @@ type Props = {
   onDismiss: () => void;  // called after confirm or ignore (marks entriesDismissed)
 };
 
+type StateDeltaValue = 'down' | 'same' | 'up' | 'unknown';
+type AfterStateDeltaDraft = {
+  energy?: StateDeltaValue;
+  focus?: StateDeltaValue;
+  mood?: StateDeltaValue;
+};
+
 export default function HomeCapturePending({ captureId, entries, onDismiss }: Props) {
-  const { data, addCategory, addModule, addSkill, createExecutionLog, addExistingSkillToModule } = useStore();
+  const { data, addCategory, addModule, addSkill, createExecutionLog, updateExecutionLog, addExistingSkillToModule } = useStore();
   const lang = getLanguage(data.settings.language ?? data.settings.preferredLanguage);
   const questTheme = getQuestTheme(data.settings.selectedThemeId);
   const capture = (data.rawCaptures || []).find((item) => item.id === captureId);
@@ -475,6 +482,9 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
   );
   const [logged, setLogged] = useState(false);
   const [postSaveFeedback, setPostSaveFeedback] = useState<PostSaveFeedback | null>(null);
+  const [savedLogIds, setSavedLogIds] = useState<string[]>([]);
+  const [afterStateDraft, setAfterStateDraft] = useState<AfterStateDeltaDraft>({});
+  const [afterStateStatus, setAfterStateStatus] = useState<'idle' | 'saved' | 'skipped'>('idle');
   const [confirming, setConfirming] = useState(false);
   const chipStyle = (selected: boolean) => [pendStyles.optionChip, {
     borderColor: selected ? questTheme.colors.primary : questTheme.colors.chipBorder,
@@ -509,6 +519,54 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
 
   const setRpe = (i: number, rpe: number) =>
     setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, rpe } : e));
+
+  const setAfterStateValue = (key: keyof AfterStateDeltaDraft, value: StateDeltaValue) => {
+    setAfterStateDraft((current) => ({
+      ...current,
+      [key]: current[key] === value ? undefined : value,
+    }));
+  };
+
+  const saveAfterStateDelta = () => {
+    const hasSelection = Object.values(afterStateDraft).some(Boolean);
+    const delta = {
+      energy: afterStateDraft.energy ?? 'unknown',
+      focus: afterStateDraft.focus ?? 'unknown',
+      mood: afterStateDraft.mood ?? 'unknown',
+      capturedAt: new Date().toISOString(),
+      skipped: false,
+    };
+    savedLogIds.forEach((logId) => {
+      const existing = data.executionLogs.find((log) => log.id === logId);
+      updateExecutionLog(logId, {
+        structuredData: {
+          ...(existing?.structuredData || {}),
+          afterStateDelta: hasSelection ? delta : { ...delta, skipped: true },
+        },
+      });
+    });
+    setAfterStateStatus(hasSelection ? 'saved' : 'skipped');
+  };
+
+  const skipAfterStateDelta = () => {
+    const skippedDelta = {
+      energy: 'unknown' as const,
+      focus: 'unknown' as const,
+      mood: 'unknown' as const,
+      capturedAt: new Date().toISOString(),
+      skipped: true,
+    };
+    savedLogIds.forEach((logId) => {
+      const existing = data.executionLogs.find((log) => log.id === logId);
+      updateExecutionLog(logId, {
+        structuredData: {
+          ...(existing?.structuredData || {}),
+          afterStateDelta: skippedDelta,
+        },
+      });
+    });
+    setAfterStateStatus('skipped');
+  };
 
   const setSelectedSkill = (i: number, skillName: string, skillId?: string) =>
     setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, selectedSkillName: skillName, selectedSkillId: skillId ?? null, createNew: !skillId } : e));
@@ -1071,10 +1129,13 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
 
     if (savedLogs.length > 0) {
       setPostSaveFeedback(buildPostSaveFeedback({ savedLogs, data, lang }));
+      setSavedLogIds(savedLogs.map((log) => log.id));
+      setAfterStateDraft({});
+      setAfterStateStatus('idle');
     }
     setLogged(true);
   }, [confirming, logged, captureText, effectiveEntries, entryStates, captureId, data, data.categories, data.modules, data.skills, data.executionLogs, lang, questTheme.colors.primary,
-      completionSchema?.domain, resolveSkill, resolveGoalForSave, resolveModuleForSave, resolveRouting, addSkill, addExistingSkillToModule, createExecutionLog, onDismiss]);
+      completionSchema?.domain, resolveSkill, resolveGoalForSave, resolveModuleForSave, resolveRouting, addSkill, addExistingSkillToModule, createExecutionLog, updateExecutionLog, onDismiss]);
 
   if (logged) {
     if (postSaveFeedback?.items.length) {
@@ -1136,6 +1197,63 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
               {t(lang, 'moreSavedItems').replace('{n}', String(postSaveFeedback.overflowCount))}
             </Text>
           ) : null}
+          {afterStateStatus === 'idle' ? (
+            <View style={[pendStyles.afterStateBox, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceMuted }]}>
+              <Text style={[pendStyles.completionTitle, { color: questTheme.colors.text }]}>
+                {t(lang, 'afterStatePrompt')}
+              </Text>
+              {([
+                ['energy', 'afterStateEnergy'],
+                ['focus', 'afterStateFocus'],
+                ['mood', 'afterStateMood'],
+              ] as const).map(([key, labelKey]) => (
+                <View key={key} style={pendStyles.afterStateRow}>
+                  <Text style={[pendStyles.afterStateLabel, { color: questTheme.colors.textMuted }]}>
+                    {t(lang, labelKey)}
+                  </Text>
+                  <View style={pendStyles.afterStateChipRow}>
+                    {([
+                      ['down', 'stateDown'],
+                      ['same', 'stateSame'],
+                      ['up', 'stateUp'],
+                    ] as const).map(([value, textKey]) => {
+                      const selected = afterStateDraft[key] === value;
+                      return (
+                        <TouchableOpacity
+                          key={value}
+                          onPress={() => setAfterStateValue(key, value)}
+                          style={chipStyle(selected)}
+                          activeOpacity={0.75}
+                        >
+                          <Text style={chipTextStyle(selected)}>{t(lang, textKey)}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+              ))}
+              <View style={pendStyles.afterStateActions}>
+                <TouchableOpacity
+                  onPress={saveAfterStateDelta}
+                  style={[pendStyles.confirmBtn, { backgroundColor: questTheme.colors.primary, borderRadius: questTheme.radius.sm }]}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[pendStyles.confirmText, { color: questTheme.colors.primaryText }]}>
+                    {t(lang, 'saveStateChange')}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={skipAfterStateDelta} style={pendStyles.ignoreBtn} activeOpacity={0.7}>
+                  <Text style={[pendStyles.ignoreText, { color: questTheme.colors.textMuted }]}>
+                    {t(lang, 'skipStateChange')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <Text style={[pendStyles.summary, { color: afterStateStatus === 'saved' ? questTheme.colors.success : questTheme.colors.textMuted }]}>
+              {t(lang, afterStateStatus === 'saved' ? 'stateChangeSaved' : 'stateChangeSkipped')}
+            </Text>
+          )}
           <TouchableOpacity
             onPress={onDismiss}
             style={[pendStyles.confirmBtn, { backgroundColor: questTheme.colors.primary, borderRadius: questTheme.radius.sm, alignSelf: 'flex-start' }]}
@@ -1729,6 +1847,11 @@ const pendStyles = StyleSheet.create({
   exerciseDetailCard: { borderWidth: 1, borderRadius: 8, padding: 8, gap: 7 },
   feedbackList: { gap: 8, marginTop: 8, marginBottom: 8 },
   feedbackItem: { borderWidth: 1, borderRadius: 8, padding: 8, gap: 5 },
+  afterStateBox: { borderWidth: 1, borderRadius: 8, padding: 8, gap: 7, marginTop: 4, marginBottom: 8 },
+  afterStateRow: { gap: 5 },
+  afterStateLabel: { fontSize: 11, fontWeight: '700' },
+  afterStateChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  afterStateActions: { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: 2 },
   detailInputRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   miniInput: { minWidth: 72, flexGrow: 1, borderWidth: 1, borderRadius: 7, paddingHorizontal: 8, paddingVertical: 6, fontSize: 12, fontWeight: '700' },
   bulkBtn: { alignSelf: 'flex-start', borderWidth: 1, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4, marginBottom: 6 },

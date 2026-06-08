@@ -657,6 +657,25 @@ function BehaviorLinksPanel({
   questTheme: ReturnType<typeof getQuestTheme>;
   lang: 'zh' | 'en';
 }) {
+  const deltaLabel = (key: 'afterStateEnergy' | 'afterStateFocus' | 'afterStateMood' | 'afterStateBody', value?: 'down' | 'same' | 'up' | 'unknown') => {
+    if (!value || value === 'unknown') return null;
+    const valueKey = value === 'down' ? 'stateDown' : value === 'same' ? 'stateSame' : 'stateUp';
+    return `${t(lang, key)}${t(lang, valueKey)}`;
+  };
+  const afterStateText = (link: MetacognitionSummary['behaviorLinks'][number]) => {
+    const effects = link.stateEffects;
+    if (!effects) return null;
+    const changes = [
+      deltaLabel('afterStateEnergy', effects.energy),
+      deltaLabel('afterStateFocus', effects.focus),
+      deltaLabel('afterStateMood', effects.mood),
+      deltaLabel('afterStateBody', effects.body),
+    ].filter(Boolean).join('，');
+    if (!changes) return null;
+    return t(lang, 'afterStateAssociation')
+      .replace('{action}', link.label)
+      .replace('{changes}', changes);
+  };
   return (
     <QuestCard questTheme={questTheme} variant="flat" style={[styles.metaStrip, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.borderStrong }]} className="behavior-links-card insight-card">
       <View style={styles.metaSectionHeader}>
@@ -664,12 +683,14 @@ function BehaviorLinksPanel({
         <Text style={[styles.metaSectionMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'associatedNotCausal')}</Text>
       </View>
       {metacognition.behaviorLinks.length === 0 ? (
-        <Text style={[styles.metaEmpty, { color: questTheme.colors.textMuted }]}>{t(lang, 'noBehaviorLinkYet')} · {t(lang, 'whatToRecordNext')}</Text>
+        <Text style={[styles.metaEmpty, { color: questTheme.colors.textMuted }]}>{t(lang, 'noBehaviorLinkYet')} · {t(lang, 'afterStateInsufficient')}</Text>
       ) : (
         <View style={styles.behaviorList}>
           {metacognition.behaviorLinks.map((link) => {
             const [count, avgQuality, avgDuration] = link.evidence.split('|');
             const tone = link.direction === 'positive' ? questTheme.colors.success : link.direction === 'negative' ? questTheme.colors.warning : questTheme.colors.textMuted;
+            const afterText = afterStateText(link);
+            const afterCount = link.evidence.startsWith('after|') ? link.evidence.split('|')[1] : count;
             const linkTypeKey = link.linkType === 'context_state'
               ? 'contextStateLink'
               : link.linkType === 'context_execution'
@@ -681,12 +702,18 @@ function BehaviorLinksPanel({
               <View key={`${link.label}-${link.evidence}`} style={[styles.behaviorItem, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSubtle }]}>
                 <Text style={[styles.behaviorTitle, { color: tone }]}>{link.label}</Text>
                 <Text style={[styles.behaviorEvidence, { color: questTheme.colors.textSubtle }]}>{t(lang, 'observedAssociation')} · {t(lang, linkTypeKey)}</Text>
-                <Text style={[styles.behaviorEvidence, { color: questTheme.colors.textMuted }]}>
-                  {t(lang, 'behaviorEvidence')
-                    .replace('{count}', count)
-                    .replace('{quality}', avgQuality)
-                    .replace('{duration}', avgDuration)}
-                </Text>
+                {afterText ? (
+                  <Text style={[styles.behaviorEvidence, { color: questTheme.colors.textMuted }]}>
+                    {afterText} · {t(lang, 'afterStateInsightTitle')} · {afterCount}
+                  </Text>
+                ) : (
+                  <Text style={[styles.behaviorEvidence, { color: questTheme.colors.textMuted }]}>
+                    {t(lang, 'behaviorEvidence')
+                      .replace('{count}', count)
+                      .replace('{quality}', avgQuality)
+                      .replace('{duration}', avgDuration)}
+                  </Text>
+                )}
                 <Text style={[styles.behaviorEvidence, { color: questTheme.colors.textSubtle }]}>{t(lang, link.confidence === 'high' ? 'confidenceHigh' : link.confidence === 'medium' ? 'confidenceMedium' : 'confidenceLow')}</Text>
               </View>
             );
