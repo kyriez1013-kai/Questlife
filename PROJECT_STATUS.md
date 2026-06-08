@@ -1476,7 +1476,7 @@ Known limitations:
 
 ## Meta-cognition Loop v1.1 - Before/After State Capture
 
-Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+Status: Production manually validated. Commit 4760544 accepted.
 
 Files changed:
 - `src/screens/HomeCapturePending.tsx`
@@ -1496,9 +1496,14 @@ What changed:
 - Added zh/en i18n keys for the after-state capture and association copy.
 
 Validation:
-- `npx tsc --noEmit`: pending.
-- `npm run build`: pending.
-- Production web UI verification is required at `https://questlife-alpha-orpin.vercel.app`.
+- `npx tsc --noEmit`: passed locally.
+- `npm run build`: passed locally.
+- Production web UI manual verification: passed at `https://questlife-alpha-orpin.vercel.app`.
+- Verified `SQL 20分钟` save -> B4 feedback -> after-state chips -> save state change -> refresh retained the saved record.
+- Verified a simple shoulder record can skip after-state capture without losing the execution record.
+- Verified Insights behavior links show the after-state association `SQL 后：精力差不多，专注上升，情绪差不多`.
+- Verified old logs without `afterStateDelta` do not crash Insights.
+- Spot-checked cleanFocus and deepWork theme switching with after-state copy mounted and no crash.
 
 Known limitations:
 - No real `contextLogs` source exists yet.
