@@ -1440,7 +1440,7 @@ Known limitations:
 
 ## Data Residue Diagnosis + Deletion Chain Fix v1
 
-Status: Implemented code/build pass; production verification pending after GitHub/Vercel deployment.
+Status: Production manually validated. Commit `28eaed4` accepted.
 
 Files changed:
 - `src/utils/dataResidueAudit.ts`
@@ -1453,13 +1453,18 @@ What changed:
 - Added gated debug logging for `[data residue audit]`, enabled only by `?debugDataResidue=1` or `localStorage.questlife_debug_data_residue === "true"`.
 - `deleteExecutionLog` now removes associated `EffortUnit` and `ContributionLink` rows through the shared derived-data cleanup helper.
 - `deleteRawCapture` now detects linked execution logs by both `structuredData.sourceCaptureId` and legacy/top-level source capture fields before deleting associated logs and derived data.
+- Associated capture deletion now removes the linked `executionLogs`, `effortUnits`, and `contributionLinks` together when the user confirms deleting associated records.
 - `deleteSkillFromLibrary` now detaches historical logs from the deleted skill, clears the deleted skill as an effort primary skill, and removes contribution links targeting the deleted skill.
 - Insights skill time allocation already uses live logs and filters deleted/orphan skill links; task/metric allocation, ability map inputs, monthly/self-knowledge summaries, and meta-cognition are all fed from the same live log set.
+- The previous `SQL · 0.3h · 21%` display was diagnosed as a valid live data chain, not orphan/UI residue.
 
 Validation:
 - `npx tsc --noEmit`: passed locally.
 - `npm run build`: passed locally.
-- Production web UI verification is still required at `https://questlife-alpha-orpin.vercel.app/?debugDataResidue=1`.
+- Production web UI manual verification: passed.
+- User confirmed deletion of `SQL 20分钟` raw capture / record in production.
+- After refresh, Insights no longer shows `SQL · 0.3h · 21%`.
+- `https://questlife-alpha-orpin.vercel.app/?debugDataResidue=1` no longer shows the previous SQL executionLog `capture-rc-mpw8055xxbyfqf-0`; associated effort/contribution records are gone or no longer linked to that SQL record.
 
 Known limitations:
 - The audit helper reports SQL-like IDs/relationships for diagnosis; it does not mutate or hide data.
