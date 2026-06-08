@@ -1511,3 +1511,34 @@ Known limitations:
 - State association is deterministic/rule-based and does not claim causality.
 - Per-action after-state capture for multi-action saves is intentionally deferred.
 - Richer causal explanation and LLM interpretation are intentionally deferred.
+
+## Meta-cognition Loop v1.2 - State Pattern Interpretation
+
+Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+
+Files changed:
+- `src/utils/metacognition.ts`
+- `src/screens/StatsScreen.tsx`
+- `src/i18n.ts`
+- `PROJECT_STATUS.md`
+
+What changed:
+- Added `statePatterns` to `buildMetacognitionSummary`.
+- Aggregates `ExecutionLog.structuredData.afterStateDelta` into compact state pattern interpretations.
+- Pattern types include restorative action, draining action, focus stabilizer, mood lifter, low-state starter, high-state push, and mixed effect.
+- Insights now shows a compact State Patterns section between State Trend and raw Behavior Links.
+- Interpreted patterns include a label, evidence sentence, next action sentence, confidence, and source ids.
+- Raw behavior links remain visible below the interpreted State Patterns section.
+- All state pattern wording is association-based and explicitly avoids causal claims.
+
+Validation:
+- `npx tsc --noEmit`: pending.
+- `npm run build`: pending.
+- Production web UI verification is required at `https://questlife-alpha-orpin.vercel.app`.
+
+Known limitations:
+- More after-state data is needed before confidence becomes stable.
+- No real context layer exists yet.
+- No sleep, food, HealthKit, weather, or sensor ingestion exists yet.
+- No LLM narrative explanation exists yet.
+- Per-action state deltas remain deferred.

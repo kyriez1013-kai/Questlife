@@ -2,6 +2,14 @@ import { Category, ExecutionLog, Skill, StateCheckIn } from '../types';
 
 type Confidence = 'low' | 'medium' | 'high';
 type StateDeltaValue = 'down' | 'same' | 'up' | 'unknown';
+type StatePatternType =
+  | 'restorative_action'
+  | 'draining_action'
+  | 'focus_stabilizer'
+  | 'mood_lifter'
+  | 'low_state_starter'
+  | 'high_state_push'
+  | 'mixed_effect';
 
 export type ContextLog = {
   id: string;
@@ -40,6 +48,21 @@ export type MetacognitionSummary = {
       body?: StateDeltaValue;
     };
   }[];
+  statePatterns: {
+    status: 'insufficient' | 'ok';
+    patterns: {
+      id: string;
+      patternType: StatePatternType;
+      labelKey: string;
+      labelValues?: Record<string, any>;
+      evidenceKey: string;
+      evidenceValues?: Record<string, any>;
+      nextActionKey: string;
+      nextActionValues?: Record<string, any>;
+      confidence: Confidence;
+      sourceIds: string[];
+    }[];
+  };
   predictionGap: {
     status: 'insufficient' | 'ok';
     durationErrorAvg?: number;
@@ -180,6 +203,144 @@ function directionFromStateEffects(effects: NonNullable<MetacognitionSummary['be
   return 'neutral';
 }
 
+function confidenceForCount(count: number, mixed = false): Confidence {
+  if (count >= 5 && !mixed) return 'high';
+  if (count >= 3 && !mixed) return 'medium';
+  return 'low';
+}
+
+function isLowStartingState(log: ExecutionLog) {
+  const snapshot = log.stateSnapshot;
+  if (!snapshot) return false;
+  return [snapshot.energy, snapshot.focus, snapshot.mood].some((value) => typeof value === 'number' && value <= 2);
+}
+
+function buildStatePatterns(logs: ExecutionLog[], skills: Skill[]): MetacognitionSummary['statePatterns'] {
+  const skillMap = new Map(skills.map((skill) => [skill.id, skill]));
+  const groups = new Map<string, {
+    id: string;
+    label: string;
+    taskType?: string;
+    logs: ExecutionLog[];
+    sourceIds: string[];
+    energy: StateDeltaValue[];
+    focus: StateDeltaValue[];
+    mood: StateDeltaValue[];
+    body: StateDeltaValue[];
+    quality: number[];
+    lowStartCount: number;
+  }>();
+  logs.forEach((log) => {
+    const delta = log.structuredData?.afterStateDelta as Record<string, unknown> | undefined;
+    if (!delta || delta.skipped) return;
+    const energy = normalizeDelta(delta.energy);
+    const focus = normalizeDelta(delta.focus);
+    const mood = normalizeDelta(delta.mood);
+    const body = normalizeDelta(delta.body);
+    if (!energy && !focus && !mood && !body) return;
+    const skill = log.linkedSkillId ? skillMap.get(log.linkedSkillId) : undefined;
+    const key = skill?.id ?? log.title ?? log.orphanedSkillName ?? log.taskType ?? 'unlinked';
+    const row = groups.get(key) ?? {
+      id: key,
+      label: skill?.name ?? log.title ?? log.orphanedSkillName ?? taskLabel(log.taskType),
+      taskType: log.taskType ?? skill?.taskType,
+      logs: [],
+      sourceIds: [],
+      energy: [],
+      focus: [],
+      mood: [],
+      body: [],
+      quality: [],
+      lowStartCount: 0,
+    };
+    row.logs.push(log);
+    row.sourceIds.push(log.id);
+    if (energy) row.energy.push(energy);
+    if (focus) row.focus.push(focus);
+    if (mood) row.mood.push(mood);
+    if (body) row.body.push(body);
+    if (typeof log.qualityRating === 'number') row.quality.push(log.qualityRating);
+    if (isLowStartingState(log)) row.lowStartCount += 1;
+    groups.set(key, row);
+  });
+  const totalAfterStateLogs = Array.from(groups.values()).reduce((sum, row) => sum + row.logs.length, 0);
+  if (totalAfterStateLogs < 2) return { status: 'insufficient', patterns: [] };
+
+  const patterns: MetacognitionSummary['statePatterns']['patterns'] = [];
+  Array.from(groups.values()).forEach((row) => {
+    const count = row.logs.length;
+    if (count < 2) return;
+    const up = (values: StateDeltaValue[]) => values.filter((value) => value === 'up').length;
+    const sameOrUp = (values: StateDeltaValue[]) => values.filter((value) => value === 'same' || value === 'up').length;
+    const down = (values: StateDeltaValue[]) => values.filter((value) => value === 'down').length;
+    const majority = Math.ceil(count / 2);
+    const energyUp = up(row.energy) >= majority;
+    const energyDown = down(row.energy) >= majority;
+    const focusSameUp = sameOrUp(row.focus) >= majority;
+    const focusDown = down(row.focus) >= majority;
+    const moodUp = up(row.mood) >= majority;
+    const moodSameUp = sameOrUp(row.mood) >= majority;
+    const moodDown = down(row.mood) >= majority;
+    const strongDownSignals = down(row.energy) + down(row.focus) + down(row.mood);
+    const highQuality = row.quality.length > 0 && (avg(row.quality) ?? 0) >= 4;
+    const mixed = energyDown && (moodUp || focusSameUp);
+    const baseValues = { action: row.label, count: String(count) };
+    const pushPattern = (
+      patternType: StatePatternType,
+      labelKey: string,
+      evidenceKey: string,
+      nextActionKey: string,
+      options: { mixed?: boolean; confidence?: Confidence } = {},
+    ) => {
+      patterns.push({
+        id: `${row.id}:${patternType}`,
+        patternType,
+        labelKey,
+        labelValues: baseValues,
+        evidenceKey,
+        evidenceValues: baseValues,
+        nextActionKey,
+        nextActionValues: baseValues,
+        confidence: options.confidence ?? confidenceForCount(count, options.mixed),
+        sourceIds: row.sourceIds.slice(0, 5),
+      });
+    };
+
+    if (mixed) {
+      pushPattern('mixed_effect', 'mixedEffect', 'mixedStateEffect', 'leaveRecoveryWindow', { mixed: true });
+      return;
+    }
+    if (energyDown && (focusDown || moodDown)) {
+      pushPattern('draining_action', 'drainingAction', 'mayDrainState', 'leaveRecoveryWindow');
+      return;
+    }
+    if ((energyUp || moodUp) && focusSameUp && strongDownSignals <= 1) {
+      pushPattern('restorative_action', 'restorativeAction', 'mayRestoreState', 'tryAsStarterTask');
+      return;
+    }
+    if (moodUp) {
+      pushPattern('mood_lifter', 'moodLifter', 'mayLiftMood', 'continueToConfirmPattern');
+      return;
+    }
+    if (focusSameUp && !energyDown) {
+      const weakLowStart = row.lowStartCount === 0;
+      pushPattern(
+        weakLowStart ? 'focus_stabilizer' : 'low_state_starter',
+        weakLowStart ? 'focusStabilizer' : 'lowStateStarter',
+        weakLowStart ? 'mayStabilizeFocus' : 'goodLowStateStarter',
+        'tryAsStarterTask',
+        { confidence: weakLowStart && count === 2 ? 'low' : undefined },
+      );
+      return;
+    }
+    if (highQuality && !energyDown && moodSameUp) {
+      pushPattern('high_state_push', 'highStatePush', 'goodHighStatePush', 'continueToConfirmPattern');
+    }
+  });
+
+  return { status: patterns.length > 0 ? 'ok' : 'insufficient', patterns: patterns.slice(0, 3) };
+}
+
 function buildAfterStateLinks(logs: ExecutionLog[], skills: Skill[]): MetacognitionSummary['behaviorLinks'] {
   const skillMap = new Map(skills.map((skill) => [skill.id, skill]));
   const groups = new Map<string, {
@@ -309,6 +470,7 @@ export function buildMetacognitionSummary({
   const contexts = (contextLogs || []).filter((row) => (row.date ?? row.createdAt ?? '') >= startStr);
   const stateTrend = buildStateTrend(states);
   const behaviorLinks = buildBehaviorLinks(logs, skills);
+  const statePatterns = buildStatePatterns(logs, skills);
   const predictionGap = buildPredictionGap(logs);
   const insufficient = logs.length < 3 || states.length < 3;
   void contexts;
@@ -356,6 +518,7 @@ export function buildMetacognitionSummary({
     windowDays,
     stateTrend,
     behaviorLinks,
+    statePatterns,
     predictionGap,
     currentPattern,
   };

@@ -386,6 +386,7 @@ export default function StatsScreen() {
         </QuestCard>
 
         <StateTrendStrip metacognition={metacognition} questTheme={questTheme} lang={lang} />
+        <StatePatternsPanel metacognition={metacognition} questTheme={questTheme} lang={lang} />
         <BehaviorLinksPanel metacognition={metacognition} questTheme={questTheme} lang={lang} />
 
         <View style={[styles.commandStrip, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong }]}>
@@ -648,6 +649,66 @@ function StateTrendStrip({
   );
 }
 
+function applyValues(template: string, values?: Record<string, any>) {
+  if (!values) return template;
+  return Object.entries(values).reduce((text, [key, value]) => text.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value)), template);
+}
+
+function StatePatternsPanel({
+  metacognition,
+  questTheme,
+  lang,
+}: {
+  metacognition: MetacognitionSummary;
+  questTheme: ReturnType<typeof getQuestTheme>;
+  lang: 'zh' | 'en';
+}) {
+  return (
+    <QuestCard questTheme={questTheme} variant="flat" style={[styles.metaStrip, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.borderStrong }]} className="state-patterns-card insight-card">
+      <View style={styles.metaSectionHeader}>
+        <Text style={[styles.metaSectionTitle, { color: questTheme.colors.text }]}>{t(lang, 'statePatterns')}</Text>
+        <Text style={[styles.metaSectionMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'associationNotCausation')}</Text>
+      </View>
+      {metacognition.statePatterns.status === 'insufficient' || metacognition.statePatterns.patterns.length === 0 ? (
+        <Text style={[styles.metaEmpty, { color: questTheme.colors.textMuted }]}>{t(lang, 'statePatternInsufficient')}</Text>
+      ) : (
+        <View style={styles.behaviorList}>
+          {metacognition.statePatterns.patterns.map((pattern) => {
+            const confidenceColor = pattern.confidence === 'high'
+              ? questTheme.colors.success
+              : pattern.confidence === 'medium'
+                ? questTheme.colors.warning
+                : questTheme.colors.textMuted;
+            return (
+              <View key={pattern.id} style={[styles.behaviorItem, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSubtle }]}>
+                <View style={styles.patternTitleRow}>
+                  <Text style={[styles.behaviorTitle, { color: questTheme.colors.text, flex: 1 }]}>
+                    {applyValues(t(lang, pattern.labelKey), pattern.labelValues)}
+                  </Text>
+                  <View style={[styles.dataHealthPill, { borderColor: confidenceColor, backgroundColor: confidenceColor + '22' }]}>
+                    <Text style={[styles.dataHealthText, { color: confidenceColor }]}>
+                      {t(lang, pattern.confidence === 'high' ? 'confidenceHigh' : pattern.confidence === 'medium' ? 'confidenceMedium' : 'confidenceLow')}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={[styles.behaviorEvidence, { color: questTheme.colors.textMuted }]}>
+                  {t(lang, 'patternEvidence')}: {applyValues(t(lang, pattern.evidenceKey), pattern.evidenceValues)}
+                </Text>
+                <Text style={[styles.behaviorEvidence, { color: questTheme.colors.primary }]}>
+                  {t(lang, 'patternNextAction')}: {applyValues(t(lang, pattern.nextActionKey), pattern.nextActionValues)}
+                </Text>
+                <Text style={[styles.behaviorEvidence, { color: questTheme.colors.textSubtle }]}>
+                  {t(lang, 'associationNotCausation')}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+      )}
+    </QuestCard>
+  );
+}
+
 function BehaviorLinksPanel({
   metacognition,
   questTheme,
@@ -892,6 +953,7 @@ const styles = StyleSheet.create({
   metaEmpty: { fontSize: 12, fontWeight: '800', lineHeight: 18, marginTop: 10 },
   behaviorList: { gap: 8, marginTop: 10 },
   behaviorItem: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8 },
+  patternTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   behaviorTitle: { fontSize: 13, fontWeight: '900' },
   behaviorEvidence: { fontSize: 11, fontWeight: '800', lineHeight: 16, marginTop: 3 },
   decisionCard: { marginTop: 16 },
