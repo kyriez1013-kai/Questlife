@@ -1514,7 +1514,7 @@ Known limitations:
 
 ## Meta-cognition Loop v1.2 - State Pattern Interpretation
 
-Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+Status: Production manually validated. Commits `8aac559` and `e1d6220` accepted.
 
 Files changed:
 - `src/utils/metacognition.ts`
@@ -1532,9 +1532,16 @@ What changed:
 - All state pattern wording is association-based and explicitly avoids causal claims.
 
 Validation:
-- `npx tsc --noEmit`: pending.
-- `npm run build`: pending.
-- Production web UI verification is required at `https://questlife-alpha-orpin.vercel.app`.
+- `npx tsc --noEmit`: passed locally.
+- `npm run build`: passed locally.
+- Production web UI manual verification: passed at `https://questlife-alpha-orpin.vercel.app`.
+- Verified English sample paste/parse/save: `Sleep 6h 12m, Deep sleep 48m, REM 1h 20m, Resting HR 64, HRV 38, Steps 8200, Workout 45min.` produced 7 context logs with correct minutes and body metrics.
+- Verified refresh persistence after English save: Today Body/Sleep Context updated to low recovery and retained the saved context count.
+- Verified Chinese sample paste/parse/save: `昨晚睡眠6小时12分钟，深睡48分钟，HRV38，静息心率64，步数8200，喝了一杯咖啡。` produced 6 context logs including caffeine.
+- Verified refresh persistence after Chinese save: saved context count remained and Today brief stayed updated.
+- Verified Insights Body/Context section appears after State Patterns and before Behavior Links with recovery status, recommended action, avoid list, and metric cards.
+- Verified existing after-state/state-pattern output still renders in Insights alongside the new Body/Context section.
+- Spot-checked cleanFocus and deepWork themes with the new Today context card mounted; restored deepWork afterward.
 
 Known limitations:
 - More after-state data is needed before confidence becomes stable.
