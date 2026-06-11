@@ -22,8 +22,9 @@ function parseDurationMinutes(text: string, patterns: RegExp[]) {
   for (const pattern of patterns) {
     const match = text.match(pattern);
     if (!match) continue;
-    const hours = Number(match.groups?.hours ?? match[1] ?? 0);
-    const minutes = Number(match.groups?.minutes ?? match[2] ?? 0);
+    const hasNamedGroups = !!match.groups;
+    const hours = Number(match.groups?.hours ?? (hasNamedGroups ? 0 : match[1]) ?? 0);
+    const minutes = Number(match.groups?.minutes ?? (hasNamedGroups ? 0 : match[2]) ?? 0);
     if (Number.isFinite(hours) || Number.isFinite(minutes)) {
       return Math.max(0, Math.round((Number.isFinite(hours) ? hours : 0) * 60 + (Number.isFinite(minutes) ? minutes : 0)));
     }
