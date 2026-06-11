@@ -4,7 +4,7 @@
 //   2) 在 reducer 内部直接调 persist(newData) 立刻写入 AsyncStorage
 // 这样无论 App 后续是否被 kill / 刷新, 数据都已经落盘.
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
-import { AppData, DEFAULT_DATA, Goal, Skill, Action, Category, UNCATEGORIZED_ID, ScheduleBlock, QuestModule, ModuleSkillLink, ExecutionLog, RescueLog, StateCheckIn, EffortUnit, ContributionLink, RawCapture } from './types';
+import { AppData, DEFAULT_DATA, Goal, Skill, Action, Category, UNCATEGORIZED_ID, ScheduleBlock, QuestModule, ModuleSkillLink, ExecutionLog, RescueLog, StateCheckIn, EffortUnit, ContributionLink, RawCapture, ContextLog } from './types';
 import { loadData, persist, uid, today } from './storage';
 import { scheduleSkillReminder, cancelSkillReminder, rescheduleAllReminders } from './notifications';
 import { calculateModuleProgress, calculatePredictionDelta, progressTypeForSkill, skillsForModule } from './progress';
@@ -76,6 +76,9 @@ interface Ctx {
   getLatestStateCheckIn: (date?: string) => StateCheckIn | undefined;
   getStateCheckInsThisWeek: () => StateCheckIn[];
   getAverageStateByTimeBlock: (days: number) => Record<string, number>;
+  addContextLog: (log: Omit<ContextLog, 'id' | 'createdAt'> & { id?: string; createdAt?: string }) => ContextLog;
+  addContextLogs: (logs: (Omit<ContextLog, 'id' | 'createdAt'> & { id?: string; createdAt?: string })[]) => ContextLog[];
+  deleteContextLog: (id: string) => void;
   addScheduleBlock: (b: Omit<ScheduleBlock, 'id' | 'createdAt'>) => ScheduleBlock;
   updateScheduleBlock: (id: string, patch: Partial<ScheduleBlock>) => void;
   deleteScheduleBlock: (id: string) => void;
@@ -1052,6 +1055,30 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return Object.fromEntries(Object.entries(totals).map(([key, value]) => [key, value.count > 0 ? value.sum / value.count : 0]));
   }, [data.stateCheckIns]);
 
+  const addContextLogs: Ctx['addContextLogs'] = useCallback((logs) => {
+    const now = new Date().toISOString();
+    const rows: ContextLog[] = logs
+      .filter((log) => log && log.label && log.type)
+      .map((log) => ({
+        id: log.id ?? uid(),
+        createdAt: log.createdAt ?? now,
+        source: log.source ?? 'manual',
+        ...log,
+      }));
+    if (rows.length > 0) {
+      mutate((d) => ({ ...d, contextLogs: [...(d.contextLogs || []), ...rows] }));
+    }
+    return rows;
+  }, [mutate]);
+
+  const addContextLog: Ctx['addContextLog'] = useCallback((log) => (
+    addContextLogs([log])[0]
+  ), [addContextLogs]);
+
+  const deleteContextLog: Ctx['deleteContextLog'] = useCallback((id) => {
+    mutate((d) => ({ ...d, contextLogs: (d.contextLogs || []).filter((log) => log.id !== id) }));
+  }, [mutate]);
+
   const addScheduleBlock: Ctx['addScheduleBlock'] = useCallback((b) => {
     const block: ScheduleBlock = { id: uid(), createdAt: Date.now(), ...b };
     mutate((d) => ({ ...d, scheduleBlocks: [...(d.scheduleBlocks || []), block] }));
@@ -1229,6 +1256,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         getLatestStateCheckIn,
         getStateCheckInsThisWeek,
         getAverageStateByTimeBlock,
+        addContextLog,
+        addContextLogs,
+        deleteContextLog,
         addScheduleBlock,
         updateScheduleBlock,
         deleteScheduleBlock,

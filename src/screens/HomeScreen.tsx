@@ -34,6 +34,7 @@ import {
 } from '../i18n';
 import { trackEvent } from '../utils/analytics';
 import QuestButton from '../components/ui/QuestButton';
+import QuestCard from '../components/ui/QuestCard';
 import QuestIcon from '../components/ui/QuestIcon';
 import QuestProgressBar from '../components/ui/QuestProgressBar';
 import QuestInput from '../components/ui/QuestInput';
@@ -45,6 +46,8 @@ import HomeSmartCapture from './HomeSmartCapture';
 import { confirmAction } from '../utils/confirm';
 import { displayEntityName } from '../utils/displayName';
 import { buildTodayCommand, TodayCommandAction } from '../utils/todayCommand';
+import { parseHealthContextText, ParsedHealthContext } from '../utils/healthContextParser';
+import { buildObjectiveContextBrief, ObjectiveContextBrief } from '../utils/objectiveContextBrief';
 
 // 晨间状态选项
 const DAILY_STATE_OPTIONS = [
@@ -358,6 +361,7 @@ export default function HomeScreen() {
     completeRescueStep,
     completeActivationStep,
     createStateCheckIn,
+    addContextLogs,
     setSettings,
   } = useStore();
   const navigation = useNavigation<any>();
@@ -477,6 +481,9 @@ export default function HomeScreen() {
   const [contextAfterExam, setContextAfterExam] = useState(false);
   const [contextCaffeine, setContextCaffeine] = useState(false);
   const [contextSocialDrain, setContextSocialDrain] = useState(false);
+  const [contextPasteText, setContextPasteText] = useState('');
+  const [contextPreview, setContextPreview] = useState<ParsedHealthContext | null>(null);
+  const [contextSaveStatus, setContextSaveStatus] = useState<'idle' | 'saved'>('idle');
   const [planExpanded, setPlanExpanded] = useState(false);
   const [recordsExpanded, setRecordsExpanded] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -508,6 +515,11 @@ export default function HomeScreen() {
   const todayRescueLogs = (data.rescueLogs || []).filter((log) => log.date === todayStr);
   const completedRescuesToday = todayRescueLogs.filter((log) => log.activationStepCompleted).length;
   const unfinishedRescue = todayRescueLogs.slice().reverse().find((log) => !log.activationStepCompleted);
+  const objectiveContextBrief = useMemo(
+    () => buildObjectiveContextBrief(data.contextLogs || []),
+    [data.contextLogs],
+  );
+  const savedContextCountToday = (data.contextLogs || []).filter((log) => log.date === todayStr).length;
   const todayStateCheckIns = (data.stateCheckIns || []).filter((row) => row.date === todayStr);
   const latestStateCheckIn = todayStateCheckIns.slice().sort((a, b) => b.timestamp.localeCompare(a.timestamp))[0];
   const effectiveCurrentState: CurrentState | null = latestStateCheckIn
@@ -1521,6 +1533,34 @@ export default function HomeScreen() {
     });
   }, [commandTargetSkill, formatCommandCopy, openModal, openRescueFlow, startSession, todayCommand, unfinishedRescue?.id]);
 
+  const parseContextInput = useCallback(() => {
+    const parsed = parseHealthContextText(contextPasteText);
+    setContextPreview(parsed);
+    setContextSaveStatus('idle');
+  }, [contextPasteText]);
+
+  const saveContextPreview = useCallback(() => {
+    if (!contextPreview || contextPreview.contextLogs.length === 0) return;
+    addContextLogs(contextPreview.contextLogs);
+    setContextSaveStatus('saved');
+    setContextPasteText('');
+    setContextPreview(null);
+  }, [addContextLogs, contextPreview]);
+
+  const contextMetricRows = useMemo(() => {
+    const metrics = contextPreview?.summary ?? objectiveContextBrief.metrics;
+    return [
+      { key: 'sleepDuration', value: metrics.sleepMinutes, unit: t(lang, 'minutes') },
+      { key: 'deepSleep', value: metrics.deepSleepMinutes, unit: t(lang, 'minutes') },
+      { key: 'remSleep', value: metrics.remMinutes, unit: t(lang, 'minutes') },
+      { key: 'restingHeartRate', value: metrics.restingHeartRate, unit: 'bpm' },
+      { key: 'hrv', value: metrics.hrv, unit: 'ms' },
+      { key: 'steps', value: metrics.steps, unit: t(lang, 'stepsUnit') },
+      { key: 'workoutMinutes', value: metrics.workoutMinutes, unit: t(lang, 'minutes') },
+      { key: 'caffeine', value: metrics.caffeineCount, unit: t(lang, 'countUnit') },
+    ].filter((row) => row.value != null);
+  }, [contextPreview, objectiveContextBrief.metrics, lang]);
+
   const modalSkill = skillId ? data.skills.find((item) => item.id === skillId) : undefined;
   const modalPredictionSchema = getPredictionSchemaForSkill(modalSkill);
   const modalIsStrength = isStrengthPredictionSkill(modalSkill);
@@ -1541,6 +1581,85 @@ export default function HomeScreen() {
       >
         {/* ═══ ZONE 1: Smart Capture (input always first) ═══════════════════ */}
         <HomeSmartCapture />
+
+        <QuestCard questTheme={questTheme} variant="flat" style={styles.contextBridgeCard}>
+          <View style={styles.contextBridgeHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.strategyKicker, { color: questTheme.colors.textMuted }]}>{t(lang, 'bodySleepContext')}</Text>
+              <Text style={[styles.contextBriefTitle, { color: questTheme.colors.text }]}>
+                {t(lang, 'recoveryStatus')}: {t(lang, `recoveryStatus_${objectiveContextBrief.recoveryStatus}`)}
+              </Text>
+              <Text style={[styles.contextBriefBody, { color: questTheme.colors.textMuted }]}>
+                {t(lang, objectiveContextBrief.cognitiveLoadSuggestionKey)}
+              </Text>
+            </View>
+            <View style={[styles.contextCountPill, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}>
+              <Text style={[styles.contextCountText, { color: questTheme.colors.textMuted }]}>
+                {savedContextCountToday} {t(lang, 'contextLogs')}
+              </Text>
+            </View>
+          </View>
+          <Text style={[styles.contextBriefBody, { color: questTheme.colors.primary }]}>
+            {t(lang, 'recommendedAction')}: {t(lang, objectiveContextBrief.recommendedActionKey)}
+          </Text>
+          {objectiveContextBrief.avoidKeys.length > 0 ? (
+            <Text style={[styles.contextBriefBody, { color: questTheme.colors.textSubtle }]}>
+              {t(lang, 'avoidToday')}: {objectiveContextBrief.avoidKeys.map((key) => t(lang, key)).join(' · ')}
+            </Text>
+          ) : null}
+          <View style={styles.contextInputRow}>
+            <QuestInput
+              questTheme={questTheme}
+              value={contextPasteText}
+              onChangeText={(text) => {
+                setContextPasteText(text);
+                setContextSaveStatus('idle');
+              }}
+              placeholder={t(lang, 'pasteHealthContext')}
+              multiline
+              style={styles.contextInput}
+            />
+            <QuestButton
+              questTheme={questTheme}
+              variant="secondary"
+              icon="activity"
+              label={t(lang, 'parseContext')}
+              disabled={contextPasteText.trim().length === 0}
+              onPress={parseContextInput}
+            />
+          </View>
+          {contextPreview ? (
+            <View style={[styles.contextPreviewBox, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}>
+              <Text style={[styles.contextPreviewTitle, { color: questTheme.colors.text }]}>
+                {contextPreview.contextLogs.length > 0
+                  ? t(lang, 'contextPreviewFound').replace('{count}', String(contextPreview.contextLogs.length))
+                  : t(lang, 'contextPreviewEmpty')}
+              </Text>
+              {contextMetricRows.length > 0 ? (
+                <View style={styles.contextMetricWrap}>
+                  {contextMetricRows.map((row) => (
+                    <View key={row.key} style={[styles.contextMetricPill, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}>
+                      <Text style={[styles.contextMetricText, { color: questTheme.colors.textMuted }]}>
+                        {t(lang, row.key)} · {row.value}{row.unit ? ` ${row.unit}` : ''}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+              <QuestButton
+                questTheme={questTheme}
+                variant="primary"
+                icon="check"
+                label={t(lang, 'saveContext')}
+                disabled={contextPreview.contextLogs.length === 0}
+                onPress={saveContextPreview}
+              />
+            </View>
+          ) : null}
+          {contextSaveStatus === 'saved' ? (
+            <Text style={[styles.contextBriefBody, { color: questTheme.colors.success }]}>{t(lang, 'contextSaved')}</Text>
+          ) : null}
+        </QuestCard>
 
         {/* ═══ ZONE 2: Now Focus — timer if active, else top-priority action ═ */}
         {data.settings.firstQuestCreated && !data.settings.firstSystemWelcomeDismissed ? (
@@ -2927,6 +3046,19 @@ const styles = StyleSheet.create({
   nowFocusIconShell: { width: 44, height: 44, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   nowFocusTitle: { color: theme.text, fontSize: 24, fontWeight: '900', lineHeight: 30 },
   nowFocusActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
+  contextBridgeCard: { marginTop: 12, gap: 10 },
+  contextBridgeHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  contextBriefTitle: { fontSize: 15, fontWeight: '900', lineHeight: 21, marginTop: 2 },
+  contextBriefBody: { fontSize: 12, fontWeight: '800', lineHeight: 18, marginTop: 2 },
+  contextCountPill: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 5 },
+  contextCountText: { fontSize: 10, fontWeight: '900' },
+  contextInputRow: { gap: 8 },
+  contextInput: { minHeight: 62, textAlignVertical: 'top' },
+  contextPreviewBox: { borderWidth: 1, borderRadius: 14, padding: 10, gap: 8 },
+  contextPreviewTitle: { fontSize: 12, fontWeight: '900' },
+  contextMetricWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  contextMetricPill: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 5 },
+  contextMetricText: { fontSize: 10, fontWeight: '900' },
   nowFocusBtn: { borderWidth: 1, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 9 },
   nowFocusBtnText: { fontSize: 12, fontWeight: '900' },
   nowFocusPrimary: { borderRadius: 16, paddingHorizontal: 13, paddingVertical: 10 },

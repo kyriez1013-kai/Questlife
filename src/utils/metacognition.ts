@@ -1,4 +1,4 @@
-import { Category, ExecutionLog, Skill, StateCheckIn } from '../types';
+import { Category, ContextLog, ExecutionLog, Skill, StateCheckIn } from '../types';
 
 type Confidence = 'low' | 'medium' | 'high';
 type StateDeltaValue = 'down' | 'same' | 'up' | 'unknown';
@@ -10,18 +10,6 @@ type StatePatternType =
   | 'low_state_starter'
   | 'high_state_push'
   | 'mixed_effect';
-
-export type ContextLog = {
-  id: string;
-  date?: string;
-  createdAt?: string;
-  type: 'sleep' | 'food' | 'environment' | 'body' | 'weather' | 'symptom' | 'custom';
-  label: string;
-  value?: number | string;
-  unit?: string;
-  intensity?: number;
-  source?: 'manual' | 'healthkit' | 'sensor' | 'import' | 'unknown';
-};
 
 export type MetacognitionSummary = {
   status: 'insufficient' | 'ok';
@@ -447,6 +435,61 @@ function buildBehaviorLinks(logs: ExecutionLog[], skills: Skill[]): Metacognitio
   return [...afterStateLinks, ...genericLinks].slice(0, 3);
 }
 
+function buildContextLinks(
+  logs: ExecutionLog[],
+  states: StateCheckIn[],
+  contexts: ContextLog[],
+): MetacognitionSummary['behaviorLinks'] {
+  const byDate = new Map<string, ContextLog[]>();
+  contexts.forEach((log) => {
+    const date = log.date ?? (log.createdAt ? localDate(new Date(log.createdAt)) : undefined);
+    if (!date) return;
+    byDate.set(date, [...(byDate.get(date) || []), log]);
+  });
+
+  const lowSleepDates = new Set<string>();
+  const highLoadDates = new Set<string>();
+  byDate.forEach((rows, date) => {
+    const sleep = rows.find((row) => row.label === 'sleep_duration' && typeof row.value === 'number');
+    const hrv = rows.find((row) => row.label === 'hrv' && typeof row.value === 'number');
+    const workout = rows.find((row) => row.label === 'workout_minutes' && typeof row.value === 'number');
+    if ((typeof sleep?.value === 'number' && sleep.value < 390) || (typeof hrv?.value === 'number' && hrv.value < 40)) {
+      lowSleepDates.add(date);
+    }
+    if (typeof workout?.value === 'number' && workout.value >= 60) {
+      highLoadDates.add(date);
+    }
+  });
+
+  const links: MetacognitionSummary['behaviorLinks'] = [];
+  const lowSleepLogs = logs.filter((log) => lowSleepDates.has(log.date));
+  const lowSleepStates = states.filter((row) => lowSleepDates.has(row.date) && ((row.energy ?? row.overall) <= 2 || (row.focus ?? row.overall) <= 2));
+  if (lowSleepDates.size > 0 && (lowSleepLogs.length > 0 || lowSleepStates.length > 0)) {
+    links.push({
+      linkType: lowSleepStates.length > 0 ? 'context_state_execution' : 'context_execution',
+      direction: lowSleepStates.length > 0 ? 'negative' : 'neutral',
+      label: 'bodyContext',
+      evidence: `context|sleep|${lowSleepDates.size}`,
+      confidence: lowSleepDates.size >= 3 ? 'medium' : 'low',
+      sourceIds: [...lowSleepLogs.map((log) => log.id), ...lowSleepStates.map((row) => row.id)].slice(0, 5),
+    });
+  }
+
+  const highLoadLogs = logs.filter((log) => highLoadDates.has(log.date));
+  if (highLoadDates.size > 0 && highLoadLogs.length > 0) {
+    links.push({
+      linkType: 'context_execution',
+      direction: 'neutral',
+      label: 'bodyContext',
+      evidence: `context|load|${highLoadDates.size}`,
+      confidence: highLoadDates.size >= 3 ? 'medium' : 'low',
+      sourceIds: highLoadLogs.map((log) => log.id).slice(0, 5),
+    });
+  }
+
+  return links.slice(0, 2);
+}
+
 export function buildMetacognitionSummary({
   executionLogs,
   stateCheckIns,
@@ -469,11 +512,10 @@ export function buildMetacognitionSummary({
   const states = (stateCheckIns || []).filter((row) => row.date >= startStr);
   const contexts = (contextLogs || []).filter((row) => (row.date ?? row.createdAt ?? '') >= startStr);
   const stateTrend = buildStateTrend(states);
-  const behaviorLinks = buildBehaviorLinks(logs, skills);
+  const behaviorLinks = [...buildContextLinks(logs, states, contexts), ...buildBehaviorLinks(logs, skills)].slice(0, 3);
   const statePatterns = buildStatePatterns(logs, skills);
   const predictionGap = buildPredictionGap(logs);
   const insufficient = logs.length < 3 || states.length < 3;
-  void contexts;
 
   let currentPattern: MetacognitionSummary['currentPattern'];
   if (insufficient) {

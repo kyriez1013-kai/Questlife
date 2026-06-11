@@ -1542,3 +1542,42 @@ Known limitations:
 - No sleep, food, HealthKit, weather, or sensor ingestion exists yet.
 - No LLM narrative explanation exists yet.
 - Per-action state deltas remain deferred.
+
+## Objective Context Layer v1 - Sleep / Recovery / Food Bridge
+
+Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+
+Files changed:
+- `src/types.ts`
+- `src/storage.ts`
+- `src/store.tsx`
+- `src/utils/healthContextParser.ts`
+- `src/utils/objectiveContextBrief.ts`
+- `src/utils/metacognition.ts`
+- `src/screens/HomeScreen.tsx`
+- `src/screens/StatsScreen.tsx`
+- `src/i18n.ts`
+- `PROJECT_STATUS.md`
+
+What changed:
+- Added optional `ContextLog` data layer with safe `[]` fallback for old local data.
+- Added store actions for adding one or many context logs and deleting a context log.
+- Added a deterministic English/Chinese health context parser for sleep duration, deep sleep, REM, resting heart rate, HRV, steps, workout minutes, caffeine, and food/body notes.
+- Added an objective context brief helper that produces cautious recovery status, cognitive-load suggestion, recommended action, avoid list, and confidence without medical diagnosis.
+- Passed real `contextLogs` into meta-cognition and added weak context-state/context-execution behavior links while preserving existing after-state and state-pattern behavior.
+- Added a compact Today Body/Sleep Context paste -> parse preview -> save flow.
+- Added a Today Body-Cognition Brief surface using the saved context logs.
+- Added an Insights Body/Context section after State Patterns and before Behavior Links.
+- Added zh/en i18n keys for the new context parser, brief, and insight copy.
+
+Validation:
+- `npx tsc --noEmit`: pending.
+- `npm run build`: pending.
+- Production web UI verification is required at `https://questlife-alpha-orpin.vercel.app`.
+
+Known limitations:
+- No native HealthKit, Apple Watch, EAS entitlement, or sensor integration exists yet.
+- No LLM call is used for context parsing or advice.
+- Food/body notes are stored as lightweight context observations and are not nutrition modelling.
+- Recommendations are rule-based and cautious; they do not diagnose medical conditions or claim causality.
+- Weather, humidity, sweating, and advanced recovery modelling remain deferred.

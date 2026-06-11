@@ -1,7 +1,7 @@
 // 本地持久化层 - 全部基于 @react-native-async-storage/async-storage
 // Web 平台会自动 fallback 到 localStorage; iOS/Android 写到原生本地存储.
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AppData, DEFAULT_DATA, Category, UNCATEGORIZED_ID, Skill, TaskType, ProgressType, QuestModule, ModuleSkillLink, ExecutionLog, RescueLog, StateCheckIn } from './types';
+import { AppData, DEFAULT_DATA, Category, UNCATEGORIZED_ID, Skill, TaskType, ProgressType, QuestModule, ModuleSkillLink, ExecutionLog, RescueLog, StateCheckIn, ContextLog } from './types';
 
 const KEY = 'questlife.v1';
 
@@ -141,6 +141,20 @@ function migrateStateCheckIn(checkIn: any): StateCheckIn {
   };
 }
 
+function migrateContextLog(log: any): ContextLog | null {
+  if (!log || typeof log !== 'object') return null;
+  const createdAt = log.createdAt ?? new Date().toISOString();
+  return {
+    id: log.id ?? stableId('context', `${createdAt}-${Math.random()}`),
+    date: log.date ?? today(),
+    createdAt,
+    type: log.type ?? 'custom',
+    label: log.label ?? 'context',
+    source: log.source ?? 'manual',
+    ...log,
+  };
+}
+
 export async function loadData(): Promise<AppData> {
   try {
     const raw = await AsyncStorage.getItem(KEY);
@@ -164,6 +178,7 @@ export async function loadData(): Promise<AppData> {
       contributionLinks: parsed.contributionLinks || [],
       rescueLogs: (parsed.rescueLogs || []).map(migrateRescueLog),
       stateCheckIns: (parsed.stateCheckIns || []).map(migrateStateCheckIn),
+      contextLogs: (parsed.contextLogs || []).map(migrateContextLog).filter(Boolean) as ContextLog[],
       scheduleBlocks: parsed.scheduleBlocks || [],
       settings: { ...DEFAULT_DATA.settings, ...(parsed.settings || {}) },
     };

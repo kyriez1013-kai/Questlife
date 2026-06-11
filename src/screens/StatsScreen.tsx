@@ -25,6 +25,7 @@ import { generateInsightsSummary, InsightsSummaryResult } from '../utils/insight
 import { InsightCardsBlock } from './StatsScreenInsights';
 import { displayEntityName } from '../utils/displayName';
 import { buildMetacognitionSummary, getLiveExecutionLogs, MetacognitionSummary } from '../utils/metacognition';
+import { buildObjectiveContextBrief, ObjectiveContextBrief } from '../utils/objectiveContextBrief';
 
 const WEEKDAY_KEYS = ['weekdaySun', 'weekdayMon', 'weekdayTue', 'weekdayWed', 'weekdayThu', 'weekdayFri', 'weekdaySat'];
 
@@ -329,8 +330,12 @@ export default function StatsScreen() {
     stateCheckIns: data.stateCheckIns || [],
     skills: data.skills,
     goals: data.categories,
-    contextLogs: [],
-  }), [data.categories, data.skills, data.stateCheckIns, logs]);
+    contextLogs: data.contextLogs || [],
+  }), [data.categories, data.contextLogs, data.skills, data.stateCheckIns, logs]);
+  const objectiveContextBrief = useMemo(
+    () => buildObjectiveContextBrief(data.contextLogs || []),
+    [data.contextLogs],
+  );
   const metaConfidenceColor = metacognition.currentPattern.confidence === 'high'
     ? questTheme.colors.success
     : metacognition.currentPattern.confidence === 'medium'
@@ -387,6 +392,7 @@ export default function StatsScreen() {
 
         <StateTrendStrip metacognition={metacognition} questTheme={questTheme} lang={lang} />
         <StatePatternsPanel metacognition={metacognition} questTheme={questTheme} lang={lang} />
+        <BodyContextPanel brief={objectiveContextBrief} questTheme={questTheme} lang={lang} />
         <BehaviorLinksPanel metacognition={metacognition} questTheme={questTheme} lang={lang} />
 
         <View style={[styles.commandStrip, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong }]}>
@@ -709,6 +715,70 @@ function StatePatternsPanel({
   );
 }
 
+function BodyContextPanel({
+  brief,
+  questTheme,
+  lang,
+}: {
+  brief: ObjectiveContextBrief;
+  questTheme: ReturnType<typeof getQuestTheme>;
+  lang: 'zh' | 'en';
+}) {
+  const confidenceColor = brief.confidence === 'high'
+    ? questTheme.colors.success
+    : brief.confidence === 'medium'
+      ? questTheme.colors.warning
+      : questTheme.colors.textMuted;
+  const metricRows = [
+    { key: 'sleepDuration', value: brief.metrics.sleepMinutes, unit: t(lang, 'minutes') },
+    { key: 'deepSleep', value: brief.metrics.deepSleepMinutes, unit: t(lang, 'minutes') },
+    { key: 'hrv', value: brief.metrics.hrv, unit: 'ms' },
+    { key: 'restingHeartRate', value: brief.metrics.restingHeartRate, unit: 'bpm' },
+    { key: 'steps', value: brief.metrics.steps, unit: t(lang, 'stepsUnit') },
+    { key: 'workoutMinutes', value: brief.metrics.workoutMinutes, unit: t(lang, 'minutes') },
+  ].filter((row) => row.value != null);
+  return (
+    <QuestCard questTheme={questTheme} variant="flat" style={[styles.metaStrip, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.borderStrong }]} className="body-context-card insight-card">
+      <View style={styles.metaSectionHeader}>
+        <Text style={[styles.metaSectionTitle, { color: questTheme.colors.text }]}>{t(lang, 'bodyContext')}</Text>
+        <View style={[styles.dataHealthPill, { borderColor: confidenceColor, backgroundColor: confidenceColor + '22' }]}>
+          <Text style={[styles.dataHealthText, { color: confidenceColor }]}>
+            {t(lang, brief.confidence === 'high' ? 'confidenceHigh' : brief.confidence === 'medium' ? 'confidenceMedium' : 'confidenceLow')}
+          </Text>
+        </View>
+      </View>
+      {brief.status === 'empty' ? (
+        <Text style={[styles.metaEmpty, { color: questTheme.colors.textMuted }]}>{t(lang, 'contextNoDataSuggestion')}</Text>
+      ) : (
+        <>
+          <Text style={[styles.metaBody, { color: questTheme.colors.text }]}>
+            {t(lang, 'recoveryStatus')}: {t(lang, `recoveryStatus_${brief.recoveryStatus}`)}
+          </Text>
+          <Text style={[styles.behaviorEvidence, { color: questTheme.colors.textMuted }]}>{t(lang, brief.cognitiveLoadSuggestionKey)}</Text>
+          <Text style={[styles.behaviorEvidence, { color: questTheme.colors.primary }]}>
+            {t(lang, 'recommendedAction')}: {t(lang, brief.recommendedActionKey)}
+          </Text>
+          {brief.avoidKeys.length > 0 ? (
+            <Text style={[styles.behaviorEvidence, { color: questTheme.colors.textSubtle }]}>
+              {t(lang, 'avoidToday')}: {brief.avoidKeys.map((key) => t(lang, key)).join(' · ')}
+            </Text>
+          ) : null}
+          {metricRows.length > 0 ? (
+            <View style={styles.stateDeltaGrid}>
+              {metricRows.map((row) => (
+                <View key={row.key} style={[styles.stateDelta, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSubtle }]}>
+                  <Text style={[styles.stateDeltaLabel, { color: questTheme.colors.textMuted }]}>{t(lang, row.key)}</Text>
+                  <Text style={[styles.stateDeltaValue, { color: questTheme.colors.text }]}>{row.value} {row.unit}</Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
+        </>
+      )}
+    </QuestCard>
+  );
+}
+
 function BehaviorLinksPanel({
   metacognition,
   questTheme,
@@ -759,9 +829,10 @@ function BehaviorLinksPanel({
                 : link.linkType === 'context_state_execution'
                   ? 'possibleContextLink'
                   : 'executionStateLink';
+            const displayLabel = link.linkType.startsWith('context') ? t(lang, link.label) : link.label;
             return (
               <View key={`${link.label}-${link.evidence}`} style={[styles.behaviorItem, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSubtle }]}>
-                <Text style={[styles.behaviorTitle, { color: tone }]}>{link.label}</Text>
+                <Text style={[styles.behaviorTitle, { color: tone }]}>{displayLabel}</Text>
                 <Text style={[styles.behaviorEvidence, { color: questTheme.colors.textSubtle }]}>{t(lang, 'observedAssociation')} · {t(lang, linkTypeKey)}</Text>
                 {afterText ? (
                   <Text style={[styles.behaviorEvidence, { color: questTheme.colors.textMuted }]}>

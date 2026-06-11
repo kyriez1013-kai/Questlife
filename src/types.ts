@@ -723,6 +723,20 @@ export interface RawCapture {
   };
 }
 
+export interface ContextLog {
+  id: string;
+  date?: string;
+  createdAt?: string;
+  type: 'sleep' | 'food' | 'environment' | 'body' | 'weather' | 'symptom' | 'custom';
+  label: string;
+  value?: number | string;
+  unit?: string;
+  intensity?: number;
+  source?: 'manual' | 'healthkit' | 'sensor' | 'import' | 'unknown';
+  note?: string;
+  rawText?: string;
+}
+
 export interface AppData {
   goals: Goal[];
   categories: Category[];     // V2 新
@@ -735,6 +749,7 @@ export interface AppData {
   contributionLinks: ContributionLink[];
   rescueLogs: RescueLog[];
   stateCheckIns: StateCheckIn[];
+  contextLogs: ContextLog[];
   scheduleBlocks: ScheduleBlock[];
   rawCaptures: RawCapture[];   // Spec B-1: smart capture loop
   settings: {
@@ -766,6 +781,7 @@ export const DEFAULT_DATA: AppData = {
   contributionLinks: [],
   rescueLogs: [],
   stateCheckIns: [],
+  contextLogs: [],
   scheduleBlocks: [],
   rawCaptures: [],
   settings: { selectedThemeId: 'cleanFocus' },
