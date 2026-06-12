@@ -1552,7 +1552,7 @@ Known limitations:
 
 ## Objective Context Layer v1 - Sleep / Recovery / Food Bridge
 
-Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+Status: Production manually validated. Commits `7b0d4f7` and `1e6e906` accepted.
 
 Files changed:
 - `src/types.ts`
@@ -1578,9 +1578,17 @@ What changed:
 - Added zh/en i18n keys for the new context parser, brief, and insight copy.
 
 Validation:
-- `npx tsc --noEmit`: pending.
-- `npm run build`: pending.
-- Production web UI verification is required at `https://questlife-alpha-orpin.vercel.app`.
+- `npx tsc --noEmit`: passed locally.
+- `npm run build`: passed locally.
+- Production web UI manual verification: passed at `https://questlife-alpha-orpin.vercel.app`.
+- Verified `我昨天晚上12点睡觉睡了8个小时` parses as 1 sleep context with preview `睡眠 · 8小时`, saves successfully, survives refresh, and changes Today Body-Cognition Brief from pure insufficient to cautious sleep guidance.
+- Verified context count now reflects recent 48-hour context logs, so yesterday/last-night sleep saves are visible in the Today context count.
+- Verified `我昨晚睡了7个半小时，HRV38，静息心率64，步数8200，喝了一杯咖啡` parses as sleep 7h30m, HRV 38, resting HR 64, steps 8200, and caffeine 1.
+- Verified `中午吃得很油，晚上训练45分钟` parses into 2 context logs, including visible workout 45 minutes and a low-confidence food note.
+- Verified English sample `Sleep: 6h 12m / Deep sleep: 48m / REM: 1h 20m / Resting HR: 64 / HRV: 38 / Steps: 8200 / Workout: strength training 45min` parses into 7 context logs and saves successfully.
+- Verified empty parse now shows the improved example hint instead of only saying nothing was found.
+- Verified Insights Body/Context shows single-record guidance, metrics, and non-medical wording instead of only generic insufficiency.
+- Spot-checked existing B4 feedback, after-state/state pattern output, and Insights rendering still mount after the context parser changes.
 
 Known limitations:
 - No native HealthKit, Apple Watch, EAS entitlement, or sensor integration exists yet.
