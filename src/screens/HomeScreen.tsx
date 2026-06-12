@@ -519,7 +519,11 @@ export default function HomeScreen() {
     () => buildObjectiveContextBrief(data.contextLogs || []),
     [data.contextLogs],
   );
-  const savedContextCountToday = (data.contextLogs || []).filter((log) => log.date === todayStr).length;
+  const contextCountCutoff = Date.now() - 48 * 60 * 60 * 1000;
+  const savedContextCountToday = (data.contextLogs || []).filter((log) => {
+    const time = new Date(log.createdAt ?? log.date ?? 0).getTime();
+    return Number.isFinite(time) && time >= contextCountCutoff;
+  }).length;
   const todayStateCheckIns = (data.stateCheckIns || []).filter((row) => row.date === todayStr);
   const latestStateCheckIn = todayStateCheckIns.slice().sort((a, b) => b.timestamp.localeCompare(a.timestamp))[0];
   const effectiveCurrentState: CurrentState | null = latestStateCheckIn
