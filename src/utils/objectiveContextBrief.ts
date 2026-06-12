@@ -73,6 +73,44 @@ export function buildObjectiveContextBrief(contextLogs: ContextLog[] = [], now =
     metrics.restingHeartRate != null && metrics.restingHeartRate <= 65,
     metrics.steps != null && metrics.steps >= 6000,
   ].filter(Boolean).length;
+  const hasRecentSleep = metrics.sleepMinutes != null && metrics.sleepMinutes > 0;
+  const confidence: ObjectiveContextBrief['confidence'] = recent.length >= 5 ? 'high' : recent.length >= 3 ? 'medium' : 'low';
+
+  if (hasRecentSleep) {
+    if (metrics.sleepMinutes! < 360) {
+      return {
+        status: 'ok',
+        recoveryStatus: 'low',
+        cognitiveLoadSuggestionKey: 'singleSleepBriefLow',
+        recommendedActionKey: 'singleSleepActionLow',
+        avoidKeys: ['avoidHighIntensity', 'avoidDeepWorkStack'],
+        confidence,
+        metrics,
+      };
+    }
+    if (metrics.sleepMinutes! < 420) {
+      return {
+        status: 'ok',
+        recoveryStatus: 'moderate',
+        cognitiveLoadSuggestionKey: 'singleSleepBriefShort',
+        recommendedActionKey: 'singleSleepActionShort',
+        avoidKeys: ['avoidDeepWorkStack'],
+        confidence,
+        metrics,
+      };
+    }
+    if (metrics.sleepMinutes! <= 540) {
+      return {
+        status: 'ok',
+        recoveryStatus: 'good',
+        cognitiveLoadSuggestionKey: 'singleSleepBriefNormal',
+        recommendedActionKey: 'singleSleepActionNormal',
+        avoidKeys: [],
+        confidence,
+        metrics,
+      };
+    }
+  }
 
   const recoveryStatus: ObjectiveContextBrief['recoveryStatus'] = lowSignals >= 2
     ? 'low'
@@ -81,7 +119,6 @@ export function buildObjectiveContextBrief(contextLogs: ContextLog[] = [], now =
       : goodSignals >= 2
         ? 'good'
         : 'moderate';
-  const confidence: ObjectiveContextBrief['confidence'] = recent.length >= 5 ? 'high' : recent.length >= 3 ? 'medium' : 'low';
 
   if (recoveryStatus === 'low') {
     return {

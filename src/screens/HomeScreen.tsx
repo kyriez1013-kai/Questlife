@@ -483,7 +483,7 @@ export default function HomeScreen() {
   const [contextSocialDrain, setContextSocialDrain] = useState(false);
   const [contextPasteText, setContextPasteText] = useState('');
   const [contextPreview, setContextPreview] = useState<ParsedHealthContext | null>(null);
-  const [contextSaveStatus, setContextSaveStatus] = useState<'idle' | 'saved'>('idle');
+  const [contextSaveStatus, setContextSaveStatus] = useState<'idle' | 'saved' | 'saved_sleep'>('idle');
   const [planExpanded, setPlanExpanded] = useState(false);
   const [recordsExpanded, setRecordsExpanded] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -1541,11 +1541,24 @@ export default function HomeScreen() {
 
   const saveContextPreview = useCallback(() => {
     if (!contextPreview || contextPreview.contextLogs.length === 0) return;
+    const hasSleepContext = contextPreview.contextLogs.some((log) => log.type === 'sleep' && log.label === 'sleep_duration');
     addContextLogs(contextPreview.contextLogs);
-    setContextSaveStatus('saved');
+    setContextSaveStatus(hasSleepContext ? 'saved_sleep' : 'saved');
     setContextPasteText('');
     setContextPreview(null);
   }, [addContextLogs, contextPreview]);
+
+  const formatContextMetricValue = useCallback((key: string, value?: number | string, unit?: string) => {
+    if (value == null) return '';
+    if (typeof value === 'number' && ['sleepDuration', 'deepSleep', 'remSleep'].includes(key)) {
+      const hours = Math.floor(value / 60);
+      const minutes = Math.round(value % 60);
+      if (hours > 0 && minutes > 0) return `${hours}${t(lang, 'hoursShort')} ${minutes}${t(lang, 'minutesShort')}`;
+      if (hours > 0) return `${hours}${t(lang, 'hoursShort')}`;
+      return `${minutes}${t(lang, 'minutesShort')}`;
+    }
+    return `${value}${unit ? ` ${unit}` : ''}`;
+  }, [lang]);
 
   const contextMetricRows = useMemo(() => {
     const metrics = contextPreview?.summary ?? objectiveContextBrief.metrics;
@@ -1607,6 +1620,9 @@ export default function HomeScreen() {
               {t(lang, 'avoidToday')}: {objectiveContextBrief.avoidKeys.map((key) => t(lang, key)).join(' · ')}
             </Text>
           ) : null}
+          {objectiveContextBrief.status !== 'empty' ? (
+            <Text style={[styles.contextBriefBody, { color: questTheme.colors.textSubtle }]}>{t(lang, 'contextNotMedical')}</Text>
+          ) : null}
           <View style={styles.contextInputRow}>
             <QuestInput
               questTheme={questTheme}
@@ -1640,11 +1656,16 @@ export default function HomeScreen() {
                   {contextMetricRows.map((row) => (
                     <View key={row.key} style={[styles.contextMetricPill, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}>
                       <Text style={[styles.contextMetricText, { color: questTheme.colors.textMuted }]}>
-                        {t(lang, row.key)} · {row.value}{row.unit ? ` ${row.unit}` : ''}
+                        {t(lang, row.key)} · {formatContextMetricValue(row.key, row.value, row.unit)}
                       </Text>
                     </View>
                   ))}
                 </View>
+              ) : null}
+              {contextPreview.contextLogs.length === 0 ? (
+                <Text style={[styles.contextBriefBody, { color: questTheme.colors.textMuted }]}>
+                  {t(lang, 'tryInputExamples')}
+                </Text>
               ) : null}
               <QuestButton
                 questTheme={questTheme}
@@ -1656,8 +1677,10 @@ export default function HomeScreen() {
               />
             </View>
           ) : null}
-          {contextSaveStatus === 'saved' ? (
-            <Text style={[styles.contextBriefBody, { color: questTheme.colors.success }]}>{t(lang, 'contextSaved')}</Text>
+          {contextSaveStatus === 'saved' || contextSaveStatus === 'saved_sleep' ? (
+            <Text style={[styles.contextBriefBody, { color: questTheme.colors.success }]}>
+              {t(lang, contextSaveStatus === 'saved_sleep' ? 'sleepContextSaved' : 'contextSaved')}
+            </Text>
           ) : null}
         </QuestCard>
 

@@ -1588,3 +1588,36 @@ Known limitations:
 - Food/body notes are stored as lightweight context observations and are not nutrition modelling.
 - Recommendations are rule-based and cautious; they do not diagnose medical conditions or claim causality.
 - Weather, humidity, sweating, and advanced recovery modelling remain deferred.
+
+## Context Parser v1.1 + Daily Context Trust
+
+Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+
+Files changed:
+- `src/utils/healthContextParser.ts`
+- `src/utils/objectiveContextBrief.ts`
+- `src/screens/HomeScreen.tsx`
+- `src/screens/StatsScreen.tsx`
+- `src/i18n.ts`
+- `PROJECT_STATUS.md`
+
+What changed:
+- Improved the deterministic context parser for natural Chinese sleep phrases such as `我昨天晚上12点睡觉睡了8个小时`, `我昨晚睡了8小时`, `昨晚睡眠8小时`, `昨天12点睡到8点`, `晚上12点睡，早上8点起`, `我睡了7个半小时`, and `睡眠 6小时12分钟`.
+- Preserves raw text and safely maps `昨天/昨晚` context logs to yesterday when detected.
+- Improved English parsing for colon-style sleep summaries such as `Sleep: 6h 12m`, `Deep sleep: 48m`, and `REM: 1h 20m`.
+- Expanded parsing for HRV, resting heart rate, steps, caffeine, workout minutes, and low-confidence food/body notes.
+- Body-Cognition Brief now gives cautious single-record sleep guidance instead of feeling like pure insufficient data when a recent sleep-duration log exists.
+- Today context preview now formats sleep minutes as human-readable hours/minutes and shows clearer examples when nothing is detected.
+- Insights Body/Context now distinguishes single-record sleep guidance from full pattern insufficiency.
+- Added zh/en i18n keys for parser trust, single-sleep guidance, empty hints, and non-medical context wording.
+
+Validation:
+- `npx tsc --noEmit`: pending.
+- `npm run build`: pending.
+- Production web UI verification is required at `https://questlife-alpha-orpin.vercel.app`.
+
+Known limitations:
+- Apple Health native integration remains deferred.
+- No LLM parsing is used for context text.
+- Context recommendations are cautious execution guidance, not medical advice.
+- Daily Operating Brief remains the next suggested product priority.

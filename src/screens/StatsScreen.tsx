@@ -758,11 +758,15 @@ function BodyContextPanel({
           <Text style={[styles.behaviorEvidence, { color: questTheme.colors.primary }]}>
             {t(lang, 'recommendedAction')}: {t(lang, brief.recommendedActionKey)}
           </Text>
+          {brief.metrics.sleepMinutes != null ? (
+            <Text style={[styles.behaviorEvidence, { color: questTheme.colors.textMuted }]}>{t(lang, 'oneContextRecordGuidance')}</Text>
+          ) : null}
           {brief.avoidKeys.length > 0 ? (
             <Text style={[styles.behaviorEvidence, { color: questTheme.colors.textSubtle }]}>
               {t(lang, 'avoidToday')}: {brief.avoidKeys.map((key) => t(lang, key)).join(' · ')}
             </Text>
           ) : null}
+          <Text style={[styles.behaviorEvidence, { color: questTheme.colors.textSubtle }]}>{t(lang, 'contextNotMedical')}</Text>
           {metricRows.length > 0 ? (
             <View style={styles.stateDeltaGrid}>
               {metricRows.map((row) => (
