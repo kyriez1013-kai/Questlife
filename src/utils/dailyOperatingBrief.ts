@@ -56,8 +56,15 @@ function modeLabelKey(mode: DailyOperatingBriefMode) {
   return map[mode];
 }
 
-function newestState(stateCheckIns: StateCheckIn[]) {
-  return (stateCheckIns || []).slice().sort((a, b) => b.timestamp.localeCompare(a.timestamp))[0];
+function newestState(stateCheckIns: StateCheckIn[], now: Date) {
+  const cutoff = now.getTime() - 24 * 60 * 60 * 1000;
+  return (stateCheckIns || [])
+    .filter((row) => {
+      const time = new Date(row.timestamp ?? row.createdAt ?? row.date ?? 0).getTime();
+      return Number.isFinite(time) && time >= cutoff;
+    })
+    .slice()
+    .sort((a, b) => b.timestamp.localeCompare(a.timestamp))[0];
 }
 
 function isLowState(state?: StateCheckIn) {
@@ -125,7 +132,7 @@ function makeFallbackBrief(): DailyOperatingBrief {
 
 export function buildDailyOperatingBrief(input: BuildDailyOperatingBriefInput): DailyOperatingBrief {
   const { objectiveContextBrief, metacognitionSummary, todayCommand, scheduleBlocks, skills, stateCheckIns, executionLogs, now } = input;
-  const latestState = newestState(stateCheckIns);
+  const latestState = newestState(stateCheckIns, now);
   const sleepMinutes = objectiveContextBrief.metrics.sleepMinutes;
   const shortSleep = sleepMinutes != null && sleepMinutes < 360;
   const slightlyShortSleep = sleepMinutes != null && sleepMinutes >= 360 && sleepMinutes < 420;
