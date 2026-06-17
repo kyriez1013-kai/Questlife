@@ -1667,7 +1667,7 @@ Known limitations:
 
 ## Insights IA Cleanup v1
 
-Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+Status: Production manually validated. Commit `9e07b36` accepted.
 
 Files changed:
 - `src/screens/StatsScreen.tsx`
@@ -1686,9 +1686,16 @@ What changed:
 Validation:
 - `npx tsc --noEmit`: passed locally.
 - `npm run build`: passed locally.
-- Production web UI verification is required at `https://questlife-alpha-orpin.vercel.app`.
+- Production web UI manual verification: passed at `https://questlife-alpha-orpin.vercel.app`.
+- Verified Insights opens with a clear top `主判断 / 今日核心判断` card instead of Ability Map or unrelated cards first.
+- Verified `关键证据` appears directly below the main judgement and only shows useful evidence for the current data, reducing repeated insufficient-data cards.
+- Verified `高级分析` is lower and collapsed by default with `展开高级分析`.
+- Verified expanding Advanced Analysis reveals existing Ability Map, Signal Grid, prediction/self-knowledge, growth/monthly/anomaly/deep analysis, rescue stats, time/task/metric allocation, heatmap, and system loop overview.
+- Verified Today still loads after the change, B4 SQL feedback still renders, and smart capture/context paste inputs still mount.
+- Verified production deepWork/dark theme remains readable in the tested Insights and Today flows.
 
 Known limitations:
 - Main judgement is still rule-based from existing metacognition/context outputs.
 - Advanced Analysis is collapsed by default, but the underlying sections still need future visual polish.
 - Data-poor users still need more sleep/state/action records before Insights can become specific.
+- A destructive fresh-data production reset was not performed; data-poor handling was kept to the existing non-destructive fallback path.
