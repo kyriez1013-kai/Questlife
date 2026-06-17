@@ -1629,3 +1629,31 @@ Known limitations:
 - No LLM parsing is used for context text.
 - Context recommendations are cautious execution guidance, not medical advice.
 - Daily Operating Brief remains the next suggested product priority.
+
+## Daily Operating Brief v1
+
+Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+
+Files changed:
+- `src/utils/dailyOperatingBrief.ts`
+- `src/screens/HomeScreen.tsx`
+- `src/i18n.ts`
+- `PROJECT_STATUS.md`
+
+What changed:
+- Added a deterministic Daily Operating Brief helper that combines objective context, subjective state check-ins, recent execution, state patterns, and the existing Today command.
+- Today now shows a compact first-screen Daily Operating Brief below Smart Capture and above the body/sleep context card.
+- The brief displays operating mode, main judgement, first recommended action, up to 3 evidence/why chips, up to 2 avoid chips, confidence, and a non-medical wording note.
+- Body-Cognition Brief remains as a body/context evidence source and paste/save flow; it is no longer the only Today judgement surface.
+- No Apple Health native integration, no LLM, no data migration, and no medical diagnosis were added.
+
+Validation:
+- `npx tsc --noEmit`: passed locally.
+- `npm run build`: pending.
+- Production web UI verification is required at `https://questlife-alpha-orpin.vercel.app`.
+
+Known limitations:
+- Recommendations are rule-based and cautious.
+- Stronger recommendations require more state/context/execution data.
+- Apple Health native/import and automated context sync remain later work.
+- Insights IA cleanup remains the next product priority.

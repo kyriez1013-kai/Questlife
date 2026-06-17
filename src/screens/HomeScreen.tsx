@@ -36,6 +36,7 @@ import { trackEvent } from '../utils/analytics';
 import QuestButton from '../components/ui/QuestButton';
 import QuestCard from '../components/ui/QuestCard';
 import QuestIcon from '../components/ui/QuestIcon';
+import QuestPill from '../components/ui/QuestPill';
 import QuestProgressBar from '../components/ui/QuestProgressBar';
 import QuestInput from '../components/ui/QuestInput';
 import QuestEntityIcon from '../components/ui/QuestEntityIcon';
@@ -48,6 +49,8 @@ import { displayEntityName } from '../utils/displayName';
 import { buildTodayCommand, TodayCommandAction } from '../utils/todayCommand';
 import { parseHealthContextText, ParsedHealthContext } from '../utils/healthContextParser';
 import { buildObjectiveContextBrief, ObjectiveContextBrief } from '../utils/objectiveContextBrief';
+import { buildMetacognitionSummary } from '../utils/metacognition';
+import { buildDailyOperatingBrief } from '../utils/dailyOperatingBrief';
 
 // 晨间状态选项
 const DAILY_STATE_OPTIONS = [
@@ -1321,6 +1324,29 @@ export default function HomeScreen() {
     activeSession,
   }), [activeSession, data, latestFeedbackLog, latestStateCheckIn, todayLogs, todayScheduleBlocks]);
 
+  const metacognitionSummary = useMemo(() => buildMetacognitionSummary({
+    executionLogs: data.executionLogs || [],
+    stateCheckIns: data.stateCheckIns || [],
+    skills: data.skills || [],
+    goals: data.categories || [],
+    contextLogs: data.contextLogs || [],
+    now: new Date(),
+  }), [data.categories, data.contextLogs, data.executionLogs, data.skills, data.stateCheckIns]);
+
+  const dailyOperatingBrief = useMemo(() => buildDailyOperatingBrief({
+    contextLogs: data.contextLogs || [],
+    stateCheckIns: data.stateCheckIns || [],
+    executionLogs: data.executionLogs || [],
+    goals: data.categories || [],
+    modules: data.modules || [],
+    skills: data.skills || [],
+    scheduleBlocks: todayScheduleBlocks,
+    todayCommand,
+    objectiveContextBrief,
+    metacognitionSummary,
+    now: new Date(),
+  }), [data.categories, data.contextLogs, data.executionLogs, data.modules, data.skills, data.stateCheckIns, metacognitionSummary, objectiveContextBrief, todayCommand, todayScheduleBlocks]);
+
   const formatCommandCopy = useCallback((key: string, values?: Record<string, string | number>) => {
     let copy = t(lang, key);
     Object.entries(values || {}).forEach(([name, value]) => {
@@ -1598,6 +1624,64 @@ export default function HomeScreen() {
       >
         {/* ═══ ZONE 1: Smart Capture (input always first) ═══════════════════ */}
         <HomeSmartCapture />
+
+        <QuestCard questTheme={questTheme} variant="hero" style={styles.dailyBriefCard}>
+          <View style={styles.dailyBriefHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.strategyKicker, { color: questTheme.colors.textMuted }]}>{t(lang, 'dailyOperatingBrief')}</Text>
+              <Text style={[styles.dailyBriefTitle, { color: questTheme.colors.text }]}>
+                {formatCommandCopy(dailyOperatingBrief.mainJudgementKey, dailyOperatingBrief.mainJudgementValues)}
+              </Text>
+            </View>
+            <QuestPill
+              questTheme={questTheme}
+              active
+              variant={dailyOperatingBrief.recommendedIntensity === 'high' ? 'success' : dailyOperatingBrief.recommendedIntensity === 'normal' ? 'default' : dailyOperatingBrief.recommendedIntensity === 'low' ? 'warning' : 'danger'}
+              label={t(lang, dailyOperatingBrief.modeLabelKey)}
+            />
+          </View>
+          <View style={[styles.dailyBriefAction, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}>
+            <QuestIcon name="zap" size={16} color={questTheme.colors.primary} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'firstAction')}</Text>
+              <Text style={[styles.dailyBriefActionText, { color: questTheme.colors.text }]}>
+                {formatCommandCopy(dailyOperatingBrief.firstActionKey, dailyOperatingBrief.firstActionValues)}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.dailyBriefSection}>
+            <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'whyThis')}</Text>
+            <View style={styles.dailyBriefChipRow}>
+              {dailyOperatingBrief.whyKeys.slice(0, 3).map((key) => (
+                <View key={key} style={[styles.dailyBriefChip, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}>
+                  <Text style={[styles.dailyBriefChipText, { color: questTheme.colors.textMuted }]}>
+                    {formatCommandCopy(key, dailyOperatingBrief.whyValues)}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+          {dailyOperatingBrief.avoidKeys.length > 0 ? (
+            <View style={styles.dailyBriefSection}>
+              <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'avoidToday')}</Text>
+              <View style={styles.dailyBriefChipRow}>
+                {dailyOperatingBrief.avoidKeys.slice(0, 2).map((key) => (
+                  <View key={key} style={[styles.dailyBriefChip, { backgroundColor: questTheme.colors.warningSoft, borderColor: questTheme.colors.border }]}>
+                    <Text style={[styles.dailyBriefChipText, { color: questTheme.colors.text }]}>
+                      {formatCommandCopy(key)}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          ) : null}
+          <View style={styles.dailyBriefFooter}>
+            <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textSubtle }]}>
+              {t(lang, 'confidence')}: {t(lang, dailyOperatingBrief.confidence === 'high' ? 'confidenceHigh' : dailyOperatingBrief.confidence === 'medium' ? 'confidenceMedium' : 'confidenceLow')}
+            </Text>
+            <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textSubtle }]}>{t(lang, 'briefNotMedical')}</Text>
+          </View>
+        </QuestCard>
 
         <QuestCard questTheme={questTheme} variant="flat" style={styles.contextBridgeCard}>
           <View style={styles.contextBridgeHeader}>
@@ -3073,6 +3157,17 @@ const styles = StyleSheet.create({
   nowFocusIconShell: { width: 44, height: 44, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   nowFocusTitle: { color: theme.text, fontSize: 24, fontWeight: '900', lineHeight: 30 },
   nowFocusActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
+  dailyBriefCard: { marginTop: 12, gap: 10 },
+  dailyBriefHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  dailyBriefTitle: { fontSize: 16, fontWeight: '900', lineHeight: 22, marginTop: 2 },
+  dailyBriefAction: { borderWidth: 1, borderRadius: 14, padding: 10, flexDirection: 'row', alignItems: 'center', gap: 9 },
+  dailyBriefActionText: { fontSize: 13, fontWeight: '900', lineHeight: 18 },
+  dailyBriefMeta: { fontSize: 11, fontWeight: '800', lineHeight: 16 },
+  dailyBriefSection: { gap: 6 },
+  dailyBriefChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  dailyBriefChip: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 5 },
+  dailyBriefChipText: { fontSize: 10, fontWeight: '900', lineHeight: 14 },
+  dailyBriefFooter: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'space-between' },
   contextBridgeCard: { marginTop: 12, gap: 10 },
   contextBridgeHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   contextBriefTitle: { fontSize: 15, fontWeight: '900', lineHeight: 21, marginTop: 2 },
