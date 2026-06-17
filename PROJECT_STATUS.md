@@ -1632,7 +1632,7 @@ Known limitations:
 
 ## Daily Operating Brief v1
 
-Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+Status: Production manually validated. Commits `38ee9b2` and `dd0c10a` accepted.
 
 Files changed:
 - `src/utils/dailyOperatingBrief.ts`
@@ -1641,19 +1641,26 @@ Files changed:
 - `PROJECT_STATUS.md`
 
 What changed:
-- Added a deterministic Daily Operating Brief helper that combines objective context, subjective state check-ins, recent execution, state patterns, and the existing Today command.
+- Added a deterministic Daily Operating Brief helper that combines objective context, recent subjective state, recent execution, state patterns, and the existing Today command.
 - Today now shows a compact first-screen Daily Operating Brief below Smart Capture and above the body/sleep context card.
 - The brief displays operating mode, main judgement, first recommended action, up to 3 evidence/why chips, up to 2 avoid chips, confidence, and a non-medical wording note.
 - Body-Cognition Brief remains as a body/context evidence source and paste/save flow; it is no longer the only Today judgement surface.
+- Fixed stale all-time state check-ins affecting the brief by limiting subjective-state influence to recent 24-hour state check-ins.
 - No Apple Health native integration, no LLM, no data migration, and no medical diagnosis were added.
 
 Validation:
 - `npx tsc --noEmit`: passed locally.
-- `npm run build`: pending.
-- Production web UI verification is required at `https://questlife-alpha-orpin.vercel.app`.
+- `npm run build`: passed locally.
+- Production web UI manual verification: passed at `https://questlife-alpha-orpin.vercel.app`.
+- Verified normal sleep input `我昨天晚上12点睡觉睡了8个小时` parses/saves as sleep 8 hours, shows a push/steady-style Daily Brief, and does not present insufficient-sleep guidance or medical claims.
+- Verified short sleep input `我昨晚睡了5个小时` parses/saves as sleep 5 hours, switches the brief to protect-focus/recovery guidance, recommends lower granularity, and avoids long deep work plus heavy-training/deep-work stacking.
+- Verified a low current-state check-in updates the brief to recovery/restart guidance with low-friction first action and the low-state reason included.
+- Verified existing context paste/save, B4 feedback display, after-state/state-pattern surfaces, and Insights rendering still mount after the Daily Brief changes.
+- Verified the brief remains readable in the production dark theme during the tested flows.
 
 Known limitations:
 - Recommendations are rule-based and cautious.
 - Stronger recommendations require more state/context/execution data.
+- State-pattern starter selection can be overridden by stronger current signals such as short sleep, low state, pending confirmation, or Today command.
 - Apple Health native/import and automated context sync remain later work.
 - Insights IA cleanup remains the next product priority.
