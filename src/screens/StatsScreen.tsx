@@ -7,8 +7,8 @@
 //   5. 🥇 本周技能分配    (新, 占比列表)
 //   6. 🎯 技能雷达        (保留)
 //   7. 🔥 近 8 周热力图   (从 16 周缩到 8 周, 移到最底)
-import React, { useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Rect } from 'react-native-svg';
 import { useStore } from '../store';
@@ -34,6 +34,7 @@ const fmtDate = (d: Date) =>
 
 export default function StatsScreen() {
   const { data } = useStore();
+  const [advancedExpanded, setAdvancedExpanded] = useState(false);
   const lang = getLanguage(data.settings.language);
   const questTheme = getQuestTheme(data.settings.selectedThemeId);
   const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
@@ -336,9 +337,63 @@ export default function StatsScreen() {
     () => buildObjectiveContextBrief(data.contextLogs || []),
     [data.contextLogs],
   );
-  const metaConfidenceColor = metacognition.currentPattern.confidence === 'high'
+  const hasStateTrendEvidence = metacognition.stateTrend.direction !== 'unknown';
+  const hasStatePatternEvidence = metacognition.statePatterns.status === 'ok' && metacognition.statePatterns.patterns.length > 0;
+  const hasBodyContextEvidence = objectiveContextBrief.status !== 'empty';
+  const hasBehaviorEvidence = metacognition.behaviorLinks.length > 0;
+  const hasKeyEvidence = hasStateTrendEvidence || hasStatePatternEvidence || hasBodyContextEvidence || hasBehaviorEvidence;
+  const mainInsight = useMemo(() => {
+    if (metacognition.status === 'ok') {
+      return {
+        titleKey: metacognition.currentPattern.titleKey,
+        bodyKey: metacognition.currentPattern.bodyKey,
+        nextKey: metacognition.currentPattern.nextActionKey,
+        confidence: metacognition.currentPattern.confidence,
+        sourceKey: 'evidenceFromPatterns',
+      };
+    }
+    const topPattern = metacognition.statePatterns.patterns[0];
+    if (topPattern) {
+      return {
+        titleKey: topPattern.labelKey,
+        titleValues: topPattern.labelValues,
+        bodyKey: topPattern.evidenceKey,
+        bodyValues: topPattern.evidenceValues,
+        nextKey: topPattern.nextActionKey,
+        nextValues: topPattern.nextActionValues,
+        confidence: topPattern.confidence,
+        sourceKey: 'evidenceFromPatterns',
+      };
+    }
+    if (objectiveContextBrief.status !== 'empty') {
+      return {
+        titleKey: 'bodyContext',
+        bodyKey: objectiveContextBrief.cognitiveLoadSuggestionKey,
+        nextKey: objectiveContextBrief.recommendedActionKey,
+        confidence: objectiveContextBrief.confidence,
+        sourceKey: 'evidenceFromContext',
+      };
+    }
+    if (logs.length > 0) {
+      return {
+        titleKey: 'evidenceFromRecentExecution',
+        bodyKey: 'recentFeedbackEvidence',
+        nextKey: 'continueOneMoreRecord',
+        confidence: dataHealthLevel,
+        sourceKey: 'evidenceFromRecentExecution',
+      };
+    }
+    return {
+      titleKey: 'dataStillAccumulating',
+      bodyKey: 'notEnoughForDetailedInsights',
+      nextKey: 'recordBeforeAfterAction',
+      confidence: 'low' as const,
+      sourceKey: 'oneClearJudgement',
+    };
+  }, [dataHealthLevel, logs.length, metacognition, objectiveContextBrief]);
+  const mainInsightColor = mainInsight.confidence === 'high'
     ? questTheme.colors.success
-    : metacognition.currentPattern.confidence === 'medium'
+    : mainInsight.confidence === 'medium'
       ? questTheme.colors.warning
       : questTheme.colors.textSubtle;
 
@@ -368,150 +423,169 @@ export default function StatsScreen() {
             backgroundColor: questTheme.colors.surfaceElevated,
             borderColor: questTheme.colors.borderStrong,
             borderLeftWidth: 4,
-            borderLeftColor: metaConfidenceColor,
+            borderLeftColor: mainInsightColor,
           }]}
           className="insight-card metacognition-summary-card"
         >
           <View style={styles.primaryHeader}>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.decisionKicker, { color: questTheme.colors.textMuted }]}>{t(lang, 'metacognitionSummary')}</Text>
-              <Text style={[styles.primaryTitle, { color: questTheme.colors.text }]}>{t(lang, 'howYouOperate')}</Text>
+              <Text style={[styles.decisionKicker, { color: questTheme.colors.textMuted }]}>{t(lang, 'mainInsight')}</Text>
+              <Text style={[styles.primaryTitle, { color: questTheme.colors.text }]}>{t(lang, 'todayCoreJudgement')}</Text>
             </View>
-            <View style={[styles.dataHealthPill, { borderColor: metaConfidenceColor, backgroundColor: metaConfidenceColor + '22' }]}>
-              <Text style={[styles.dataHealthText, { color: metaConfidenceColor }]}>{t(lang, metacognition.currentPattern.confidence === 'high' ? 'confidenceHigh' : metacognition.currentPattern.confidence === 'medium' ? 'confidenceMedium' : 'confidenceLow')}</Text>
+            <View style={[styles.dataHealthPill, { borderColor: mainInsightColor, backgroundColor: mainInsightColor + '22' }]}>
+              <Text style={[styles.dataHealthText, { color: mainInsightColor }]}>{t(lang, mainInsight.confidence === 'high' ? 'confidenceHigh' : mainInsight.confidence === 'medium' ? 'confidenceMedium' : 'confidenceLow')}</Text>
             </View>
           </View>
-          <Text style={[styles.primaryBody, { color: questTheme.colors.text }]}>{t(lang, metacognition.currentPattern.titleKey)}</Text>
-          <Text style={[styles.metaBody, { color: questTheme.colors.textMuted }]}>{t(lang, metacognition.currentPattern.bodyKey)}</Text>
-          <PredictionGapLine metacognition={metacognition} questTheme={questTheme} lang={lang} />
+          <Text style={[styles.primaryBody, { color: questTheme.colors.text }]}>{applyValues(t(lang, mainInsight.titleKey), mainInsight.titleValues)}</Text>
+          <Text style={[styles.metaBody, { color: questTheme.colors.textMuted }]}>{applyValues(t(lang, mainInsight.bodyKey), mainInsight.bodyValues)}</Text>
+          <Text style={[styles.metaBody, { color: questTheme.colors.textSubtle }]}>{t(lang, mainInsight.sourceKey)}</Text>
           <View style={[styles.nextActionBox, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.border }]}>
             <Text style={[styles.nextActionLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'next')}</Text>
-            <Text style={[styles.nextActionText, { color: questTheme.colors.primary }]}>{t(lang, metacognition.currentPattern.nextActionKey)}</Text>
+            <Text style={[styles.nextActionText, { color: questTheme.colors.primary }]}>{applyValues(t(lang, mainInsight.nextKey), mainInsight.nextValues)}</Text>
           </View>
         </QuestCard>
 
-        <StateTrendStrip metacognition={metacognition} questTheme={questTheme} lang={lang} />
-        <StatePatternsPanel metacognition={metacognition} questTheme={questTheme} lang={lang} />
-        <BodyContextPanel brief={objectiveContextBrief} questTheme={questTheme} lang={lang} />
-        <BehaviorLinksPanel metacognition={metacognition} questTheme={questTheme} lang={lang} />
-
-        <View style={[styles.commandStrip, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong }]}>
-          <View style={styles.commandCell}>
-            <Text style={[styles.commandValue, { color: questTheme.colors.primary }]}>{(instantInsight.weeklyMinutes / 60).toFixed(1)}h</Text>
-            <Text style={[styles.commandLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'weeklyOverview')}</Text>
-          </View>
-          <View style={styles.commandCell}>
-            <Text style={[styles.commandValue, { color: questTheme.colors.accent }]} numberOfLines={1}>
-              {instantInsight.topSkill ? instantInsight.topSkill.label : t(lang, 'notEnoughDataYet')}
-            </Text>
-            <Text style={[styles.commandLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'keySignal')}</Text>
-          </View>
-          <View style={styles.commandCell}>
-            <Text style={[styles.commandValue, { color: dataHealthColor }]}>{t(lang, dataHealthLabelKey)}</Text>
-            <Text style={[styles.commandLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'dataHealth')}</Text>
-          </View>
-          <View style={styles.commandCell}>
-            <Text style={[styles.commandValue, { color: questTheme.colors.warning }]}>{instantInsight.done}/{instantInsight.done + instantInsight.remaining}</Text>
-            <Text style={[styles.commandLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'todayCompletion')}</Text>
-          </View>
-        </View>
-
-        {/* ── 重排后顺序：有行动价值的分析在上，系统自检在下 ──────────────── */}
-        <InsightCardsBlock insights={engineInsights} questTheme={questTheme} lang={lang} selfKnowledge={selfKnowledge} />
-
-        {/* 2. 本周平均状态 */}
-        {weeklyQuality && (
+        <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'keyEvidence')}</Text>
+        {hasKeyEvidence ? (
           <>
-            <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'weeklyAverageState')}</Text>
-            <View style={[styles.qCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong }]}>
-              <Text style={[styles.qBig, { color: questTheme.colors.text }]}>
-                {weeklyQuality.avg.toFixed(1)} <Text style={[styles.qOf, { color: questTheme.colors.textMuted }]}>/ 5.0</Text>{' '}
-                <Text style={styles.qEmoji}>{emojiForAvgQuality(weeklyQuality.avg)}</Text>
-              </Text>
-              <Text style={[styles.qSub, { color: questTheme.colors.textMuted }]}>{t(lang, 'total')} {weeklyQuality.count} {t(lang, 'validRecords')}</Text>
-            </View>
+            {hasStateTrendEvidence ? <StateTrendStrip metacognition={metacognition} questTheme={questTheme} lang={lang} /> : null}
+            {hasStatePatternEvidence ? <StatePatternsPanel metacognition={metacognition} questTheme={questTheme} lang={lang} /> : null}
+            {hasBodyContextEvidence ? <BodyContextPanel brief={objectiveContextBrief} questTheme={questTheme} lang={lang} /> : null}
+            {hasBehaviorEvidence ? <BehaviorLinksPanel metacognition={metacognition} questTheme={questTheme} lang={lang} /> : null}
           </>
-        )}
-
-        {/* 3. 近 7 天柱图 */}
-        <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'last7Days')}</Text>
-        <DailyBarChart days={last7} accent={accent} lang={lang} questTheme={questTheme} />
-
-        {/* 6. 启动救援统计 */}
-        <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'rescueStarts')}</Text>
-        <QuestCard questTheme={questTheme} variant="flat" style={[styles.insightCard, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.borderStrong, borderLeftWidth: 3, borderLeftColor: questTheme.colors.warning }]} className="rescue-summary-card insight-card">
-          <Text style={[styles.insightLine, { color: questTheme.colors.text }]}>
-            {t(lang, 'week')}: <Text style={[styles.insightStrong, { color: questTheme.colors.primary }]}>{rescueStats.total}</Text>
-            {' · '}{t(lang, 'rescueCompletionRate')}: <Text style={[styles.insightStrong, { color: questTheme.colors.primary }]}>{rescueStats.completionRate}%</Text>
-          </Text>
-          <Text style={[styles.insightLine, { color: questTheme.colors.text }]}>
-            {t(lang, 'latestRescue')}: {rescueStats.latest?.startedAt ? new Date(rescueStats.latest.startedAt).toLocaleString() : t(lang, 'notEnoughRescueData')}
-          </Text>
-          <Text style={[styles.insightLine, { color: questTheme.colors.textMuted }]}>
-            {rescueStats.topTrigger ? `${rescueStats.topTrigger} · ` : ''}{t(lang, 'rescueInsightPlaceholder')}
-          </Text>
-        </QuestCard>
-
-        {/* 7. 历史统计数字 */}
-        <View style={styles.statRow}>
-          <Stat questTheme={questTheme} label={t(lang, 'weeklyExecutionTime')} value={fmt(last7.reduce((s, d) => s + d.minutes, 0))} accent={accent} />
-          <Stat questTheme={questTheme} label={t(lang, 'totalHours')} value={(totalMin / 60).toFixed(1)} accent={accent} />
-        </View>
-        <View style={styles.statRow}>
-          <Stat questTheme={questTheme} label={t(lang, 'activeDays')} value={String(activeDays)} accent={accent} />
-          <Stat questTheme={questTheme} label={t(lang, 'streak')} value={`${streak} ${t(lang, 'days')}`} accent={accent} />
-          <Stat questTheme={questTheme} label={t(lang, 'weeklyHit')} value={`${weeklyHitDays}/7`} accent={accent} />
-        </View>
-
-        {/* 8. 本周规律洞察 */}
-        <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'weeklyPatterns')}</Text>
-        <View style={[styles.insightCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>
-          {insight.locked ? (
-            <Text style={[styles.insightLocked, { color: questTheme.colors.textMuted }]}>
-              {t(lang, 'patternLocked')}{'\n'}
-              <Text style={[styles.insightLockedSub, { color: questTheme.colors.textMuted }]}>
-                {insight.daysHave} {t(lang, 'days')}
-              </Text>
-            </Text>
-          ) : (
-            <>
-              <Text style={[styles.insightLine, { color: questTheme.colors.text }]}>
-                {t(lang, 'weeklyInvestment')}: <Text style={[styles.insightStrong, { color: questTheme.colors.primary }]}>{insight.bestLabel}</Text>
-                {' · '}<Text style={[styles.insightStrong, { color: questTheme.colors.primary }]}>{insight.bestMinutes} {t(lang, 'minutes')}</Text>
-              </Text>
-              <Text style={[styles.insightLine, { color: questTheme.colors.text }]}>
-                {t(lang, 'averageQuality')}: <Text style={[styles.insightStrong, { color: questTheme.colors.primary }]}>{insight.avgPerDay} {t(lang, 'minutes')}</Text>
-              </Text>
-            </>
-          )}
-        </View>
-
-        {/* 4. 本周技能分配 */}
-        <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'timeBySkill')}</Text>
-        {!weeklySkillShare ? (
-          <Text style={[styles.empty, { color: questTheme.colors.textMuted, backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>{t(lang, 'noExecutionInsights')}</Text>
         ) : (
-          <View style={[styles.shareCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>
-            {weeklySkillShare.rows.map(({ label, icon, color, minutes, percent, skill }) => (
-              <View key={label} style={styles.shareRow}>
-                <View style={styles.shareHeaderRow}>
-                  <QuestEntityIcon icon={icon} systemIcon={getSkillSemanticIcon(skill)} color={color} questTheme={questTheme} size="sm" />
-                  <Text style={[styles.shareName, { color: questTheme.colors.text }]} numberOfLines={1}>
-                    {label} · {(minutes / 60).toFixed(1)}h · {(percent * 100).toFixed(0)}%
-                  </Text>
-                </View>
-                <View style={[styles.shareBarBg, { backgroundColor: questTheme.colors.surfaceSoft }]}>
-                  <View
-                    style={[
-                      styles.shareBarFg,
-                      { width: `${percent * 100}%`, backgroundColor: color },
-                    ]}
-                  />
-                </View>
-              </View>
-            ))}
-          </View>
+          <QuestCard questTheme={questTheme} variant="flat" style={[styles.insightCard, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.borderStrong }]} className="insight-card empty-state">
+            <Text style={[styles.insightLine, { color: questTheme.colors.text }]}>{t(lang, 'dataStillAccumulating')}</Text>
+            <Text style={[styles.insightLine, { color: questTheme.colors.textMuted }]}>{t(lang, 'notEnoughForDetailedInsights')}</Text>
+          </QuestCard>
         )}
+
+        <TouchableOpacity
+          onPress={() => setAdvancedExpanded((value) => !value)}
+          activeOpacity={0.75}
+          style={[styles.advancedToggle, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong }]}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.advancedTitle, { color: questTheme.colors.text }]}>{t(lang, 'advancedAnalysis')}</Text>
+            <Text style={[styles.advancedSubtitle, { color: questTheme.colors.textMuted }]}>{t(lang, 'advancedSignals')}</Text>
+          </View>
+          <Text style={[styles.advancedAction, { color: questTheme.colors.primary }]}>
+            {advancedExpanded ? t(lang, 'hideAdvancedAnalysis') : t(lang, 'showAdvancedAnalysis')}
+          </Text>
+        </TouchableOpacity>
+
+        {advancedExpanded ? (
+          <>
+            <View style={[styles.commandStrip, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong }]}>
+              <View style={styles.commandCell}>
+                <Text style={[styles.commandValue, { color: questTheme.colors.primary }]}>{(instantInsight.weeklyMinutes / 60).toFixed(1)}h</Text>
+                <Text style={[styles.commandLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'weeklyOverview')}</Text>
+              </View>
+              <View style={styles.commandCell}>
+                <Text style={[styles.commandValue, { color: questTheme.colors.accent }]} numberOfLines={1}>
+                  {instantInsight.topSkill ? instantInsight.topSkill.label : t(lang, 'notEnoughDataYet')}
+                </Text>
+                <Text style={[styles.commandLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'keySignal')}</Text>
+              </View>
+              <View style={styles.commandCell}>
+                <Text style={[styles.commandValue, { color: dataHealthColor }]}>{t(lang, dataHealthLabelKey)}</Text>
+                <Text style={[styles.commandLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'dataHealth')}</Text>
+              </View>
+              <View style={styles.commandCell}>
+                <Text style={[styles.commandValue, { color: questTheme.colors.warning }]}>{instantInsight.done}/{instantInsight.done + instantInsight.remaining}</Text>
+                <Text style={[styles.commandLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'todayCompletion')}</Text>
+              </View>
+            </View>
+
+            <InsightCardsBlock insights={engineInsights} questTheme={questTheme} lang={lang} selfKnowledge={selfKnowledge} />
+
+            {weeklyQuality && (
+              <>
+                <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'weeklyAverageState')}</Text>
+                <View style={[styles.qCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong }]}>
+                  <Text style={[styles.qBig, { color: questTheme.colors.text }]}>
+                    {weeklyQuality.avg.toFixed(1)} <Text style={[styles.qOf, { color: questTheme.colors.textMuted }]}>/ 5.0</Text>{' '}
+                    <Text style={styles.qEmoji}>{emojiForAvgQuality(weeklyQuality.avg)}</Text>
+                  </Text>
+                  <Text style={[styles.qSub, { color: questTheme.colors.textMuted }]}>{t(lang, 'total')} {weeklyQuality.count} {t(lang, 'validRecords')}</Text>
+                </View>
+              </>
+            )}
+
+            <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'last7Days')}</Text>
+            <DailyBarChart days={last7} accent={accent} lang={lang} questTheme={questTheme} />
+
+            <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'rescueStarts')}</Text>
+            <QuestCard questTheme={questTheme} variant="flat" style={[styles.insightCard, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.borderStrong, borderLeftWidth: 3, borderLeftColor: questTheme.colors.warning }]} className="rescue-summary-card insight-card">
+              <Text style={[styles.insightLine, { color: questTheme.colors.text }]}>
+                {t(lang, 'week')}: <Text style={[styles.insightStrong, { color: questTheme.colors.primary }]}>{rescueStats.total}</Text>
+                {' · '}{t(lang, 'rescueCompletionRate')}: <Text style={[styles.insightStrong, { color: questTheme.colors.primary }]}>{rescueStats.completionRate}%</Text>
+              </Text>
+              <Text style={[styles.insightLine, { color: questTheme.colors.text }]}>
+                {t(lang, 'latestRescue')}: {rescueStats.latest?.startedAt ? new Date(rescueStats.latest.startedAt).toLocaleString() : t(lang, 'notEnoughRescueData')}
+              </Text>
+              <Text style={[styles.insightLine, { color: questTheme.colors.textMuted }]}>
+                {rescueStats.topTrigger ? `${rescueStats.topTrigger} · ` : ''}{t(lang, 'rescueInsightPlaceholder')}
+              </Text>
+            </QuestCard>
+
+            <View style={styles.statRow}>
+              <Stat questTheme={questTheme} label={t(lang, 'weeklyExecutionTime')} value={fmt(last7.reduce((s, d) => s + d.minutes, 0))} accent={accent} />
+              <Stat questTheme={questTheme} label={t(lang, 'totalHours')} value={(totalMin / 60).toFixed(1)} accent={accent} />
+            </View>
+            <View style={styles.statRow}>
+              <Stat questTheme={questTheme} label={t(lang, 'activeDays')} value={String(activeDays)} accent={accent} />
+              <Stat questTheme={questTheme} label={t(lang, 'streak')} value={`${streak} ${t(lang, 'days')}`} accent={accent} />
+              <Stat questTheme={questTheme} label={t(lang, 'weeklyHit')} value={`${weeklyHitDays}/7`} accent={accent} />
+            </View>
+
+            <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'weeklyPatterns')}</Text>
+            <View style={[styles.insightCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>
+              {insight.locked ? (
+                <Text style={[styles.insightLocked, { color: questTheme.colors.textMuted }]}>
+                  {t(lang, 'patternLocked')}{'\n'}
+                  <Text style={[styles.insightLockedSub, { color: questTheme.colors.textMuted }]}>
+                    {insight.daysHave} {t(lang, 'days')}
+                  </Text>
+                </Text>
+              ) : (
+                <>
+                  <Text style={[styles.insightLine, { color: questTheme.colors.text }]}>
+                    {t(lang, 'weeklyInvestment')}: <Text style={[styles.insightStrong, { color: questTheme.colors.primary }]}>{insight.bestLabel}</Text>
+                    {' · '}<Text style={[styles.insightStrong, { color: questTheme.colors.primary }]}>{insight.bestMinutes} {t(lang, 'minutes')}</Text>
+                  </Text>
+                  <Text style={[styles.insightLine, { color: questTheme.colors.text }]}>
+                    {t(lang, 'averageQuality')}: <Text style={[styles.insightStrong, { color: questTheme.colors.primary }]}>{insight.avgPerDay} {t(lang, 'minutes')}</Text>
+                  </Text>
+                </>
+              )}
+            </View>
+
+            <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'timeBySkill')}</Text>
+            {!weeklySkillShare ? (
+              <Text style={[styles.empty, { color: questTheme.colors.textMuted, backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>{t(lang, 'noExecutionInsights')}</Text>
+            ) : (
+              <View style={[styles.shareCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>
+                {weeklySkillShare.rows.map(({ label, icon, color, minutes, percent, skill }) => (
+                  <View key={label} style={styles.shareRow}>
+                    <View style={styles.shareHeaderRow}>
+                      <QuestEntityIcon icon={icon} systemIcon={getSkillSemanticIcon(skill)} color={color} questTheme={questTheme} size="sm" />
+                      <Text style={[styles.shareName, { color: questTheme.colors.text }]} numberOfLines={1}>
+                        {label} · {(minutes / 60).toFixed(1)}h · {(percent * 100).toFixed(0)}%
+                      </Text>
+                    </View>
+                    <View style={[styles.shareBarBg, { backgroundColor: questTheme.colors.surfaceSoft }]}>
+                      <View
+                        style={[
+                          styles.shareBarFg,
+                          { width: `${percent * 100}%`, backgroundColor: color },
+                        ]}
+                      />
+                    </View>
+                  </View>
+                ))}
+              </View>
+            )}
 
         <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'timeByTaskType')}</Text>
         {!weeklyTaskTypeShare ? (
@@ -572,6 +646,8 @@ export default function StatsScreen() {
           </View>
           <Text style={[styles.loopNext, { color: questTheme.colors.primary }]}>{t(lang, 'next')}: {appLoop.nextBestAction || t(lang, 'keepLoggingForInsights')}</Text>
         </QuestCard>
+          </>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
@@ -1002,6 +1078,10 @@ const styles = StyleSheet.create({
   sub: { color: theme.textDim, marginTop: 4 },
   dashboardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
   dashboardMeta: { fontSize: 12, fontWeight: '800', marginTop: 8, lineHeight: 18 },
+  advancedToggle: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderRadius: 16, padding: 14, marginTop: 18 },
+  advancedTitle: { fontSize: 16, fontWeight: '900', lineHeight: 22 },
+  advancedSubtitle: { fontSize: 12, fontWeight: '800', lineHeight: 18, marginTop: 2 },
+  advancedAction: { fontSize: 12, fontWeight: '900', flexShrink: 0 },
   commandStrip: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, borderWidth: 1, borderRadius: 16, padding: 10, marginTop: 16 },
   commandCell: { flex: 1, minWidth: 132, paddingHorizontal: 8, paddingVertical: 8 },
   commandValue: { fontSize: 16, fontWeight: '900', lineHeight: 22 },

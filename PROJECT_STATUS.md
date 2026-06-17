@@ -1664,3 +1664,31 @@ Known limitations:
 - State-pattern starter selection can be overridden by stronger current signals such as short sleep, low state, pending confirmation, or Today command.
 - Apple Health native/import and automated context sync remain later work.
 - Insights IA cleanup remains the next product priority.
+
+## Insights IA Cleanup v1
+
+Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+
+Files changed:
+- `src/screens/StatsScreen.tsx`
+- `src/i18n.ts`
+- `PROJECT_STATUS.md`
+
+What changed:
+- Insights now prioritizes one top-level main judgement before showing supporting evidence.
+- Key Evidence is limited to useful state trend, state patterns, body/context, and behavior-link evidence instead of showing every insufficient panel at once.
+- Advanced/experimental signals are moved into a lower collapsed Advanced Analysis section.
+- Advanced Analysis contains the existing ability map, signal grid, weekly charts, rescue stats, time/task/metric allocations, heatmap, system loop overview, prediction, monthly/growth/anomaly, and related deep sections.
+- Repeated insufficient-data messages are reduced to one global compact hint when no key evidence is available.
+- No data model changes, no Apple Health changes, no parser changes, no LLM calls, and no Today/B-3.3/B4 changes were made.
+- Daily Operating Brief remains the Today primary loop; this pass only clarifies the Insights surface.
+
+Validation:
+- `npx tsc --noEmit`: passed locally.
+- `npm run build`: passed locally.
+- Production web UI verification is required at `https://questlife-alpha-orpin.vercel.app`.
+
+Known limitations:
+- Main judgement is still rule-based from existing metacognition/context outputs.
+- Advanced Analysis is collapsed by default, but the underlying sections still need future visual polish.
+- Data-poor users still need more sleep/state/action records before Insights can become specific.
