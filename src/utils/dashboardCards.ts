@@ -170,3 +170,36 @@ export function getDashboardPreference(preferences: DashboardPreferences | undef
   const list = surface === 'today' ? normalized.todayCards : normalized.insightsCards;
   return list.find((pref) => pref.cardId === cardId);
 }
+
+export function getNextDashboardCardSize(card: DashboardCardMeta, currentSize: DashboardCardSize): DashboardCardSize {
+  const sizes = card.allowedSizes.length > 0 ? card.allowedSizes : [card.defaultSize];
+  const index = sizes.indexOf(currentSize);
+  return sizes[(index >= 0 ? index + 1 : 0) % sizes.length];
+}
+
+export function reorderDashboardCard(
+  preferences: DashboardPreferences | undefined,
+  surface: DashboardSurface,
+  movingCardId: string,
+  targetCardId: string
+): DashboardPreferences {
+  const normalized = normalizeDashboardPreferences(preferences);
+  const key = surface === 'today' ? 'todayCards' : 'insightsCards';
+  if (movingCardId === targetCardId) return normalized;
+
+  const list = [...normalized[key]].sort((a, b) => a.order - b.order);
+  const moving = list.find((item) => item.cardId === movingCardId);
+  const targetIndex = list.findIndex((item) => item.cardId === targetCardId);
+  if (!moving || targetIndex < 0) return normalized;
+
+  const withoutMoving = list.filter((item) => item.cardId !== movingCardId);
+  const adjustedTargetIndex = withoutMoving.findIndex((item) => item.cardId === targetCardId);
+  const insertIndex = adjustedTargetIndex >= 0 ? adjustedTargetIndex : targetIndex;
+  withoutMoving.splice(insertIndex, 0, moving);
+
+  return {
+    ...normalized,
+    [key]: withoutMoving.map((item, index) => ({ ...item, order: index + 1 })),
+    updatedAt: new Date().toISOString(),
+  };
+}

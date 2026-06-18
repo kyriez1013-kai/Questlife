@@ -1735,3 +1735,39 @@ Known limitations:
 - Drag-and-drop remains later.
 - Dedicated Fitness Mode cards and Apple Health native/import remain later.
 - Cloud account sync remains later.
+
+## Control Center v2: Apple-like Editable Grid
+
+Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+
+Files changed:
+- `src/components/DashboardLayoutControls.tsx`
+- `src/components/dashboard/DashboardCardShell.tsx`
+- `src/components/dashboard/AddCardGallery.tsx`
+- `src/screens/HomeScreen.tsx`
+- `src/screens/StatsScreen.tsx`
+- `src/utils/dashboardCards.ts`
+- `src/i18n.ts`
+- `PROJECT_STATUS.md`
+
+What changed:
+- Preserved the Control Center v1 registry, preferences, and preset system.
+- Replaced the visible admin-style edit rows with an in-place dashboard edit mode.
+- Today and Insights cards now remain in the dashboard while editing and show card-level remove and resize controls.
+- Resize now uses a bottom-right card handle that cycles available sizes instead of visible S/M/L rows.
+- Reorder now uses a production-safe selected-card interaction: select a card, then tap another card to move it before that card.
+- Added an inline Add Card gallery for hidden cards, grouped by Core, Learning, Fitness, Recovery, Context, State, Execution, and Advanced.
+- Presets remain available as compact pills inside edit mode, with reset layout still available.
+- Normal mode no longer exposes always-visible Up/Down/S/M/L/Hide management controls.
+- No drag-and-drop native library, no data migration, no Apple Health changes, and no B-3.3/B4/context/metacognition flow changes were added.
+
+Validation:
+- `npx tsc --noEmit`: passed locally.
+- `npm run build`: pending.
+- Production web UI verification is required at `https://questlife-alpha-orpin.vercel.app` after push/deploy.
+
+Known limitations:
+- Reorder uses tap-to-move fallback rather than true pointer drag.
+- True resize-drag, jiggle animation polish, and native mobile gesture polish remain later.
+- Card size still mostly changes shell density; dedicated Fitness/Learning size-specific renderers remain later.
+- Apple Health integration remains later.

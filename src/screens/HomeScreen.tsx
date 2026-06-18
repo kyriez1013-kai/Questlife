@@ -52,7 +52,8 @@ import { buildObjectiveContextBrief, ObjectiveContextBrief } from '../utils/obje
 import { buildMetacognitionSummary } from '../utils/metacognition';
 import { buildDailyOperatingBrief } from '../utils/dailyOperatingBrief';
 import DashboardLayoutControls from '../components/DashboardLayoutControls';
-import { getDashboardPreference, normalizeDashboardPreferences } from '../utils/dashboardCards';
+import DashboardCardShell from '../components/dashboard/DashboardCardShell';
+import { getDashboardCardsForSurface, getDashboardPreference, normalizeDashboardPreferences, reorderDashboardCard } from '../utils/dashboardCards';
 
 // 晨间状态选项
 const DAILY_STATE_OPTIONS = [
@@ -368,13 +369,14 @@ export default function HomeScreen() {
     createStateCheckIn,
     addContextLogs,
     setSettings,
+    updateDashboardPreferences,
     setDashboardPreset,
     setDashboardCardVisibility,
-    moveDashboardCard,
     setDashboardCardSize,
     resetDashboardLayout,
   } = useStore();
   const [dashboardEditing, setDashboardEditing] = useState(false);
+  const [selectedDashboardCardId, setSelectedDashboardCardId] = useState<string | null>(null);
   const navigation = useNavigation<any>();
   const questTheme = getQuestTheme(data.settings.selectedThemeId);
   const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
@@ -1632,6 +1634,10 @@ export default function HomeScreen() {
     [dashboardPreferences]
   );
   const todayCardVisible = useCallback((cardId: string) => todayCardPref(cardId)?.visible !== false, [todayCardPref]);
+  const todayCardsById = useMemo(
+    () => new Map(getDashboardCardsForSurface('today').map((card) => [card.id, card])),
+    []
+  );
   const todayCardWrapperStyle = useCallback((cardId: string) => {
     const pref = todayCardPref(cardId);
     const size = pref?.size ?? 'medium';
@@ -1640,6 +1646,31 @@ export default function HomeScreen() {
       marginTop: size === 'small' ? questTheme.spacing.sm : size === 'large' ? questTheme.spacing.lg : questTheme.spacing.md,
     } as any;
   }, [questTheme.spacing.lg, questTheme.spacing.md, questTheme.spacing.sm, todayCardPref]);
+  const handleTodayDashboardCardSelect = useCallback((cardId: string) => {
+    if (!dashboardEditing) return;
+    if (selectedDashboardCardId && selectedDashboardCardId !== cardId) {
+      updateDashboardPreferences(reorderDashboardCard(dashboardPreferences, 'today', selectedDashboardCardId, cardId));
+      setSelectedDashboardCardId(null);
+      return;
+    }
+    setSelectedDashboardCardId((current) => (current === cardId ? null : cardId));
+  }, [dashboardEditing, dashboardPreferences, selectedDashboardCardId, updateDashboardPreferences]);
+  const todayDashboardShellProps = useCallback((cardId: string) => {
+    const card = todayCardsById.get(cardId)!;
+    return {
+      surface: 'today' as const,
+      card,
+      preference: todayCardPref(cardId),
+      editMode: dashboardEditing,
+      selected: selectedDashboardCardId === cardId,
+      questTheme,
+      language: lang,
+      style: todayCardWrapperStyle(cardId),
+      onSelect: () => handleTodayDashboardCardSelect(cardId),
+      onRemove: () => setDashboardCardVisibility('today', cardId, false),
+      onResize: (size: any) => setDashboardCardSize('today', cardId, size),
+    };
+  }, [dashboardEditing, handleTodayDashboardCardSelect, lang, questTheme, selectedDashboardCardId, setDashboardCardSize, setDashboardCardVisibility, todayCardPref, todayCardWrapperStyle, todayCardsById]);
 
   return (
     <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
@@ -1653,23 +1684,24 @@ export default function HomeScreen() {
           language={lang}
           preferences={dashboardPreferences}
           editing={dashboardEditing}
-          onEditingChange={setDashboardEditing}
+          onEditingChange={(editing) => {
+            setDashboardEditing(editing);
+            setSelectedDashboardCardId(null);
+          }}
           onPreset={setDashboardPreset}
           onVisibility={(cardId, visible) => setDashboardCardVisibility('today', cardId, visible)}
-          onMove={(cardId, direction) => moveDashboardCard('today', cardId, direction)}
-          onSize={(cardId, size) => setDashboardCardSize('today', cardId, size)}
           onReset={() => resetDashboardLayout('today')}
         />
 
         {/* ═══ ZONE 1: Smart Capture (input always first by default) ═════════ */}
         {todayCardVisible('smart_capture') ? (
-          <View style={todayCardWrapperStyle('smart_capture')}>
+          <DashboardCardShell {...todayDashboardShellProps('smart_capture')}>
             <HomeSmartCapture />
-          </View>
+          </DashboardCardShell>
         ) : null}
 
         {todayCardVisible('daily_operating_brief') ? (
-        <View style={todayCardWrapperStyle('daily_operating_brief')}>
+        <DashboardCardShell {...todayDashboardShellProps('daily_operating_brief')}>
         <QuestCard questTheme={questTheme} variant="hero" style={styles.dailyBriefCard}>
           <View style={styles.dailyBriefHeader}>
             <View style={{ flex: 1 }}>
@@ -1727,11 +1759,11 @@ export default function HomeScreen() {
             <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textSubtle }]}>{t(lang, 'briefNotMedical')}</Text>
           </View>
         </QuestCard>
-        </View>
+        </DashboardCardShell>
         ) : null}
 
         {todayCardVisible('body_context') ? (
-        <View style={todayCardWrapperStyle('body_context')}>
+        <DashboardCardShell {...todayDashboardShellProps('body_context')}>
         <QuestCard questTheme={questTheme} variant="flat" style={styles.contextBridgeCard}>
           <View style={styles.contextBridgeHeader}>
             <View style={{ flex: 1 }}>
@@ -1820,12 +1852,12 @@ export default function HomeScreen() {
             </Text>
           ) : null}
         </QuestCard>
-        </View>
+        </DashboardCardShell>
         ) : null}
 
         {/* ═══ ZONE 2: Now Focus — timer if active, else top-priority action ═ */}
         {todayCardVisible('recent_feedback') ? (
-        <View style={todayCardWrapperStyle('recent_feedback')}>
+        <DashboardCardShell {...todayDashboardShellProps('recent_feedback')}>
         {data.settings.firstQuestCreated && !data.settings.firstSystemWelcomeDismissed ? (
           <View style={[styles.welcomeCard, themedCard]}>
             <View style={{ flex: 1 }}>
@@ -1925,11 +1957,11 @@ export default function HomeScreen() {
             ) : null}
           </View>
         </View>
-        </View>
+        </DashboardCardShell>
         ) : null}
 
         {todayCardVisible('rescue_strip') ? (
-        <View style={todayCardWrapperStyle('rescue_strip')}>
+        <DashboardCardShell {...todayDashboardShellProps('rescue_strip')}>
         <TouchableOpacity
           style={[styles.rescueStrip, {
             backgroundColor: questTheme.colors.surfaceSubtle,
@@ -1953,7 +1985,7 @@ export default function HomeScreen() {
             <Text style={[styles.rescueMiniButtonText, { color: questTheme.colors.warning }]}>{t(lang, 'rescueStartAction')}</Text>
           </View>
         </TouchableOpacity>
-        </View>
+        </DashboardCardShell>
         ) : null}
 
         {/* ═══ ZONE 3: Today data — header always visible, cards collapsible ═ */}
@@ -1967,7 +1999,7 @@ export default function HomeScreen() {
 
         {/* ── Plan card (collapsible) ─────────────────────────────────────── */}
         {todayCardVisible('today_plan') ? (
-        <View style={todayCardWrapperStyle('today_plan')}>
+        <DashboardCardShell {...todayDashboardShellProps('today_plan')}>
         <TouchableOpacity
           onPress={() => setPlanCardOpen((v) => !v)}
           style={[styles.sectionToggleRow, { borderColor: questTheme.colors.divider, backgroundColor: questTheme.colors.surfaceSubtle }]}
@@ -2033,12 +2065,12 @@ export default function HomeScreen() {
           ) : null}
         </View>
         )}
-        </View>
+        </DashboardCardShell>
         ) : null}
 
         {/* ── State card (collapsible) ────────────────────────────────────── */}
         {todayCardVisible('state_checkin') ? (
-        <View style={todayCardWrapperStyle('state_checkin')}>
+        <DashboardCardShell {...todayDashboardShellProps('state_checkin')}>
         <TouchableOpacity
           onPress={() => setStateCardOpen((v) => !v)}
           style={[styles.sectionToggleRow, { borderColor: questTheme.colors.divider, backgroundColor: questTheme.colors.surfaceSubtle }]}
@@ -2072,14 +2104,14 @@ export default function HomeScreen() {
           </View>
         </View>
         )}
-        </View>
+        </DashboardCardShell>
         ) : null}
 
 
 
         {/* 今日记录 */}
         {todayCardVisible('today_records') ? (
-        <View style={todayCardWrapperStyle('today_records')}>
+        <DashboardCardShell {...todayDashboardShellProps('today_records')}>
         <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'todayLogs')}</Text>
         {data.categories.length === 0 ? (
           <TouchableOpacity style={[styles.emptyCta, { borderColor: accent, backgroundColor: questTheme.colors.surface }]} onPress={goToGoals}>
@@ -2156,11 +2188,11 @@ export default function HomeScreen() {
           </TouchableOpacity>
         ) : null}
         {todayLogs.length > 0 && <Text style={[styles.tip, { color: questTheme.colors.textMuted }]}>{t(lang, 'longPressDelete')}</Text>}
-        </View>
+        </DashboardCardShell>
         ) : null}
 
         {todayCardVisible('detailed_data') ? (
-        <View style={todayCardWrapperStyle('detailed_data')}>
+        <DashboardCardShell {...todayDashboardShellProps('detailed_data')}>
         <TouchableOpacity
           onPress={() => setDetailsOpen((v) => !v)}
           style={[styles.sectionToggleRow, { borderColor: questTheme.colors.divider, backgroundColor: questTheme.colors.surfaceSubtle }]}
@@ -2295,7 +2327,7 @@ export default function HomeScreen() {
 
           </View>
         ) : null}
-        </View>
+        </DashboardCardShell>
         ) : null}
       </ScrollView>
 
