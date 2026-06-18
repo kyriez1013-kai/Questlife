@@ -766,7 +766,28 @@ export interface AppData {
     firstQuestCreated?: boolean;
     onboardingRestartRequested?: boolean;
     firstSystemWelcomeDismissed?: boolean;
+    dashboardPreferences?: DashboardPreferences;
   };
+}
+
+export type DashboardCardSize = 'small' | 'medium' | 'large';
+
+export type DashboardSurface = 'today' | 'insights';
+
+export type DashboardPresetId = 'default' | 'learning' | 'fitness' | 'recovery' | 'advanced';
+
+export interface DashboardCardPreference {
+  cardId: string;
+  visible: boolean;
+  order: number;
+  size: DashboardCardSize;
+}
+
+export interface DashboardPreferences {
+  activePreset: DashboardPresetId;
+  todayCards: DashboardCardPreference[];
+  insightsCards: DashboardCardPreference[];
+  updatedAt?: string;
 }
 
 export const DEFAULT_DATA: AppData = {

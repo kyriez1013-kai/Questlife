@@ -4,7 +4,7 @@
 //   2) 在 reducer 内部直接调 persist(newData) 立刻写入 AsyncStorage
 // 这样无论 App 后续是否被 kill / 刷新, 数据都已经落盘.
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
-import { AppData, DEFAULT_DATA, Goal, Skill, Action, Category, UNCATEGORIZED_ID, ScheduleBlock, QuestModule, ModuleSkillLink, ExecutionLog, RescueLog, StateCheckIn, EffortUnit, ContributionLink, RawCapture, ContextLog } from './types';
+import { AppData, DEFAULT_DATA, Goal, Skill, Action, Category, UNCATEGORIZED_ID, ScheduleBlock, QuestModule, ModuleSkillLink, ExecutionLog, RescueLog, StateCheckIn, EffortUnit, ContributionLink, RawCapture, ContextLog, DashboardCardSize, DashboardPresetId, DashboardSurface, DashboardPreferences } from './types';
 import { loadData, persist, uid, today } from './storage';
 import { scheduleSkillReminder, cancelSkillReminder, rescheduleAllReminders } from './notifications';
 import { calculateModuleProgress, calculatePredictionDelta, progressTypeForSkill, skillsForModule } from './progress';
@@ -13,6 +13,7 @@ import { createEffortUnitsFromExecutionLog, generateContributionLinks } from './
 import { DOMAIN_TEMPLATES, createGoalStructureFromTemplate, templateProgressModel } from './domainTemplates';
 import { rebuildDerivedDataFromLogs, repairAppDataIntegrity, validateAppDataIntegrity, CoreFlowIntegrityResult } from './utils/coreFlow';
 import { getLinkedExecutionLogIdsForCapture, removeDerivedForLogs } from './utils/dataResidueAudit';
+import { buildDashboardPreferencesForPreset, normalizeDashboardPreferences } from './utils/dashboardCards';
 
 function metricTypeForAnalytics(skill?: Skill) {
   return skill?.metricConfig?.metricType ?? skill?.progressType;
@@ -83,6 +84,12 @@ interface Ctx {
   updateScheduleBlock: (id: string, patch: Partial<ScheduleBlock>) => void;
   deleteScheduleBlock: (id: string) => void;
   setSettings: (s: Partial<AppData['settings']>) => void;
+  updateDashboardPreferences: (patch: Partial<DashboardPreferences>) => void;
+  setDashboardPreset: (presetId: DashboardPresetId) => void;
+  setDashboardCardVisibility: (surface: DashboardSurface, cardId: string, visible: boolean) => void;
+  moveDashboardCard: (surface: DashboardSurface, cardId: string, direction: 'up' | 'down') => void;
+  setDashboardCardSize: (surface: DashboardSurface, cardId: string, size: DashboardCardSize) => void;
+  resetDashboardLayout: (surface?: DashboardSurface | 'all') => void;
   runIntegrityCheck: () => CoreFlowIntegrityResult;
   repairSafeIntegrityIssues: () => CoreFlowIntegrityResult;
   rebuildDerivedData: () => { effortUnitCount: number; contributionLinkCount: number };
@@ -1109,6 +1116,114 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     mutate((d) => ({ ...d, settings: { ...d.settings, ...s } }));
   }, [mutate]);
 
+  const updateDashboardPreferences: Ctx['updateDashboardPreferences'] = useCallback((patch) => {
+    mutate((d) => {
+      const current = normalizeDashboardPreferences(d.settings.dashboardPreferences);
+      return {
+        ...d,
+        settings: {
+          ...d.settings,
+          dashboardPreferences: {
+            ...current,
+            ...patch,
+            todayCards: patch.todayCards ?? current.todayCards,
+            insightsCards: patch.insightsCards ?? current.insightsCards,
+            updatedAt: new Date().toISOString(),
+          },
+        },
+      };
+    });
+  }, [mutate]);
+
+  const setDashboardPreset: Ctx['setDashboardPreset'] = useCallback((presetId) => {
+    mutate((d) => ({
+      ...d,
+      settings: {
+        ...d.settings,
+        dashboardPreferences: buildDashboardPreferencesForPreset(presetId),
+      },
+    }));
+  }, [mutate]);
+
+  const setDashboardCardVisibility: Ctx['setDashboardCardVisibility'] = useCallback((surface, cardId, visible) => {
+    mutate((d) => {
+      const prefs = normalizeDashboardPreferences(d.settings.dashboardPreferences);
+      const key = surface === 'today' ? 'todayCards' : 'insightsCards';
+      return {
+        ...d,
+        settings: {
+          ...d.settings,
+          dashboardPreferences: {
+            ...prefs,
+            [key]: prefs[key].map((card) => (card.cardId === cardId ? { ...card, visible } : card)),
+            updatedAt: new Date().toISOString(),
+          },
+        },
+      };
+    });
+  }, [mutate]);
+
+  const moveDashboardCard: Ctx['moveDashboardCard'] = useCallback((surface, cardId, direction) => {
+    mutate((d) => {
+      const prefs = normalizeDashboardPreferences(d.settings.dashboardPreferences);
+      const key = surface === 'today' ? 'todayCards' : 'insightsCards';
+      const cards = [...prefs[key]].sort((a, b) => a.order - b.order);
+      const index = cards.findIndex((card) => card.cardId === cardId);
+      const swapIndex = direction === 'up' ? index - 1 : index + 1;
+      if (index < 0 || swapIndex < 0 || swapIndex >= cards.length) return d;
+      const currentOrder = cards[index].order;
+      cards[index] = { ...cards[index], order: cards[swapIndex].order };
+      cards[swapIndex] = { ...cards[swapIndex], order: currentOrder };
+      return {
+        ...d,
+        settings: {
+          ...d.settings,
+          dashboardPreferences: {
+            ...prefs,
+            [key]: cards.sort((a, b) => a.order - b.order),
+            updatedAt: new Date().toISOString(),
+          },
+        },
+      };
+    });
+  }, [mutate]);
+
+  const setDashboardCardSize: Ctx['setDashboardCardSize'] = useCallback((surface, cardId, size) => {
+    mutate((d) => {
+      const prefs = normalizeDashboardPreferences(d.settings.dashboardPreferences);
+      const key = surface === 'today' ? 'todayCards' : 'insightsCards';
+      return {
+        ...d,
+        settings: {
+          ...d.settings,
+          dashboardPreferences: {
+            ...prefs,
+            [key]: prefs[key].map((card) => (card.cardId === cardId ? { ...card, size } : card)),
+            updatedAt: new Date().toISOString(),
+          },
+        },
+      };
+    });
+  }, [mutate]);
+
+  const resetDashboardLayout: Ctx['resetDashboardLayout'] = useCallback((surface = 'all') => {
+    mutate((d) => {
+      const current = normalizeDashboardPreferences(d.settings.dashboardPreferences);
+      const defaults = buildDashboardPreferencesForPreset(current.activePreset);
+      return {
+        ...d,
+        settings: {
+          ...d.settings,
+          dashboardPreferences: surface === 'today'
+            ? { ...current, todayCards: defaults.todayCards, updatedAt: new Date().toISOString() }
+            : surface === 'insights'
+              ? { ...current, insightsCards: defaults.insightsCards, updatedAt: new Date().toISOString() }
+              : defaults,
+        },
+      };
+    });
+  }, [mutate]);
+
   const runIntegrityCheck: Ctx['runIntegrityCheck'] = useCallback(() => {
     const result = validateAppDataIntegrity(data);
     trackEvent('integrity_check_run', {
@@ -1263,6 +1378,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         updateScheduleBlock,
         deleteScheduleBlock,
         setSettings,
+        updateDashboardPreferences,
+        setDashboardPreset,
+        setDashboardCardVisibility,
+        moveDashboardCard,
+        setDashboardCardSize,
+        resetDashboardLayout,
         runIntegrityCheck,
         repairSafeIntegrityIssues,
         rebuildDerivedData,

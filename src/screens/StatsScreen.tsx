@@ -26,6 +26,8 @@ import { InsightCardsBlock } from './StatsScreenInsights';
 import { displayEntityName } from '../utils/displayName';
 import { buildMetacognitionSummary, getLiveExecutionLogs, MetacognitionSummary } from '../utils/metacognition';
 import { buildObjectiveContextBrief, ObjectiveContextBrief } from '../utils/objectiveContextBrief';
+import DashboardLayoutControls from '../components/DashboardLayoutControls';
+import { getDashboardPreference, normalizeDashboardPreferences } from '../utils/dashboardCards';
 
 const WEEKDAY_KEYS = ['weekdaySun', 'weekdayMon', 'weekdayTue', 'weekdayWed', 'weekdayThu', 'weekdayFri', 'weekdaySat'];
 
@@ -33,8 +35,16 @@ const fmtDate = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 export default function StatsScreen() {
-  const { data } = useStore();
+  const {
+    data,
+    setDashboardPreset,
+    setDashboardCardVisibility,
+    moveDashboardCard,
+    setDashboardCardSize,
+    resetDashboardLayout,
+  } = useStore();
   const [advancedExpanded, setAdvancedExpanded] = useState(false);
+  const [dashboardEditing, setDashboardEditing] = useState(false);
   const lang = getLanguage(data.settings.language);
   const questTheme = getQuestTheme(data.settings.selectedThemeId);
   const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
@@ -396,6 +406,20 @@ export default function StatsScreen() {
     : mainInsight.confidence === 'medium'
       ? questTheme.colors.warning
       : questTheme.colors.textSubtle;
+  const dashboardPreferences = useMemo(
+    () => normalizeDashboardPreferences(data.settings.dashboardPreferences),
+    [data.settings.dashboardPreferences]
+  );
+  const insightsCardPref = (cardId: string) => getDashboardPreference(dashboardPreferences, 'insights', cardId);
+  const insightsCardVisible = (cardId: string) => insightsCardPref(cardId)?.visible !== false;
+  const insightsCardWrapperStyle = (cardId: string) => {
+    const pref = insightsCardPref(cardId);
+    const size = pref?.size ?? 'medium';
+    return {
+      order: pref?.order ?? 500,
+      marginTop: size === 'small' ? questTheme.spacing.sm : size === 'large' ? questTheme.spacing.lg : questTheme.spacing.md,
+    } as any;
+  };
 
   return (
     <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
@@ -416,6 +440,22 @@ export default function StatsScreen() {
           {t(lang, 'dashboardSummary')} · {logs.length} {t(lang, 'logsToday')} · {activeDays} {t(lang, 'activeDays')} · {t(lang, 'last7Days')}
         </Text>
 
+        <DashboardLayoutControls
+          surface="insights"
+          questTheme={questTheme}
+          language={lang}
+          preferences={dashboardPreferences}
+          editing={dashboardEditing}
+          onEditingChange={setDashboardEditing}
+          onPreset={setDashboardPreset}
+          onVisibility={(cardId, visible) => setDashboardCardVisibility('insights', cardId, visible)}
+          onMove={(cardId, direction) => moveDashboardCard('insights', cardId, direction)}
+          onSize={(cardId, size) => setDashboardCardSize('insights', cardId, size)}
+          onReset={() => resetDashboardLayout('insights')}
+        />
+
+        {insightsCardVisible('main_judgement') ? (
+        <View style={insightsCardWrapperStyle('main_judgement')}>
         <QuestCard
           questTheme={questTheme}
           variant="hero"
@@ -444,7 +484,11 @@ export default function StatsScreen() {
             <Text style={[styles.nextActionText, { color: questTheme.colors.primary }]}>{applyValues(t(lang, mainInsight.nextKey), mainInsight.nextValues)}</Text>
           </View>
         </QuestCard>
+        </View>
+        ) : null}
 
+        {insightsCardVisible('key_evidence') ? (
+        <View style={insightsCardWrapperStyle('key_evidence')}>
         <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'keyEvidence')}</Text>
         {hasKeyEvidence ? (
           <>
@@ -459,7 +503,11 @@ export default function StatsScreen() {
             <Text style={[styles.insightLine, { color: questTheme.colors.textMuted }]}>{t(lang, 'notEnoughForDetailedInsights')}</Text>
           </QuestCard>
         )}
+        </View>
+        ) : null}
 
+        {insightsCardVisible('advanced_signals') ? (
+        <View style={insightsCardWrapperStyle('advanced_signals')}>
         <TouchableOpacity
           onPress={() => setAdvancedExpanded((value) => !value)}
           activeOpacity={0.75}
@@ -647,6 +695,8 @@ export default function StatsScreen() {
           <Text style={[styles.loopNext, { color: questTheme.colors.primary }]}>{t(lang, 'next')}: {appLoop.nextBestAction || t(lang, 'keepLoggingForInsights')}</Text>
         </QuestCard>
           </>
+        ) : null}
+        </View>
         ) : null}
       </ScrollView>
     </SafeAreaView>

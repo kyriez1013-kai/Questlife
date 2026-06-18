@@ -1699,3 +1699,39 @@ Known limitations:
 - Advanced Analysis is collapsed by default, but the underlying sections still need future visual polish.
 - Data-poor users still need more sleep/state/action records before Insights can become specific.
 - A destructive fresh-data production reset was not performed; data-poor handling was kept to the existing non-destructive fallback path.
+
+## Control Center v1: Personalizable Dashboard Cards
+
+Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+
+Files changed:
+- `src/types.ts`
+- `src/store.tsx`
+- `src/utils/dashboardCards.ts`
+- `src/components/DashboardLayoutControls.tsx`
+- `src/screens/HomeScreen.tsx`
+- `src/screens/StatsScreen.tsx`
+- `src/i18n.ts`
+- `PROJECT_STATUS.md`
+
+What changed:
+- Added optional `dashboardPreferences` under settings for safe, non-destructive dashboard layout personalization.
+- Added dashboard card registry and presets for Default, Learning, Fitness, Recovery, and Advanced.
+- Today and Insights now expose a Control Center edit surface for configurable cards where implemented.
+- Users can hide/show cards, move cards up/down, choose S/M/L size, apply presets, and reset layout.
+- Today cards wired in v1: smart capture, Daily Operating Brief, body/context, recent feedback / command center, rescue strip, Today plan, state check-in, Today records, and detailed data.
+- Insights cards wired in v1: main judgement, key evidence, and advanced analysis container while preserving the cleaned Insights IA.
+- This creates a platform/control-center layer that can support future vertical dashboards such as Fitness Mode without replacing QuestLife Core.
+- No drag-and-drop, no native Apple Health, no data migration, no LLM, and no B-3.3/B4/context/metacognition rewrite were added.
+
+Validation:
+- `npx tsc --noEmit`: passed locally.
+- `npm run build`: passed locally.
+- Production web UI verification is required at `https://questlife-alpha-orpin.vercel.app` after push/deploy.
+
+Known limitations:
+- Card sizes are v1 density/layout hints; dedicated size-specific renderers can be improved later.
+- Insights v1 controls wrap the main IA groups instead of every deep sub-card individually.
+- Drag-and-drop remains later.
+- Dedicated Fitness Mode cards and Apple Health native/import remain later.
+- Cloud account sync remains later.
