@@ -53,7 +53,7 @@ import { buildMetacognitionSummary } from '../utils/metacognition';
 import { buildDailyOperatingBrief } from '../utils/dailyOperatingBrief';
 import DashboardLayoutControls from '../components/DashboardLayoutControls';
 import DashboardCardShell from '../components/dashboard/DashboardCardShell';
-import { getDashboardCardsForSurface, getDashboardPreference, normalizeDashboardPreferences, reorderDashboardCard } from '../utils/dashboardCards';
+import { addDashboardCardAtEnd, getDashboardCardsForSurface, getDashboardPreference, normalizeDashboardPreferences, reorderDashboardCard } from '../utils/dashboardCards';
 
 // 晨间状态选项
 const DAILY_STATE_OPTIONS = [
@@ -377,6 +377,8 @@ export default function HomeScreen() {
   } = useStore();
   const [dashboardEditing, setDashboardEditing] = useState(false);
   const [selectedDashboardCardId, setSelectedDashboardCardId] = useState<string | null>(null);
+  const [draggingDashboardCardId, setDraggingDashboardCardId] = useState<string | null>(null);
+  const [dragTargetDashboardCardId, setDragTargetDashboardCardId] = useState<string | null>(null);
   const navigation = useNavigation<any>();
   const questTheme = getQuestTheme(data.settings.selectedThemeId);
   const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
@@ -1655,6 +1657,13 @@ export default function HomeScreen() {
     }
     setSelectedDashboardCardId((current) => (current === cardId ? null : cardId));
   }, [dashboardEditing, dashboardPreferences, selectedDashboardCardId, updateDashboardPreferences]);
+  const finishTodayDashboardDrag = useCallback(() => {
+    if (draggingDashboardCardId && dragTargetDashboardCardId && draggingDashboardCardId !== dragTargetDashboardCardId) {
+      updateDashboardPreferences(reorderDashboardCard(dashboardPreferences, 'today', draggingDashboardCardId, dragTargetDashboardCardId));
+    }
+    setDraggingDashboardCardId(null);
+    setDragTargetDashboardCardId(null);
+  }, [dashboardPreferences, dragTargetDashboardCardId, draggingDashboardCardId, updateDashboardPreferences]);
   const todayDashboardShellProps = useCallback((cardId: string) => {
     const card = todayCardsById.get(cardId)!;
     return {
@@ -1662,15 +1671,28 @@ export default function HomeScreen() {
       card,
       preference: todayCardPref(cardId),
       editMode: dashboardEditing,
-      selected: selectedDashboardCardId === cardId,
+      selected: selectedDashboardCardId === cardId || draggingDashboardCardId === cardId || dragTargetDashboardCardId === cardId,
       questTheme,
       language: lang,
       style: todayCardWrapperStyle(cardId),
       onSelect: () => handleTodayDashboardCardSelect(cardId),
+      onEnterEdit: () => {
+        setDashboardEditing(true);
+        setSelectedDashboardCardId(cardId);
+      },
       onRemove: () => setDashboardCardVisibility('today', cardId, false),
       onResize: (size: any) => setDashboardCardSize('today', cardId, size),
+      onDragStart: () => {
+        setDraggingDashboardCardId(cardId);
+        setDragTargetDashboardCardId(cardId);
+      },
+      onDragEnter: () => {
+        if (draggingDashboardCardId && draggingDashboardCardId !== cardId) setDragTargetDashboardCardId(cardId);
+      },
+      onDragEnd: finishTodayDashboardDrag,
     };
-  }, [dashboardEditing, handleTodayDashboardCardSelect, lang, questTheme, selectedDashboardCardId, setDashboardCardSize, setDashboardCardVisibility, todayCardPref, todayCardWrapperStyle, todayCardsById]);
+  }, [dashboardEditing, dragTargetDashboardCardId, draggingDashboardCardId, finishTodayDashboardDrag, handleTodayDashboardCardSelect, lang, questTheme, selectedDashboardCardId, setDashboardCardSize, setDashboardCardVisibility, todayCardPref, todayCardWrapperStyle, todayCardsById]);
+  const TileGrid = View as any;
 
   return (
     <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
@@ -1690,8 +1712,11 @@ export default function HomeScreen() {
           }}
           onPreset={setDashboardPreset}
           onVisibility={(cardId, visible) => setDashboardCardVisibility('today', cardId, visible)}
+          onAddCard={(cardId) => updateDashboardPreferences(addDashboardCardAtEnd(dashboardPreferences, 'today', cardId))}
           onReset={() => resetDashboardLayout('today')}
         />
+
+        <TileGrid className="dashboard-tile-grid today-dashboard-tile-grid" style={styles.dashboardTileGrid}>
 
         {/* ═══ ZONE 1: Smart Capture (input always first by default) ═════════ */}
         {todayCardVisible('smart_capture') ? (
@@ -1989,13 +2014,15 @@ export default function HomeScreen() {
         ) : null}
 
         {/* ═══ ZONE 3: Today data — header always visible, cards collapsible ═ */}
-        <Text style={[styles.h1, { color: questTheme.colors.text, marginTop: questTheme.spacing.xl }]}>{t(lang, 'today')}</Text>
-        <Text style={[styles.sub, { color: questTheme.colors.textMuted }]}>
-          {todayStr} · {t(lang, 'todayInvested')} {todayMinutes} {t(lang, 'minutes')} · {todayLogs.length} {t(lang, 'logsToday')}
-        </Text>
-        <Text style={[styles.sub, { color: questTheme.colors.textMuted }]}>
-          {t(lang, 'currentState')}: {stateSummaryLabel}{stateSummaryTime ? ` · ${stateSummaryTime}` : ''} · {t(lang, currentTimeBlock)}
-        </Text>
+        <View style={styles.dashboardFullRow}>
+          <Text style={[styles.h1, { color: questTheme.colors.text, marginTop: questTheme.spacing.xl }]}>{t(lang, 'today')}</Text>
+          <Text style={[styles.sub, { color: questTheme.colors.textMuted }]}> 
+            {todayStr} · {t(lang, 'todayInvested')} {todayMinutes} {t(lang, 'minutes')} · {todayLogs.length} {t(lang, 'logsToday')}
+          </Text>
+          <Text style={[styles.sub, { color: questTheme.colors.textMuted }]}> 
+            {t(lang, 'currentState')}: {stateSummaryLabel}{stateSummaryTime ? ` · ${stateSummaryTime}` : ''} · {t(lang, currentTimeBlock)}
+          </Text>
+        </View>
 
         {/* ── Plan card (collapsible) ─────────────────────────────────────── */}
         {todayCardVisible('today_plan') ? (
@@ -2329,6 +2356,7 @@ export default function HomeScreen() {
         ) : null}
         </DashboardCardShell>
         ) : null}
+        </TileGrid>
       </ScrollView>
 
       {/* 顶部横幅: 成就 / Streak — pointerEvents none 不挡交互 */}
@@ -3479,6 +3507,8 @@ const styles = StyleSheet.create({
   },
   stateEmoji: { fontSize: 26 },
   stateLabel: { color: theme.textDim, fontSize: 10, fontWeight: '600' },
+  dashboardTileGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, alignItems: 'stretch', marginTop: 10 },
+  dashboardFullRow: { width: '100%' },
 
   bigBtn: { marginTop: 16, paddingVertical: 18, borderRadius: theme.radius.lg, alignItems: 'center', ...theme.shadow },
   bigBtnText: { color: '#fff', fontSize: 18, fontWeight: '700' },

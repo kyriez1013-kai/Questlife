@@ -115,3 +115,34 @@
 .questlife-theme-dark .ql-subtle {
   color: var(--ql-text-subtle, #94a3b8) !important;
 }
+
+.dashboard-tile-grid {
+  align-items: stretch;
+}
+
+.dashboard-tile {
+  flex-basis: 100% !important;
+  max-width: 100% !important;
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+
+.dashboard-tile-editing .dashboard-card-shell {
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12) !important;
+}
+
+.dashboard-tile-selected {
+  transform: translateY(-2px) scale(0.995);
+}
+
+@media (min-width: 780px) {
+  .dashboard-tile-grid .dashboard-tile-small,
+  .dashboard-tile-grid .dashboard-tile-medium {
+    flex-basis: calc(50% - 8px) !important;
+    max-width: calc(50% - 8px) !important;
+  }
+
+  .dashboard-tile-grid .dashboard-tile-large {
+    flex-basis: 100% !important;
+    max-width: 100% !important;
+  }
+}

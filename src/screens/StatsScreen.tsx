@@ -28,7 +28,7 @@ import { buildMetacognitionSummary, getLiveExecutionLogs, MetacognitionSummary }
 import { buildObjectiveContextBrief, ObjectiveContextBrief } from '../utils/objectiveContextBrief';
 import DashboardLayoutControls from '../components/DashboardLayoutControls';
 import DashboardCardShell from '../components/dashboard/DashboardCardShell';
-import { getDashboardCardsForSurface, getDashboardPreference, normalizeDashboardPreferences, reorderDashboardCard } from '../utils/dashboardCards';
+import { addDashboardCardAtEnd, getDashboardCardsForSurface, getDashboardPreference, normalizeDashboardPreferences, reorderDashboardCard } from '../utils/dashboardCards';
 
 const WEEKDAY_KEYS = ['weekdaySun', 'weekdayMon', 'weekdayTue', 'weekdayWed', 'weekdayThu', 'weekdayFri', 'weekdaySat'];
 
@@ -47,6 +47,8 @@ export default function StatsScreen() {
   const [advancedExpanded, setAdvancedExpanded] = useState(false);
   const [dashboardEditing, setDashboardEditing] = useState(false);
   const [selectedDashboardCardId, setSelectedDashboardCardId] = useState<string | null>(null);
+  const [draggingDashboardCardId, setDraggingDashboardCardId] = useState<string | null>(null);
+  const [dragTargetDashboardCardId, setDragTargetDashboardCardId] = useState<string | null>(null);
   const lang = getLanguage(data.settings.language);
   const questTheme = getQuestTheme(data.settings.selectedThemeId);
   const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
@@ -435,19 +437,39 @@ export default function StatsScreen() {
     }
     setSelectedDashboardCardId((current) => (current === cardId ? null : cardId));
   };
+  const finishInsightsDashboardDrag = () => {
+    if (draggingDashboardCardId && dragTargetDashboardCardId && draggingDashboardCardId !== dragTargetDashboardCardId) {
+      updateDashboardPreferences(reorderDashboardCard(dashboardPreferences, 'insights', draggingDashboardCardId, dragTargetDashboardCardId));
+    }
+    setDraggingDashboardCardId(null);
+    setDragTargetDashboardCardId(null);
+  };
   const insightsDashboardShellProps = (cardId: string) => ({
     surface: 'insights' as const,
     card: insightsCardsById.get(cardId)!,
     preference: insightsCardPref(cardId),
     editMode: dashboardEditing,
-    selected: selectedDashboardCardId === cardId,
+    selected: selectedDashboardCardId === cardId || draggingDashboardCardId === cardId || dragTargetDashboardCardId === cardId,
     questTheme,
     language: lang,
     style: insightsCardWrapperStyle(cardId),
     onSelect: () => handleInsightsDashboardCardSelect(cardId),
+    onEnterEdit: () => {
+      setDashboardEditing(true);
+      setSelectedDashboardCardId(cardId);
+    },
     onRemove: () => setDashboardCardVisibility('insights', cardId, false),
     onResize: (size: any) => setDashboardCardSize('insights', cardId, size),
+    onDragStart: () => {
+      setDraggingDashboardCardId(cardId);
+      setDragTargetDashboardCardId(cardId);
+    },
+    onDragEnter: () => {
+      if (draggingDashboardCardId && draggingDashboardCardId !== cardId) setDragTargetDashboardCardId(cardId);
+    },
+    onDragEnd: finishInsightsDashboardDrag,
   });
+  const TileGrid = View as any;
 
   return (
     <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
@@ -480,8 +502,11 @@ export default function StatsScreen() {
           }}
           onPreset={setDashboardPreset}
           onVisibility={(cardId, visible) => setDashboardCardVisibility('insights', cardId, visible)}
+          onAddCard={(cardId) => updateDashboardPreferences(addDashboardCardAtEnd(dashboardPreferences, 'insights', cardId))}
           onReset={() => resetDashboardLayout('insights')}
         />
+
+        <TileGrid className="dashboard-tile-grid insights-dashboard-tile-grid" style={styles.dashboardTileGrid}>
 
         {insightsCardVisible('main_judgement') ? (
         <DashboardCardShell {...insightsDashboardShellProps('main_judgement')}>
@@ -515,7 +540,6 @@ export default function StatsScreen() {
         </QuestCard>
         </DashboardCardShell>
         ) : null}
-
         {insightsCardVisible('key_evidence') ? (
         <DashboardCardShell {...insightsDashboardShellProps('key_evidence')}>
         <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'keyEvidence')}</Text>
@@ -727,6 +751,7 @@ export default function StatsScreen() {
         ) : null}
         </DashboardCardShell>
         ) : null}
+        </TileGrid>
       </ScrollView>
     </SafeAreaView>
   );
@@ -1157,6 +1182,7 @@ const styles = StyleSheet.create({
   sub: { color: theme.textDim, marginTop: 4 },
   dashboardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
   dashboardMeta: { fontSize: 12, fontWeight: '800', marginTop: 8, lineHeight: 18 },
+  dashboardTileGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, alignItems: 'stretch', marginTop: 10 },
   advancedToggle: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderRadius: 16, padding: 14, marginTop: 18 },
   advancedTitle: { fontSize: 16, fontWeight: '900', lineHeight: 22 },
   advancedSubtitle: { fontSize: 12, fontWeight: '800', lineHeight: 18, marginTop: 2 },

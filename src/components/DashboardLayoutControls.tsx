@@ -22,6 +22,7 @@ type Props = {
   onEditingChange: (editing: boolean) => void;
   onPreset: (preset: DashboardPresetId) => void;
   onVisibility: (cardId: string, visible: boolean) => void;
+  onAddCard?: (cardId: string) => void;
   onReset: () => void;
 };
 
@@ -34,11 +35,13 @@ export default function DashboardLayoutControls({
   onEditingChange,
   onPreset,
   onVisibility,
+  onAddCard,
   onReset,
 }: Props) {
   const q = questTheme ?? getQuestTheme();
   const lang = getLanguage(language);
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const [presetOpen, setPresetOpen] = useState(false);
   const normalized = normalizeDashboardPreferences(preferences);
   const prefs = surface === 'today' ? normalized.todayCards : normalized.insightsCards;
   const prefById = useMemo(() => new Map(prefs.map((pref) => [pref.cardId, pref])), [prefs]);
@@ -46,12 +49,12 @@ export default function DashboardLayoutControls({
   const hiddenCards = cards.filter((card) => prefById.get(card.id)?.visible === false);
 
   return (
-    <QuestCard questTheme={q} variant="flat" style={styles.shell} className="control-center dashboard-controls">
+    <QuestCard questTheme={q} variant="flat" style={[styles.shell, editing ? styles.shellEditing : styles.shellNormal]} className="control-center dashboard-controls dashboard-edit-bar">
       <View style={styles.topRow}>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.kicker, { color: q.colors.textMuted }]}>{t(lang, 'controlCenter')}</Text>
+          <Text style={[styles.kicker, { color: q.colors.textMuted }]}>{t(lang, editing ? 'editingDashboard' : 'tileGrid')}</Text>
           <Text style={[styles.title, { color: q.colors.text }]}>{t(lang, surface === 'today' ? 'todayCards' : 'insightsCards')}</Text>
-          <Text style={[styles.subtitle, { color: q.colors.textMuted }]}>{t(lang, editing ? 'editModeHint' : 'personalizeDashboard')}</Text>
+          <Text style={[styles.subtitle, { color: q.colors.textMuted }]}>{t(lang, editing ? 'compactEditHint' : 'longPressToEdit')}</Text>
         </View>
         <QuestButton
           questTheme={q}
@@ -60,6 +63,7 @@ export default function DashboardLayoutControls({
           label={editing ? t(lang, 'exitEditMode') : t(lang, 'enterEditMode')}
           onPress={() => {
             setGalleryOpen(false);
+            setPresetOpen(false);
             onEditingChange(!editing);
           }}
         />
@@ -68,20 +72,7 @@ export default function DashboardLayoutControls({
       {editing ? (
         <>
           <View style={[styles.hintBox, { backgroundColor: q.colors.surfaceSoft, borderColor: q.colors.border }]}> 
-            <Text style={[styles.hintText, { color: q.colors.textMuted }]}>{t(lang, 'dragToReorder')} · {t(lang, 'tapToResize')}</Text>
-          </View>
-
-          <Text style={[styles.sectionTitle, { color: q.colors.text }]}>{t(lang, 'applyDashboardPreset')}</Text>
-          <View style={styles.wrap}>
-            {DASHBOARD_PRESETS.map((preset) => (
-              <QuestPill
-                key={preset.id}
-                questTheme={q}
-                active={normalized.activePreset === preset.id}
-                label={t(lang, preset.titleKey)}
-                onPress={() => onPreset(preset.id)}
-              />
-            ))}
+            <Text style={[styles.hintText, { color: q.colors.textMuted }]}>{t(lang, 'dragCardsToReorder')} · {t(lang, 'resizeFromCorner')}</Text>
           </View>
 
           <View style={styles.actionsRow}>
@@ -92,17 +83,38 @@ export default function DashboardLayoutControls({
               label={t(lang, 'addCardGallery')}
               onPress={() => setGalleryOpen((value) => !value)}
             />
+            <QuestButton
+              questTheme={q}
+              variant="ghost"
+              icon="settings"
+              label={t(lang, 'presetMenu')}
+              onPress={() => setPresetOpen((value) => !value)}
+            />
             <QuestButton questTheme={q} variant="ghost" icon="settings" label={t(lang, 'resetLayout')} onPress={onReset} />
           </View>
 
+          {presetOpen ? (
+            <View style={styles.wrap}>
+              {DASHBOARD_PRESETS.map((preset) => (
+                <QuestPill
+                  key={preset.id}
+                  questTheme={q}
+                  active={normalized.activePreset === preset.id}
+                  label={t(lang, preset.titleKey)}
+                  onPress={() => onPreset(preset.id)}
+                />
+              ))}
+            </View>
+          ) : null}
+
           {galleryOpen ? (
             <View style={styles.galleryWrap}>
-              <Text style={[styles.sectionTitle, { color: q.colors.text }]}>{t(lang, 'hiddenCardGallery')}</Text>
+              <Text style={[styles.sectionTitle, { color: q.colors.text }]}>{t(lang, 'cardGallery')}</Text>
               <AddCardGallery
                 hiddenCards={hiddenCards}
                 questTheme={q}
                 language={lang}
-                onAddCard={(cardId) => onVisibility(cardId, true)}
+                onAddCard={(cardId) => (onAddCard ? onAddCard(cardId) : onVisibility(cardId, true))}
               />
             </View>
           ) : null}
@@ -113,7 +125,9 @@ export default function DashboardLayoutControls({
 }
 
 const styles = StyleSheet.create({
-  shell: { marginTop: 12, gap: 12 },
+  shell: { marginTop: 12, gap: 10 },
+  shellNormal: { paddingVertical: 10 },
+  shellEditing: { paddingVertical: 12 },
   topRow: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
   kicker: { fontSize: 11, fontWeight: '900', textTransform: 'uppercase' },
   title: { fontSize: 17, fontWeight: '900', lineHeight: 23 },

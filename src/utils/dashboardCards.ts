@@ -203,3 +203,20 @@ export function reorderDashboardCard(
     updatedAt: new Date().toISOString(),
   };
 }
+
+export function addDashboardCardAtEnd(
+  preferences: DashboardPreferences | undefined,
+  surface: DashboardSurface,
+  cardId: string
+): DashboardPreferences {
+  const normalized = normalizeDashboardPreferences(preferences);
+  const key = surface === 'today' ? 'todayCards' : 'insightsCards';
+  const maxOrder = Math.max(0, ...normalized[key].map((item) => item.order || 0));
+  return {
+    ...normalized,
+    [key]: normalized[key].map((item) => (
+      item.cardId === cardId ? { ...item, visible: true, order: maxOrder + 1 } : item
+    )),
+    updatedAt: new Date().toISOString(),
+  };
+}

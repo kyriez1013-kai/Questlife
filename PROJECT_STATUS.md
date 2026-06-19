@@ -1779,3 +1779,42 @@ Known limitations:
 - True resize-drag, jiggle animation polish, and native mobile gesture polish remain later.
 - Card size still mostly changes shell density; dedicated Fitness/Learning size-specific renderers remain later.
 - Apple Health integration remains later.
+
+## Control Center v3: Long-Press Editable Tile Grid
+
+Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+
+Files changed:
+- `src/components/DashboardLayoutControls.tsx`
+- `src/components/dashboard/DashboardCardShell.tsx`
+- `src/components/dashboard/AddCardGallery.tsx`
+- `src/screens/HomeScreen.tsx`
+- `src/screens/StatsScreen.tsx`
+- `src/styles/theme-overrides.css`
+- `src/utils/dashboardCards.ts`
+- `src/i18n.ts`
+- `PROJECT_STATUS.md`
+
+What changed:
+- Upgraded Control Center edit mode from v2 tap-to-move controls into a more Apple-like tile editing experience.
+- Normal mode keeps the dashboard clean with only a compact edit affordance and no admin rows or large management block.
+- Cards support long-press entry into edit mode through the shared dashboard card shell.
+- Edit mode keeps cards in place as editable tiles with subtle elevated/outlined state, remove badges, and bottom-right resize grips.
+- Web edit mode supports lightweight pointer drag reorder: press/drag over another tile and release to move the dragged card before the target.
+- Touch/mobile retains the safe tap fallback while keeping it visually secondary.
+- Resize now uses a corner grip and changes tile footprint/density instead of S/M/L button rows.
+- Add Card gallery is an inline grouped card picker with suggested size badges and add buttons.
+- Presets are secondary behind a compact preset menu and remain tied to the existing v1/v2 preference system.
+- Dashboard registry, preferences, presets, and persistence were preserved; no data migration was added.
+- No Apple Health changes and no B-3.3/B4/context/metacognition flow changes were made.
+
+Validation:
+- `npx tsc --noEmit`: passed locally.
+- `npm run build`: pending.
+- Production web UI verification is required at `https://questlife-alpha-orpin.vercel.app` after push/deploy.
+
+Known limitations:
+- Native mobile drag polish remains later.
+- Freeform resize-drag and jiggle animation remain later.
+- Card-specific small/medium/large content renderers remain limited; most cards currently use tile footprint/density changes.
+- Apple Health integration remains later.
