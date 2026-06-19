@@ -1738,7 +1738,7 @@ Known limitations:
 
 ## Control Center v2: Apple-like Editable Grid
 
-Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+Status: Production manually validated. Commit `9093fdb` accepted.
 
 Files changed:
 - `src/components/DashboardLayoutControls.tsx`
@@ -1763,8 +1763,16 @@ What changed:
 
 Validation:
 - `npx tsc --noEmit`: passed locally.
-- `npm run build`: pending.
-- Production web UI verification is required at `https://questlife-alpha-orpin.vercel.app` after push/deploy.
+- `npm run build`: passed locally.
+- Production web UI manual verification: passed at `https://questlife-alpha-orpin.vercel.app`.
+- Verified Today normal mode no longer shows always-visible `上移 / 下移 / S / M / L / 隐藏` admin rows.
+- Verified Today edit mode shows in-place card controls, including remove badges and bottom-right resize handles.
+- Verified resize cycles card size and persists after refresh.
+- Verified hide card and Add Card gallery restore flow work.
+- Verified preset application and reset layout work without returning to the old admin rows.
+- Verified tap-to-move reorder fallback enters selected-card state and completes the move interaction without old controls.
+- Verified Insights normal mode keeps main judgement and key evidence visible, and Insights edit mode uses the same in-place card controls.
+- Verified Today and Insights still load in production after the change.
 
 Known limitations:
 - Reorder uses tap-to-move fallback rather than true pointer drag.
