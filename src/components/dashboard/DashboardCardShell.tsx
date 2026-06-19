@@ -74,6 +74,14 @@ export default function DashboardCardShell({
     event?.preventDefault?.();
     onDropCard?.(event?.dataTransfer?.getData?.('text/plain'));
   };
+  const getDashboardCardIdFromPoint = (clientX: number, clientY: number) => {
+    const tile = document.elementFromPoint(clientX, clientY)?.closest?.('.dashboard-tile') as HTMLElement | null;
+    const cardClass = Array.from(tile?.classList ?? []).find((className) => (
+      className.startsWith('dashboard-tile-') &&
+      !['dashboard-tile-small', 'dashboard-tile-medium', 'dashboard-tile-large', 'dashboard-tile-editing', 'dashboard-tile-selected'].includes(className)
+    ));
+    return cardClass?.replace('dashboard-tile-', '');
+  };
   const handlePointerDragStart = (event: any) => {
     if (!editMode) return;
     event?.preventDefault?.();
@@ -84,17 +92,11 @@ export default function DashboardCardShell({
     currentTarget?.setPointerCapture?.(pointerId);
 
     const handlePointerMove = (moveEvent: PointerEvent) => {
-      const tile = document
-        .elementFromPoint(moveEvent.clientX, moveEvent.clientY)
-        ?.closest?.('[data-dashboard-card-id]') as HTMLElement | null;
-      const targetId = tile?.dataset?.dashboardCardId;
+      const targetId = getDashboardCardIdFromPoint(moveEvent.clientX, moveEvent.clientY);
       if (targetId && targetId !== card.id) onDragEnter?.();
     };
     const handlePointerUp = (upEvent: PointerEvent) => {
-      const tile = document
-        .elementFromPoint(upEvent.clientX, upEvent.clientY)
-        ?.closest?.('[data-dashboard-card-id]') as HTMLElement | null;
-      const targetId = tile?.dataset?.dashboardCardId;
+      const targetId = getDashboardCardIdFromPoint(upEvent.clientX, upEvent.clientY);
       if (targetId && targetId !== card.id) onMoveToCard?.(targetId);
       onDragEnd?.();
       window.removeEventListener('pointermove', handlePointerMove);
