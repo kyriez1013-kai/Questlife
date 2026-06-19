@@ -75,12 +75,8 @@ export default function DashboardCardShell({
     onDropCard?.(event?.dataTransfer?.getData?.('text/plain'));
   };
   const getDashboardCardIdFromPoint = (clientX: number, clientY: number) => {
-    const tile = document.elementFromPoint(clientX, clientY)?.closest?.('.dashboard-tile') as HTMLElement | null;
-    const cardClass = Array.from(tile?.classList ?? []).find((className) => (
-      className.startsWith('dashboard-tile-') &&
-      !['dashboard-tile-small', 'dashboard-tile-medium', 'dashboard-tile-large', 'dashboard-tile-editing', 'dashboard-tile-selected'].includes(className)
-    ));
-    return cardClass?.replace('dashboard-tile-', '');
+    const tile = document.elementFromPoint(clientX, clientY)?.closest?.('[id^="dashboard-card-"]') as HTMLElement | null;
+    return tile?.id?.replace(`dashboard-card-${surface}-`, '');
   };
   const handlePointerDragStart = (event: any) => {
     if (!editMode) return;
@@ -111,6 +107,7 @@ export default function DashboardCardShell({
   const content = (
     <CardContainer
       className={`dashboard-card-shell ${surface}-dashboard-card dashboard-card-${card.id} ${editMode ? 'dashboard-card-editing' : ''}`}
+      nativeID={`dashboard-card-${surface}-${card.id}`}
       style={[
         styles.shell,
         size === 'small' ? styles.small : size === 'large' ? styles.large : styles.medium,
