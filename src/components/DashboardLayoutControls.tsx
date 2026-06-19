@@ -40,6 +40,7 @@ export default function DashboardLayoutControls({
 }: Props) {
   const q = questTheme ?? getQuestTheme();
   const lang = getLanguage(language);
+  const WebView = View as any;
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [presetOpen, setPresetOpen] = useState(false);
   const normalized = normalizeDashboardPreferences(preferences);
@@ -49,93 +50,120 @@ export default function DashboardLayoutControls({
   const hiddenCards = cards.filter((card) => prefById.get(card.id)?.visible === false);
 
   return (
-    <QuestCard questTheme={q} variant="flat" style={[styles.shell, editing ? styles.shellEditing : styles.shellNormal]} className="control-center dashboard-controls dashboard-edit-bar">
-      <View style={styles.topRow}>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.kicker, { color: q.colors.textMuted }]}>{t(lang, editing ? 'editingDashboard' : 'tileGrid')}</Text>
-          <Text style={[styles.title, { color: q.colors.text }]}>{t(lang, surface === 'today' ? 'todayCards' : 'insightsCards')}</Text>
-          <Text style={[styles.subtitle, { color: q.colors.textMuted }]}>{t(lang, editing ? 'compactEditHint' : 'longPressToEdit')}</Text>
+    <WebView style={styles.wrapper} className="control-center dashboard-controls">
+      {!editing ? (
+        <View style={styles.normalRow}>
+          <Text style={[styles.normalHint, { color: q.colors.textMuted }]}>{t(lang, 'longPressToEdit')}</Text>
+          <QuestButton
+            questTheme={q}
+            variant="ghost"
+            icon="settings"
+            label={t(lang, 'editDashboard')}
+            onPress={() => {
+              setGalleryOpen(false);
+              setPresetOpen(false);
+              onEditingChange(true);
+            }}
+          />
         </View>
-        <QuestButton
-          questTheme={q}
-          variant={editing ? 'primary' : 'secondary'}
-          icon={editing ? 'check' : 'settings'}
-          label={editing ? t(lang, 'exitEditMode') : t(lang, 'enterEditMode')}
-          onPress={() => {
-            setGalleryOpen(false);
-            setPresetOpen(false);
-            onEditingChange(!editing);
-          }}
-        />
-      </View>
-
-      {editing ? (
-        <>
-          <View style={[styles.hintBox, { backgroundColor: q.colors.surfaceSoft, borderColor: q.colors.border }]}> 
-            <Text style={[styles.hintText, { color: q.colors.textMuted }]}>{t(lang, 'dragCardsToReorder')} · {t(lang, 'resizeFromCorner')}</Text>
+      ) : (
+        <WebView style={[styles.editBar, { backgroundColor: q.colors.surfaceElevated, borderColor: q.colors.borderStrong }]} className="dashboard-floating-edit-bar">
+          <View style={{ flex: 1, minWidth: 160 }}>
+            <Text style={[styles.kicker, { color: q.colors.textMuted }]}>{t(lang, 'editingDashboard')}</Text>
+            <Text style={[styles.hintText, { color: q.colors.textMuted }]}>{t(lang, 'dragCardToMove')} · {t(lang, 'tapCornerToResize')}</Text>
           </View>
-
           <View style={styles.actionsRow}>
             <QuestButton
               questTheme={q}
               variant="secondary"
               icon="plus"
-              label={t(lang, 'addCardGallery')}
-              onPress={() => setGalleryOpen((value) => !value)}
+              label={t(lang, 'addCard')}
+              onPress={() => {
+                setGalleryOpen((value) => !value);
+                setPresetOpen(false);
+              }}
             />
             <QuestButton
               questTheme={q}
               variant="ghost"
               icon="settings"
               label={t(lang, 'presetMenu')}
-              onPress={() => setPresetOpen((value) => !value)}
+              onPress={() => {
+                setPresetOpen((value) => !value);
+                setGalleryOpen(false);
+              }}
             />
             <QuestButton questTheme={q} variant="ghost" icon="settings" label={t(lang, 'resetLayout')} onPress={onReset} />
+            <QuestButton
+              questTheme={q}
+              variant="primary"
+              icon="check"
+              label={t(lang, 'doneEditing')}
+              onPress={() => {
+                setGalleryOpen(false);
+                setPresetOpen(false);
+                onEditingChange(false);
+              }}
+            />
           </View>
+        </WebView>
+      )}
 
-          {presetOpen ? (
-            <View style={styles.wrap}>
-              {DASHBOARD_PRESETS.map((preset) => (
-                <QuestPill
-                  key={preset.id}
-                  questTheme={q}
-                  active={normalized.activePreset === preset.id}
-                  label={t(lang, preset.titleKey)}
-                  onPress={() => onPreset(preset.id)}
-                />
-              ))}
-            </View>
-          ) : null}
-
-          {galleryOpen ? (
-            <View style={styles.galleryWrap}>
-              <Text style={[styles.sectionTitle, { color: q.colors.text }]}>{t(lang, 'cardGallery')}</Text>
-              <AddCardGallery
-                hiddenCards={hiddenCards}
+      {editing && presetOpen ? (
+        <QuestCard questTheme={q} variant="flat" style={styles.popoverPanel} className="dashboard-preset-popover">
+          <Text style={[styles.sectionTitle, { color: q.colors.text }]}>{t(lang, 'applyPresetCompact')}</Text>
+          <View style={styles.wrap}>
+            {DASHBOARD_PRESETS.map((preset) => (
+              <QuestPill
+                key={preset.id}
                 questTheme={q}
-                language={lang}
-                onAddCard={(cardId) => (onAddCard ? onAddCard(cardId) : onVisibility(cardId, true))}
+                active={normalized.activePreset === preset.id}
+                label={t(lang, preset.titleKey)}
+                onPress={() => onPreset(preset.id)}
               />
-            </View>
-          ) : null}
-        </>
+            ))}
+          </View>
+        </QuestCard>
       ) : null}
-    </QuestCard>
+
+      {editing && galleryOpen ? (
+        <QuestCard questTheme={q} variant="flat" style={styles.popoverPanel} className="dashboard-card-gallery-popover">
+          <Text style={[styles.sectionTitle, { color: q.colors.text }]}>{t(lang, 'cardGallery')}</Text>
+          <AddCardGallery
+            hiddenCards={hiddenCards}
+            questTheme={q}
+            language={lang}
+            onAddCard={(cardId) => (onAddCard ? onAddCard(cardId) : onVisibility(cardId, true))}
+          />
+        </QuestCard>
+      ) : null}
+    </WebView>
   );
 }
 
 const styles = StyleSheet.create({
-  shell: { marginTop: 12, gap: 10 },
-  shellNormal: { paddingVertical: 10 },
-  shellEditing: { paddingVertical: 12 },
-  topRow: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
+  wrapper: { marginTop: 8, marginBottom: 8, gap: 8, zIndex: 20 },
+  normalRow: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 8, minHeight: 34 },
+  normalHint: { fontSize: 11, fontWeight: '800', flexShrink: 1 },
+  editBar: {
+    position: 'sticky' as any,
+    top: 8,
+    zIndex: 30,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+  },
   kicker: { fontSize: 11, fontWeight: '900', textTransform: 'uppercase' },
-  title: { fontSize: 17, fontWeight: '900', lineHeight: 23 },
-  subtitle: { fontSize: 12, fontWeight: '800', lineHeight: 18, marginTop: 2 },
   sectionTitle: { fontSize: 13, fontWeight: '900', marginTop: 2 },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
-  actionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
-  hintBox: { borderWidth: 1, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10 },
+  actionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignItems: 'center', justifyContent: 'flex-end' },
   hintText: { fontSize: 12, fontWeight: '800', lineHeight: 17 },
-  galleryWrap: { gap: 10 },
+  popoverPanel: { gap: 10 },
 });

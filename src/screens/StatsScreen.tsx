@@ -467,6 +467,14 @@ export default function StatsScreen() {
     onDragEnter: () => {
       if (draggingDashboardCardId && draggingDashboardCardId !== cardId) setDragTargetDashboardCardId(cardId);
     },
+    onDropCard: (movingCardId?: string) => {
+      const movingId = movingCardId || draggingDashboardCardId;
+      if (movingId && movingId !== cardId) {
+        updateDashboardPreferences(reorderDashboardCard(dashboardPreferences, 'insights', movingId, cardId));
+      }
+      setDraggingDashboardCardId(null);
+      setDragTargetDashboardCardId(null);
+    },
     onDragEnd: finishInsightsDashboardDrag,
   });
   const TileGrid = View as any;

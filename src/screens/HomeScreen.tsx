@@ -1689,9 +1689,17 @@ export default function HomeScreen() {
       onDragEnter: () => {
         if (draggingDashboardCardId && draggingDashboardCardId !== cardId) setDragTargetDashboardCardId(cardId);
       },
+      onDropCard: (movingCardId?: string) => {
+        const movingId = movingCardId || draggingDashboardCardId;
+        if (movingId && movingId !== cardId) {
+          updateDashboardPreferences(reorderDashboardCard(dashboardPreferences, 'today', movingId, cardId));
+        }
+        setDraggingDashboardCardId(null);
+        setDragTargetDashboardCardId(null);
+      },
       onDragEnd: finishTodayDashboardDrag,
     };
-  }, [dashboardEditing, dragTargetDashboardCardId, draggingDashboardCardId, finishTodayDashboardDrag, handleTodayDashboardCardSelect, lang, questTheme, selectedDashboardCardId, setDashboardCardSize, setDashboardCardVisibility, todayCardPref, todayCardWrapperStyle, todayCardsById]);
+  }, [dashboardEditing, dashboardPreferences, dragTargetDashboardCardId, draggingDashboardCardId, finishTodayDashboardDrag, handleTodayDashboardCardSelect, lang, questTheme, selectedDashboardCardId, setDashboardCardSize, setDashboardCardVisibility, todayCardPref, todayCardWrapperStyle, todayCardsById, updateDashboardPreferences]);
   const TileGrid = View as any;
 
   return (

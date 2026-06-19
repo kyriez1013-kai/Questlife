@@ -22,6 +22,7 @@ type Props = {
   onDragStart?: () => void;
   onDragEnter?: () => void;
   onDragEnd?: () => void;
+  onDropCard?: (movingCardId?: string) => void;
 };
 
 export default function DashboardCardShell({
@@ -41,6 +42,7 @@ export default function DashboardCardShell({
   onDragStart,
   onDragEnter,
   onDragEnd,
+  onDropCard,
 }: Props) {
   const q = questTheme ?? getQuestTheme();
   const lang = getLanguage(language);
@@ -55,6 +57,20 @@ export default function DashboardCardShell({
     editMode ? 'dashboard-tile-editing' : '',
     selected ? 'dashboard-tile-selected' : '',
   ].filter(Boolean).join(' ');
+  const handleDragStart = (event: any) => {
+    event?.dataTransfer?.setData?.('text/plain', card.id);
+    if (event?.dataTransfer) event.dataTransfer.effectAllowed = 'move';
+    onDragStart?.();
+  };
+  const handleDragOver = (event: any) => {
+    event?.preventDefault?.();
+    if (event?.dataTransfer) event.dataTransfer.dropEffect = 'move';
+    onDragEnter?.();
+  };
+  const handleDrop = (event: any) => {
+    event?.preventDefault?.();
+    onDropCard?.(event?.dataTransfer?.getData?.('text/plain'));
+  };
 
   const content = (
     <CardContainer
@@ -80,20 +96,19 @@ export default function DashboardCardShell({
           >
             <Text style={[styles.removeText, { color: q.colors.danger }]}>×</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            accessibilityLabel={t(lang, 'selectCardToMove')}
-            onPress={onSelect}
+          <View
+            pointerEvents="none"
+            accessibilityLabel={t(lang, 'dragCardToMove')}
             style={[
-              styles.moveHandle,
+              styles.dragHandle,
               {
                 backgroundColor: selected ? q.colors.primarySoft : q.colors.surfaceElevated,
                 borderColor: selected ? q.colors.primary : q.colors.borderStrong,
               },
             ]}
           >
-            <Text style={[styles.moveText, { color: selected ? q.colors.primary : q.colors.textMuted }]}>↕</Text>
-          </TouchableOpacity>
+            <Text style={[styles.dragText, { color: selected ? q.colors.primary : q.colors.textMuted }]}>↕</Text>
+          </View>
           <TouchableOpacity
             activeOpacity={0.8}
             accessibilityLabel={t(lang, 'resizeCard')}
@@ -120,12 +135,14 @@ export default function DashboardCardShell({
   return (
     <TilePressable
       className={tileClassName}
+      draggable={editMode}
       delayLongPress={320}
       onLongPress={onEnterEdit}
       onPress={editMode ? onSelect : undefined}
-      onPointerDown={editMode ? onDragStart : undefined}
-      onPointerEnter={editMode ? onDragEnter : undefined}
-      onPointerUp={editMode ? onDragEnd : undefined}
+      onDragStart={editMode ? handleDragStart : undefined}
+      onDragOver={editMode ? handleDragOver : undefined}
+      onDrop={editMode ? handleDrop : undefined}
+      onDragEnd={editMode ? onDragEnd : undefined}
       style={({ pressed }: { pressed: boolean }) => [
         styles.touchShell,
         size === 'large' ? styles.tileLarge : size === 'small' ? styles.tileSmall : styles.tileMedium,
@@ -172,7 +189,7 @@ const styles = StyleSheet.create({
     zIndex: 5,
   },
   removeText: { fontSize: 18, lineHeight: 20, fontWeight: '900' },
-  moveHandle: {
+  dragHandle: {
     position: 'absolute',
     top: -8,
     left: -8,
@@ -184,7 +201,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 5,
   },
-  moveText: { fontSize: 16, lineHeight: 18, fontWeight: '900' },
+  dragText: { fontSize: 16, lineHeight: 18, fontWeight: '900' },
   resizeHandle: {
     position: 'absolute',
     right: 8,

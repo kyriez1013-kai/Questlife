@@ -1826,3 +1826,38 @@ Known limitations:
 - Freeform resize-drag and jiggle animation remain later.
 - Card-specific small/medium/large content renderers remain limited; most cards currently use tile footprint/density changes.
 - Apple Health integration remains later.
+
+## Control Center v4: True Editable Grid Interaction
+
+Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+
+Files changed:
+- `src/components/DashboardLayoutControls.tsx`
+- `src/components/dashboard/DashboardCardShell.tsx`
+- `src/screens/HomeScreen.tsx`
+- `src/screens/StatsScreen.tsx`
+- `src/styles/theme-overrides.css`
+- `src/utils/dashboardCards.ts`
+- `src/i18n.ts`
+- `PROJECT_STATUS.md`
+
+What changed:
+- Replaced the remaining admin/config feeling with a compact edit affordance in normal mode and a floating edit bar in edit mode.
+- Preserved the v1/v2/v3 dashboard registry, preferences, presets, and persistence; no data migration was added.
+- Edit mode keeps cards in place and supports in-card remove badges, corner resize handles, Add Card gallery, compact preset menu, and reset.
+- Added true web drag/drop reorder through native draggable tile events while keeping the old tap fallback non-primary.
+- Card sizes now map to more meaningful tile footprints; input-heavy cards restrict unsafe small sizes.
+- Presets now apply visibly different order, visibility, and size combinations for Default, Learning, Fitness, Recovery, and Advanced.
+- Add Card gallery remains grouped by domain and appears as a picker panel instead of a main management list.
+- No Apple Health changes and no B-3.3/B4/context/metacognition flow changes were made.
+
+Validation:
+- `npx tsc --noEmit`: passed locally.
+- `npm run build`: passed locally.
+- Production web UI verification is required at `https://questlife-alpha-orpin.vercel.app` after push/deploy.
+
+Known limitations:
+- Native mobile drag polish remains later; v4 targets production web drag.
+- Freeform resize-drag and Apple-level jiggle animation remain later.
+- Dedicated vertical card renderers remain later; v4 improves footprint and safe allowed sizes first.
+- Apple Health integration remains later.

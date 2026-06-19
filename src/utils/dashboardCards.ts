@@ -29,9 +29,9 @@ export type DashboardCardMeta = {
 };
 
 export const DASHBOARD_CARDS: DashboardCardMeta[] = [
-  { id: 'smart_capture', surface: 'today', titleKey: 'smartCapture', descriptionKey: 'smartCaptureDashboardDescription', domainTags: ['core', 'execution'], defaultSize: 'medium', allowedSizes: ['small', 'medium', 'large'], defaultVisible: true, priority: 10 },
+  { id: 'smart_capture', surface: 'today', titleKey: 'smartCapture', descriptionKey: 'smartCaptureDashboardDescription', domainTags: ['core', 'execution'], defaultSize: 'large', allowedSizes: ['medium', 'large'], defaultVisible: true, priority: 10 },
   { id: 'daily_operating_brief', surface: 'today', titleKey: 'dailyOperatingBrief', descriptionKey: 'dailyBriefDashboardDescription', domainTags: ['core', 'context', 'state'], defaultSize: 'medium', allowedSizes: ['small', 'medium', 'large'], defaultVisible: true, priority: 20 },
-  { id: 'body_context', surface: 'both', titleKey: 'bodyContext', descriptionKey: 'bodyContextDashboardDescription', domainTags: ['context', 'recovery', 'fitness'], defaultSize: 'medium', allowedSizes: ['small', 'medium', 'large'], defaultVisible: true, priority: 30 },
+  { id: 'body_context', surface: 'both', titleKey: 'bodyContext', descriptionKey: 'bodyContextDashboardDescription', domainTags: ['context', 'recovery', 'fitness'], defaultSize: 'medium', allowedSizes: ['medium', 'large'], defaultVisible: true, priority: 30 },
   { id: 'recent_feedback', surface: 'today', titleKey: 'recentFeedback', descriptionKey: 'recentFeedbackDashboardDescription', domainTags: ['execution', 'learning', 'fitness'], defaultSize: 'small', allowedSizes: ['small', 'medium'], defaultVisible: true, priority: 40 },
   { id: 'state_checkin', surface: 'today', titleKey: 'currentState', descriptionKey: 'stateCheckinDashboardDescription', domainTags: ['state', 'recovery'], defaultSize: 'medium', allowedSizes: ['small', 'medium', 'large'], defaultVisible: true, priority: 50 },
   { id: 'today_plan', surface: 'today', titleKey: 'todayPlan', descriptionKey: 'todayPlanDashboardDescription', domainTags: ['execution', 'core'], defaultSize: 'medium', allowedSizes: ['small', 'medium', 'large'], defaultVisible: true, priority: 60 },
@@ -59,6 +59,7 @@ type PresetConfig = {
   visibleTags?: DashboardDomainTag[];
   hiddenCardIds?: string[];
   largeCardIds?: string[];
+  sizeOverrides?: Record<string, DashboardCardSize>;
 };
 
 export const DASHBOARD_PRESETS: PresetConfig[] = [
@@ -68,6 +69,16 @@ export const DASHBOARD_PRESETS: PresetConfig[] = [
     descriptionKey: 'defaultPresetDescription',
     todayOrder: ['smart_capture', 'daily_operating_brief', 'body_context', 'recent_feedback', 'state_checkin', 'today_plan', 'today_records', 'rescue_strip', 'detailed_data'],
     insightsOrder: ['main_judgement', 'key_evidence', 'state_change', 'state_patterns', 'body_context', 'behavior_links', 'advanced_signals', 'ability_map', 'allocations', 'prediction_growth'],
+    sizeOverrides: {
+      smart_capture: 'large',
+      daily_operating_brief: 'medium',
+      body_context: 'medium',
+      recent_feedback: 'small',
+      rescue_strip: 'small',
+      main_judgement: 'large',
+      key_evidence: 'medium',
+      advanced_signals: 'large',
+    },
   },
   {
     id: 'learning',
@@ -76,6 +87,17 @@ export const DASHBOARD_PRESETS: PresetConfig[] = [
     todayOrder: ['smart_capture', 'daily_operating_brief', 'recent_feedback', 'state_checkin', 'today_plan', 'body_context', 'today_records', 'rescue_strip', 'detailed_data'],
     insightsOrder: ['main_judgement', 'key_evidence', 'behavior_links', 'state_patterns', 'advanced_signals', 'allocations', 'prediction_growth', 'body_context', 'state_change', 'ability_map'],
     visibleTags: ['core', 'learning', 'execution', 'state', 'advanced'],
+    hiddenCardIds: ['rescue_strip'],
+    sizeOverrides: {
+      smart_capture: 'large',
+      recent_feedback: 'medium',
+      today_plan: 'large',
+      state_checkin: 'small',
+      detailed_data: 'medium',
+      main_judgement: 'large',
+      behavior_links: 'large',
+      allocations: 'medium',
+    },
   },
   {
     id: 'fitness',
@@ -84,6 +106,17 @@ export const DASHBOARD_PRESETS: PresetConfig[] = [
     todayOrder: ['body_context', 'daily_operating_brief', 'recent_feedback', 'state_checkin', 'today_plan', 'smart_capture', 'rescue_strip', 'today_records', 'detailed_data'],
     insightsOrder: ['main_judgement', 'body_context', 'state_patterns', 'behavior_links', 'key_evidence', 'state_change', 'allocations', 'ability_map', 'advanced_signals', 'prediction_growth'],
     visibleTags: ['core', 'fitness', 'recovery', 'execution', 'state', 'context'],
+    hiddenCardIds: ['detailed_data', 'prediction_growth'],
+    sizeOverrides: {
+      body_context: 'large',
+      daily_operating_brief: 'medium',
+      recent_feedback: 'medium',
+      today_records: 'large',
+      rescue_strip: 'small',
+      main_judgement: 'medium',
+      state_patterns: 'large',
+      behavior_links: 'large',
+    },
   },
   {
     id: 'recovery',
@@ -93,6 +126,17 @@ export const DASHBOARD_PRESETS: PresetConfig[] = [
     insightsOrder: ['main_judgement', 'key_evidence', 'body_context', 'state_change', 'state_patterns', 'behavior_links', 'advanced_signals', 'allocations', 'ability_map', 'prediction_growth'],
     visibleTags: ['core', 'recovery', 'state', 'context'],
     hiddenCardIds: ['detailed_data', 'advanced_signals', 'ability_map', 'prediction_growth'],
+    sizeOverrides: {
+      daily_operating_brief: 'large',
+      body_context: 'large',
+      state_checkin: 'large',
+      rescue_strip: 'medium',
+      smart_capture: 'medium',
+      today_plan: 'small',
+      main_judgement: 'large',
+      key_evidence: 'medium',
+      state_patterns: 'medium',
+    },
   },
   {
     id: 'advanced',
@@ -102,6 +146,18 @@ export const DASHBOARD_PRESETS: PresetConfig[] = [
     insightsOrder: ['main_judgement', 'key_evidence', 'advanced_signals', 'ability_map', 'allocations', 'prediction_growth', 'behavior_links', 'state_patterns', 'body_context', 'state_change'],
     visibleTags: ['core', 'advanced', 'execution', 'state', 'context', 'learning', 'fitness', 'recovery'],
     largeCardIds: ['advanced_signals', 'detailed_data'],
+    sizeOverrides: {
+      smart_capture: 'medium',
+      daily_operating_brief: 'medium',
+      body_context: 'medium',
+      detailed_data: 'large',
+      main_judgement: 'medium',
+      key_evidence: 'large',
+      advanced_signals: 'large',
+      ability_map: 'large',
+      allocations: 'large',
+      prediction_growth: 'large',
+    },
   },
 ];
 
@@ -114,7 +170,10 @@ function preferenceForCard(card: DashboardCardMeta, order: number, preset?: Pres
     ? card.domainTags.some((tag) => preset.visibleTags?.includes(tag))
     : card.defaultVisible;
   const visible = preset?.hiddenCardIds?.includes(card.id) ? false : visibleByTag;
-  const size = preset?.largeCardIds?.includes(card.id) && card.allowedSizes.includes('large')
+  const overrideSize = preset?.sizeOverrides?.[card.id];
+  const size = overrideSize && card.allowedSizes.includes(overrideSize)
+    ? overrideSize
+    : preset?.largeCardIds?.includes(card.id) && card.allowedSizes.includes('large')
     ? 'large'
     : card.defaultSize;
   return { cardId: card.id, visible, order, size };

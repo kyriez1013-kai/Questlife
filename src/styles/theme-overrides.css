@@ -118,24 +118,58 @@
 
 .dashboard-tile-grid {
   align-items: stretch;
+  display: flex;
+  flex-wrap: wrap;
 }
 
 .dashboard-tile {
   flex-basis: 100% !important;
   max-width: 100% !important;
-  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease, opacity 140ms ease;
+  min-width: 0;
+}
+
+.dashboard-tile .dashboard-card-shell {
+  min-height: 100%;
+}
+
+.dashboard-tile-small .dashboard-card-shell {
+  min-height: 132px !important;
+  max-height: 188px;
+  overflow: hidden;
+}
+
+.dashboard-tile-medium .dashboard-card-shell {
+  min-height: 196px !important;
+}
+
+.dashboard-tile-large .dashboard-card-shell {
+  min-height: 284px !important;
 }
 
 .dashboard-tile-editing .dashboard-card-shell {
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12) !important;
 }
 
+.dashboard-tile-editing {
+  cursor: grab;
+}
+
+.dashboard-tile-editing:active {
+  cursor: grabbing;
+}
+
 .dashboard-tile-selected {
   transform: translateY(-2px) scale(0.995);
+  opacity: 0.92;
 }
 
 @media (min-width: 780px) {
-  .dashboard-tile-grid .dashboard-tile-small,
+  .dashboard-tile-grid .dashboard-tile-small {
+    flex-basis: calc(33.333% - 8px) !important;
+    max-width: calc(33.333% - 8px) !important;
+  }
+
   .dashboard-tile-grid .dashboard-tile-medium {
     flex-basis: calc(50% - 8px) !important;
     max-width: calc(50% - 8px) !important;
