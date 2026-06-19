@@ -3,7 +3,6 @@ import { Pressable, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from '
 import { getLanguage, t } from '../../i18n';
 import { DashboardCardPreference, DashboardCardSize, DashboardSurface } from '../../types';
 import { getQuestTheme, QuestTheme } from '../../design/tokens';
-import QuestIcon from '../ui/QuestIcon';
 import { DashboardCardMeta, getNextDashboardCardSize } from '../../utils/dashboardCards';
 
 type Props = {
@@ -83,6 +82,20 @@ export default function DashboardCardShell({
           </TouchableOpacity>
           <TouchableOpacity
             activeOpacity={0.8}
+            accessibilityLabel={t(lang, 'selectCardToMove')}
+            onPress={onSelect}
+            style={[
+              styles.moveHandle,
+              {
+                backgroundColor: selected ? q.colors.primarySoft : q.colors.surfaceElevated,
+                borderColor: selected ? q.colors.primary : q.colors.borderStrong,
+              },
+            ]}
+          >
+            <Text style={[styles.moveText, { color: selected ? q.colors.primary : q.colors.textMuted }]}>↕</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={0.8}
             accessibilityLabel={t(lang, 'resizeCard')}
             onPress={() => onResize?.(nextSize)}
             style={[styles.resizeHandle, { backgroundColor: q.colors.primarySoft, borderColor: q.colors.primary }]}
@@ -159,6 +172,19 @@ const styles = StyleSheet.create({
     zIndex: 5,
   },
   removeText: { fontSize: 18, lineHeight: 20, fontWeight: '900' },
+  moveHandle: {
+    position: 'absolute',
+    top: -8,
+    left: -8,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 5,
+  },
+  moveText: { fontSize: 16, lineHeight: 18, fontWeight: '900' },
   resizeHandle: {
     position: 'absolute',
     right: 8,
