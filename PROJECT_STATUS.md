@@ -1829,7 +1829,7 @@ Known limitations:
 
 ## Control Center v4: True Editable Grid Interaction
 
-Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+Status: Production manually validated. Final commit `47e38fa` accepted.
 
 Files changed:
 - `src/components/DashboardLayoutControls.tsx`
@@ -1845,7 +1845,7 @@ What changed:
 - Replaced the remaining admin/config feeling with a compact edit affordance in normal mode and a floating edit bar in edit mode.
 - Preserved the v1/v2/v3 dashboard registry, preferences, presets, and persistence; no data migration was added.
 - Edit mode keeps cards in place and supports in-card remove badges, corner resize handles, Add Card gallery, compact preset menu, and reset.
-- Added true web drag/drop reorder through native draggable tile events while keeping the old tap fallback non-primary.
+- Added true production web pointer drag reorder through in-card drag handles and RN Web-safe `nativeID` drop target resolution.
 - Card sizes now map to more meaningful tile footprints; input-heavy cards restrict unsafe small sizes.
 - Presets now apply visibly different order, visibility, and size combinations for Default, Learning, Fitness, Recovery, and Advanced.
 - Add Card gallery remains grouped by domain and appears as a picker panel instead of a main management list.
@@ -1854,7 +1854,16 @@ What changed:
 Validation:
 - `npx tsc --noEmit`: passed locally.
 - `npm run build`: passed locally.
-- Production web UI verification is required at `https://questlife-alpha-orpin.vercel.app` after push/deploy.
+- Production web UI manual verification: passed at `https://questlife-alpha-orpin.vercel.app`.
+- Verified production bundle `index-2387c8fc21757d28ef8ebe65af3928bb.js` deployed after GitHub push.
+- Verified Today normal mode has no giant management panel and no always-visible `上移 / 下移 / S / M / L / 隐藏` admin controls.
+- Verified Today edit mode keeps cards in place with remove badges, drag handles, and corner resize handles.
+- Verified true pointer drag reorder in production by dragging `daily_operating_brief` before `smart_capture`; order changed immediately and persisted after reload.
+- Verified resize handle cycles a card from `M` to `L` with visible footprint change.
+- Verified hide card and Add Card gallery restore flow by hiding and adding back `rescue_strip`.
+- Verified Fitness preset visibly changed Today card visibility, order, and size.
+- Verified Insights normal mode still shows main judgement/key evidence and Insights edit mode uses the same in-place tile controls.
+- Verified Today still loads smart capture, B4 feedback, Daily Operating Brief, and context/body cards after the change.
 
 Known limitations:
 - Native mobile drag polish remains later; v4 targets production web drag.
