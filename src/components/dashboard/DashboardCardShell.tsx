@@ -23,6 +23,7 @@ type Props = {
   onDragEnter?: () => void;
   onDragEnd?: () => void;
   onDropCard?: (movingCardId?: string) => void;
+  onMoveToCard?: (targetCardId: string) => void;
 };
 
 export default function DashboardCardShell({
@@ -43,6 +44,7 @@ export default function DashboardCardShell({
   onDragEnter,
   onDragEnd,
   onDropCard,
+  onMoveToCard,
 }: Props) {
   const q = questTheme ?? getQuestTheme();
   const lang = getLanguage(language);
@@ -50,6 +52,7 @@ export default function DashboardCardShell({
   const nextSize = getNextDashboardCardSize(card, size);
   const CardContainer = View as any;
   const TilePressable = Pressable as any;
+  const DragHandle = View as any;
   const tileClassName = [
     'dashboard-tile',
     `dashboard-tile-${size}`,
@@ -70,6 +73,37 @@ export default function DashboardCardShell({
   const handleDrop = (event: any) => {
     event?.preventDefault?.();
     onDropCard?.(event?.dataTransfer?.getData?.('text/plain'));
+  };
+  const handlePointerDragStart = (event: any) => {
+    if (!editMode) return;
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+    onDragStart?.();
+    const pointerId = event?.nativeEvent?.pointerId ?? event?.pointerId;
+    const currentTarget = event?.currentTarget;
+    currentTarget?.setPointerCapture?.(pointerId);
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      const tile = document
+        .elementFromPoint(moveEvent.clientX, moveEvent.clientY)
+        ?.closest?.('[data-dashboard-card-id]') as HTMLElement | null;
+      const targetId = tile?.dataset?.dashboardCardId;
+      if (targetId && targetId !== card.id) onDragEnter?.();
+    };
+    const handlePointerUp = (upEvent: PointerEvent) => {
+      const tile = document
+        .elementFromPoint(upEvent.clientX, upEvent.clientY)
+        ?.closest?.('[data-dashboard-card-id]') as HTMLElement | null;
+      const targetId = tile?.dataset?.dashboardCardId;
+      if (targetId && targetId !== card.id) onMoveToCard?.(targetId);
+      onDragEnd?.();
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+    };
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
   };
 
   const content = (
@@ -96,9 +130,9 @@ export default function DashboardCardShell({
           >
             <Text style={[styles.removeText, { color: q.colors.danger }]}>×</Text>
           </TouchableOpacity>
-          <View
-            pointerEvents="none"
+          <DragHandle
             accessibilityLabel={t(lang, 'dragCardToMove')}
+            onPointerDown={handlePointerDragStart}
             style={[
               styles.dragHandle,
               {
@@ -108,7 +142,7 @@ export default function DashboardCardShell({
             ]}
           >
             <Text style={[styles.dragText, { color: selected ? q.colors.primary : q.colors.textMuted }]}>↕</Text>
-          </View>
+          </DragHandle>
           <TouchableOpacity
             activeOpacity={0.8}
             accessibilityLabel={t(lang, 'resizeCard')}
@@ -135,6 +169,7 @@ export default function DashboardCardShell({
   return (
     <TilePressable
       className={tileClassName}
+      data-dashboard-card-id={card.id}
       draggable={editMode}
       delayLongPress={320}
       onLongPress={onEnterEdit}

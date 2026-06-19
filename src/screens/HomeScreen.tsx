@@ -1697,6 +1697,13 @@ export default function HomeScreen() {
         setDraggingDashboardCardId(null);
         setDragTargetDashboardCardId(null);
       },
+      onMoveToCard: (targetCardId: string) => {
+        if (targetCardId && targetCardId !== cardId) {
+          updateDashboardPreferences(reorderDashboardCard(dashboardPreferences, 'today', cardId, targetCardId));
+        }
+        setDraggingDashboardCardId(null);
+        setDragTargetDashboardCardId(null);
+      },
       onDragEnd: finishTodayDashboardDrag,
     };
   }, [dashboardEditing, dashboardPreferences, dragTargetDashboardCardId, draggingDashboardCardId, finishTodayDashboardDrag, handleTodayDashboardCardSelect, lang, questTheme, selectedDashboardCardId, setDashboardCardSize, setDashboardCardVisibility, todayCardPref, todayCardWrapperStyle, todayCardsById, updateDashboardPreferences]);

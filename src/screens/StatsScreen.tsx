@@ -475,6 +475,13 @@ export default function StatsScreen() {
       setDraggingDashboardCardId(null);
       setDragTargetDashboardCardId(null);
     },
+    onMoveToCard: (targetCardId: string) => {
+      if (targetCardId && targetCardId !== cardId) {
+        updateDashboardPreferences(reorderDashboardCard(dashboardPreferences, 'insights', cardId, targetCardId));
+      }
+      setDraggingDashboardCardId(null);
+      setDragTargetDashboardCardId(null);
+    },
     onDragEnd: finishInsightsDashboardDrag,
   });
   const TileGrid = View as any;
