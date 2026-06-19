@@ -1782,7 +1782,7 @@ Known limitations:
 
 ## Control Center v3: Long-Press Editable Tile Grid
 
-Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+Status: Production manually validated. Commits `615b68c` and reorder fallback commit `08e7b2a` accepted.
 
 Files changed:
 - `src/components/DashboardLayoutControls.tsx`
@@ -1801,7 +1801,7 @@ What changed:
 - Cards support long-press entry into edit mode through the shared dashboard card shell.
 - Edit mode keeps cards in place as editable tiles with subtle elevated/outlined state, remove badges, and bottom-right resize grips.
 - Web edit mode supports lightweight pointer drag reorder: press/drag over another tile and release to move the dragged card before the target.
-- Touch/mobile retains the safe tap fallback while keeping it visually secondary.
+- Touch/mobile retains the safe tap fallback through an explicit in-card move handle while keeping it visually secondary.
 - Resize now uses a corner grip and changes tile footprint/density instead of S/M/L button rows.
 - Add Card gallery is an inline grouped card picker with suggested size badges and add buttons.
 - Presets are secondary behind a compact preset menu and remain tied to the existing v1/v2 preference system.
@@ -1810,8 +1810,16 @@ What changed:
 
 Validation:
 - `npx tsc --noEmit`: passed locally.
-- `npm run build`: pending.
-- Production web UI verification is required at `https://questlife-alpha-orpin.vercel.app` after push/deploy.
+- `npm run build`: passed locally.
+- Production web UI manual verification: passed at `https://questlife-alpha-orpin.vercel.app`.
+- Verified Today normal mode has no always-visible `上移 / 下移 / S / M / L` admin rows.
+- Verified Today edit mode shows in-place remove, move, and resize controls.
+- Verified resize cycles card size and persists after refresh.
+- Verified hide-card and Add Card gallery restore flow work and persist after refresh.
+- Verified in-card move handle reorder changes order and persists after refresh.
+- Verified Insights normal mode still prioritizes main judgement/key evidence and Insights edit mode uses the same in-place tile controls.
+- Verified preset menu exposes Default/Learning/Fitness/Recovery/Advanced and applying a preset keeps the tile UI without old admin rows.
+- Verified Today still loads smart capture, B4 feedback, and Daily Operating Brief after the change.
 
 Known limitations:
 - Native mobile drag polish remains later.
