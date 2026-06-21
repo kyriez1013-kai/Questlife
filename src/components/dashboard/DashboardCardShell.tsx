@@ -48,6 +48,7 @@ export default function DashboardCardShell({
   onHoverCard,
   onMoveToCard,
 }: Props) {
+  const draggingRef = React.useRef(false);
   const q = questTheme ?? getQuestTheme();
   const lang = getLanguage(language);
   const size = preference?.size ?? card.defaultSize;
@@ -81,12 +82,47 @@ export default function DashboardCardShell({
     const tile = document.elementFromPoint(clientX, clientY)?.closest?.('[id^="dashboard-card-"]') as HTMLElement | null;
     return tile?.id?.replace(`dashboard-card-${surface}-`, '');
   };
-  const handlePointerDragStart = (event: any) => {
+  const getPointFromNativeEvent = (nativeEvent: any) => {
+    const clientX = typeof nativeEvent?.clientX === 'number'
+      ? nativeEvent.clientX
+      : typeof nativeEvent?.pageX === 'number'
+        ? nativeEvent.pageX - (typeof window !== 'undefined' ? window.scrollX : 0)
+        : undefined;
+    const clientY = typeof nativeEvent?.clientY === 'number'
+      ? nativeEvent.clientY
+      : typeof nativeEvent?.pageY === 'number'
+        ? nativeEvent.pageY - (typeof window !== 'undefined' ? window.scrollY : 0)
+        : undefined;
+    if (typeof clientX !== 'number' || typeof clientY !== 'number') return undefined;
+    return { clientX, clientY };
+  };
+  const isIgnoredDragTarget = (target?: HTMLElement) => (
+    !!target?.closest?.('input, textarea, [contenteditable="true"], [aria-label="移除卡片"], [aria-label="Remove card"], [aria-label="调整大小"], [aria-label="Resize card"]')
+  );
+  const markDragHover = (clientX: number, clientY: number) => {
+    const targetId = getDashboardCardIdFromPoint(clientX, clientY);
+    if (targetId && targetId !== card.id) {
+      onHoverCard?.(targetId);
+      onDragEnter?.();
+    }
+    return targetId;
+  };
+  const finishDragAt = (clientX?: number, clientY?: number) => {
+    if (typeof clientX === 'number' && typeof clientY === 'number') {
+      const targetId = getDashboardCardIdFromPoint(clientX, clientY);
+      if (targetId && targetId !== card.id) onMoveToCard?.(targetId);
+    }
+    draggingRef.current = false;
+    document.body.classList.remove('dashboard-dragging');
+    onDragEnd?.();
+  };
+  const beginDrag = (event: any) => {
     if (!editMode) return;
     const target = event?.target as HTMLElement | undefined;
-    if (target?.closest?.('input, textarea, [contenteditable="true"], [aria-label="移除卡片"], [aria-label="Remove card"], [aria-label="调整大小"], [aria-label="Resize card"]')) return;
+    if (isIgnoredDragTarget(target)) return;
     event?.preventDefault?.();
     event?.stopPropagation?.();
+    draggingRef.current = true;
     document.body.classList.add('dashboard-dragging');
     onDragStart?.();
     const pointerId = event?.nativeEvent?.pointerId ?? event?.pointerId;
@@ -94,17 +130,10 @@ export default function DashboardCardShell({
     currentTarget?.setPointerCapture?.(pointerId);
 
     const handlePointerMove = (moveEvent: PointerEvent) => {
-      const targetId = getDashboardCardIdFromPoint(moveEvent.clientX, moveEvent.clientY);
-      if (targetId && targetId !== card.id) {
-        onHoverCard?.(targetId);
-        onDragEnter?.();
-      }
+      markDragHover(moveEvent.clientX, moveEvent.clientY);
     };
     const handlePointerUp = (upEvent: PointerEvent) => {
-      const targetId = getDashboardCardIdFromPoint(upEvent.clientX, upEvent.clientY);
-      if (targetId && targetId !== card.id) onMoveToCard?.(targetId);
-      document.body.classList.remove('dashboard-dragging');
-      onDragEnd?.();
+      finishDragAt(upEvent.clientX, upEvent.clientY);
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('pointercancel', handlePointerUp);
@@ -113,12 +142,38 @@ export default function DashboardCardShell({
     window.addEventListener('pointerup', handlePointerUp);
     window.addEventListener('pointercancel', handlePointerUp);
   };
+  const handleResponderGrant = (event: any) => {
+    if (!editMode) return;
+    const target = event?.target as HTMLElement | undefined;
+    if (isIgnoredDragTarget(target)) return;
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+    draggingRef.current = true;
+    document.body.classList.add('dashboard-dragging');
+    onDragStart?.();
+  };
+  const handleResponderMove = (event: any) => {
+    if (!draggingRef.current) return;
+    const point = getPointFromNativeEvent(event?.nativeEvent);
+    if (point) markDragHover(point.clientX, point.clientY);
+  };
+  const handleResponderRelease = (event: any) => {
+    if (!draggingRef.current) return;
+    const point = getPointFromNativeEvent(event?.nativeEvent);
+    finishDragAt(point?.clientX, point?.clientY);
+  };
 
   const content = (
     <CardContainer
       className={`dashboard-card-shell ${surface}-dashboard-card dashboard-card-${card.id} ${editMode ? 'dashboard-card-editing' : ''}`}
       nativeID={`dashboard-card-${surface}-${card.id}`}
-      onPointerDown={editMode ? handlePointerDragStart : undefined}
+      onPointerDown={editMode ? beginDrag : undefined}
+      onStartShouldSetResponder={editMode ? () => true : undefined}
+      onMoveShouldSetResponder={editMode ? () => true : undefined}
+      onResponderGrant={editMode ? handleResponderGrant : undefined}
+      onResponderMove={editMode ? handleResponderMove : undefined}
+      onResponderRelease={editMode ? handleResponderRelease : undefined}
+      onResponderTerminate={editMode ? handleResponderRelease : undefined}
       style={[
         styles.shell,
         size === 'small' ? styles.small : size === 'large' ? styles.large : styles.medium,
@@ -134,7 +189,7 @@ export default function DashboardCardShell({
         <>
           <DragSurface
             accessibilityLabel={t(lang, 'grabToMove')}
-            onPointerDown={handlePointerDragStart}
+            onPointerDown={beginDrag}
             style={styles.dragSurface}
           />
           <TouchableOpacity
@@ -147,7 +202,7 @@ export default function DashboardCardShell({
           </TouchableOpacity>
           <DragHandle
             accessibilityLabel={t(lang, 'dragCardToMove')}
-            onPointerDown={handlePointerDragStart}
+            onPointerDown={beginDrag}
             style={[
               styles.dragHandle,
               {
