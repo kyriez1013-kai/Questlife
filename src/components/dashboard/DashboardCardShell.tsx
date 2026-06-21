@@ -55,6 +55,7 @@ export default function DashboardCardShell({
   const CardContainer = View as any;
   const TilePressable = Pressable as any;
   const DragHandle = View as any;
+  const DragSurface = View as any;
   const tileClassName = [
     'dashboard-tile',
     `dashboard-tile-${size}`,
@@ -131,6 +132,11 @@ export default function DashboardCardShell({
       {children}
       {editMode ? (
         <>
+          <DragSurface
+            accessibilityLabel={t(lang, 'grabToMove')}
+            onPointerDown={handlePointerDragStart}
+            style={styles.dragSurface}
+          />
           <TouchableOpacity
             activeOpacity={0.8}
             accessibilityLabel={t(lang, 'removeCard')}
@@ -239,6 +245,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 5,
+    cursor: 'grab',
+    touchAction: 'none',
+    userSelect: 'none',
+  } as any,
+  dragSurface: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 3,
     cursor: 'grab',
     touchAction: 'none',
     userSelect: 'none',
