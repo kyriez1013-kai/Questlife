@@ -222,6 +222,11 @@ export default function DashboardCardShell({
     <CardContainer
       className={`dashboard-card-shell ${surface}-dashboard-card dashboard-card-${card.id} ${editMode ? 'dashboard-card-editing' : ''}`}
       nativeID={cardDomId}
+      draggable={editMode}
+      onDragStart={editMode ? handleDragStart : undefined}
+      onDragOver={editMode ? handleDragOver : undefined}
+      onDrop={editMode ? handleDrop : undefined}
+      onDragEnd={editMode ? onDragEnd : undefined}
       onPointerDown={editMode ? beginDrag : undefined}
       onStartShouldSetResponder={editMode ? () => true : undefined}
       onMoveShouldSetResponder={editMode ? () => true : undefined}
@@ -244,6 +249,11 @@ export default function DashboardCardShell({
         <>
           <DragSurface
             accessibilityLabel={t(lang, 'grabToMove')}
+            draggable={editMode}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            onDragEnd={onDragEnd}
             onPointerDown={beginDrag}
             style={styles.dragSurface}
           />
@@ -257,6 +267,11 @@ export default function DashboardCardShell({
           </TouchableOpacity>
           <DragHandle
             accessibilityLabel={t(lang, 'dragCardToMove')}
+            draggable={editMode}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            onDragEnd={onDragEnd}
             onPointerDown={beginDrag}
             style={[
               styles.dragHandle,
