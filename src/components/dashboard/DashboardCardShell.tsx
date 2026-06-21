@@ -53,6 +53,7 @@ export default function DashboardCardShell({
   const lang = getLanguage(language);
   const size = preference?.size ?? card.defaultSize;
   const nextSize = getNextDashboardCardSize(card, size);
+  const cardDomId = `dashboard-card-${surface}-${card.id}`;
   const CardContainer = View as any;
   const TilePressable = Pressable as any;
   const DragHandle = View as any;
@@ -163,10 +164,64 @@ export default function DashboardCardShell({
     finishDragAt(point?.clientX, point?.clientY);
   };
 
+  React.useEffect(() => {
+    if (!editMode || typeof document === 'undefined') return undefined;
+    const element = document.getElementById(cardDomId);
+    if (!element) return undefined;
+
+    const getPointFromMouseOrTouch = (event: MouseEvent | TouchEvent) => {
+      const touch = 'touches' in event ? event.touches[0] ?? event.changedTouches[0] : undefined;
+      const source = touch ?? (event as MouseEvent);
+      if (!source) return undefined;
+      return { clientX: source.clientX, clientY: source.clientY };
+    };
+    const handleNativeMove = (event: MouseEvent | TouchEvent) => {
+      if (!draggingRef.current) return;
+      const point = getPointFromMouseOrTouch(event);
+      if (point) markDragHover(point.clientX, point.clientY);
+    };
+    const handleNativeUp = (event: MouseEvent | TouchEvent) => {
+      if (!draggingRef.current) return;
+      const point = getPointFromMouseOrTouch(event);
+      finishDragAt(point?.clientX, point?.clientY);
+      window.removeEventListener('mousemove', handleNativeMove);
+      window.removeEventListener('mouseup', handleNativeUp);
+      window.removeEventListener('touchmove', handleNativeMove);
+      window.removeEventListener('touchend', handleNativeUp);
+      window.removeEventListener('touchcancel', handleNativeUp);
+    };
+    const handleNativeStart = (event: MouseEvent | TouchEvent) => {
+      if ('button' in event && event.button !== 0) return;
+      if (isIgnoredDragTarget(event.target as HTMLElement | undefined)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      draggingRef.current = true;
+      document.body.classList.add('dashboard-dragging');
+      onDragStart?.();
+      window.addEventListener('mousemove', handleNativeMove);
+      window.addEventListener('mouseup', handleNativeUp);
+      window.addEventListener('touchmove', handleNativeMove, { passive: false });
+      window.addEventListener('touchend', handleNativeUp);
+      window.addEventListener('touchcancel', handleNativeUp);
+    };
+
+    element.addEventListener('mousedown', handleNativeStart);
+    element.addEventListener('touchstart', handleNativeStart, { passive: false });
+    return () => {
+      element.removeEventListener('mousedown', handleNativeStart);
+      element.removeEventListener('touchstart', handleNativeStart);
+      window.removeEventListener('mousemove', handleNativeMove);
+      window.removeEventListener('mouseup', handleNativeUp);
+      window.removeEventListener('touchmove', handleNativeMove);
+      window.removeEventListener('touchend', handleNativeUp);
+      window.removeEventListener('touchcancel', handleNativeUp);
+    };
+  }, [cardDomId, editMode, onDragStart, onMoveToCard, onHoverCard, onDragEnter, onDragEnd]);
+
   const content = (
     <CardContainer
       className={`dashboard-card-shell ${surface}-dashboard-card dashboard-card-${card.id} ${editMode ? 'dashboard-card-editing' : ''}`}
-      nativeID={`dashboard-card-${surface}-${card.id}`}
+      nativeID={cardDomId}
       onPointerDown={editMode ? beginDrag : undefined}
       onStartShouldSetResponder={editMode ? () => true : undefined}
       onMoveShouldSetResponder={editMode ? () => true : undefined}
