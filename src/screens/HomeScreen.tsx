@@ -11,7 +11,7 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert,
-  Animated, Easing, Keyboard, Modal, useWindowDimensions,
+  Animated, Easing, Keyboard, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -25,7 +25,6 @@ import {
   skillMinutesOnDate, skillStreak, skillTotalMinutes, skillMilestones,
   Skill, Category, Action, Quality, QUALITY_OPTIONS, HOUR_MILESTONES, TaskType, ExecutionLog, StateCheckIn,
   DomainRecordingField,
-  DashboardCardSize,
 } from '../types';
 import BottomSheetForm from '../components/BottomSheetForm';
 import { adjustScheduleBlock, generateScheduleBlocksFromSkills } from '../scheduleAdjust';
@@ -52,9 +51,31 @@ import { parseHealthContextText, ParsedHealthContext } from '../utils/healthCont
 import { buildObjectiveContextBrief, ObjectiveContextBrief } from '../utils/objectiveContextBrief';
 import { buildMetacognitionSummary } from '../utils/metacognition';
 import { buildDailyOperatingBrief } from '../utils/dailyOperatingBrief';
-import DashboardLayoutControls from '../components/DashboardLayoutControls';
 import DashboardCardShell from '../components/dashboard/DashboardCardShell';
-import { addDashboardCardAtEnd, getDashboardCardsForSurface, getDashboardPreference, normalizeDashboardPreferences, reorderDashboardCard } from '../utils/dashboardCards';
+
+const FIXED_TODAY_CARD_SIZES = {
+  smart_capture: 'large',
+  daily_operating_brief: 'large',
+  body_context: 'large',
+  recent_feedback: 'medium',
+  state_checkin: 'medium',
+  today_plan: 'medium',
+  today_records: 'large',
+  rescue_strip: 'small',
+  detailed_data: 'large',
+} as const;
+
+const FIXED_TODAY_CARD_ORDER: Record<keyof typeof FIXED_TODAY_CARD_SIZES, number> = {
+  smart_capture: 10,
+  daily_operating_brief: 20,
+  body_context: 30,
+  recent_feedback: 40,
+  state_checkin: 50,
+  today_plan: 60,
+  today_records: 70,
+  rescue_strip: 80,
+  detailed_data: 90,
+};
 
 // 晨间状态选项
 const DAILY_STATE_OPTIONS = [
@@ -370,20 +391,9 @@ export default function HomeScreen() {
     createStateCheckIn,
     addContextLogs,
     setSettings,
-    updateDashboardPreferences,
-    setDashboardPreset,
-    setDashboardCardVisibility,
-    setDashboardCardSize,
-    resetDashboardLayout,
   } = useStore();
-  const [dashboardEditing, setDashboardEditing] = useState(false);
-  const [selectedDashboardCardId, setSelectedDashboardCardId] = useState<string | null>(null);
-  const [draggingDashboardCardId, setDraggingDashboardCardId] = useState<string | null>(null);
-  const [dragTargetDashboardCardId, setDragTargetDashboardCardId] = useState<string | null>(null);
   const navigation = useNavigation<any>();
   const questTheme = getQuestTheme(data.settings.selectedThemeId);
-  const { width: viewportWidth } = useWindowDimensions();
-  const dashboardIsWide = viewportWidth >= 780;
   const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
   const lang = getLanguage(data.settings.language);
   const themedCard = {
@@ -1630,100 +1640,41 @@ export default function HomeScreen() {
     borderColor: questTheme.colors.border,
     color: questTheme.colors.text,
   };
-  const dashboardPreferences = useMemo(
-    () => normalizeDashboardPreferences(data.settings.dashboardPreferences),
-    [data.settings.dashboardPreferences]
-  );
-  const todayCardPref = useCallback(
-    (cardId: string) => getDashboardPreference(dashboardPreferences, 'today', cardId),
-    [dashboardPreferences]
-  );
-  const todayCardVisible = useCallback((cardId: string) => todayCardPref(cardId)?.visible !== false, [todayCardPref]);
-  const todayCardsById = useMemo(
-    () => new Map(getDashboardCardsForSurface('today').map((card) => [card.id, card])),
-    []
-  );
-  const todayCardSize = useCallback((cardId: string): DashboardCardSize => (
-    todayCardPref(cardId)?.size ?? todayCardsById.get(cardId)?.defaultSize ?? 'medium'
-  ), [todayCardPref, todayCardsById]);
-  const todayCardWrapperStyle = useCallback((cardId: string) => {
-    const pref = todayCardPref(cardId);
-    const size = pref?.size ?? 'medium';
-    const footprint = !dashboardIsWide
-      ? { flexBasis: '100%', maxWidth: '100%' }
-      : size === 'small'
-        ? { flexBasis: '31.8%', maxWidth: '31.8%' }
-        : size === 'medium'
-          ? { flexBasis: '48.8%', maxWidth: '48.8%' }
-          : { flexBasis: '100%', maxWidth: '100%' };
+  const todayCardVisible = useCallback((_cardId: string) => true, []);
+  const todayCardSize = useCallback((cardId: keyof typeof FIXED_TODAY_CARD_SIZES) => FIXED_TODAY_CARD_SIZES[cardId], []);
+  const todayCardWrapperStyle = useCallback((cardId: keyof typeof FIXED_TODAY_CARD_SIZES) => {
+    const size = FIXED_TODAY_CARD_SIZES[cardId];
     return {
-      ...footprint,
-      order: pref?.order ?? 500,
+      flexBasis: size === 'small' ? 320 : size === 'medium' ? 456 : '100%',
+      maxWidth: size === 'small' ? 360 : size === 'medium' ? 456 : '100%',
+      flexGrow: size === 'large' ? 1 : 0,
+      order: FIXED_TODAY_CARD_ORDER[cardId],
       marginTop: size === 'small' ? questTheme.spacing.sm : size === 'large' ? questTheme.spacing.lg : questTheme.spacing.md,
     } as any;
-  }, [dashboardIsWide, questTheme.spacing.lg, questTheme.spacing.md, questTheme.spacing.sm, todayCardPref]);
-  const handleTodayDashboardCardSelect = useCallback((cardId: string) => {
-    if (!dashboardEditing) return;
-    if (selectedDashboardCardId && selectedDashboardCardId !== cardId) {
-      updateDashboardPreferences(reorderDashboardCard(dashboardPreferences, 'today', selectedDashboardCardId, cardId));
-      setSelectedDashboardCardId(null);
-      return;
-    }
-    setSelectedDashboardCardId((current) => (current === cardId ? null : cardId));
-  }, [dashboardEditing, dashboardPreferences, selectedDashboardCardId, updateDashboardPreferences]);
-  const finishTodayDashboardDrag = useCallback(() => {
-    if (draggingDashboardCardId && dragTargetDashboardCardId && draggingDashboardCardId !== dragTargetDashboardCardId) {
-      updateDashboardPreferences(reorderDashboardCard(dashboardPreferences, 'today', draggingDashboardCardId, dragTargetDashboardCardId));
-    }
-    setDraggingDashboardCardId(null);
-    setDragTargetDashboardCardId(null);
-  }, [dashboardPreferences, dragTargetDashboardCardId, draggingDashboardCardId, updateDashboardPreferences]);
+  }, [questTheme.spacing.lg, questTheme.spacing.md, questTheme.spacing.sm]);
   const todayDashboardShellProps = useCallback((cardId: string) => {
-    const card = todayCardsById.get(cardId)!;
+    const size = FIXED_TODAY_CARD_SIZES[cardId as keyof typeof FIXED_TODAY_CARD_SIZES] ?? 'medium';
     return {
       surface: 'today' as const,
-      card,
-      preference: todayCardPref(cardId),
-      editMode: dashboardEditing,
-      selected: selectedDashboardCardId === cardId || draggingDashboardCardId === cardId || dragTargetDashboardCardId === cardId,
+      card: {
+        id: cardId,
+        surface: 'today' as const,
+        titleKey: cardId,
+        descriptionKey: cardId,
+        domainTags: [],
+        defaultSize: size,
+        allowedSizes: [size],
+        defaultVisible: true,
+        priority: FIXED_TODAY_CARD_ORDER[cardId as keyof typeof FIXED_TODAY_CARD_SIZES] ?? 500,
+      },
+      preference: { cardId, visible: true, order: FIXED_TODAY_CARD_ORDER[cardId as keyof typeof FIXED_TODAY_CARD_SIZES] ?? 500, size },
+      editMode: false,
+      selected: false,
       questTheme,
       language: lang,
-      style: todayCardWrapperStyle(cardId),
-      onSelect: () => handleTodayDashboardCardSelect(cardId),
-      onEnterEdit: () => {
-        setDashboardEditing(true);
-        setSelectedDashboardCardId(cardId);
-      },
-      onRemove: () => setDashboardCardVisibility('today', cardId, false),
-      onResize: (size: any) => setDashboardCardSize('today', cardId, size),
-      onDragStart: () => {
-        setDraggingDashboardCardId(cardId);
-        setDragTargetDashboardCardId(cardId);
-      },
-      onDragEnter: () => {
-        if (draggingDashboardCardId && draggingDashboardCardId !== cardId) setDragTargetDashboardCardId(cardId);
-      },
-      onHoverCard: (targetCardId: string) => {
-        if (targetCardId !== cardId) setDragTargetDashboardCardId(targetCardId);
-      },
-      onDropCard: (movingCardId?: string) => {
-        const movingId = movingCardId || draggingDashboardCardId;
-        if (movingId && movingId !== cardId) {
-          updateDashboardPreferences(reorderDashboardCard(dashboardPreferences, 'today', movingId, cardId));
-        }
-        setDraggingDashboardCardId(null);
-        setDragTargetDashboardCardId(null);
-      },
-      onMoveToCard: (targetCardId: string) => {
-        if (targetCardId && targetCardId !== cardId) {
-          updateDashboardPreferences(reorderDashboardCard(dashboardPreferences, 'today', cardId, targetCardId));
-        }
-        setDraggingDashboardCardId(null);
-        setDragTargetDashboardCardId(null);
-      },
-      onDragEnd: finishTodayDashboardDrag,
+      style: todayCardWrapperStyle(cardId as keyof typeof FIXED_TODAY_CARD_SIZES),
     };
-  }, [dashboardEditing, dashboardPreferences, dragTargetDashboardCardId, draggingDashboardCardId, finishTodayDashboardDrag, handleTodayDashboardCardSelect, lang, questTheme, selectedDashboardCardId, setDashboardCardSize, setDashboardCardVisibility, todayCardPref, todayCardWrapperStyle, todayCardsById, updateDashboardPreferences]);
+  }, [lang, questTheme, todayCardWrapperStyle]);
   const dailyBriefDashboardSize = todayCardSize('daily_operating_brief');
   const bodyContextDashboardSize = todayCardSize('body_context');
   const recentFeedbackDashboardSize = todayCardSize('recent_feedback');
@@ -1736,26 +1687,10 @@ export default function HomeScreen() {
         style={[styles.container, { backgroundColor: questTheme.colors.background }]}
         contentContainerStyle={{ padding: 16, paddingBottom: 190, maxWidth: 960, width: '100%', alignSelf: 'center' }}
       >
-        <DashboardLayoutControls
-          surface="today"
-          questTheme={questTheme}
-          language={lang}
-          preferences={dashboardPreferences}
-          editing={dashboardEditing}
-          onEditingChange={(editing) => {
-            setDashboardEditing(editing);
-            setSelectedDashboardCardId(null);
-          }}
-          onPreset={setDashboardPreset}
-          onVisibility={(cardId, visible) => setDashboardCardVisibility('today', cardId, visible)}
-          onAddCard={(cardId) => updateDashboardPreferences(addDashboardCardAtEnd(dashboardPreferences, 'today', cardId))}
-          onReset={() => resetDashboardLayout('today')}
-        />
-
         <TileGrid
           nativeID="today-dashboard-grid"
-          className={`dashboard-tile-grid today-dashboard-tile-grid ${dashboardEditing ? 'dashboard-editing' : ''}`}
-          style={[styles.dashboardTileGrid, dashboardEditing && styles.dashboardTileGridEditing]}
+          className="dashboard-tile-grid today-dashboard-tile-grid"
+          style={styles.dashboardTileGrid}
         >
 
         {/* ═══ ZONE 1: Smart Capture (input always first by default) ═════════ */}

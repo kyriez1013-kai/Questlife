@@ -1912,3 +1912,31 @@ Known limitations:
 - Native mobile drag polish remains later; this pass prioritizes production web.
 - Some deep/legacy cards still need dedicated small/medium/large renderers in a later design-system pass.
 - Apple Health integration remains later.
+
+## Control Center Recall + Product Stability Restore
+
+Status: Implemented; production verification pending after GitHub/Vercel deployment.
+
+Product verdict:
+- The Control Center editable dashboard experiment was product-rejected after real use.
+- Editable dashboard UI added friction, unreliable drag behavior, mobile damage, and an admin/debug feeling that did not serve the Today/Insights core loop.
+
+What changed:
+- Disabled/recalled the editable dashboard UI from production Today and Insights.
+- Removed production screen wiring for edit layout controls, long-press edit mode, drag handles, remove badges, resize handles, Add Card gallery, presets, reset controls, and dashboard edit overlays.
+- Restored Today to a stable fixed layout: Smart Capture, Daily Operating Brief, Body/Sleep Context, Recent Feedback/Today Command, State Check-in, Today Plan, Today Records, Rescue Strip, and Detailed Data lower.
+- Restored Insights to a stable fixed layout that preserves the Insights IA Cleanup: Main Judgement, Key Evidence, and Advanced Analysis lower/collapsible.
+- Preserved QuestLife core systems: B-3.3 capture, B4 feedback, after-state capture, statePatterns, Objective Context Layer, Context Parser v1.1, Body-Cognition Brief, Daily Operating Brief, contextLogs, stateCheckIns, and executionLogs.
+- Preserved the dashboard registry/preferences/preset code as dormant infrastructure for a future redesign; preferences no longer affect Today/Insights production rendering.
+- No data migration, user-data clearing, Apple Health work, B-3.3 logic change, B4 logic change, context parser change, or metacognition/statePatterns change was made.
+
+Validation:
+- `npx tsc --noEmit`: passed locally.
+- `npm run build`: passed locally.
+- Production web UI verification is required at `https://questlife-alpha-orpin.vercel.app` after push/deploy.
+
+Known limitations:
+- Future Control Center personalization needs a separate design/prototype before reimplementation.
+- Apple Health integration remains later.
+- A broader UI design-system pass remains later.
+- Vertical mode dashboards remain later.

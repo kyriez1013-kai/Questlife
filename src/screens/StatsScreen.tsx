@@ -8,12 +8,12 @@
 //   6. 🎯 技能雷达        (保留)
 //   7. 🔥 近 8 周热力图   (从 16 周缩到 8 周, 移到最底)
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Rect } from 'react-native-svg';
 import { useStore } from '../store';
 import { appAccent, theme } from '../theme';
-import { Skill, DashboardCardSize } from '../types';
+import { DashboardCardSize, Skill } from '../types';
 import { getLanguage, progressTypeLabel, t, taskTypeLabel } from '../i18n';
 import { getAppCoreLoopStatus } from '../utils/coreLoop';
 import { trackEvent } from '../utils/analytics';
@@ -26,9 +26,19 @@ import { InsightCardsBlock } from './StatsScreenInsights';
 import { displayEntityName } from '../utils/displayName';
 import { buildMetacognitionSummary, getLiveExecutionLogs, MetacognitionSummary } from '../utils/metacognition';
 import { buildObjectiveContextBrief, ObjectiveContextBrief } from '../utils/objectiveContextBrief';
-import DashboardLayoutControls from '../components/DashboardLayoutControls';
 import DashboardCardShell from '../components/dashboard/DashboardCardShell';
-import { addDashboardCardAtEnd, getDashboardCardsForSurface, getDashboardPreference, normalizeDashboardPreferences, reorderDashboardCard } from '../utils/dashboardCards';
+
+const FIXED_INSIGHTS_CARD_SIZES: Record<string, DashboardCardSize> = {
+  main_judgement: 'large',
+  key_evidence: 'large',
+  advanced_signals: 'large',
+};
+
+const FIXED_INSIGHTS_CARD_ORDER: Record<string, number> = {
+  main_judgement: 10,
+  key_evidence: 20,
+  advanced_signals: 90,
+};
 
 const WEEKDAY_KEYS = ['weekdaySun', 'weekdayMon', 'weekdayTue', 'weekdayWed', 'weekdayThu', 'weekdayFri', 'weekdaySat'];
 
@@ -38,21 +48,10 @@ const fmtDate = (d: Date) =>
 export default function StatsScreen() {
   const {
     data,
-    updateDashboardPreferences,
-    setDashboardPreset,
-    setDashboardCardVisibility,
-    setDashboardCardSize,
-    resetDashboardLayout,
   } = useStore();
   const [advancedExpanded, setAdvancedExpanded] = useState(false);
-  const [dashboardEditing, setDashboardEditing] = useState(false);
-  const [selectedDashboardCardId, setSelectedDashboardCardId] = useState<string | null>(null);
-  const [draggingDashboardCardId, setDraggingDashboardCardId] = useState<string | null>(null);
-  const [dragTargetDashboardCardId, setDragTargetDashboardCardId] = useState<string | null>(null);
   const lang = getLanguage(data.settings.language);
   const questTheme = getQuestTheme(data.settings.selectedThemeId);
-  const { width: viewportWidth } = useWindowDimensions();
-  const dashboardIsWide = viewportWidth >= 780;
   const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
   const logs = useMemo(() => getLiveExecutionLogs(data.executionLogs || [], { skills: data.skills }), [data.executionLogs, data.skills]);
   const timeLogs = useMemo(() => logs.filter((log) => (log.durationMinutes ?? 0) > 0), [logs]);
@@ -412,94 +411,41 @@ export default function StatsScreen() {
     : mainInsight.confidence === 'medium'
       ? questTheme.colors.warning
       : questTheme.colors.textSubtle;
-  const dashboardPreferences = useMemo(
-    () => normalizeDashboardPreferences(data.settings.dashboardPreferences),
-    [data.settings.dashboardPreferences]
-  );
-  const insightsCardsById = useMemo(
-    () => new Map(getDashboardCardsForSurface('insights').map((card) => [card.id, card])),
-    []
-  );
-  const insightsCardPref = (cardId: string) => getDashboardPreference(dashboardPreferences, 'insights', cardId);
-  const insightsCardVisible = (cardId: string) => insightsCardPref(cardId)?.visible !== false;
-  const insightsCardSize = (cardId: string): DashboardCardSize => (
-    insightsCardPref(cardId)?.size ?? insightsCardsById.get(cardId)?.defaultSize ?? 'medium'
-  );
+  const insightsCardVisible = (_cardId: string) => true;
+  const insightsCardSize = (cardId: keyof typeof FIXED_INSIGHTS_CARD_SIZES) => FIXED_INSIGHTS_CARD_SIZES[cardId];
   const insightsCardWrapperStyle = (cardId: string) => {
-    const pref = insightsCardPref(cardId);
-    const size = pref?.size ?? 'medium';
-    const footprint = !dashboardIsWide
-      ? { flexBasis: '100%', maxWidth: '100%' }
-      : size === 'small'
-        ? { flexBasis: '31.8%', maxWidth: '31.8%' }
-        : size === 'medium'
-          ? { flexBasis: '48.8%', maxWidth: '48.8%' }
-          : { flexBasis: '100%', maxWidth: '100%' };
+    const size = FIXED_INSIGHTS_CARD_SIZES[cardId as keyof typeof FIXED_INSIGHTS_CARD_SIZES] ?? 'large';
     return {
-      ...footprint,
-      order: pref?.order ?? 500,
+      flexBasis: size === 'medium' ? 456 : '100%',
+      maxWidth: size === 'medium' ? 456 : '100%',
+      flexGrow: size === 'large' ? 1 : 0,
+      order: FIXED_INSIGHTS_CARD_ORDER[cardId as keyof typeof FIXED_INSIGHTS_CARD_SIZES] ?? 500,
       marginTop: size === 'small' ? questTheme.spacing.sm : size === 'large' ? questTheme.spacing.lg : questTheme.spacing.md,
     } as any;
   };
-  const handleInsightsDashboardCardSelect = (cardId: string) => {
-    if (!dashboardEditing) return;
-    if (selectedDashboardCardId && selectedDashboardCardId !== cardId) {
-      updateDashboardPreferences(reorderDashboardCard(dashboardPreferences, 'insights', selectedDashboardCardId, cardId));
-      setSelectedDashboardCardId(null);
-      return;
-    }
-    setSelectedDashboardCardId((current) => (current === cardId ? null : cardId));
-  };
-  const finishInsightsDashboardDrag = () => {
-    if (draggingDashboardCardId && dragTargetDashboardCardId && draggingDashboardCardId !== dragTargetDashboardCardId) {
-      updateDashboardPreferences(reorderDashboardCard(dashboardPreferences, 'insights', draggingDashboardCardId, dragTargetDashboardCardId));
-    }
-    setDraggingDashboardCardId(null);
-    setDragTargetDashboardCardId(null);
-  };
-  const insightsDashboardShellProps = (cardId: string) => ({
+  const insightsDashboardShellProps = (cardId: string) => {
+    const size = FIXED_INSIGHTS_CARD_SIZES[cardId as keyof typeof FIXED_INSIGHTS_CARD_SIZES] ?? 'large';
+    return ({
     surface: 'insights' as const,
-    card: insightsCardsById.get(cardId)!,
-    preference: insightsCardPref(cardId),
-    editMode: dashboardEditing,
-    selected: selectedDashboardCardId === cardId || draggingDashboardCardId === cardId || dragTargetDashboardCardId === cardId,
+    card: {
+      id: cardId,
+      surface: 'insights' as const,
+      titleKey: cardId,
+      descriptionKey: cardId,
+      domainTags: [],
+      defaultSize: size,
+      allowedSizes: [size],
+      defaultVisible: true,
+      priority: FIXED_INSIGHTS_CARD_ORDER[cardId as keyof typeof FIXED_INSIGHTS_CARD_SIZES] ?? 500,
+    },
+    preference: { cardId, visible: true, order: FIXED_INSIGHTS_CARD_ORDER[cardId as keyof typeof FIXED_INSIGHTS_CARD_SIZES] ?? 500, size },
+    editMode: false,
+    selected: false,
     questTheme,
     language: lang,
     style: insightsCardWrapperStyle(cardId),
-    onSelect: () => handleInsightsDashboardCardSelect(cardId),
-    onEnterEdit: () => {
-      setDashboardEditing(true);
-      setSelectedDashboardCardId(cardId);
-    },
-    onRemove: () => setDashboardCardVisibility('insights', cardId, false),
-    onResize: (size: any) => setDashboardCardSize('insights', cardId, size),
-    onDragStart: () => {
-      setDraggingDashboardCardId(cardId);
-      setDragTargetDashboardCardId(cardId);
-    },
-    onDragEnter: () => {
-      if (draggingDashboardCardId && draggingDashboardCardId !== cardId) setDragTargetDashboardCardId(cardId);
-    },
-    onHoverCard: (targetCardId: string) => {
-      if (targetCardId !== cardId) setDragTargetDashboardCardId(targetCardId);
-    },
-    onDropCard: (movingCardId?: string) => {
-      const movingId = movingCardId || draggingDashboardCardId;
-      if (movingId && movingId !== cardId) {
-        updateDashboardPreferences(reorderDashboardCard(dashboardPreferences, 'insights', movingId, cardId));
-      }
-      setDraggingDashboardCardId(null);
-      setDragTargetDashboardCardId(null);
-    },
-    onMoveToCard: (targetCardId: string) => {
-      if (targetCardId && targetCardId !== cardId) {
-        updateDashboardPreferences(reorderDashboardCard(dashboardPreferences, 'insights', cardId, targetCardId));
-      }
-      setDraggingDashboardCardId(null);
-      setDragTargetDashboardCardId(null);
-    },
-    onDragEnd: finishInsightsDashboardDrag,
-  });
+    });
+  };
   const mainJudgementCardSize = insightsCardSize('main_judgement');
   const keyEvidenceCardSize = insightsCardSize('key_evidence');
   const advancedSignalsCardSize = insightsCardSize('advanced_signals');
@@ -524,26 +470,10 @@ export default function StatsScreen() {
           {t(lang, 'dashboardSummary')} · {logs.length} {t(lang, 'logsToday')} · {activeDays} {t(lang, 'activeDays')} · {t(lang, 'last7Days')}
         </Text>
 
-        <DashboardLayoutControls
-          surface="insights"
-          questTheme={questTheme}
-          language={lang}
-          preferences={dashboardPreferences}
-          editing={dashboardEditing}
-          onEditingChange={(editing) => {
-            setDashboardEditing(editing);
-            setSelectedDashboardCardId(null);
-          }}
-          onPreset={setDashboardPreset}
-          onVisibility={(cardId, visible) => setDashboardCardVisibility('insights', cardId, visible)}
-          onAddCard={(cardId) => updateDashboardPreferences(addDashboardCardAtEnd(dashboardPreferences, 'insights', cardId))}
-          onReset={() => resetDashboardLayout('insights')}
-        />
-
         <TileGrid
           nativeID="insights-dashboard-grid"
-          className={`dashboard-tile-grid insights-dashboard-tile-grid ${dashboardEditing ? 'dashboard-editing' : ''}`}
-          style={[styles.dashboardTileGrid, dashboardEditing && styles.dashboardTileGridEditing]}
+          className="dashboard-tile-grid insights-dashboard-tile-grid"
+          style={styles.dashboardTileGrid}
         >
 
         {insightsCardVisible('main_judgement') ? (
