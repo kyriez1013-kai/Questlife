@@ -417,8 +417,8 @@ export default function StatsScreen() {
     const size = FIXED_INSIGHTS_CARD_SIZES[cardId as keyof typeof FIXED_INSIGHTS_CARD_SIZES] ?? 'large';
     return {
       width: '100%',
-      flexBasis: size === 'large' ? '100%' : 456,
-      maxWidth: size === 'medium' ? 456 : '100%',
+      flexBasis: '100%',
+      maxWidth: '100%',
       flexGrow: size === 'large' ? 1 : 0,
       order: FIXED_INSIGHTS_CARD_ORDER[cardId as keyof typeof FIXED_INSIGHTS_CARD_SIZES] ?? 500,
       marginTop: size === 'small' ? questTheme.spacing.sm : size === 'large' ? questTheme.spacing.lg : questTheme.spacing.md,
