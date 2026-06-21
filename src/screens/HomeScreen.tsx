@@ -1645,7 +1645,8 @@ export default function HomeScreen() {
   const todayCardWrapperStyle = useCallback((cardId: keyof typeof FIXED_TODAY_CARD_SIZES) => {
     const size = FIXED_TODAY_CARD_SIZES[cardId];
     return {
-      flexBasis: size === 'small' ? 320 : size === 'medium' ? 456 : '100%',
+      width: '100%',
+      flexBasis: size === 'large' ? '100%' : 456,
       maxWidth: size === 'small' ? 360 : size === 'medium' ? 456 : '100%',
       flexGrow: size === 'large' ? 1 : 0,
       order: FIXED_TODAY_CARD_ORDER[cardId],
