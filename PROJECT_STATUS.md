@@ -1725,9 +1725,15 @@ What changed:
 - No drag-and-drop, no native Apple Health, no data migration, no LLM, and no B-3.3/B4/context/metacognition rewrite were added.
 
 Validation:
-- `npx tsc --noEmit`: passed locally.
-- `npm run build`: passed locally.
-- Production web UI verification is required at `https://questlife-alpha-orpin.vercel.app` after push/deploy.
+- `npx tsc --noEmit`: passed locally after the recall and fixed-layout stabilization patches.
+- `npm run build`: passed locally after the recall and fixed-layout stabilization patches.
+- Production web UI manual verification: passed at `https://questlife-alpha-orpin.vercel.app`.
+- Verified production bundle `index-7c577ba2c056d4c658238b7ad8307d4c.js` deployed after GitHub push.
+- Verified Today normal mode has no edit layout button, long-press edit state, drag handles, remove badges, resize handles, Add Card gallery, preset controls, reset controls, or visible `上移 / 下移 / S / M / L / 隐藏` admin rows.
+- Verified Today fixed order includes Smart Capture, Daily Operating Brief, Body/Sleep Context, Recent Feedback/Today Command, Current State, Today Plan, Today Records, Rescue Strip, and Detailed Data.
+- Verified Insights fixed order includes Main Judgement, Key Evidence, and Advanced Analysis lower/collapsible, with no edit UI controls.
+- Verified mobile web at 390px width: Today cards fit within the viewport, max card width 358px and max right edge 374px; bottom nav did not expose or cover recalled edit controls.
+- Verified core Today/Insights content still loads, including smart capture, B4 feedback, Daily Operating Brief, Body/Sleep Context, and Insights main judgement/key evidence.
 
 Known limitations:
 - Card sizes are v1 density/layout hints; dedicated size-specific renderers can be improved later.
@@ -1903,9 +1909,15 @@ What changed:
 - No Apple Health changes and no B-3.3/B4/context/metacognition logic changes were made.
 
 Validation:
-- `npx tsc --noEmit`: passed locally.
-- `npm run build`: passed locally.
-- Production web UI verification is required at `https://questlife-alpha-orpin.vercel.app` after push/deploy.
+- `npx tsc --noEmit`: passed locally after the recall and fixed-layout stabilization patches.
+- `npm run build`: passed locally after the recall and fixed-layout stabilization patches.
+- Production web UI manual verification: passed at `https://questlife-alpha-orpin.vercel.app`.
+- Verified production bundle `index-7c577ba2c056d4c658238b7ad8307d4c.js` deployed after GitHub push.
+- Verified Today normal mode has no edit layout button, long-press edit state, drag handles, remove badges, resize handles, Add Card gallery, preset controls, reset controls, or visible `上移 / 下移 / S / M / L / 隐藏` admin rows.
+- Verified Today fixed order includes Smart Capture, Daily Operating Brief, Body/Sleep Context, Recent Feedback/Today Command, Current State, Today Plan, Today Records, Rescue Strip, and Detailed Data.
+- Verified Insights fixed order includes Main Judgement, Key Evidence, and Advanced Analysis lower/collapsible, with no edit UI controls.
+- Verified mobile web at 390px width: Today cards fit within the viewport, max card width 358px and max right edge 374px; bottom nav did not expose or cover recalled edit controls.
+- Verified core Today/Insights content still loads, including smart capture, B4 feedback, Daily Operating Brief, Body/Sleep Context, and Insights main judgement/key evidence.
 
 Known limitations:
 - Freeform resize-drag and Apple-level jiggle animation remain later.
@@ -1915,7 +1927,7 @@ Known limitations:
 
 ## Control Center Recall + Product Stability Restore
 
-Status: Implemented; production verification pending after GitHub/Vercel deployment.
+Status: Production manually validated. Code commits `2c9c636`, `c21c81a`, and `59af765` accepted.
 
 Product verdict:
 - The Control Center editable dashboard experiment was product-rejected after real use.
@@ -1931,9 +1943,15 @@ What changed:
 - No data migration, user-data clearing, Apple Health work, B-3.3 logic change, B4 logic change, context parser change, or metacognition/statePatterns change was made.
 
 Validation:
-- `npx tsc --noEmit`: passed locally.
-- `npm run build`: passed locally.
-- Production web UI verification is required at `https://questlife-alpha-orpin.vercel.app` after push/deploy.
+- `npx tsc --noEmit`: passed locally after the recall and fixed-layout stabilization patches.
+- `npm run build`: passed locally after the recall and fixed-layout stabilization patches.
+- Production web UI manual verification: passed at `https://questlife-alpha-orpin.vercel.app`.
+- Verified production bundle `index-7c577ba2c056d4c658238b7ad8307d4c.js` deployed after GitHub push.
+- Verified Today normal mode has no edit layout button, long-press edit state, drag handles, remove badges, resize handles, Add Card gallery, preset controls, reset controls, or visible `上移 / 下移 / S / M / L / 隐藏` admin rows.
+- Verified Today fixed order includes Smart Capture, Daily Operating Brief, Body/Sleep Context, Recent Feedback/Today Command, Current State, Today Plan, Today Records, Rescue Strip, and Detailed Data.
+- Verified Insights fixed order includes Main Judgement, Key Evidence, and Advanced Analysis lower/collapsible, with no edit UI controls.
+- Verified mobile web at 390px width: Today cards fit within the viewport, max card width 358px and max right edge 374px; bottom nav did not expose or cover recalled edit controls.
+- Verified core Today/Insights content still loads, including smart capture, B4 feedback, Daily Operating Brief, Body/Sleep Context, and Insights main judgement/key evidence.
 
 Known limitations:
 - Future Control Center personalization needs a separate design/prototype before reimplementation.
