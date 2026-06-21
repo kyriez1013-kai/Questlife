@@ -120,6 +120,7 @@
   align-items: stretch;
   display: flex;
   flex-wrap: wrap;
+  gap: 12px;
 }
 
 .dashboard-tile {
@@ -129,8 +130,38 @@
   min-width: 0;
 }
 
+#today-dashboard-grid,
+#insights-dashboard-grid {
+  -webkit-tap-highlight-color: transparent;
+}
+
+#today-dashboard-grid.dashboard-editing,
+#insights-dashboard-grid.dashboard-editing,
+.dashboard-dragging,
+.dashboard-dragging * {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+
+.dashboard-dragging input,
+.dashboard-dragging textarea,
+.dashboard-dragging [contenteditable="true"] {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+
 .dashboard-tile .dashboard-card-shell {
   min-height: 100%;
+}
+
+[id^="dashboard-card-"] {
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease, background-color 140ms ease;
+}
+
+[id^="dashboard-card-"]:has([aria-label="拖动卡片移动"]),
+[id^="dashboard-card-"]:has([aria-label="Drag card to move"]) {
+  -webkit-user-select: none !important;
+  user-select: none !important;
 }
 
 .dashboard-tile-small .dashboard-card-shell {
@@ -149,6 +180,15 @@
 
 .dashboard-tile-editing .dashboard-card-shell {
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12) !important;
+}
+
+[id^="dashboard-card-"] [aria-label="拖动卡片移动"],
+[id^="dashboard-card-"] [aria-label="Drag card to move"],
+[id^="dashboard-card-"] [aria-label="调整大小"],
+[id^="dashboard-card-"] [aria-label="Resize card"] {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  touch-action: none;
 }
 
 .dashboard-tile-editing {

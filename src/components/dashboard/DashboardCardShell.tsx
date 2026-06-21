@@ -23,6 +23,7 @@ type Props = {
   onDragEnter?: () => void;
   onDragEnd?: () => void;
   onDropCard?: (movingCardId?: string) => void;
+  onHoverCard?: (targetCardId: string) => void;
   onMoveToCard?: (targetCardId: string) => void;
 };
 
@@ -44,6 +45,7 @@ export default function DashboardCardShell({
   onDragEnter,
   onDragEnd,
   onDropCard,
+  onHoverCard,
   onMoveToCard,
 }: Props) {
   const q = questTheme ?? getQuestTheme();
@@ -80,8 +82,11 @@ export default function DashboardCardShell({
   };
   const handlePointerDragStart = (event: any) => {
     if (!editMode) return;
+    const target = event?.target as HTMLElement | undefined;
+    if (target?.closest?.('input, textarea, [contenteditable="true"], [aria-label="移除卡片"], [aria-label="Remove card"], [aria-label="调整大小"], [aria-label="Resize card"]')) return;
     event?.preventDefault?.();
     event?.stopPropagation?.();
+    document.body.classList.add('dashboard-dragging');
     onDragStart?.();
     const pointerId = event?.nativeEvent?.pointerId ?? event?.pointerId;
     const currentTarget = event?.currentTarget;
@@ -89,11 +94,15 @@ export default function DashboardCardShell({
 
     const handlePointerMove = (moveEvent: PointerEvent) => {
       const targetId = getDashboardCardIdFromPoint(moveEvent.clientX, moveEvent.clientY);
-      if (targetId && targetId !== card.id) onDragEnter?.();
+      if (targetId && targetId !== card.id) {
+        onHoverCard?.(targetId);
+        onDragEnter?.();
+      }
     };
     const handlePointerUp = (upEvent: PointerEvent) => {
       const targetId = getDashboardCardIdFromPoint(upEvent.clientX, upEvent.clientY);
       if (targetId && targetId !== card.id) onMoveToCard?.(targetId);
+      document.body.classList.remove('dashboard-dragging');
       onDragEnd?.();
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
@@ -108,6 +117,7 @@ export default function DashboardCardShell({
     <CardContainer
       className={`dashboard-card-shell ${surface}-dashboard-card dashboard-card-${card.id} ${editMode ? 'dashboard-card-editing' : ''}`}
       nativeID={`dashboard-card-${surface}-${card.id}`}
+      onPointerDown={editMode ? handlePointerDragStart : undefined}
       style={[
         styles.shell,
         size === 'small' ? styles.small : size === 'large' ? styles.large : styles.medium,
@@ -155,11 +165,6 @@ export default function DashboardCardShell({
             </View>
             <Text style={[styles.sizeLabel, { color: q.colors.primary }]}>{t(lang, size === 'small' ? 'sizeSmall' : size === 'medium' ? 'sizeMedium' : 'sizeLarge')}</Text>
           </TouchableOpacity>
-          {selected ? (
-            <View style={[styles.selectedPill, { backgroundColor: q.colors.primarySoft, borderColor: q.colors.primary }]}> 
-              <Text style={[styles.selectedText, { color: q.colors.primary }]}>{t(lang, 'dragToMove')}</Text>
-            </View>
-          ) : null}
         </>
       ) : null}
     </CardContainer>
@@ -172,7 +177,7 @@ export default function DashboardCardShell({
       draggable={editMode}
       delayLongPress={320}
       onLongPress={onEnterEdit}
-      onPress={editMode ? onSelect : undefined}
+      onPress={undefined}
       onDragStart={editMode ? handleDragStart : undefined}
       onDragOver={editMode ? handleDragOver : undefined}
       onDrop={editMode ? handleDrop : undefined}
@@ -196,7 +201,7 @@ const styles = StyleSheet.create({
   tileSmall: { minHeight: 76 },
   tileMedium: { minHeight: 118 },
   tileLarge: { minHeight: 168 },
-  tileEditing: { cursor: 'grab' } as any,
+  tileEditing: { cursor: 'grab', userSelect: 'none', WebkitUserSelect: 'none' } as any,
   tileSelected: { cursor: 'grabbing' } as any,
   shell: {
     position: 'relative',
@@ -234,7 +239,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 5,
-  },
+    cursor: 'grab',
+    touchAction: 'none',
+    userSelect: 'none',
+  } as any,
   dragText: { fontSize: 16, lineHeight: 18, fontWeight: '900' },
   resizeHandle: {
     position: 'absolute',
@@ -255,14 +263,4 @@ const styles = StyleSheet.create({
   gripMarkMiddle: { width: 10 },
   gripMarkLong: { width: 14 },
   sizeLabel: { fontSize: 10, fontWeight: '900' },
-  selectedPill: {
-    position: 'absolute',
-    left: 10,
-    bottom: 10,
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-  },
-  selectedText: { fontSize: 10, fontWeight: '900' },
 });

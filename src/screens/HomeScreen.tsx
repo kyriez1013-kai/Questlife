@@ -11,7 +11,7 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert,
-  Animated, Easing, Keyboard, Modal,
+  Animated, Easing, Keyboard, Modal, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -25,6 +25,7 @@ import {
   skillMinutesOnDate, skillStreak, skillTotalMinutes, skillMilestones,
   Skill, Category, Action, Quality, QUALITY_OPTIONS, HOUR_MILESTONES, TaskType, ExecutionLog, StateCheckIn,
   DomainRecordingField,
+  DashboardCardSize,
 } from '../types';
 import BottomSheetForm from '../components/BottomSheetForm';
 import { adjustScheduleBlock, generateScheduleBlocksFromSkills } from '../scheduleAdjust';
@@ -381,6 +382,8 @@ export default function HomeScreen() {
   const [dragTargetDashboardCardId, setDragTargetDashboardCardId] = useState<string | null>(null);
   const navigation = useNavigation<any>();
   const questTheme = getQuestTheme(data.settings.selectedThemeId);
+  const { width: viewportWidth } = useWindowDimensions();
+  const dashboardIsWide = viewportWidth >= 780;
   const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
   const lang = getLanguage(data.settings.language);
   const themedCard = {
@@ -1640,14 +1643,25 @@ export default function HomeScreen() {
     () => new Map(getDashboardCardsForSurface('today').map((card) => [card.id, card])),
     []
   );
+  const todayCardSize = useCallback((cardId: string): DashboardCardSize => (
+    todayCardPref(cardId)?.size ?? todayCardsById.get(cardId)?.defaultSize ?? 'medium'
+  ), [todayCardPref, todayCardsById]);
   const todayCardWrapperStyle = useCallback((cardId: string) => {
     const pref = todayCardPref(cardId);
     const size = pref?.size ?? 'medium';
+    const footprint = !dashboardIsWide
+      ? { flexBasis: '100%', maxWidth: '100%' }
+      : size === 'small'
+        ? { flexBasis: '31.8%', maxWidth: '31.8%' }
+        : size === 'medium'
+          ? { flexBasis: '48.8%', maxWidth: '48.8%' }
+          : { flexBasis: '100%', maxWidth: '100%' };
     return {
+      ...footprint,
       order: pref?.order ?? 500,
       marginTop: size === 'small' ? questTheme.spacing.sm : size === 'large' ? questTheme.spacing.lg : questTheme.spacing.md,
     } as any;
-  }, [questTheme.spacing.lg, questTheme.spacing.md, questTheme.spacing.sm, todayCardPref]);
+  }, [dashboardIsWide, questTheme.spacing.lg, questTheme.spacing.md, questTheme.spacing.sm, todayCardPref]);
   const handleTodayDashboardCardSelect = useCallback((cardId: string) => {
     if (!dashboardEditing) return;
     if (selectedDashboardCardId && selectedDashboardCardId !== cardId) {
@@ -1689,6 +1703,9 @@ export default function HomeScreen() {
       onDragEnter: () => {
         if (draggingDashboardCardId && draggingDashboardCardId !== cardId) setDragTargetDashboardCardId(cardId);
       },
+      onHoverCard: (targetCardId: string) => {
+        if (targetCardId !== cardId) setDragTargetDashboardCardId(targetCardId);
+      },
       onDropCard: (movingCardId?: string) => {
         const movingId = movingCardId || draggingDashboardCardId;
         if (movingId && movingId !== cardId) {
@@ -1707,6 +1724,10 @@ export default function HomeScreen() {
       onDragEnd: finishTodayDashboardDrag,
     };
   }, [dashboardEditing, dashboardPreferences, dragTargetDashboardCardId, draggingDashboardCardId, finishTodayDashboardDrag, handleTodayDashboardCardSelect, lang, questTheme, selectedDashboardCardId, setDashboardCardSize, setDashboardCardVisibility, todayCardPref, todayCardWrapperStyle, todayCardsById, updateDashboardPreferences]);
+  const dailyBriefDashboardSize = todayCardSize('daily_operating_brief');
+  const bodyContextDashboardSize = todayCardSize('body_context');
+  const recentFeedbackDashboardSize = todayCardSize('recent_feedback');
+  const stateCheckinDashboardSize = todayCardSize('state_checkin');
   const TileGrid = View as any;
 
   return (
@@ -1731,7 +1752,11 @@ export default function HomeScreen() {
           onReset={() => resetDashboardLayout('today')}
         />
 
-        <TileGrid className="dashboard-tile-grid today-dashboard-tile-grid" style={styles.dashboardTileGrid}>
+        <TileGrid
+          nativeID="today-dashboard-grid"
+          className={`dashboard-tile-grid today-dashboard-tile-grid ${dashboardEditing ? 'dashboard-editing' : ''}`}
+          style={[styles.dashboardTileGrid, dashboardEditing && styles.dashboardTileGridEditing]}
+        >
 
         {/* ═══ ZONE 1: Smart Capture (input always first by default) ═════════ */}
         {todayCardVisible('smart_capture') ? (
@@ -1766,10 +1791,11 @@ export default function HomeScreen() {
               </Text>
             </View>
           </View>
+          {dailyBriefDashboardSize !== 'small' ? (
           <View style={styles.dailyBriefSection}>
             <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'whyThis')}</Text>
             <View style={styles.dailyBriefChipRow}>
-              {dailyOperatingBrief.whyKeys.slice(0, 3).map((key) => (
+              {dailyOperatingBrief.whyKeys.slice(0, dailyBriefDashboardSize === 'medium' ? 1 : 3).map((key) => (
                 <View key={key} style={[styles.dailyBriefChip, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}>
                   <Text style={[styles.dailyBriefChipText, { color: questTheme.colors.textMuted }]}>
                     {formatCommandCopy(key, dailyOperatingBrief.whyValues)}
@@ -1778,7 +1804,8 @@ export default function HomeScreen() {
               ))}
             </View>
           </View>
-          {dailyOperatingBrief.avoidKeys.length > 0 ? (
+          ) : null}
+          {dailyBriefDashboardSize === 'large' && dailyOperatingBrief.avoidKeys.length > 0 ? (
             <View style={styles.dailyBriefSection}>
               <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'avoidToday')}</Text>
               <View style={styles.dailyBriefChipRow}>
@@ -1792,12 +1819,14 @@ export default function HomeScreen() {
               </View>
             </View>
           ) : null}
+          {dailyBriefDashboardSize === 'large' ? (
           <View style={styles.dailyBriefFooter}>
             <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textSubtle }]}>
               {t(lang, 'confidence')}: {t(lang, dailyOperatingBrief.confidence === 'high' ? 'confidenceHigh' : dailyOperatingBrief.confidence === 'medium' ? 'confidenceMedium' : 'confidenceLow')}
             </Text>
             <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textSubtle }]}>{t(lang, 'briefNotMedical')}</Text>
           </View>
+          ) : null}
         </QuestCard>
         </DashboardCardShell>
         ) : null}
@@ -1821,17 +1850,20 @@ export default function HomeScreen() {
               </Text>
             </View>
           </View>
+          {bodyContextDashboardSize !== 'small' ? (
           <Text style={[styles.contextBriefBody, { color: questTheme.colors.primary }]}>
             {t(lang, 'recommendedAction')}: {t(lang, objectiveContextBrief.recommendedActionKey)}
           </Text>
-          {objectiveContextBrief.avoidKeys.length > 0 ? (
+          ) : null}
+          {bodyContextDashboardSize === 'large' && objectiveContextBrief.avoidKeys.length > 0 ? (
             <Text style={[styles.contextBriefBody, { color: questTheme.colors.textSubtle }]}>
               {t(lang, 'avoidToday')}: {objectiveContextBrief.avoidKeys.map((key) => t(lang, key)).join(' · ')}
             </Text>
           ) : null}
-          {objectiveContextBrief.status !== 'empty' ? (
+          {bodyContextDashboardSize === 'large' && objectiveContextBrief.status !== 'empty' ? (
             <Text style={[styles.contextBriefBody, { color: questTheme.colors.textSubtle }]}>{t(lang, 'contextNotMedical')}</Text>
           ) : null}
+          {bodyContextDashboardSize === 'large' ? (
           <View style={styles.contextInputRow}>
             <QuestInput
               questTheme={questTheme}
@@ -1853,7 +1885,8 @@ export default function HomeScreen() {
               onPress={parseContextInput}
             />
           </View>
-          {contextPreview ? (
+          ) : null}
+          {bodyContextDashboardSize === 'large' && contextPreview ? (
             <View style={[styles.contextPreviewBox, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}>
               <Text style={[styles.contextPreviewTitle, { color: questTheme.colors.text }]}>
                 {contextPreview.contextLogs.length > 0
@@ -1886,7 +1919,7 @@ export default function HomeScreen() {
               />
             </View>
           ) : null}
-          {contextSaveStatus === 'saved' || contextSaveStatus === 'saved_sleep' ? (
+          {bodyContextDashboardSize === 'large' && (contextSaveStatus === 'saved' || contextSaveStatus === 'saved_sleep') ? (
             <Text style={[styles.contextBriefBody, { color: questTheme.colors.success }]}>
               {t(lang, contextSaveStatus === 'saved_sleep' ? 'sleepContextSaved' : 'contextSaved')}
             </Text>
@@ -1898,7 +1931,7 @@ export default function HomeScreen() {
         {/* ═══ ZONE 2: Now Focus — timer if active, else top-priority action ═ */}
         {todayCardVisible('recent_feedback') ? (
         <DashboardCardShell {...todayDashboardShellProps('recent_feedback')}>
-        {data.settings.firstQuestCreated && !data.settings.firstSystemWelcomeDismissed ? (
+        {recentFeedbackDashboardSize !== 'small' && data.settings.firstQuestCreated && !data.settings.firstSystemWelcomeDismissed ? (
           <View style={[styles.welcomeCard, themedCard]}>
             <View style={{ flex: 1 }}>
               <Text style={[styles.actionTitle, { color: questTheme.colors.text }]}>{t(lang, 'firstSystemReady')}</Text>
@@ -1951,12 +1984,15 @@ export default function HomeScreen() {
               <Text style={[styles.nowFocusTitle, { color: questTheme.colors.text }]}>{formatCommandCopy(todayCommand.titleKey, todayCommand.titleValues)}</Text>
             </View>
           </View>
+          {recentFeedbackDashboardSize !== 'small' ? (
           <Text style={[styles.nextActionText, { color: questTheme.colors.textMuted }]}>
             {t(lang, 'because')} {formatCommandCopy(todayCommand.reasonKey, todayCommand.reasonValues)}
           </Text>
+          ) : null}
           <Text style={[styles.commandStateLine, { color: questTheme.colors.textMuted }]}>
             {t(lang, 'currentState')}: {stateSummaryLabel}{stateSummaryTime ? ` · ${stateSummaryTime}` : ''}
           </Text>
+          {recentFeedbackDashboardSize !== 'small' ? (
           <View style={styles.nowFocusActions}>
             <QuestButton
               questTheme={questTheme}
@@ -1996,6 +2032,7 @@ export default function HomeScreen() {
               />
             ) : null}
           </View>
+          ) : null}
         </View>
         </DashboardCardShell>
         ) : null}
@@ -2128,10 +2165,13 @@ export default function HomeScreen() {
               <Text style={[styles.strategyKicker, { color: questTheme.colors.textMuted }]}>{t(lang, 'currentState')}</Text>
               <Text style={[styles.currentStateTitle, { color: questTheme.colors.text }]}>{t(lang, 'logStateNow')}</Text>
             </View>
+            {stateCheckinDashboardSize === 'large' ? (
             <TouchableOpacity style={[styles.stateUpdateBtn, { borderColor: accent }]} onPress={openStateModal}>
               <Text style={[styles.stateUpdateText, { color: accent }]}>＋ {t(lang, 'detailedCheckIn')}</Text>
             </TouchableOpacity>
+            ) : null}
           </View>
+          {stateCheckinDashboardSize !== 'small' ? (
           <View style={styles.quickStateGrid}>
             {dailyStateOptions.map((opt) => (
               <TouchableOpacity
@@ -2144,6 +2184,7 @@ export default function HomeScreen() {
               </TouchableOpacity>
             ))}
           </View>
+          ) : null}
         </View>
         )}
         </DashboardCardShell>
@@ -3523,6 +3564,7 @@ const styles = StyleSheet.create({
   stateEmoji: { fontSize: 26 },
   stateLabel: { color: theme.textDim, fontSize: 10, fontWeight: '600' },
   dashboardTileGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, alignItems: 'stretch', marginTop: 10 },
+  dashboardTileGridEditing: { userSelect: 'none', WebkitUserSelect: 'none' } as any,
   dashboardFullRow: { width: '100%' },
 
   bigBtn: { marginTop: 16, paddingVertical: 18, borderRadius: theme.radius.lg, alignItems: 'center', ...theme.shadow },

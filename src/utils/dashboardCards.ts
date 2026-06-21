@@ -29,10 +29,10 @@ export type DashboardCardMeta = {
 };
 
 export const DASHBOARD_CARDS: DashboardCardMeta[] = [
-  { id: 'smart_capture', surface: 'today', titleKey: 'smartCapture', descriptionKey: 'smartCaptureDashboardDescription', domainTags: ['core', 'execution'], defaultSize: 'large', allowedSizes: ['medium', 'large'], defaultVisible: true, priority: 10 },
+  { id: 'smart_capture', surface: 'today', titleKey: 'smartCapture', descriptionKey: 'smartCaptureDashboardDescription', domainTags: ['core', 'execution'], defaultSize: 'large', allowedSizes: ['large'], defaultVisible: true, priority: 10 },
   { id: 'daily_operating_brief', surface: 'today', titleKey: 'dailyOperatingBrief', descriptionKey: 'dailyBriefDashboardDescription', domainTags: ['core', 'context', 'state'], defaultSize: 'medium', allowedSizes: ['small', 'medium', 'large'], defaultVisible: true, priority: 20 },
-  { id: 'body_context', surface: 'both', titleKey: 'bodyContext', descriptionKey: 'bodyContextDashboardDescription', domainTags: ['context', 'recovery', 'fitness'], defaultSize: 'medium', allowedSizes: ['medium', 'large'], defaultVisible: true, priority: 30 },
-  { id: 'recent_feedback', surface: 'today', titleKey: 'recentFeedback', descriptionKey: 'recentFeedbackDashboardDescription', domainTags: ['execution', 'learning', 'fitness'], defaultSize: 'small', allowedSizes: ['small', 'medium'], defaultVisible: true, priority: 40 },
+  { id: 'body_context', surface: 'both', titleKey: 'bodyContext', descriptionKey: 'bodyContextDashboardDescription', domainTags: ['context', 'recovery', 'fitness'], defaultSize: 'medium', allowedSizes: ['small', 'medium', 'large'], defaultVisible: true, priority: 30 },
+  { id: 'recent_feedback', surface: 'today', titleKey: 'recentFeedback', descriptionKey: 'recentFeedbackDashboardDescription', domainTags: ['execution', 'learning', 'fitness'], defaultSize: 'small', allowedSizes: ['small', 'medium', 'large'], defaultVisible: true, priority: 40 },
   { id: 'state_checkin', surface: 'today', titleKey: 'currentState', descriptionKey: 'stateCheckinDashboardDescription', domainTags: ['state', 'recovery'], defaultSize: 'medium', allowedSizes: ['small', 'medium', 'large'], defaultVisible: true, priority: 50 },
   { id: 'today_plan', surface: 'today', titleKey: 'todayPlan', descriptionKey: 'todayPlanDashboardDescription', domainTags: ['execution', 'core'], defaultSize: 'medium', allowedSizes: ['small', 'medium', 'large'], defaultVisible: true, priority: 60 },
   { id: 'today_records', surface: 'today', titleKey: 'todayLogs', descriptionKey: 'todayRecordsDashboardDescription', domainTags: ['execution'], defaultSize: 'medium', allowedSizes: ['small', 'medium', 'large'], defaultVisible: true, priority: 70 },

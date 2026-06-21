@@ -1870,3 +1870,45 @@ Known limitations:
 - Freeform resize-drag and Apple-level jiggle animation remain later.
 - Dedicated vertical card renderers remain later; v4 improves footprint and safe allowed sizes first.
 - Apple Health integration remains later.
+
+## Control Center Product Rejection Fix: Web-first Grid + UI Integrity
+
+Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+
+Product verdict:
+- Control Center v4 remains technically validated, but the product interaction was rejected.
+- This corrective pass treats v4 as a foundation and fixes the web-first editing feel instead of adding new product scope.
+
+Files changed:
+- `src/components/dashboard/DashboardCardShell.tsx`
+- `src/components/dashboard/AddCardGallery.tsx`
+- `src/screens/HomeScreen.tsx`
+- `src/screens/StatsScreen.tsx`
+- `src/styles/theme-overrides.css`
+- `src/utils/dashboardCards.ts`
+- `src/i18n.ts`
+- `PROJECT_STATUS.md`
+
+What changed:
+- Added edit/drag text-selection suppression through dashboard edit styles and a `dashboard-dragging` body guard.
+- Reworked production web drag so cards can be grabbed directly while avoiding inputs, remove controls, and resize controls.
+- Preserved `dashboardPreferences`, card registry, visible/hidden preferences, order, size, and presets; no data migration was added.
+- Moved responsive tile footprint into RN Web-safe layout styles instead of relying on unstable `className` propagation.
+- Today and Insights now use width-aware tile footprints: small/medium cards can form a grid on wider web, while narrow screens remain one column.
+- Size changes now affect card content density for key cards: Daily Operating Brief, Body Context, Recent Feedback/Command, State Check-in, and Insights main/evidence/advanced cards.
+- Smart Capture is restricted to large size to avoid breaking the input experience.
+- Add Card Gallery now de-duplicates multi-tag cards and shows category/size badges, making it feel more like a picker.
+- Removed emoji-style system labels from B4 smart-capture feedback labels and replaced the Insights quality emoji marker with numeric quality text.
+- Preset definitions remain meaningful and continue to change card order, visibility, and size.
+- No Apple Health changes and no B-3.3/B4/context/metacognition logic changes were made.
+
+Validation:
+- `npx tsc --noEmit`: passed locally.
+- `npm run build`: passed locally.
+- Production web UI verification is required at `https://questlife-alpha-orpin.vercel.app` after push/deploy.
+
+Known limitations:
+- Freeform resize-drag and Apple-level jiggle animation remain later.
+- Native mobile drag polish remains later; this pass prioritizes production web.
+- Some deep/legacy cards still need dedicated small/medium/large renderers in a later design-system pass.
+- Apple Health integration remains later.

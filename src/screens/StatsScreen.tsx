@@ -8,12 +8,12 @@
 //   6. 🎯 技能雷达        (保留)
 //   7. 🔥 近 8 周热力图   (从 16 周缩到 8 周, 移到最底)
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Rect } from 'react-native-svg';
 import { useStore } from '../store';
 import { appAccent, theme } from '../theme';
-import { emojiForAvgQuality, Skill } from '../types';
+import { Skill, DashboardCardSize } from '../types';
 import { getLanguage, progressTypeLabel, t, taskTypeLabel } from '../i18n';
 import { getAppCoreLoopStatus } from '../utils/coreLoop';
 import { trackEvent } from '../utils/analytics';
@@ -51,6 +51,8 @@ export default function StatsScreen() {
   const [dragTargetDashboardCardId, setDragTargetDashboardCardId] = useState<string | null>(null);
   const lang = getLanguage(data.settings.language);
   const questTheme = getQuestTheme(data.settings.selectedThemeId);
+  const { width: viewportWidth } = useWindowDimensions();
+  const dashboardIsWide = viewportWidth >= 780;
   const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
   const logs = useMemo(() => getLiveExecutionLogs(data.executionLogs || [], { skills: data.skills }), [data.executionLogs, data.skills]);
   const timeLogs = useMemo(() => logs.filter((log) => (log.durationMinutes ?? 0) > 0), [logs]);
@@ -420,10 +422,21 @@ export default function StatsScreen() {
   );
   const insightsCardPref = (cardId: string) => getDashboardPreference(dashboardPreferences, 'insights', cardId);
   const insightsCardVisible = (cardId: string) => insightsCardPref(cardId)?.visible !== false;
+  const insightsCardSize = (cardId: string): DashboardCardSize => (
+    insightsCardPref(cardId)?.size ?? insightsCardsById.get(cardId)?.defaultSize ?? 'medium'
+  );
   const insightsCardWrapperStyle = (cardId: string) => {
     const pref = insightsCardPref(cardId);
     const size = pref?.size ?? 'medium';
+    const footprint = !dashboardIsWide
+      ? { flexBasis: '100%', maxWidth: '100%' }
+      : size === 'small'
+        ? { flexBasis: '31.8%', maxWidth: '31.8%' }
+        : size === 'medium'
+          ? { flexBasis: '48.8%', maxWidth: '48.8%' }
+          : { flexBasis: '100%', maxWidth: '100%' };
     return {
+      ...footprint,
       order: pref?.order ?? 500,
       marginTop: size === 'small' ? questTheme.spacing.sm : size === 'large' ? questTheme.spacing.lg : questTheme.spacing.md,
     } as any;
@@ -467,6 +480,9 @@ export default function StatsScreen() {
     onDragEnter: () => {
       if (draggingDashboardCardId && draggingDashboardCardId !== cardId) setDragTargetDashboardCardId(cardId);
     },
+    onHoverCard: (targetCardId: string) => {
+      if (targetCardId !== cardId) setDragTargetDashboardCardId(targetCardId);
+    },
     onDropCard: (movingCardId?: string) => {
       const movingId = movingCardId || draggingDashboardCardId;
       if (movingId && movingId !== cardId) {
@@ -484,6 +500,9 @@ export default function StatsScreen() {
     },
     onDragEnd: finishInsightsDashboardDrag,
   });
+  const mainJudgementCardSize = insightsCardSize('main_judgement');
+  const keyEvidenceCardSize = insightsCardSize('key_evidence');
+  const advancedSignalsCardSize = insightsCardSize('advanced_signals');
   const TileGrid = View as any;
 
   return (
@@ -521,7 +540,11 @@ export default function StatsScreen() {
           onReset={() => resetDashboardLayout('insights')}
         />
 
-        <TileGrid className="dashboard-tile-grid insights-dashboard-tile-grid" style={styles.dashboardTileGrid}>
+        <TileGrid
+          nativeID="insights-dashboard-grid"
+          className={`dashboard-tile-grid insights-dashboard-tile-grid ${dashboardEditing ? 'dashboard-editing' : ''}`}
+          style={[styles.dashboardTileGrid, dashboardEditing && styles.dashboardTileGridEditing]}
+        >
 
         {insightsCardVisible('main_judgement') ? (
         <DashboardCardShell {...insightsDashboardShellProps('main_judgement')}>
@@ -546,12 +569,18 @@ export default function StatsScreen() {
             </View>
           </View>
           <Text style={[styles.primaryBody, { color: questTheme.colors.text }]}>{applyValues(t(lang, mainInsight.titleKey), mainInsight.titleValues)}</Text>
+          {mainJudgementCardSize !== 'small' ? (
           <Text style={[styles.metaBody, { color: questTheme.colors.textMuted }]}>{applyValues(t(lang, mainInsight.bodyKey), mainInsight.bodyValues)}</Text>
+          ) : null}
+          {mainJudgementCardSize === 'large' ? (
           <Text style={[styles.metaBody, { color: questTheme.colors.textSubtle }]}>{t(lang, mainInsight.sourceKey)}</Text>
+          ) : null}
+          {mainJudgementCardSize === 'large' ? (
           <View style={[styles.nextActionBox, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.border }]}>
             <Text style={[styles.nextActionLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'next')}</Text>
             <Text style={[styles.nextActionText, { color: questTheme.colors.primary }]}>{applyValues(t(lang, mainInsight.nextKey), mainInsight.nextValues)}</Text>
           </View>
+          ) : null}
         </QuestCard>
         </DashboardCardShell>
         ) : null}
@@ -561,9 +590,9 @@ export default function StatsScreen() {
         {hasKeyEvidence ? (
           <>
             {hasStateTrendEvidence ? <StateTrendStrip metacognition={metacognition} questTheme={questTheme} lang={lang} /> : null}
-            {hasStatePatternEvidence ? <StatePatternsPanel metacognition={metacognition} questTheme={questTheme} lang={lang} /> : null}
-            {hasBodyContextEvidence ? <BodyContextPanel brief={objectiveContextBrief} questTheme={questTheme} lang={lang} /> : null}
-            {hasBehaviorEvidence ? <BehaviorLinksPanel metacognition={metacognition} questTheme={questTheme} lang={lang} /> : null}
+            {keyEvidenceCardSize !== 'small' && hasStatePatternEvidence ? <StatePatternsPanel metacognition={metacognition} questTheme={questTheme} lang={lang} /> : null}
+            {keyEvidenceCardSize === 'large' && hasBodyContextEvidence ? <BodyContextPanel brief={objectiveContextBrief} questTheme={questTheme} lang={lang} /> : null}
+            {keyEvidenceCardSize === 'large' && hasBehaviorEvidence ? <BehaviorLinksPanel metacognition={metacognition} questTheme={questTheme} lang={lang} /> : null}
           </>
         ) : (
           <QuestCard questTheme={questTheme} variant="flat" style={[styles.insightCard, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.borderStrong }]} className="insight-card empty-state">
@@ -590,7 +619,13 @@ export default function StatsScreen() {
           </Text>
         </TouchableOpacity>
 
-        {advancedExpanded ? (
+        {advancedSignalsCardSize !== 'large' ? (
+          <QuestCard questTheme={questTheme} variant="flat" style={[styles.insightCard, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.borderStrong }]} className="insight-card">
+            <Text style={[styles.insightLine, { color: questTheme.colors.textMuted }]}>{t(lang, 'advancedSignals')}</Text>
+          </QuestCard>
+        ) : null}
+
+        {advancedSignalsCardSize === 'large' && advancedExpanded ? (
           <>
             <View style={[styles.commandStrip, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong }]}>
               <View style={styles.commandCell}>
@@ -621,7 +656,6 @@ export default function StatsScreen() {
                 <View style={[styles.qCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong }]}>
                   <Text style={[styles.qBig, { color: questTheme.colors.text }]}>
                     {weeklyQuality.avg.toFixed(1)} <Text style={[styles.qOf, { color: questTheme.colors.textMuted }]}>/ 5.0</Text>{' '}
-                    <Text style={styles.qEmoji}>{emojiForAvgQuality(weeklyQuality.avg)}</Text>
                   </Text>
                   <Text style={[styles.qSub, { color: questTheme.colors.textMuted }]}>{t(lang, 'total')} {weeklyQuality.count} {t(lang, 'validRecords')}</Text>
                 </View>
@@ -1074,7 +1108,7 @@ function DailyBarChart({
             <View key={d.date} style={styles.barCol}>
               <View style={styles.barEmojiSlot}>
                 {d.avgQuality != null && (
-                  <Text style={styles.barEmoji}>{emojiForAvgQuality(d.avgQuality)}</Text>
+                  <Text style={[styles.barEmoji, { color: questTheme.colors.textMuted }]}>{d.avgQuality.toFixed(1)}</Text>
                 )}
               </View>
               <View style={[styles.barWrap, { backgroundColor: questTheme.colors.surfaceSoft }]}>
@@ -1198,6 +1232,7 @@ const styles = StyleSheet.create({
   dashboardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
   dashboardMeta: { fontSize: 12, fontWeight: '800', marginTop: 8, lineHeight: 18 },
   dashboardTileGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, alignItems: 'stretch', marginTop: 10 },
+  dashboardTileGridEditing: { userSelect: 'none', WebkitUserSelect: 'none' } as any,
   advancedToggle: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderRadius: 16, padding: 14, marginTop: 18 },
   advancedTitle: { fontSize: 16, fontWeight: '900', lineHeight: 22 },
   advancedSubtitle: { fontSize: 12, fontWeight: '800', lineHeight: 18, marginTop: 2 },

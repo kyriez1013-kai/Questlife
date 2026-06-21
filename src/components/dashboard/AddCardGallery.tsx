@@ -28,12 +28,13 @@ export default function AddCardGallery({ hiddenCards, questTheme, language, onAd
   const q = questTheme ?? getQuestTheme();
   const lang = getLanguage(language);
   const used = new Set<string>();
-  const groups = GROUPS.map((group) => ({
-    ...group,
-    cards: hiddenCards.filter((card) => card.domainTags.includes(group.tag) && !used.has(card.id)),
-  })).map((group) => {
-    group.cards.forEach((card) => used.add(card.id));
-    return group;
+  const groups = GROUPS.map((group) => {
+    const cards = hiddenCards.filter((card) => {
+      if (used.has(card.id) || !card.domainTags.includes(group.tag)) return false;
+      used.add(card.id);
+      return true;
+    });
+    return { ...group, cards };
   }).filter((group) => group.cards.length > 0);
   const leftovers = hiddenCards.filter((card) => !used.has(card.id));
 
@@ -61,6 +62,9 @@ export default function AddCardGallery({ hiddenCards, questTheme, language, onAd
                         {t(lang, 'cardSize')}: {t(lang, card.defaultSize === 'small' ? 'sizeSmall' : card.defaultSize === 'medium' ? 'sizeMedium' : 'sizeLarge')}
                       </Text>
                     </View>
+                    <View style={[styles.categoryBadge, { backgroundColor: q.colors.surfaceSoft, borderColor: q.colors.border }]}>
+                      <Text style={[styles.categoryBadgeText, { color: q.colors.textMuted }]}>{t(lang, group.labelKey)}</Text>
+                    </View>
                   </View>
                   <Text style={[styles.cardDescription, { color: q.colors.textMuted }]}>{t(lang, card.descriptionKey)}</Text>
                 </View>
@@ -85,6 +89,8 @@ const styles = StyleSheet.create({
   cardDescription: { fontSize: 11, fontWeight: '700', lineHeight: 16, marginTop: 2 },
   sizeBadge: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 4 },
   sizeBadgeText: { fontSize: 10, fontWeight: '900' },
+  categoryBadge: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 4 },
+  categoryBadgeText: { fontSize: 10, fontWeight: '900' },
   empty: { marginTop: 4 },
   emptyText: { fontSize: 12, fontWeight: '800' },
 });
