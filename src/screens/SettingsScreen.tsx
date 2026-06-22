@@ -1,8 +1,9 @@
 // V2: "设置" Tab
 // 提醒已移到每个技能内, 这里只保留版本号 + 本地存储说明
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import ColorPicker from '../components/ColorPicker';
 import { useStore } from '../store';
 import { getLanguage, t } from '../i18n';
@@ -24,6 +25,7 @@ export default function SettingsScreen() {
   const [decisionLabOutput, setDecisionLabOutput] = useState('');
   const [decisionLabError, setDecisionLabError] = useState('');
   const [decisionLabLoading, setDecisionLabLoading] = useState(false);
+  const [lastDecisionFeedback, setLastDecisionFeedback] = useState('');
   const decisionDebugVisible = (() => {
     if (typeof window === 'undefined') return false;
     try {
@@ -33,7 +35,7 @@ export default function SettingsScreen() {
       return false;
     }
   })();
-  const readLastDecisionFeedback = () => {
+  const readLastDecisionFeedback = useCallback(() => {
     if (typeof window === 'undefined') return '';
     try {
       const raw = window.localStorage?.getItem('questlife_decision_ai_last_feedback');
@@ -44,8 +46,11 @@ export default function SettingsScreen() {
     } catch {
       return '';
     }
-  };
-  const lastDecisionFeedback = decisionDebugVisible ? readLastDecisionFeedback() : '';
+  }, [lang]);
+  useFocusEffect(useCallback(() => {
+    if (decisionDebugVisible) setLastDecisionFeedback(readLastDecisionFeedback());
+    return undefined;
+  }, [decisionDebugVisible, readLastDecisionFeedback]));
   const setDecisionAIFlag = (enabled: boolean) => {
     if (typeof window === 'undefined') return;
     try {
