@@ -1702,7 +1702,7 @@ Known limitations:
 
 ## Control Center v1: Personalizable Dashboard Cards
 
-Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+Status: Production manually validated. Commits `ffe6208` and `64566d4` accepted.
 
 Files changed:
 - `src/types.ts`
@@ -2056,9 +2056,18 @@ What changed:
 Validation:
 - `npx tsc --noEmit`: passed locally.
 - `npm run build`: passed locally.
+- Production web UI manual verification: passed at `https://questlife-alpha-orpin.vercel.app`.
+- Verified production bundle `index-85213990f84a9ab8566e63b481d3d3fa.js` deployed after GitHub push.
+- Verified Debug Lab fallback brief generates a result with quality score, grade, checks, flags, and payload summary.
+- Verified Debug Lab AI brief calls `/api/brief`, returns JSON, shows quality evaluation, and does not expose `reasoning_content`.
+- Verified weak-output simulation marks generic filler as `bad`, flags generic/missing evidence/weak actionability, and shows failed checks.
+- Verified Instant Read feedback controls appear after a state check-in and clicking useful/not-useful does not break the UI.
+- Verified Debug Lab reads the latest local Instant Read feedback after returning from Today.
+- Verified normal production UI does not show Decision AI Lab without debug flag.
+- Verified Today still loads smart capture, B4 feedback, context parser, and Daily Operating Brief.
+- Verified Insights still loads Main Judgement, Key Evidence, and Advanced Analysis.
 
 Known limitations:
-- Production web UI verification still needs to validate Debug Lab fallback, AI brief quality output, weak-output simulation, and Instant Read feedback controls after deployment.
 - Evaluator v1.2 is rule-based and intentionally conservative; future versions can calibrate thresholds using real feedback.
 - Feedback is local/ephemeral and not yet used to improve prompt or pattern memory.
 - Persisting decision results remains future work.
