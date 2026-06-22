@@ -10,6 +10,8 @@ import { appAccent, theme } from '../theme';
 import { getQuestTheme, themeOptions } from '../design/tokens';
 import { trackEvent } from '../utils/analytics';
 import { confirmAction } from '../utils/confirm';
+import { buildDecisionPayload } from '../utils/decisionPayload';
+import { AiDecisionService, LegacyDecisionService } from '../services/decisionService';
 
 export default function SettingsScreen() {
   const { data, setSettings, runIntegrityCheck, repairSafeIntegrityIssues, rebuildDerivedData } = useStore();
@@ -17,6 +19,46 @@ export default function SettingsScreen() {
   const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
   const lang = getLanguage(data.settings.language);
   const [integrityIssueCount, setIntegrityIssueCount] = useState<number | null>(null);
+  const [decisionLabOutput, setDecisionLabOutput] = useState('');
+  const [decisionLabError, setDecisionLabError] = useState('');
+  const [decisionLabLoading, setDecisionLabLoading] = useState(false);
+  const decisionDebugVisible = (() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('debugDecision') === '1' || window.localStorage?.getItem('questlife_debug_decision_ai') === 'true';
+    } catch {
+      return false;
+    }
+  })();
+  const runDecisionLab = async (kind: 'legacy_daily' | 'ai_daily' | 'ai_instant') => {
+    setDecisionLabLoading(true);
+    setDecisionLabError('');
+    try {
+      const payload = buildDecisionPayload(data, {
+        mode: kind === 'ai_instant' ? 'instant_micro' : 'daily_brief',
+        trigger: 'debug',
+      });
+      const service = kind === 'legacy_daily' ? new LegacyDecisionService() : new AiDecisionService();
+      const result = await service.buildBrief(payload);
+      setDecisionLabOutput(JSON.stringify({
+        payloadSummary: {
+          mode: payload.mode,
+          trigger: payload.trigger,
+          goals: payload.profile.active_goals.length,
+          skills: payload.profile.skills.length,
+          last7Days: payload.history_index.last_7_days.length,
+          scheduleToday: payload.schedule_today.length,
+          approxBytes: JSON.stringify(payload).length,
+        },
+        result,
+      }, null, 2));
+    } catch (error: any) {
+      setDecisionLabError(String(error?.message || error));
+    } finally {
+      setDecisionLabLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
@@ -158,6 +200,44 @@ export default function SettingsScreen() {
           </View>
         ) : null}
 
+
+
+        {decisionDebugVisible ? (
+          <View style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, shadowColor: questTheme.colors.cardShadow }]}> 
+            <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'decisionAILab')}</Text>
+            <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>{t(lang, 'decisionAILabDesc')}</Text>
+            <View style={styles.debugActions}>
+              <TouchableOpacity
+                disabled={decisionLabLoading}
+                style={[styles.debugBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}
+                onPress={() => runDecisionLab('legacy_daily')}
+              >
+                <Text style={[styles.debugBtnText, { color: questTheme.colors.text }]}>{t(lang, 'generateFallbackBrief')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                disabled={decisionLabLoading}
+                style={[styles.debugBtn, { borderColor: accent, backgroundColor: questTheme.colors.primarySoft }]}
+                onPress={() => runDecisionLab('ai_daily')}
+              >
+                <Text style={[styles.debugBtnText, { color: accent }]}>{t(lang, 'generateDailyDecisionBrief')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                disabled={decisionLabLoading}
+                style={[styles.debugBtn, { borderColor: accent, backgroundColor: questTheme.colors.primarySoft }]}
+                onPress={() => runDecisionLab('ai_instant')}
+              >
+                <Text style={[styles.debugBtnText, { color: accent }]}>{t(lang, 'generateInstantMicroBrief')}</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={[styles.value, { color: decisionLabError ? questTheme.colors.danger : questTheme.colors.textMuted, marginTop: 12 }]}> 
+              {decisionLabLoading ? t(lang, 'decisionAILoading') : decisionLabError ? `${t(lang, 'decisionAIError')}: ${decisionLabError}` : decisionLabOutput ? t(lang, 'decisionAIResultPreview') : t(lang, 'decisionAIHiddenByDefault')}
+            </Text>
+            {decisionLabOutput ? (
+              <Text style={[styles.monoText, { color: questTheme.colors.text, backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}>{decisionLabOutput}</Text>
+            ) : null}
+          </View>
+        ) : null}
+
         <View style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, shadowColor: questTheme.colors.cardShadow }]}>
           <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'version')}</Text>
           <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>{t(lang, 'versionText')}</Text>
@@ -189,4 +269,5 @@ const styles = StyleSheet.create({
   debugActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   debugBtn: { borderWidth: 1, borderRadius: theme.radius.md, paddingHorizontal: 10, paddingVertical: 9 },
   debugBtnText: { fontSize: 12, fontWeight: '800' },
+  monoText: { marginTop: 12, borderWidth: 1, borderRadius: theme.radius.md, padding: 10, fontSize: 11, lineHeight: 16 } as any,
 });

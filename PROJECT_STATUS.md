@@ -1958,3 +1958,36 @@ Known limitations:
 - Apple Health integration remains later.
 - A broader UI design-system pass remains later.
 - Vertical mode dashboards remain later.
+
+## Decision AI Foundation v1
+
+Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+
+What changed:
+- Added `DecisionService` abstraction with `LegacyDecisionService` and `AiDecisionService`.
+- Added `/api/brief` server endpoint for server-side Decision AI calls through DeepSeek; the API key stays server-side and is never exposed to the frontend.
+- Added compact summarized decision payload builder with Profile / Pattern Memory, History Index, Today Context, current state, and today schedule layers.
+- Added rule-based legacy fallback brief so the feature has a no-network safe path.
+- Added feature flags through localStorage: `questlife_decision_ai_enabled`, `questlife_decision_ai_shadow`, and `questlife_debug_decision_ai`.
+- Added shadow mode hook on Today: only when `questlife_decision_ai_shadow === "true"`, the app builds a decision payload and attempts an AI brief in the background/debug path without changing visible product behavior.
+- Added hidden Decision AI Lab in Settings behind `?debugDecision=1` or `questlife_debug_decision_ai === "true"`.
+- Decision AI Lab can generate a legacy fallback daily brief, attempt an AI daily brief, and attempt an instant micro brief; errors are shown safely.
+- `/api/brief` validates input shape, requests JSON output, retries invalid/empty/length-truncated outputs, normalizes the result schema, and never returns chain-of-thought / reasoning_content.
+- Schedule adjustments returned by the model are treated as proposals only; v1 does not auto-apply any schedule changes.
+- Existing Today / Insights / B-3.3 / B4 / context parser / metacognition behavior remains unchanged by default.
+- No Apple Health native work, no UI redesign, no data migration, and no user data clearing were added.
+- DeepSeek brief model is env-configurable with `DEEPSEEK_BRIEF_MODEL` / `DEEPSEEK_BRIEF_FAST_MODEL`, falling back safely to existing DeepSeek defaults.
+
+Validation:
+- `npx tsc --noEmit`: passed locally.
+- `npm run build`: passed locally.
+- Production web UI verification is required at `https://questlife-alpha-orpin.vercel.app` after push/deploy.
+
+Known limitations:
+- Daily Brief integration into Today remains future work; this pass only adds the safe foundation and hidden lab.
+- Instant micro-analysis after state tap remains future work.
+- Schedule confirm/apply remains future work; schedule adjustments are debug proposals only.
+- Pattern memory writeback remains future work.
+- Apple Health import/native integration remains later.
+- Decision output evaluation gates remain future work.
+- Old Insights replacement remains later.

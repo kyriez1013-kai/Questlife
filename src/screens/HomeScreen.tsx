@@ -51,6 +51,8 @@ import { parseHealthContextText, ParsedHealthContext } from '../utils/healthCont
 import { buildObjectiveContextBrief, ObjectiveContextBrief } from '../utils/objectiveContextBrief';
 import { buildMetacognitionSummary } from '../utils/metacognition';
 import { buildDailyOperatingBrief } from '../utils/dailyOperatingBrief';
+import { buildDecisionPayload } from '../utils/decisionPayload';
+import { isDecisionAIShadowEnabled, runDecisionShadowBrief } from '../services/decisionService';
 import DashboardCardShell from '../components/dashboard/DashboardCardShell';
 
 const FIXED_TODAY_CARD_SIZES = {
@@ -1371,6 +1373,12 @@ export default function HomeScreen() {
     metacognitionSummary,
     now: new Date(),
   }), [data.categories, data.contextLogs, data.executionLogs, data.modules, data.skills, data.stateCheckIns, metacognitionSummary, objectiveContextBrief, todayCommand, todayScheduleBlocks]);
+
+  useEffect(() => {
+    if (!isDecisionAIShadowEnabled()) return;
+    const payload = buildDecisionPayload(data, { mode: 'daily_brief', trigger: 'manual' });
+    runDecisionShadowBrief(payload);
+  }, [data]);
 
   const formatCommandCopy = useCallback((key: string, values?: Record<string, string | number>) => {
     let copy = t(lang, key);
