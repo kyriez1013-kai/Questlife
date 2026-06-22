@@ -1961,7 +1961,7 @@ Known limitations:
 
 ## Decision AI Foundation v1
 
-Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+Status: Production manually validated. Commit `1262287` accepted.
 
 What changed:
 - Added `DecisionService` abstraction with `LegacyDecisionService` and `AiDecisionService`.
@@ -1981,7 +1981,16 @@ What changed:
 Validation:
 - `npx tsc --noEmit`: passed locally.
 - `npm run build`: passed locally.
-- Production web UI verification is required at `https://questlife-alpha-orpin.vercel.app` after push/deploy.
+- Production web UI manual verification: passed at `https://questlife-alpha-orpin.vercel.app`.
+- Verified production bundle `index-b7d7f6867a59e348e0faa75fa4c8a654.js` deployed after GitHub push.
+- Verified normal Today UI still loads Smart Capture, B4 feedback, Daily Operating Brief, and Body/Sleep Context with no visible Decision AI UI.
+- Verified Insights still loads Main Judgement and Key Evidence with no visible Decision AI UI.
+- Verified hidden Settings Decision AI Lab appears only under `?debugDecision=1`.
+- Verified Decision AI Lab can generate a rule-based fallback daily brief with payload summary, `schema_version`, `readiness`, and `prescription`.
+- Verified Decision AI Lab can generate an AI daily brief through `/api/brief`; result has `schema_version: 1.0`, readiness data, and no `reasoning_content`.
+- Verified direct production `/api/brief` POST returns structured JSON `{ ok, result }` with no API key exposure and no `reasoning_content`.
+- Verified 390px mobile web debug Lab does not overflow horizontally; max observed right edge was 390px.
+- Shadow mode implementation remains feature-flagged by localStorage and does not alter visible UI by default; direct localStorage toggling was blocked by the in-app browser security policy, but the same AI service/API path was validated through the debug lab.
 
 Known limitations:
 - Daily Brief integration into Today remains future work; this pass only adds the safe foundation and hidden lab.
