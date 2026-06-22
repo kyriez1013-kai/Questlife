@@ -407,6 +407,7 @@ export default function HomeScreen() {
   const [instantDecisionBrief, setInstantDecisionBrief] = useState<DecisionBriefResult | null>(null);
   const [instantDecisionStatus, setInstantDecisionStatus] = useState<'idle' | 'loading' | 'ready' | 'fallback' | 'error'>('idle');
   const [instantDecisionDebugError, setInstantDecisionDebugError] = useState('');
+  const [instantDecisionFeedback, setInstantDecisionFeedback] = useState<'useful' | 'not_useful' | null>(null);
   const instantDecisionRequestRef = useRef(0);
 
 
@@ -1192,6 +1193,7 @@ export default function HomeScreen() {
     instantDecisionRequestRef.current = requestId;
     setInstantDecisionStatus('loading');
     setInstantDecisionDebugError('');
+    setInstantDecisionFeedback(null);
     const dataWithCheckIn = { ...data, stateCheckIns: [...(data.stateCheckIns || []), checkIn] };
     const payload = buildDecisionPayload(dataWithCheckIn, { mode: 'instant_micro', trigger: 'state_checkin', locale: lang });
     payload.current_state = {
@@ -1232,6 +1234,22 @@ export default function HomeScreen() {
       });
     runDecisionShadowBrief(payload);
   }, [data, lang]);
+
+  const markInstantDecisionFeedback = useCallback((feedback: 'useful' | 'not_useful') => {
+    setInstantDecisionFeedback(feedback);
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage?.setItem('questlife_decision_ai_last_feedback', JSON.stringify({
+          feedback,
+          mode: 'instant_micro',
+          trigger: 'state_checkin',
+          timestamp: new Date().toISOString(),
+        }));
+      }
+    } catch {
+      // Feedback is best-effort and must never affect state check-in.
+    }
+  }, []);
 
   const saveStateCheckIn = useCallback(async (overall: DailyStateValue, details?: Partial<StateCheckIn>) => {
     const now = new Date();
@@ -2218,6 +2236,26 @@ export default function HomeScreen() {
                   <Text style={[styles.instantReadMeta, { color: questTheme.colors.textSubtle }]}>
                     {t(lang, 'evidenceBasis')}: {t(lang, instantDecisionBrief.evidence_basis === 'personal_pattern' ? 'basedOnRecentState' : 'basedOnContextAndHistory')} · {t(lang, 'confidence')}: {Math.round((instantDecisionBrief.confidence || 0) * 100)}%
                   </Text>
+                  <View style={styles.instantFeedbackRow}>
+                    <Text style={[styles.instantReadMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'instantReadFeedbackPrompt')}</Text>
+                    {(['useful', 'not_useful'] as const).map((feedback) => {
+                      const selected = instantDecisionFeedback === feedback;
+                      return (
+                        <TouchableOpacity
+                          key={feedback}
+                          style={[
+                            styles.instantFeedbackBtn,
+                            { borderColor: selected ? accent : questTheme.colors.border, backgroundColor: selected ? questTheme.colors.primarySoft : questTheme.colors.surface },
+                          ]}
+                          onPress={() => markInstantDecisionFeedback(feedback)}
+                        >
+                          <Text style={[styles.instantFeedbackText, { color: selected ? accent : questTheme.colors.textMuted }]}>
+                            {t(lang, feedback === 'useful' ? 'decisionUseful' : 'decisionNotUseful')}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
                   {instantDecisionDebugError && isDecisionDebugEnabled() ? (
                     <Text style={[styles.instantReadMeta, { color: questTheme.colors.danger }]}>{instantDecisionDebugError}</Text>
                   ) : null}
@@ -3448,6 +3486,9 @@ const styles = StyleSheet.create({
   instantReadBody: { fontSize: 13, lineHeight: 19, fontWeight: '800' },
   instantReadStep: { marginTop: 8, fontSize: 13, lineHeight: 19, fontWeight: '900' },
   instantReadMeta: { marginTop: 5, fontSize: 11, lineHeight: 16, fontWeight: '700' },
+  instantFeedbackRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 8 },
+  instantFeedbackBtn: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 5 },
+  instantFeedbackText: { fontSize: 11, fontWeight: '900' },
   strategyCard: {
     marginTop: 12,
     backgroundColor: theme.card,

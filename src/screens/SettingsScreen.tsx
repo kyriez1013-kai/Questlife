@@ -12,6 +12,8 @@ import { trackEvent } from '../utils/analytics';
 import { confirmAction } from '../utils/confirm';
 import { buildDecisionPayload } from '../utils/decisionPayload';
 import { AiDecisionService, LegacyDecisionService } from '../services/decisionService';
+import { DecisionBriefResult } from '../utils/decisionTypes';
+import { evaluateDecisionBriefQuality } from '../utils/decisionQuality';
 
 export default function SettingsScreen() {
   const { data, setSettings, runIntegrityCheck, repairSafeIntegrityIssues, rebuildDerivedData } = useStore();
@@ -31,6 +33,19 @@ export default function SettingsScreen() {
       return false;
     }
   })();
+  const readLastDecisionFeedback = () => {
+    if (typeof window === 'undefined') return '';
+    try {
+      const raw = window.localStorage?.getItem('questlife_decision_ai_last_feedback');
+      if (!raw) return '';
+      const parsed = JSON.parse(raw);
+      const label = parsed?.feedback === 'useful' ? t(lang, 'decisionUseful') : parsed?.feedback === 'not_useful' ? t(lang, 'decisionNotUseful') : '';
+      return label ? `${label} · ${t(lang, 'instantMicroMode')} · ${parsed?.timestamp || ''}` : '';
+    } catch {
+      return '';
+    }
+  };
+  const lastDecisionFeedback = decisionDebugVisible ? readLastDecisionFeedback() : '';
   const setDecisionAIFlag = (enabled: boolean) => {
     if (typeof window === 'undefined') return;
     try {
@@ -57,6 +72,7 @@ export default function SettingsScreen() {
       });
       const service = kind === 'legacy_daily' ? new LegacyDecisionService() : new AiDecisionService();
       const result = await service.buildBrief(payload);
+      const quality = evaluateDecisionBriefQuality({ result, payload, mode: payload.mode });
       setDecisionLabOutput(JSON.stringify({
         payloadSummary: {
           mode: payload.mode,
@@ -64,9 +80,12 @@ export default function SettingsScreen() {
           goals: payload.profile.active_goals.length,
           skills: payload.profile.skills.length,
           last7Days: payload.history_index.last_7_days.length,
+          contextItems: payload.today_context.recent_context_logs.length,
+          latestStateExists: !!payload.current_state,
           scheduleToday: payload.schedule_today.length,
           approxBytes: JSON.stringify(payload).length,
         },
+        quality,
         result,
       }, null, 2));
     } catch (error: any) {
@@ -74,6 +93,40 @@ export default function SettingsScreen() {
     } finally {
       setDecisionLabLoading(false);
     }
+  };
+  const runBadDecisionSimulation = () => {
+    const payload = buildDecisionPayload(data, { mode: 'instant_micro', trigger: 'debug', locale: lang });
+    const result: DecisionBriefResult = {
+      schema_version: '1.0',
+      generated_at: new Date().toISOString(),
+      readiness: { score: null, band: 'unknown', vs_baseline: 'unknown', drivers: [] },
+      headline_insight: lang === 'zh' ? '保持积极，继续努力。' : 'Stay positive and keep going.',
+      perception_gap: { detected: false, subjective: '', objective: '', interpretation: '', test_action: '' },
+      deep_analysis: lang === 'zh' ? '照顾好自己。' : 'Listen to your body.',
+      prescription: { do_first: { step: lang === 'zh' ? '继续努力。' : 'Try your best.', why: '', duration_min: null }, schedule_adjustments: [], do_not: [] },
+      patterns_surfaced: [],
+      confidence: 0.8,
+      evidence_basis: 'population_prior',
+      data_gaps: [],
+      tone: 'assertive',
+    };
+    const quality = evaluateDecisionBriefQuality({ result, payload, mode: payload.mode });
+    setDecisionLabError('');
+    setDecisionLabOutput(JSON.stringify({
+      payloadSummary: {
+        mode: payload.mode,
+        trigger: payload.trigger,
+        goals: payload.profile.active_goals.length,
+        skills: payload.profile.skills.length,
+        last7Days: payload.history_index.last_7_days.length,
+        contextItems: payload.today_context.recent_context_logs.length,
+        latestStateExists: !!payload.current_state,
+        scheduleToday: payload.schedule_today.length,
+        approxBytes: JSON.stringify(payload).length,
+      },
+      quality,
+      result,
+    }, null, 2));
   };
 
   return (
@@ -258,12 +311,24 @@ export default function SettingsScreen() {
               >
                 <Text style={[styles.debugBtnText, { color: questTheme.colors.text }]}>{t(lang, 'disableDecisionAIForDebug')}</Text>
               </TouchableOpacity>
+              <TouchableOpacity
+                disabled={decisionLabLoading}
+                style={[styles.debugBtn, { borderColor: questTheme.colors.warning, backgroundColor: questTheme.colors.warningSoft }]}
+                onPress={runBadDecisionSimulation}
+              >
+                <Text style={[styles.debugBtnText, { color: questTheme.colors.text }]}>{t(lang, 'simulateWeakDecisionOutput')}</Text>
+              </TouchableOpacity>
             </View>
             <Text style={[styles.value, { color: decisionLabError ? questTheme.colors.danger : questTheme.colors.textMuted, marginTop: 12 }]}> 
               {decisionLabLoading ? t(lang, 'decisionAILoading') : decisionLabError ? `${t(lang, 'decisionAIError')}: ${decisionLabError}` : decisionLabOutput ? t(lang, 'decisionAIResultPreview') : t(lang, 'decisionAIHiddenByDefault')}
             </Text>
             {decisionLabOutput ? (
               <Text style={[styles.monoText, { color: questTheme.colors.text, backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}>{decisionLabOutput}</Text>
+            ) : null}
+            {lastDecisionFeedback ? (
+              <Text style={[styles.value, { color: questTheme.colors.textMuted, marginTop: 12 }]}>
+                {t(lang, 'lastInstantReadFeedback')}: {lastDecisionFeedback}
+              </Text>
             ) : null}
           </View>
         ) : null}

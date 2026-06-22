@@ -96,6 +96,12 @@ Only output valid JSON. No markdown. No chain-of-thought. Do not include reasoni
 No medical diagnosis. No generic wellness filler. No "as an AI". Do not overclaim causality.
 Every prescription must include an actionable first step.
 If input.locale is "zh", write all user-facing string fields in Chinese. If input.locale is "en", write them in English.
+Use concrete evidence from the input whenever available: sleep, HRV, steps, state, recent execution, skill, context, after-state, or schedule.
+Mention exactly which evidence was used. If data is sparse, say what is missing and give a test action instead of pretending confidence.
+The first step must be physically executable within 5-25 minutes. Avoid vague advice like "stay mindful", "keep going", "保持积极", or "照顾好自己".
+For instant_micro, be sharp and compact. For daily_brief, be deeper but still structured.
+Bad example: "保持积极，照顾好自己。"
+Good example: "你昨晚睡眠只有5小时，今天不适合硬冲90分钟深度任务。先做10分钟低阻力启动，然后复评专注。"
 
 Mandatory analysis questions:
 1. Readiness/recovery relative to available baseline.

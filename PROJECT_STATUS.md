@@ -2036,3 +2036,29 @@ Known limitations:
 - Schedule confirm/apply remains future work.
 - Decision output evaluation gates remain future work.
 - Apple Health import/native integration remains later.
+
+## Decision AI v1.2: Output Quality Evaluation + Prompt Calibration
+
+Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+
+What changed:
+- Added `src/utils/decisionQuality.ts` with a rule-based quality evaluator for Decision Brief results.
+- Evaluator scores output 0-100 and grades `excellent`, `good`, `weak`, or `bad`.
+- Evaluator checks schema completeness, personalization/evidence grounding, first-step actionability, generic filler, safety, causality overclaiming, and mode-appropriate length.
+- Decision AI Lab now includes quality score, grade, checks, flags, and expanded payload summary for generated fallback and AI briefs.
+- Decision AI Lab includes a weak-output simulation path to verify generic/missing-evidence failures without calling the API.
+- Instant Read now includes compact local feedback controls: useful / not useful.
+- Instant Read feedback is stored only as a small local browser flag with no user text and no server persistence.
+- Hidden Decision AI Lab can show the last local Instant Read feedback if available.
+- `/api/brief` prompt was calibrated to require concrete evidence, compact actionable first steps, cautious sparse-data wording, and avoidance of motivational filler.
+- Normal product behavior remains unchanged: no schedule auto-apply, no Apple Health, no data migration, no raw API key exposure, and no reasoning_content exposure.
+
+Validation:
+- `npx tsc --noEmit`: passed locally.
+- `npm run build`: passed locally.
+
+Known limitations:
+- Production web UI verification still needs to validate Debug Lab fallback, AI brief quality output, weak-output simulation, and Instant Read feedback controls after deployment.
+- Evaluator v1.2 is rule-based and intentionally conservative; future versions can calibrate thresholds using real feedback.
+- Feedback is local/ephemeral and not yet used to improve prompt or pattern memory.
+- Persisting decision results remains future work.
