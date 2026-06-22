@@ -2000,3 +2000,30 @@ Known limitations:
 - Apple Health import/native integration remains later.
 - Decision output evaluation gates remain future work.
 - Old Insights replacement remains later.
+
+## Decision AI v1.1: Instant Micro-Analysis after State Check-in
+
+Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+
+What changed:
+- Today now triggers an instant Decision Brief after a state check-in is saved.
+- State saving remains primary and is not blocked by Decision AI failures.
+- The instant brief uses `mode: "instant_micro"` and `trigger: "state_checkin"` with the saved check-in injected as `current_state`.
+- Visible behavior respects the existing feature flags: `questlife_decision_ai_enabled === "true"` uses `AiDecisionService`; otherwise the UI shows the safe legacy fallback.
+- AI failures fall back to `LegacyDecisionService`; fallback failures degrade to a compact unavailable state with a low-friction first step.
+- Shadow mode can still call the AI path in the background when `questlife_decision_ai_shadow === "true"`.
+- Added locale propagation into Decision payloads and `/api/brief` prompt instructions so visible decision strings match zh/en mode.
+- Added a compact instant-read card near Current State with headline, first step, evidence basis, confidence, and short no-medical-advice note.
+- Added hidden Decision AI Lab debug toggles under `?debugDecision=1` so production testers can enable/disable the visible AI path without browser console access.
+- No schedule auto-apply, no data model change, no migration, no Apple Health work, and no Today/Insights redesign were added.
+
+Validation:
+- `npx tsc --noEmit`: passed locally.
+- `npm run build`: passed locally.
+
+Known limitations:
+- Production web UI verification still needs to confirm both legacy fallback and AI-enabled state-check paths after Vercel deployment.
+- Pattern memory writeback remains future work.
+- Schedule confirm/apply remains future work.
+- Decision output evaluation gates remain future work.
+- Apple Health import/native integration remains later.

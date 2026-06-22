@@ -11,6 +11,7 @@ export type DecisionBriefInput = {
   mode: DecisionMode;
   trigger: DecisionTrigger;
   now: string;
+  locale?: 'zh' | 'en';
   current_state: Record<string, unknown> | null;
   today_context: {
     objective_context_brief?: ObjectiveContextBrief;

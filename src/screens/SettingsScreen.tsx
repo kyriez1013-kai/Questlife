@@ -31,6 +31,21 @@ export default function SettingsScreen() {
       return false;
     }
   })();
+  const setDecisionAIFlag = (enabled: boolean) => {
+    if (typeof window === 'undefined') return;
+    try {
+      if (enabled) {
+        window.localStorage?.setItem('questlife_decision_ai_enabled', 'true');
+        setDecisionLabOutput(t(lang, 'decisionAIEnabledForDebug'));
+      } else {
+        window.localStorage?.removeItem('questlife_decision_ai_enabled');
+        setDecisionLabOutput(t(lang, 'decisionAIDisabledForDebug'));
+      }
+      setDecisionLabError('');
+    } catch (error: any) {
+      setDecisionLabError(String(error?.message || error));
+    }
+  };
   const runDecisionLab = async (kind: 'legacy_daily' | 'ai_daily' | 'ai_instant') => {
     setDecisionLabLoading(true);
     setDecisionLabError('');
@@ -38,6 +53,7 @@ export default function SettingsScreen() {
       const payload = buildDecisionPayload(data, {
         mode: kind === 'ai_instant' ? 'instant_micro' : 'daily_brief',
         trigger: 'debug',
+        locale: lang,
       });
       const service = kind === 'legacy_daily' ? new LegacyDecisionService() : new AiDecisionService();
       const result = await service.buildBrief(payload);
@@ -227,6 +243,20 @@ export default function SettingsScreen() {
                 onPress={() => runDecisionLab('ai_instant')}
               >
                 <Text style={[styles.debugBtnText, { color: accent }]}>{t(lang, 'generateInstantMicroBrief')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                disabled={decisionLabLoading}
+                style={[styles.debugBtn, { borderColor: accent, backgroundColor: questTheme.colors.surfaceSoft }]}
+                onPress={() => setDecisionAIFlag(true)}
+              >
+                <Text style={[styles.debugBtnText, { color: accent }]}>{t(lang, 'enableDecisionAIForDebug')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                disabled={decisionLabLoading}
+                style={[styles.debugBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}
+                onPress={() => setDecisionAIFlag(false)}
+              >
+                <Text style={[styles.debugBtnText, { color: questTheme.colors.text }]}>{t(lang, 'disableDecisionAIForDebug')}</Text>
               </TouchableOpacity>
             </View>
             <Text style={[styles.value, { color: decisionLabError ? questTheme.colors.danger : questTheme.colors.textMuted, marginTop: 12 }]}> 

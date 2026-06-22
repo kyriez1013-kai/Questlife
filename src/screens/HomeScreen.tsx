@@ -52,7 +52,8 @@ import { buildObjectiveContextBrief, ObjectiveContextBrief } from '../utils/obje
 import { buildMetacognitionSummary } from '../utils/metacognition';
 import { buildDailyOperatingBrief } from '../utils/dailyOperatingBrief';
 import { buildDecisionPayload } from '../utils/decisionPayload';
-import { isDecisionAIShadowEnabled, runDecisionShadowBrief } from '../services/decisionService';
+import { DecisionBriefResult } from '../utils/decisionTypes';
+import { createDecisionService, isDecisionAIEnabled, isDecisionAIShadowEnabled, isDecisionDebugEnabled, LegacyDecisionService, runDecisionShadowBrief } from '../services/decisionService';
 import DashboardCardShell from '../components/dashboard/DashboardCardShell';
 
 const FIXED_TODAY_CARD_SIZES = {
@@ -402,6 +403,12 @@ export default function HomeScreen() {
     ...getSurfaceStyle(questTheme, 'elevated'),
     shadowColor: questTheme.colors.cardShadow,
   };
+
+  const [instantDecisionBrief, setInstantDecisionBrief] = useState<DecisionBriefResult | null>(null);
+  const [instantDecisionStatus, setInstantDecisionStatus] = useState<'idle' | 'loading' | 'ready' | 'fallback' | 'error'>('idle');
+  const [instantDecisionDebugError, setInstantDecisionDebugError] = useState('');
+  const instantDecisionRequestRef = useRef(0);
+
 
   const dailyStateOptions = [
     { value: 1 as DailyStateValue, emoji: '😴', label: t(lang, 'veryBad') },
@@ -1180,6 +1187,52 @@ export default function HomeScreen() {
     setStateModal(true);
   }, [dailyState, effectiveCurrentState, latestStateCheckIn]);
 
+  const generateInstantDecisionBrief = useCallback((checkIn: StateCheckIn) => {
+    const requestId = Date.now();
+    instantDecisionRequestRef.current = requestId;
+    setInstantDecisionStatus('loading');
+    setInstantDecisionDebugError('');
+    const dataWithCheckIn = { ...data, stateCheckIns: [...(data.stateCheckIns || []), checkIn] };
+    const payload = buildDecisionPayload(dataWithCheckIn, { mode: 'instant_micro', trigger: 'state_checkin', locale: lang });
+    payload.current_state = {
+      timestamp: checkIn.timestamp,
+      overall: checkIn.overall,
+      energy: checkIn.energy,
+      focus: checkIn.focus,
+      mood: checkIn.mood,
+      physical: checkIn.physical,
+      stress: checkIn.stress,
+      label: checkIn.label,
+    };
+    const service = createDecisionService();
+    const timeout = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('instant_read_timeout')), 9000);
+    });
+    Promise.race([service.buildBrief(payload), timeout])
+      .then((result) => {
+        if (instantDecisionRequestRef.current !== requestId) return;
+        setInstantDecisionBrief(result);
+        setInstantDecisionStatus(isDecisionAIEnabled() ? 'ready' : 'fallback');
+      })
+      .catch((error) => {
+        if (instantDecisionRequestRef.current !== requestId) return;
+        if (isDecisionDebugEnabled()) console.warn('[decision instant failed]', error);
+        setInstantDecisionDebugError(String(error?.message || error));
+        new LegacyDecisionService().buildBrief(payload)
+          .then((fallback) => {
+            if (instantDecisionRequestRef.current !== requestId) return;
+            setInstantDecisionBrief(fallback);
+            setInstantDecisionStatus('fallback');
+          })
+          .catch((fallbackError) => {
+            if (instantDecisionRequestRef.current !== requestId) return;
+            if (isDecisionDebugEnabled()) console.warn('[decision instant fallback failed]', fallbackError);
+            setInstantDecisionStatus('error');
+          });
+      });
+    runDecisionShadowBrief(payload);
+  }, [data, lang]);
+
   const saveStateCheckIn = useCallback(async (overall: DailyStateValue, details?: Partial<StateCheckIn>) => {
     const now = new Date();
     const checkIn = createStateCheckIn({
@@ -1197,8 +1250,9 @@ export default function HomeScreen() {
       hasDetails: !!details?.energy || !!details?.focus || !!details?.mood || !!details?.physical || !!details?.stress,
       hasContext: !!details?.context && Object.values(details.context).some(Boolean),
     }, { page: 'today' });
+    generateInstantDecisionBrief(checkIn);
     Alert.alert(t(lang, 'stateCheckInSaved'));
-  }, [createStateCheckIn, lang]);
+  }, [createStateCheckIn, generateInstantDecisionBrief, lang]);
 
   const saveStateAssessment = useCallback(async () => {
     const avg = Math.round((stateEnergy + stateFocus + stateMood) / 3) as DailyStateValue;
@@ -1376,9 +1430,9 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (!isDecisionAIShadowEnabled()) return;
-    const payload = buildDecisionPayload(data, { mode: 'daily_brief', trigger: 'manual' });
+    const payload = buildDecisionPayload(data, { mode: 'daily_brief', trigger: 'manual', locale: lang });
     runDecisionShadowBrief(payload);
-  }, [data]);
+  }, [data, lang]);
 
   const formatCommandCopy = useCallback((key: string, values?: Record<string, string | number>) => {
     let copy = t(lang, key);
@@ -2128,6 +2182,48 @@ export default function HomeScreen() {
               </TouchableOpacity>
             ))}
           </View>
+          ) : null}
+          {instantDecisionStatus !== 'idle' ? (
+            <View style={[styles.instantReadCard, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}>
+              <View style={styles.instantReadHeader}>
+                <Text style={[styles.instantReadTitle, { color: questTheme.colors.text }]}>{t(lang, 'instantRead')}</Text>
+                <Text style={[styles.instantReadMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'noMedicalAdviceShort')}</Text>
+              </View>
+              {instantDecisionStatus === 'loading' ? (
+                <Text style={[styles.instantReadBody, { color: questTheme.colors.textMuted }]}>{t(lang, 'generatingInstantRead')}</Text>
+              ) : instantDecisionStatus === 'error' || !instantDecisionBrief ? (
+                <>
+                  <Text style={[styles.instantReadBody, { color: questTheme.colors.text }]}>{t(lang, 'instantReadUnavailable')}</Text>
+                  <Text style={[styles.instantReadStep, { color: questTheme.colors.textMuted }]}>{t(lang, 'firstStep')}: {t(lang, 'tryLowFrictionTask')}</Text>
+                  <Text style={[styles.instantReadMeta, { color: questTheme.colors.textSubtle }]}>{t(lang, 'reassessAfterFirstStep')}</Text>
+                </>
+              ) : (
+                <>
+                  <Text style={[styles.instantReadBody, { color: questTheme.colors.text }]}>
+                    {instantDecisionBrief.headline_insight || t(lang, 'aiUnavailableFallback')}
+                  </Text>
+                  {instantDecisionBrief.perception_gap?.detected ? (
+                    <Text style={[styles.instantReadMeta, { color: questTheme.colors.textMuted }]}>
+                      {t(lang, 'perceptionGap')}: {instantDecisionBrief.perception_gap.interpretation}
+                    </Text>
+                  ) : null}
+                  <Text style={[styles.instantReadStep, { color: questTheme.colors.text }]}>
+                    {t(lang, 'firstStep')}: {instantDecisionBrief.prescription.do_first.step || t(lang, 'tryLowFrictionTask')}
+                  </Text>
+                  {instantDecisionBrief.prescription.do_first.why ? (
+                    <Text style={[styles.instantReadMeta, { color: questTheme.colors.textMuted }]}>
+                      {instantDecisionBrief.prescription.do_first.why}
+                    </Text>
+                  ) : null}
+                  <Text style={[styles.instantReadMeta, { color: questTheme.colors.textSubtle }]}>
+                    {t(lang, 'evidenceBasis')}: {t(lang, instantDecisionBrief.evidence_basis === 'personal_pattern' ? 'basedOnRecentState' : 'basedOnContextAndHistory')} · {t(lang, 'confidence')}: {Math.round((instantDecisionBrief.confidence || 0) * 100)}%
+                  </Text>
+                  {instantDecisionDebugError && isDecisionDebugEnabled() ? (
+                    <Text style={[styles.instantReadMeta, { color: questTheme.colors.danger }]}>{instantDecisionDebugError}</Text>
+                  ) : null}
+                </>
+              )}
+            </View>
           ) : null}
         </View>
         )}
@@ -3346,6 +3442,12 @@ const styles = StyleSheet.create({
   quickStateGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   quickStateBtn: { width: '18%', minWidth: 56, alignItems: 'center', backgroundColor: theme.cardAlt, borderRadius: 14, paddingVertical: 9 },
   stateToneDot: { width: 18, height: 18, borderRadius: 9, marginBottom: 5 },
+  instantReadCard: { marginTop: 12, borderWidth: 1, borderRadius: theme.radius.md, padding: 12 },
+  instantReadHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 6 },
+  instantReadTitle: { fontSize: 14, fontWeight: '900', lineHeight: 19 },
+  instantReadBody: { fontSize: 13, lineHeight: 19, fontWeight: '800' },
+  instantReadStep: { marginTop: 8, fontSize: 13, lineHeight: 19, fontWeight: '900' },
+  instantReadMeta: { marginTop: 5, fontSize: 11, lineHeight: 16, fontWeight: '700' },
   strategyCard: {
     marginTop: 12,
     backgroundColor: theme.card,

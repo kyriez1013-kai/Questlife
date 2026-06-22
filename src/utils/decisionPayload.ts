@@ -91,7 +91,7 @@ function buildLast28Aggregate(logs: ExecutionLog[], now: Date) {
 
 export function buildDecisionPayload(
   data: AppData,
-  options: { mode?: DecisionMode; trigger?: DecisionTrigger; now?: Date } = {},
+  options: { mode?: DecisionMode; trigger?: DecisionTrigger; now?: Date; locale?: 'zh' | 'en' } = {},
 ): DecisionBriefInput {
   const now = options.now ?? new Date();
   const liveLogs = getLiveExecutionLogs(data.executionLogs || [], { skills: data.skills || [] });
@@ -113,6 +113,7 @@ export function buildDecisionPayload(
     mode: options.mode ?? 'daily_brief',
     trigger: options.trigger ?? 'debug',
     now: now.toISOString(),
+    locale: options.locale,
     current_state: latestState ? {
       timestamp: latestState.timestamp,
       overall: latestState.overall,

@@ -15,16 +15,17 @@ function latestStateScore(input: DecisionBriefInput) {
 
 export function buildLegacyDecisionBrief(input: DecisionBriefInput): DecisionBriefResult {
   const now = new Date().toISOString();
+  const zh = input.locale === 'zh';
   const sleep = typeof input.today_context.latest_sleep_minutes === 'number' ? input.today_context.latest_sleep_minutes : undefined;
   const stateScore = latestStateScore(input);
   const drivers: string[] = [];
   const dataGaps: string[] = [];
   let score = 55;
   let band: DecisionBriefResult['readiness']['band'] = 'unknown';
-  let headline = 'Use a conservative first step and collect one more signal.';
-  let firstStep = 'Do one 5-15 minute low-friction task.';
-  let firstWhy = 'There is not enough personal signal yet, so the safest prescription is to start small.';
-  const doNot: string[] = ['Do not stack too many large tasks at once.'];
+  let headline = zh ? '先用保守启动，顺便补一条状态或睡眠信号。' : 'Use a conservative first step and collect one more signal.';
+  let firstStep = zh ? '做一个 5-15 分钟低阻力任务。' : 'Do one 5-15 minute low-friction task.';
+  let firstWhy = zh ? '当前个人信号还不够，先小步启动更稳。' : 'There is not enough personal signal yet, so the safest prescription is to start small.';
+  const doNot: string[] = [zh ? '不要同时堆太多大任务。' : 'Do not stack too many large tasks at once.'];
 
   if (sleep == null) dataGaps.push('recent_sleep');
   if (stateScore == null) dataGaps.push('latest_state_checkin');
@@ -34,23 +35,23 @@ export function buildLegacyDecisionBrief(input: DecisionBriefInput): DecisionBri
     if (sleep < 360) {
       score -= 20;
       band = 'red';
-      headline = 'Recovery and focus protection should lead today.';
-      firstStep = 'Start with a 5-15 minute low-friction task.';
-      firstWhy = 'Recent sleep is short, so long high-cognitive blocks are a poor first move.';
-      doNot.unshift('Avoid a long deep-work block as the first task.');
+      headline = zh ? '今天先以恢复和保护专注为主。' : 'Recovery and focus protection should lead today.';
+      firstStep = zh ? '先做一个 5-15 分钟低阻力任务。' : 'Start with a 5-15 minute low-friction task.';
+      firstWhy = zh ? '最近睡眠偏短，直接开启长时间高认知任务风险更高。' : 'Recent sleep is short, so long high-cognitive blocks are a poor first move.';
+      doNot.unshift(zh ? '不要把长时间深度任务放在第一步。' : 'Avoid a long deep-work block as the first task.');
     } else if (sleep < 420) {
       score -= 10;
       band = 'yellow';
-      headline = 'Use reduced granularity rather than forcing a full push.';
-      firstStep = 'Choose one clear 15-25 minute task.';
-      firstWhy = 'Sleep is slightly short, so a smaller task boundary is safer.';
-      doNot.unshift('Avoid heavy task stacking.');
+      headline = zh ? '今天更适合降低任务粒度，而不是硬冲完整强度。' : 'Use reduced granularity rather than forcing a full push.';
+      firstStep = zh ? '选一个清晰的 15-25 分钟任务。' : 'Choose one clear 15-25 minute task.';
+      firstWhy = zh ? '睡眠略短，把任务边界缩小会更稳。' : 'Sleep is slightly short, so a smaller task boundary is safer.';
+      doNot.unshift(zh ? '避免高负荷任务堆叠。' : 'Avoid heavy task stacking.');
     } else if (sleep <= 540) {
       score += 12;
       band = 'green';
-      headline = 'Normal progress is reasonable if subjective state agrees.';
-      firstStep = 'Continue the clearest planned task.';
-      firstWhy = 'Sleep duration is in a normal range and there is no obvious recovery warning.';
+      headline = zh ? '如果主观状态跟得上，今天可以正常推进。' : 'Normal progress is reasonable if subjective state agrees.';
+      firstStep = zh ? '继续推进最清晰的计划任务。' : 'Continue the clearest planned task.';
+      firstWhy = zh ? '睡眠时长在正常范围内，目前没有明显恢复警报。' : 'Sleep duration is in a normal range and there is no obvious recovery warning.';
     }
   }
 
@@ -59,10 +60,10 @@ export function buildLegacyDecisionBrief(input: DecisionBriefInput): DecisionBri
     if (stateScore <= 2) {
       score -= 18;
       band = band === 'green' ? 'yellow' : 'red';
-      headline = 'Subjective state is low, so restart before pushing.';
-      firstStep = 'Do a minimum viable starter task.';
-      firstWhy = 'A low check-in is a practical reason to lower friction before judging capacity.';
-      doNot.unshift('Do not interpret a slow start as failure.');
+      headline = zh ? '当前主观状态偏低，先重新启动节奏，再考虑推进。' : 'Subjective state is low, so restart before pushing.';
+      firstStep = zh ? '做一个最低可行启动任务。' : 'Do a minimum viable starter task.';
+      firstWhy = zh ? '状态偏低时，先降低启动阻力，再判断真实容量。' : 'A low check-in is a practical reason to lower friction before judging capacity.';
+      doNot.unshift(zh ? '不要把慢启动理解成失败。' : 'Do not interpret a slow start as failure.');
     } else if (stateScore >= 4 && band !== 'red') {
       score += 8;
       band = band === 'unknown' ? 'green' : band;
@@ -85,10 +86,10 @@ export function buildLegacyDecisionBrief(input: DecisionBriefInput): DecisionBri
       detected: false,
       subjective: typeof stateScore === 'number' ? `state_score:${stateScore.toFixed(1)}` : 'unknown',
       objective: typeof sleep === 'number' ? `sleep_minutes:${sleep}` : 'unknown',
-      interpretation: 'Fallback mode only flags obvious mismatches; no strong perception-gap claim is made.',
-      test_action: 'Log state before and after the first action.',
+      interpretation: zh ? '回退模式只提示明显差异，不做强因果判断。' : 'Fallback mode only flags obvious mismatches; no strong perception-gap claim is made.',
+      test_action: zh ? '完成第一步前后各记录一次状态。' : 'Log state before and after the first action.',
     },
-    deep_analysis: 'Rule-based fallback used. It combines recent sleep and latest state without making medical claims.',
+    deep_analysis: zh ? '当前使用规则回退：只结合近期睡眠和最新状态，不做医学判断。' : 'Rule-based fallback used. It combines recent sleep and latest state without making medical claims.',
     prescription: {
       do_first: {
         step: firstStep,
