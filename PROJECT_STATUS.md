@@ -1599,7 +1599,7 @@ Known limitations:
 
 ## Context Parser v1.1 + Daily Context Trust
 
-Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+Status: Production manually validated. Commit `94f675e` accepted.
 
 Files changed:
 - `src/utils/healthContextParser.ts`
@@ -2020,9 +2020,18 @@ What changed:
 Validation:
 - `npx tsc --noEmit`: passed locally.
 - `npm run build`: passed locally.
+- Production web UI manual verification: passed at `https://questlife-alpha-orpin.vercel.app`.
+- Verified production bundle `index-e515ddf598f11113927ac505ef7b4433.js` deployed after GitHub push.
+- Verified state check-in saves first, persists after refresh, and then shows the instant-read card near Current State.
+- Verified default AI-disabled path shows the legacy fallback instant read with headline, first step, evidence basis, confidence, and short no-medical-advice note.
+- Verified hidden Decision AI Lab appears under `?debugDecision=1` and can enable/disable the AI visible path without browser-console access.
+- Verified AI-enabled state-check path shows loading first, then an AI-generated instant read with perception gap, first step, evidence basis, confidence, and no raw JSON.
+- Verified the debug AI visible-path flag was disabled again after production testing.
+- Verified 390px production mobile web has no horizontal overflow on Today (`maxRight` 390 / `innerWidth` 390).
+- Verified Today still loads smart capture, B4 feedback, Daily Operating Brief, and Body/Sleep Context after the change.
+- Verified Insights still loads Main Judgement, Key Evidence, and Advanced Analysis after the change.
 
 Known limitations:
-- Production web UI verification still needs to confirm both legacy fallback and AI-enabled state-check paths after Vercel deployment.
 - Pattern memory writeback remains future work.
 - Schedule confirm/apply remains future work.
 - Decision output evaluation gates remain future work.
