@@ -5,6 +5,20 @@ const AI_ENABLED_KEY = 'questlife_decision_ai_enabled';
 const AI_SHADOW_KEY = 'questlife_decision_ai_shadow';
 const DEBUG_KEY = 'questlife_debug_decision_ai';
 
+export type DecisionServiceMeta = {
+  service: 'ai' | 'legacy_fallback' | 'unknown';
+  endpointOk?: boolean;
+  model?: string;
+  finishReason?: string;
+  error?: string;
+};
+
+let lastDecisionServiceMeta: DecisionServiceMeta = { service: 'unknown' };
+
+export function getLastDecisionServiceMeta() {
+  return lastDecisionServiceMeta;
+}
+
 function readLocalFlag(key: string) {
   if (typeof window === 'undefined') return false;
   try {
@@ -34,6 +48,7 @@ export function isDecisionDebugEnabled() {
 
 export class LegacyDecisionService implements DecisionService {
   async buildBrief(input: DecisionBriefInput): Promise<DecisionBriefResult> {
+    lastDecisionServiceMeta = { service: 'legacy_fallback', endpointOk: undefined };
     return buildLegacyDecisionBrief(input);
   }
 }
@@ -47,8 +62,19 @@ export class AiDecisionService implements DecisionService {
     });
     const json = await response.json().catch(() => null);
     if (!response.ok || !json?.ok || !json?.result) {
+      lastDecisionServiceMeta = {
+        service: 'ai',
+        endpointOk: false,
+        error: String(json?.error || `brief_http_${response.status}`),
+      };
       throw new Error(String(json?.error || `brief_http_${response.status}`));
     }
+    lastDecisionServiceMeta = {
+      service: 'ai',
+      endpointOk: true,
+      model: typeof json?.meta?.model === 'string' ? json.meta.model : undefined,
+      finishReason: typeof json?.meta?.finishReason === 'string' ? json.meta.finishReason : undefined,
+    };
     return json.result as DecisionBriefResult;
   }
 }

@@ -162,6 +162,7 @@ export function evaluateDecisionBriefQuality({ result, payload, mode }: Evaluate
     detail: anyPayloadData ? Object.entries(data).filter(([, value]) => value).map(([key]) => key).join(', ') : 'no_payload_data',
   });
   add({ id: 'actionability', passed: concreteAction, severity: 'high', messageKey: 'dqCheckActionability' });
+  add({ id: 'specificity', passed: !tooVague, severity: 'medium', messageKey: 'dqCheckSpecificity' });
   add({ id: 'generic_language', passed: !generic, severity: 'medium', messageKey: 'dqCheckGeneric' });
   add({ id: 'safety', passed: !medicalRisk, severity: 'high', messageKey: 'dqCheckSafety' });
   add({ id: 'causality', passed: !overclaiming, severity: 'medium', messageKey: 'dqCheckCausality' });

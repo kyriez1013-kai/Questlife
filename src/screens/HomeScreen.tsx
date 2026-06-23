@@ -2236,6 +2236,11 @@ export default function HomeScreen() {
                   <Text style={[styles.instantReadMeta, { color: questTheme.colors.textSubtle }]}>
                     {t(lang, 'evidenceBasis')}: {t(lang, instantDecisionBrief.evidence_basis === 'personal_pattern' ? 'basedOnRecentState' : 'basedOnContextAndHistory')} · {t(lang, 'confidence')}: {Math.round((instantDecisionBrief.confidence || 0) * 100)}%
                   </Text>
+                  {isDecisionDebugEnabled() ? (
+                    <Text style={[styles.instantReadMeta, { color: questTheme.colors.textSubtle }]}>
+                      {t(lang, 'decisionSource')}: {t(lang, instantDecisionStatus === 'ready' ? 'decisionSourceAI' : instantDecisionDebugError ? 'decisionSourceAIFailedFallback' : 'decisionSourceFallback')}
+                    </Text>
+                  ) : null}
                   <View style={styles.instantFeedbackRow}>
                     <Text style={[styles.instantReadMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'instantReadFeedbackPrompt')}</Text>
                     {(['useful', 'not_useful'] as const).map((feedback) => {

@@ -157,7 +157,7 @@ async function callDeepSeek(input: BriefBody, apiKey: string, attempt: number) {
     const json: any = await response.json();
     const choice = json.choices?.[0];
     const content = choice?.message?.content ?? '';
-    return { content, finishReason: choice?.finish_reason };
+    return { content, finishReason: choice?.finish_reason, model };
   } finally {
     clearTimeout(timer);
   }
@@ -177,11 +177,11 @@ export default async function handler(req: any, res: any) {
 
     let lastError = 'invalid_json';
     for (let attempt = 0; attempt < 2; attempt += 1) {
-      const { content, finishReason } = await callDeepSeek(body, apiKey, attempt);
+      const { content, finishReason, model } = await callDeepSeek(body, apiKey, attempt);
       const parsed = parseJson(content);
       const normalized = normalizeResult(parsed);
       if (normalized && finishReason !== 'length') {
-        return send(res, 200, { ok: true, result: normalized });
+        return send(res, 200, { ok: true, result: normalized, meta: { model, finishReason } });
       }
       lastError = finishReason === 'length' ? 'finish_reason_length' : 'invalid_json';
     }

@@ -2071,3 +2071,31 @@ Known limitations:
 - Evaluator v1.2 is rule-based and intentionally conservative; future versions can calibrate thresholds using real feedback.
 - Feedback is local/ephemeral and not yet used to improve prompt or pattern memory.
 - Persisting decision results remains future work.
+
+## Decision AI Reality Audit before v1.3
+
+Status: Diagnostic layer implemented locally; production verification pending after GitHub/Vercel deployment.
+
+What changed:
+- Added `DECISION_AI_REALITY_AUDIT.md` with current Decision AI path diagnosis and v1.3 readiness blockers.
+- Added a debug-only Decision payload audit that reports summarized counts/categories instead of raw user text.
+- Decision AI Lab now shows service metadata, payload audit, generic-output diagnosis, failed quality checks, quality score, and result JSON.
+- `/api/brief` now returns non-sensitive model/finish metadata for debug use while still hiding API keys, headers, env values, and reasoning content.
+- Decision services now record whether the latest result came from AI or legacy fallback.
+- Today Instant Read shows AI/fallback/AI-failed-fallback source only in `?debugDecision=1` mode.
+- Added a specificity quality check so generic placeholder first steps are easier to identify.
+
+Current audit conclusion:
+- Normal visible output may still be legacy fallback unless `questlife_decision_ai_enabled === "true"` is set.
+- Generic-looking output is most likely caused by fallback routing, sparse structured evidence, missing after-state/pattern/context coverage, or a first step that is valid but not specific enough.
+- `daily_brief` should not be integrated into Today as the primary judgement until production debug verification confirms the visible path, payload richness, and generic-output checks.
+
+Validation:
+- `npx tsc --noEmit`: passed locally.
+- `npm run build`: passed locally.
+- Production web UI verification: pending.
+
+Known limitations:
+- This is an audit/diagnostic pass, not Decision AI v1.3.
+- No Today daily brief integration was added.
+- No schedule auto-apply, Apple Health, data migration, or UI redesign was added.

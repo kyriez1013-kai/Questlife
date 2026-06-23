@@ -12,9 +12,10 @@ import { getQuestTheme, themeOptions } from '../design/tokens';
 import { trackEvent } from '../utils/analytics';
 import { confirmAction } from '../utils/confirm';
 import { buildDecisionPayload } from '../utils/decisionPayload';
-import { AiDecisionService, LegacyDecisionService } from '../services/decisionService';
+import { AiDecisionService, getLastDecisionServiceMeta, LegacyDecisionService } from '../services/decisionService';
 import { DecisionBriefResult } from '../utils/decisionTypes';
 import { evaluateDecisionBriefQuality } from '../utils/decisionQuality';
+import { auditDecisionPayload, diagnoseDecisionOutput } from '../utils/decisionRealityAudit';
 
 export default function SettingsScreen() {
   const { data, setSettings, runIntegrityCheck, repairSafeIntegrityIssues, rebuildDerivedData } = useStore();
@@ -78,7 +79,24 @@ export default function SettingsScreen() {
       const service = kind === 'legacy_daily' ? new LegacyDecisionService() : new AiDecisionService();
       const result = await service.buildBrief(payload);
       const quality = evaluateDecisionBriefQuality({ result, payload, mode: payload.mode });
+      const serviceMeta = getLastDecisionServiceMeta();
+      const payloadAudit = auditDecisionPayload(payload);
+      const genericDiagnosis = diagnoseDecisionOutput({
+        payload,
+        result,
+        quality,
+        source: serviceMeta.service,
+      });
       setDecisionLabOutput(JSON.stringify({
+        service: serviceMeta,
+        payloadAudit,
+        genericDiagnosis,
+        failedChecks: quality.checks.filter((check) => !check.passed).map((check) => ({
+          id: check.id,
+          severity: check.severity,
+          messageKey: check.messageKey,
+          detail: check.detail,
+        })),
         payloadSummary: {
           mode: payload.mode,
           trigger: payload.trigger,
@@ -116,8 +134,24 @@ export default function SettingsScreen() {
       tone: 'assertive',
     };
     const quality = evaluateDecisionBriefQuality({ result, payload, mode: payload.mode });
+    const payloadAudit = auditDecisionPayload(payload);
+    const genericDiagnosis = diagnoseDecisionOutput({
+      payload,
+      result,
+      quality,
+      source: 'mock_weak_output',
+    });
     setDecisionLabError('');
     setDecisionLabOutput(JSON.stringify({
+      service: { service: 'mock_weak_output', endpointOk: undefined },
+      payloadAudit,
+      genericDiagnosis,
+      failedChecks: quality.checks.filter((check) => !check.passed).map((check) => ({
+        id: check.id,
+        severity: check.severity,
+        messageKey: check.messageKey,
+        detail: check.detail,
+      })),
       payloadSummary: {
         mode: payload.mode,
         trigger: payload.trigger,
