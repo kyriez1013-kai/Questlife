@@ -2074,7 +2074,7 @@ Known limitations:
 
 ## Decision AI Reality Audit before v1.3
 
-Status: Diagnostic layer implemented locally; production verification pending after GitHub/Vercel deployment.
+Status: Production manually validated. Commit `216f23a` accepted.
 
 What changed:
 - Added `DECISION_AI_REALITY_AUDIT.md` with current Decision AI path diagnosis and v1.3 readiness blockers.
@@ -2093,7 +2093,16 @@ Current audit conclusion:
 Validation:
 - `npx tsc --noEmit`: passed locally.
 - `npm run build`: passed locally.
-- Production web UI verification: pending.
+- Production web UI manual verification: passed at `https://questlife-alpha-orpin.vercel.app/?debugDecision=1`.
+- Verified production bundle `index-12237b1274e826d6cc2b19cc59e2f59f.js` deployed after GitHub push.
+- Verified Decision AI Lab fallback path shows `service: legacy_fallback`, payload audit, quality score/checks, and generic diagnosis.
+- Verified Decision AI Lab AI path calls `/api/brief` and shows `service: ai`, `endpointOk: true`, model `deepseek-chat`, finish reason `stop`, payload audit, quality score/checks, and generic diagnosis.
+- Verified debug output did not expose API key-shaped strings or `reasoning_content`.
+- Verified payload audit reports summarized counts/categories and flags sparse evidence without printing raw private text in the audit section.
+- Verified weak-output simulation is graded `bad` and flags personalization, actionability, specificity, generic language, and causality failures.
+- Verified AI visible-path flag was disabled again after testing.
+- Verified Today still loads Daily Operating Brief and B4 feedback area after the diagnostic change.
+- Verified Insights still loads Main Judgement, Key Evidence, and Advanced Analysis after the diagnostic change.
 
 Known limitations:
 - This is an audit/diagnostic pass, not Decision AI v1.3.
