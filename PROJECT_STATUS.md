@@ -1879,7 +1879,7 @@ Known limitations:
 
 ## Control Center Product Rejection Fix: Web-first Grid + UI Integrity
 
-Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+Status: Production manually validated. Commit `c8c6d06` accepted.
 
 Product verdict:
 - Control Center v4 remains technically validated, but the product interaction was rejected.
@@ -2126,12 +2126,21 @@ What changed:
 - Updated quality evaluation grounding so empty 7-day date rows are no longer treated as real execution evidence.
 
 Current readiness:
-- v1.3 daily brief remains blocked until production debug audit shows `usable` or `rich` evidence richness on real data.
+- Production debug audit now shows `rich` evidence richness on current real data, so the previous evidence-sparsity blocker is cleared for this dataset.
+- v1.3 daily brief still remains a separate integration task; AI visible-path default strategy and Today integration UX must be decided before making it primary.
 
 Validation:
 - `npx tsc --noEmit`: passed locally.
 - `npm run build`: passed locally.
-- Production web UI verification: pending.
+- Production web UI manual verification: passed at `https://questlife-alpha-orpin.vercel.app/?debugDecision=1`.
+- Verified production bundle `index-cbe67e80de776062989647a0973b4841.js` deployed after GitHub push.
+- Verified Decision AI Lab fallback path shows enriched payload audit with `evidenceRichness: "rich"` on current real data.
+- Verified payload audit shows execution/state/context/after-state/pattern evidence counts, including `executionRows28d: 9`, `stateCheckInCount7d: 5`, `contextCount7d: 2`, `afterStateSampleCount: 2`, and `inferredPatternsCount: 2`.
+- Verified AI daily brief path calls `/api/brief`, returns `service: ai`, `endpointOk: true`, model metadata, and generic diagnosis with state/context/recent execution/after-state/pattern usage.
+- Verified debug output did not expose API key-shaped strings or `reasoning_content`.
+- Verified AI visible-path flag was disabled again after testing.
+- Verified Today still loads Daily Operating Brief and B4 feedback area.
+- Verified Insights still loads Main Judgement, Key Evidence, and Advanced Analysis.
 
 Known limitations:
 - Inferred patterns v0 are derived at payload-build time and are not persistent pattern memory.
