@@ -2108,3 +2108,34 @@ Known limitations:
 - This is an audit/diagnostic pass, not Decision AI v1.3.
 - No Today daily brief integration was added.
 - No schedule auto-apply, Apple Health, data migration, or UI redesign was added.
+
+## Decision AI v1.25: Evidence Pipeline Enrichment
+
+Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+
+What changed:
+- Enriched `buildDecisionPayload` so `/api/brief` receives compact evidence from existing QuestLife data instead of mostly empty history rows.
+- `history_index.last_7_days` now includes sanitized execution, state, context, and post-save feedback event rows where available.
+- `history_index.last_28_days` now includes execution count, total duration, task counts, average quality, after-state sample count, context sample count, state check-in count, and top goal/module/skill aggregates.
+- Added `state_summary` with latest state, 7-day count, averages, and compact recent rows.
+- Added `today_context.context_summary` with 24h/7d counts, present context types, latest context timestamp, and missing core types.
+- Added `after_state_summary` using the correct `ExecutionLog.structuredData.afterStateDelta` path.
+- Added non-persistent `profile.inferred_patterns_v0` derived from existing after-state deltas; no new store model or migration was added.
+- Updated Decision AI payload audit to report execution/state/context/after-state/pattern counts and `evidenceRichness` (`none`, `sparse`, `usable`, `rich`).
+- Updated generic diagnosis to distinguish fallback-only, AI path with sparse payload, usable/rich payload with generic response, and quality/grounding issues.
+- Updated quality evaluation grounding so empty 7-day date rows are no longer treated as real execution evidence.
+
+Current readiness:
+- v1.3 daily brief remains blocked until production debug audit shows `usable` or `rich` evidence richness on real data.
+
+Validation:
+- `npx tsc --noEmit`: passed locally.
+- `npm run build`: passed locally.
+- Production web UI verification: pending.
+
+Known limitations:
+- Inferred patterns v0 are derived at payload-build time and are not persistent pattern memory.
+- No Apple Health import/native integration was added.
+- No daily_brief Today integration was added.
+- No schedule auto-apply, UI redesign, migration, or data clearing was added.
+- More real user samples are still needed before v1.3 should become the Today primary judgement.

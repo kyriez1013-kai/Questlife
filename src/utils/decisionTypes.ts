@@ -16,6 +16,7 @@ export type DecisionBriefInput = {
   today_context: {
     objective_context_brief?: ObjectiveContextBrief;
     recent_context_logs: Array<Record<string, unknown>>;
+    context_summary?: Record<string, unknown>;
     latest_sleep_minutes?: number;
     hrv?: number;
     resting_heart_rate?: number;
@@ -29,12 +30,15 @@ export type DecisionBriefInput = {
     skills: Array<Record<string, unknown>>;
     known_baselines: Record<string, unknown>;
     confirmed_patterns: Array<Record<string, unknown>>;
+    inferred_patterns_v0?: Array<Record<string, unknown>>;
     chronotype: 'unknown' | 'morning' | 'evening' | 'mixed';
   };
   history_index: {
     last_7_days: Array<Record<string, unknown>>;
     last_28_days: Record<string, unknown>;
   };
+  state_summary?: Record<string, unknown>;
+  after_state_summary?: Record<string, unknown>;
   schedule_today: Array<Record<string, unknown>>;
 };
 

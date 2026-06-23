@@ -16,14 +16,24 @@ export type DecisionPayloadAudit = {
     foodOrBodyNotes: boolean;
   };
   historyRowsCount: number;
+  historyIndexCount: number;
   executionSamplesLast7Days: number;
+  executionRows7d: number;
+  executionRows28d: number;
+  stateCheckInCount7d: number;
+  contextCount24h: number;
+  contextCount7d: number;
+  contextTypesPresent: string[];
   last28AggregateAvailable: boolean;
   activeGoalsCount: number;
   modulesCount: number;
   skillsCount: number;
   afterStateDeltaCount: number;
+  afterStateSampleCount: number;
   scheduleBlocksCount: number;
   confirmedPatternsCount: number;
+  inferredPatternsCount: number;
+  evidenceRichness: 'none' | 'sparse' | 'usable' | 'rich';
   estimatedBytes: number;
   enoughEvidenceForPersonalizedJudgement: boolean;
   evidenceReasons: string[];
@@ -60,21 +70,60 @@ function includesAny(text: string, terms: string[]) {
   return terms.some((term) => text.includes(term.toLowerCase()));
 }
 
+function richnessFor(args: {
+  hasState: boolean;
+  executionCount: number;
+  contextCount: number;
+  afterStateCount: number;
+  patternCount: number;
+}) {
+  const categories = [
+    args.hasState,
+    args.executionCount > 0,
+    args.contextCount > 0,
+    args.afterStateCount > 0 || args.patternCount > 0,
+  ].filter(Boolean).length;
+  if (categories === 0) return 'none';
+  if (categories === 1) return 'sparse';
+  if (categories >= 4) return 'rich';
+  return 'usable';
+}
+
 export function auditDecisionPayload(payload: DecisionBriefInput): DecisionPayloadAudit {
   const contextLogs = payload.today_context?.recent_context_logs || [];
+  const contextSummary = (payload.today_context?.context_summary || {}) as Record<string, any>;
   const contextText = lower(safeStringify({
     recent_context_logs: contextLogs,
     objective_context_brief: payload.today_context?.objective_context_brief,
+    context_summary: contextSummary,
   }));
   const historyRows = payload.history_index?.last_7_days || [];
   const executionSamplesLast7Days = historyRows.reduce((sum, row) => {
     const samples = Array.isArray((row as any).samples) ? (row as any).samples.length : 0;
-    return sum + samples;
+    const events = Array.isArray((row as any).execution_events) ? (row as any).execution_events.length : 0;
+    return sum + Math.max(samples, events);
   }, 0);
   const afterStateDeltaCount = historyRows.reduce((sum, row) => {
     const samples = Array.isArray((row as any).samples) ? (row as any).samples : [];
-    return sum + samples.filter((sample: any) => !!sample?.afterStateDelta).length;
+    const events = Array.isArray((row as any).execution_events) ? (row as any).execution_events : [];
+    return sum + [...samples, ...events].filter((sample: any) => !!sample?.afterStateDelta).length;
   }, 0);
+  const stateCheckInCount7d = Number((payload.state_summary as any)?.count_7d || 0);
+  const contextCount24h = Number(contextSummary.count_24h || 0);
+  const contextCount7d = Number(contextSummary.count_7d || contextLogs.length || 0);
+  const contextTypesPresent = Array.isArray(contextSummary.types_present) ? contextSummary.types_present.map(String) : [];
+  const last28 = payload.history_index?.last_28_days || {};
+  const executionRows28d = Number((last28 as any).log_count || 0);
+  const afterStateSampleCount = Number((payload.after_state_summary as any)?.sample_count || (last28 as any).after_state_sample_count || afterStateDeltaCount || 0);
+  const inferredPatternsCount = Math.max(0, (payload.profile?.inferred_patterns_v0 || []).filter((pattern: any) => Number(pattern?.sample_n || 0) > 0).length);
+  const confirmedPatternsCount = (payload.profile?.confirmed_patterns || []).length;
+  const evidenceRichness = richnessFor({
+    hasState: !!payload.current_state || stateCheckInCount7d > 0,
+    executionCount: Math.max(executionSamplesLast7Days, executionRows28d),
+    contextCount: contextCount7d,
+    afterStateCount: afterStateSampleCount,
+    patternCount: confirmedPatternsCount + inferredPatternsCount,
+  });
   const evidenceReasons: string[] = [];
   const missingEvidence: string[] = [];
   const contextTypes = {
@@ -88,16 +137,15 @@ export function auditDecisionPayload(payload: DecisionBriefInput): DecisionPaylo
   };
   if (payload.current_state) evidenceReasons.push('latest_state');
   else missingEvidence.push('latest_state');
-  if (Object.values(contextTypes).some(Boolean)) evidenceReasons.push('objective_context');
+  if (Object.values(contextTypes).some(Boolean) || contextCount7d > 0) evidenceReasons.push('objective_context');
   else missingEvidence.push('objective_context');
-  if (executionSamplesLast7Days > 0) evidenceReasons.push('recent_execution');
+  if (executionSamplesLast7Days > 0 || executionRows28d > 0) evidenceReasons.push('recent_execution');
   else missingEvidence.push('recent_execution');
-  if ((payload.profile?.confirmed_patterns || []).length > 0) evidenceReasons.push('confirmed_patterns');
+  if (confirmedPatternsCount > 0) evidenceReasons.push('confirmed_patterns');
   else missingEvidence.push('confirmed_patterns');
-  if (afterStateDeltaCount > 0) evidenceReasons.push('after_state_delta');
+  if (afterStateSampleCount > 0) evidenceReasons.push('after_state_delta');
   else missingEvidence.push('after_state_delta');
 
-  const last28 = payload.history_index?.last_28_days || {};
   return {
     mode: payload.mode,
     trigger: payload.trigger,
@@ -105,17 +153,26 @@ export function auditDecisionPayload(payload: DecisionBriefInput): DecisionPaylo
     contextCount: contextLogs.length,
     contextTypes,
     historyRowsCount: historyRows.length,
+    historyIndexCount: historyRows.length,
     executionSamplesLast7Days,
+    executionRows7d: executionSamplesLast7Days,
+    executionRows28d,
+    stateCheckInCount7d,
+    contextCount24h,
+    contextCount7d,
+    contextTypesPresent,
     last28AggregateAvailable: Object.keys(last28).length > 0 && ((last28 as any).log_count > 0 || (last28 as any).total_duration > 0),
     activeGoalsCount: (payload.profile?.active_goals || []).length,
     modulesCount: (payload.profile?.modules || []).length,
     skillsCount: (payload.profile?.skills || []).length,
     afterStateDeltaCount,
+    afterStateSampleCount,
     scheduleBlocksCount: (payload.schedule_today || []).length,
-    confirmedPatternsCount: (payload.profile?.confirmed_patterns || []).length,
+    confirmedPatternsCount,
+    inferredPatternsCount,
+    evidenceRichness,
     estimatedBytes: safeStringify(payload).length,
-    enoughEvidenceForPersonalizedJudgement: !!payload.current_state
-      && (Object.values(contextTypes).some(Boolean) || executionSamplesLast7Days >= 2 || (payload.profile?.confirmed_patterns || []).length > 0),
+    enoughEvidenceForPersonalizedJudgement: evidenceRichness === 'usable' || evidenceRichness === 'rich',
     evidenceReasons,
     missingEvidence,
   };
@@ -140,23 +197,27 @@ export function diagnoseDecisionOutput(args: {
   ].join(' '));
   const hasSkillOrGoal = (payload.profile?.skills || []).length > 0 || (payload.profile?.active_goals || []).length > 0;
   const likelyCauses: string[] = [];
-  if (source === 'legacy_fallback') likelyCauses.push('visible_result_is_legacy_fallback');
-  if (source === 'ai' && quality.flags.generic) likelyCauses.push('ai_output_contains_generic_language');
-  if (!audit.enoughEvidenceForPersonalizedJudgement) likelyCauses.push('payload_sparse_for_personalized_judgement');
+  if (source === 'legacy_fallback') likelyCauses.push('fallback_only_visible_path');
+  if (source === 'ai' && audit.evidenceRichness === 'none') likelyCauses.push('ai_path_but_no_evidence_payload');
+  if (source === 'ai' && audit.evidenceRichness === 'sparse') likelyCauses.push('ai_path_but_sparse_payload');
+  if (source === 'ai' && (audit.evidenceRichness === 'usable' || audit.evidenceRichness === 'rich') && (quality.flags.generic || quality.flags.tooVague)) {
+    likelyCauses.push('usable_payload_but_generic_response_prompt_or_model_issue');
+  }
+  if (quality.flags.missingEvidence) likelyCauses.push('quality_gate_grounding_issue');
+  if (!audit.enoughEvidenceForPersonalizedJudgement) likelyCauses.push('v1_3_not_ready_evidence_sparse');
   if (!audit.latestStateIncluded) likelyCauses.push('missing_latest_state');
   if (!Object.values(audit.contextTypes).some(Boolean)) likelyCauses.push('missing_objective_context');
-  if (audit.executionSamplesLast7Days === 0) likelyCauses.push('missing_recent_execution');
-  if (audit.afterStateDeltaCount === 0 && audit.confirmedPatternsCount === 0) likelyCauses.push('missing_after_state_or_confirmed_patterns');
-  if (quality.flags.tooVague || quality.flags.missingEvidence) likelyCauses.push('quality_gate_flags_weak_specificity_or_evidence');
+  if (audit.executionRows7d === 0 && audit.executionRows28d === 0) likelyCauses.push('missing_recent_execution');
+  if (audit.afterStateSampleCount === 0 && audit.confirmedPatternsCount + audit.inferredPatternsCount === 0) likelyCauses.push('missing_after_state_or_patterns');
 
   return {
     resultSource: source,
     headlineMentionsRealData: includesAny(headline, ['sleep', '睡眠', 'state', '状态', 'hrv', 'steps', '步数', '记录', 'execution', 'schedule', '日程']),
     firstStepReferencesGoalOrSkill: hasSkillOrGoal && includesAny(step, ['skill', '技能', '任务', 'goal', '目标', 'sql', 'python', 'bench', '卧推', '练']),
     usesLatestState: audit.latestStateIncluded && includesAny(fullText, ['state', '状态', '主观', 'check-in']),
-    usesContext: Object.values(audit.contextTypes).some(Boolean) && includesAny(fullText, ['sleep', '睡眠', 'hrv', 'steps', '步数', 'context', '上下文', '身体']),
-    usesRecentExecution: audit.executionSamplesLast7Days > 0 && includesAny(fullText, ['execution', '执行', '记录', 'recent', '最近']),
-    usesAfterStateOrPatterns: (audit.afterStateDeltaCount > 0 || audit.confirmedPatternsCount > 0) && includesAny(fullText, ['pattern', '模式', 'after', '之后', '复评']),
+    usesContext: (Object.values(audit.contextTypes).some(Boolean) || audit.contextCount7d > 0) && includesAny(fullText, ['sleep', '睡眠', 'hrv', 'steps', '步数', 'context', '上下文', '身体']),
+    usesRecentExecution: (audit.executionRows7d > 0 || audit.executionRows28d > 0) && includesAny(fullText, ['execution', '执行', '记录', 'recent', '最近']),
+    usesAfterStateOrPatterns: (audit.afterStateSampleCount > 0 || audit.confirmedPatternsCount + audit.inferredPatternsCount > 0) && includesAny(fullText, ['pattern', '模式', 'after', '之后', '复评']),
     suggestedActionsPresent: !!String(result.prescription?.do_first?.step || '').trim(),
     genericLowFrictionOnly: includesAny(step, ['low-friction', '低阻力', '低摩擦']) && !includesAny(step, ['sql', 'python', '卧推', '写', '读', '练', 'review', 'practice']),
     failedChecks: quality.checks.filter((check) => !check.passed).map((check) => check.id),

@@ -84,16 +84,26 @@ function hasAny(text: string, phrases: string[]) {
 }
 
 function hasPayloadData(payload: DecisionBriefInput) {
+  const rows = payload.history_index.last_7_days || [];
+  const executionCount = rows.reduce((sum, row: any) => {
+    const samples = Array.isArray(row.samples) ? row.samples.length : 0;
+    const events = Array.isArray(row.execution_events) ? row.execution_events.length : 0;
+    return sum + Math.max(samples, events);
+  }, 0);
+  const contextSummary = (payload.today_context.context_summary || {}) as Record<string, any>;
+  const afterStateSamples = Number((payload.after_state_summary as any)?.sample_count || (payload.history_index.last_28_days as any)?.after_state_sample_count || 0);
+  const inferredPatterns = (payload.profile.inferred_patterns_v0 || []).filter((pattern: any) => Number(pattern?.sample_n || 0) > 0).length;
   return {
     latestState: !!payload.current_state,
     sleep: typeof payload.today_context.latest_sleep_minutes === 'number',
     hrv: typeof payload.today_context.hrv === 'number',
     steps: typeof payload.today_context.steps === 'number',
-    context: (payload.today_context.recent_context_logs || []).length > 0,
-    execution: (payload.history_index.last_7_days || []).length > 0,
+    context: (payload.today_context.recent_context_logs || []).length > 0 || Number(contextSummary.count_7d || 0) > 0,
+    execution: executionCount > 0 || Number((payload.history_index.last_28_days as any)?.log_count || 0) > 0,
+    afterState: afterStateSamples > 0,
     skill: (payload.profile.skills || []).length > 0,
     schedule: (payload.schedule_today || []).length > 0,
-    pattern: (payload.profile.confirmed_patterns || []).length > 0,
+    pattern: (payload.profile.confirmed_patterns || []).length > 0 || inferredPatterns > 0,
   };
 }
 
@@ -106,6 +116,7 @@ function mentionsEvidence(text: string, payload: DecisionBriefInput) {
     data.steps ? ['steps', '步数'] : [],
     data.context ? ['context', '上下文', '身体'] : [],
     data.execution ? ['execution', '执行', '记录', 'recent'] : [],
+    data.afterState ? ['after', '之后', '复评', '状态变化'] : [],
     data.skill ? ['skill', '技能', '任务'] : [],
     data.schedule ? ['schedule', '日程', '计划'] : [],
     data.pattern ? ['pattern', '模式'] : [],
