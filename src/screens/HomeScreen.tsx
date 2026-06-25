@@ -53,7 +53,9 @@ import { buildMetacognitionSummary } from '../utils/metacognition';
 import { buildDailyOperatingBrief } from '../utils/dailyOperatingBrief';
 import { buildDecisionPayload } from '../utils/decisionPayload';
 import { DecisionBriefResult } from '../utils/decisionTypes';
-import { createDecisionService, isDecisionAIEnabled, isDecisionAIShadowEnabled, isDecisionDebugEnabled, LegacyDecisionService, runDecisionShadowBrief } from '../services/decisionService';
+import { DecisionQualityEvaluation, evaluateDecisionBriefQuality } from '../utils/decisionQuality';
+import { DecisionPayloadAudit, auditDecisionPayload } from '../utils/decisionRealityAudit';
+import { createDecisionService, getLastDecisionServiceMeta, isDecisionAIEnabled, isDecisionAIShadowEnabled, isDecisionDailyBriefEnabled, isDecisionDebugEnabled, LegacyDecisionService, AiDecisionService, runDecisionShadowBrief, DecisionServiceMeta } from '../services/decisionService';
 import DashboardCardShell from '../components/dashboard/DashboardCardShell';
 
 const FIXED_TODAY_CARD_SIZES = {
@@ -410,6 +412,17 @@ export default function HomeScreen() {
   const [instantDecisionFeedback, setInstantDecisionFeedback] = useState<'useful' | 'not_useful' | null>(null);
   const instantDecisionRequestRef = useRef(0);
 
+  const [dailyDecisionBrief, setDailyDecisionBrief] = useState<DecisionBriefResult | null>(null);
+  const [dailyDecisionLoading, setDailyDecisionLoading] = useState(false);
+  const [dailyDecisionError, setDailyDecisionError] = useState('');
+  const [dailyDecisionSource, setDailyDecisionSource] = useState<'ai' | 'legacy_fallback' | 'ai_failed_fallback'>('legacy_fallback');
+  const [dailyDecisionQuality, setDailyDecisionQuality] = useState<DecisionQualityEvaluation | null>(null);
+  const [dailyDecisionGeneratedAt, setDailyDecisionGeneratedAt] = useState('');
+  const [dailyDecisionPayloadAudit, setDailyDecisionPayloadAudit] = useState<DecisionPayloadAudit | null>(null);
+  const [dailyDecisionServiceMeta, setDailyDecisionServiceMeta] = useState<DecisionServiceMeta | null>(null);
+  const dailyDecisionRequestRef = useRef(0);
+  const dailyDecisionInFlightRef = useRef(false);
+  const dailyDecisionAutoKeyRef = useRef('');
 
   const dailyStateOptions = [
     { value: 1 as DailyStateValue, emoji: '😴', label: t(lang, 'veryBad') },
@@ -1235,6 +1248,75 @@ export default function HomeScreen() {
     runDecisionShadowBrief(payload);
   }, [data, lang]);
 
+  const generateDailyDecisionBrief = useCallback((reason: 'auto' | 'manual' = 'auto') => {
+    if (dailyDecisionInFlightRef.current) return;
+    const requestId = Date.now();
+    dailyDecisionRequestRef.current = requestId;
+    dailyDecisionInFlightRef.current = true;
+    setDailyDecisionLoading(true);
+    setDailyDecisionError('');
+
+    const payload = buildDecisionPayload(data, { mode: 'daily_brief', trigger: 'manual', locale: lang });
+    const payloadAudit = auditDecisionPayload(payload);
+    setDailyDecisionPayloadAudit(payloadAudit);
+
+    const useAI = isDecisionAIEnabled() && isDecisionDailyBriefEnabled();
+    const service = useAI ? new AiDecisionService() : new LegacyDecisionService();
+    const timeout = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('daily_brief_timeout')), 12000);
+    });
+
+    const useFallback = (fallbackReason: string, source: 'legacy_fallback' | 'ai_failed_fallback') => {
+      new LegacyDecisionService().buildBrief(payload)
+        .then((fallback) => {
+          if (dailyDecisionRequestRef.current !== requestId) return;
+          const quality = evaluateDecisionBriefQuality({ result: fallback, payload, mode: payload.mode });
+          setDailyDecisionBrief(fallback);
+          setDailyDecisionQuality(quality);
+          setDailyDecisionSource(source);
+          setDailyDecisionServiceMeta(getLastDecisionServiceMeta());
+          setDailyDecisionGeneratedAt(fallback.generated_at || new Date().toISOString());
+          setDailyDecisionError(source === 'ai_failed_fallback' ? fallbackReason : '');
+        })
+        .catch((fallbackError) => {
+          if (dailyDecisionRequestRef.current !== requestId) return;
+          if (isDecisionDebugEnabled()) console.warn('[decision daily fallback failed]', fallbackError);
+          setDailyDecisionError(String(fallbackError?.message || fallbackError));
+        })
+        .finally(() => {
+          if (dailyDecisionRequestRef.current !== requestId) return;
+          dailyDecisionInFlightRef.current = false;
+          setDailyDecisionLoading(false);
+        });
+    };
+
+    Promise.race([service.buildBrief(payload), timeout])
+      .then((result) => {
+        if (dailyDecisionRequestRef.current !== requestId) return;
+        const quality = evaluateDecisionBriefQuality({ result, payload, mode: payload.mode });
+        const meta = getLastDecisionServiceMeta();
+        if (useAI && quality.grade === 'bad') {
+          if (isDecisionDebugEnabled()) console.warn('[decision daily quality gate fallback]', quality);
+          useFallback('quality_gate_bad', 'ai_failed_fallback');
+          return;
+        }
+        setDailyDecisionBrief(result);
+        setDailyDecisionQuality(quality);
+        setDailyDecisionSource(useAI ? 'ai' : 'legacy_fallback');
+        setDailyDecisionServiceMeta(meta);
+        setDailyDecisionGeneratedAt(result.generated_at || new Date().toISOString());
+        setDailyDecisionError('');
+        dailyDecisionInFlightRef.current = false;
+        setDailyDecisionLoading(false);
+      })
+      .catch((error) => {
+        if (dailyDecisionRequestRef.current !== requestId) return;
+        if (isDecisionDebugEnabled()) console.warn('[decision daily failed]', { reason, error });
+        setDailyDecisionServiceMeta(getLastDecisionServiceMeta());
+        useFallback(String(error?.message || error), useAI ? 'ai_failed_fallback' : 'legacy_fallback');
+      });
+  }, [data, lang]);
+
   const markInstantDecisionFeedback = useCallback((feedback: 'useful' | 'not_useful') => {
     setInstantDecisionFeedback(feedback);
     try {
@@ -1447,6 +1529,18 @@ export default function HomeScreen() {
   }), [data.categories, data.contextLogs, data.executionLogs, data.modules, data.skills, data.stateCheckIns, metacognitionSummary, objectiveContextBrief, todayCommand, todayScheduleBlocks]);
 
   useEffect(() => {
+    const dailyBriefKey = [
+      today(),
+      lang,
+      isDecisionAIEnabled() ? 'ai' : 'fallback',
+      isDecisionDailyBriefEnabled() ? 'daily_ai' : 'daily_fallback',
+    ].join(':');
+    if (dailyDecisionAutoKeyRef.current === dailyBriefKey) return;
+    dailyDecisionAutoKeyRef.current = dailyBriefKey;
+    generateDailyDecisionBrief('auto');
+  }, [generateDailyDecisionBrief, lang]);
+
+  useEffect(() => {
     if (!isDecisionAIShadowEnabled()) return;
     const payload = buildDecisionPayload(data, { mode: 'daily_brief', trigger: 'manual', locale: lang });
     runDecisionShadowBrief(payload);
@@ -1461,6 +1555,38 @@ export default function HomeScreen() {
   }, [lang]);
 
   const commandTargetSkill = todayCommand.linkedSkillId ? data.skills.find((item) => item.id === todayCommand.linkedSkillId) : undefined;
+
+  const dailyDecisionReadinessKey = useMemo(() => {
+    const band = dailyDecisionBrief?.readiness?.band || 'unknown';
+    if (band === 'green') return 'pushReadyMode';
+    if (band === 'yellow') return 'stableProgressMode';
+    if (band === 'red') return 'protectRecoveryMode';
+    return 'insufficientDataMode';
+  }, [dailyDecisionBrief]);
+
+  const dailyDecisionPillVariant = useMemo(() => {
+    const band = dailyDecisionBrief?.readiness?.band || 'unknown';
+    if (band === 'green') return 'success' as const;
+    if (band === 'yellow') return 'warning' as const;
+    if (band === 'red') return 'danger' as const;
+    return 'muted' as const;
+  }, [dailyDecisionBrief]);
+
+  const dailyDecisionEvidenceItems = useMemo(() => {
+    const drivers = (dailyDecisionBrief?.readiness?.drivers || []).filter(Boolean).slice(0, 3);
+    if (drivers.length > 0) return drivers;
+    const audit = dailyDecisionPayloadAudit;
+    if (!audit) return [t(lang, 'dataStillAccumulating')];
+    const items: string[] = [];
+    if (audit.latestStateIncluded || audit.stateCheckInCount7d > 0) items.push(t(lang, 'evidenceFromState'));
+    if (audit.contextCount7d > 0 || audit.contextTypesPresent.length > 0) items.push(t(lang, 'evidenceFromContext'));
+    if (audit.executionRows28d > 0 || audit.executionRows7d > 0) items.push(t(lang, 'evidenceFromRecentExecution'));
+    if (audit.afterStateSampleCount > 0 || audit.confirmedPatternsCount + audit.inferredPatternsCount > 0) items.push(t(lang, 'evidenceFromPatterns'));
+    return items.length > 0 ? items.slice(0, 3) : [t(lang, 'dataStillAccumulating')];
+  }, [dailyDecisionBrief, dailyDecisionPayloadAudit, lang]);
+
+  const dailyDecisionSourceLabelKey = dailyDecisionSource === 'ai' ? 'aiSourceAI' : dailyDecisionSource === 'ai_failed_fallback' ? 'aiSourceFailedFallback' : 'aiSourceFallback';
+  const dailyDecisionQualityLabelKey = dailyDecisionQuality?.grade === 'bad' ? 'aiQualityBadFallback' : dailyDecisionQuality?.grade === 'weak' ? 'aiQualityWeak' : 'aiQuality';
 
   const trackNowFocusAction = useCallback((action: 'start_timer' | 'one_tap' | 'log_progress') => {
     trackEvent('today_now_focus_clicked', {
@@ -1786,62 +1912,135 @@ export default function HomeScreen() {
         <QuestCard questTheme={questTheme} variant="hero" style={styles.dailyBriefCard}>
           <View style={styles.dailyBriefHeader}>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.strategyKicker, { color: questTheme.colors.textMuted }]}>{t(lang, 'dailyOperatingBrief')}</Text>
-              <Text style={[styles.dailyBriefTitle, { color: questTheme.colors.text }]}>
-                {formatCommandCopy(dailyOperatingBrief.mainJudgementKey, dailyOperatingBrief.mainJudgementValues)}
+              <Text style={[styles.strategyKicker, { color: questTheme.colors.textMuted }]}>{t(lang, 'dailyDecisionBrief')}</Text>
+              <Text style={[styles.dailyBriefTitle, { color: questTheme.colors.text }]}> 
+                {dailyDecisionLoading && !dailyDecisionBrief ? t(lang, 'generatingDailyBrief') : dailyDecisionBrief?.headline_insight || formatCommandCopy(dailyOperatingBrief.mainJudgementKey, dailyOperatingBrief.mainJudgementValues)}
               </Text>
             </View>
             <QuestPill
               questTheme={questTheme}
               active
-              variant={dailyOperatingBrief.recommendedIntensity === 'high' ? 'success' : dailyOperatingBrief.recommendedIntensity === 'normal' ? 'default' : dailyOperatingBrief.recommendedIntensity === 'low' ? 'warning' : 'danger'}
-              label={t(lang, dailyOperatingBrief.modeLabelKey)}
+              variant={dailyDecisionPillVariant}
+              label={t(lang, dailyDecisionReadinessKey)}
             />
           </View>
-          <View style={[styles.dailyBriefAction, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}>
+
+          <View style={styles.dailyBriefMetaRow}>
+            <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}> 
+              {t(lang, 'readiness')}: {dailyDecisionBrief?.readiness?.score == null ? t(lang, 'readinessUnknown') : Math.round(dailyDecisionBrief.readiness.score)}
+            </Text>
+            {dailyDecisionQuality?.grade === 'weak' ? (
+              <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.warning }]}>{t(lang, 'aiQualityWeak')}</Text>
+            ) : null}
+            {dailyDecisionSource !== 'ai' ? (
+              <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textSubtle }]}>{t(lang, 'dailyBriefFallback')}</Text>
+            ) : null}
+          </View>
+
+          <View style={[styles.dailyBriefAction, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}> 
             <QuestIcon name="zap" size={16} color={questTheme.colors.primary} />
             <View style={{ flex: 1 }}>
-              <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'firstAction')}</Text>
-              <Text style={[styles.dailyBriefActionText, { color: questTheme.colors.text }]}>
-                {formatCommandCopy(dailyOperatingBrief.firstActionKey, dailyOperatingBrief.firstActionValues)}
+              <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'firstStep')}</Text>
+              <Text style={[styles.dailyBriefActionText, { color: questTheme.colors.text }]}> 
+                {dailyDecisionBrief?.prescription?.do_first?.step || formatCommandCopy(dailyOperatingBrief.firstActionKey, dailyOperatingBrief.firstActionValues)}
               </Text>
+              {dailyDecisionBrief?.prescription?.do_first?.why ? (
+                <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted, marginTop: 4 }]}>{dailyDecisionBrief.prescription.do_first.why}</Text>
+              ) : null}
             </View>
+            {typeof dailyDecisionBrief?.prescription?.do_first?.duration_min === 'number' ? (
+              <QuestPill
+                questTheme={questTheme}
+                active
+                variant="default"
+                label={String(dailyDecisionBrief.prescription.do_first.duration_min) + t(lang, 'minutesShort')}
+              />
+            ) : null}
           </View>
+
           {dailyBriefDashboardSize !== 'small' ? (
           <View style={styles.dailyBriefSection}>
-            <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'whyThis')}</Text>
+            <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'keyEvidence')}</Text>
             <View style={styles.dailyBriefChipRow}>
-              {dailyOperatingBrief.whyKeys.slice(0, dailyBriefDashboardSize === 'medium' ? 1 : 3).map((key) => (
-                <View key={key} style={[styles.dailyBriefChip, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}>
-                  <Text style={[styles.dailyBriefChipText, { color: questTheme.colors.textMuted }]}>
-                    {formatCommandCopy(key, dailyOperatingBrief.whyValues)}
-                  </Text>
+              {dailyDecisionEvidenceItems.slice(0, dailyBriefDashboardSize === 'medium' ? 2 : 3).map((item, index) => (
+                <View key={String(item) + index} style={[styles.dailyBriefChip, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}> 
+                  <Text style={[styles.dailyBriefChipText, { color: questTheme.colors.textMuted }]}>{item}</Text>
                 </View>
               ))}
             </View>
           </View>
           ) : null}
-          {dailyBriefDashboardSize === 'large' && dailyOperatingBrief.avoidKeys.length > 0 ? (
+
+          {dailyBriefDashboardSize === 'large' && dailyDecisionBrief?.perception_gap?.detected ? (
+            <View style={[styles.dailyBriefAction, { backgroundColor: questTheme.colors.accentSoft, borderColor: questTheme.colors.border }]}> 
+              <QuestIcon name="activity" size={16} color={questTheme.colors.accent} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'perceptionGapShort')}</Text>
+                <Text style={[styles.dailyBriefActionText, { color: questTheme.colors.text }]}>{dailyDecisionBrief.perception_gap.interpretation}</Text>
+              </View>
+            </View>
+          ) : null}
+
+          {dailyBriefDashboardSize === 'large' && (dailyDecisionBrief?.prescription?.do_not || []).length > 0 ? (
             <View style={styles.dailyBriefSection}>
-              <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'avoidToday')}</Text>
+              <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'doNotToday')}</Text>
               <View style={styles.dailyBriefChipRow}>
-                {dailyOperatingBrief.avoidKeys.slice(0, 2).map((key) => (
-                  <View key={key} style={[styles.dailyBriefChip, { backgroundColor: questTheme.colors.warningSoft, borderColor: questTheme.colors.border }]}>
-                    <Text style={[styles.dailyBriefChipText, { color: questTheme.colors.text }]}>
-                      {formatCommandCopy(key)}
-                    </Text>
+                {(dailyDecisionBrief?.prescription?.do_not || []).slice(0, 2).map((item, index) => (
+                  <View key={String(item) + index} style={[styles.dailyBriefChip, { backgroundColor: questTheme.colors.warningSoft, borderColor: questTheme.colors.border }]}> 
+                    <Text style={[styles.dailyBriefChipText, { color: questTheme.colors.text }]}>{item}</Text>
                   </View>
                 ))}
               </View>
             </View>
           ) : null}
-          {dailyBriefDashboardSize === 'large' ? (
+
+          {dailyBriefDashboardSize === 'large' && (dailyDecisionBrief?.prescription?.schedule_adjustments || []).length > 0 ? (
+            <View style={styles.dailyBriefSection}>
+              <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}> 
+                {t(lang, 'scheduleProposal')}: {(dailyDecisionBrief?.prescription?.schedule_adjustments || []).length} · {t(lang, 'scheduleProposalNotApplied')}
+              </Text>
+              {isDecisionDebugEnabled() ? (
+                <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textSubtle, marginTop: 4 }]}> 
+                  {JSON.stringify(dailyDecisionBrief?.prescription?.schedule_adjustments || [])}
+                </Text>
+              ) : null}
+            </View>
+          ) : null}
+
           <View style={styles.dailyBriefFooter}>
-            <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textSubtle }]}>
-              {t(lang, 'confidence')}: {t(lang, dailyOperatingBrief.confidence === 'high' ? 'confidenceHigh' : dailyOperatingBrief.confidence === 'medium' ? 'confidenceMedium' : 'confidenceLow')}
+            <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textSubtle }]}> 
+              {t(lang, 'evidenceBasis')}: {t(lang, dailyDecisionBrief?.evidence_basis === 'personal_pattern' ? 'basedOnRecentState' : 'basedOnContextAndHistory')} · {t(lang, 'confidence')}: {dailyDecisionBrief?.confidence == null ? t(lang, 'confidenceLow') : Math.round(dailyDecisionBrief.confidence * 100) + '%'}
             </Text>
-            <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textSubtle }]}>{t(lang, 'briefNotMedical')}</Text>
+            <TouchableOpacity
+              disabled={dailyDecisionLoading}
+              onPress={() => generateDailyDecisionBrief('manual')}
+              style={[styles.dailyBriefRefreshBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}
+            >
+              <Text style={[styles.dailyBriefRefreshText, { color: questTheme.colors.primary }]}> 
+                {dailyDecisionLoading ? t(lang, 'generatingDailyBrief') : t(lang, 'refreshBrief')}
+              </Text>
+            </TouchableOpacity>
           </View>
+
+          {dailyBriefDashboardSize === 'large' ? (
+            <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textSubtle, marginTop: 8 }]}>{t(lang, 'noMedicalAdviceShort')}</Text>
+          ) : null}
+
+          {isDecisionDebugEnabled() ? (
+            <View style={[styles.dailyBriefDebugBox, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}> 
+              <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}> 
+                {t(lang, 'aiSource')}: {t(lang, dailyDecisionSourceLabelKey)} · {t(lang, dailyDecisionQualityLabelKey)}{dailyDecisionQuality ? ' ' + dailyDecisionQuality.grade + '/' + dailyDecisionQuality.score : ''}
+              </Text>
+              <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textSubtle }]}> 
+                {t(lang, 'evidenceBasis')}: {dailyDecisionPayloadAudit?.evidenceRichness || 'unknown'} · model: {dailyDecisionServiceMeta?.model || '-'} · finish: {dailyDecisionServiceMeta?.finishReason || '-'}
+              </Text>
+              {dailyDecisionError ? (
+                <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.danger }]}>{dailyDecisionError}</Text>
+              ) : null}
+              {dailyDecisionGeneratedAt ? (
+                <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textSubtle }]}>{t(lang, 'generatedAt')}: {dailyDecisionGeneratedAt}</Text>
+              ) : null}
+            </View>
           ) : null}
         </QuestCard>
         </DashboardCardShell>
@@ -3433,6 +3632,7 @@ const styles = StyleSheet.create({
   nowFocusActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
   dailyBriefCard: { marginTop: 12, gap: 10 },
   dailyBriefHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  dailyBriefMetaRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
   dailyBriefTitle: { fontSize: 16, fontWeight: '900', lineHeight: 22, marginTop: 2 },
   dailyBriefAction: { borderWidth: 1, borderRadius: 14, padding: 10, flexDirection: 'row', alignItems: 'center', gap: 9 },
   dailyBriefActionText: { fontSize: 13, fontWeight: '900', lineHeight: 18 },
@@ -3441,7 +3641,10 @@ const styles = StyleSheet.create({
   dailyBriefChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   dailyBriefChip: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 5 },
   dailyBriefChipText: { fontSize: 10, fontWeight: '900', lineHeight: 14 },
-  dailyBriefFooter: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'space-between' },
+  dailyBriefFooter: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'space-between', alignItems: 'center' },
+  dailyBriefRefreshBtn: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
+  dailyBriefRefreshText: { fontSize: 11, fontWeight: '900' },
+  dailyBriefDebugBox: { marginTop: 4, borderWidth: 1, borderRadius: 14, padding: 8, gap: 4 },
   contextBridgeCard: { marginTop: 12, gap: 10 },
   contextBridgeHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   contextBriefTitle: { fontSize: 15, fontWeight: '900', lineHeight: 21, marginTop: 2 },

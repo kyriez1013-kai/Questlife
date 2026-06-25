@@ -3,6 +3,7 @@ import { DecisionBriefInput, DecisionBriefResult, DecisionService } from '../uti
 
 const AI_ENABLED_KEY = 'questlife_decision_ai_enabled';
 const AI_SHADOW_KEY = 'questlife_decision_ai_shadow';
+const DAILY_BRIEF_ENABLED_KEY = 'questlife_decision_daily_brief_enabled';
 const DEBUG_KEY = 'questlife_debug_decision_ai';
 
 export type DecisionServiceMeta = {
@@ -34,6 +35,10 @@ export function isDecisionAIEnabled() {
 
 export function isDecisionAIShadowEnabled() {
   return readLocalFlag(AI_SHADOW_KEY);
+}
+
+export function isDecisionDailyBriefEnabled() {
+  return readLocalFlag(DAILY_BRIEF_ENABLED_KEY);
 }
 
 export function isDecisionDebugEnabled() {

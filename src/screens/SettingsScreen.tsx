@@ -12,7 +12,7 @@ import { getQuestTheme, themeOptions } from '../design/tokens';
 import { trackEvent } from '../utils/analytics';
 import { confirmAction } from '../utils/confirm';
 import { buildDecisionPayload } from '../utils/decisionPayload';
-import { AiDecisionService, getLastDecisionServiceMeta, LegacyDecisionService } from '../services/decisionService';
+import { AiDecisionService, getLastDecisionServiceMeta, isDecisionAIEnabled, isDecisionAIShadowEnabled, isDecisionDailyBriefEnabled, LegacyDecisionService } from '../services/decisionService';
 import { DecisionBriefResult } from '../utils/decisionTypes';
 import { evaluateDecisionBriefQuality } from '../utils/decisionQuality';
 import { auditDecisionPayload, diagnoseDecisionOutput } from '../utils/decisionRealityAudit';
@@ -27,6 +27,11 @@ export default function SettingsScreen() {
   const [decisionLabError, setDecisionLabError] = useState('');
   const [decisionLabLoading, setDecisionLabLoading] = useState(false);
   const [lastDecisionFeedback, setLastDecisionFeedback] = useState('');
+  const [decisionFlagSnapshot, setDecisionFlagSnapshot] = useState(() => ({
+    aiEnabled: isDecisionAIEnabled(),
+    dailyBriefEnabled: isDecisionDailyBriefEnabled(),
+    shadowEnabled: isDecisionAIShadowEnabled(),
+  }));
   const decisionDebugVisible = (() => {
     if (typeof window === 'undefined') return false;
     try {
@@ -49,23 +54,58 @@ export default function SettingsScreen() {
     }
   }, [lang]);
   useFocusEffect(useCallback(() => {
-    if (decisionDebugVisible) setLastDecisionFeedback(readLastDecisionFeedback());
+    if (decisionDebugVisible) {
+      setLastDecisionFeedback(readLastDecisionFeedback());
+      setDecisionFlagSnapshot({
+        aiEnabled: isDecisionAIEnabled(),
+        dailyBriefEnabled: isDecisionDailyBriefEnabled(),
+        shadowEnabled: isDecisionAIShadowEnabled(),
+      });
+    }
     return undefined;
   }, [decisionDebugVisible, readLastDecisionFeedback]));
-  const setDecisionAIFlag = (enabled: boolean) => {
+  const refreshDecisionFlagSnapshot = () => setDecisionFlagSnapshot({
+    aiEnabled: isDecisionAIEnabled(),
+    dailyBriefEnabled: isDecisionDailyBriefEnabled(),
+    shadowEnabled: isDecisionAIShadowEnabled(),
+  });
+
+  const setDecisionFlag = (key: string, enabled: boolean, enabledText: string, disabledText: string) => {
     if (typeof window === 'undefined') return;
     try {
-      if (enabled) {
-        window.localStorage?.setItem('questlife_decision_ai_enabled', 'true');
-        setDecisionLabOutput(t(lang, 'decisionAIEnabledForDebug'));
-      } else {
-        window.localStorage?.removeItem('questlife_decision_ai_enabled');
-        setDecisionLabOutput(t(lang, 'decisionAIDisabledForDebug'));
-      }
+      if (enabled) window.localStorage?.setItem(key, 'true');
+      else window.localStorage?.removeItem(key);
+      setDecisionLabOutput(enabled ? enabledText : disabledText);
       setDecisionLabError('');
+      refreshDecisionFlagSnapshot();
     } catch (error: any) {
       setDecisionLabError(String(error?.message || error));
     }
+  };
+
+  const setDecisionAIFlag = (enabled: boolean) => {
+    setDecisionFlag(
+      'questlife_decision_ai_enabled',
+      enabled,
+      t(lang, 'decisionAIEnabledForDebug'),
+      t(lang, 'decisionAIDisabledForDebug'),
+    );
+  };
+  const setDecisionDailyBriefFlag = (enabled: boolean) => {
+    setDecisionFlag(
+      'questlife_decision_daily_brief_enabled',
+      enabled,
+      t(lang, 'dailyAIBriefEnabledForDebug'),
+      t(lang, 'dailyAIBriefDisabledForDebug'),
+    );
+  };
+  const setDecisionShadowFlag = (enabled: boolean) => {
+    setDecisionFlag(
+      'questlife_decision_ai_shadow',
+      enabled,
+      t(lang, 'decisionAIShadowEnabledForDebug'),
+      t(lang, 'decisionAIShadowDisabledForDebug'),
+    );
   };
   const runDecisionLab = async (kind: 'legacy_daily' | 'ai_daily' | 'ai_instant') => {
     setDecisionLabLoading(true);
@@ -314,6 +354,9 @@ export default function SettingsScreen() {
           <View style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, shadowColor: questTheme.colors.cardShadow }]}> 
             <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'decisionAILab')}</Text>
             <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>{t(lang, 'decisionAILabDesc')}</Text>
+            <Text style={[styles.value, { color: questTheme.colors.textMuted, marginTop: 8 }]}>
+              {t(lang, 'decisionAIFlagStatus')}: AI {t(lang, decisionFlagSnapshot.aiEnabled ? 'flagOn' : 'flagOff')} · {t(lang, 'enableDailyAIBrief')} {t(lang, decisionFlagSnapshot.dailyBriefEnabled ? 'flagOn' : 'flagOff')} · {t(lang, 'decisionAIShadow')} {t(lang, decisionFlagSnapshot.shadowEnabled ? 'flagOn' : 'flagOff')}
+            </Text>
             <View style={styles.debugActions}>
               <TouchableOpacity
                 disabled={decisionLabLoading}
@@ -349,6 +392,34 @@ export default function SettingsScreen() {
                 onPress={() => setDecisionAIFlag(false)}
               >
                 <Text style={[styles.debugBtnText, { color: questTheme.colors.text }]}>{t(lang, 'disableDecisionAIForDebug')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                disabled={decisionLabLoading}
+                style={[styles.debugBtn, { borderColor: accent, backgroundColor: questTheme.colors.primarySoft }]}
+                onPress={() => setDecisionDailyBriefFlag(true)}
+              >
+                <Text style={[styles.debugBtnText, { color: accent }]}>{t(lang, 'enableDailyAIBrief')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                disabled={decisionLabLoading}
+                style={[styles.debugBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}
+                onPress={() => setDecisionDailyBriefFlag(false)}
+              >
+                <Text style={[styles.debugBtnText, { color: questTheme.colors.text }]}>{t(lang, 'disableDailyAIBrief')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                disabled={decisionLabLoading}
+                style={[styles.debugBtn, { borderColor: accent, backgroundColor: questTheme.colors.primarySoft }]}
+                onPress={() => setDecisionShadowFlag(true)}
+              >
+                <Text style={[styles.debugBtnText, { color: accent }]}>{t(lang, 'enableDecisionAIShadow')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                disabled={decisionLabLoading}
+                style={[styles.debugBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}
+                onPress={() => setDecisionShadowFlag(false)}
+              >
+                <Text style={[styles.debugBtnText, { color: questTheme.colors.text }]}>{t(lang, 'disableDecisionAIShadow')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 disabled={decisionLabLoading}

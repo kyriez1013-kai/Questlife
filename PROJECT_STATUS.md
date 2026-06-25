@@ -2148,3 +2148,25 @@ Known limitations:
 - No daily_brief Today integration was added.
 - No schedule auto-apply, UI redesign, migration, or data clearing was added.
 - More real user samples are still needed before v1.3 should become the Today primary judgement.
+
+## Decision AI v1.3: Daily Brief Integration into Today
+
+Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+
+What changed:
+- Added a separate Daily AI Brief feature flag using localStorage key `questlife_decision_daily_brief_enabled`.
+- Today now renders a compact Daily Decision Brief as the primary high-level judgement card.
+- The Daily Decision Brief uses the enriched `daily_brief` payload, payload audit evidence, readiness band, first step, do-not guidance, confidence, and evidence basis.
+- AI Daily Brief is visible only when both `questlife_decision_ai_enabled === "true"` and `questlife_decision_daily_brief_enabled === "true"`; otherwise Today uses the local legacy fallback.
+- Added quality gating: bad AI output falls back to the legacy local brief, weak output remains visible with calibration messaging.
+- Added manual refresh for the Daily Decision Brief with an in-flight guard to avoid duplicate requests/API loops.
+- Schedule adjustments from AI are shown only as proposals and are never auto-applied.
+- Decision AI debug mode now shows current AI/daily/shadow flags and can toggle Daily AI Brief and shadow mode.
+- Debug view can show source, quality, payload evidence richness, model, finish reason, errors, and generated time without exposing API keys or reasoning content.
+- Existing Smart Capture, Instant Read, B4 feedback, Body/Sleep Context, context paste/save, and Insights flows remain in place.
+
+Known limitations:
+- Daily Decision Brief results are generated client-side on page load/manual refresh and are not persisted as a separate result model.
+- Schedule suggestions remain advisory only and are not applied to Schedule.
+- No Apple Health native integration, medical diagnosis, data migration, or Control Center redesign was added.
+- Production validation is still required at `https://questlife-alpha-orpin.vercel.app` after deployment.
