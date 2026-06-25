@@ -1,5 +1,6 @@
 import { ObjectiveContextBrief } from './objectiveContextBrief';
 import type { DecisionMemorySummary } from './decisionMemory';
+import type { PatternMemorySummary } from './patternMemory';
 
 export type DecisionMode = 'instant_micro' | 'daily_brief';
 export type DecisionTrigger = 'morning_push' | 'state_checkin' | 'manual' | 'debug';
@@ -32,6 +33,8 @@ export type DecisionBriefInput = {
     known_baselines: Record<string, unknown>;
     confirmed_patterns: Array<Record<string, unknown>>;
     inferred_patterns_v0?: Array<Record<string, unknown>>;
+    pattern_candidates?: Array<Record<string, unknown>>;
+    pattern_memory_summary?: PatternMemorySummary;
     chronotype: 'unknown' | 'morning' | 'evening' | 'mixed';
   };
   history_index: {

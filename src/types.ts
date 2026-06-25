@@ -782,6 +782,41 @@ export interface DecisionResult {
   };
 }
 
+export interface PatternMemorySupport {
+  sourceType: 'execution' | 'state' | 'context' | 'decision_result' | 'after_state';
+  sourceId?: string;
+  ts?: string;
+  summary: string;
+}
+
+export interface PatternMemory {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  status: 'candidate' | 'accepted' | 'rejected' | 'archived';
+  label: string;
+  description: string;
+  patternType:
+    | 'action_state_effect'
+    | 'context_state_effect'
+    | 'decision_feedback'
+    | 'schedule_timing'
+    | 'recovery_readiness'
+    | 'execution_quality'
+    | 'perception_gap'
+    | 'other';
+  evidenceBasis: 'personal_pattern' | 'mixed' | 'population_prior';
+  confidence: number;
+  sampleN: number;
+  support: PatternMemorySupport[];
+  caution?: string;
+  lastSeenAt?: string;
+  usefulness?: {
+    usefulCount: number;
+    notUsefulCount: number;
+  };
+}
+
 export interface AppData {
   goals: Goal[];
   categories: Category[];     // V2 新
@@ -796,6 +831,7 @@ export interface AppData {
   stateCheckIns: StateCheckIn[];
   contextLogs: ContextLog[];
   decisionResults: DecisionResult[];
+  patternMemory: PatternMemory[];
   scheduleBlocks: ScheduleBlock[];
   rawCaptures: RawCapture[];   // Spec B-1: smart capture loop
   settings: {
@@ -850,6 +886,7 @@ export const DEFAULT_DATA: AppData = {
   stateCheckIns: [],
   contextLogs: [],
   decisionResults: [],
+  patternMemory: [],
   scheduleBlocks: [],
   rawCaptures: [],
   settings: { selectedThemeId: 'cleanFocus' },

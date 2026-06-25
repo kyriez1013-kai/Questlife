@@ -4,6 +4,7 @@ import { buildMetacognitionSummary, getLiveExecutionLogs } from './metacognition
 import { buildPostSaveFeedback } from './progressFeedback';
 import { DecisionBriefInput, DecisionMode, DecisionTrigger } from './decisionTypes';
 import { buildDecisionMemorySummary } from './decisionMemory';
+import { sanitizePatternMemoryForPayload } from './patternMemory';
 
 function dateKey(date: Date) {
   return date.toISOString().slice(0, 10);
@@ -484,6 +485,7 @@ export function buildDecisionPayload(
   const inferredPatterns = buildInferredPatternsV0(liveLogs, data, now);
   const last28Aggregate = buildLast28Aggregate(liveLogs, data, now);
   const decisionMemorySummary = buildDecisionMemorySummary(data.decisionResults || [], now);
+  const patternMemoryPayload = sanitizePatternMemoryForPayload(data.patternMemory || []);
 
   return {
     mode: options.mode ?? 'daily_brief',
@@ -535,11 +537,15 @@ export function buildDecisionPayload(
         activeDays: new Set(liveLogs.map((log) => log.date)).size,
         avgDurationLast28: (last28Aggregate.total_duration as number) / Math.max(1, last28Aggregate.log_count as number),
       },
-      confirmed_patterns: (metacognition.statePatterns.patterns || []).slice(0, 8).map((pattern) => ({
-        type: pattern.patternType,
-        confidence: pattern.confidence,
-        labelValues: pattern.labelValues,
-      })),
+      confirmed_patterns: [
+        ...patternMemoryPayload.confirmed_patterns,
+        ...(metacognition.statePatterns.patterns || []).slice(0, 4).map((pattern) => ({
+          type: pattern.patternType,
+          confidence: pattern.confidence,
+          labelValues: pattern.labelValues,
+          source: 'state_patterns',
+        })),
+      ].slice(0, 10),
       inferred_patterns_v0: inferredPatterns.length > 0
         ? inferredPatterns
         : [{
@@ -549,6 +555,8 @@ export function buildDecisionPayload(
             sample_n: 0,
             supporting_evidence: ['insufficient_after_state_delta_samples'],
           }],
+      pattern_candidates: patternMemoryPayload.candidate_patterns,
+      pattern_memory_summary: patternMemoryPayload.pattern_memory_summary,
       chronotype: 'unknown',
     },
     history_index: {

@@ -2192,3 +2192,25 @@ Known limitations:
 - Schedule confirm/apply remains future work.
 - Apple Health import/native integration remains later.
 - Full Insights replacement remains later.
+
+## Decision AI v1.5: Pattern Memory Writeback
+
+Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+
+What changed:
+- Added conservative local `PatternMemory` records with candidate / accepted / rejected / archived statuses.
+- Pattern candidates derive from existing execution after-state signals, context/state proximity, and DecisionResult feedback.
+- Candidates are never treated as confirmed automatically; they remain debug-reviewable until accepted.
+- Decision AI Lab under `?debugDecision=1` now shows Pattern Memory counts, recent candidates, support summaries, confidence, sample size, evidence basis, and accept/reject/archive controls.
+- “Regenerate pattern candidates” merges currently derived candidates into local memory while preserving existing accepted/rejected/archive statuses.
+- Accepted pattern memory is included in Decision AI payload as `confirmed_patterns`.
+- Candidate pattern summaries and `pattern_memory_summary` are included separately as unconfirmed payload context.
+- No AI auto-write of unverified patterns, no schedule auto-apply, no Apple Health, no raw prompt/payload persistence, and no `reasoning_content` exposure were added.
+
+Known limitations:
+- Accepted patterns are available to the payload but are not yet weighted in the Daily Brief prompt.
+- Pattern confidence does not yet decay or update over time beyond regenerated evidence.
+- Non-debug pattern review UX remains future work.
+- Schedule confirm/apply remains future work.
+- Apple Health import/native integration remains later.
+- Full Insights replacement remains later.

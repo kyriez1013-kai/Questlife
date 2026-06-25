@@ -129,6 +129,9 @@ export function repairAppDataIntegrity(appData: AppData): AppData {
     contributionLinks: (appData.contributionLinks || []).filter((link) => !contributionLinkIdsToRemove.has(link.id)),
     rescueLogs: appData.rescueLogs || [],
     stateCheckIns: appData.stateCheckIns || [],
+    contextLogs: appData.contextLogs || [],
+    decisionResults: appData.decisionResults || [],
+    patternMemory: appData.patternMemory || [],
     scheduleBlocks: (appData.scheduleBlocks || []).map((block) => (
       block.linkedSkillId && !skillIds.has(block.linkedSkillId)
         ? { ...block, linkedSkillId: undefined, source: block.source ?? 'manual' }

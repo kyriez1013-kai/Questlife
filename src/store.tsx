@@ -4,7 +4,7 @@
 //   2) 在 reducer 内部直接调 persist(newData) 立刻写入 AsyncStorage
 // 这样无论 App 后续是否被 kill / 刷新, 数据都已经落盘.
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
-import { AppData, DEFAULT_DATA, Goal, Skill, Action, Category, UNCATEGORIZED_ID, ScheduleBlock, QuestModule, ModuleSkillLink, ExecutionLog, RescueLog, StateCheckIn, EffortUnit, ContributionLink, RawCapture, ContextLog, DecisionResult, DashboardCardSize, DashboardPresetId, DashboardSurface, DashboardPreferences } from './types';
+import { AppData, DEFAULT_DATA, Goal, Skill, Action, Category, UNCATEGORIZED_ID, ScheduleBlock, QuestModule, ModuleSkillLink, ExecutionLog, RescueLog, StateCheckIn, EffortUnit, ContributionLink, RawCapture, ContextLog, DecisionResult, PatternMemory, DashboardCardSize, DashboardPresetId, DashboardSurface, DashboardPreferences } from './types';
 import { loadData, persist, uid, today } from './storage';
 import { scheduleSkillReminder, cancelSkillReminder, rescheduleAllReminders } from './notifications';
 import { calculateModuleProgress, calculatePredictionDelta, progressTypeForSkill, skillsForModule } from './progress';
@@ -15,6 +15,7 @@ import { rebuildDerivedDataFromLogs, repairAppDataIntegrity, validateAppDataInte
 import { getLinkedExecutionLogIdsForCapture, removeDerivedForLogs } from './utils/dataResidueAudit';
 import { buildDashboardPreferencesForPreset, normalizeDashboardPreferences } from './utils/dashboardCards';
 import { compactDecisionResults } from './utils/decisionMemory';
+import { mergePatternCandidates as mergePatternCandidateList } from './utils/patternMemory';
 
 function metricTypeForAnalytics(skill?: Skill) {
   return skill?.metricConfig?.metricType ?? skill?.progressType;
@@ -97,6 +98,8 @@ interface Ctx {
   addDecisionResult: (result: Omit<DecisionResult, 'id' | 'createdAt'> & { id?: string; createdAt?: string }) => DecisionResult;
   updateDecisionResultFeedback: (id: string, rating: 'useful' | 'not_useful') => void;
   deleteDecisionResult: (id: string) => void;
+  mergePatternMemoryCandidates: (candidates: PatternMemory[]) => PatternMemory[];
+  updatePatternMemoryStatus: (id: string, status: PatternMemory['status']) => void;
   // Spec B-1: Smart Capture Loop
   addRawCapture: (text: string) => RawCapture;
   updateRawCapture: (id: string, patch: Partial<RawCapture>) => void;
@@ -1359,6 +1362,24 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }));
   }, [mutate]);
 
+  const mergePatternMemoryCandidates: Ctx['mergePatternMemoryCandidates'] = useCallback((candidates) => {
+    let merged: PatternMemory[] = [];
+    mutate((d) => {
+      merged = mergePatternCandidateList(d.patternMemory || [], candidates || []);
+      return { ...d, patternMemory: merged };
+    });
+    return merged;
+  }, [mutate]);
+
+  const updatePatternMemoryStatus: Ctx['updatePatternMemoryStatus'] = useCallback((id, status) => {
+    mutate((d) => ({
+      ...d,
+      patternMemory: (d.patternMemory || []).map((pattern) => (
+        pattern.id === id ? { ...pattern, status, updatedAt: new Date().toISOString() } : pattern
+      )),
+    }));
+  }, [mutate]);
+
   return (
     <StoreContext.Provider
       value={{
@@ -1425,6 +1446,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         addDecisionResult,
         updateDecisionResultFeedback,
         deleteDecisionResult,
+        mergePatternMemoryCandidates,
+        updatePatternMemoryStatus,
         addRawCapture,
         updateRawCapture,
         deleteRawCapture,

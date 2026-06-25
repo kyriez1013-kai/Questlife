@@ -1,6 +1,6 @@
 // V2: "设置" Tab
 // 提醒已移到每个技能内, 这里只保留版本号 + 本地存储说明
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -17,9 +17,10 @@ import { DecisionBriefResult } from '../utils/decisionTypes';
 import { evaluateDecisionBriefQuality } from '../utils/decisionQuality';
 import { auditDecisionPayload, diagnoseDecisionOutput } from '../utils/decisionRealityAudit';
 import { buildDecisionMemorySummary, compactDecisionResults } from '../utils/decisionMemory';
+import { buildPatternMemorySummary, derivePatternCandidates, mergePatternCandidates, sanitizePatternMemoryForPayload } from '../utils/patternMemory';
 
 export default function SettingsScreen() {
-  const { data, setSettings, runIntegrityCheck, repairSafeIntegrityIssues, rebuildDerivedData } = useStore();
+  const { data, setSettings, runIntegrityCheck, repairSafeIntegrityIssues, rebuildDerivedData, mergePatternMemoryCandidates, updatePatternMemoryStatus } = useStore();
   const questTheme = getQuestTheme(data.settings.selectedThemeId);
   const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
   const lang = getLanguage(data.settings.language);
@@ -35,6 +36,13 @@ export default function SettingsScreen() {
   }));
   const decisionMemorySummary = buildDecisionMemorySummary(data.decisionResults || []);
   const recentDecisionResults = compactDecisionResults(data.decisionResults || [], 5);
+  const derivedPatternCandidates = useMemo(() => derivePatternCandidates(data), [data]);
+  const patternReviewItems = useMemo(
+    () => mergePatternCandidates(data.patternMemory || [], derivedPatternCandidates),
+    [data.patternMemory, derivedPatternCandidates],
+  );
+  const patternMemorySummary = buildPatternMemorySummary(data.patternMemory || []);
+  const patternPayload = sanitizePatternMemoryForPayload(data.patternMemory || []);
   const decisionDebugVisible = (() => {
     if (typeof window === 'undefined') return false;
     try {
@@ -144,6 +152,9 @@ export default function SettingsScreen() {
           mode: payload.mode,
           trigger: payload.trigger,
           decision_memory_summary: payload.decision_memory_summary,
+          pattern_memory_summary: payload.profile.pattern_memory_summary,
+          confirmed_patterns: payload.profile.confirmed_patterns.length,
+          pattern_candidates: payload.profile.pattern_candidates?.length || 0,
           goals: payload.profile.active_goals.length,
           skills: payload.profile.skills.length,
           last7Days: payload.history_index.last_7_days.length,
@@ -200,6 +211,9 @@ export default function SettingsScreen() {
         mode: payload.mode,
         trigger: payload.trigger,
         decision_memory_summary: payload.decision_memory_summary,
+        pattern_memory_summary: payload.profile.pattern_memory_summary,
+        confirmed_patterns: payload.profile.confirmed_patterns.length,
+        pattern_candidates: payload.profile.pattern_candidates?.length || 0,
         goals: payload.profile.active_goals.length,
         skills: payload.profile.skills.length,
         last7Days: payload.history_index.last_7_days.length,
@@ -433,6 +447,73 @@ export default function SettingsScreen() {
               >
                 <Text style={[styles.debugBtnText, { color: questTheme.colors.text }]}>{t(lang, 'simulateWeakDecisionOutput')}</Text>
               </TouchableOpacity>
+            </View>
+            <View style={[styles.memoryBox, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}>
+              <Text style={[styles.label, { color: questTheme.colors.text, marginBottom: 6 }]}>{t(lang, 'patternMemory')}</Text>
+              <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>
+                {t(lang, 'acceptedPatterns')}: {patternMemorySummary.accepted_count} · {t(lang, 'candidatePatterns')}: {patternMemorySummary.candidate_count} · {t(lang, 'rejectedPatterns')}: {patternMemorySummary.rejected_count}{'\n'}
+                {t(lang, 'patternIncludedInPayload')}: {patternPayload.confirmed_patterns.length > 0 ? t(lang, 'yes') : t(lang, 'no')} · {t(lang, 'lowConfidencePattern')}: {patternMemorySummary.low_confidence_count}
+              </Text>
+              <View style={styles.debugActions}>
+                <TouchableOpacity
+                  disabled={decisionLabLoading}
+                  style={[styles.debugBtn, { borderColor: accent, backgroundColor: questTheme.colors.primarySoft }]}
+                  onPress={() => {
+                    mergePatternMemoryCandidates(derivedPatternCandidates);
+                    setDecisionLabError('');
+                    setDecisionLabOutput(`${t(lang, 'regeneratePatternCandidates')}: ${derivedPatternCandidates.length}`);
+                  }}
+                >
+                  <Text style={[styles.debugBtnText, { color: accent }]}>{t(lang, 'regeneratePatternCandidates')}</Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={[styles.value, { color: questTheme.colors.textMuted, marginTop: 8 }]}>{t(lang, 'patternCandidates')}</Text>
+              {patternReviewItems.length === 0 ? (
+                <Text style={[styles.value, { color: questTheme.colors.textSubtle, marginTop: 4 }]}>{t(lang, 'noPatternMemoryYet')}</Text>
+              ) : (
+                patternReviewItems.slice(0, 8).map((pattern) => (
+                  <View key={pattern.id} style={[styles.memoryRow, { borderColor: questTheme.colors.border }]}>
+                    <Text style={[styles.value, { color: questTheme.colors.text }]}>{pattern.label}</Text>
+                    <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>
+                      {t(lang, 'patternType')}: {pattern.patternType} · {t(lang, 'sampleN')}: {pattern.sampleN} · {t(lang, 'confidence')}: {Math.round(pattern.confidence * 100)}% · {t(lang, 'evidenceBasis')}: {pattern.evidenceBasis}
+                    </Text>
+                    <Text style={[styles.value, { color: questTheme.colors.textSubtle }]}>
+                      {pattern.status === 'accepted' ? t(lang, 'confirmedPattern') : pattern.status === 'candidate' ? t(lang, 'unconfirmedPattern') : pattern.status} · {pattern.caution || ''}
+                    </Text>
+                    <Text style={[styles.value, { color: questTheme.colors.textSubtle }]}>
+                      {t(lang, 'support')}: {(pattern.support || []).map((item) => item.summary).slice(0, 2).join(' · ')}
+                    </Text>
+                    <View style={styles.debugActions}>
+                      <TouchableOpacity
+                        style={[styles.debugBtn, { borderColor: accent, backgroundColor: questTheme.colors.primarySoft }]}
+                        onPress={() => {
+                          mergePatternMemoryCandidates([pattern]);
+                          updatePatternMemoryStatus(pattern.id, 'accepted');
+                        }}
+                      >
+                        <Text style={[styles.debugBtnText, { color: accent }]}>{t(lang, 'acceptPattern')}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.debugBtn, { borderColor: questTheme.colors.warning, backgroundColor: questTheme.colors.warningSoft }]}
+                        onPress={() => {
+                          mergePatternMemoryCandidates([pattern]);
+                          updatePatternMemoryStatus(pattern.id, 'rejected');
+                        }}
+                      >
+                        <Text style={[styles.debugBtnText, { color: questTheme.colors.text }]}>{t(lang, 'rejectPattern')}</Text>
+                      </TouchableOpacity>
+                      {pattern.status === 'accepted' ? (
+                        <TouchableOpacity
+                          style={[styles.debugBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}
+                          onPress={() => updatePatternMemoryStatus(pattern.id, 'archived')}
+                        >
+                          <Text style={[styles.debugBtnText, { color: questTheme.colors.textMuted }]}>{t(lang, 'archivePattern')}</Text>
+                        </TouchableOpacity>
+                      ) : null}
+                    </View>
+                  </View>
+                ))
+              )}
             </View>
             <Text style={[styles.value, { color: decisionLabError ? questTheme.colors.danger : questTheme.colors.textMuted, marginTop: 12 }]}> 
               {decisionLabLoading ? t(lang, 'decisionAILoading') : decisionLabError ? `${t(lang, 'decisionAIError')}: ${decisionLabError}` : decisionLabOutput ? t(lang, 'decisionAIResultPreview') : t(lang, 'decisionAIHiddenByDefault')}

@@ -1,7 +1,7 @@
 // 本地持久化层 - 全部基于 @react-native-async-storage/async-storage
 // Web 平台会自动 fallback 到 localStorage; iOS/Android 写到原生本地存储.
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AppData, DEFAULT_DATA, Category, UNCATEGORIZED_ID, Skill, TaskType, ProgressType, QuestModule, ModuleSkillLink, ExecutionLog, RescueLog, StateCheckIn, ContextLog, DecisionResult } from './types';
+import { AppData, DEFAULT_DATA, Category, UNCATEGORIZED_ID, Skill, TaskType, ProgressType, QuestModule, ModuleSkillLink, ExecutionLog, RescueLog, StateCheckIn, ContextLog, DecisionResult, PatternMemory } from './types';
 
 const KEY = 'questlife.v1';
 
@@ -170,6 +170,47 @@ function migrateDecisionResult(result: any): DecisionResult | null {
   };
 }
 
+function migratePatternMemory(pattern: any): PatternMemory | null {
+  if (!pattern?.id || !pattern?.label) return null;
+  const status = ['candidate', 'accepted', 'rejected', 'archived'].includes(pattern.status) ? pattern.status : 'candidate';
+  const patternType = [
+    'action_state_effect',
+    'context_state_effect',
+    'decision_feedback',
+    'schedule_timing',
+    'recovery_readiness',
+    'execution_quality',
+    'perception_gap',
+    'other',
+  ].includes(pattern.patternType) ? pattern.patternType : 'other';
+  const evidenceBasis = ['personal_pattern', 'mixed', 'population_prior'].includes(pattern.evidenceBasis) ? pattern.evidenceBasis : 'mixed';
+  const confidence = typeof pattern.confidence === 'number' && Number.isFinite(pattern.confidence) ? Math.max(0, Math.min(1, pattern.confidence)) : 0.25;
+  return {
+    id: String(pattern.id),
+    createdAt: pattern.createdAt || new Date().toISOString(),
+    updatedAt: pattern.updatedAt || pattern.createdAt || new Date().toISOString(),
+    status,
+    label: String(pattern.label).slice(0, 180),
+    description: String(pattern.description || '').slice(0, 360),
+    patternType,
+    evidenceBasis,
+    confidence,
+    sampleN: Number.isFinite(Number(pattern.sampleN)) ? Math.max(0, Math.round(Number(pattern.sampleN))) : 0,
+    support: Array.isArray(pattern.support) ? pattern.support.slice(0, 5).map((item: any) => ({
+      sourceType: ['execution', 'state', 'context', 'decision_result', 'after_state'].includes(item?.sourceType) ? item.sourceType : 'execution',
+      sourceId: item?.sourceId ? String(item.sourceId) : undefined,
+      ts: item?.ts ? String(item.ts) : undefined,
+      summary: String(item?.summary || '').slice(0, 120),
+    })) : [],
+    caution: pattern.caution ? String(pattern.caution).slice(0, 180) : undefined,
+    lastSeenAt: pattern.lastSeenAt,
+    usefulness: pattern.usefulness ? {
+      usefulCount: Number(pattern.usefulness.usefulCount || 0),
+      notUsefulCount: Number(pattern.usefulness.notUsefulCount || 0),
+    } : undefined,
+  };
+}
+
 export async function loadData(): Promise<AppData> {
   try {
     const raw = await AsyncStorage.getItem(KEY);
@@ -195,6 +236,7 @@ export async function loadData(): Promise<AppData> {
       stateCheckIns: (parsed.stateCheckIns || []).map(migrateStateCheckIn),
       contextLogs: (parsed.contextLogs || []).map(migrateContextLog).filter(Boolean) as ContextLog[],
       decisionResults: (parsed.decisionResults || []).map(migrateDecisionResult).filter(Boolean) as DecisionResult[],
+      patternMemory: (parsed.patternMemory || []).map(migratePatternMemory).filter(Boolean) as PatternMemory[],
       scheduleBlocks: parsed.scheduleBlocks || [],
       settings: { ...DEFAULT_DATA.settings, ...(parsed.settings || {}) },
     };
