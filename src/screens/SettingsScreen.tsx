@@ -16,6 +16,7 @@ import { AiDecisionService, getLastDecisionServiceMeta, isDecisionAIEnabled, isD
 import { DecisionBriefResult } from '../utils/decisionTypes';
 import { evaluateDecisionBriefQuality } from '../utils/decisionQuality';
 import { auditDecisionPayload, diagnoseDecisionOutput } from '../utils/decisionRealityAudit';
+import { buildDecisionMemorySummary, compactDecisionResults } from '../utils/decisionMemory';
 
 export default function SettingsScreen() {
   const { data, setSettings, runIntegrityCheck, repairSafeIntegrityIssues, rebuildDerivedData } = useStore();
@@ -32,6 +33,8 @@ export default function SettingsScreen() {
     dailyBriefEnabled: isDecisionDailyBriefEnabled(),
     shadowEnabled: isDecisionAIShadowEnabled(),
   }));
+  const decisionMemorySummary = buildDecisionMemorySummary(data.decisionResults || []);
+  const recentDecisionResults = compactDecisionResults(data.decisionResults || [], 5);
   const decisionDebugVisible = (() => {
     if (typeof window === 'undefined') return false;
     try {
@@ -140,6 +143,7 @@ export default function SettingsScreen() {
         payloadSummary: {
           mode: payload.mode,
           trigger: payload.trigger,
+          decision_memory_summary: payload.decision_memory_summary,
           goals: payload.profile.active_goals.length,
           skills: payload.profile.skills.length,
           last7Days: payload.history_index.last_7_days.length,
@@ -195,6 +199,7 @@ export default function SettingsScreen() {
       payloadSummary: {
         mode: payload.mode,
         trigger: payload.trigger,
+        decision_memory_summary: payload.decision_memory_summary,
         goals: payload.profile.active_goals.length,
         skills: payload.profile.skills.length,
         last7Days: payload.history_index.last_7_days.length,
@@ -440,6 +445,36 @@ export default function SettingsScreen() {
                 {t(lang, 'lastInstantReadFeedback')}: {lastDecisionFeedback}
               </Text>
             ) : null}
+            <View style={[styles.memoryBox, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}>
+              <Text style={[styles.label, { color: questTheme.colors.text, marginBottom: 6 }]}>{t(lang, 'decisionMemory')}</Text>
+              <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>
+                {t(lang, 'totalDecisionResults')}: {(data.decisionResults || []).length} · {t(lang, 'last7dDecisionResults')}: {decisionMemorySummary.recent_count_7d}{'\n'}
+                {t(lang, 'useful')}: {decisionMemorySummary.useful_count_7d} · {t(lang, 'notUseful')}: {decisionMemorySummary.not_useful_count_7d} · {t(lang, 'weakBadDecisionResults')}: {decisionMemorySummary.weak_or_bad_quality_count_7d}
+              </Text>
+              {decisionMemorySummary.repeated_failed_checks.length > 0 ? (
+                <Text style={[styles.value, { color: questTheme.colors.textSubtle, marginTop: 6 }]}>
+                  {t(lang, 'decisionQualityHistory')}: {decisionMemorySummary.repeated_failed_checks.join(', ')}
+                </Text>
+              ) : null}
+              <Text style={[styles.value, { color: questTheme.colors.textMuted, marginTop: 10 }]}>{t(lang, 'recentDecisionResults')}</Text>
+              {recentDecisionResults.length === 0 ? (
+                <Text style={[styles.value, { color: questTheme.colors.textSubtle, marginTop: 4 }]}>{t(lang, 'noDecisionMemoryYet')}</Text>
+              ) : (
+                recentDecisionResults.map((result) => (
+                  <View key={result.id} style={[styles.memoryRow, { borderColor: questTheme.colors.border }]}>
+                    <Text style={[styles.value, { color: questTheme.colors.text }]}>
+                      {result.headlineInsight || t(lang, 'latestDecisionMemory')}
+                    </Text>
+                    <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>
+                      {t(lang, 'decisionResultMode')}: {result.mode} · {t(lang, 'decisionResultSource')}: {result.source} · {t(lang, 'decisionResultQuality')}: {result.quality ? `${result.quality.grade}/${result.quality.score}` : '-'} · {t(lang, 'decisionFeedback')}: {result.userFeedback?.rating === 'useful' ? t(lang, 'useful') : result.userFeedback?.rating === 'not_useful' ? t(lang, 'notUseful') : '-'}
+                    </Text>
+                    <Text style={[styles.value, { color: questTheme.colors.textSubtle }]}>
+                      {t(lang, 'evidence')}: {result.evidenceBasis || '-'} · {t(lang, 'confidence')}: {result.confidence == null ? '-' : Math.round(result.confidence * 100) + '%'} · {result.createdAt}
+                    </Text>
+                  </View>
+                ))
+              )}
+            </View>
           </View>
         ) : null}
 
@@ -468,6 +503,8 @@ const styles = StyleSheet.create({
   languageText: { color: theme.text, fontWeight: '800' },
   languageTextOn: { color: '#fff' },
   themeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 12 },
+  memoryBox: { marginTop: 14, padding: 12, borderWidth: 1, borderRadius: theme.radius.md },
+  memoryRow: { paddingTop: 8, marginTop: 8, borderTopWidth: 1 },
   themeOption: { width: '48%', minWidth: 142, padding: 12, borderRadius: theme.radius.md, borderWidth: 1 },
   themeSwatches: { flexDirection: 'row', gap: 6, marginBottom: 8 },
   themeSwatch: { width: 18, height: 18, borderRadius: 9, borderWidth: 1, borderColor: 'rgba(0,0,0,0.08)' },

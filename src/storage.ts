@@ -1,7 +1,7 @@
 // 本地持久化层 - 全部基于 @react-native-async-storage/async-storage
 // Web 平台会自动 fallback 到 localStorage; iOS/Android 写到原生本地存储.
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AppData, DEFAULT_DATA, Category, UNCATEGORIZED_ID, Skill, TaskType, ProgressType, QuestModule, ModuleSkillLink, ExecutionLog, RescueLog, StateCheckIn, ContextLog } from './types';
+import { AppData, DEFAULT_DATA, Category, UNCATEGORIZED_ID, Skill, TaskType, ProgressType, QuestModule, ModuleSkillLink, ExecutionLog, RescueLog, StateCheckIn, ContextLog, DecisionResult } from './types';
 
 const KEY = 'questlife.v1';
 
@@ -155,6 +155,21 @@ function migrateContextLog(log: any): ContextLog | null {
   };
 }
 
+function migrateDecisionResult(result: any): DecisionResult | null {
+  if (!result || typeof result !== 'object') return null;
+  const createdAt = result.createdAt ?? result.generatedAt ?? new Date().toISOString();
+  return {
+    id: result.id ?? stableId('decision', `${createdAt}-${Math.random()}`),
+    createdAt,
+    mode: result.mode === 'instant_micro' ? 'instant_micro' : 'daily_brief',
+    trigger: ['state_checkin', 'manual', 'morning_push', 'debug'].includes(result.trigger) ? result.trigger : 'manual',
+    source: ['ai', 'legacy_fallback', 'ai_failed_fallback'].includes(result.source) ? result.source : 'legacy_fallback',
+    schemaVersion: result.schemaVersion ?? '1.0',
+    headlineInsight: String(result.headlineInsight ?? result.headline_insight ?? '').slice(0, 240),
+    ...result,
+  };
+}
+
 export async function loadData(): Promise<AppData> {
   try {
     const raw = await AsyncStorage.getItem(KEY);
@@ -179,6 +194,7 @@ export async function loadData(): Promise<AppData> {
       rescueLogs: (parsed.rescueLogs || []).map(migrateRescueLog),
       stateCheckIns: (parsed.stateCheckIns || []).map(migrateStateCheckIn),
       contextLogs: (parsed.contextLogs || []).map(migrateContextLog).filter(Boolean) as ContextLog[],
+      decisionResults: (parsed.decisionResults || []).map(migrateDecisionResult).filter(Boolean) as DecisionResult[],
       scheduleBlocks: parsed.scheduleBlocks || [],
       settings: { ...DEFAULT_DATA.settings, ...(parsed.settings || {}) },
     };

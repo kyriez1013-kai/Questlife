@@ -4,7 +4,7 @@
 //   2) 在 reducer 内部直接调 persist(newData) 立刻写入 AsyncStorage
 // 这样无论 App 后续是否被 kill / 刷新, 数据都已经落盘.
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
-import { AppData, DEFAULT_DATA, Goal, Skill, Action, Category, UNCATEGORIZED_ID, ScheduleBlock, QuestModule, ModuleSkillLink, ExecutionLog, RescueLog, StateCheckIn, EffortUnit, ContributionLink, RawCapture, ContextLog, DashboardCardSize, DashboardPresetId, DashboardSurface, DashboardPreferences } from './types';
+import { AppData, DEFAULT_DATA, Goal, Skill, Action, Category, UNCATEGORIZED_ID, ScheduleBlock, QuestModule, ModuleSkillLink, ExecutionLog, RescueLog, StateCheckIn, EffortUnit, ContributionLink, RawCapture, ContextLog, DecisionResult, DashboardCardSize, DashboardPresetId, DashboardSurface, DashboardPreferences } from './types';
 import { loadData, persist, uid, today } from './storage';
 import { scheduleSkillReminder, cancelSkillReminder, rescheduleAllReminders } from './notifications';
 import { calculateModuleProgress, calculatePredictionDelta, progressTypeForSkill, skillsForModule } from './progress';
@@ -14,6 +14,7 @@ import { DOMAIN_TEMPLATES, createGoalStructureFromTemplate, templateProgressMode
 import { rebuildDerivedDataFromLogs, repairAppDataIntegrity, validateAppDataIntegrity, CoreFlowIntegrityResult } from './utils/coreFlow';
 import { getLinkedExecutionLogIdsForCapture, removeDerivedForLogs } from './utils/dataResidueAudit';
 import { buildDashboardPreferencesForPreset, normalizeDashboardPreferences } from './utils/dashboardCards';
+import { compactDecisionResults } from './utils/decisionMemory';
 
 function metricTypeForAnalytics(skill?: Skill) {
   return skill?.metricConfig?.metricType ?? skill?.progressType;
@@ -93,6 +94,9 @@ interface Ctx {
   runIntegrityCheck: () => CoreFlowIntegrityResult;
   repairSafeIntegrityIssues: () => CoreFlowIntegrityResult;
   rebuildDerivedData: () => { effortUnitCount: number; contributionLinkCount: number };
+  addDecisionResult: (result: Omit<DecisionResult, 'id' | 'createdAt'> & { id?: string; createdAt?: string }) => DecisionResult;
+  updateDecisionResultFeedback: (id: string, rating: 'useful' | 'not_useful') => void;
+  deleteDecisionResult: (id: string) => void;
   // Spec B-1: Smart Capture Loop
   addRawCapture: (text: string) => RawCapture;
   updateRawCapture: (id: string, patch: Partial<RawCapture>) => void;
@@ -1324,6 +1328,37 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return counts;
   }, [data.executionLogs, mutate]);
 
+  const addDecisionResult: Ctx['addDecisionResult'] = useCallback((input) => {
+    const result: DecisionResult = {
+      id: input.id ?? `decision-${uid()}`,
+      createdAt: input.createdAt ?? new Date().toISOString(),
+      ...input,
+    };
+    mutate((d) => ({
+      ...d,
+      decisionResults: compactDecisionResults([result, ...(d.decisionResults || []).filter((item) => item.id !== result.id)]),
+    }));
+    return result;
+  }, [mutate]);
+
+  const updateDecisionResultFeedback: Ctx['updateDecisionResultFeedback'] = useCallback((id, rating) => {
+    mutate((d) => ({
+      ...d,
+      decisionResults: (d.decisionResults || []).map((result) => (
+        result.id === id
+          ? { ...result, userFeedback: { rating, ts: new Date().toISOString() } }
+          : result
+      )),
+    }));
+  }, [mutate]);
+
+  const deleteDecisionResult: Ctx['deleteDecisionResult'] = useCallback((id) => {
+    mutate((d) => ({
+      ...d,
+      decisionResults: (d.decisionResults || []).filter((result) => result.id !== id),
+    }));
+  }, [mutate]);
+
   return (
     <StoreContext.Provider
       value={{
@@ -1387,6 +1422,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         runIntegrityCheck,
         repairSafeIntegrityIssues,
         rebuildDerivedData,
+        addDecisionResult,
+        updateDecisionResultFeedback,
+        deleteDecisionResult,
         addRawCapture,
         updateRawCapture,
         deleteRawCapture,

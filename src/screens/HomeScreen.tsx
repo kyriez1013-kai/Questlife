@@ -55,6 +55,7 @@ import { buildDecisionPayload } from '../utils/decisionPayload';
 import { DecisionBriefResult } from '../utils/decisionTypes';
 import { DecisionQualityEvaluation, evaluateDecisionBriefQuality } from '../utils/decisionQuality';
 import { DecisionPayloadAudit, auditDecisionPayload } from '../utils/decisionRealityAudit';
+import { createDecisionResultRecord } from '../utils/decisionMemory';
 import { createDecisionService, getLastDecisionServiceMeta, isDecisionAIEnabled, isDecisionAIShadowEnabled, isDecisionDailyBriefEnabled, isDecisionDebugEnabled, LegacyDecisionService, AiDecisionService, runDecisionShadowBrief, DecisionServiceMeta } from '../services/decisionService';
 import DashboardCardShell from '../components/dashboard/DashboardCardShell';
 
@@ -396,6 +397,8 @@ export default function HomeScreen() {
     createStateCheckIn,
     addContextLogs,
     setSettings,
+    addDecisionResult,
+    updateDecisionResultFeedback,
   } = useStore();
   const navigation = useNavigation<any>();
   const questTheme = getQuestTheme(data.settings.selectedThemeId);
@@ -410,6 +413,7 @@ export default function HomeScreen() {
   const [instantDecisionStatus, setInstantDecisionStatus] = useState<'idle' | 'loading' | 'ready' | 'fallback' | 'error'>('idle');
   const [instantDecisionDebugError, setInstantDecisionDebugError] = useState('');
   const [instantDecisionFeedback, setInstantDecisionFeedback] = useState<'useful' | 'not_useful' | null>(null);
+  const [instantDecisionResultId, setInstantDecisionResultId] = useState('');
   const instantDecisionRequestRef = useRef(0);
 
   const [dailyDecisionBrief, setDailyDecisionBrief] = useState<DecisionBriefResult | null>(null);
@@ -420,6 +424,8 @@ export default function HomeScreen() {
   const [dailyDecisionGeneratedAt, setDailyDecisionGeneratedAt] = useState('');
   const [dailyDecisionPayloadAudit, setDailyDecisionPayloadAudit] = useState<DecisionPayloadAudit | null>(null);
   const [dailyDecisionServiceMeta, setDailyDecisionServiceMeta] = useState<DecisionServiceMeta | null>(null);
+  const [dailyDecisionResultId, setDailyDecisionResultId] = useState('');
+  const [dailyDecisionFeedback, setDailyDecisionFeedback] = useState<'useful' | 'not_useful' | null>(null);
   const dailyDecisionRequestRef = useRef(0);
   const dailyDecisionInFlightRef = useRef(false);
   const dailyDecisionAutoKeyRef = useRef('');
@@ -1207,6 +1213,7 @@ export default function HomeScreen() {
     setInstantDecisionStatus('loading');
     setInstantDecisionDebugError('');
     setInstantDecisionFeedback(null);
+    setInstantDecisionResultId('');
     const dataWithCheckIn = { ...data, stateCheckIns: [...(data.stateCheckIns || []), checkIn] };
     const payload = buildDecisionPayload(dataWithCheckIn, { mode: 'instant_micro', trigger: 'state_checkin', locale: lang });
     payload.current_state = {
@@ -1226,6 +1233,20 @@ export default function HomeScreen() {
     Promise.race([service.buildBrief(payload), timeout])
       .then((result) => {
         if (instantDecisionRequestRef.current !== requestId) return;
+        const quality = evaluateDecisionBriefQuality({ result, payload, mode: payload.mode });
+        const payloadAudit = auditDecisionPayload(payload);
+        const source = isDecisionAIEnabled() ? 'ai' : 'legacy_fallback';
+        const record = addDecisionResult(createDecisionResultRecord({
+          id: `decision-${requestId}-instant`,
+          result,
+          mode: 'instant_micro',
+          trigger: 'state_checkin',
+          source,
+          quality,
+          meta: getLastDecisionServiceMeta(),
+          payloadAudit,
+        }));
+        setInstantDecisionResultId(record.id);
         setInstantDecisionBrief(result);
         setInstantDecisionStatus(isDecisionAIEnabled() ? 'ready' : 'fallback');
       })
@@ -1236,6 +1257,19 @@ export default function HomeScreen() {
         new LegacyDecisionService().buildBrief(payload)
           .then((fallback) => {
             if (instantDecisionRequestRef.current !== requestId) return;
+            const quality = evaluateDecisionBriefQuality({ result: fallback, payload, mode: payload.mode });
+            const payloadAudit = auditDecisionPayload(payload);
+            const record = addDecisionResult(createDecisionResultRecord({
+              id: `decision-${requestId}-instant-fallback`,
+              result: fallback,
+              mode: 'instant_micro',
+              trigger: 'state_checkin',
+              source: isDecisionAIEnabled() ? 'ai_failed_fallback' : 'legacy_fallback',
+              quality,
+              meta: getLastDecisionServiceMeta(),
+              payloadAudit,
+            }));
+            setInstantDecisionResultId(record.id);
             setInstantDecisionBrief(fallback);
             setInstantDecisionStatus('fallback');
           })
@@ -1246,7 +1280,7 @@ export default function HomeScreen() {
           });
       });
     runDecisionShadowBrief(payload);
-  }, [data, lang]);
+  }, [addDecisionResult, data, lang]);
 
   const generateDailyDecisionBrief = useCallback((reason: 'auto' | 'manual' = 'auto') => {
     if (dailyDecisionInFlightRef.current) return;
@@ -1255,6 +1289,8 @@ export default function HomeScreen() {
     dailyDecisionInFlightRef.current = true;
     setDailyDecisionLoading(true);
     setDailyDecisionError('');
+    setDailyDecisionFeedback(null);
+    setDailyDecisionResultId('');
 
     const payload = buildDecisionPayload(data, { mode: 'daily_brief', trigger: 'manual', locale: lang });
     const payloadAudit = auditDecisionPayload(payload);
@@ -1271,6 +1307,17 @@ export default function HomeScreen() {
         .then((fallback) => {
           if (dailyDecisionRequestRef.current !== requestId) return;
           const quality = evaluateDecisionBriefQuality({ result: fallback, payload, mode: payload.mode });
+          const record = addDecisionResult(createDecisionResultRecord({
+            id: `decision-${requestId}-daily-fallback`,
+            result: fallback,
+            mode: 'daily_brief',
+            trigger: 'manual',
+            source,
+            quality,
+            meta: getLastDecisionServiceMeta(),
+            payloadAudit,
+          }));
+          setDailyDecisionResultId(record.id);
           setDailyDecisionBrief(fallback);
           setDailyDecisionQuality(quality);
           setDailyDecisionSource(source);
@@ -1300,6 +1347,17 @@ export default function HomeScreen() {
           useFallback('quality_gate_bad', 'ai_failed_fallback');
           return;
         }
+        const record = addDecisionResult(createDecisionResultRecord({
+          id: `decision-${requestId}-daily`,
+          result,
+          mode: 'daily_brief',
+          trigger: 'manual',
+          source: useAI ? 'ai' : 'legacy_fallback',
+          quality,
+          meta,
+          payloadAudit,
+        }));
+        setDailyDecisionResultId(record.id);
         setDailyDecisionBrief(result);
         setDailyDecisionQuality(quality);
         setDailyDecisionSource(useAI ? 'ai' : 'legacy_fallback');
@@ -1315,10 +1373,11 @@ export default function HomeScreen() {
         setDailyDecisionServiceMeta(getLastDecisionServiceMeta());
         useFallback(String(error?.message || error), useAI ? 'ai_failed_fallback' : 'legacy_fallback');
       });
-  }, [data, lang]);
+  }, [addDecisionResult, data, lang]);
 
   const markInstantDecisionFeedback = useCallback((feedback: 'useful' | 'not_useful') => {
     setInstantDecisionFeedback(feedback);
+    if (instantDecisionResultId) updateDecisionResultFeedback(instantDecisionResultId, feedback);
     try {
       if (typeof window !== 'undefined') {
         window.localStorage?.setItem('questlife_decision_ai_last_feedback', JSON.stringify({
@@ -1331,7 +1390,12 @@ export default function HomeScreen() {
     } catch {
       // Feedback is best-effort and must never affect state check-in.
     }
-  }, []);
+  }, [instantDecisionResultId, updateDecisionResultFeedback]);
+
+  const markDailyDecisionFeedback = useCallback((feedback: 'useful' | 'not_useful') => {
+    setDailyDecisionFeedback(feedback);
+    if (dailyDecisionResultId) updateDecisionResultFeedback(dailyDecisionResultId, feedback);
+  }, [dailyDecisionResultId, updateDecisionResultFeedback]);
 
   const saveStateCheckIn = useCallback(async (overall: DailyStateValue, details?: Partial<StateCheckIn>) => {
     const now = new Date();
@@ -2026,6 +2090,29 @@ export default function HomeScreen() {
             <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textSubtle, marginTop: 8 }]}>{t(lang, 'noMedicalAdviceShort')}</Text>
           ) : null}
 
+          {dailyDecisionBrief ? (
+            <View style={styles.instantFeedbackRow}>
+              <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'dailyBriefFeedback')}</Text>
+              {(['useful', 'not_useful'] as const).map((feedback) => {
+                const selected = dailyDecisionFeedback === feedback;
+                return (
+                  <TouchableOpacity
+                    key={feedback}
+                    style={[
+                      styles.instantFeedbackBtn,
+                      { borderColor: selected ? accent : questTheme.colors.border, backgroundColor: selected ? questTheme.colors.primarySoft : questTheme.colors.surface },
+                    ]}
+                    onPress={() => markDailyDecisionFeedback(feedback)}
+                  >
+                    <Text style={[styles.instantFeedbackText, { color: selected ? accent : questTheme.colors.textMuted }]}>
+                      {t(lang, feedback === 'useful' ? 'useful' : 'notUseful')}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ) : null}
+
           {isDecisionDebugEnabled() ? (
             <View style={[styles.dailyBriefDebugBox, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}> 
               <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}> 
@@ -2454,7 +2541,7 @@ export default function HomeScreen() {
                           onPress={() => markInstantDecisionFeedback(feedback)}
                         >
                           <Text style={[styles.instantFeedbackText, { color: selected ? accent : questTheme.colors.textMuted }]}>
-                            {t(lang, feedback === 'useful' ? 'decisionUseful' : 'decisionNotUseful')}
+                            {t(lang, feedback === 'useful' ? 'useful' : 'notUseful')}
                           </Text>
                         </TouchableOpacity>
                       );

@@ -3,6 +3,7 @@ import { buildObjectiveContextBrief } from './objectiveContextBrief';
 import { buildMetacognitionSummary, getLiveExecutionLogs } from './metacognition';
 import { buildPostSaveFeedback } from './progressFeedback';
 import { DecisionBriefInput, DecisionMode, DecisionTrigger } from './decisionTypes';
+import { buildDecisionMemorySummary } from './decisionMemory';
 
 function dateKey(date: Date) {
   return date.toISOString().slice(0, 10);
@@ -482,6 +483,7 @@ export function buildDecisionPayload(
   const afterStateSummary = buildAfterStateSummary(liveLogs, data, now);
   const inferredPatterns = buildInferredPatternsV0(liveLogs, data, now);
   const last28Aggregate = buildLast28Aggregate(liveLogs, data, now);
+  const decisionMemorySummary = buildDecisionMemorySummary(data.decisionResults || [], now);
 
   return {
     mode: options.mode ?? 'daily_brief',
@@ -570,5 +572,6 @@ export function buildDecisionPayload(
         flexibility: block.flexibility,
         rigidity: block.rigidity,
       })),
+    decision_memory_summary: decisionMemorySummary,
   };
 }

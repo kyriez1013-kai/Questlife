@@ -2170,3 +2170,25 @@ Known limitations:
 - Schedule suggestions remain advisory only and are not applied to Schedule.
 - No Apple Health native integration, medical diagnosis, data migration, or Control Center redesign was added.
 - Production validation is still required at `https://questlife-alpha-orpin.vercel.app` after deployment.
+
+## Decision AI v1.4: Decision Memory + Feedback Loop
+
+Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+
+What changed:
+- Added local `DecisionResult` memory for sanitized Decision AI outputs.
+- Instant micro-analysis and Daily Decision Brief now persist compact decision records when generated.
+- Useful / not useful feedback now attaches to the persisted decision record, while the older instant-read local feedback flag remains as a compatibility signal.
+- `buildDecisionPayload` now includes a compact `decision_memory_summary` so future prompts can account for recent usefulness and quality patterns without raw text.
+- Decision AI Lab under `?debugDecision=1` now shows recent Decision Memory counts, recent result rows, feedback stats, and repeated quality signals.
+- Debug payload summaries include `decision_memory_summary`.
+- Stored memory excludes raw prompts, raw payloads, `reasoning_content`, API keys, environment values, and full private notes.
+- No server feedback upload, schedule auto-apply, Apple Health work, or visible Today/Insights redesign was added.
+
+Known limitations:
+- Feedback is stored locally only and is not yet used to rewrite pattern memory.
+- Prompt calibration from feedback remains future work.
+- Daily Brief cache/refinement remains future work.
+- Schedule confirm/apply remains future work.
+- Apple Health import/native integration remains later.
+- Full Insights replacement remains later.

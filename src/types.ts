@@ -737,6 +737,51 @@ export interface ContextLog {
   rawText?: string;
 }
 
+export interface DecisionResult {
+  id: string;
+  createdAt: string;
+  mode: 'instant_micro' | 'daily_brief';
+  trigger: 'state_checkin' | 'manual' | 'morning_push' | 'debug';
+  source: 'ai' | 'legacy_fallback' | 'ai_failed_fallback';
+  schemaVersion: string;
+  headlineInsight: string;
+  readinessBand?: 'green' | 'yellow' | 'red' | 'unknown';
+  readinessScore?: number;
+  firstStep?: {
+    step: string;
+    why?: string;
+    durationMin?: number;
+  };
+  doNot?: string[];
+  perceptionGapDetected?: boolean;
+  evidenceBasis?: 'population_prior' | 'personal_pattern' | 'mixed';
+  confidence?: number;
+  quality?: {
+    score: number;
+    grade: 'excellent' | 'good' | 'weak' | 'bad';
+    failedCheckIds: string[];
+    flags: {
+      generic?: boolean;
+      missingEvidence?: boolean;
+      missingFirstStep?: boolean;
+      overclaiming?: boolean;
+      medicalRisk?: boolean;
+      tooVerbose?: boolean;
+      tooVague?: boolean;
+    };
+  };
+  meta?: {
+    model?: string;
+    finishReason?: string;
+    evidenceRichness?: 'none' | 'sparse' | 'usable' | 'rich';
+    endpointOk?: boolean;
+  };
+  userFeedback?: {
+    rating: 'useful' | 'not_useful';
+    ts: string;
+  };
+}
+
 export interface AppData {
   goals: Goal[];
   categories: Category[];     // V2 新
@@ -750,6 +795,7 @@ export interface AppData {
   rescueLogs: RescueLog[];
   stateCheckIns: StateCheckIn[];
   contextLogs: ContextLog[];
+  decisionResults: DecisionResult[];
   scheduleBlocks: ScheduleBlock[];
   rawCaptures: RawCapture[];   // Spec B-1: smart capture loop
   settings: {
@@ -803,6 +849,7 @@ export const DEFAULT_DATA: AppData = {
   rescueLogs: [],
   stateCheckIns: [],
   contextLogs: [],
+  decisionResults: [],
   scheduleBlocks: [],
   rawCaptures: [],
   settings: { selectedThemeId: 'cleanFocus' },

@@ -1,4 +1,5 @@
 import { ObjectiveContextBrief } from './objectiveContextBrief';
+import type { DecisionMemorySummary } from './decisionMemory';
 
 export type DecisionMode = 'instant_micro' | 'daily_brief';
 export type DecisionTrigger = 'morning_push' | 'state_checkin' | 'manual' | 'debug';
@@ -40,6 +41,7 @@ export type DecisionBriefInput = {
   state_summary?: Record<string, unknown>;
   after_state_summary?: Record<string, unknown>;
   schedule_today: Array<Record<string, unknown>>;
+  decision_memory_summary?: DecisionMemorySummary;
 };
 
 export type DecisionBriefResult = {
