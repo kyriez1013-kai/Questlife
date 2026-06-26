@@ -1775,7 +1775,10 @@ export default function HomeScreen() {
 
   const undoDailyScheduleProposal = useCallback(() => {
     if (!scheduleProposalUndo) return;
-    updateScheduleBlock(scheduleProposalUndo.block.id, scheduleProposalUndo.block);
+    updateScheduleBlock(scheduleProposalUndo.block.id, {
+      ...scheduleProposalUndo.block,
+      notes: scheduleProposalUndo.block.notes,
+    });
     setScheduleProposalStatuses((current) => ({ ...current, [scheduleProposalUndo.proposalId]: 'pending' }));
     setScheduleProposalUndo(null);
   }, [scheduleProposalUndo, updateScheduleBlock]);
