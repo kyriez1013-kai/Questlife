@@ -2216,6 +2216,26 @@ Known limitations:
 - Pattern confidence update/decay remains future work.
 - Full Insights replacement remains later.
 
+## Decision AI v1.7.1: Schedule Proposal Test Fixture + Apply/Undo Verification
+
+Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+
+What changed:
+- Added a debug-only schedule proposal test fixture behind `?debugDecision=1`.
+- Fixture can generate controlled `move`, `shorten`, and `protect` proposals using real `ScheduleBlock` ids.
+- Fixture-generated proposals use the same proposal review, apply, and one-level undo code path as AI-generated proposals.
+- Debug UI shows target block plus before/after schedule snapshots to support production verification.
+- Fixture controls are hidden outside debug mode and do not change the normal production UI.
+- No schedule proposal auto-apply, Apple Health work, data migration, UI redesign, raw prompt/payload exposure, or `reasoning_content` exposure was added.
+
+Known limitations:
+- Mobile 390px verification remains pending until production test.
+- Richer schedule editor remains future work.
+- Schedule conflict detection remains future work.
+- Multi-step undo/history remains future work.
+- Apple Health import/native integration remains later.
+- Full Insights replacement remains later.
+
 ## Decision AI v1.6: PatternMemory Prompt Weighting
 
 Status: Implemented locally; production verification pending after GitHub/Vercel deployment.

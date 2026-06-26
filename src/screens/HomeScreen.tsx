@@ -57,7 +57,7 @@ import { DecisionQualityEvaluation, evaluateDecisionBriefQuality } from '../util
 import { DecisionPayloadAudit, auditDecisionPayload } from '../utils/decisionRealityAudit';
 import { createDecisionResultRecord } from '../utils/decisionMemory';
 import { createDecisionService, getLastDecisionServiceMeta, isDecisionAIEnabled, isDecisionAIShadowEnabled, isDecisionDailyBriefEnabled, isDecisionDebugEnabled, LegacyDecisionService, AiDecisionService, runDecisionShadowBrief, DecisionServiceMeta } from '../services/decisionService';
-import { buildScheduleProposalPatch, normalizeScheduleProposals, previewScheduleProposal, scheduleProposalActionKey, ScheduleProposalStatus } from '../utils/scheduleProposal';
+import { buildScheduleProposalPatch, normalizeScheduleProposals, previewScheduleProposal, scheduleProposalActionKey, ScheduleProposal, ScheduleProposalStatus } from '../utils/scheduleProposal';
 import DashboardCardShell from '../components/dashboard/DashboardCardShell';
 
 const FIXED_TODAY_CARD_SIZES = {
@@ -83,6 +83,33 @@ const FIXED_TODAY_CARD_ORDER: Record<keyof typeof FIXED_TODAY_CARD_SIZES, number
   rescue_strip: 80,
   detailed_data: 90,
 };
+
+function scheduleMinutesOf(value: string) {
+  const [hour, minute] = value.split(':').map(Number);
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return 9 * 60;
+  return hour * 60 + minute;
+}
+
+function scheduleTimeFromMinutes(value: number) {
+  const total = Math.max(0, Math.min(23 * 60 + 59, value));
+  const hour = Math.floor(total / 60);
+  const minute = total % 60;
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+}
+
+function nextFixtureMoveTime(block: ScheduleBlock) {
+  const start = scheduleMinutesOf(block.startTime);
+  const shifted = start <= 23 * 60 ? start + 30 : Math.max(0, start - 30);
+  return scheduleTimeFromMinutes(shifted);
+}
+
+function nextFixtureShortenTime(block: ScheduleBlock) {
+  const start = scheduleMinutesOf(block.startTime);
+  const end = scheduleMinutesOf(block.endTime);
+  const duration = Math.max(1, end - start);
+  const shortened = Math.max(15, Math.floor(duration / 2));
+  return scheduleTimeFromMinutes(start + shortened);
+}
 
 // 晨间状态选项
 const DAILY_STATE_OPTIONS = [
@@ -430,6 +457,7 @@ export default function HomeScreen() {
   const [dailyDecisionFeedback, setDailyDecisionFeedback] = useState<'useful' | 'not_useful' | null>(null);
   const [scheduleProposalStatuses, setScheduleProposalStatuses] = useState<Record<string, ScheduleProposalStatus>>({});
   const [scheduleProposalUndo, setScheduleProposalUndo] = useState<{ proposalId: string; block: ScheduleBlock } | null>(null);
+  const [debugScheduleProposalFixture, setDebugScheduleProposalFixture] = useState<ScheduleProposal | null>(null);
   const dailyDecisionRequestRef = useRef(0);
   const dailyDecisionInFlightRef = useRef(false);
   const dailyDecisionAutoKeyRef = useRef('');
@@ -1297,6 +1325,7 @@ export default function HomeScreen() {
     setDailyDecisionResultId('');
     setScheduleProposalStatuses({});
     setScheduleProposalUndo(null);
+    setDebugScheduleProposalFixture(null);
 
     const payload = buildDecisionPayload(data, { mode: 'daily_brief', trigger: 'manual', locale: lang });
     const payloadAudit = auditDecisionPayload(payload);
@@ -1655,22 +1684,67 @@ export default function HomeScreen() {
     return items.length > 0 ? items.slice(0, 3) : [t(lang, 'dataStillAccumulating')];
   }, [dailyDecisionBrief, dailyDecisionPayloadAudit, lang]);
 
-  const dailyDecisionScheduleProposals = useMemo(() => (
-    normalizeScheduleProposals(
+  const debugScheduleProposalTargetBlock = useMemo(() => (
+    todayScheduleBlocks.find((block) => block.status !== 'completed')
+      ?? data.scheduleBlocks.find((block) => block.status !== 'completed')
+      ?? data.scheduleBlocks[0]
+  ), [data.scheduleBlocks, todayScheduleBlocks]);
+
+  const makeDebugScheduleProposal = useCallback((action: 'move' | 'shorten' | 'protect') => {
+    const block = debugScheduleProposalTargetBlock;
+    if (!block) return;
+    const proposalId = `schedule-proposal-fixture-${action}-${block.id}`;
+    const proposal: ScheduleProposal = {
+      id: proposalId,
+      sourceDecisionResultId: 'debug_fixture',
+      createdAt: new Date().toISOString(),
+      blockId: block.id,
+      action,
+      from: `${block.startTime}-${block.endTime}`,
+      to: action === 'move'
+        ? nextFixtureMoveTime(block)
+        : action === 'shorten'
+          ? nextFixtureShortenTime(block)
+          : undefined,
+      reason: t(lang, action === 'move'
+        ? 'debugFixtureMoveReason'
+        : action === 'shorten'
+          ? 'debugFixtureShortenReason'
+          : 'debugFixtureProtectReason'),
+      confidence: 1,
+      status: 'pending',
+    };
+    setDebugScheduleProposalFixture(proposal);
+    setScheduleProposalStatuses((current) => ({ ...current, [proposalId]: 'pending' }));
+    setScheduleProposalUndo(null);
+  }, [debugScheduleProposalTargetBlock, lang]);
+
+  const clearDebugScheduleProposalFixture = useCallback(() => {
+    setDebugScheduleProposalFixture(null);
+    setScheduleProposalUndo(null);
+  }, []);
+
+  const dailyDecisionScheduleProposals = useMemo(() => {
+    const aiProposals = normalizeScheduleProposals(
       dailyDecisionBrief?.prescription?.schedule_adjustments || [],
       dailyDecisionResultId || dailyDecisionGeneratedAt || 'daily',
-    ).map((proposal) => ({
+    );
+    const proposals = debugScheduleProposalFixture
+      ? [debugScheduleProposalFixture, ...aiProposals]
+      : aiProposals;
+    return proposals.map((proposal) => ({
       ...proposal,
       status: scheduleProposalStatuses[proposal.id] || proposal.status,
-    }))
-  ), [dailyDecisionBrief, dailyDecisionGeneratedAt, dailyDecisionResultId, scheduleProposalStatuses]);
+    }));
+  }, [dailyDecisionBrief, dailyDecisionGeneratedAt, dailyDecisionResultId, debugScheduleProposalFixture, scheduleProposalStatuses]);
 
   const canApplyDailyScheduleProposal = useCallback((proposalId: string) => {
     const proposal = dailyDecisionScheduleProposals.find((item) => item.id === proposalId);
     if (!proposal) return false;
     if (proposal.status !== 'pending') return false;
-    if (dailyDecisionQuality?.grade === 'bad') return false;
-    if (dailyDecisionQuality?.grade === 'weak' && !isDecisionDebugEnabled()) return false;
+    const isDebugFixture = proposal.sourceDecisionResultId === 'debug_fixture';
+    if (!isDebugFixture && dailyDecisionQuality?.grade === 'bad') return false;
+    if (!isDebugFixture && dailyDecisionQuality?.grade === 'weak' && !isDecisionDebugEnabled()) return false;
     const block = proposal.blockId ? data.scheduleBlocks.find((item) => item.id === proposal.blockId) : undefined;
     const result = buildScheduleProposalPatch(proposal, block);
     if (!result.ok) return false;
@@ -2115,6 +2189,78 @@ export default function HomeScreen() {
             </View>
           ) : null}
 
+          {dailyBriefDashboardSize === 'large' && isDecisionDebugEnabled() ? (
+            <View style={[styles.scheduleProposalCard, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}>
+              <View style={styles.scheduleProposalHeader}>
+                <Text style={[styles.dailyBriefActionText, { color: questTheme.colors.text }]}>
+                  {t(lang, 'scheduleProposalTestFixture')}
+                </Text>
+                <QuestPill questTheme={questTheme} variant="muted" label={t(lang, 'debugFixtureOnly')} />
+              </View>
+              <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>
+                {debugScheduleProposalTargetBlock
+                  ? `${t(lang, 'selectedScheduleBlock')}: ${debugScheduleProposalTargetBlock.title} · ${debugScheduleProposalTargetBlock.startTime}-${debugScheduleProposalTargetBlock.endTime} · ${debugScheduleProposalTargetBlock.id}`
+                  : t(lang, 'noScheduleBlockForTest')}
+              </Text>
+              <View style={styles.scheduleProposalActions}>
+                <TouchableOpacity
+                  disabled={!debugScheduleProposalTargetBlock}
+                  onPress={() => makeDebugScheduleProposal('move')}
+                  style={[
+                    styles.dailyBriefRefreshBtn,
+                    {
+                      borderColor: debugScheduleProposalTargetBlock ? questTheme.colors.primary : questTheme.colors.border,
+                      backgroundColor: debugScheduleProposalTargetBlock ? questTheme.colors.primarySoft : questTheme.colors.surface,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.dailyBriefRefreshText, { color: debugScheduleProposalTargetBlock ? questTheme.colors.primary : questTheme.colors.textSubtle }]}>
+                    {t(lang, 'generateMoveProposal')}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  disabled={!debugScheduleProposalTargetBlock}
+                  onPress={() => makeDebugScheduleProposal('shorten')}
+                  style={[
+                    styles.dailyBriefRefreshBtn,
+                    {
+                      borderColor: debugScheduleProposalTargetBlock ? questTheme.colors.primary : questTheme.colors.border,
+                      backgroundColor: debugScheduleProposalTargetBlock ? questTheme.colors.primarySoft : questTheme.colors.surface,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.dailyBriefRefreshText, { color: debugScheduleProposalTargetBlock ? questTheme.colors.primary : questTheme.colors.textSubtle }]}>
+                    {t(lang, 'generateShortenProposal')}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  disabled={!debugScheduleProposalTargetBlock}
+                  onPress={() => makeDebugScheduleProposal('protect')}
+                  style={[
+                    styles.dailyBriefRefreshBtn,
+                    {
+                      borderColor: debugScheduleProposalTargetBlock ? questTheme.colors.primary : questTheme.colors.border,
+                      backgroundColor: debugScheduleProposalTargetBlock ? questTheme.colors.primarySoft : questTheme.colors.surface,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.dailyBriefRefreshText, { color: debugScheduleProposalTargetBlock ? questTheme.colors.primary : questTheme.colors.textSubtle }]}>
+                    {t(lang, 'generateProtectProposal')}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  disabled={!debugScheduleProposalFixture}
+                  onPress={clearDebugScheduleProposalFixture}
+                  style={[styles.dailyBriefRefreshBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}
+                >
+                  <Text style={[styles.dailyBriefRefreshText, { color: debugScheduleProposalFixture ? questTheme.colors.textMuted : questTheme.colors.textSubtle }]}>
+                    {t(lang, 'clearTestProposal')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : null}
+
           {dailyBriefDashboardSize === 'large' && dailyDecisionScheduleProposals.length > 0 ? (
             <View style={styles.dailyBriefSection}>
               <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>
@@ -2152,6 +2298,21 @@ export default function HomeScreen() {
                     <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>
                       {t(lang, 'reason')}: {proposal.reason}
                     </Text>
+                    {isDecisionDebugEnabled() ? (
+                      <View style={[styles.contextPreviewBox, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}>
+                        <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>
+                          {t(lang, 'targetBlock')}: {block ? `${block.title} · ${block.id}` : '-'}
+                        </Text>
+                        {scheduleProposalUndo?.proposalId === proposal.id ? (
+                          <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>
+                            {t(lang, 'beforeApply')}: {scheduleProposalUndo.block.startTime}-{scheduleProposalUndo.block.endTime} · {scheduleProposalUndo.block.notes || '-'}
+                          </Text>
+                        ) : null}
+                        <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>
+                          {t(lang, 'afterApply')}: {block ? `${block.startTime}-${block.endTime} · ${block.notes || '-'}` : '-'}
+                        </Text>
+                      </View>
+                    ) : null}
                     {safetyKey ? (
                       <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.warning }]}>
                         {t(lang, safetyKey)}
