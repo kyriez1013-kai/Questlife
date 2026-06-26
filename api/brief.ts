@@ -120,6 +120,9 @@ If an accepted pattern is relevant, cite it in headline_insight, deep_analysis, 
 Candidate patterns are unconfirmed. They can only be supporting evidence or caution; never present them as confirmed truth.
 If evidence_basis is "personal_pattern", reference at least one accepted pattern or strong personal evidence.
 If relying only on population prior, use tentative tone and lower confidence.
+Schedule adjustments are proposals only. Never imply they were applied.
+For schedule_adjustments, use only ids from input.schedule_today[].id as blockId. If no exact block id is safe, return action "suggest" without blockId.
+Supported schedule_adjustments actions: move, shorten, protect, suggest. For move/shorten include from, to, reason.
 The first step must be physically executable within 5-25 minutes. Avoid vague advice like "stay mindful", "keep going", "保持积极", or "照顾好自己".
 For instant_micro, be sharp and compact. For daily_brief, be deeper but still structured.
 Bad example: "保持积极，照顾好自己。"
@@ -144,7 +147,7 @@ Return exactly this JSON shape:
   "headline_insight": "one specific judgement",
   "perception_gap": { "detected": false, "subjective": "", "objective": "", "interpretation": "", "test_action": "" },
   "deep_analysis": "concise analysis without hidden reasoning",
-  "prescription": { "do_first": { "step": "", "why": "", "duration_min": 15 }, "schedule_adjustments": [], "do_not": [] },
+  "prescription": { "do_first": { "step": "", "why": "", "duration_min": 15 }, "schedule_adjustments": [{ "blockId": "", "action": "move|shorten|protect|suggest", "from": "HH:mm", "to": "HH:mm", "reason": "", "confidence": 0.5 }], "do_not": [] },
   "patterns_surfaced": [],
   "pattern_references": [{ "pattern_id": "", "label": "", "status": "accepted|candidate", "used_as": "primary_evidence|supporting_evidence|caution" }],
   "confidence": 0.5,

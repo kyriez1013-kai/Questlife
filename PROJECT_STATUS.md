@@ -2193,6 +2193,29 @@ Known limitations:
 - Apple Health import/native integration remains later.
 - Full Insights replacement remains later.
 
+## Decision AI v1.7: Schedule Proposal Confirm / Apply
+
+Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+
+What changed:
+- Added a safe schedule proposal review workflow inside Daily Decision Brief.
+- AI schedule adjustments remain proposals and are never auto-applied.
+- User must explicitly apply a proposal before any ScheduleBlock is changed.
+- Proposal normalization supports `move`, `shorten`, `protect`, `suggest`, and `swap`, with v1.7 auto-apply limited to safe `move`, `shorten`, and `protect` mutations.
+- Apply requires a matching ScheduleBlock id, supported action, valid time fields, and acceptable Decision AI quality.
+- Unsupported or unsafe proposals remain suggestion-only with disabled apply controls.
+- One-level undo is available for the last applied proposal.
+- `/api/brief` now asks schedule proposals to reference real `schedule_today[].id` values when safe.
+- No Apple Health, UI redesign, schedule auto-apply, destructive migration, raw prompt/payload persistence, or `reasoning_content` exposure was added.
+
+Known limitations:
+- Richer schedule editor remains future work.
+- Multi-step undo/history remains future work.
+- Schedule conflict detection remains future work.
+- Apple Health import/native integration remains later.
+- Pattern confidence update/decay remains future work.
+- Full Insights replacement remains later.
+
 ## Decision AI v1.6: PatternMemory Prompt Weighting
 
 Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
