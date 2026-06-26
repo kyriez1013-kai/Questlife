@@ -28,6 +28,14 @@ export default function SettingsScreen() {
   const [decisionLabOutput, setDecisionLabOutput] = useState('');
   const [decisionLabError, setDecisionLabError] = useState('');
   const [decisionLabLoading, setDecisionLabLoading] = useState(false);
+  const [decisionPatternDebug, setDecisionPatternDebug] = useState<{
+    accepted: number;
+    candidates: number;
+    references: number;
+    ignored: boolean;
+    candidateMisuse: boolean;
+    evidenceBasis?: string;
+  } | null>(null);
   const [lastDecisionFeedback, setLastDecisionFeedback] = useState('');
   const [decisionFlagSnapshot, setDecisionFlagSnapshot] = useState(() => ({
     aiEnabled: isDecisionAIEnabled(),
@@ -138,6 +146,14 @@ export default function SettingsScreen() {
         quality,
         source: serviceMeta.service,
       });
+      setDecisionPatternDebug({
+        accepted: payload.profile.confirmed_patterns.length,
+        candidates: payload.profile.pattern_candidates?.length || 0,
+        references: result.pattern_references?.length || 0,
+        ignored: genericDiagnosis.ignoredAcceptedPatterns,
+        candidateMisuse: genericDiagnosis.candidateMisuse,
+        evidenceBasis: result.evidence_basis,
+      });
       setDecisionLabOutput(JSON.stringify({
         service: serviceMeta,
         payloadAudit,
@@ -195,6 +211,14 @@ export default function SettingsScreen() {
       result,
       quality,
       source: 'mock_weak_output',
+    });
+    setDecisionPatternDebug({
+      accepted: payload.profile.confirmed_patterns.length,
+      candidates: payload.profile.pattern_candidates?.length || 0,
+      references: result.pattern_references?.length || 0,
+      ignored: genericDiagnosis.ignoredAcceptedPatterns,
+      candidateMisuse: genericDiagnosis.candidateMisuse,
+      evidenceBasis: result.evidence_basis,
     });
     setDecisionLabError('');
     setDecisionLabOutput(JSON.stringify({
@@ -518,6 +542,12 @@ export default function SettingsScreen() {
             <Text style={[styles.value, { color: decisionLabError ? questTheme.colors.danger : questTheme.colors.textMuted, marginTop: 12 }]}> 
               {decisionLabLoading ? t(lang, 'decisionAILoading') : decisionLabError ? `${t(lang, 'decisionAIError')}: ${decisionLabError}` : decisionLabOutput ? t(lang, 'decisionAIResultPreview') : t(lang, 'decisionAIHiddenByDefault')}
             </Text>
+            {decisionPatternDebug ? (
+              <Text style={[styles.value, { color: questTheme.colors.textMuted, marginTop: 8 }]}>
+                {t(lang, 'acceptedPatternsAvailable')}: {decisionPatternDebug.accepted} · {t(lang, 'candidatePatternsAvailable')}: {decisionPatternDebug.candidates} · {t(lang, 'patternReference')}: {decisionPatternDebug.references}{'\n'}
+                {t(lang, 'ignoredAcceptedPatterns')}: {decisionPatternDebug.ignored ? t(lang, 'yes') : t(lang, 'no')} · {t(lang, 'candidatePatternMisuse')}: {decisionPatternDebug.candidateMisuse ? t(lang, 'yes') : t(lang, 'no')} · {t(lang, 'evidenceBasis')}: {decisionPatternDebug.evidenceBasis || '-'}
+              </Text>
+            ) : null}
             {decisionLabOutput ? (
               <Text style={[styles.monoText, { color: questTheme.colors.text, backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}>{decisionLabOutput}</Text>
             ) : null}

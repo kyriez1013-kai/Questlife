@@ -765,10 +765,13 @@ export interface DecisionResult {
       missingEvidence?: boolean;
       missingFirstStep?: boolean;
       overclaiming?: boolean;
-      medicalRisk?: boolean;
-      tooVerbose?: boolean;
-      tooVague?: boolean;
-    };
+        medicalRisk?: boolean;
+        tooVerbose?: boolean;
+        tooVague?: boolean;
+        ignoredAcceptedPatterns?: boolean;
+        candidateMisuse?: boolean;
+        acceptedPatternGrounded?: boolean;
+      };
   };
   meta?: {
     model?: string;

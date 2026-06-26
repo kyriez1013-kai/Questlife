@@ -55,6 +55,17 @@ function normalizeResult(value: any) {
   const doFirst = prescription.do_first && typeof prescription.do_first === 'object' ? prescription.do_first : {};
   const perceptionGap = value.perception_gap && typeof value.perception_gap === 'object' ? value.perception_gap : {};
   const confidence = typeof value.confidence === 'number' ? Math.max(0, Math.min(1, value.confidence)) : 0.35;
+  const patternReferences = Array.isArray(value.pattern_references)
+    ? value.pattern_references
+      .filter((item: any) => item && typeof item === 'object' && typeof item.label === 'string')
+      .slice(0, 6)
+      .map((item: any) => ({
+        pattern_id: typeof item.pattern_id === 'string' ? item.pattern_id.slice(0, 120) : undefined,
+        label: String(item.label || '').slice(0, 160),
+        status: item.status === 'candidate' ? 'candidate' : 'accepted',
+        used_as: ['primary_evidence', 'supporting_evidence', 'caution'].includes(item.used_as) ? item.used_as : 'supporting_evidence',
+      }))
+    : [];
   return {
     schema_version: '1.0',
     generated_at: typeof value.generated_at === 'string' ? value.generated_at : new Date().toISOString(),
@@ -83,6 +94,7 @@ function normalizeResult(value: any) {
       do_not: Array.isArray(prescription.do_not) ? prescription.do_not.map(String).slice(0, 6) : [],
     },
     patterns_surfaced: Array.isArray(value.patterns_surfaced) ? value.patterns_surfaced.map(String).slice(0, 8) : [],
+    pattern_references: patternReferences,
     confidence,
     evidence_basis: ['population_prior', 'personal_pattern', 'mixed'].includes(value.evidence_basis) ? value.evidence_basis : 'population_prior',
     data_gaps: Array.isArray(value.data_gaps) ? value.data_gaps.map(String).slice(0, 8) : [],
@@ -98,6 +110,16 @@ Every prescription must include an actionable first step.
 If input.locale is "zh", write all user-facing string fields in Chinese. If input.locale is "en", write them in English.
 Use concrete evidence from the input whenever available: sleep, HRV, steps, state, recent execution, skill, context, after-state, or schedule.
 Mention exactly which evidence was used. If data is sparse, say what is missing and give a test action instead of pretending confidence.
+Evidence priority:
+1. Accepted personal PatternMemory in profile.confirmed_patterns.
+2. Recent personal evidence: state, context, execution, after-state, decision feedback.
+3. Unconfirmed profile.pattern_candidates.
+4. Population prior or general science.
+Accepted PatternMemory is more important than generic advice. Use it as the primary personalization layer when relevant.
+If an accepted pattern is relevant, cite it in headline_insight, deep_analysis, readiness.drivers, patterns_surfaced, or pattern_references.
+Candidate patterns are unconfirmed. They can only be supporting evidence or caution; never present them as confirmed truth.
+If evidence_basis is "personal_pattern", reference at least one accepted pattern or strong personal evidence.
+If relying only on population prior, use tentative tone and lower confidence.
 The first step must be physically executable within 5-25 minutes. Avoid vague advice like "stay mindful", "keep going", "保持积极", or "照顾好自己".
 For instant_micro, be sharp and compact. For daily_brief, be deeper but still structured.
 Bad example: "保持积极，照顾好自己。"
@@ -124,6 +146,7 @@ Return exactly this JSON shape:
   "deep_analysis": "concise analysis without hidden reasoning",
   "prescription": { "do_first": { "step": "", "why": "", "duration_min": 15 }, "schedule_adjustments": [], "do_not": [] },
   "patterns_surfaced": [],
+  "pattern_references": [{ "pattern_id": "", "label": "", "status": "accepted|candidate", "used_as": "primary_evidence|supporting_evidence|caution" }],
   "confidence": 0.5,
   "evidence_basis": "population_prior|personal_pattern|mixed",
   "data_gaps": [],

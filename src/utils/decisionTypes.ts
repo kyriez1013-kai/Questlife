@@ -75,6 +75,12 @@ export type DecisionBriefResult = {
     do_not: string[];
   };
   patterns_surfaced: string[];
+  pattern_references?: Array<{
+    pattern_id?: string;
+    label: string;
+    status: 'accepted' | 'candidate';
+    used_as: 'primary_evidence' | 'supporting_evidence' | 'caution';
+  }>;
   confidence: number;
   evidence_basis: DecisionEvidenceBasis;
   data_gaps: string[];

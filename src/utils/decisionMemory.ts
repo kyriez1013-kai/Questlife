@@ -84,6 +84,9 @@ export function createDecisionResultRecord({
         medicalRisk: quality.flags.medicalRisk || undefined,
         tooVerbose: quality.flags.tooVerbose || undefined,
         tooVague: quality.flags.tooVague || undefined,
+        ignoredAcceptedPatterns: quality.flags.ignoredAcceptedPatterns || undefined,
+        candidateMisuse: quality.flags.candidateMisuse || undefined,
+        acceptedPatternGrounded: quality.flags.acceptedPatternGrounded || undefined,
       },
     } : undefined,
     meta: {

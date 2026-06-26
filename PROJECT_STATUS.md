@@ -2193,6 +2193,27 @@ Known limitations:
 - Apple Health import/native integration remains later.
 - Full Insights replacement remains later.
 
+## Decision AI v1.6: PatternMemory Prompt Weighting
+
+Status: Implemented locally; production verification pending after GitHub/Vercel deployment.
+
+What changed:
+- `/api/brief` now explicitly prioritizes accepted personal PatternMemory over recent evidence, unconfirmed candidates, and population prior.
+- Accepted patterns can be returned in optional `pattern_references` and should be cited when relevant.
+- Candidate patterns remain unconfirmed and can only be supporting evidence or caution, never primary truth.
+- Quality evaluation now detects ignored accepted patterns, candidate misuse, and accepted-pattern grounding.
+- Quality scoring gives a small grounding bonus when accepted patterns are used correctly.
+- Reality audit / generic diagnosis now reports accepted pattern availability, candidate availability, accepted pattern usage, ignored accepted patterns, candidate misuse, and population-prior-only outputs.
+- Decision AI Lab shows compact pattern grounding diagnostics for generated results.
+- No schedule auto-apply, Apple Health, UI redesign, raw prompt/payload persistence, or `reasoning_content` exposure was added.
+
+Known limitations:
+- Pattern confidence update/decay remains future work.
+- Schedule confirm/apply remains future work.
+- Apple Health import/native integration remains later.
+- Full Insights replacement remains later.
+- A dedicated visual/product design pass remains future work.
+
 ## Decision AI v1.5: Pattern Memory Writeback
 
 Status: Implemented locally; production verification pending after GitHub/Vercel deployment.

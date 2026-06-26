@@ -32,6 +32,8 @@ export type DecisionPayloadAudit = {
   afterStateSampleCount: number;
   scheduleBlocksCount: number;
   confirmedPatternsCount: number;
+  acceptedPatternMemoryCount: number;
+  candidatePatternsCount: number;
   inferredPatternsCount: number;
   evidenceRichness: 'none' | 'sparse' | 'usable' | 'rich';
   estimatedBytes: number;
@@ -51,6 +53,12 @@ export type DecisionGenericDiagnosis = {
   suggestedActionsPresent: boolean;
   genericLowFrictionOnly: boolean;
   failedChecks: string[];
+  acceptedPatternsAvailable: number;
+  candidatePatternsAvailable: number;
+  acceptedPatternUsed: boolean;
+  ignoredAcceptedPatterns: boolean;
+  candidateMisuse: boolean;
+  populationPriorOnly: boolean;
   likelyCauses: string[];
 };
 
@@ -117,6 +125,8 @@ export function auditDecisionPayload(payload: DecisionBriefInput): DecisionPaylo
   const afterStateSampleCount = Number((payload.after_state_summary as any)?.sample_count || (last28 as any).after_state_sample_count || afterStateDeltaCount || 0);
   const inferredPatternsCount = Math.max(0, (payload.profile?.inferred_patterns_v0 || []).filter((pattern: any) => Number(pattern?.sample_n || 0) > 0).length);
   const confirmedPatternsCount = (payload.profile?.confirmed_patterns || []).length;
+  const acceptedPatternMemoryCount = (payload.profile?.confirmed_patterns || []).filter((pattern: any) => typeof pattern?.id === 'string' && pattern.id.startsWith('pattern-')).length;
+  const candidatePatternsCount = (payload.profile?.pattern_candidates || []).length;
   const evidenceRichness = richnessFor({
     hasState: !!payload.current_state || stateCheckInCount7d > 0,
     executionCount: Math.max(executionSamplesLast7Days, executionRows28d),
@@ -169,6 +179,8 @@ export function auditDecisionPayload(payload: DecisionBriefInput): DecisionPaylo
     afterStateSampleCount,
     scheduleBlocksCount: (payload.schedule_today || []).length,
     confirmedPatternsCount,
+    acceptedPatternMemoryCount,
+    candidatePatternsCount,
     inferredPatternsCount,
     evidenceRichness,
     estimatedBytes: safeStringify(payload).length,
@@ -196,6 +208,15 @@ export function diagnoseDecisionOutput(args: {
     ...(result.patterns_surfaced || []),
   ].join(' '));
   const hasSkillOrGoal = (payload.profile?.skills || []).length > 0 || (payload.profile?.active_goals || []).length > 0;
+  const acceptedPatterns = (payload.profile?.confirmed_patterns || []).filter((pattern: any) => typeof pattern?.id === 'string' && pattern.id.startsWith('pattern-'));
+  const candidates = payload.profile?.pattern_candidates || [];
+  const patternRefs = result.pattern_references || [];
+  const acceptedPatternUsed = patternRefs.some((ref) => ref.status === 'accepted')
+    || acceptedPatterns.some((pattern: any) => includesAny(fullText, [String(pattern.id || ''), String(pattern.label || ''), String(pattern.title || '')].filter(Boolean)));
+  const candidateMisuse = patternRefs.some((ref) => ref.status === 'candidate' && ref.used_as === 'primary_evidence')
+    || candidates.some((pattern: any) => includesAny(fullText, [String(pattern.label || '')].filter(Boolean)) && includesAny(fullText, ['confirmed', '已确认', '模式证明']));
+  const ignoredAcceptedPatterns = acceptedPatterns.length > 0 && result.evidence_basis === 'personal_pattern' && !acceptedPatternUsed;
+  const populationPriorOnly = result.evidence_basis === 'population_prior' && acceptedPatterns.length === 0 && audit.evidenceRichness !== 'rich';
   const likelyCauses: string[] = [];
   if (source === 'legacy_fallback') likelyCauses.push('fallback_only_visible_path');
   if (source === 'ai' && audit.evidenceRichness === 'none') likelyCauses.push('ai_path_but_no_evidence_payload');
@@ -209,6 +230,12 @@ export function diagnoseDecisionOutput(args: {
   if (!Object.values(audit.contextTypes).some(Boolean)) likelyCauses.push('missing_objective_context');
   if (audit.executionRows7d === 0 && audit.executionRows28d === 0) likelyCauses.push('missing_recent_execution');
   if (audit.afterStateSampleCount === 0 && audit.confirmedPatternsCount + audit.inferredPatternsCount === 0) likelyCauses.push('missing_after_state_or_patterns');
+  if (acceptedPatterns.length > 0 && !acceptedPatternUsed) likelyCauses.push('accepted_patterns_available_but_ignored');
+  if (acceptedPatterns.length === 0 && candidates.length > 0) likelyCauses.push('only_candidates_available');
+  if (candidateMisuse) likelyCauses.push('candidate_misused_as_confirmed');
+  if (ignoredAcceptedPatterns) likelyCauses.push('personal_pattern_claim_without_pattern_reference');
+  if (acceptedPatternUsed) likelyCauses.push('accepted_pattern_used');
+  if (populationPriorOnly) likelyCauses.push('population_prior_only');
 
   return {
     resultSource: source,
@@ -221,6 +248,12 @@ export function diagnoseDecisionOutput(args: {
     suggestedActionsPresent: !!String(result.prescription?.do_first?.step || '').trim(),
     genericLowFrictionOnly: includesAny(step, ['low-friction', '低阻力', '低摩擦']) && !includesAny(step, ['sql', 'python', '卧推', '写', '读', '练', 'review', 'practice']),
     failedChecks: quality.checks.filter((check) => !check.passed).map((check) => check.id),
+    acceptedPatternsAvailable: acceptedPatterns.length,
+    candidatePatternsAvailable: candidates.length,
+    acceptedPatternUsed,
+    ignoredAcceptedPatterns,
+    candidateMisuse,
+    populationPriorOnly,
     likelyCauses,
   };
 }

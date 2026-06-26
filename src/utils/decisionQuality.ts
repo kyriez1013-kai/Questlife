@@ -22,6 +22,9 @@ export type DecisionQualityEvaluation = {
     schemaWeakness: boolean;
     tooVerbose: boolean;
     tooVague: boolean;
+    ignoredAcceptedPatterns: boolean;
+    candidateMisuse: boolean;
+    acceptedPatternGrounded: boolean;
   };
 };
 
@@ -76,6 +79,7 @@ function textOf(result: DecisionBriefResult) {
     result.prescription?.do_first?.why,
     ...(result.prescription?.do_not || []),
     ...(result.patterns_surfaced || []),
+    ...(result.pattern_references || []).map((ref) => `${ref.pattern_id || ''} ${ref.label || ''} ${ref.status || ''} ${ref.used_as || ''}`),
   ].filter(Boolean).join(' ').toLowerCase();
 }
 
@@ -124,6 +128,39 @@ function mentionsEvidence(text: string, payload: DecisionBriefInput) {
   return evidenceTerms.some((term) => text.includes(term.toLowerCase()));
 }
 
+function acceptedPatternMemory(payload: DecisionBriefInput) {
+  return (payload.profile.confirmed_patterns || []).filter((pattern: any) => typeof pattern?.id === 'string' && pattern.id.startsWith('pattern-'));
+}
+
+function candidatePatterns(payload: DecisionBriefInput) {
+  return payload.profile.pattern_candidates || [];
+}
+
+function patternMentioned(text: string, pattern: any) {
+  const values = [pattern.id, pattern.label, pattern.title, pattern.type, pattern.patternType]
+    .map((value) => String(value || '').toLowerCase())
+    .filter((value) => value.length >= 4);
+  return values.some((value) => text.includes(value));
+}
+
+function acceptedPatternGrounded(result: DecisionBriefResult, payload: DecisionBriefInput, outputText: string) {
+  const accepted = acceptedPatternMemory(payload);
+  if (accepted.length === 0) return false;
+  const refs = result.pattern_references || [];
+  return refs.some((ref) => ref.status === 'accepted' && ref.used_as !== 'caution')
+    || accepted.some((pattern) => patternMentioned(outputText, pattern));
+}
+
+function candidatePatternMisuse(result: DecisionBriefResult, payload: DecisionBriefInput, outputText: string) {
+  const candidates = candidatePatterns(payload);
+  const refs = result.pattern_references || [];
+  if (refs.some((ref) => ref.status === 'candidate' && ref.used_as === 'primary_evidence')) return true;
+  return candidates.some((pattern: any) => {
+    if (!patternMentioned(outputText, pattern)) return false;
+    return hasAny(outputText, ['confirmed', '已确认', '确定模式', 'personal pattern shows', '模式证明']);
+  });
+}
+
 function hasConcreteAction(step: string, duration: number | null | undefined) {
   const normalized = String(step || '').toLowerCase();
   if (!normalized.trim()) return false;
@@ -154,6 +191,11 @@ export function evaluateDecisionBriefQuality({ result, payload, mode }: Evaluate
   const explicitInsufficient = /insufficient|not enough|missing|data gap|数据不足|缺少|不足/.test(outputText);
   const concreteAction = hasConcreteAction(doFirst?.step || '', doFirst?.duration_min);
   const generic = hasAny(outputText, genericPhrases);
+  const acceptedPatterns = acceptedPatternMemory(payload);
+  const hasAcceptedPatterns = acceptedPatterns.length > 0;
+  const groundedAcceptedPattern = acceptedPatternGrounded(result, payload, outputText);
+  const ignoredAcceptedPatterns = hasAcceptedPatterns && result.evidence_basis === 'personal_pattern' && !groundedAcceptedPattern;
+  const candidateMisuse = candidatePatternMisuse(result, payload, outputText);
   const medicalRisk = hasAny(outputText, medicalRiskPhrases);
   const overclaiming = hasAny(outputText, overclaimPhrases)
     || (result.evidence_basis === 'population_prior' && result.tone === 'assertive' && result.confidence > 0.6);
@@ -178,10 +220,24 @@ export function evaluateDecisionBriefQuality({ result, payload, mode }: Evaluate
   add({ id: 'safety', passed: !medicalRisk, severity: 'high', messageKey: 'dqCheckSafety' });
   add({ id: 'causality', passed: !overclaiming, severity: 'medium', messageKey: 'dqCheckCausality' });
   add({ id: 'length', passed: !tooVerbose, severity: 'low', messageKey: 'dqCheckLength' });
+  add({
+    id: 'accepted_pattern_grounding',
+    passed: !ignoredAcceptedPatterns,
+    severity: 'high',
+    messageKey: 'patternGroundingCheck',
+    detail: hasAcceptedPatterns ? `accepted_patterns=${acceptedPatterns.length}` : 'no_accepted_patterns',
+  });
+  add({
+    id: 'candidate_misuse',
+    passed: !candidateMisuse,
+    severity: 'high',
+    messageKey: 'candidatePatternMisuse',
+  });
 
   const penaltyBySeverity = { low: 6, medium: 12, high: 20 };
   const penalty = checks.reduce((sum, check) => sum + (check.passed ? 0 : penaltyBySeverity[check.severity]), 0);
-  const score = Math.max(0, Math.min(100, Math.round(100 - penalty)));
+  const bonus = groundedAcceptedPattern ? 5 : 0;
+  const score = Math.max(0, Math.min(100, Math.round(100 - penalty + bonus)));
 
   return {
     score,
@@ -196,6 +252,9 @@ export function evaluateDecisionBriefQuality({ result, payload, mode }: Evaluate
       schemaWeakness: checks.some((check) => !check.passed && ['headline', 'first_step', 'confidence', 'evidence_basis', 'readiness_band'].includes(check.id)),
       tooVerbose,
       tooVague,
+      ignoredAcceptedPatterns,
+      candidateMisuse,
+      acceptedPatternGrounded: groundedAcceptedPattern,
     },
   };
 }
