@@ -49,7 +49,6 @@ export default function StatsScreen() {
   const {
     data,
   } = useStore();
-  const [advancedExpanded, setAdvancedExpanded] = useState(false);
   const lang = getLanguage(data.settings.language);
   const questTheme = getQuestTheme(data.settings.selectedThemeId);
   const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
@@ -421,7 +420,7 @@ export default function StatsScreen() {
       maxWidth: '100%',
       flexGrow: size === 'large' ? 1 : 0,
       order: FIXED_INSIGHTS_CARD_ORDER[cardId as keyof typeof FIXED_INSIGHTS_CARD_SIZES] ?? 500,
-      marginTop: size === 'small' ? questTheme.spacing.sm : size === 'large' ? questTheme.spacing.lg : questTheme.spacing.md,
+      marginTop: size === 'small' ? questTheme.spacing.xs : questTheme.spacing.sm,
     } as any;
   };
   const insightsDashboardShellProps = (cardId: string) => {
@@ -536,19 +535,12 @@ export default function StatsScreen() {
 
         {insightsCardVisible('advanced_signals') ? (
         <DashboardCardShell {...insightsDashboardShellProps('advanced_signals')}>
-        <TouchableOpacity
-          onPress={() => setAdvancedExpanded((value) => !value)}
-          activeOpacity={0.75}
-          style={[styles.advancedToggle, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong }]}
-        >
+        <View style={[styles.advancedHeader, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong }]}>
           <View style={{ flex: 1 }}>
             <Text style={[styles.advancedTitle, { color: questTheme.colors.text }]}>{t(lang, 'advancedAnalysis')}</Text>
             <Text style={[styles.advancedSubtitle, { color: questTheme.colors.textMuted }]}>{t(lang, 'advancedSignals')}</Text>
           </View>
-          <Text style={[styles.advancedAction, { color: questTheme.colors.primary }]}>
-            {advancedExpanded ? t(lang, 'hideAdvancedAnalysis') : t(lang, 'showAdvancedAnalysis')}
-          </Text>
-        </TouchableOpacity>
+        </View>
 
         {advancedSignalsCardSize !== 'large' ? (
           <QuestCard questTheme={questTheme} variant="flat" style={[styles.insightCard, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.borderStrong }]} className="insight-card">
@@ -556,7 +548,7 @@ export default function StatsScreen() {
           </QuestCard>
         ) : null}
 
-        {advancedSignalsCardSize === 'large' && advancedExpanded ? (
+        {advancedSignalsCardSize === 'large' ? (
           <>
             <View style={[styles.commandStrip, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong }]}>
               <View style={styles.commandCell}>
@@ -1158,17 +1150,16 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.bg },
   container: { flex: 1, backgroundColor: theme.bg },
   h1: { color: theme.text, fontSize: 34, fontWeight: '800' },
-  h2: { color: theme.text, fontSize: 18, fontWeight: '600', marginTop: 24, marginBottom: 12 },
+  h2: { color: theme.text, fontSize: 18, fontWeight: '600', marginTop: 14, marginBottom: 8 },
   sub: { color: theme.textDim, marginTop: 4 },
   dashboardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
   dashboardMeta: { fontSize: 12, fontWeight: '800', marginTop: 8, lineHeight: 18 },
-  dashboardTileGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, alignItems: 'stretch', marginTop: 10 },
+  dashboardTileGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'stretch', marginTop: 8 },
   dashboardTileGridEditing: { userSelect: 'none', WebkitUserSelect: 'none' } as any,
-  advancedToggle: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderRadius: 16, padding: 14, marginTop: 18 },
+  advancedHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderRadius: 16, padding: 12, marginTop: 8 },
   advancedTitle: { fontSize: 16, fontWeight: '900', lineHeight: 22 },
   advancedSubtitle: { fontSize: 12, fontWeight: '800', lineHeight: 18, marginTop: 2 },
-  advancedAction: { fontSize: 12, fontWeight: '900', flexShrink: 0 },
-  commandStrip: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, borderWidth: 1, borderRadius: 16, padding: 10, marginTop: 16 },
+  commandStrip: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, borderWidth: 1, borderRadius: 16, padding: 10, marginTop: 10 },
   commandCell: { flex: 1, minWidth: 132, paddingHorizontal: 8, paddingVertical: 8 },
   commandValue: { fontSize: 16, fontWeight: '900', lineHeight: 22 },
   commandLabel: { fontSize: 11, fontWeight: '800', marginTop: 2 },

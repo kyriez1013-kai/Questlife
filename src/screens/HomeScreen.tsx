@@ -573,13 +573,6 @@ export default function HomeScreen() {
   const [contextPasteText, setContextPasteText] = useState('');
   const [contextPreview, setContextPreview] = useState<ParsedHealthContext | null>(null);
   const [contextSaveStatus, setContextSaveStatus] = useState<'idle' | 'saved' | 'saved_sleep'>('idle');
-  const [planExpanded, setPlanExpanded] = useState(false);
-  const [recordsExpanded, setRecordsExpanded] = useState(false);
-  const [detailsOpen, setDetailsOpen] = useState(false);
-  // zone-3 section collapse state (default collapsed for clean first-screen view)
-  const [stateCardOpen,  setStateCardOpen]  = useState(false);
-  const [budgetCardOpen, setBudgetCardOpen] = useState(false);
-  const [planCardOpen,   setPlanCardOpen]   = useState(false);
   const [rescueOpen, setRescueOpen] = useState(false);
   const [rescueStep, setRescueStep] = useState<'intro' | 'body' | 'activation' | 'done'>('intro');
   const [activeRescueId, setActiveRescueId] = useState<string | null>(null);
@@ -676,8 +669,8 @@ export default function HomeScreen() {
   // 今日执行记录按 category 分组
   const displayedTodayLogs = useMemo(() => {
     const sorted = todayLogs.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    return recordsExpanded ? sorted : sorted.slice(0, 3);
-  }, [recordsExpanded, todayLogs]);
+    return sorted;
+  }, [todayLogs]);
 
   const groupedToday = useMemo(() => {
     const map = new Map<string, ExecutionLog[]>();
@@ -1968,7 +1961,6 @@ export default function HomeScreen() {
       return;
     }
     if (action === 'review_feedback') {
-      setRecordsExpanded(true);
       return;
     }
     if (action === 'finish_pending_capture') {
@@ -2054,9 +2046,9 @@ export default function HomeScreen() {
       maxWidth: '100%',
       flexGrow: size === 'large' ? 1 : 0,
       order: FIXED_TODAY_CARD_ORDER[cardId],
-      marginTop: size === 'small' ? questTheme.spacing.sm : size === 'large' ? questTheme.spacing.lg : questTheme.spacing.md,
+      marginTop: size === 'small' ? questTheme.spacing.xs : questTheme.spacing.sm,
     } as any;
-  }, [questTheme.spacing.lg, questTheme.spacing.md, questTheme.spacing.sm]);
+  }, [questTheme.spacing.sm, questTheme.spacing.xs]);
   const todayDashboardShellProps = useCallback((cardId: string) => {
     const size = FIXED_TODAY_CARD_SIZES[cardId as keyof typeof FIXED_TODAY_CARD_SIZES] ?? 'medium';
     return {
@@ -2665,9 +2657,9 @@ export default function HomeScreen() {
         </DashboardCardShell>
         ) : null}
 
-        {/* ═══ ZONE 3: Today data — header always visible, cards collapsible ═ */}
+        {/* ═══ ZONE 3: Today data — static execution sections ═ */}
         <View style={styles.dashboardFullRow}>
-          <Text style={[styles.h1, { color: questTheme.colors.text, marginTop: questTheme.spacing.xl }]}>{t(lang, 'today')}</Text>
+          <Text style={[styles.h1, { color: questTheme.colors.text }]}>{t(lang, 'today')}</Text>
           <Text style={[styles.sub, { color: questTheme.colors.textMuted }]}> 
             {todayStr} · {t(lang, 'todayInvested')} {todayMinutes} {t(lang, 'minutes')} · {todayLogs.length} {t(lang, 'logsToday')}
           </Text>
@@ -2676,21 +2668,11 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        {/* ── Plan card (collapsible) ─────────────────────────────────────── */}
         {todayCardVisible('today_plan') ? (
         <DashboardCardShell {...todayDashboardShellProps('today_plan')}>
-        <TouchableOpacity
-          onPress={() => setPlanCardOpen((v) => !v)}
-          style={[styles.sectionToggleRow, { borderColor: questTheme.colors.divider, backgroundColor: questTheme.colors.surfaceSubtle }]}
-          activeOpacity={0.75}
-        >
-          <Text style={[styles.sectionToggleLabel, { color: questTheme.colors.text }]}>{t(lang, 'sectionPlanCard')}</Text>
-          <Text style={[styles.sectionToggleChev, { color: questTheme.colors.textMuted }]}>{planCardOpen ? t(lang, 'expandTap') : t(lang, 'collapseTap')}</Text>
-        </TouchableOpacity>
-        {planCardOpen && (
         <View style={[styles.compactPlanCard, themedCard]}>
           <Text style={[styles.planTitle, { color: questTheme.colors.text }]}>{t(lang, 'todayPlan')}</Text>
-          {(todayScheduleBlocks.length > 0 ? todayScheduleBlocks : data.skills).slice(0, planExpanded ? undefined : 3).map((item: any) => {
+          {(todayScheduleBlocks.length > 0 ? todayScheduleBlocks : data.skills).map((item: any) => {
             const isBlock = !!item.startTime;
             const skill = isBlock
               ? (item.linkedSkillId ? data.skills.find((s) => s.id === item.linkedSkillId) : undefined)
@@ -2728,37 +2710,12 @@ export default function HomeScreen() {
               </View>
             );
           })}
-          {(todayScheduleBlocks.length > 0 ? todayScheduleBlocks.length : data.skills.length) > 3 ? (
-            <TouchableOpacity
-              style={styles.expandPlanBtn}
-              onPress={() => {
-                const count = todayScheduleBlocks.length > 0 ? todayScheduleBlocks.length : data.skills.length;
-                if (!planExpanded) trackEvent('today_plan_expanded', { tasksCount: count }, { page: 'today' });
-                setPlanExpanded((value) => !value);
-              }}
-            >
-              <Text style={[styles.expandPlanText, { color: accent }]}>
-                {planExpanded ? t(lang, 'collapseTasks') : t(lang, 'expandAllTasks').replace('{count}', String(todayScheduleBlocks.length > 0 ? todayScheduleBlocks.length : data.skills.length))}
-              </Text>
-            </TouchableOpacity>
-          ) : null}
         </View>
-        )}
         </DashboardCardShell>
         ) : null}
 
-        {/* ── State card (collapsible) ────────────────────────────────────── */}
         {todayCardVisible('state_checkin') ? (
         <DashboardCardShell {...todayDashboardShellProps('state_checkin')}>
-        <TouchableOpacity
-          onPress={() => setStateCardOpen((v) => !v)}
-          style={[styles.sectionToggleRow, { borderColor: questTheme.colors.divider, backgroundColor: questTheme.colors.surfaceSubtle }]}
-          activeOpacity={0.75}
-        >
-          <Text style={[styles.sectionToggleLabel, { color: questTheme.colors.text }]}>{t(lang, 'sectionStateCard')}</Text>
-          <Text style={[styles.sectionToggleChev, { color: questTheme.colors.textMuted }]}>{stateSummaryLabel} {stateCardOpen ? t(lang, 'expandTap') : t(lang, 'collapseTap')}</Text>
-        </TouchableOpacity>
-        {stateCardOpen && (
         <View style={[styles.stateCheckInCard, themedCard]}>
           <View style={styles.currentStateTop}>
             <View style={{ flex: 1 }}>
@@ -2853,7 +2810,6 @@ export default function HomeScreen() {
             </View>
           ) : null}
         </View>
-        )}
         </DashboardCardShell>
         ) : null}
 
@@ -2927,32 +2883,14 @@ export default function HomeScreen() {
             </View>
           ))
         )}
-        {todayLogs.length > 3 ? (
-          <TouchableOpacity
-            style={[styles.expandPlanBtn, { alignSelf: 'flex-start' }]}
-            onPress={() => setRecordsExpanded((value) => !value)}
-          >
-            <Text style={[styles.expandPlanText, { color: accent }]}> 
-              {recordsExpanded ? t(lang, 'hideDetails') : t(lang, 'showMoreRecords').replace('{count}', String(todayLogs.length - 3))}
-            </Text>
-          </TouchableOpacity>
-        ) : null}
         {todayLogs.length > 0 && <Text style={[styles.tip, { color: questTheme.colors.textMuted }]}>{t(lang, 'longPressDelete')}</Text>}
         </DashboardCardShell>
         ) : null}
 
         {todayCardVisible('detailed_data') ? (
         <DashboardCardShell {...todayDashboardShellProps('detailed_data')}>
-        <TouchableOpacity
-          onPress={() => setDetailsOpen((v) => !v)}
-          style={[styles.sectionToggleRow, { borderColor: questTheme.colors.divider, backgroundColor: questTheme.colors.surfaceSubtle }]}
-          activeOpacity={0.75}
-        >
-          <Text style={[styles.sectionToggleLabel, { color: questTheme.colors.text }]}>{t(lang, 'detailedData')}</Text>
-          <Text style={[styles.sectionToggleChev, { color: questTheme.colors.textMuted }]}>{detailsOpen ? t(lang, 'hideDetails') : t(lang, 'showAdvancedFields')}</Text>
-        </TouchableOpacity>
-        {detailsOpen ? (
           <View>
+        <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'detailedData')}</Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -2988,16 +2926,6 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* ── Budget card (collapsible) ────────────────────────────────────── */}
-        <TouchableOpacity
-          onPress={() => setBudgetCardOpen((v) => !v)}
-          style={[styles.sectionToggleRow, { borderColor: questTheme.colors.divider, backgroundColor: questTheme.colors.surfaceSubtle }]}
-          activeOpacity={0.75}
-        >
-          <Text style={[styles.sectionToggleLabel, { color: questTheme.colors.text }]}>{t(lang, 'sectionBudgetCard')}</Text>
-          <Text style={[styles.sectionToggleChev, { color: questTheme.colors.textMuted }]}>{energyBudgetRows.allocated}% {budgetCardOpen ? t(lang, 'expandTap') : t(lang, 'collapseTap')}</Text>
-        </TouchableOpacity>
-        {budgetCardOpen && (
         <View style={[styles.energyCard, themedCard]}>
           <View style={styles.sectionTitleRow}>
             <QuestIcon name="activity" size={18} color={accent} />
@@ -3022,7 +2950,6 @@ export default function HomeScreen() {
           })}
           <Text style={[styles.planNote, { color: questTheme.colors.textMuted }]}>{t(lang, 'energyBudgetHint')}</Text>
         </View>
-        )}
 
         <View style={styles.statRow}>
           <Stat questTheme={questTheme} accent={accent} label={t(lang, 'logsToday')} value={String(todayLogs.length)} />
@@ -3076,7 +3003,6 @@ export default function HomeScreen() {
         )}
 
           </View>
-        ) : null}
         </DashboardCardShell>
         ) : null}
         </TileGrid>
@@ -3981,7 +3907,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.bg },
   container: { flex: 1, backgroundColor: theme.bg },
   h1: { color: theme.text, fontSize: 34, fontWeight: '800' },
-  h2: { color: theme.text, fontSize: 18, fontWeight: '600', marginTop: 24, marginBottom: 12 },
+  h2: { color: theme.text, fontSize: 18, fontWeight: '600', marginTop: 14, marginBottom: 8 },
   sub: { color: theme.textDim, marginTop: 4 },
   welcomeCard: { marginTop: 12, borderRadius: theme.radius.lg, padding: 14, borderWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 12, ...theme.shadow },
   welcomeActions: { alignItems: 'flex-end', gap: 8 },
@@ -4051,7 +3977,7 @@ const styles = StyleSheet.create({
   nowFocusPrimary: { borderRadius: 16, paddingHorizontal: 13, paddingVertical: 10 },
   nowFocusPrimaryText: { color: '#fff', fontSize: 12, fontWeight: '900' },
   compactPlanCard: {
-    marginTop: 12,
+    marginTop: 8,
     backgroundColor: theme.card,
     borderRadius: theme.radius.lg,
     padding: 14,
@@ -4062,10 +3988,8 @@ const styles = StyleSheet.create({
   compactPlanRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, borderTopWidth: 1, borderTopColor: theme.border },
   compactPlanTitle: { color: theme.text, fontSize: 14, fontWeight: '900' },
   compactPlanMeta: { color: theme.textDim, fontSize: 11, fontWeight: '700', marginTop: 3 },
-  expandPlanBtn: { alignSelf: 'flex-start', paddingVertical: 8 },
-  expandPlanText: { fontSize: 12, fontWeight: '900' },
   stateCheckInCard: {
-    marginTop: 12,
+    marginTop: 8,
     backgroundColor: theme.card,
     borderRadius: theme.radius.lg,
     padding: 14,
@@ -4185,7 +4109,7 @@ const styles = StyleSheet.create({
     ...theme.shadow,
   },
   energyCard: {
-    marginTop: 12,
+    marginTop: 8,
     backgroundColor: theme.card,
     borderRadius: theme.radius.lg,
     padding: 16,
@@ -4207,16 +4131,8 @@ const styles = StyleSheet.create({
   quickActionRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
   iconActionBtn: { width: 34, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: theme.border, backgroundColor: theme.card },
   iconActionText: { color: theme.text, fontSize: 14, fontWeight: '900' },
-  statRow: { flexDirection: 'row', gap: 10, marginTop: 16 },
+  statRow: { flexDirection: 'row', gap: 10, marginTop: 12 },
   stat: { flex: 1, backgroundColor: theme.card, padding: 14, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
-  // zone-3 collapsible section toggle rows
-  sectionToggleRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    marginTop: 12, paddingHorizontal: 14, paddingVertical: 10,
-    borderRadius: theme.radius.md, borderWidth: 1,
-  },
-  sectionToggleLabel: { fontSize: 14, fontWeight: '700' },
-  sectionToggleChev: { fontSize: 13 },
   statValue: { color: theme.primary, fontSize: 22, fontWeight: '700' },
   statLabel: { color: theme.textDim, fontSize: 12, marginTop: 2 },
   // 晨间状态横幅
@@ -4246,7 +4162,7 @@ const styles = StyleSheet.create({
   },
   stateEmoji: { fontSize: 26 },
   stateLabel: { color: theme.textDim, fontSize: 10, fontWeight: '600' },
-  dashboardTileGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, alignItems: 'stretch', marginTop: 10 },
+  dashboardTileGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'stretch', marginTop: 8 },
   dashboardTileGridEditing: { userSelect: 'none', WebkitUserSelect: 'none' } as any,
   dashboardFullRow: { width: '100%' },
 
