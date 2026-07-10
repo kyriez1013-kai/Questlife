@@ -9,6 +9,7 @@ import { loadData, persist, uid, today } from './storage';
 import { scheduleSkillReminder, cancelSkillReminder, rescheduleAllReminders } from './notifications';
 import { calculateModuleProgress, calculatePredictionDelta, progressTypeForSkill, skillsForModule } from './progress';
 import { trackEvent } from './utils/analytics';
+import { scheduleServerSync } from './services/syncService';
 import { createEffortUnitsFromExecutionLog, generateContributionLinks } from './utils/effort';
 import { DOMAIN_TEMPLATES, createGoalStructureFromTemplate, templateProgressModel } from './domainTemplates';
 import { rebuildDerivedDataFromLogs, repairAppDataIntegrity, validateAppDataIntegrity, CoreFlowIntegrityResult } from './utils/coreFlow';
@@ -297,7 +298,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   // 兜底: 万一某处直接 setData 而没走 mutate, 也写一遍.
   useEffect(() => {
-    if (loadedRef.current) persist(data);
+    if (loadedRef.current) {
+      persist(data);
+      // 本地落盘后再排队一次防抖的服务器同步 (见 syncService.ts 的触发模型说明).
+      scheduleServerSync(data);
+    }
   }, [data]);
 
   const addGoal: Ctx['addGoal'] = useCallback((g) => {

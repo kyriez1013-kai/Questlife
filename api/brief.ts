@@ -6,6 +6,12 @@
  * Never return reasoning_content / chain-of-thought to the client.
  */
 
+import { z } from 'zod';
+import { sanitizePatternMemoryForPayload } from '../src/utils/patternMemory';
+import { buildDecisionMemorySummary, createDecisionResultRecord } from '../src/utils/decisionMemory';
+import type { PatternMemory, DecisionResult } from '../src/types';
+import type { DecisionBriefResult } from '../src/utils/decisionTypes';
+
 declare const process: any;
 
 const DEEPSEEK_BASE = 'https://api.deepseek.com';
@@ -13,6 +19,60 @@ const DEFAULT_MODEL = 'deepseek-chat';
 const TIMEOUT_MS = 9000;
 
 type BriefBody = Record<string, any>;
+
+// Typed request schema — mirrors DecisionBriefInput in src/utils/decisionTypes.ts.
+// Structurally invalid requests are rejected with 400 + issue details instead
+// of the old top-level "key exists" check.
+const LooseRecord = z.record(z.string(), z.unknown());
+
+const BriefInputSchema = z
+  .object({
+    mode: z.enum(['instant_micro', 'daily_brief']),
+    trigger: z.enum(['morning_push', 'state_checkin', 'manual', 'debug']),
+    now: z.string().min(1),
+    locale: z.enum(['zh', 'en']).optional(),
+    // Optional so older deployed bundles (which do not send it) keep working;
+    // without it the server-memory path is skipped.
+    anonymous_user_id: z.string().min(1).max(200).optional(),
+    current_state: LooseRecord.nullable(),
+    today_context: z
+      .object({
+        objective_context_brief: LooseRecord.optional(),
+        recent_context_logs: z.array(LooseRecord),
+        context_summary: LooseRecord.optional(),
+        latest_sleep_minutes: z.number().optional(),
+        hrv: z.number().optional(),
+        resting_heart_rate: z.number().optional(),
+        steps: z.number().optional(),
+        workout_minutes: z.number().optional(),
+        caffeine_count: z.number().optional(),
+      })
+      .passthrough(),
+    profile: z
+      .object({
+        active_goals: z.array(LooseRecord),
+        modules: z.array(LooseRecord),
+        skills: z.array(LooseRecord),
+        known_baselines: LooseRecord,
+        confirmed_patterns: z.array(LooseRecord),
+        inferred_patterns_v0: z.array(LooseRecord).optional(),
+        pattern_candidates: z.array(LooseRecord).optional(),
+        pattern_memory_summary: LooseRecord.optional(),
+        chronotype: z.enum(['unknown', 'morning', 'evening', 'mixed']),
+      })
+      .passthrough(),
+    history_index: z
+      .object({
+        last_7_days: z.array(LooseRecord),
+        last_28_days: LooseRecord,
+      })
+      .passthrough(),
+    state_summary: LooseRecord.optional(),
+    after_state_summary: LooseRecord.optional(),
+    schedule_today: z.array(LooseRecord),
+    decision_memory_summary: LooseRecord.optional(),
+  })
+  .passthrough();
 
 function send(res: any, status: number, body: Record<string, unknown>) {
   res.status(status).json(body);
@@ -36,16 +96,144 @@ function parseJson(raw: string) {
   }
 }
 
-function validateInput(body: BriefBody) {
-  if (!body || typeof body !== 'object') return false;
-  if (body.mode !== 'instant_micro' && body.mode !== 'daily_brief') return false;
-  if (!['morning_push', 'state_checkin', 'manual', 'debug'].includes(body.trigger)) return false;
-  if (typeof body.now !== 'string') return false;
-  if (!body.today_context || typeof body.today_context !== 'object') return false;
-  if (!body.profile || typeof body.profile !== 'object') return false;
-  if (!body.history_index || typeof body.history_index !== 'object') return false;
-  if (!Array.isArray(body.schedule_today)) return false;
-  return true;
+// ---------------------------------------------------------------------------
+// Server-side Pattern/Decision Memory (persisted in Supabase, written by
+// /api/sync and by this route's post-brief write-back). When available it is
+// the source of truth for confirmed_patterns / pattern_candidates /
+// decision_memory_summary instead of the client-computed blob.
+// ---------------------------------------------------------------------------
+
+type ServerMemoryStatus = 'applied' | 'empty' | 'unavailable' | 'skipped_no_user_id' | 'not_configured';
+
+type SupabaseConfig = { url: string; key: string };
+
+function supabaseConfig(): SupabaseConfig | null {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  return url && key ? { url: String(url).replace(/\/$/, ''), key: String(key) } : null;
+}
+
+async function supabaseSelect(config: SupabaseConfig, table: string, query: string): Promise<any[]> {
+  const response = await fetch(`${config.url}/rest/v1/${table}?${query}`, {
+    headers: { apikey: config.key, Authorization: `Bearer ${config.key}` },
+  });
+  if (!response.ok) throw new Error(`select ${table} HTTP ${response.status}`);
+  const rows = await response.json();
+  return Array.isArray(rows) ? rows : [];
+}
+
+async function supabaseUpsert(config: SupabaseConfig, table: string, rows: Array<Record<string, unknown>>) {
+  const response = await fetch(`${config.url}/rest/v1/${table}?on_conflict=anonymous_user_id,id`, {
+    method: 'POST',
+    headers: {
+      apikey: config.key,
+      Authorization: `Bearer ${config.key}`,
+      'Content-Type': 'application/json',
+      Prefer: 'resolution=merge-duplicates,return=minimal',
+    },
+    body: JSON.stringify(rows),
+  });
+  if (!response.ok) throw new Error(`upsert ${table} HTTP ${response.status}`);
+}
+
+/** Both the client record and the server write-back share createdAt
+ *  (= result.generated_at), so dedupe on it and prefer the record that
+ *  carries quality/userFeedback (the client-enriched copy). */
+function dedupeDecisionResults(results: DecisionResult[]): DecisionResult[] {
+  const byCreatedAt = new Map<string, DecisionResult>();
+  results.forEach((result) => {
+    const key = result.createdAt || result.id;
+    const existing = byCreatedAt.get(key);
+    if (!existing) {
+      byCreatedAt.set(key, result);
+      return;
+    }
+    const existingEnriched = !!(existing.userFeedback || existing.quality);
+    const candidateEnriched = !!(result.userFeedback || result.quality);
+    if (candidateEnriched && !existingEnriched) byCreatedAt.set(key, result);
+  });
+  return Array.from(byCreatedAt.values());
+}
+
+type ServerMemory = {
+  status: ServerMemoryStatus;
+  patternCount: number;
+  decisionCount: number;
+};
+
+/** Reads persisted memory and, when present, overrides the client-provided
+ *  pattern/decision fields on the model input. Falls back silently so a
+ *  missing table or Supabase outage never blocks a brief. */
+async function applyServerMemory(input: BriefBody, userId: string | undefined): Promise<ServerMemory> {
+  const config = supabaseConfig();
+  if (!config) return { status: 'not_configured', patternCount: 0, decisionCount: 0 };
+  if (!userId) return { status: 'skipped_no_user_id', patternCount: 0, decisionCount: 0 };
+  try {
+    const [patternRows, decisionRows] = await Promise.all([
+      supabaseSelect(config, 'pattern_memory', `anonymous_user_id=eq.${encodeURIComponent(userId)}&select=payload&limit=200`),
+      supabaseSelect(config, 'decision_results', `anonymous_user_id=eq.${encodeURIComponent(userId)}&select=payload&order=created_at.desc.nullslast&limit=100`),
+    ]);
+    const patterns = patternRows
+      .map((row) => row?.payload)
+      .filter((payload): payload is PatternMemory => !!payload && typeof payload === 'object' && !!payload.id && !!payload.label);
+    const decisions = dedupeDecisionResults(
+      decisionRows
+        .map((row) => row?.payload)
+        .filter((payload): payload is DecisionResult => !!payload && typeof payload === 'object' && !!payload.id)
+    );
+    if (patterns.length === 0 && decisions.length === 0) {
+      return { status: 'empty', patternCount: 0, decisionCount: 0 };
+    }
+    if (patterns.length > 0) {
+      const sanitized = sanitizePatternMemoryForPayload(patterns);
+      input.profile = {
+        ...input.profile,
+        confirmed_patterns: sanitized.confirmed_patterns,
+        pattern_candidates: sanitized.candidate_patterns,
+        pattern_memory_summary: sanitized.pattern_memory_summary,
+      };
+    }
+    if (decisions.length > 0) {
+      input.decision_memory_summary = buildDecisionMemorySummary(decisions);
+    }
+    return { status: 'applied', patternCount: patterns.length, decisionCount: decisions.length };
+  } catch (error: any) {
+    console.warn('[brief] server memory unavailable', error?.message || error);
+    return { status: 'unavailable', patternCount: 0, decisionCount: 0 };
+  }
+}
+
+/** Persists the generated brief server-side so Decision Memory accumulates
+ *  even if the client never syncs. Failures are logged, never fatal. */
+async function persistDecisionResult(
+  userId: string | undefined,
+  normalized: DecisionBriefResult,
+  mode: 'instant_micro' | 'daily_brief',
+  trigger: 'morning_push' | 'state_checkin' | 'manual' | 'debug',
+  model: string,
+) {
+  const config = supabaseConfig();
+  if (!config || !userId) return;
+  try {
+    const record = createDecisionResultRecord({
+      id: `srv-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+      result: normalized,
+      mode,
+      trigger,
+      source: 'ai',
+      meta: { service: 'ai', endpointOk: true, model },
+    });
+    await supabaseUpsert(config, 'decision_results', [{
+      anonymous_user_id: userId,
+      id: record.id,
+      created_at: record.createdAt,
+      mode: record.mode,
+      source: record.source,
+      payload: record,
+    }]);
+  } catch (error: any) {
+    console.warn('[brief] decision result write-back failed', error?.message || error);
+  }
 }
 
 function normalizeResult(value: any) {
@@ -197,17 +385,49 @@ export default async function handler(req: any, res: any) {
 
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
-    if (!validateInput(body)) return send(res, 400, { ok: false, error: 'invalid_input' });
+    const parsedInput = BriefInputSchema.safeParse(body);
+    if (!parsedInput.success) {
+      return send(res, 400, {
+        ok: false,
+        error: 'invalid_input',
+        issues: parsedInput.error.issues.slice(0, 10).map((issue) => ({
+          path: issue.path.join('.'),
+          message: issue.message,
+        })),
+      });
+    }
     const apiKey = process.env.DEEPSEEK_API_KEY;
     if (!apiKey) return send(res, 503, { ok: false, error: 'not_configured' });
 
+    // The anonymous user id keys the persisted memory; it is stripped from
+    // the model input so it never reaches DeepSeek.
+    const { anonymous_user_id: anonymousUserId, ...modelInput } = parsedInput.data as BriefBody;
+    const serverMemory = await applyServerMemory(modelInput, anonymousUserId);
+
     let lastError = 'invalid_json';
     for (let attempt = 0; attempt < 2; attempt += 1) {
-      const { content, finishReason, model } = await callDeepSeek(body, apiKey, attempt);
+      const { content, finishReason, model } = await callDeepSeek(modelInput, apiKey, attempt);
       const parsed = parseJson(content);
       const normalized = normalizeResult(parsed);
       if (normalized && finishReason !== 'length') {
-        return send(res, 200, { ok: true, result: normalized, meta: { model, finishReason } });
+        await persistDecisionResult(
+          anonymousUserId,
+          normalized as DecisionBriefResult,
+          modelInput.mode,
+          modelInput.trigger,
+          model,
+        );
+        return send(res, 200, {
+          ok: true,
+          result: normalized,
+          meta: {
+            model,
+            finishReason,
+            server_memory: serverMemory.status,
+            server_pattern_count: serverMemory.patternCount,
+            server_decision_count: serverMemory.decisionCount,
+          },
+        });
       }
       lastError = finishReason === 'length' ? 'finish_reason_length' : 'invalid_json';
     }

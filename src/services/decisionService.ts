@@ -1,5 +1,6 @@
 import { buildLegacyDecisionBrief } from '../utils/decisionBriefFallback';
 import { DecisionBriefInput, DecisionBriefResult, DecisionService } from '../utils/decisionTypes';
+import { getAnonymousUserId } from '../utils/analytics';
 
 const AI_ENABLED_KEY = 'questlife_decision_ai_enabled';
 const AI_SHADOW_KEY = 'questlife_decision_ai_shadow';
@@ -60,10 +61,12 @@ export class LegacyDecisionService implements DecisionService {
 
 export class AiDecisionService implements DecisionService {
   async buildBrief(input: DecisionBriefInput): Promise<DecisionBriefResult> {
+    // anonymous_user_id 让 /api/brief 能读取服务端持久化的 Pattern/Decision Memory.
+    const anonymousUserId = await getAnonymousUserId().catch(() => undefined);
     const response = await fetch('/api/brief', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(input),
+      body: JSON.stringify(anonymousUserId ? { ...input, anonymous_user_id: anonymousUserId } : input),
     });
     const json = await response.json().catch(() => null);
     if (!response.ok || !json?.ok || !json?.result) {
