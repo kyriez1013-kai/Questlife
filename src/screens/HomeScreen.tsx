@@ -2629,7 +2629,7 @@ export default function HomeScreen() {
         </DashboardCardShell>
         ) : null}
 
-        {todayCardVisible('rescue_strip') ? (
+        {todayCardVisible('rescue_strip') && unfinishedRescue ? (
         <DashboardCardShell {...todayDashboardShellProps('rescue_strip')}>
         <TouchableOpacity
           style={[styles.rescueStrip, {
@@ -2660,11 +2660,8 @@ export default function HomeScreen() {
         {/* ═══ ZONE 3: Today data — static execution sections ═ */}
         <View style={styles.dashboardFullRow}>
           <Text style={[styles.h1, { color: questTheme.colors.text }]}>{t(lang, 'today')}</Text>
-          <Text style={[styles.sub, { color: questTheme.colors.textMuted }]}> 
-            {todayStr} · {t(lang, 'todayInvested')} {todayMinutes} {t(lang, 'minutes')} · {todayLogs.length} {t(lang, 'logsToday')}
-          </Text>
-          <Text style={[styles.sub, { color: questTheme.colors.textMuted }]}> 
-            {t(lang, 'currentState')}: {stateSummaryLabel}{stateSummaryTime ? ` · ${stateSummaryTime}` : ''} · {t(lang, currentTimeBlock)}
+          <Text style={[styles.sub, { color: questTheme.colors.textMuted }]}>
+            {todayStr} · {t(lang, 'todayInvested')} {todayMinutes} {t(lang, 'minutes')} · {todayLogs.length} {t(lang, 'logsToday')} · {t(lang, currentTimeBlock)}
           </Text>
         </View>
 
@@ -3909,15 +3906,15 @@ const styles = StyleSheet.create({
   h1: { color: theme.text, fontSize: 34, fontWeight: '800' },
   h2: { color: theme.text, fontSize: 18, fontWeight: '600', marginTop: 14, marginBottom: 8 },
   sub: { color: theme.textDim, marginTop: 4 },
-  welcomeCard: { marginTop: 12, borderRadius: theme.radius.lg, padding: 14, borderWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 12, ...theme.shadow },
+  welcomeCard: { marginTop: 10, borderRadius: theme.radius.lg, padding: 12, borderWidth: 1, flexDirection: 'row', alignItems: 'center', gap: 12, ...theme.shadow },
   welcomeActions: { alignItems: 'flex-end', gap: 8 },
   compactBtn: { borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8 },
   compactBtnText: { fontSize: 12, fontWeight: '900' },
-  timerBar: { marginTop: 12, backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.lg, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10, ...theme.shadow },
+  timerBar: { marginTop: 10, backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border, borderRadius: theme.radius.lg, padding: 10, flexDirection: 'row', alignItems: 'center', gap: 10, ...theme.shadow },
   timerText: { color: theme.text, fontSize: 13, fontWeight: '900', flex: 1 },
   timerFinishBtn: { borderWidth: 1, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 7 },
   timerFinishText: { fontSize: 12, fontWeight: '900' },
-  modeRow: { gap: 8, paddingTop: 16, paddingBottom: 4 },
+  modeRow: { gap: 8, paddingTop: 12, paddingBottom: 4 },
   modeChip: {
     paddingHorizontal: 14,
     paddingVertical: 9,
@@ -3929,18 +3926,18 @@ const styles = StyleSheet.create({
   modeChipText: { color: theme.textDim, fontSize: 13, fontWeight: '700' },
   modeChipTextOn: { color: '#fff' },
   nowFocusCard: {
-    marginTop: 12,
+    marginTop: 10,
     backgroundColor: theme.card,
     borderRadius: theme.radius.lg,
-    padding: 16,
+    padding: 14,
     borderWidth: 1,
     borderColor: theme.border,
     ...theme.shadow,
   },
   nowFocusHeading: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  nowFocusIconShell: { width: 44, height: 44, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  nowFocusTitle: { color: theme.text, fontSize: 24, fontWeight: '900', lineHeight: 30 },
-  nowFocusActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
+  nowFocusIconShell: { width: 40, height: 40, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  nowFocusTitle: { color: theme.text, fontSize: 21, fontWeight: '900', lineHeight: 26 },
+  nowFocusActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   dailyBriefCard: { marginTop: 12, gap: 10 },
   dailyBriefHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   dailyBriefMetaRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
@@ -3980,24 +3977,24 @@ const styles = StyleSheet.create({
     marginTop: 8,
     backgroundColor: theme.card,
     borderRadius: theme.radius.lg,
-    padding: 14,
+    padding: 12,
     borderWidth: 1,
     borderColor: theme.border,
     ...theme.shadow,
   },
-  compactPlanRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, borderTopWidth: 1, borderTopColor: theme.border },
+  compactPlanRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, borderTopWidth: 1, borderTopColor: theme.border },
   compactPlanTitle: { color: theme.text, fontSize: 14, fontWeight: '900' },
   compactPlanMeta: { color: theme.textDim, fontSize: 11, fontWeight: '700', marginTop: 3 },
   stateCheckInCard: {
     marginTop: 8,
     backgroundColor: theme.card,
     borderRadius: theme.radius.lg,
-    padding: 14,
+    padding: 12,
     borderWidth: 1,
     borderColor: theme.border,
     ...theme.shadow,
   },
-  quickStateGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  quickStateGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
   quickStateBtn: { width: '18%', minWidth: 56, alignItems: 'center', backgroundColor: theme.cardAlt, borderRadius: 14, paddingVertical: 9 },
   stateToneDot: { width: 18, height: 18, borderRadius: 9, marginBottom: 5 },
   instantReadCard: { marginTop: 12, borderWidth: 1, borderRadius: theme.radius.md, padding: 12 },
@@ -4010,20 +4007,20 @@ const styles = StyleSheet.create({
   instantFeedbackBtn: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 5 },
   instantFeedbackText: { fontSize: 11, fontWeight: '900' },
   strategyCard: {
-    marginTop: 12,
+    marginTop: 10,
     backgroundColor: theme.card,
     borderRadius: theme.radius.lg,
-    padding: 16,
+    padding: 14,
     borderWidth: 1,
     borderColor: theme.border,
     ...theme.shadow,
   },
-  strategyKicker: { color: theme.textDim, fontSize: 11, fontWeight: '800', letterSpacing: 0.4, marginBottom: 8 },
-  strategyTitle: { color: theme.text, fontSize: 20, fontWeight: '800' },
-  strategyDesc: { color: theme.textDim, fontSize: 14, lineHeight: 21, marginTop: 6 },
+  strategyKicker: { color: theme.textDim, fontSize: 11, fontWeight: '800', letterSpacing: 0.4, marginBottom: 6 },
+  strategyTitle: { color: theme.text, fontSize: 18, fontWeight: '800' },
+  strategyDesc: { color: theme.textDim, fontSize: 14, lineHeight: 20, marginTop: 5 },
   minimumBox: {
-    marginTop: 14,
-    padding: 12,
+    marginTop: 10,
+    padding: 10,
     borderRadius: theme.radius.md,
     backgroundColor: theme.cardAlt,
   },
@@ -4112,7 +4109,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     backgroundColor: theme.card,
     borderRadius: theme.radius.lg,
-    padding: 16,
+    padding: 12,
     borderWidth: 1,
     borderColor: theme.border,
     ...theme.shadow,
@@ -4132,7 +4129,7 @@ const styles = StyleSheet.create({
   iconActionBtn: { width: 34, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: theme.border, backgroundColor: theme.card },
   iconActionText: { color: theme.text, fontSize: 14, fontWeight: '900' },
   statRow: { flexDirection: 'row', gap: 10, marginTop: 12 },
-  stat: { flex: 1, backgroundColor: theme.card, padding: 14, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
+  stat: { flex: 1, backgroundColor: theme.card, padding: 11, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
   statValue: { color: theme.primary, fontSize: 22, fontWeight: '700' },
   statLabel: { color: theme.textDim, fontSize: 12, marginTop: 2 },
   // 晨间状态横幅
@@ -4213,7 +4210,7 @@ const styles = StyleSheet.create({
   overChipText: { color: theme.success, fontSize: 11, fontWeight: '700' },
 
   // 今日记录
-  actionCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: theme.card, padding: 14, borderRadius: theme.radius.lg, marginBottom: 8, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
+  actionCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: theme.card, padding: 12, borderRadius: theme.radius.lg, marginBottom: 8, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
   dot: { width: 10, height: 10, borderRadius: 5 },
   actionTitle: { color: theme.text, fontSize: 15, fontWeight: '600' },
   actionNote: { color: theme.textDim, marginTop: 4, fontSize: 13 },

@@ -329,9 +329,11 @@ export default function DashboardCardShell({
 
 const styles = StyleSheet.create({
   touchShell: { width: '100%' },
-  tileSmall: { minHeight: 76 },
-  tileMedium: { minHeight: 118 },
-  tileLarge: { minHeight: 168 },
+  // minHeight 是地板值,内容更多时会自然撑高;这里只是降低"内容很少时"的强制留白下限,
+  // 不改变 size 的取值来源,因此不影响任何依赖 size==='large'/'small' 的条件分支。
+  tileSmall: { minHeight: 56 },
+  tileMedium: { minHeight: 84 },
+  tileLarge: { minHeight: 112 },
   tileEditing: { cursor: 'grab', userSelect: 'none', WebkitUserSelect: 'none' } as any,
   tileSelected: { cursor: 'grabbing' } as any,
   shell: {

@@ -731,7 +731,7 @@ const styles = StyleSheet.create({
   loopItem: { width: '31%', minWidth: 92, backgroundColor: theme.cardAlt, borderRadius: 10, padding: 10 },
   loopLabel: { color: theme.textDim, fontSize: 10, fontWeight: '800' },
   loopValue: { color: theme.text, fontSize: 14, fontWeight: '900', marginTop: 4 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 26, marginBottom: 12 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 20, marginBottom: 10 },
   h2: { color: theme.text, fontSize: 18, fontWeight: '700' },
   sectionSub: { color: theme.textDim, fontSize: 12, marginTop: 4 },
   criterionCard: { backgroundColor: theme.card, padding: 14, borderRadius: 14, marginBottom: 10, borderWidth: 1, borderColor: theme.border },

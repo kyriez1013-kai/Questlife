@@ -770,7 +770,7 @@ const monthStyles = StyleSheet.create({
 });
 
 const sectionStyles = StyleSheet.create({
-  title: { fontSize: 18, fontWeight: '800', marginTop: 22, marginBottom: 2 },
+  title: { fontSize: 18, fontWeight: '800', marginTop: 16, marginBottom: 2 },
 });
 
 const dashboardStyles = StyleSheet.create({

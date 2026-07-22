@@ -327,9 +327,20 @@ export default function SettingsScreen() {
           />
         </View>
 
+        {/* Reminders/Storage/Version 合并为一张"关于"卡的三行,内容不变,只减少三份重复的卡片外壳(padding/shadow/margin) */}
         <View style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, shadowColor: questTheme.colors.cardShadow }]}>
-          <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'reminders')}</Text>
-          <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>{t(lang, 'remindersText')}</Text>
+          <View style={styles.aboutRow}>
+            <Text style={[styles.label, styles.aboutLabel, { color: questTheme.colors.text }]}>{t(lang, 'reminders')}</Text>
+            <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>{t(lang, 'remindersText')}</Text>
+          </View>
+          <View style={[styles.aboutRow, styles.aboutRowDivider, { borderTopColor: questTheme.colors.border }]}>
+            <Text style={[styles.label, styles.aboutLabel, { color: questTheme.colors.text }]}>{t(lang, 'storage')}</Text>
+            <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>{t(lang, 'storageText')}</Text>
+          </View>
+          <View style={[styles.aboutRow, styles.aboutRowDivider, { borderTopColor: questTheme.colors.border }]}>
+            <Text style={[styles.label, styles.aboutLabel, { color: questTheme.colors.text }]}>{t(lang, 'version')}</Text>
+            <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>{t(lang, 'versionText')}</Text>
+          </View>
         </View>
 
         <View style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, shadowColor: questTheme.colors.cardShadow }]}>
@@ -341,11 +352,6 @@ export default function SettingsScreen() {
           >
             <Text style={[styles.debugBtnText, { color: accent }]}>{t(lang, 'restartOnboarding')}</Text>
           </TouchableOpacity>
-        </View>
-
-        <View style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, shadowColor: questTheme.colors.cardShadow }]}>
-          <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'storage')}</Text>
-          <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>{t(lang, 'storageText')}</Text>
         </View>
 
         {__DEV__ ? (
@@ -589,10 +595,6 @@ export default function SettingsScreen() {
           </View>
         ) : null}
 
-        <View style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, shadowColor: questTheme.colors.cardShadow }]}>
-          <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'version')}</Text>
-          <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>{t(lang, 'versionText')}</Text>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -603,9 +605,12 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.bg },
   h1: { color: theme.text, fontSize: 34, fontWeight: '800' },
   sub: { color: theme.textDim, marginTop: 4, marginBottom: 18 },
-  card: { backgroundColor: theme.card, padding: 18, borderRadius: theme.radius.lg, marginBottom: 12, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
+  card: { backgroundColor: theme.card, padding: 16, borderRadius: theme.radius.lg, marginBottom: 12, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
   label: { color: theme.text, fontSize: 16, fontWeight: '800', marginBottom: 8 },
   value: { color: theme.textDim, fontSize: 13, lineHeight: 20 },
+  aboutRow: { paddingVertical: 2 },
+  aboutRowDivider: { borderTopWidth: 1, marginTop: 10, paddingTop: 10 },
+  aboutLabel: { fontSize: 14, marginBottom: 4 },
   colorPreviewRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 14, marginBottom: 14 },
   colorPreview: { width: 34, height: 34, borderRadius: 17 },
   colorValue: { fontSize: 13, fontWeight: '800' },

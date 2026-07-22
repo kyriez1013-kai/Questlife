@@ -1199,8 +1199,8 @@ const styles = StyleSheet.create({
   decisionMetric: { width: '23.5%', minWidth: 120, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 },
   decisionValue: { fontSize: 20, fontWeight: '900' },
   decisionLabel: { fontSize: 11, fontWeight: '800', marginTop: 3 },
-  statRow: { flexDirection: 'row', gap: 10, marginTop: 16 },
-  stat: { flex: 1, backgroundColor: theme.card, padding: 14, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
+  statRow: { flexDirection: 'row', gap: 10, marginTop: 12 },
+  stat: { flex: 1, backgroundColor: theme.card, padding: 11, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
   statValue: { fontSize: 22, fontWeight: '800' },
   statLabel: { color: theme.textDim, fontSize: 12, marginTop: 2 },
   instantGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
@@ -1210,7 +1210,7 @@ const styles = StyleSheet.create({
   encourageCard: { marginTop: 8, backgroundColor: theme.card, padding: 14, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
   encourageBarBg: { height: 8, backgroundColor: theme.cardAlt, borderRadius: 4, overflow: 'hidden', marginTop: 10 },
   encourageBarFg: { height: '100%', borderRadius: 4 },
-  loopCard: { marginTop: 16, backgroundColor: theme.card, padding: 16, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
+  loopCard: { marginTop: 12, backgroundColor: theme.card, padding: 14, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
   h2Inline: { color: theme.text, fontSize: 18, fontWeight: '800' },
   loopGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   loopStat: { width: '31%', minWidth: 92, backgroundColor: theme.cardAlt, borderRadius: 10, padding: 10 },
@@ -1221,7 +1221,7 @@ const styles = StyleSheet.create({
   empty: { color: theme.textDim, fontStyle: 'italic', backgroundColor: theme.card, padding: 14, borderRadius: theme.radius.md },
 
   // 本周平均状态
-  qCard: { backgroundColor: theme.card, padding: 20, borderRadius: theme.radius.lg, alignItems: 'center', borderWidth: 1, borderColor: theme.border, ...theme.shadow },
+  qCard: { backgroundColor: theme.card, padding: 14, borderRadius: theme.radius.lg, alignItems: 'center', borderWidth: 1, borderColor: theme.border, ...theme.shadow },
   qBig: { color: theme.text, fontSize: 36, fontWeight: '700' },
   qOf: { color: theme.textDim, fontSize: 18, fontWeight: '500' },
   qEmoji: { fontSize: 32 },

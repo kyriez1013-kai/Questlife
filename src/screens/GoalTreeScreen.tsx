@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
   emptyBox: { backgroundColor: theme.card, padding: 20, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
   emptyTitle: { color: theme.text, fontSize: 16, fontWeight: '600' },
   emptyDesc: { color: theme.textDim, marginTop: 8, lineHeight: 22 },
-  card: { flexDirection: 'row', backgroundColor: theme.card, padding: 16, borderRadius: theme.radius.lg, marginBottom: 10, alignItems: 'center', gap: 14, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
+  card: { flexDirection: 'row', backgroundColor: theme.card, padding: 13, borderRadius: theme.radius.lg, marginBottom: 8, alignItems: 'center', gap: 12, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
   iconBox: { width: 52, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.cardAlt },
   name: { color: theme.text, fontSize: 17, fontWeight: '600' },
   desc: { color: theme.textDim, fontSize: 12, marginTop: 4 },
