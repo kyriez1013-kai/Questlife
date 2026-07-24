@@ -21,7 +21,7 @@ import QuestEmptyState from '../components/ui/QuestEmptyState';
 import QuestEntityIcon from '../components/ui/QuestEntityIcon';
 import QuestIcon from '../components/ui/QuestIcon';
 import { confirmAction } from '../utils/confirm';
-import { QuestScreenHeader } from '../components/ui/QuestPrimitives';
+import { QuestContextBar } from '../components/ui/QuestPrimitives';
 
 export default function GoalTreeScreen() {
   const { data, deleteCategory } = useStore();
@@ -70,10 +70,10 @@ export default function GoalTreeScreen() {
           alignSelf: 'center',
         }}
       >
-        <QuestScreenHeader
+        <QuestContextBar
           questTheme={questTheme}
-          title={t(lang, 'quest')}
-          subtitle={t(lang, 'questSubtitle')}
+          primary={`${data.categories.length} ${t(lang, 'quest')} · ${data.skills.length} ${t(lang, 'skillCount')}`}
+          secondary={t(lang, 'questSubtitle')}
           trailing={<View style={styles.headerActions}>
             <QuestButton questTheme={questTheme} variant="ghost" icon="library" label={t(lang, 'skillLibrary')} onPress={() => nav.navigate('SkillLibrary')} />
             <QuestButton questTheme={questTheme} variant="primary" icon="plus" label={t(lang, 'addQuest')} onPress={() => setCreating(true)} />

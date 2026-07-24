@@ -18,7 +18,6 @@ import { evaluateDecisionBriefQuality } from '../utils/decisionQuality';
 import { auditDecisionPayload, diagnoseDecisionOutput } from '../utils/decisionRealityAudit';
 import { buildDecisionMemorySummary, compactDecisionResults } from '../utils/decisionMemory';
 import { buildPatternMemorySummary, derivePatternCandidates, mergePatternCandidates, sanitizePatternMemoryForPayload } from '../utils/patternMemory';
-import { QuestScreenHeader } from '../components/ui/QuestPrimitives';
 
 export default function SettingsScreen() {
   const { data, setSettings, runIntegrityCheck, repairSafeIntegrityIssues, rebuildDerivedData, mergePatternMemoryCandidates, updatePatternMemoryStatus } = useStore();
@@ -265,12 +264,6 @@ export default function SettingsScreen() {
           alignSelf: 'center',
         }}
       >
-        <QuestScreenHeader
-          questTheme={questTheme}
-          title={t(lang, 'settings')}
-          subtitle={t(lang, 'settingsSubtitle')}
-        />
-
         <View style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, shadowColor: questTheme.colors.cardShadow }]}>
           <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'language')}</Text>
           <View style={styles.languageRow}>

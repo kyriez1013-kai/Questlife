@@ -17,11 +17,12 @@ export function QuestScreenHeader({ title, subtitle, trailing, questTheme, style
   const q = questTheme ?? getQuestTheme();
   return (
     <View style={[{
+      minHeight: 44,
       flexDirection: 'row',
-      alignItems: 'flex-start',
+      alignItems: 'center',
       justifyContent: 'space-between',
       gap: q.spacing.md,
-      marginBottom: q.spacing.tight,
+      marginBottom: q.spacing.sm,
     }, style]}>
       <View style={{ flex: 1 }}>
         <Text style={{
@@ -40,6 +41,55 @@ export function QuestScreenHeader({ title, subtitle, trailing, questTheme, style
             marginTop: q.spacing.xs,
           }}>
             {subtitle}
+          </Text>
+        ) : null}
+      </View>
+      {trailing}
+    </View>
+  );
+}
+
+type ContextBarProps = ThemeProps & {
+  primary: string;
+  secondary?: string;
+  trailing?: React.ReactNode;
+  style?: ViewStyle | ViewStyle[];
+};
+
+export function QuestContextBar({ primary, secondary, trailing, questTheme, style }: ContextBarProps) {
+  const q = questTheme ?? getQuestTheme();
+  return (
+    <View style={[{
+      minHeight: 48,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: q.spacing.sm,
+      marginBottom: q.spacing.sm,
+    }, style]}>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text
+          numberOfLines={1}
+          style={{
+            color: q.colors.text,
+            fontSize: q.typography.titleSize,
+            lineHeight: q.typography.titleLineHeight,
+            fontWeight: q.typography.weightBold,
+          }}
+        >
+          {primary}
+        </Text>
+        {secondary ? (
+          <Text
+            numberOfLines={1}
+            style={{
+              color: q.colors.textMuted,
+              fontSize: q.typography.metaSize,
+              lineHeight: q.typography.metaLineHeight,
+              marginTop: q.spacing.xs,
+            }}
+          >
+            {secondary}
           </Text>
         ) : null}
       </View>

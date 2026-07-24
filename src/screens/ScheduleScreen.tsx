@@ -17,7 +17,7 @@ import { getSkillSemanticIcon } from '../design/entityIcons';
 import { isStrengthPredictionSkill, strengthVolume } from '../utils/prediction';
 import QuestButton from '../components/ui/QuestButton';
 import QuestCard from '../components/ui/QuestCard';
-import { QuestScreenHeader } from '../components/ui/QuestPrimitives';
+import { QuestContextBar } from '../components/ui/QuestPrimitives';
 import QuestEntityIcon from '../components/ui/QuestEntityIcon';
 import QuestIcon from '../components/ui/QuestIcon';
 import QuestInput from '../components/ui/QuestInput';
@@ -325,10 +325,10 @@ export default function ScheduleScreen() {
           alignSelf: 'center',
         }}
       >
-        <QuestScreenHeader
+        <QuestContextBar
           questTheme={questTheme}
-          title={t(lang, 'schedule')}
-          subtitle={t(lang, 'scheduleSubtitle')}
+          primary={dateWithWeekday(selectedDate, lang)}
+          secondary={t(lang, 'scheduleSubtitle')}
           trailing={<QuestButton questTheme={questTheme} variant="primary" icon="plus" label={t(lang, 'addBlock')} onPress={() => setOpen(true)} />}
         />
 

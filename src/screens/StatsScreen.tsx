@@ -29,7 +29,7 @@ import { buildObjectiveContextBrief, ObjectiveContextBrief } from '../utils/obje
 import DashboardCardShell from '../components/dashboard/DashboardCardShell';
 import {
   QuestGroupedSurface,
-  QuestScreenHeader,
+  QuestContextBar,
   QuestSectionHeader,
 } from '../components/ui/QuestPrimitives';
 
@@ -469,10 +469,10 @@ export default function StatsScreen() {
           alignSelf: 'center',
         }}
       >
-        <QuestScreenHeader
+        <QuestContextBar
           questTheme={questTheme}
-          title={t(lang, 'insights')}
-          subtitle={`${t(lang, 'dashboardSummary')} · ${logs.length} ${t(lang, 'logsToday')} · ${activeDays} ${t(lang, 'activeDays')} · ${t(lang, 'last7Days')}`}
+          primary={t(lang, 'last7Days')}
+          secondary={`${logs.length} ${t(lang, 'logsToday')} · ${activeDays} ${t(lang, 'activeDays')}`}
           trailing={<View style={[styles.dataHealthPill, { borderColor: dataHealthColor, backgroundColor: dataHealthColor + '22' }]}>
             <Text style={[styles.dataHealthText, { color: dataHealthColor }]}>{t(lang, 'dataHealth')}: {t(lang, dataHealthLabelKey)}</Text>
           </View>}
