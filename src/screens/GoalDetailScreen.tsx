@@ -380,7 +380,7 @@ export default function GoalDetailScreen() {
           })
         )}
 
-        {suggestedModules.length > 0 ? (
+        {missingSuggestedModules.length > 0 ? (
           <QuestCard questTheme={questTheme} variant="data" style={[styles.suggestedCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong, borderLeftWidth: 3, borderLeftColor: questTheme.colors.accent }]} className="suggested-modules-card">
             <View style={styles.cardTitleRow}>
               <QuestIcon name={systemIcons.suggestedModules} size={18} color={questTheme.colors.primary} />
@@ -397,8 +397,7 @@ export default function GoalDetailScreen() {
               icon="plus"
               label={t(lang, 'addSuggestedModules')}
               onPress={addSuggestedModules}
-              disabled={missingSuggestedModules.length === 0}
-              style={{ marginTop: 14, opacity: missingSuggestedModules.length === 0 ? 0.45 : 1 }}
+              style={{ marginTop: 14 }}
             />
           </QuestCard>
         ) : null}

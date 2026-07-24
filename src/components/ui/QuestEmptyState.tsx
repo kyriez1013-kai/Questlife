@@ -17,12 +17,26 @@ export default function QuestEmptyState({ title, body, icon = 'target', questThe
   const soft = getSurfaceStyle(q, 'soft');
   const EmptyView = View as any;
   return (
-    <EmptyView className="empty-state" style={{ ...surface, borderWidth: 1, borderStyle: 'dashed', borderRadius: q.radius.lg, padding: q.spacing.xl, alignItems: 'center' }}>
-      <View style={{ width: 44, height: 44, borderRadius: 16, backgroundColor: soft.backgroundColor, alignItems: 'center', justifyContent: 'center', marginBottom: q.spacing.md }}>
-        <QuestIcon name={icon} size={22} color={q.colors.primary} />
+    <EmptyView
+      className="empty-state"
+      style={{
+        ...surface,
+        borderWidth: 1,
+        borderStyle: 'dashed',
+        borderRadius: q.radius.md,
+        padding: q.spacing.md,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: q.spacing.sm,
+      }}
+    >
+      <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: soft.backgroundColor, alignItems: 'center', justifyContent: 'center' }}>
+        <QuestIcon name={icon} size={18} color={q.colors.primary} />
       </View>
-      <Text style={{ color: q.colors.text, fontSize: 16, fontWeight: '800', textAlign: 'center' }}>{title}</Text>
-      {body ? <Text style={{ color: q.colors.textMuted, fontSize: 13, lineHeight: 20, textAlign: 'center', marginTop: q.spacing.sm }}>{body}</Text> : null}
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: q.colors.text, fontSize: q.typography.cardTitleSize, lineHeight: q.typography.cardTitleLineHeight, fontWeight: '800' }}>{title}</Text>
+        {body ? <Text style={{ color: q.colors.textMuted, fontSize: q.typography.helperSize, lineHeight: q.typography.helperLineHeight, marginTop: q.spacing.xs }}>{body}</Text> : null}
+      </View>
     </EmptyView>
   );
 }
