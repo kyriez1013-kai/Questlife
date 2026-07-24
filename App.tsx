@@ -2,10 +2,10 @@ import 'react-native-gesture-handler';
 import './src/styles/theme-overrides.css';
 import React, { useEffect, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, useIsFocused } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Text, View, ActivityIndicator } from 'react-native';
+import { Text, View, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StoreProvider, useStore } from './src/store';
 import { getLanguage, t } from './src/i18n';
@@ -29,6 +29,23 @@ import { auditDataResidue, isDataResidueDebugEnabled } from './src/utils/dataRes
 const Tab = createBottomTabNavigator();
 const SkillsStack = createNativeStackNavigator();
 const GoalsStack = createNativeStackNavigator();
+
+function FocusedTabSurface({ children, backgroundColor }: { children: React.ReactNode; backgroundColor: string }) {
+  const focused = useIsFocused();
+
+  return (
+    <View
+      pointerEvents={focused ? 'auto' : 'none'}
+      style={{
+        flex: 1,
+        display: focused ? 'flex' : 'none',
+        backgroundColor,
+      }}
+    >
+      {children}
+    </View>
+  );
+}
 
 function TabIcon({ name, focused, color }: { name: QuestIconName; focused: boolean; color: string }) {
   return (
@@ -171,8 +188,15 @@ function AppContent() {
     <RootView {...rootProps} style={rootStyle}>
       <NavigationContainer theme={navTheme}>
         <Tab.Navigator
+          detachInactiveScreens={Platform.OS !== 'web'}
           screenOptions={{
             headerShown: false,
+            lazy: true,
+            freezeOnBlur: true,
+            sceneStyle: {
+              backgroundColor: questTheme.colors.background,
+              overflow: 'hidden',
+            },
             tabBarActiveTintColor: questTheme.colors.navActive,
             tabBarInactiveTintColor: questTheme.colors.navInactive,
             tabBarStyle: {
@@ -198,16 +222,41 @@ function AppContent() {
             tabBarLabelStyle: { fontSize: 10, fontWeight: '700' },
           }}
         >
-          <Tab.Screen name="Today" component={HomeScreen}
-            options={{ tabBarLabel: t(lang, 'today'), tabBarIcon: ({ focused, color }) => <TabIcon name="home" focused={focused} color={color} /> }} />
-          <Tab.Screen name="Quest" component={GoalsTabStack}
-            options={{ tabBarLabel: t(lang, 'quest'), tabBarIcon: ({ focused, color }) => <TabIcon name="target" focused={focused} color={color} /> }} />
-          <Tab.Screen name="Schedule" component={ScheduleScreen}
-            options={{ tabBarLabel: t(lang, 'schedule'), tabBarIcon: ({ focused, color }) => <TabIcon name="calendar" focused={focused} color={color} /> }} />
-          <Tab.Screen name="Insights" component={StatsScreen}
-            options={{ tabBarLabel: t(lang, 'insights'), tabBarIcon: ({ focused, color }) => <TabIcon name="barChart" focused={focused} color={color} /> }} />
-          <Tab.Screen name="Settings" component={SettingsScreen}
-            options={{ tabBarLabel: t(lang, 'settings'), tabBarIcon: ({ focused, color }) => <TabIcon name="settings" focused={focused} color={color} /> }} />
+          <Tab.Screen name="Today" options={{ tabBarLabel: t(lang, 'today'), tabBarIcon: ({ focused, color }) => <TabIcon name="home" focused={focused} color={color} /> }}>
+            {() => (
+              <FocusedTabSurface backgroundColor={questTheme.colors.background}>
+                <HomeScreen />
+              </FocusedTabSurface>
+            )}
+          </Tab.Screen>
+          <Tab.Screen name="Quest" options={{ popToTopOnBlur: true, tabBarLabel: t(lang, 'quest'), tabBarIcon: ({ focused, color }) => <TabIcon name="target" focused={focused} color={color} /> }}>
+            {() => (
+              <FocusedTabSurface backgroundColor={questTheme.colors.background}>
+                <GoalsTabStack />
+              </FocusedTabSurface>
+            )}
+          </Tab.Screen>
+          <Tab.Screen name="Schedule" options={{ tabBarLabel: t(lang, 'schedule'), tabBarIcon: ({ focused, color }) => <TabIcon name="calendar" focused={focused} color={color} /> }}>
+            {() => (
+              <FocusedTabSurface backgroundColor={questTheme.colors.background}>
+                <ScheduleScreen />
+              </FocusedTabSurface>
+            )}
+          </Tab.Screen>
+          <Tab.Screen name="Insights" options={{ tabBarLabel: t(lang, 'insights'), tabBarIcon: ({ focused, color }) => <TabIcon name="barChart" focused={focused} color={color} /> }}>
+            {() => (
+              <FocusedTabSurface backgroundColor={questTheme.colors.background}>
+                <StatsScreen />
+              </FocusedTabSurface>
+            )}
+          </Tab.Screen>
+          <Tab.Screen name="Settings" options={{ tabBarLabel: t(lang, 'settings'), tabBarIcon: ({ focused, color }) => <TabIcon name="settings" focused={focused} color={color} /> }}>
+            {() => (
+              <FocusedTabSurface backgroundColor={questTheme.colors.background}>
+                <SettingsScreen />
+              </FocusedTabSurface>
+            )}
+          </Tab.Screen>
         </Tab.Navigator>
       </NavigationContainer>
     </RootView>
