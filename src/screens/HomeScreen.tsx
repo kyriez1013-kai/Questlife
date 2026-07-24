@@ -2042,7 +2042,7 @@ export default function HomeScreen() {
     borderColor: questTheme.colors.border,
     color: questTheme.colors.text,
   };
-  const todayCardVisible = useCallback((_cardId: string) => true, []);
+  const todayCardVisible = useCallback((cardId: string) => !['body_context', 'detailed_data'].includes(cardId), []);
   const todayCardSize = useCallback((cardId: keyof typeof FIXED_TODAY_CARD_SIZES) => FIXED_TODAY_CARD_SIZES[cardId], []);
   const todayCardWrapperStyle = useCallback((cardId: keyof typeof FIXED_TODAY_CARD_SIZES) => {
     const size = FIXED_TODAY_CARD_SIZES[cardId];
@@ -2136,6 +2136,20 @@ export default function HomeScreen() {
             />
           </View>
 
+          <View style={[styles.dailyBriefCompactAction, { backgroundColor: questTheme.colors.surfaceSoft }]}>
+            <QuestIcon name="zap" size={15} color={questTheme.colors.primary} />
+            <Text style={[styles.dailyBriefCompactActionText, { color: questTheme.colors.text }]} numberOfLines={2}>
+              {dailyDecisionBrief?.prescription?.do_first?.step || formatCommandCopy(dailyOperatingBrief.firstActionKey, dailyOperatingBrief.firstActionValues)}
+            </Text>
+            {typeof dailyDecisionBrief?.prescription?.do_first?.duration_min === 'number' ? (
+              <Text style={[styles.dailyBriefCompactDuration, { color: questTheme.colors.primary }]}>
+                {String(dailyDecisionBrief.prescription.do_first.duration_min) + t(lang, 'minutesShort')}
+              </Text>
+            ) : null}
+          </View>
+
+          {showDailyBriefEvidence ? (
+          <>
           <View style={styles.dailyBriefMetaRow}>
             <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}> 
               {t(lang, 'readiness')}: {dailyDecisionBrief?.readiness?.score == null ? t(lang, 'readinessUnknown') : Math.round(dailyDecisionBrief.readiness.score)}
@@ -2439,6 +2453,18 @@ export default function HomeScreen() {
               ) : null}
             </View>
           ) : null}
+          </>
+          ) : null}
+          {!showDailyBriefEvidence ? (
+            <TouchableOpacity
+              onPress={() => setShowDailyBriefEvidence(true)}
+              style={styles.dailyBriefCompactDisclosure}
+            >
+              <Text style={[styles.dailyBriefRefreshText, { color: questTheme.colors.primary }]}>
+                {t(lang, 'viewEvidence')}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
         </QuestCard>
         </DashboardCardShell>
         ) : null}
@@ -2543,7 +2569,11 @@ export default function HomeScreen() {
         {/* ═══ ZONE 2: Now Focus — timer if active, else top-priority action ═ */}
         {todayCardVisible('recent_feedback') ? (
         <DashboardCardShell {...todayDashboardShellProps('recent_feedback')}>
-        {recentFeedbackDashboardSize !== 'small' && data.settings.firstQuestCreated && !data.settings.firstSystemWelcomeDismissed ? (
+        {recentFeedbackDashboardSize !== 'small'
+          && data.categories.length === 0
+          && (data.executionLogs || []).length === 0
+          && data.settings.firstQuestCreated
+          && !data.settings.firstSystemWelcomeDismissed ? (
           <View style={[styles.welcomeCard, themedCard]}>
             <View style={{ flex: 1 }}>
               <Text style={[styles.actionTitle, { color: questTheme.colors.text }]}>{t(lang, 'firstSystemReady')}</Text>
@@ -2681,7 +2711,7 @@ export default function HomeScreen() {
         <DashboardCardShell {...todayDashboardShellProps('today_plan')}>
         <View style={[styles.compactPlanCard, themedCard]}>
           <Text style={[styles.planTitle, { color: questTheme.colors.text }]}>{t(lang, 'todayPlan')}</Text>
-          {(todayScheduleBlocks.length > 0 ? todayScheduleBlocks : data.skills).map((item: any) => {
+          {(todayScheduleBlocks.length > 0 ? todayScheduleBlocks : data.skills).slice(0, 3).map((item: any) => {
             const isBlock = !!item.startTime;
             const skill = isBlock
               ? (item.linkedSkillId ? data.skills.find((s) => s.id === item.linkedSkillId) : undefined)
@@ -2719,6 +2749,13 @@ export default function HomeScreen() {
               </View>
             );
           })}
+          {(todayScheduleBlocks.length > 0 ? todayScheduleBlocks : data.skills).length > 3 ? (
+            <TouchableOpacity style={styles.compactPlanMore} onPress={goToGoals}>
+              <Text style={[styles.compactPlanMeta, { color: questTheme.colors.primary }]}>
+                {t(lang, 'more')} · {(todayScheduleBlocks.length > 0 ? todayScheduleBlocks : data.skills).length - 3}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
         </DashboardCardShell>
         ) : null}
@@ -3954,6 +3991,10 @@ const styles = StyleSheet.create({
   dailyBriefHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   dailyBriefMetaRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
   dailyBriefTitle: { fontSize: 16, fontWeight: '900', lineHeight: 21, marginTop: 1 },
+  dailyBriefCompactAction: { minHeight: 42, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  dailyBriefCompactActionText: { flex: 1, fontSize: 13, lineHeight: 18, fontWeight: '800' },
+  dailyBriefCompactDuration: { fontSize: 11, fontWeight: '900' },
+  dailyBriefCompactDisclosure: { alignSelf: 'flex-start', paddingVertical: 3, paddingHorizontal: 2 },
   dailyBriefAction: { borderWidth: 0, borderRadius: 12, padding: 8, flexDirection: 'row', alignItems: 'center', gap: 8 },
   dailyBriefActionText: { fontSize: 13, fontWeight: '900', lineHeight: 18 },
   dailyBriefMeta: { fontSize: 11, fontWeight: '800', lineHeight: 16 },
@@ -3996,6 +4037,7 @@ const styles = StyleSheet.create({
     ...theme.shadow,
   },
   compactPlanRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, borderTopWidth: 1, borderTopColor: theme.border },
+  compactPlanMore: { alignItems: 'center', paddingTop: 9, paddingBottom: 2 },
   compactPlanTitle: { color: theme.text, fontSize: 14, fontWeight: '900' },
   compactPlanMeta: { color: theme.textDim, fontSize: 11, fontWeight: '700', marginTop: 3 },
   stateCheckInCard: {

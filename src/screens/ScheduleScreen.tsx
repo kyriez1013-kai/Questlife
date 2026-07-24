@@ -342,15 +342,12 @@ export default function ScheduleScreen() {
 
         {view === 'day' ? (
           <>
-            <Text style={[styles.dateTitle, { color: questTheme.colors.text }]}>{t(lang, 'selectDate')} · {dateWithWeekday(selectedDate, lang)}</Text>
             <QuestCard questTheme={questTheme} variant="hero" style={[styles.nowNextCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.border }]} className="schedule-card current-next-card">
-              <Text style={[styles.nowNextKicker, { color: questTheme.colors.textMuted }]}>{t(lang, 'nowNext')}</Text>
               <View style={styles.nowNextRow}>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.nowNextLabel, { color: questTheme.colors.textMuted }]}>
-                    {t(lang, 'currentTime')} · {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  <Text style={[styles.nowNextKicker, { color: questTheme.colors.textMuted }]}>
+                    {t(lang, 'nowNext')} · {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </Text>
-                  <Text style={[styles.nowNextLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'currentSlot')}</Text>
                   <Text style={[styles.nowNextMain, { color: questTheme.colors.text }]}>
                     {nowInfo.active
                       ? `${nowInfo.active.title} · ${nowInfo.active.startTime}-${nowInfo.active.endTime}`
@@ -361,7 +358,7 @@ export default function ScheduleScreen() {
                   <QuestButton questTheme={questTheme} variant="secondary" icon="activity" label={t(lang, 'jumpToNow')} onPress={jumpToNow} />
                 ) : null}
               </View>
-              <Text style={[styles.nowNextSub, { color: questTheme.colors.textMuted }]}>
+              <Text style={[styles.nowNextSub, { color: questTheme.colors.textMuted }]} numberOfLines={1}>
                 {t(lang, 'nextBlock')}: {nowInfo.next ? `${nowInfo.next.title} · ${nowInfo.next.startTime}-${nowInfo.next.endTime}` : t(lang, 'noneBlock')}
               </Text>
             </QuestCard>
@@ -670,17 +667,17 @@ const styles = StyleSheet.create({
   sub: { color: theme.textDim, marginTop: 4, maxWidth: 230 },
   addBtn: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: theme.radius.md, ...theme.shadow },
   addBtnText: { color: '#fff', fontWeight: '800', fontSize: 12 },
-  switcher: { flexDirection: 'row', backgroundColor: theme.cardAlt, borderRadius: theme.radius.md, padding: 4, marginTop: 18 },
-  switchBtn: { flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center' },
+  switcher: { flexDirection: 'row', backgroundColor: theme.cardAlt, borderRadius: theme.radius.md, padding: 3, marginTop: 2, marginBottom: 8 },
+  switchBtn: { flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center' },
   switchText: { color: theme.textDim, fontWeight: '800' },
   switchTextOn: { color: '#fff' },
   dateTitle: { color: theme.text, fontSize: 18, fontWeight: '800', marginTop: 16, marginBottom: 10 },
-  nowNextCard: { backgroundColor: theme.card, borderRadius: theme.radius.lg, padding: 14, borderWidth: 1, borderColor: theme.border, marginBottom: 12, ...theme.shadow },
-  nowNextKicker: { color: theme.textDim, fontSize: 11, fontWeight: '900', textTransform: 'uppercase', marginBottom: 8 },
+  nowNextCard: { minHeight: 82, backgroundColor: theme.card, borderRadius: theme.radius.lg, paddingHorizontal: 11, paddingVertical: 9, borderWidth: 1, borderColor: theme.border, marginBottom: 8 },
+  nowNextKicker: { color: theme.textDim, fontSize: 11, fontWeight: '900', marginBottom: 2 },
   nowNextRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   nowNextLabel: { color: theme.textDim, fontSize: 12, fontWeight: '800' },
-  nowNextMain: { color: theme.text, fontSize: 15, fontWeight: '800', lineHeight: 21, marginTop: 2 },
-  nowNextSub: { color: theme.textDim, fontSize: 12, fontWeight: '700', marginTop: 10 },
+  nowNextMain: { color: theme.text, fontSize: 14, fontWeight: '800', lineHeight: 19, marginTop: 1 },
+  nowNextSub: { color: theme.textDim, fontSize: 11, fontWeight: '700', marginTop: 5 },
   jumpBtn: { borderWidth: 1, borderRadius: 16, paddingHorizontal: 10, paddingVertical: 7 },
   jumpText: { fontSize: 12, fontWeight: '900' },
   empty: { color: theme.textDim, backgroundColor: theme.card, borderRadius: theme.radius.lg, padding: 14, borderWidth: 1, borderColor: theme.border, ...theme.shadow },

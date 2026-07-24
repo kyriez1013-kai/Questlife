@@ -19,7 +19,6 @@ import QuestButton from '../components/ui/QuestButton';
 import QuestCard from '../components/ui/QuestCard';
 import QuestEmptyState from '../components/ui/QuestEmptyState';
 import QuestEntityIcon from '../components/ui/QuestEntityIcon';
-import QuestIcon from '../components/ui/QuestIcon';
 import { confirmAction } from '../utils/confirm';
 import { QuestContextBar } from '../components/ui/QuestPrimitives';
 
@@ -95,10 +94,9 @@ export default function GoalTreeScreen() {
             >
               <QuestCard
                 questTheme={questTheme}
-                variant="action"
+                variant="flat"
                 style={[styles.card, {
-                  backgroundColor: questTheme.colors.surfaceElevated,
-                  borderColor: questTheme.colors.borderStrong,
+                  backgroundColor: questTheme.colors.surface,
                   borderLeftWidth: 3,
                   borderLeftColor: c.color ?? accent,
                 }]}
@@ -117,9 +115,8 @@ export default function GoalTreeScreen() {
                   }}
                   style={[styles.deleteBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}
                 >
-                  <Text style={[styles.deleteBtnText, { color: questTheme.colors.textMuted }]}>×</Text>
+                  <Text style={[styles.deleteBtnText, { color: questTheme.colors.textMuted }]}>•••</Text>
                 </TouchableOpacity>
-                <QuestIcon name="target" size={18} color={questTheme.colors.textSubtle} />
               </QuestCard>
             </TouchableOpacity>
           );
@@ -146,12 +143,12 @@ const styles = StyleSheet.create({
   emptyBox: { backgroundColor: theme.card, padding: 14, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
   emptyTitle: { color: theme.text, fontSize: 16, fontWeight: '600' },
   emptyDesc: { color: theme.textDim, marginTop: 8, lineHeight: 22 },
-  card: { flexDirection: 'row', backgroundColor: theme.card, padding: 12, borderRadius: theme.radius.lg, marginBottom: 6, alignItems: 'center', gap: 10, borderWidth: 1, borderColor: theme.border },
+  card: { minHeight: 78, flexDirection: 'row', backgroundColor: theme.card, paddingHorizontal: 10, paddingVertical: 9, borderRadius: theme.radius.lg, marginBottom: 5, alignItems: 'center', gap: 10, borderWidth: 0 },
   iconBox: { width: 52, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.cardAlt },
   name: { color: theme.text, fontSize: 17, fontWeight: '600' },
   desc: { color: theme.textDim, fontSize: 12, marginTop: 4 },
   meta: { color: theme.accent, fontSize: 11, marginTop: 4 },
-  deleteBtn: { width: 30, height: 30, borderRadius: 15, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  deleteBtnText: { fontSize: 17, fontWeight: '900', lineHeight: 20 },
+  deleteBtn: { width: 32, height: 32, borderRadius: 12, borderWidth: 0, alignItems: 'center', justifyContent: 'center' },
+  deleteBtnText: { fontSize: 13, fontWeight: '900', lineHeight: 18, letterSpacing: 0 },
   chev: { color: theme.textDim, fontSize: 24 },
 });
