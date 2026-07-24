@@ -274,6 +274,23 @@ export function AbilityRadarCard({ result, questTheme, lang, isExpanded, onToggl
     ieRadarResilience: 'recoveryPowerMeaning',
   };
 
+  if (isBaseline) {
+    return (
+      <QuestCard questTheme={questTheme} variant="flat" style={{ marginTop: questTheme.spacing.sm }}>
+        <CardTitle
+          titleKey="ieAbilityRadar"
+          isBaseline
+          questTheme={questTheme}
+          lang={lang}
+          prominent
+        />
+        <Text style={[cardStyles.insufficientText, { color: questTheme.colors.textMuted }]}>
+          {t(lang, 'lowConfidenceAbilityMap')}
+        </Text>
+      </QuestCard>
+    );
+  }
+
   return (
     <QuestCard questTheme={questTheme} variant="flat" style={{ marginTop: questTheme.spacing.sm }}>
       <CardTitle

@@ -18,9 +18,12 @@ import { evaluateDecisionBriefQuality } from '../utils/decisionQuality';
 import { auditDecisionPayload, diagnoseDecisionOutput } from '../utils/decisionRealityAudit';
 import { buildDecisionMemorySummary, compactDecisionResults } from '../utils/decisionMemory';
 import { buildPatternMemorySummary, derivePatternCandidates, mergePatternCandidates, sanitizePatternMemoryForPayload } from '../utils/patternMemory';
+import { parseHealthContextText, ParsedHealthContext } from '../utils/healthContextParser';
+import QuestInput from '../components/ui/QuestInput';
+import QuestButton from '../components/ui/QuestButton';
 
 export default function SettingsScreen() {
-  const { data, setSettings, runIntegrityCheck, repairSafeIntegrityIssues, rebuildDerivedData, mergePatternMemoryCandidates, updatePatternMemoryStatus } = useStore();
+  const { data, setSettings, addContextLogs, runIntegrityCheck, repairSafeIntegrityIssues, rebuildDerivedData, mergePatternMemoryCandidates, updatePatternMemoryStatus } = useStore();
   const questTheme = getQuestTheme(data.settings.selectedThemeId);
   const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
   const lang = getLanguage(data.settings.language);
@@ -37,6 +40,9 @@ export default function SettingsScreen() {
     evidenceBasis?: string;
   } | null>(null);
   const [lastDecisionFeedback, setLastDecisionFeedback] = useState('');
+  const [contextPasteText, setContextPasteText] = useState('');
+  const [contextPreview, setContextPreview] = useState<ParsedHealthContext | null>(null);
+  const [contextSaved, setContextSaved] = useState(false);
   const [decisionFlagSnapshot, setDecisionFlagSnapshot] = useState(() => ({
     aiEnabled: isDecisionAIEnabled(),
     dailyBriefEnabled: isDecisionDailyBriefEnabled(),
@@ -331,6 +337,62 @@ export default function SettingsScreen() {
           />
         </View>
 
+        <View style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, shadowColor: questTheme.colors.cardShadow }]}>
+          <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'dataSources')}</Text>
+          <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>{t(lang, 'manualContextInput')}</Text>
+          <QuestInput
+            questTheme={questTheme}
+            value={contextPasteText}
+            onChangeText={(value) => {
+              setContextPasteText(value);
+              setContextPreview(null);
+              setContextSaved(false);
+            }}
+            placeholder={t(lang, 'pasteHealthContext')}
+            multiline
+            style={styles.contextInput}
+          />
+          {contextPreview ? (
+            <Text style={[styles.value, { color: contextPreview.contextLogs.length > 0 ? questTheme.colors.success : questTheme.colors.textMuted }]}>
+              {contextPreview.contextLogs.length > 0
+                ? t(lang, 'contextPreviewFound').replace('{count}', String(contextPreview.contextLogs.length))
+                : t(lang, 'contextPreviewEmpty')}
+            </Text>
+          ) : null}
+          {contextSaved ? (
+            <Text style={[styles.value, { color: questTheme.colors.success }]}>{t(lang, 'contextSaved')}</Text>
+          ) : null}
+          <View style={styles.dataSourceActions}>
+            <QuestButton
+              questTheme={questTheme}
+              variant="secondary"
+              label={t(lang, 'parseContext')}
+              disabled={!contextPasteText.trim()}
+              onPress={() => {
+                setContextPreview(parseHealthContextText(contextPasteText));
+                setContextSaved(false);
+              }}
+              style={{ flex: 1 }}
+            />
+            <QuestButton
+              questTheme={questTheme}
+              label={t(lang, 'saveContext')}
+              disabled={!contextPreview?.contextLogs.length}
+              onPress={() => {
+                if (!contextPreview?.contextLogs.length) return;
+                addContextLogs(contextPreview.contextLogs);
+                setContextPasteText('');
+                setContextPreview(null);
+                setContextSaved(true);
+              }}
+              style={{ flex: 1 }}
+            />
+          </View>
+          <Text style={[styles.value, { color: questTheme.colors.textSubtle }]}>
+            {t(lang, 'contextLogs')}: {(data.contextLogs || []).length}
+          </Text>
+        </View>
+
         {/* Reminders/Storage/Version 合并为一张"关于"卡的三行,内容不变,只减少三份重复的卡片外壳(padding/shadow/margin) */}
         <View style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, shadowColor: questTheme.colors.cardShadow }]}>
           <View style={styles.aboutRow}>
@@ -618,6 +680,8 @@ const styles = StyleSheet.create({
   colorPreviewRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, marginBottom: 10 },
   colorPreview: { width: 34, height: 34, borderRadius: 17 },
   colorValue: { fontSize: 13, fontWeight: '800' },
+  contextInput: { minHeight: 72, marginTop: 10, marginBottom: 8, textAlignVertical: 'top' },
+  dataSourceActions: { flexDirection: 'row', gap: 8, marginTop: 8, marginBottom: 8 },
   languageRow: { flexDirection: 'row', gap: 8 },
   languageBtn: { flex: 1, minHeight: questLayout.controlMinHeight, alignItems: 'center', justifyContent: 'center', paddingVertical: 9, borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.border, backgroundColor: theme.cardAlt },
   languageText: { color: theme.text, fontWeight: '800' },

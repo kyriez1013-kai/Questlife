@@ -54,6 +54,7 @@ export default function StatsScreen() {
   const {
     data,
   } = useStore();
+  const [insightsView, setInsightsView] = useState<'overview' | 'trends' | 'patterns' | 'advanced'>('overview');
   const lang = getLanguage(data.settings.language);
   const questTheme = getQuestTheme(data.settings.selectedThemeId);
   const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
@@ -361,6 +362,10 @@ export default function StatsScreen() {
   const hasBodyContextEvidence = objectiveContextBrief.status !== 'empty';
   const hasBehaviorEvidence = metacognition.behaviorLinks.length > 0;
   const hasKeyEvidence = hasStateTrendEvidence || hasStatePatternEvidence || hasBodyContextEvidence || hasBehaviorEvidence;
+  const weeklyMinutesTotal = last7.reduce((sum, day) => sum + day.minutes, 0);
+  const hasAdvancedEvidence = logs.length >= 3
+    || (data.stateCheckIns || []).length >= 3
+    || (data.contextLogs || []).length >= 2;
   const mainInsight = useMemo(() => {
     if (metacognition.status === 'ok') {
       return {
@@ -478,13 +483,30 @@ export default function StatsScreen() {
           </View>}
         />
 
+        <View style={[styles.insightsTabs, { backgroundColor: questTheme.colors.surfaceSoft }]}>
+          {(['overview', 'trends', 'patterns', 'advanced'] as const).map((viewKey) => {
+            const active = insightsView === viewKey;
+            return (
+              <TouchableOpacity
+                key={viewKey}
+                style={[styles.insightsTab, active && { backgroundColor: questTheme.colors.surfaceElevated }]}
+                onPress={() => setInsightsView(viewKey)}
+              >
+                <Text style={[styles.insightsTabText, { color: active ? questTheme.colors.text : questTheme.colors.textMuted }]}>
+                  {t(lang, `insights_${viewKey}`)}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
         <TileGrid
           nativeID="insights-dashboard-grid"
           className="dashboard-tile-grid insights-dashboard-tile-grid"
           style={styles.dashboardTileGrid}
         >
 
-        {insightsCardVisible('main_judgement') ? (
+        {insightsView === 'overview' && insightsCardVisible('main_judgement') ? (
         <DashboardCardShell {...insightsDashboardShellProps('main_judgement')}>
         <QuestCard
           questTheme={questTheme}
@@ -517,26 +539,90 @@ export default function StatsScreen() {
         </QuestCard>
         </DashboardCardShell>
         ) : null}
-        {insightsCardVisible('key_evidence') ? (
+        {insightsView === 'overview' && hasKeyEvidence && insightsCardVisible('key_evidence') ? (
         <DashboardCardShell {...insightsDashboardShellProps('key_evidence')}>
         <QuestSectionHeader questTheme={questTheme} title={t(lang, 'keyEvidence')} />
-        {hasKeyEvidence ? (
-          <>
-            {hasStateTrendEvidence ? <StateTrendStrip metacognition={metacognition} questTheme={questTheme} lang={lang} /> : null}
-            {keyEvidenceCardSize !== 'small' && hasStatePatternEvidence ? <StatePatternsPanel metacognition={metacognition} questTheme={questTheme} lang={lang} /> : null}
-            {keyEvidenceCardSize === 'large' && hasBodyContextEvidence ? <BodyContextPanel brief={objectiveContextBrief} questTheme={questTheme} lang={lang} /> : null}
-            {keyEvidenceCardSize === 'large' && hasBehaviorEvidence ? <BehaviorLinksPanel metacognition={metacognition} questTheme={questTheme} lang={lang} /> : null}
-          </>
-        ) : (
-          <QuestGroupedSurface questTheme={questTheme} style={{ padding: questTheme.spacing.md }}>
-            <Text style={[styles.insightLine, { color: questTheme.colors.text }]}>{t(lang, 'dataStillAccumulating')}</Text>
-            <Text style={[styles.insightLine, { color: questTheme.colors.textMuted }]}>{t(lang, 'notEnoughForDetailedInsights')}</Text>
-          </QuestGroupedSurface>
-        )}
+        {hasStateTrendEvidence ? <StateTrendStrip metacognition={metacognition} questTheme={questTheme} lang={lang} /> : null}
+        {keyEvidenceCardSize !== 'small' && hasStatePatternEvidence ? <StatePatternsPanel metacognition={metacognition} questTheme={questTheme} lang={lang} /> : null}
+        {keyEvidenceCardSize === 'large' && hasBodyContextEvidence ? <BodyContextPanel brief={objectiveContextBrief} questTheme={questTheme} lang={lang} /> : null}
+        {keyEvidenceCardSize === 'large' && hasBehaviorEvidence ? <BehaviorLinksPanel metacognition={metacognition} questTheme={questTheme} lang={lang} /> : null}
         </DashboardCardShell>
         ) : null}
 
-        {insightsCardVisible('advanced_signals') ? (
+        {insightsView === 'overview' ? (
+          <View style={[styles.overviewSignalGrid, { order: 30 } as any]}>
+            <View style={[styles.overviewSignalTile, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>
+              <Text style={[styles.overviewSignalValue, { color: questTheme.colors.primary }]}>
+                {instantInsight.weeklyMinutes > 0 ? `${(instantInsight.weeklyMinutes / 60).toFixed(1)}h` : t(lang, 'notEnoughDataYet')}
+              </Text>
+              <Text style={[styles.overviewSignalLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'weeklyExecutionTime')}</Text>
+            </View>
+            <View style={[styles.overviewSignalTile, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>
+              <Text style={[styles.overviewSignalValue, { color: questTheme.colors.accent }]} numberOfLines={1}>
+                {instantInsight.topSkill?.label || t(lang, 'notEnoughDataYet')}
+              </Text>
+              <Text style={[styles.overviewSignalLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'keySignal')}</Text>
+            </View>
+            <View style={[styles.overviewSignalTile, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>
+              <Text style={[styles.overviewSignalValue, { color: dataHealthColor }]}>{t(lang, dataHealthLabelKey)}</Text>
+              <Text style={[styles.overviewSignalLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'dataHealth')}</Text>
+            </View>
+            <View style={[styles.overviewSignalTile, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>
+              <Text style={[styles.overviewSignalValue, { color: questTheme.colors.warning }]}>
+                {instantInsight.done + instantInsight.remaining > 0 ? `${instantInsight.done}/${instantInsight.done + instantInsight.remaining}` : t(lang, 'notEnoughDataYet')}
+              </Text>
+              <Text style={[styles.overviewSignalLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'todayCompletion')}</Text>
+            </View>
+          </View>
+        ) : null}
+
+        {insightsView === 'trends' ? (
+          <View style={styles.insightsLayer}>
+            <QuestSectionHeader questTheme={questTheme} title={t(lang, 'insights_trends')} subtitle={t(lang, 'last7Days')} />
+            {weeklyMinutesTotal > 0 ? (
+              <>
+                <DailyBarChart days={last7} accent={accent} lang={lang} questTheme={questTheme} />
+                {weeklySkillShare ? (
+                  <View style={[styles.shareCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>
+                    {weeklySkillShare.rows.slice(0, 5).map(({ label, color, minutes, percent }) => (
+                      <View key={label} style={styles.shareRow}>
+                        <Text style={[styles.shareName, { color: questTheme.colors.text }]}>{label} · {(minutes / 60).toFixed(1)}h · {(percent * 100).toFixed(0)}%</Text>
+                        <View style={[styles.shareBarBg, { backgroundColor: questTheme.colors.surfaceSoft }]}>
+                          <View style={[styles.shareBarFg, { width: `${percent * 100}%`, backgroundColor: color }]} />
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
+              </>
+            ) : (
+              <QuestGroupedSurface questTheme={questTheme} style={{ padding: questTheme.spacing.md }}>
+                <Text style={[styles.insightLine, { color: questTheme.colors.text }]}>
+                  {t(lang, 'dataStillAccumulating')}
+                </Text>
+                <Text style={[styles.insightLine, { color: questTheme.colors.textMuted }]}>
+                  {t(lang, 'notEnoughForDetailedInsights')}
+                </Text>
+              </QuestGroupedSurface>
+            )}
+          </View>
+        ) : null}
+
+        {insightsView === 'patterns' ? (
+          <View style={styles.insightsLayer}>
+            <QuestSectionHeader questTheme={questTheme} title={t(lang, 'insights_patterns')} />
+            {hasStatePatternEvidence ? <StatePatternsPanel metacognition={metacognition} questTheme={questTheme} lang={lang} /> : null}
+            {hasBehaviorEvidence ? <BehaviorLinksPanel metacognition={metacognition} questTheme={questTheme} lang={lang} /> : null}
+            {!hasStatePatternEvidence && !hasBehaviorEvidence ? (
+              <QuestGroupedSurface questTheme={questTheme} style={{ padding: questTheme.spacing.md }}>
+                <Text style={[styles.insightLine, { color: questTheme.colors.text }]}>{t(lang, 'dataStillAccumulating')}</Text>
+                <Text style={[styles.insightLine, { color: questTheme.colors.textMuted }]}>{t(lang, 'notEnoughForDetailedInsights')}</Text>
+              </QuestGroupedSurface>
+            ) : null}
+          </View>
+        ) : null}
+
+        {insightsView === 'advanced' && insightsCardVisible('advanced_signals') ? (
         <DashboardCardShell {...insightsDashboardShellProps('advanced_signals')}>
         <QuestSectionHeader
           questTheme={questTheme}
@@ -550,7 +636,14 @@ export default function StatsScreen() {
           </QuestCard>
         ) : null}
 
-        {advancedSignalsCardSize === 'large' ? (
+        {advancedSignalsCardSize === 'large' && !hasAdvancedEvidence ? (
+          <QuestGroupedSurface questTheme={questTheme} style={{ padding: questTheme.spacing.md }}>
+            <Text style={[styles.insightLine, { color: questTheme.colors.text }]}>{t(lang, 'dataStillAccumulating')}</Text>
+            <Text style={[styles.insightLine, { color: questTheme.colors.textMuted }]}>{t(lang, 'notEnoughForDetailedInsights')}</Text>
+          </QuestGroupedSurface>
+        ) : null}
+
+        {advancedSignalsCardSize === 'large' && hasAdvancedEvidence ? (
           <>
             <View style={[styles.commandStrip, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong }]}>
               <View style={styles.commandCell}>
@@ -587,8 +680,12 @@ export default function StatsScreen() {
               </>
             )}
 
-            <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'last7Days')}</Text>
-            <DailyBarChart days={last7} accent={accent} lang={lang} questTheme={questTheme} />
+            {weeklyMinutesTotal > 0 ? (
+              <>
+                <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'last7Days')}</Text>
+                <DailyBarChart days={last7} accent={accent} lang={lang} questTheme={questTheme} />
+              </>
+            ) : null}
 
             <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'rescueStarts')}</Text>
             <QuestCard questTheme={questTheme} variant="flat" style={[styles.insightCard, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.borderStrong, borderLeftWidth: 3, borderLeftColor: questTheme.colors.warning }]} className="rescue-summary-card insight-card">
@@ -1151,6 +1248,14 @@ function LoopStat({ label, value, questTheme }: { label: string; value: string; 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.bg },
   container: { flex: 1, backgroundColor: theme.bg },
+  insightsTabs: { flexDirection: 'row', padding: 3, borderRadius: 12, marginBottom: 8 },
+  insightsTab: { flex: 1, minHeight: 36, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
+  insightsTabText: { fontSize: 11, fontWeight: '800' },
+  insightsLayer: { width: '100%', gap: 8 },
+  overviewSignalGrid: { width: '100%', flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  overviewSignalTile: { width: '48.7%', minHeight: 62, borderWidth: 1, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 9, justifyContent: 'space-between' },
+  overviewSignalValue: { fontSize: 16, lineHeight: 20, fontWeight: '900' },
+  overviewSignalLabel: { fontSize: 10, lineHeight: 14, fontWeight: '700' },
   h1: { color: theme.text, fontSize: 34, fontWeight: '800' },
   h2: { color: theme.text, fontSize: 18, fontWeight: '600', marginTop: 14, marginBottom: 8 },
   sub: { color: theme.textDim, marginTop: 4 },
