@@ -30,18 +30,18 @@ export default function QuestCard({ children, variant = 'data', questTheme, styl
             ? { ...getSurfaceStyle(q, 'soft'), shadowOpacity: 0, elevation: 0 }
             : getSurfaceStyle(q, 'card');
   const variantPadding: ViewStyle =
-    variant === 'hero' || variant === 'data'
+    variant === 'hero'
       ? { padding: q.spacing.lg }
       : { padding: q.spacing.md };
   const legacyStyle = guardDarkSurfaceStyle(StyleSheet.flatten(style), q, surfaceRole);
   const resolvedStyle: ViewStyle = {
     borderRadius: q.radius.lg,
-    borderWidth: 1,
+    borderWidth: variant === 'flat' ? 0 : 1,
     shadowColor: q.colors.cardShadow,
-    shadowOpacity: variant === 'flat' ? 0 : 0.07,
-    shadowOffset: { width: 0, height: 8 },
-    shadowRadius: 18,
-    elevation: variant === 'flat' ? 0 : 3,
+    shadowOpacity: variant === 'hero' ? 0.07 : variant === 'data' ? 0.035 : 0,
+    shadowOffset: { width: 0, height: q.spacing.xs },
+    shadowRadius: q.spacing.lg,
+    elevation: variant === 'hero' ? 3 : variant === 'data' ? 1 : 0,
     ...variantSurface,
     ...variantPadding,
     ...legacyStyle,

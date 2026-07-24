@@ -11,12 +11,13 @@ import { Quality, QUALITY_OPTIONS, ScheduleBlock, TaskType } from '../types';
 import BottomSheetForm from '../components/BottomSheetForm';
 import { generateScheduleBlocksFromSkills } from '../scheduleAdjust';
 import { formatMetricSummary, progressTypeForSkill } from '../progress';
-import { getQuestTheme, QuestTheme } from '../design/tokens';
+import { getQuestTheme, questLayout, QuestTheme } from '../design/tokens';
 import { systemIcons } from '../design/systemIcons';
 import { getSkillSemanticIcon } from '../design/entityIcons';
 import { isStrengthPredictionSkill, strengthVolume } from '../utils/prediction';
 import QuestButton from '../components/ui/QuestButton';
 import QuestCard from '../components/ui/QuestCard';
+import { QuestScreenHeader } from '../components/ui/QuestPrimitives';
 import QuestEntityIcon from '../components/ui/QuestEntityIcon';
 import QuestIcon from '../components/ui/QuestIcon';
 import QuestInput from '../components/ui/QuestInput';
@@ -315,15 +316,21 @@ export default function ScheduleScreen() {
       <ScrollView
         ref={scrollRef}
         style={[styles.container, { backgroundColor: questTheme.colors.background }]}
-        contentContainerStyle={{ padding: 16, paddingBottom: 144, maxWidth: 960, width: '100%', alignSelf: 'center' }}
+        contentContainerStyle={{
+          paddingHorizontal: questTheme.spacing.md,
+          paddingTop: questTheme.spacing.sm,
+          paddingBottom: questLayout.contentBottomInset,
+          maxWidth: questLayout.contentMaxWidth,
+          width: '100%',
+          alignSelf: 'center',
+        }}
       >
-        <View style={styles.headerRow}>
-          <View>
-            <Text style={[styles.h1, { color: questTheme.colors.text }]}>{t(lang, 'schedule')}</Text>
-            <Text style={[styles.sub, { color: questTheme.colors.textMuted }]}>{t(lang, 'scheduleSubtitle')}</Text>
-          </View>
-          <QuestButton questTheme={questTheme} variant="primary" icon="plus" label={t(lang, 'addBlock')} onPress={() => setOpen(true)} />
-        </View>
+        <QuestScreenHeader
+          questTheme={questTheme}
+          title={t(lang, 'schedule')}
+          subtitle={t(lang, 'scheduleSubtitle')}
+          trailing={<QuestButton questTheme={questTheme} variant="primary" icon="plus" label={t(lang, 'addBlock')} onPress={() => setOpen(true)} />}
+        />
 
         <View style={[styles.switcher, { backgroundColor: questTheme.colors.surfaceSoft }]}>
           {(['day', 'week', 'month', 'year'] as const).map((v) => (

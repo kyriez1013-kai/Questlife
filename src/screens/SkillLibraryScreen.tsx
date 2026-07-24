@@ -8,13 +8,14 @@ import { getLanguage, progressTypeLabel, t, taskTypeLabel } from '../i18n';
 import { formatSkillProgress, getSkillLinkedCount, progressTypeForSkill } from '../progress';
 import { Skill } from '../types';
 import SkillForm from '../components/SkillForm';
-import { getQuestTheme } from '../design/tokens';
+import { getQuestTheme, questLayout } from '../design/tokens';
 import { getSkillSemanticIcon } from '../design/entityIcons';
 import QuestButton from '../components/ui/QuestButton';
 import QuestCard from '../components/ui/QuestCard';
 import QuestEntityIcon from '../components/ui/QuestEntityIcon';
 import QuestIcon from '../components/ui/QuestIcon';
 import { confirmAction } from '../utils/confirm';
+import { QuestScreenHeader } from '../components/ui/QuestPrimitives';
 
 function fill(template: string, values: Record<string, string | number>) {
   return Object.entries(values).reduce((out, [key, value]) => out.replace(`{${key}}`, String(value)), template);
@@ -49,14 +50,20 @@ export default function SkillLibraryScreen() {
           <Text style={[styles.backText, { color: questTheme.colors.primary }]}>{t(lang, 'back')}</Text>
         </TouchableOpacity>
       </View>
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 130, maxWidth: 960, width: '100%', alignSelf: 'center' }}>
-        <View style={styles.titleRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.h1, { color: questTheme.colors.text }]}>{t(lang, 'skillLibrary')}</Text>
-            <Text style={[styles.sub, { color: questTheme.colors.textMuted }]}>{data.skills.length} {t(lang, 'skillCount')}</Text>
-          </View>
-          <QuestButton questTheme={questTheme} variant="primary" icon="plus" label={t(lang, 'createSkill')} onPress={() => setCreating(true)} />
-        </View>
+      <ScrollView contentContainerStyle={{
+        paddingHorizontal: questTheme.spacing.md,
+        paddingTop: questTheme.spacing.sm,
+        paddingBottom: questLayout.contentBottomInset,
+        maxWidth: questLayout.contentMaxWidth,
+        width: '100%',
+        alignSelf: 'center',
+      }}>
+        <QuestScreenHeader
+          questTheme={questTheme}
+          title={t(lang, 'skillLibrary')}
+          subtitle={`${data.skills.length} ${t(lang, 'skillCount')}`}
+          trailing={<QuestButton questTheme={questTheme} variant="primary" icon="plus" label={t(lang, 'createSkill')} onPress={() => setCreating(true)} />}
+        />
         {data.skills.map((skill) => {
           const linkedCount = getSkillLinkedCount(skill.id, data.moduleSkillLinks || []);
           return (
@@ -104,7 +111,7 @@ const styles = StyleSheet.create({
   sub: { color: theme.textDim, marginTop: 4, marginBottom: 16 },
   createBtn: { borderWidth: 1, borderColor: theme.border, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 12 },
   createText: { color: theme.primary, fontSize: 12, fontWeight: '900' },
-  card: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: theme.card, padding: 14, borderRadius: 14, borderWidth: 1, borderColor: theme.border, marginBottom: 10, ...theme.shadow },
+  card: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: theme.card, padding: 12, borderRadius: 14, borderWidth: 1, borderColor: theme.border, marginBottom: 6 },
   icon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   name: { color: theme.text, fontSize: 16, fontWeight: '800' },
   meta: { color: theme.textDim, fontSize: 12, marginTop: 3 },

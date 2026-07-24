@@ -12,11 +12,26 @@ type Props = {
 export default function QuestSection({ title, subtitle, children, questTheme }: Props) {
   const q = questTheme ?? getQuestTheme();
   return (
-    <View style={{ marginTop: q.spacing.xl }}>
-      <Text style={{ color: q.colors.text, fontSize: q.typography.sectionTitleSize, fontWeight: q.typography.weightBold, marginBottom: 4 }}>
+    <View style={{ marginTop: q.spacing.section }}>
+      <Text style={{
+        color: q.colors.text,
+        fontSize: q.typography.sectionTitleSize,
+        lineHeight: q.typography.sectionTitleLineHeight,
+        fontWeight: q.typography.weightBold,
+        marginBottom: q.spacing.xs,
+      }}>
         {title}
       </Text>
-      {subtitle ? <Text style={{ color: q.colors.textMuted, fontSize: q.typography.captionSize, marginBottom: q.spacing.md }}>{subtitle}</Text> : null}
+      {subtitle ? (
+        <Text style={{
+          color: q.colors.textMuted,
+          fontSize: q.typography.helperSize,
+          lineHeight: q.typography.helperLineHeight,
+          marginBottom: q.spacing.sm,
+        }}>
+          {subtitle}
+        </Text>
+      ) : null}
       {children}
     </View>
   );

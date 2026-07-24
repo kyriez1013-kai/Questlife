@@ -8,7 +8,7 @@ import ColorPicker from '../components/ColorPicker';
 import { useStore } from '../store';
 import { getLanguage, t } from '../i18n';
 import { appAccent, theme } from '../theme';
-import { getQuestTheme, themeOptions } from '../design/tokens';
+import { getQuestTheme, questLayout, themeOptions } from '../design/tokens';
 import { trackEvent } from '../utils/analytics';
 import { confirmAction } from '../utils/confirm';
 import { buildDecisionPayload } from '../utils/decisionPayload';
@@ -18,6 +18,7 @@ import { evaluateDecisionBriefQuality } from '../utils/decisionQuality';
 import { auditDecisionPayload, diagnoseDecisionOutput } from '../utils/decisionRealityAudit';
 import { buildDecisionMemorySummary, compactDecisionResults } from '../utils/decisionMemory';
 import { buildPatternMemorySummary, derivePatternCandidates, mergePatternCandidates, sanitizePatternMemoryForPayload } from '../utils/patternMemory';
+import { QuestScreenHeader } from '../components/ui/QuestPrimitives';
 
 export default function SettingsScreen() {
   const { data, setSettings, runIntegrityCheck, repairSafeIntegrityIssues, rebuildDerivedData, mergePatternMemoryCandidates, updatePatternMemoryStatus } = useStore();
@@ -255,10 +256,20 @@ export default function SettingsScreen() {
     <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
       <ScrollView
         style={[styles.container, { backgroundColor: questTheme.colors.background }]}
-        contentContainerStyle={{ padding: 16, paddingBottom: 110, maxWidth: 960, width: '100%', alignSelf: 'center' }}
+        contentContainerStyle={{
+          paddingHorizontal: questTheme.spacing.md,
+          paddingTop: questTheme.spacing.sm,
+          paddingBottom: questLayout.contentBottomInset,
+          maxWidth: questLayout.contentMaxWidth,
+          width: '100%',
+          alignSelf: 'center',
+        }}
       >
-        <Text style={[styles.h1, { color: questTheme.colors.text }]}>{t(lang, 'settings')}</Text>
-        <Text style={[styles.sub, { color: questTheme.colors.textMuted }]}>{t(lang, 'settingsSubtitle')}</Text>
+        <QuestScreenHeader
+          questTheme={questTheme}
+          title={t(lang, 'settings')}
+          subtitle={t(lang, 'settingsSubtitle')}
+        />
 
         <View style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, shadowColor: questTheme.colors.cardShadow }]}>
           <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'language')}</Text>
@@ -306,7 +317,7 @@ export default function SettingsScreen() {
                     <View style={[styles.themeSwatch, { backgroundColor: preview.colors.primary }]} />
                     <View style={[styles.themeSwatch, { backgroundColor: preview.colors.accent }]} />
                   </View>
-                  <Text style={[styles.languageText, { color: preview.colors.text }]}>{t(lang, opt.i18nKey)}</Text>
+                  <Text style={[styles.languageText, { color: preview.colors.textPrimary }]}>{t(lang, opt.i18nKey)}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -605,23 +616,23 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.bg },
   h1: { color: theme.text, fontSize: 34, fontWeight: '800' },
   sub: { color: theme.textDim, marginTop: 4, marginBottom: 18 },
-  card: { backgroundColor: theme.card, padding: 16, borderRadius: theme.radius.lg, marginBottom: 12, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
-  label: { color: theme.text, fontSize: 16, fontWeight: '800', marginBottom: 8 },
-  value: { color: theme.textDim, fontSize: 13, lineHeight: 20 },
+  card: { backgroundColor: theme.card, padding: 14, borderRadius: theme.radius.lg, marginBottom: 8, borderWidth: 1, borderColor: theme.border },
+  label: { color: theme.text, fontSize: 15, fontWeight: '800', marginBottom: 6 },
+  value: { color: theme.textDim, fontSize: 12, lineHeight: 18 },
   aboutRow: { paddingVertical: 2 },
   aboutRowDivider: { borderTopWidth: 1, marginTop: 10, paddingTop: 10 },
   aboutLabel: { fontSize: 14, marginBottom: 4 },
-  colorPreviewRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 14, marginBottom: 14 },
+  colorPreviewRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, marginBottom: 10 },
   colorPreview: { width: 34, height: 34, borderRadius: 17 },
   colorValue: { fontSize: 13, fontWeight: '800' },
-  languageRow: { flexDirection: 'row', gap: 10 },
-  languageBtn: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.border, backgroundColor: theme.cardAlt },
+  languageRow: { flexDirection: 'row', gap: 8 },
+  languageBtn: { flex: 1, minHeight: questLayout.controlMinHeight, alignItems: 'center', justifyContent: 'center', paddingVertical: 9, borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.border, backgroundColor: theme.cardAlt },
   languageText: { color: theme.text, fontWeight: '800' },
   languageTextOn: { color: '#fff' },
-  themeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 12 },
+  themeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
   memoryBox: { marginTop: 14, padding: 12, borderWidth: 1, borderRadius: theme.radius.md },
   memoryRow: { paddingTop: 8, marginTop: 8, borderTopWidth: 1 },
-  themeOption: { width: '48%', minWidth: 142, padding: 12, borderRadius: theme.radius.md, borderWidth: 1 },
+  themeOption: { width: '48.5%', minWidth: 142, padding: 10, borderRadius: theme.radius.md, borderWidth: 1 },
   themeSwatches: { flexDirection: 'row', gap: 6, marginBottom: 8 },
   themeSwatch: { width: 18, height: 18, borderRadius: 9, borderWidth: 1, borderColor: 'rgba(0,0,0,0.08)' },
   debugActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },

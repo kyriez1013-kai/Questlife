@@ -129,7 +129,8 @@ function CaptureCard({
       questTheme={questTheme}
       variant="flat"
       style={{
-        marginTop: questTheme.spacing.sm,
+        marginTop: questTheme.spacing.tight,
+        padding: questTheme.spacing.sm,
         borderLeftWidth: 3,
         borderLeftColor: insightBorderColor(insightType, questTheme),
       }}
@@ -165,7 +166,13 @@ function CaptureCard({
       )}
 
       {capture.parseStatus === 'done' && insightText ? (
-        <View style={[styles.insightBox, { backgroundColor: insightBgColor(insightType, questTheme) }]}>
+        <View style={[styles.insightBox, {
+          backgroundColor: insightBgColor(insightType, questTheme),
+          marginTop: questTheme.spacing.tight,
+          paddingHorizontal: questTheme.spacing.sm,
+          paddingVertical: questTheme.spacing.tight,
+          borderRadius: questTheme.radius.sm,
+        }]}>
           {/* Insight-type tag */}
           <Text style={[styles.crossLinkTag, { color: insightBorderColor(insightType, questTheme) }]}>
             {t(lang, insightTagKey(insightType))}
@@ -459,9 +466,10 @@ export default function HomeSmartCapture() {
         questTheme={questTheme}
         variant="hero"
         style={{
-          marginTop: questTheme.spacing.sm,
+          marginTop: questTheme.spacing.tight,
+          padding: questTheme.spacing.sm,
           borderColor: questTheme.colors.borderStrong,
-          borderLeftWidth: 3,
+          borderLeftWidth: 2,
           borderLeftColor: questTheme.colors.primary,
           backgroundColor: questTheme.colors.surfaceElevated,
         }}
@@ -517,7 +525,7 @@ export default function HomeSmartCapture() {
 
       {/* All captures (collapsed to DEFAULT_VISIBLE, expandable to full history) */}
       {allCaptures.length > 0 && (
-        <View style={{ marginTop: questTheme.spacing.xs }}>
+        <View style={{ marginTop: questTheme.spacing.xxs }}>
           {todayCaptures.map((c) => {
             const parsedEntries = c.parsed?.entries ?? [];
             const fallbackEntries = buildFallbackEntriesFromRawText(c.text);
@@ -566,7 +574,11 @@ export default function HomeSmartCapture() {
           {hasMore && (
             <TouchableOpacity
               onPress={() => setShowAll((v) => !v)}
-              style={[styles.expandBtn, { borderColor: questTheme.colors.borderStrong, backgroundColor: questTheme.colors.surfaceMuted }]}
+              style={[styles.expandBtn, {
+                marginTop: questTheme.spacing.tight,
+                borderColor: questTheme.colors.border,
+                backgroundColor: questTheme.colors.surfaceMuted,
+              }]}
               activeOpacity={0.7}
             >
               <Text style={[styles.expandBtnText, { color: questTheme.colors.textMuted }]}>

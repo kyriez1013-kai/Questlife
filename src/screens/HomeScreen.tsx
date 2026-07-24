@@ -18,7 +18,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useStore } from '../store';
 import { appAccent, theme } from '../theme';
-import { getQuestTheme, getStateToneColor } from '../design/tokens';
+import { getQuestTheme, getStateToneColor, questLayout } from '../design/tokens';
 import { getSurfaceStyle } from '../design/surfaces';
 import { today } from '../storage';
 import {
@@ -59,6 +59,7 @@ import { createDecisionResultRecord } from '../utils/decisionMemory';
 import { createDecisionService, getLastDecisionServiceMeta, isDecisionAIEnabled, isDecisionAIShadowEnabled, isDecisionDailyBriefEnabled, isDecisionDebugEnabled, LegacyDecisionService, AiDecisionService, runDecisionShadowBrief, DecisionServiceMeta } from '../services/decisionService';
 import { buildScheduleProposalPatch, normalizeScheduleProposals, previewScheduleProposal, scheduleProposalActionKey, ScheduleProposal, ScheduleProposalStatus } from '../utils/scheduleProposal';
 import DashboardCardShell from '../components/dashboard/DashboardCardShell';
+import { QuestScreenHeader } from '../components/ui/QuestPrimitives';
 
 const FIXED_TODAY_CARD_SIZES = {
   smart_capture: 'large',
@@ -75,12 +76,12 @@ const FIXED_TODAY_CARD_SIZES = {
 const FIXED_TODAY_CARD_ORDER: Record<keyof typeof FIXED_TODAY_CARD_SIZES, number> = {
   smart_capture: 10,
   daily_operating_brief: 20,
-  body_context: 30,
+  state_checkin: 30,
+  rescue_strip: 35,
   recent_feedback: 40,
-  state_checkin: 50,
-  today_plan: 60,
+  today_plan: 50,
+  body_context: 60,
   today_records: 70,
-  rescue_strip: 80,
   detailed_data: 90,
 };
 
@@ -2046,9 +2047,9 @@ export default function HomeScreen() {
       maxWidth: '100%',
       flexGrow: size === 'large' ? 1 : 0,
       order: FIXED_TODAY_CARD_ORDER[cardId],
-      marginTop: size === 'small' ? questTheme.spacing.xs : questTheme.spacing.sm,
+      marginTop: size === 'small' ? questTheme.spacing.xxs : questTheme.spacing.xs,
     } as any;
-  }, [questTheme.spacing.sm, questTheme.spacing.xs]);
+  }, [questTheme.spacing.xs, questTheme.spacing.xxs]);
   const todayDashboardShellProps = useCallback((cardId: string) => {
     const size = FIXED_TODAY_CARD_SIZES[cardId as keyof typeof FIXED_TODAY_CARD_SIZES] ?? 'medium';
     return {
@@ -2082,7 +2083,14 @@ export default function HomeScreen() {
     <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
       <ScrollView
         style={[styles.container, { backgroundColor: questTheme.colors.background }]}
-        contentContainerStyle={{ padding: 16, paddingBottom: 190, maxWidth: 960, width: '100%', alignSelf: 'center' }}
+        contentContainerStyle={{
+          paddingHorizontal: questTheme.spacing.md,
+          paddingTop: questTheme.spacing.sm,
+          paddingBottom: questLayout.contentBottomInset,
+          maxWidth: questLayout.contentMaxWidth,
+          width: '100%',
+          alignSelf: 'center',
+        }}
       >
         <TileGrid
           nativeID="today-dashboard-grid"
@@ -2149,15 +2157,11 @@ export default function HomeScreen() {
           </View>
 
           {dailyBriefDashboardSize !== 'small' ? (
-          <View style={styles.dailyBriefSection}>
-            <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'keyEvidence')}</Text>
-            <View style={styles.dailyBriefChipRow}>
-              {dailyDecisionEvidenceItems.slice(0, dailyBriefDashboardSize === 'medium' ? 2 : 3).map((item, index) => (
-                <View key={String(item) + index} style={[styles.dailyBriefChip, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}> 
-                  <Text style={[styles.dailyBriefChipText, { color: questTheme.colors.textMuted }]}>{item}</Text>
-                </View>
-              ))}
-            </View>
+          <View style={[styles.dailyBriefSignalRow, { borderTopColor: questTheme.colors.divider }]}>
+            <Text style={[styles.dailyBriefSignalLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'keyEvidence')}</Text>
+            <Text style={[styles.dailyBriefSignalText, { color: questTheme.colors.text }]}>
+              {dailyDecisionEvidenceItems.slice(0, dailyBriefDashboardSize === 'medium' ? 2 : 3).join(' · ')}
+            </Text>
           </View>
           ) : null}
 
@@ -2172,15 +2176,11 @@ export default function HomeScreen() {
           ) : null}
 
           {dailyBriefDashboardSize === 'large' && (dailyDecisionBrief?.prescription?.do_not || []).length > 0 ? (
-            <View style={styles.dailyBriefSection}>
-              <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'doNotToday')}</Text>
-              <View style={styles.dailyBriefChipRow}>
-                {(dailyDecisionBrief?.prescription?.do_not || []).slice(0, 2).map((item, index) => (
-                  <View key={String(item) + index} style={[styles.dailyBriefChip, { backgroundColor: questTheme.colors.warningSoft, borderColor: questTheme.colors.border }]}> 
-                    <Text style={[styles.dailyBriefChipText, { color: questTheme.colors.text }]}>{item}</Text>
-                  </View>
-                ))}
-              </View>
+            <View style={[styles.dailyBriefSignalRow, { borderTopColor: questTheme.colors.divider }]}>
+              <Text style={[styles.dailyBriefSignalLabel, { color: questTheme.colors.warning }]}>{t(lang, 'doNotToday')}</Text>
+              <Text style={[styles.dailyBriefSignalText, { color: questTheme.colors.text }]}>
+                {(dailyDecisionBrief?.prescription?.do_not || []).slice(0, 2).join(' · ')}
+              </Text>
             </View>
           ) : null}
 
@@ -2363,7 +2363,7 @@ export default function HomeScreen() {
 
           <View style={styles.dailyBriefFooter}>
             <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textSubtle }]}> 
-              {t(lang, 'evidenceBasis')}: {t(lang, dailyDecisionBrief?.evidence_basis === 'personal_pattern' ? 'basedOnRecentState' : 'basedOnContextAndHistory')} · {t(lang, 'confidence')}: {dailyDecisionBrief?.confidence == null ? t(lang, 'confidenceLow') : Math.round(dailyDecisionBrief.confidence * 100) + '%'}
+              {t(lang, 'evidenceBasis')}: {t(lang, dailyDecisionBrief?.evidence_basis === 'personal_pattern' ? 'basedOnRecentState' : 'basedOnContextAndHistory')} · {t(lang, 'confidence')}: {dailyDecisionBrief?.confidence == null ? t(lang, 'confidenceLow') : Math.round(dailyDecisionBrief.confidence * 100) + '%'} · {t(lang, 'noMedicalAdviceShort')}
             </Text>
             <TouchableOpacity
               disabled={dailyDecisionLoading}
@@ -2375,10 +2375,6 @@ export default function HomeScreen() {
               </Text>
             </TouchableOpacity>
           </View>
-
-          {dailyBriefDashboardSize === 'large' ? (
-            <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textSubtle, marginTop: 8 }]}>{t(lang, 'noMedicalAdviceShort')}</Text>
-          ) : null}
 
           {dailyDecisionBrief ? (
             <View style={styles.instantFeedbackRow}>
@@ -2658,12 +2654,12 @@ export default function HomeScreen() {
         ) : null}
 
         {/* ═══ ZONE 3: Today data — static execution sections ═ */}
-        <View style={styles.dashboardFullRow}>
-          <Text style={[styles.h1, { color: questTheme.colors.text }]}>{t(lang, 'today')}</Text>
-          <Text style={[styles.sub, { color: questTheme.colors.textMuted }]}>
-            {todayStr} · {t(lang, 'todayInvested')} {todayMinutes} {t(lang, 'minutes')} · {todayLogs.length} {t(lang, 'logsToday')} · {t(lang, currentTimeBlock)}
-          </Text>
-        </View>
+        <QuestScreenHeader
+          questTheme={questTheme}
+          title={t(lang, 'today')}
+          subtitle={`${todayStr} · ${t(lang, 'todayInvested')} ${todayMinutes} ${t(lang, 'minutes')} · ${todayLogs.length} ${t(lang, 'logsToday')} · ${t(lang, currentTimeBlock)}`}
+          style={styles.dashboardFullRow}
+        />
 
         {todayCardVisible('today_plan') ? (
         <DashboardCardShell {...todayDashboardShellProps('today_plan')}>
@@ -3938,17 +3934,17 @@ const styles = StyleSheet.create({
   nowFocusIconShell: { width: 40, height: 40, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   nowFocusTitle: { color: theme.text, fontSize: 21, fontWeight: '900', lineHeight: 26 },
   nowFocusActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
-  dailyBriefCard: { marginTop: 12, gap: 10 },
+  dailyBriefCard: { gap: 8 },
   dailyBriefHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   dailyBriefMetaRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
   dailyBriefTitle: { fontSize: 16, fontWeight: '900', lineHeight: 22, marginTop: 2 },
-  dailyBriefAction: { borderWidth: 1, borderRadius: 14, padding: 10, flexDirection: 'row', alignItems: 'center', gap: 9 },
+  dailyBriefAction: { borderWidth: 1, borderRadius: 14, padding: 8, flexDirection: 'row', alignItems: 'center', gap: 8 },
   dailyBriefActionText: { fontSize: 13, fontWeight: '900', lineHeight: 18 },
   dailyBriefMeta: { fontSize: 11, fontWeight: '800', lineHeight: 16 },
   dailyBriefSection: { gap: 6 },
-  dailyBriefChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  dailyBriefChip: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 5 },
-  dailyBriefChipText: { fontSize: 10, fontWeight: '900', lineHeight: 14 },
+  dailyBriefSignalRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingTop: 7, borderTopWidth: 1 },
+  dailyBriefSignalLabel: { width: 58, flexShrink: 0, fontSize: 10, fontWeight: '900', lineHeight: 15 },
+  dailyBriefSignalText: { flex: 1, fontSize: 11, fontWeight: '800', lineHeight: 16 },
   dailyBriefFooter: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'space-between', alignItems: 'center' },
   dailyBriefRefreshBtn: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
   dailyBriefRefreshText: { fontSize: 11, fontWeight: '900' },
@@ -3956,7 +3952,7 @@ const styles = StyleSheet.create({
   scheduleProposalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   scheduleProposalActions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
   dailyBriefDebugBox: { marginTop: 4, borderWidth: 1, borderRadius: 14, padding: 8, gap: 4 },
-  contextBridgeCard: { marginTop: 12, gap: 10 },
+  contextBridgeCard: { gap: 8 },
   contextBridgeHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   contextBriefTitle: { fontSize: 15, fontWeight: '900', lineHeight: 21, marginTop: 2 },
   contextBriefBody: { fontSize: 12, fontWeight: '800', lineHeight: 18, marginTop: 2 },
@@ -4159,7 +4155,7 @@ const styles = StyleSheet.create({
   },
   stateEmoji: { fontSize: 26 },
   stateLabel: { color: theme.textDim, fontSize: 10, fontWeight: '600' },
-  dashboardTileGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'stretch', marginTop: 8 },
+  dashboardTileGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: questLayout.dashboardGap, alignItems: 'stretch' },
   dashboardTileGridEditing: { userSelect: 'none', WebkitUserSelect: 'none' } as any,
   dashboardFullRow: { width: '100%' },
 

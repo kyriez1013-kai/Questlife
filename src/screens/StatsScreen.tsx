@@ -17,7 +17,7 @@ import { DashboardCardSize, Skill } from '../types';
 import { getLanguage, progressTypeLabel, t, taskTypeLabel } from '../i18n';
 import { getAppCoreLoopStatus } from '../utils/coreLoop';
 import { trackEvent } from '../utils/analytics';
-import { getQuestTheme } from '../design/tokens';
+import { getQuestTheme, questLayout } from '../design/tokens';
 import QuestCard from '../components/ui/QuestCard';
 import QuestEntityIcon from '../components/ui/QuestEntityIcon';
 import { getSkillSemanticIcon } from '../design/entityIcons';
@@ -27,6 +27,11 @@ import { displayEntityName } from '../utils/displayName';
 import { buildMetacognitionSummary, getLiveExecutionLogs, MetacognitionSummary } from '../utils/metacognition';
 import { buildObjectiveContextBrief, ObjectiveContextBrief } from '../utils/objectiveContextBrief';
 import DashboardCardShell from '../components/dashboard/DashboardCardShell';
+import {
+  QuestGroupedSurface,
+  QuestScreenHeader,
+  QuestSectionHeader,
+} from '../components/ui/QuestPrimitives';
 
 const FIXED_INSIGHTS_CARD_SIZES: Record<string, DashboardCardSize> = {
   main_judgement: 'large',
@@ -420,7 +425,7 @@ export default function StatsScreen() {
       maxWidth: '100%',
       flexGrow: size === 'large' ? 1 : 0,
       order: FIXED_INSIGHTS_CARD_ORDER[cardId as keyof typeof FIXED_INSIGHTS_CARD_SIZES] ?? 500,
-      marginTop: size === 'small' ? questTheme.spacing.xs : questTheme.spacing.sm,
+      marginTop: size === 'small' ? questTheme.spacing.xxs : questTheme.spacing.xs,
     } as any;
   };
   const insightsDashboardShellProps = (cardId: string) => {
@@ -455,20 +460,23 @@ export default function StatsScreen() {
     <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
       <ScrollView
         style={[styles.container, { backgroundColor: questTheme.colors.background }]}
-        contentContainerStyle={{ padding: 16, paddingBottom: 170, maxWidth: 960, width: '100%', alignSelf: 'center' }}
+        contentContainerStyle={{
+          paddingHorizontal: questTheme.spacing.md,
+          paddingTop: questTheme.spacing.sm,
+          paddingBottom: questLayout.contentBottomInset,
+          maxWidth: questLayout.contentMaxWidth,
+          width: '100%',
+          alignSelf: 'center',
+        }}
       >
-        <View style={styles.dashboardHeader}>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.h1, { color: questTheme.colors.text }]}>{t(lang, 'insights')}</Text>
-            <Text style={[styles.sub, { color: questTheme.colors.textMuted }]}>{t(lang, 'settingsSubtitle')}</Text>
-          </View>
-          <View style={[styles.dataHealthPill, { borderColor: dataHealthColor, backgroundColor: dataHealthColor + '22' }]}>
+        <QuestScreenHeader
+          questTheme={questTheme}
+          title={t(lang, 'insights')}
+          subtitle={`${t(lang, 'dashboardSummary')} · ${logs.length} ${t(lang, 'logsToday')} · ${activeDays} ${t(lang, 'activeDays')} · ${t(lang, 'last7Days')}`}
+          trailing={<View style={[styles.dataHealthPill, { borderColor: dataHealthColor, backgroundColor: dataHealthColor + '22' }]}>
             <Text style={[styles.dataHealthText, { color: dataHealthColor }]}>{t(lang, 'dataHealth')}: {t(lang, dataHealthLabelKey)}</Text>
-          </View>
-        </View>
-        <Text style={[styles.dashboardMeta, { color: questTheme.colors.textMuted }]}>
-          {t(lang, 'dashboardSummary')} · {logs.length} {t(lang, 'logsToday')} · {activeDays} {t(lang, 'activeDays')} · {t(lang, 'last7Days')}
-        </Text>
+          </View>}
+        />
 
         <TileGrid
           nativeID="insights-dashboard-grid"
@@ -490,33 +498,28 @@ export default function StatsScreen() {
           className="insight-card metacognition-summary-card"
         >
           <View style={styles.primaryHeader}>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.decisionKicker, { color: questTheme.colors.textMuted }]}>{t(lang, 'mainInsight')}</Text>
-              <Text style={[styles.primaryTitle, { color: questTheme.colors.text }]}>{t(lang, 'todayCoreJudgement')}</Text>
-            </View>
+            <Text style={[styles.decisionKicker, { color: questTheme.colors.textMuted, flex: 1 }]}>{t(lang, 'mainInsight')}</Text>
             <View style={[styles.dataHealthPill, { borderColor: mainInsightColor, backgroundColor: mainInsightColor + '22' }]}>
               <Text style={[styles.dataHealthText, { color: mainInsightColor }]}>{t(lang, mainInsight.confidence === 'high' ? 'confidenceHigh' : mainInsight.confidence === 'medium' ? 'confidenceMedium' : 'confidenceLow')}</Text>
             </View>
           </View>
-          <Text style={[styles.primaryBody, { color: questTheme.colors.text }]}>{applyValues(t(lang, mainInsight.titleKey), mainInsight.titleValues)}</Text>
+          <Text style={[styles.primaryTitle, { color: questTheme.colors.text }]}>{applyValues(t(lang, mainInsight.titleKey), mainInsight.titleValues)}</Text>
           {mainJudgementCardSize !== 'small' ? (
           <Text style={[styles.metaBody, { color: questTheme.colors.textMuted }]}>{applyValues(t(lang, mainInsight.bodyKey), mainInsight.bodyValues)}</Text>
           ) : null}
           {mainJudgementCardSize === 'large' ? (
           <Text style={[styles.metaBody, { color: questTheme.colors.textSubtle }]}>{t(lang, mainInsight.sourceKey)}</Text>
           ) : null}
-          {mainJudgementCardSize === 'large' ? (
           <View style={[styles.nextActionBox, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.border }]}>
             <Text style={[styles.nextActionLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'next')}</Text>
             <Text style={[styles.nextActionText, { color: questTheme.colors.primary }]}>{applyValues(t(lang, mainInsight.nextKey), mainInsight.nextValues)}</Text>
           </View>
-          ) : null}
         </QuestCard>
         </DashboardCardShell>
         ) : null}
         {insightsCardVisible('key_evidence') ? (
         <DashboardCardShell {...insightsDashboardShellProps('key_evidence')}>
-        <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'keyEvidence')}</Text>
+        <QuestSectionHeader questTheme={questTheme} title={t(lang, 'keyEvidence')} />
         {hasKeyEvidence ? (
           <>
             {hasStateTrendEvidence ? <StateTrendStrip metacognition={metacognition} questTheme={questTheme} lang={lang} /> : null}
@@ -525,22 +528,21 @@ export default function StatsScreen() {
             {keyEvidenceCardSize === 'large' && hasBehaviorEvidence ? <BehaviorLinksPanel metacognition={metacognition} questTheme={questTheme} lang={lang} /> : null}
           </>
         ) : (
-          <QuestCard questTheme={questTheme} variant="flat" style={[styles.insightCard, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.borderStrong }]} className="insight-card empty-state">
+          <QuestGroupedSurface questTheme={questTheme} style={{ padding: questTheme.spacing.md }}>
             <Text style={[styles.insightLine, { color: questTheme.colors.text }]}>{t(lang, 'dataStillAccumulating')}</Text>
             <Text style={[styles.insightLine, { color: questTheme.colors.textMuted }]}>{t(lang, 'notEnoughForDetailedInsights')}</Text>
-          </QuestCard>
+          </QuestGroupedSurface>
         )}
         </DashboardCardShell>
         ) : null}
 
         {insightsCardVisible('advanced_signals') ? (
         <DashboardCardShell {...insightsDashboardShellProps('advanced_signals')}>
-        <View style={[styles.advancedHeader, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong }]}>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.advancedTitle, { color: questTheme.colors.text }]}>{t(lang, 'advancedAnalysis')}</Text>
-            <Text style={[styles.advancedSubtitle, { color: questTheme.colors.textMuted }]}>{t(lang, 'advancedSignals')}</Text>
-          </View>
-        </View>
+        <QuestSectionHeader
+          questTheme={questTheme}
+          title={t(lang, 'advancedAnalysis')}
+          subtitle={t(lang, 'advancedSignals')}
+        />
 
         {advancedSignalsCardSize !== 'large' ? (
           <QuestCard questTheme={questTheme} variant="flat" style={[styles.insightCard, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.borderStrong }]} className="insight-card">
@@ -1154,7 +1156,7 @@ const styles = StyleSheet.create({
   sub: { color: theme.textDim, marginTop: 4 },
   dashboardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
   dashboardMeta: { fontSize: 12, fontWeight: '800', marginTop: 8, lineHeight: 18 },
-  dashboardTileGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'stretch', marginTop: 8 },
+  dashboardTileGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: questLayout.dashboardGap, alignItems: 'stretch' },
   dashboardTileGridEditing: { userSelect: 'none', WebkitUserSelect: 'none' } as any,
   advancedHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderRadius: 16, padding: 12, marginTop: 8 },
   advancedTitle: { fontSize: 16, fontWeight: '900', lineHeight: 22 },
@@ -1163,15 +1165,15 @@ const styles = StyleSheet.create({
   commandCell: { flex: 1, minWidth: 132, paddingHorizontal: 8, paddingVertical: 8 },
   commandValue: { fontSize: 16, fontWeight: '900', lineHeight: 22 },
   commandLabel: { fontSize: 11, fontWeight: '800', marginTop: 2 },
-  primaryPanel: { marginTop: 12 },
+  primaryPanel: {},
   primaryHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  primaryTitle: { fontSize: 24, fontWeight: '900', lineHeight: 30, marginTop: 2 },
+  primaryTitle: { fontSize: 20, fontWeight: '900', lineHeight: 26, marginTop: 2 },
   primaryBody: { fontSize: 15, fontWeight: '800', lineHeight: 22, marginTop: 12 },
-  metaBody: { fontSize: 13, fontWeight: '800', lineHeight: 20, marginTop: 6 },
+  metaBody: { fontSize: 13, fontWeight: '800', lineHeight: 19, marginTop: 4 },
   predictionGapLine: { borderWidth: 1, borderRadius: 12, padding: 10, marginTop: 12, gap: 3 },
   predictionGapLabel: { fontSize: 10, fontWeight: '900', textTransform: 'uppercase' },
   predictionGapText: { fontSize: 12, fontWeight: '900', lineHeight: 18 },
-  nextActionBox: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, marginTop: 14 },
+  nextActionBox: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 8, marginTop: 8 },
   nextActionLabel: { fontSize: 11, fontWeight: '900', textTransform: 'uppercase' },
   nextActionText: { fontSize: 14, fontWeight: '900', lineHeight: 20, marginTop: 3 },
   metaStrip: { marginTop: 10, borderWidth: 1 },

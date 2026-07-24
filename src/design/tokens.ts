@@ -67,18 +67,38 @@ export type QuestTheme = {
     pill: number;
   };
   spacing: {
+    xxs: number;
     xs: number;
+    tight: number;
     sm: number;
     md: number;
     lg: number;
+    section: number;
     xl: number;
     xxl: number;
   };
   typography: {
+    displaySize: number;
+    displayLineHeight: number;
+    screenTitleSize: number;
+    screenTitleLineHeight: number;
     titleSize: number;
+    titleLineHeight: number;
     sectionTitleSize: number;
+    sectionTitleLineHeight: number;
+    cardTitleSize: number;
+    cardTitleLineHeight: number;
     bodySize: number;
+    bodyLineHeight: number;
+    compactBodySize: number;
+    compactBodyLineHeight: number;
     captionSize: number;
+    metaSize: number;
+    metaLineHeight: number;
+    helperSize: number;
+    helperLineHeight: number;
+    buttonSize: number;
+    numericSize: number;
     weightRegular: '400';
     weightMedium: '600';
     weightBold: '800';
@@ -87,14 +107,49 @@ export type QuestTheme = {
 
 // ── Global design scale (shared across all themes) ──────────────────────────
 
+export const questLayout = {
+  contentMaxWidth: 760,
+  contentBottomInset: 108,
+  controlMinHeight: 44,
+  navWidthPercent: '94%',
+  navMaxWidth: 760,
+  navBottomInset: 8,
+  navHeight: 60,
+  navRadius: 20,
+  navItemRadius: 16,
+  dashboardGap: 6,
+  editCardMinHeight: {
+    small: 48,
+    medium: 64,
+    large: 80,
+  },
+} as const;
+
 const baseScale = {
   radius: { sm: 8, md: 12, lg: 16, xl: 22, xxl: 28, pill: 999 },
-  spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 },
+  spacing: { xxs: 2, xs: 4, tight: 6, sm: 8, md: 12, lg: 16, section: 20, xl: 24, xxl: 32 },
   typography: {
-    titleSize: 32,
-    sectionTitleSize: 18,
+    displaySize: 32,
+    displayLineHeight: 38,
+    screenTitleSize: 28,
+    screenTitleLineHeight: 34,
+    titleSize: 24,
+    titleLineHeight: 30,
+    sectionTitleSize: 17,
+    sectionTitleLineHeight: 22,
+    cardTitleSize: 15,
+    cardTitleLineHeight: 20,
     bodySize: 14,
+    bodyLineHeight: 20,
+    compactBodySize: 13,
+    compactBodyLineHeight: 18,
     captionSize: 12,
+    metaSize: 11,
+    metaLineHeight: 16,
+    helperSize: 12,
+    helperLineHeight: 17,
+    buttonSize: 12,
+    numericSize: 22,
     weightRegular: '400',
     weightMedium: '600',
     weightBold: '800',

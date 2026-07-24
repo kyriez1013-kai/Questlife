@@ -20,7 +20,7 @@ import SkillForm from '../components/SkillForm';
 import { SKILL_PROFILE_DEFAULTS } from '../scheduleAdjust';
 import { flexibilityLabel, getLanguage, progressTypeLabel, rigidityLabel, t, taskTypeLabel } from '../i18n';
 import { calculateSkillProgress, formatMetricSummary, formatMetricUpdateSummary, progressTypeForSkill } from '../progress';
-import { getQuestTheme } from '../design/tokens';
+import { getQuestTheme, questLayout } from '../design/tokens';
 import { systemIcons } from '../design/systemIcons';
 import { getGoalSemanticIcon, getSkillSemanticIcon } from '../design/entityIcons';
 import QuestButton from '../components/ui/QuestButton';
@@ -249,7 +249,14 @@ export default function SkillDetailScreen() {
         <QuestButton questTheme={questTheme} variant="secondary" icon="plus" label={t(lang, 'edit')} onPress={() => setEditing(true)} />
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 180, maxWidth: 960, width: '100%', alignSelf: 'center' }}>
+      <ScrollView contentContainerStyle={{
+        paddingHorizontal: questTheme.spacing.md,
+        paddingTop: questTheme.spacing.sm,
+        paddingBottom: questLayout.contentBottomInset,
+        maxWidth: questLayout.contentMaxWidth,
+        width: '100%',
+        alignSelf: 'center',
+      }}>
         {/* 技能标题 */}
         <View style={styles.titleRow}>
           <QuestEntityIcon icon={skill.icon} systemIcon={getSkillSemanticIcon(skill)} color={skill.color} questTheme={questTheme} size="xl" />

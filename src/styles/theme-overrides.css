@@ -164,17 +164,17 @@
   user-select: none !important;
 }
 
-.dashboard-tile-small .dashboard-card-shell {
+.dashboard-tile-editing.dashboard-tile-small .dashboard-card-shell {
   min-height: 132px !important;
   max-height: 188px;
   overflow: hidden;
 }
 
-.dashboard-tile-medium .dashboard-card-shell {
+.dashboard-tile-editing.dashboard-tile-medium .dashboard-card-shell {
   min-height: 196px !important;
 }
 
-.dashboard-tile-large .dashboard-card-shell {
+.dashboard-tile-editing.dashboard-tile-large .dashboard-card-shell {
   min-height: 284px !important;
 }
 

@@ -13,7 +13,7 @@ import { appAccent, theme } from '../theme';
 import { Category } from '../types';
 import GoalForm from '../components/GoalForm';
 import { getLanguage, t } from '../i18n';
-import { getQuestTheme } from '../design/tokens';
+import { getQuestTheme, questLayout } from '../design/tokens';
 import { getGoalSemanticIcon } from '../design/entityIcons';
 import QuestButton from '../components/ui/QuestButton';
 import QuestCard from '../components/ui/QuestCard';
@@ -21,6 +21,7 @@ import QuestEmptyState from '../components/ui/QuestEmptyState';
 import QuestEntityIcon from '../components/ui/QuestEntityIcon';
 import QuestIcon from '../components/ui/QuestIcon';
 import { confirmAction } from '../utils/confirm';
+import { QuestScreenHeader } from '../components/ui/QuestPrimitives';
 
 export default function GoalTreeScreen() {
   const { data, deleteCategory } = useStore();
@@ -60,16 +61,24 @@ export default function GoalTreeScreen() {
     <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
       <ScrollView
         style={[styles.container, { backgroundColor: questTheme.colors.background }]}
-        contentContainerStyle={{ padding: 16, paddingBottom: 180, maxWidth: 960, width: '100%', alignSelf: 'center' }}
+        contentContainerStyle={{
+          paddingHorizontal: questTheme.spacing.md,
+          paddingTop: questTheme.spacing.sm,
+          paddingBottom: questLayout.contentBottomInset,
+          maxWidth: questLayout.contentMaxWidth,
+          width: '100%',
+          alignSelf: 'center',
+        }}
       >
-        <View style={styles.headerRow}>
-          <Text style={[styles.h1, { color: questTheme.colors.text }]}>{t(lang, 'quest')}</Text>
-          <View style={styles.headerActions}>
+        <QuestScreenHeader
+          questTheme={questTheme}
+          title={t(lang, 'quest')}
+          subtitle={t(lang, 'questSubtitle')}
+          trailing={<View style={styles.headerActions}>
             <QuestButton questTheme={questTheme} variant="ghost" icon="library" label={t(lang, 'skillLibrary')} onPress={() => nav.navigate('SkillLibrary')} />
             <QuestButton questTheme={questTheme} variant="primary" icon="plus" label={t(lang, 'addQuest')} onPress={() => setCreating(true)} />
-          </View>
-        </View>
-        <Text style={[styles.sub, { color: questTheme.colors.textMuted }]}>{t(lang, 'questSubtitle')}</Text>
+          </View>}
+        />
 
         {data.categories.length === 0 && (
           <QuestEmptyState questTheme={questTheme} icon="target" title={t(lang, 'noQuests')} body={t(lang, 'noQuestsDesc')} />
@@ -137,7 +146,7 @@ const styles = StyleSheet.create({
   emptyBox: { backgroundColor: theme.card, padding: 20, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
   emptyTitle: { color: theme.text, fontSize: 16, fontWeight: '600' },
   emptyDesc: { color: theme.textDim, marginTop: 8, lineHeight: 22 },
-  card: { flexDirection: 'row', backgroundColor: theme.card, padding: 13, borderRadius: theme.radius.lg, marginBottom: 8, alignItems: 'center', gap: 12, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
+  card: { flexDirection: 'row', backgroundColor: theme.card, padding: 12, borderRadius: theme.radius.lg, marginBottom: 6, alignItems: 'center', gap: 10, borderWidth: 1, borderColor: theme.border },
   iconBox: { width: 52, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.cardAlt },
   name: { color: theme.text, fontSize: 17, fontWeight: '600' },
   desc: { color: theme.textDim, fontSize: 12, marginTop: 4 },

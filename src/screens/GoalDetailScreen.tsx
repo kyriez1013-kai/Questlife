@@ -23,7 +23,7 @@ import {
 } from '../progress';
 import { uid } from '../storage';
 import { getGoalCoreLoopStatus } from '../utils/coreLoop';
-import { getQuestTheme, QuestTheme } from '../design/tokens';
+import { getQuestTheme, questLayout, QuestTheme } from '../design/tokens';
 import { systemIcons } from '../design/systemIcons';
 import { getGoalSemanticIcon, getModuleSemanticIcon, getSkillSemanticIcon } from '../design/entityIcons';
 import QuestButton from '../components/ui/QuestButton';
@@ -291,7 +291,14 @@ export default function GoalDetailScreen() {
         <QuestButton questTheme={questTheme} variant="secondary" icon="plus" label={t(lang, 'edit')} onPress={() => setEditing(true)} />
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 180, maxWidth: 960, width: '100%', alignSelf: 'center' }}>
+      <ScrollView contentContainerStyle={{
+        paddingHorizontal: questTheme.spacing.md,
+        paddingTop: questTheme.spacing.sm,
+        paddingBottom: questLayout.contentBottomInset,
+        maxWidth: questLayout.contentMaxWidth,
+        width: '100%',
+        alignSelf: 'center',
+      }}>
         <View style={styles.titleRow}>
           <QuestEntityIcon icon={cat.emoji} systemIcon={getGoalSemanticIcon(cat)} color={cat.color} questTheme={questTheme} size="xl" />
           <View style={{ flex: 1 }}>

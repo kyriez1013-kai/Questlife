@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { getLanguage, t } from '../../i18n';
 import { DashboardCardPreference, DashboardCardSize, DashboardSurface } from '../../types';
-import { getQuestTheme, QuestTheme } from '../../design/tokens';
+import { getQuestTheme, questLayout, QuestTheme } from '../../design/tokens';
 import { DashboardCardMeta, getNextDashboardCardSize } from '../../utils/dashboardCards';
 
 type Props = {
@@ -236,11 +236,13 @@ export default function DashboardCardShell({
       onResponderTerminate={editMode ? handleResponderRelease : undefined}
       style={[
         styles.shell,
-        size === 'small' ? styles.small : size === 'large' ? styles.large : styles.medium,
+        editMode ? (size === 'small' ? styles.small : size === 'large' ? styles.large : styles.medium) : null,
         {
           borderColor: selected ? q.colors.primary : editMode ? q.colors.borderStrong : 'transparent',
+          borderWidth: editMode ? 1 : 0,
           backgroundColor: editMode ? q.colors.surfaceSoft : 'transparent',
           shadowColor: q.colors.cardShadow,
+          shadowOpacity: editMode ? 0.06 : 0,
         },
       ]}
     >
@@ -315,7 +317,7 @@ export default function DashboardCardShell({
       onDragEnd={editMode ? onDragEnd : undefined}
       style={({ pressed }: { pressed: boolean }) => [
         styles.touchShell,
-        size === 'large' ? styles.tileLarge : size === 'small' ? styles.tileSmall : styles.tileMedium,
+        editMode ? (size === 'large' ? styles.tileLarge : size === 'small' ? styles.tileSmall : styles.tileMedium) : null,
         editMode && styles.tileEditing,
         selected && styles.tileSelected,
         pressed && editMode ? { transform: [{ scale: 0.992 }] } : null,
@@ -331,17 +333,17 @@ const styles = StyleSheet.create({
   touchShell: { width: '100%' },
   // minHeight 是地板值,内容更多时会自然撑高;这里只是降低"内容很少时"的强制留白下限,
   // 不改变 size 的取值来源,因此不影响任何依赖 size==='large'/'small' 的条件分支。
-  tileSmall: { minHeight: 56 },
-  tileMedium: { minHeight: 84 },
-  tileLarge: { minHeight: 112 },
+  tileSmall: { minHeight: questLayout.editCardMinHeight.small },
+  tileMedium: { minHeight: questLayout.editCardMinHeight.medium },
+  tileLarge: { minHeight: questLayout.editCardMinHeight.large },
   tileEditing: { cursor: 'grab', userSelect: 'none', WebkitUserSelect: 'none' } as any,
   tileSelected: { cursor: 'grabbing' } as any,
   shell: {
     position: 'relative',
-    borderWidth: 1,
+    borderWidth: 0,
     borderRadius: 18,
     minHeight: '100%' as any,
-    shadowOpacity: 0.06,
+    shadowOpacity: 0,
     shadowRadius: 14,
     shadowOffset: { width: 0, height: 8 },
   },

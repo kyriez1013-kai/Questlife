@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, TouchableOpacity, View, ViewStyle } from 'react-native';
-import { getQuestTheme, QuestTheme } from '../../design/tokens';
+import { getQuestTheme, questLayout, QuestTheme } from '../../design/tokens';
 import QuestIcon, { QuestIconName } from './QuestIcon';
 
 type Props = {
@@ -46,10 +46,10 @@ export default function QuestButton({
       onPress={onPress}
       style={[
         {
-          minHeight: 38,
+          minHeight: questLayout.controlMinHeight,
           borderRadius: q.radius.pill,
           paddingHorizontal: 13,
-          paddingVertical: 9,
+          paddingVertical: q.spacing.sm,
           borderWidth: variant === 'ghost' || variant === 'secondary' || disabled ? 1 : 0,
           borderColor,
           backgroundColor: bg,
@@ -62,7 +62,7 @@ export default function QuestButton({
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
         {icon ? <QuestIcon name={icon} size={16} color={fg} strokeWidth={2.4} /> : null}
-        {children ?? <Text style={{ color: fg, fontSize: 12, fontWeight: '800' }}>{label}</Text>}
+        {children ?? <Text style={{ color: fg, fontSize: q.typography.buttonSize, fontWeight: '800' }}>{label}</Text>}
       </View>
     </TouchableOpacity>
   );

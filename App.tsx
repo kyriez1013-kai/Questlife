@@ -10,7 +10,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StoreProvider, useStore } from './src/store';
 import { getLanguage, t } from './src/i18n';
 import { appAccent } from './src/theme';
-import { getQuestTheme } from './src/design/tokens';
+import { getQuestTheme, questLayout } from './src/design/tokens';
 import { isDarkTheme } from './src/design/darkSurfaceGuard';
 import QuestIcon, { QuestIconName } from './src/components/ui/QuestIcon';
 import HomeScreen from './src/screens/HomeScreen';
@@ -177,22 +177,24 @@ function AppContent() {
             tabBarInactiveTintColor: questTheme.colors.navInactive,
             tabBarStyle: {
               position: 'absolute',
-              left: 14,
-              right: 14,
-              bottom: 12,
-              height: 68,
-              paddingBottom: 10,
-              paddingTop: 8,
+              width: questLayout.navWidthPercent,
+              maxWidth: questLayout.navMaxWidth,
+              left: '50%',
+              transform: 'translateX(-50%)' as any,
+              bottom: questLayout.navBottomInset,
+              height: questLayout.navHeight,
+              paddingBottom: 7,
+              paddingTop: 6,
               backgroundColor: questTheme.colors.navBackground,
               borderTopWidth: 0,
-              borderRadius: 24,
+              borderRadius: questLayout.navRadius,
               shadowColor: questTheme.colors.cardShadow,
               shadowOpacity: 0.1,
               shadowOffset: { width: 0, height: 8 },
               shadowRadius: 24,
               elevation: 4,
             },
-            tabBarItemStyle: { borderRadius: 18 },
+            tabBarItemStyle: { borderRadius: questLayout.navItemRadius },
             tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
           }}
         >
