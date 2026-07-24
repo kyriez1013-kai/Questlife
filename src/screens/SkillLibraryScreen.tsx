@@ -15,7 +15,7 @@ import QuestCard from '../components/ui/QuestCard';
 import QuestEntityIcon from '../components/ui/QuestEntityIcon';
 import QuestIcon from '../components/ui/QuestIcon';
 import { confirmAction } from '../utils/confirm';
-import { QuestScreenHeader } from '../components/ui/QuestPrimitives';
+import { QuestContextBar } from '../components/ui/QuestPrimitives';
 
 function fill(template: string, values: Record<string, string | number>) {
   return Object.entries(values).reduce((out, [key, value]) => out.replace(`{${key}}`, String(value)), template);
@@ -58,10 +58,10 @@ export default function SkillLibraryScreen() {
         width: '100%',
         alignSelf: 'center',
       }}>
-        <QuestScreenHeader
+        <QuestContextBar
           questTheme={questTheme}
-          title={t(lang, 'skillLibrary')}
-          subtitle={`${data.skills.length} ${t(lang, 'skillCount')}`}
+          primary={t(lang, 'skillLibrary')}
+          secondary={`${data.skills.length} ${t(lang, 'skillCount')}`}
           trailing={<QuestButton questTheme={questTheme} variant="primary" icon="plus" label={t(lang, 'createSkill')} onPress={() => setCreating(true)} />}
         />
         {data.skills.map((skill) => {

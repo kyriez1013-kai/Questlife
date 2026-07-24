@@ -1,6 +1,6 @@
 # QuestLife Project Status
 
-Updated: 2026-05-25
+Updated: 2026-07-24
 
 ## Current Version State
 
@@ -2304,3 +2304,56 @@ Local responsive checks:
 Known limitations:
 - The available in-app browser screenshot command timed out, so image capture remains pending even though DOM measurements and real interactions completed locally.
 - Smart Capture parse/API, Objective Context API, and full production-data flows require production verification after deployment.
+
+## QuestLife Product Surface Reset
+
+Status: Implemented and locally verified; production verification pending after GitHub/Vercel deployment.
+
+Navigation root cause:
+- React Native Web kept inactive tab scene trees mounted as full-size flex layers.
+- The native screens fallback did not reliably apply `display: none`, so an inactive screen could remain above or behind the focused scene.
+- Every tab is now wrapped in an explicit focused web surface; inactive tab boundaries are hidden and cannot receive pointer events.
+
+Information architecture:
+- Today is a command surface: compact date/decision context, Smart Capture, current action, current state, plan and recent activity.
+- Goals is a compact working list with Skill Library and add actions in the context bar.
+- Schedule uses a compact date/switcher/current-next hierarchy.
+- Insights is split into Overview, Trends, Patterns and Advanced.
+- Settings contains manual sleep/body/objective context under Data Sources.
+- Goal Detail, Skill Library and Skill Detail use the compact detail scale.
+
+Retired from primary rendering:
+- giant standalone page titles
+- full Daily Brief evidence document
+- Body/Sleep Context and detailed technical cards on Today
+- persistent onboarding-success card after usage begins
+- default/reference-only Ability Map chart
+- empty trend charts and repeated insufficient-data evidence cards
+
+Preserved:
+- `/api/brief`, `/api/parse`, Decision AI reasoning, DecisionMemory and PatternMemory semantics
+- Smart Capture parsing/routing/save/feedback
+- state check-in and after-state flows
+- schedule proposal confirm/apply/undo
+- Goal/Module/Skill data semantics and persisted storage
+- Objective Context parser/save flow
+
+Measured presentation:
+- context/app bars: 48px minimum
+- Smart Capture idle composer: 56px
+- bottom navigation: 58px with 82px content inset
+- goal rows: 78px minimum
+- Schedule current/next: 82px minimum
+- Insights Overview: four 62px signal tiles
+- Ability Map: 220px and only after non-baseline evidence
+
+Documentation:
+- `QUESTLIFE_PRODUCT_SURFACE_INVENTORY.md`
+- `QUESTLIFE_INFORMATION_ARCHITECTURE.md`
+- `QUESTLIFE_UI_REGRESSION_MATRIX.md`
+
+Boundaries:
+- No stored data schema or migration changes.
+- No Apple Health/HealthKit integration or fake connection state.
+- No changes to QuestFit.
+- Advanced analysis remains dense for evidence-rich users and is intentionally isolated from Overview.

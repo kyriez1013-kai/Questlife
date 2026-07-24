@@ -259,7 +259,7 @@ export default function SkillDetailScreen() {
       }}>
         {/* 技能标题 */}
         <View style={styles.titleRow}>
-          <QuestEntityIcon icon={skill.icon} systemIcon={getSkillSemanticIcon(skill)} color={skill.color} questTheme={questTheme} size="xl" />
+          <QuestEntityIcon icon={skill.icon} systemIcon={getSkillSemanticIcon(skill)} color={skill.color} questTheme={questTheme} size="lg" />
           <View style={{ flex: 1 }}>
             <Text style={[styles.title, { color: questTheme.colors.text }]}>{skill.name}</Text>
             {cat && (
@@ -271,22 +271,18 @@ export default function SkillDetailScreen() {
           </View>
         </View>
 
+        {compound.points.length >= 2 ? (
         <QuestCard questTheme={questTheme} variant="data" style={styles.compoundCard}>
           <View style={styles.cardTitleRow}>
             <QuestIcon name="barChart" size={18} color={questTheme.colors.primary} />
             <Text style={[styles.sectionTitle, { color: questTheme.colors.text, marginTop: 0, marginBottom: 0 }]}>{t(lang, 'compoundCurve')}</Text>
           </View>
-          {compound.points.length < 2 ? (
-            <Text style={[styles.ruleMuted, { color: questTheme.colors.textMuted }]}>{t(lang, 'compoundNeedsData')}</Text>
-          ) : (
-            <>
-              <Text style={[styles.ruleLine, { color: questTheme.colors.text }]}>
-                {compound.growth == null ? t(lang, 'buildingData') : `${lang === 'zh' ? '本月' : 'This month'} ${compound.growth >= 0 ? '+' : ''}${compound.growth.toFixed(0)}% · ${compound.status}`}
-              </Text>
-              <MiniLineChart values={compound.points} color={skill.color} />
-            </>
-          )}
+          <Text style={[styles.ruleLine, { color: questTheme.colors.text }]}>
+            {compound.growth == null ? t(lang, 'buildingData') : `${lang === 'zh' ? '本月' : 'This month'} ${compound.growth >= 0 ? '+' : ''}${compound.growth.toFixed(0)}% · ${compound.status}`}
+          </Text>
+          <MiniLineChart values={compound.points} color={skill.color} />
         </QuestCard>
+        ) : null}
 
         {/* 时间范围切换 */}
         <View style={styles.rangeRow}>
@@ -756,18 +752,18 @@ const styles = StyleSheet.create({
   },
   headerBtnText: { color: theme.text, fontWeight: '600', fontSize: 13 },
 
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 4 },
-  cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 20, marginBottom: 12 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14, marginBottom: 8 },
   inlineEntityRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' },
   iconBox: { width: 60, height: 60, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  title: { color: theme.text, fontSize: 24, fontWeight: '700' },
+  title: { color: theme.text, fontSize: 21, lineHeight: 26, fontWeight: '800' },
   catBadge: {
     marginTop: 6, alignSelf: 'flex-start',
     backgroundColor: theme.cardAlt, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12,
   },
   catBadgeText: { color: theme.textDim, fontSize: 12, fontWeight: '600' },
 
-  rangeRow: { flexDirection: 'row', gap: 8, marginTop: 20 },
+  rangeRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
   rangePill: {
     flex: 1, paddingVertical: 8, borderRadius: 18,
     borderWidth: 1, borderColor: theme.border, backgroundColor: theme.card,
@@ -775,8 +771,8 @@ const styles = StyleSheet.create({
   },
   rangePillText: { color: theme.text, fontSize: 14, fontWeight: '600' },
 
-  chartCard: { backgroundColor: theme.card, padding: 14, borderRadius: 12, marginTop: 12, minHeight: 220 },
-  compoundCard: { backgroundColor: theme.card, padding: 14, borderRadius: 14, marginTop: 16, borderWidth: 1, borderColor: theme.border },
+  chartCard: { backgroundColor: theme.card, padding: 12, borderRadius: 12, marginTop: 8, minHeight: 180 },
+  compoundCard: { backgroundColor: theme.card, padding: 12, borderRadius: 14, marginTop: 12, borderWidth: 1, borderColor: theme.border },
   chartTitle: { color: theme.text, fontSize: 14, fontWeight: '600', marginBottom: 12 },
   emptyChart: { color: theme.textDim, textAlign: 'center', paddingVertical: 24, fontStyle: 'italic' },
 
@@ -809,14 +805,14 @@ const styles = StyleSheet.create({
   legendText: { color: theme.textDim, fontSize: 11 },
 
   // stats
-  statsRow: { flexDirection: 'row', gap: 10, marginTop: 20 },
+  statsRow: { flexDirection: 'row', gap: 8, marginTop: 14 },
   statCard: { flex: 1, backgroundColor: theme.card, padding: 14, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: theme.border },
   statValue: { fontSize: 18, fontWeight: '700' },
   statLabel: { color: theme.textDim, fontSize: 11, marginTop: 6 },
 
   // 成就里程碑
-  sectionTitle: { color: theme.text, fontSize: 16, fontWeight: '700', marginTop: 16, marginBottom: 8 },
-  ruleCard: { backgroundColor: theme.card, borderRadius: 14, padding: 14, gap: 8 },
+  sectionTitle: { color: theme.text, fontSize: 15, fontWeight: '800', marginTop: 14, marginBottom: 8 },
+  ruleCard: { backgroundColor: theme.card, borderRadius: 14, padding: 12, gap: 7 },
   logRow: { paddingBottom: 10, marginBottom: 8, borderBottomWidth: 1, borderBottomColor: theme.border },
   ruleLine: { color: theme.text, fontSize: 13, fontWeight: '600', lineHeight: 19 },
   ruleMuted: { color: theme.textDim, fontSize: 12, lineHeight: 18 },

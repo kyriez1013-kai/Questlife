@@ -67,3 +67,13 @@ Audit scope: current production-facing presentation layer and every secondary su
 - Duplicate recent records, repeated helper copy and repeated insufficient-data cards without a unique action.
 
 No retired surface implies deleting its stored data or business logic.
+
+## Reset implementation status
+
+- Primary tab navigation now uses an explicit focused web surface; inactive RN-Web tab trees cannot overlay the active screen.
+- Today, Goals and Schedule use compact context bars and working rows.
+- Insights is split into Overview, Trends, Patterns and Advanced.
+- Settings owns the existing manual Objective Context input under Data Sources.
+- Goal Detail, Skill Library and Skill Detail use the compact detail scale.
+- Full Decision Brief evidence, body/source context, Ability Map and technical diagnostics no longer compete in the primary Today/Insights feed.
+- Eight module families moved to detail/background presentation; eight redundant/default primary surfaces were retired from rendering.
