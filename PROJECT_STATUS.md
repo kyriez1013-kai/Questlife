@@ -2307,7 +2307,7 @@ Known limitations:
 
 ## QuestLife Product Surface Reset
 
-Status: Implemented and locally verified; production verification pending after GitHub/Vercel deployment.
+Status: Implemented and production UI verified on 2026-07-24.
 
 Navigation root cause:
 - React Native Web kept inactive tab scene trees mounted as full-size flex layers.
@@ -2357,3 +2357,12 @@ Boundaries:
 - No Apple Health/HealthKit integration or fake connection state.
 - No changes to QuestFit.
 - Advanced analysis remains dense for evidence-rich users and is intentionally isolated from Overview.
+
+Production verification:
+- Verified deployed bundle `index-b3b61e4ca6c44d19875f2576393b7a32.js` at `https://questlife-alpha-orpin.vercel.app`.
+- Traversed Today, Goals, Goal Detail, Skill Library, Skill Detail, Schedule, all four Insights layers and Settings in the real web UI.
+- Verified 390x844, 430x932 and 1280x900 without horizontal overflow.
+- Verified cleanFocus and deepWork switching, then restored deepWork.
+- Verified the Settings Data Sources parser preview with a one-item sleep context result without saving another production context.
+- Compact empty states now replace centered oversized empty cards, and a suggested-module panel is not rendered when the goal already contains every suggestion.
+- New Smart Capture writes, destructive Goal/Skill actions, schedule proposal apply/undo and data reset were intentionally not repeated against the user's production data; their handlers and data semantics were not changed in this pass.
