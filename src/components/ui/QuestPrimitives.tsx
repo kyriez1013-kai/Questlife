@@ -21,7 +21,7 @@ export function QuestScreenHeader({ title, subtitle, trailing, questTheme, style
       alignItems: 'flex-start',
       justifyContent: 'space-between',
       gap: q.spacing.md,
-      marginBottom: q.spacing.sm,
+      marginBottom: q.spacing.tight,
     }, style]}>
       <View style={{ flex: 1 }}>
         <Text style={{

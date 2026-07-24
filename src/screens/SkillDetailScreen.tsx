@@ -778,7 +778,7 @@ const styles = StyleSheet.create({
   chartCard: { backgroundColor: theme.card, padding: 14, borderRadius: 12, marginTop: 12, minHeight: 220 },
   compoundCard: { backgroundColor: theme.card, padding: 14, borderRadius: 14, marginTop: 16, borderWidth: 1, borderColor: theme.border },
   chartTitle: { color: theme.text, fontSize: 14, fontWeight: '600', marginBottom: 12 },
-  emptyChart: { color: theme.textDim, textAlign: 'center', paddingVertical: 40, fontStyle: 'italic' },
+  emptyChart: { color: theme.textDim, textAlign: 'center', paddingVertical: 24, fontStyle: 'italic' },
 
   // timeline (day)
   tlRow: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', backgroundColor: theme.cardAlt, padding: 12, borderRadius: 10 },
@@ -815,7 +815,7 @@ const styles = StyleSheet.create({
   statLabel: { color: theme.textDim, fontSize: 11, marginTop: 6 },
 
   // 成就里程碑
-  sectionTitle: { color: theme.text, fontSize: 16, fontWeight: '700', marginTop: 24, marginBottom: 12 },
+  sectionTitle: { color: theme.text, fontSize: 16, fontWeight: '700', marginTop: 16, marginBottom: 8 },
   ruleCard: { backgroundColor: theme.card, borderRadius: 14, padding: 14, gap: 8 },
   logRow: { paddingBottom: 10, marginBottom: 8, borderBottomWidth: 1, borderBottomColor: theme.border },
   ruleLine: { color: theme.text, fontSize: 13, fontWeight: '600', lineHeight: 19 },

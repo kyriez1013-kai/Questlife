@@ -34,15 +34,15 @@ function TabIcon({ name, focused, color }: { name: QuestIconName; focused: boole
   return (
     <View
       style={{
-        width: 34,
-        height: 28,
-        borderRadius: 16,
+        width: 30,
+        height: 24,
+        borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
         opacity: focused ? 1 : 0.72,
       }}
     >
-      <QuestIcon name={name} size={21} color={color} strokeWidth={focused ? 2.5 : 2.1} />
+      <QuestIcon name={name} size={20} color={color} strokeWidth={focused ? 2.4 : 2} />
     </View>
   );
 }
@@ -183,19 +183,19 @@ function AppContent() {
               transform: 'translateX(-50%)' as any,
               bottom: questLayout.navBottomInset,
               height: questLayout.navHeight,
-              paddingBottom: 7,
-              paddingTop: 6,
+              paddingBottom: 4,
+              paddingTop: 4,
               backgroundColor: questTheme.colors.navBackground,
               borderTopWidth: 0,
               borderRadius: questLayout.navRadius,
               shadowColor: questTheme.colors.cardShadow,
               shadowOpacity: 0.1,
               shadowOffset: { width: 0, height: 8 },
-              shadowRadius: 24,
+              shadowRadius: 16,
               elevation: 4,
             },
             tabBarItemStyle: { borderRadius: questLayout.navItemRadius },
-            tabBarLabelStyle: { fontSize: 11, fontWeight: '700' },
+            tabBarLabelStyle: { fontSize: 10, fontWeight: '700' },
           }}
         >
           <Tab.Screen name="Today" component={HomeScreen}

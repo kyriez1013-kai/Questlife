@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   addBtnText: { color: '#fff', fontWeight: '700' },
   libraryBtn: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.border, backgroundColor: theme.card },
   libraryBtnText: { color: theme.text, fontWeight: '800', fontSize: 12 },
-  emptyBox: { backgroundColor: theme.card, padding: 20, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
+  emptyBox: { backgroundColor: theme.card, padding: 14, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
   emptyTitle: { color: theme.text, fontSize: 16, fontWeight: '600' },
   emptyDesc: { color: theme.textDim, marginTop: 8, lineHeight: 22 },
   card: { flexDirection: 'row', backgroundColor: theme.card, padding: 12, borderRadius: theme.radius.lg, marginBottom: 6, alignItems: 'center', gap: 10, borderWidth: 1, borderColor: theme.border },

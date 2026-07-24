@@ -59,7 +59,6 @@ import { createDecisionResultRecord } from '../utils/decisionMemory';
 import { createDecisionService, getLastDecisionServiceMeta, isDecisionAIEnabled, isDecisionAIShadowEnabled, isDecisionDailyBriefEnabled, isDecisionDebugEnabled, LegacyDecisionService, AiDecisionService, runDecisionShadowBrief, DecisionServiceMeta } from '../services/decisionService';
 import { buildScheduleProposalPatch, normalizeScheduleProposals, previewScheduleProposal, scheduleProposalActionKey, ScheduleProposal, ScheduleProposalStatus } from '../utils/scheduleProposal';
 import DashboardCardShell from '../components/dashboard/DashboardCardShell';
-import { QuestScreenHeader } from '../components/ui/QuestPrimitives';
 
 const FIXED_TODAY_CARD_SIZES = {
   smart_capture: 'large',
@@ -456,6 +455,7 @@ export default function HomeScreen() {
   const [dailyDecisionServiceMeta, setDailyDecisionServiceMeta] = useState<DecisionServiceMeta | null>(null);
   const [dailyDecisionResultId, setDailyDecisionResultId] = useState('');
   const [dailyDecisionFeedback, setDailyDecisionFeedback] = useState<'useful' | 'not_useful' | null>(null);
+  const [showDailyBriefEvidence, setShowDailyBriefEvidence] = useState(false);
   const [scheduleProposalStatuses, setScheduleProposalStatuses] = useState<Record<string, ScheduleProposalStatus>>({});
   const [scheduleProposalUndo, setScheduleProposalUndo] = useState<{ proposalId: string; block: ScheduleBlock } | null>(null);
   const [debugScheduleProposalFixture, setDebugScheduleProposalFixture] = useState<ScheduleProposal | null>(null);
@@ -595,6 +595,11 @@ export default function HomeScreen() {
   const todayStr = today();
   const todayLogs = (data.executionLogs || []).filter((a) => a.date === todayStr);
   const todayMinutes = todayLogs.reduce((sum, a) => sum + a.durationMinutes, 0);
+  const contextLocale = lang === 'zh' ? 'zh-CN' : 'en-AU';
+  const todayContextDate = [
+    new Date().toLocaleDateString(contextLocale, { month: 'short', day: 'numeric' }),
+    new Date().toLocaleDateString(contextLocale, { weekday: 'short' }),
+  ].join(' · ');
   const todayRescueLogs = (data.rescueLogs || []).filter((log) => log.date === todayStr);
   const completedRescuesToday = todayRescueLogs.filter((log) => log.activationStepCompleted).length;
   const unfinishedRescue = todayRescueLogs.slice().reverse().find((log) => !log.activationStepCompleted);
@@ -2097,6 +2102,14 @@ export default function HomeScreen() {
           className="dashboard-tile-grid today-dashboard-tile-grid"
           style={styles.dashboardTileGrid}
         >
+        <View style={styles.todayContextBar}>
+          <Text style={[styles.todayContextDate, { color: questTheme.colors.text }]}>
+            {todayContextDate} · {t(lang, currentTimeBlock)}
+          </Text>
+          <Text style={[styles.todayContextSummary, { color: questTheme.colors.textMuted }]}>
+            {todayLogs.length} {t(lang, 'logsToday')} · {t(lang, 'todayInvested')} {todayMinutes} {t(lang, 'minutes')}
+          </Text>
+        </View>
 
         {/* ═══ ZONE 1: Smart Capture (input always first by default) ═════════ */}
         {todayCardVisible('smart_capture') ? (
@@ -2142,7 +2155,7 @@ export default function HomeScreen() {
               <Text style={[styles.dailyBriefActionText, { color: questTheme.colors.text }]}> 
                 {dailyDecisionBrief?.prescription?.do_first?.step || formatCommandCopy(dailyOperatingBrief.firstActionKey, dailyOperatingBrief.firstActionValues)}
               </Text>
-              {dailyDecisionBrief?.prescription?.do_first?.why ? (
+              {showDailyBriefEvidence && dailyDecisionBrief?.prescription?.do_first?.why ? (
                 <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted, marginTop: 4 }]}>{dailyDecisionBrief.prescription.do_first.why}</Text>
               ) : null}
             </View>
@@ -2156,7 +2169,7 @@ export default function HomeScreen() {
             ) : null}
           </View>
 
-          {dailyBriefDashboardSize !== 'small' ? (
+          {showDailyBriefEvidence && dailyBriefDashboardSize !== 'small' ? (
           <View style={[styles.dailyBriefSignalRow, { borderTopColor: questTheme.colors.divider }]}>
             <Text style={[styles.dailyBriefSignalLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'keyEvidence')}</Text>
             <Text style={[styles.dailyBriefSignalText, { color: questTheme.colors.text }]}>
@@ -2165,7 +2178,7 @@ export default function HomeScreen() {
           </View>
           ) : null}
 
-          {dailyBriefDashboardSize === 'large' && dailyDecisionBrief?.perception_gap?.detected ? (
+          {showDailyBriefEvidence && dailyBriefDashboardSize === 'large' && dailyDecisionBrief?.perception_gap?.detected ? (
             <View style={[styles.dailyBriefAction, { backgroundColor: questTheme.colors.accentSoft, borderColor: questTheme.colors.border }]}> 
               <QuestIcon name="activity" size={16} color={questTheme.colors.accent} />
               <View style={{ flex: 1 }}>
@@ -2361,10 +2374,21 @@ export default function HomeScreen() {
             </View>
           ) : null}
 
-          <View style={styles.dailyBriefFooter}>
+          {showDailyBriefEvidence ? (
             <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textSubtle }]}> 
               {t(lang, 'evidenceBasis')}: {t(lang, dailyDecisionBrief?.evidence_basis === 'personal_pattern' ? 'basedOnRecentState' : 'basedOnContextAndHistory')} · {t(lang, 'confidence')}: {dailyDecisionBrief?.confidence == null ? t(lang, 'confidenceLow') : Math.round(dailyDecisionBrief.confidence * 100) + '%'} · {t(lang, 'noMedicalAdviceShort')}
             </Text>
+          ) : null}
+
+          <View style={styles.dailyBriefFooter}>
+            <TouchableOpacity
+              onPress={() => setShowDailyBriefEvidence((value) => !value)}
+              style={[styles.dailyBriefDisclosureBtn, { backgroundColor: questTheme.colors.surfaceSoft }]}
+            >
+              <Text style={[styles.dailyBriefRefreshText, { color: questTheme.colors.textMuted }]}>
+                {t(lang, showDailyBriefEvidence ? 'hideEvidence' : 'viewEvidence')}
+              </Text>
+            </TouchableOpacity>
             <TouchableOpacity
               disabled={dailyDecisionLoading}
               onPress={() => generateDailyDecisionBrief('manual')}
@@ -2652,14 +2676,6 @@ export default function HomeScreen() {
         </TouchableOpacity>
         </DashboardCardShell>
         ) : null}
-
-        {/* ═══ ZONE 3: Today data — static execution sections ═ */}
-        <QuestScreenHeader
-          questTheme={questTheme}
-          title={t(lang, 'today')}
-          subtitle={`${todayStr} · ${t(lang, 'todayInvested')} ${todayMinutes} ${t(lang, 'minutes')} · ${todayLogs.length} ${t(lang, 'logsToday')} · ${t(lang, currentTimeBlock)}`}
-          style={styles.dashboardFullRow}
-        />
 
         {todayCardVisible('today_plan') ? (
         <DashboardCardShell {...todayDashboardShellProps('today_plan')}>
@@ -3934,19 +3950,20 @@ const styles = StyleSheet.create({
   nowFocusIconShell: { width: 40, height: 40, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   nowFocusTitle: { color: theme.text, fontSize: 21, fontWeight: '900', lineHeight: 26 },
   nowFocusActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
-  dailyBriefCard: { gap: 8 },
-  dailyBriefHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  dailyBriefMetaRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
-  dailyBriefTitle: { fontSize: 16, fontWeight: '900', lineHeight: 22, marginTop: 2 },
-  dailyBriefAction: { borderWidth: 1, borderRadius: 14, padding: 8, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  dailyBriefCard: { gap: 6 },
+  dailyBriefHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  dailyBriefMetaRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
+  dailyBriefTitle: { fontSize: 16, fontWeight: '900', lineHeight: 21, marginTop: 1 },
+  dailyBriefAction: { borderWidth: 0, borderRadius: 12, padding: 8, flexDirection: 'row', alignItems: 'center', gap: 8 },
   dailyBriefActionText: { fontSize: 13, fontWeight: '900', lineHeight: 18 },
   dailyBriefMeta: { fontSize: 11, fontWeight: '800', lineHeight: 16 },
-  dailyBriefSection: { gap: 6 },
-  dailyBriefSignalRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingTop: 7, borderTopWidth: 1 },
+  dailyBriefSection: { gap: 5 },
+  dailyBriefSignalRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingTop: 6, borderTopWidth: 1 },
   dailyBriefSignalLabel: { width: 58, flexShrink: 0, fontSize: 10, fontWeight: '900', lineHeight: 15 },
   dailyBriefSignalText: { flex: 1, fontSize: 11, fontWeight: '800', lineHeight: 16 },
-  dailyBriefFooter: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'space-between', alignItems: 'center' },
-  dailyBriefRefreshBtn: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
+  dailyBriefFooter: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'space-between', alignItems: 'center' },
+  dailyBriefDisclosureBtn: { borderRadius: 999, paddingHorizontal: 9, paddingVertical: 5 },
+  dailyBriefRefreshBtn: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 5 },
   dailyBriefRefreshText: { fontSize: 11, fontWeight: '900' },
   scheduleProposalCard: { borderWidth: 1, borderRadius: 14, padding: 10, gap: 6 },
   scheduleProposalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
@@ -3970,7 +3987,7 @@ const styles = StyleSheet.create({
   nowFocusPrimary: { borderRadius: 16, paddingHorizontal: 13, paddingVertical: 10 },
   nowFocusPrimaryText: { color: '#fff', fontSize: 12, fontWeight: '900' },
   compactPlanCard: {
-    marginTop: 8,
+    marginTop: 0,
     backgroundColor: theme.card,
     borderRadius: theme.radius.lg,
     padding: 12,
@@ -3982,17 +3999,17 @@ const styles = StyleSheet.create({
   compactPlanTitle: { color: theme.text, fontSize: 14, fontWeight: '900' },
   compactPlanMeta: { color: theme.textDim, fontSize: 11, fontWeight: '700', marginTop: 3 },
   stateCheckInCard: {
-    marginTop: 8,
+    marginTop: 0,
     backgroundColor: theme.card,
     borderRadius: theme.radius.lg,
-    padding: 12,
+    padding: 10,
     borderWidth: 1,
     borderColor: theme.border,
     ...theme.shadow,
   },
-  quickStateGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
-  quickStateBtn: { width: '18%', minWidth: 56, alignItems: 'center', backgroundColor: theme.cardAlt, borderRadius: 14, paddingVertical: 9 },
-  stateToneDot: { width: 18, height: 18, borderRadius: 9, marginBottom: 5 },
+  quickStateGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 7 },
+  quickStateBtn: { width: '18%', minWidth: 52, alignItems: 'center', backgroundColor: theme.cardAlt, borderRadius: 12, paddingVertical: 6 },
+  stateToneDot: { width: 14, height: 14, borderRadius: 7, marginBottom: 3 },
   instantReadCard: { marginTop: 12, borderWidth: 1, borderRadius: theme.radius.md, padding: 12 },
   instantReadHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 6 },
   instantReadTitle: { fontSize: 14, fontWeight: '900', lineHeight: 19 },
@@ -4158,6 +4175,15 @@ const styles = StyleSheet.create({
   dashboardTileGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: questLayout.dashboardGap, alignItems: 'stretch' },
   dashboardTileGridEditing: { userSelect: 'none', WebkitUserSelect: 'none' } as any,
   dashboardFullRow: { width: '100%' },
+  todayContextBar: {
+    width: '100%',
+    minHeight: 44,
+    justifyContent: 'center',
+    gap: 1,
+    paddingHorizontal: 2,
+  },
+  todayContextDate: { fontSize: 18, lineHeight: 22, fontWeight: '800' },
+  todayContextSummary: { fontSize: 11, lineHeight: 16, fontWeight: '700' },
 
   bigBtn: { marginTop: 16, paddingVertical: 18, borderRadius: theme.radius.lg, alignItems: 'center', ...theme.shadow },
   bigBtnText: { color: '#fff', fontSize: 18, fontWeight: '700' },

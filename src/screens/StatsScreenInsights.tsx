@@ -84,16 +84,17 @@ function WhySection({ whyKey, isExpanded, onToggle, questTheme, lang }: {
   );
 }
 
-function CardTitle({ titleKey, isBaseline, confidence, questTheme, lang }: {
+function CardTitle({ titleKey, isBaseline, confidence, questTheme, lang, prominent = false }: {
   titleKey: string;
   isBaseline: boolean;
   confidence?: 'low' | 'medium' | 'high';
   questTheme: QuestTheme;
   lang: Lang;
+  prominent?: boolean;
 }) {
   return (
     <View style={titleStyles.row}>
-      <Text style={[titleStyles.text, { color: questTheme.colors.text, fontSize: questTheme.typography.sectionTitleSize }]}>
+      <Text style={[titleStyles.text, { color: questTheme.colors.text, fontSize: prominent ? 20 : questTheme.typography.sectionTitleSize }]}>
         {t(lang, titleKey)}
       </Text>
       <View style={titleStyles.badges}>
@@ -241,10 +242,10 @@ export function GrowthCurveCard({ result, questTheme, lang, isExpanded, onToggle
 // 3. Ability Radar Card
 // ─────────────────────────────────────────────────────────────────────────────
 
-const R_SIZE  = 320;
+const R_SIZE  = 220;
 const R_CX    = R_SIZE / 2;
 const R_CY    = R_SIZE / 2;
-const R_OUTER = 112;
+const R_OUTER = 74;
 const R_N     = 5;
 
 function radarPt(score: number, idx: number, scale = R_OUTER): { x: number; y: number } {
@@ -274,21 +275,22 @@ export function AbilityRadarCard({ result, questTheme, lang, isExpanded, onToggl
   };
 
   return (
-    <QuestCard questTheme={questTheme} variant="data" style={{ marginTop: questTheme.spacing.md, borderColor: questTheme.colors.borderStrong, borderTopWidth: 2, borderTopColor: questTheme.colors.accent }}>
+    <QuestCard questTheme={questTheme} variant="flat" style={{ marginTop: questTheme.spacing.sm }}>
       <CardTitle
         titleKey="ieAbilityRadar"
         isBaseline={isBaseline}
         confidence={isBaseline ? undefined : result.conclusion.confidence}
         questTheme={questTheme}
         lang={lang}
+        prominent
       />
 
       <Text style={[cardStyles.caption, { color: questTheme.colors.textMuted, marginTop: questTheme.spacing.xs }]}>
         {t(lang, 'abilityMapExplanation')}
       </Text>
 
-      <View style={[radarStyles.dashboard, { marginTop: questTheme.spacing.md }]}>
-        <View style={[radarStyles.chartPanel, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSubtle }]}>
+      <View style={[radarStyles.dashboard, { marginTop: questTheme.spacing.sm }]}>
+        <View style={[radarStyles.chartPanel, { backgroundColor: questTheme.colors.surfaceSubtle }]}>
           <Svg width="100%" height={R_SIZE} viewBox={`0 0 ${R_SIZE} ${R_SIZE}`}>
             {[0.25, 0.5, 0.75, 1].map((frac) => (
               <Polygon
@@ -334,16 +336,17 @@ export function AbilityRadarCard({ result, questTheme, lang, isExpanded, onToggl
               ? questTheme.colors.textSubtle
               : getStateToneColor(Math.round(d.score * 5), questTheme);
             return (
-              <View key={d.key} style={[cardStyles.scoreItem, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSubtle }]}>
+              <View
+                key={d.key}
+                accessibilityLabel={`${t(lang, d.key)} ${pct}. ${t(lang, meaningKeys[d.key] ?? 'abilityMapExplanation')}`}
+                style={[cardStyles.scoreItem, { backgroundColor: questTheme.colors.surfaceSubtle }]}
+              >
                 <View style={cardStyles.scoreHeader}>
                   <Text style={[cardStyles.scoreVal, { color }]}>{pct}</Text>
                   <Text style={[cardStyles.scoreLabel, { color: questTheme.colors.text }]}>
                     {t(lang, d.key)}
                   </Text>
                 </View>
-                <Text style={[cardStyles.scoreMeaning, { color: questTheme.colors.textMuted }]}>
-                  {t(lang, meaningKeys[d.key] ?? 'abilityMapExplanation')}
-                </Text>
               </View>
             );
           })}
@@ -751,18 +754,18 @@ const cardStyles = StyleSheet.create({
   accentVal: { fontSize: 16, fontWeight: '800', marginRight: 8 },
   dimLabel: { fontSize: 13 },
   caption: { fontSize: 11, marginTop: 6 },
-  scoreGrid: { flex: 1.2, minWidth: 260, flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  scoreItem: { width: '48%', minWidth: 120, borderWidth: 1, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8 },
+  scoreGrid: { width: '100%', flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  scoreItem: { width: '49%', minHeight: 54, borderRadius: 10, paddingHorizontal: 9, paddingVertical: 8, justifyContent: 'center' },
   scoreHeader: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
-  scoreVal: { fontSize: 20, fontWeight: '900' },
+  scoreVal: { fontSize: 22, fontWeight: '900' },
   scoreLabel: { fontSize: 12, fontWeight: '900' },
   scoreMeaning: { fontSize: 11, lineHeight: 16, marginTop: 4 },
   bigVal: { fontSize: 28, fontWeight: '800' },
 });
 
 const radarStyles = StyleSheet.create({
-  dashboard: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'stretch', gap: 12 },
-  chartPanel: { flex: 1, minWidth: 260, maxWidth: 420, borderWidth: 1, borderRadius: 14, padding: 10, alignItems: 'center', justifyContent: 'center' },
+  dashboard: { width: '100%', alignItems: 'stretch', gap: 8 },
+  chartPanel: { width: '100%', height: 238, borderRadius: 12, paddingVertical: 4, alignItems: 'center', justifyContent: 'center' },
 });
 
 const monthStyles = StyleSheet.create({

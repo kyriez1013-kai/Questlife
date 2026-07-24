@@ -108,16 +108,16 @@ export type QuestTheme = {
 // ── Global design scale (shared across all themes) ──────────────────────────
 
 export const questLayout = {
-  contentMaxWidth: 760,
-  contentBottomInset: 108,
+  contentMaxWidth: 660,
+  contentBottomInset: 88,
   controlMinHeight: 44,
-  navWidthPercent: '94%',
-  navMaxWidth: 760,
-  navBottomInset: 8,
-  navHeight: 60,
-  navRadius: 20,
-  navItemRadius: 16,
-  dashboardGap: 6,
+  navWidthPercent: '96%',
+  navMaxWidth: 660,
+  navBottomInset: 6,
+  navHeight: 54,
+  navRadius: 18,
+  navItemRadius: 12,
+  dashboardGap: 12,
   editCardMinHeight: {
     small: 48,
     medium: 64,
@@ -126,17 +126,17 @@ export const questLayout = {
 } as const;
 
 const baseScale = {
-  radius: { sm: 8, md: 12, lg: 16, xl: 22, xxl: 28, pill: 999 },
-  spacing: { xxs: 2, xs: 4, tight: 6, sm: 8, md: 12, lg: 16, section: 20, xl: 24, xxl: 32 },
+  radius: { sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, pill: 999 },
+  spacing: { xxs: 2, xs: 4, tight: 6, sm: 8, md: 14, lg: 16, section: 16, xl: 20, xxl: 28 },
   typography: {
     displaySize: 32,
     displayLineHeight: 38,
-    screenTitleSize: 28,
-    screenTitleLineHeight: 34,
-    titleSize: 24,
-    titleLineHeight: 30,
-    sectionTitleSize: 17,
-    sectionTitleLineHeight: 22,
+    screenTitleSize: 26,
+    screenTitleLineHeight: 31,
+    titleSize: 23,
+    titleLineHeight: 28,
+    sectionTitleSize: 18,
+    sectionTitleLineHeight: 23,
     cardTitleSize: 15,
     cardTitleLineHeight: 20,
     bodySize: 14,

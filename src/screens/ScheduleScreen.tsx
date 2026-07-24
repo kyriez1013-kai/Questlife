@@ -683,7 +683,7 @@ const styles = StyleSheet.create({
   nowNextSub: { color: theme.textDim, fontSize: 12, fontWeight: '700', marginTop: 10 },
   jumpBtn: { borderWidth: 1, borderRadius: 16, paddingHorizontal: 10, paddingVertical: 7 },
   jumpText: { fontSize: 12, fontWeight: '900' },
-  empty: { color: theme.textDim, backgroundColor: theme.card, borderRadius: theme.radius.lg, padding: 18, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
+  empty: { color: theme.textDim, backgroundColor: theme.card, borderRadius: theme.radius.lg, padding: 14, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
   emptyInline: { color: theme.textDim, fontSize: 13, marginBottom: 10 },
   timelineSurface: { position: 'relative', backgroundColor: theme.card, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.border, overflow: 'hidden', ...theme.shadow },
   // minHeight 是空档位的下限;有日程块时内容会自然撑高,这里只收紧空档位的高度
@@ -709,7 +709,7 @@ const styles = StyleSheet.create({
   weekDate: { color: theme.text, fontWeight: '800' },
   weekTotal: { color: theme.textDim, marginTop: 8, fontSize: 12 },
   weekBlock: { color: theme.text, marginTop: 6, fontSize: 11, fontWeight: '700' },
-  placeholderCard: { marginTop: 12, backgroundColor: theme.card, borderRadius: theme.radius.lg, padding: 16, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
+  placeholderCard: { marginTop: 10, backgroundColor: theme.card, borderRadius: theme.radius.lg, padding: 14, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
   placeholderTitle: { color: theme.text, fontSize: 18, fontWeight: '800' },
   placeholderText: { color: theme.textDim, marginTop: 8, lineHeight: 20 },
   label: { color: theme.textDim, marginTop: 14, marginBottom: 6, fontWeight: '700' },

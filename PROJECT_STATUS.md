@@ -2278,3 +2278,29 @@ Known limitations:
 - Schedule confirm/apply remains future work.
 - Apple Health import/native integration remains later.
 - Full Insights replacement remains later.
+
+## QuestLife Mobile UI Rebuild v2
+
+Status: Implemented and locally verified; production verification pending after GitHub/Vercel deployment.
+
+What changed:
+- Replaced the large Today page title with a 44px date/daypart and daily-summary context bar.
+- Reduced the Smart Capture composer to 58px and recent captures to compact 81px activity rows in the tested state.
+- Reorganized Daily Decision Brief into a 269px default decision module at 390px; technical evidence is available through a secondary disclosure while recommendation, first action, warning, feedback, refresh, and schedule proposal controls remain discoverable.
+- Reduced the current-state module to 106px in the tested empty-state flow.
+- Reduced the Ability Map visual from 320px source height to a 220px viewBox / 211px rendered visual at 390px.
+- Replaced five large ability definition cards with five 54px compact metric tiles.
+- Reduced bottom navigation configuration from 60px to 54px and measured rendered tab content from 47px to 46px.
+- Reduced normal content width from 760px to 660px, mobile page padding to 14px, normal card padding to 14px, and shared surface radius/spacing scale.
+- Applied the compact scale to Goals empty states, Schedule empty/placeholder cards, and Skill Detail section spacing without changing business flows.
+- No API, Decision AI, storage, migration, schedule proposal, Goal/Module/Skill semantics, or Smart Capture routing logic changed.
+
+Local responsive checks:
+- Today, Ability Map, and Settings checked at 390x844, 430x932, and 1280x900.
+- No horizontal overflow detected at those widths.
+- `cleanFocus` and `deepWork` were checked; the tested deep theme had zero light QuestCard surfaces.
+- Daily Brief evidence disclosure, feedback, state check-in, Goals navigation, Schedule navigation, Insights navigation, and theme switching were exercised.
+
+Known limitations:
+- The available in-app browser screenshot command timed out, so image capture remains pending even though DOM measurements and real interactions completed locally.
+- Smart Capture parse/API, Objective Context API, and full production-data flows require production verification after deployment.

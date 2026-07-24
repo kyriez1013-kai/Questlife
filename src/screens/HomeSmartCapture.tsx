@@ -23,6 +23,7 @@ import { getQuestTheme } from '../design/tokens';
 import { getLanguage, t } from '../i18n';
 import { RawCapture } from '../types';
 import QuestCard from '../components/ui/QuestCard';
+import QuestIcon from '../components/ui/QuestIcon';
 import HomeCapturePending from './HomeCapturePending';
 import { confirmAction } from '../utils/confirm';
 import { buildFallbackEntriesFromRawText } from '../utils/captureCompletion';
@@ -97,15 +98,6 @@ function insightTagKey(type: InsightType | undefined): string {
   }
 }
 
-function insightBgColor(type: InsightType | undefined, questTheme: ReturnType<typeof getQuestTheme>): string {
-  switch (type) {
-    case 'skill_progress': return questTheme.colors.successSoft;
-    case 'goal_link':      return questTheme.colors.primarySoft;
-    case 'cross_link':     return questTheme.colors.accentSoft;
-    default:               return questTheme.colors.surfaceSoft;
-  }
-}
-
 // ── Capture card ──────────────────────────────────────────────────────────────
 
 function CaptureCard({
@@ -130,7 +122,8 @@ function CaptureCard({
       variant="flat"
       style={{
         marginTop: questTheme.spacing.tight,
-        padding: questTheme.spacing.sm,
+        paddingHorizontal: questTheme.spacing.sm,
+        paddingVertical: questTheme.spacing.tight,
         borderLeftWidth: 3,
         borderLeftColor: insightBorderColor(insightType, questTheme),
       }}
@@ -151,7 +144,7 @@ function CaptureCard({
       </View>
 
       {/* Original text — always visible */}
-      <Text style={[styles.captureText, { color: questTheme.colors.text, fontSize: questTheme.typography.bodySize }]}>
+      <Text numberOfLines={1} style={[styles.captureText, { color: questTheme.colors.text, fontSize: questTheme.typography.bodySize }]}>
         {capture.text}
       </Text>
 
@@ -166,18 +159,11 @@ function CaptureCard({
       )}
 
       {capture.parseStatus === 'done' && insightText ? (
-        <View style={[styles.insightBox, {
-          backgroundColor: insightBgColor(insightType, questTheme),
-          marginTop: questTheme.spacing.tight,
-          paddingHorizontal: questTheme.spacing.sm,
-          paddingVertical: questTheme.spacing.tight,
-          borderRadius: questTheme.radius.sm,
-        }]}>
-          {/* Insight-type tag */}
+        <View style={[styles.insightBox, { borderTopColor: questTheme.colors.divider }]}>
           <Text style={[styles.crossLinkTag, { color: insightBorderColor(insightType, questTheme) }]}>
             {t(lang, insightTagKey(insightType))}
           </Text>
-          <Text style={[styles.insightText, { color: questTheme.colors.text, fontSize: questTheme.typography.bodySize }]}>
+          <Text numberOfLines={2} style={[styles.insightText, { color: questTheme.colors.textMuted, fontSize: questTheme.typography.compactBodySize }]}>
             {insightText}
           </Text>
         </View>
@@ -451,26 +437,13 @@ export default function HomeSmartCapture() {
 
   return (
     <View>
-      {/* Greeting — smaller font so it doesn't compete with the input */}
-      {greeting ? (
-        <Text style={[styles.greeting, {
-          color: questTheme.colors.textSubtle,
-          fontSize: questTheme.typography.captionSize,
-        }]}>
-          {greeting}
-        </Text>
-      ) : null}
-
-      {/* One-line input */}
       <QuestCard
         questTheme={questTheme}
-        variant="hero"
+        variant="flat"
         style={{
-          marginTop: questTheme.spacing.tight,
-          padding: questTheme.spacing.sm,
-          borderColor: questTheme.colors.borderStrong,
-          borderLeftWidth: 2,
-          borderLeftColor: questTheme.colors.primary,
+          padding: questTheme.spacing.tight,
+          borderWidth: 1,
+          borderColor: questTheme.colors.inputBorder,
           backgroundColor: questTheme.colors.surfaceElevated,
         }}
       >
@@ -494,10 +467,13 @@ export default function HomeSmartCapture() {
             returnKeyType="send"
             multiline={false}
             editable={!isPosting}
+            accessibilityHint={greeting || undefined}
           />
           <TouchableOpacity
             onPress={handleSend}
             disabled={isPosting || !inputText.trim()}
+            accessibilityRole="button"
+            accessibilityLabel={t(lang, 'scSend')}
             style={[
               styles.sendBtn,
               {
@@ -515,9 +491,7 @@ export default function HomeSmartCapture() {
             {isPosting ? (
               <ActivityIndicator size="small" color={questTheme.colors.primaryText} />
             ) : (
-              <Text style={[styles.sendBtnText, { color: questTheme.colors.primaryText, fontSize: questTheme.typography.bodySize }]}>
-                {t(lang, 'scSend')}
-              </Text>
+              <QuestIcon name="zap" size={18} color={inputText.trim() ? questTheme.colors.primaryText : questTheme.colors.disabledText} />
             )}
           </TouchableOpacity>
         </View>
@@ -597,10 +571,6 @@ export default function HomeSmartCapture() {
 // ── Styles (sizing from numbers only — no hardcoded colors) ─────────────────
 
 const styles = StyleSheet.create({
-  greeting: {
-    marginBottom: 4,
-    lineHeight: 20,
-  },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -609,16 +579,16 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     paddingHorizontal: 12,
-    paddingVertical: 9,
-    borderWidth: 1,
+    paddingVertical: 8,
+    borderWidth: 0,
+    minHeight: 44,
   },
   sendBtn: {
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 44,
+    borderWidth: 0,
   },
   sendBtnText: {
     fontWeight: '700',
@@ -628,7 +598,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   timestamp: {
     fontSize: 11,
@@ -645,7 +615,7 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   captureText: {
-    lineHeight: 20,
+    lineHeight: 19,
   },
   statusRow: {
     flexDirection: 'row',
@@ -657,17 +627,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   insightBox: {
-    marginTop: 8,
-    borderRadius: 8,
-    padding: 10,
-    gap: 4,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginTop: 5,
+    paddingTop: 5,
+    borderTopWidth: 1,
+    gap: 6,
   },
   crossLinkTag: {
     fontSize: 11,
     fontWeight: '700',
   },
   insightText: {
-    lineHeight: 20,
+    flex: 1,
+    lineHeight: 17,
   },
   retryBtn: {
     borderWidth: 1,
