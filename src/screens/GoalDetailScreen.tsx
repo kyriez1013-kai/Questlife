@@ -368,44 +368,6 @@ export default function GoalDetailScreen() {
           ))
         )}
 
-        <View style={styles.sectionHeader}>
-          <View>
-            <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'outcomeCriteria')}</Text>
-            <Text style={[styles.sectionSub, { color: questTheme.colors.textMuted }]}>{t(lang, 'totalWeight')}: {totalWeight}</Text>
-          </View>
-          <QuestButton questTheme={questTheme} variant="secondary" icon="plus" label={t(lang, 'addCriterion')} onPress={() => openCriterion()} />
-        </View>
-
-        {criteria.length === 0 ? (
-          <QuestEmptyState questTheme={questTheme} icon="target" title={t(lang, 'outcomeCriteria')} body={t(lang, 'noCriteria')} />
-        ) : (
-          criteria.map((criterion) => {
-            const progress = calculateOutcomeCriterionProgress(criterion, skills);
-            const linkedSkill = criterion.linkedSkillId ? skills.find((skill) => skill.id === criterion.linkedSkillId) : undefined;
-            const current = criterion.metricType === 'binary'
-              ? (criterion.completed ? t(lang, 'completed') : t(lang, 'planned'))
-              : `${criterion.currentValue ?? 0} / ${criterion.targetValue ?? 0}${criterion.unit ?? ''}`;
-            return (
-              <TouchableOpacity key={criterion.id} onPress={() => openCriterion(criterion)} activeOpacity={0.8}>
-                <QuestCard questTheme={questTheme} variant="flat" style={[styles.criterionCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]} className="goal-detail-card">
-                <View style={styles.criterionHeader}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.criterionTitle, { color: questTheme.colors.text }]}>{criterion.title}</Text>
-                    {criterion.description ? <Text style={[styles.skillMeta, { color: questTheme.colors.textMuted }]}>{criterion.description}</Text> : null}
-                    <Text style={[styles.skillMeta, { color: questTheme.colors.textMuted }]}>
-                      {metricTypeLabel(lang, criterion.metricType)} · {current} · {t(lang, 'weight')} {criterion.weight}
-                    </Text>
-                    {linkedSkill ? <Text style={[styles.skillMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'linkedSkillOptional')}: {linkedSkill.name}</Text> : null}
-                  </View>
-                  <Text style={[styles.criterionPercent, { color: questTheme.colors.primary }]}>{progress}%</Text>
-                </View>
-                <QuestProgressBar questTheme={questTheme} value={progress} style={{ marginTop: 12 }} />
-                </QuestCard>
-              </TouchableOpacity>
-            );
-          })
-        )}
-
         {missingSuggestedModules.length > 0 ? (
           <QuestCard questTheme={questTheme} variant="data" style={[styles.suggestedCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong, borderLeftWidth: 3, borderLeftColor: questTheme.colors.accent }]} className="suggested-modules-card">
             <View style={styles.cardTitleRow}>
@@ -428,59 +390,122 @@ export default function GoalDetailScreen() {
           </QuestCard>
         ) : null}
 
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'recentExecution')}</Text>
-        </View>
-        {recentExecutionLogs.length === 0 ? (
-          <QuestEmptyState questTheme={questTheme} icon="activity" title={t(lang, 'recentExecution')} body={t(lang, 'noExecutionLogsForGoal')} />
-        ) : (
-          <QuestCard questTheme={questTheme} variant="flat" style={[styles.recentCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]} className="goal-detail-card">
-            {recentExecutionLogs.map((log) => {
-              const skill = log.linkedSkillId ? skills.find((item) => item.id === log.linkedSkillId) : undefined;
-              return (
-                <View key={log.id} style={styles.recentRow}>
-                  <View style={styles.inlineEntityRow}>
-                    <QuestEntityIcon icon={skill?.icon} systemIcon={getSkillSemanticIcon(skill)} color={skill?.color} questTheme={questTheme} size="sm" />
-                    <Text style={[styles.skillName, { color: questTheme.colors.text }]}>
-                      {skill?.name ?? log.orphanedSkillName ?? log.title ?? t(lang, 'deletedSkill')}
-                    </Text>
-                  </View>
-                  <Text style={[styles.skillMeta, { color: questTheme.colors.textMuted }]}>
-                    {log.date} · {formatMetricUpdateSummary(log, skill, lang)}
-                    {log.qualityRating ? ` · ${t(lang, 'quality')} ${log.qualityRating}/5` : ''}
-                  </Text>
-                </View>
-              );
-            })}
-          </QuestCard>
-        )}
+        {criteria.length > 0 || recentExecutionLogs.length > 0 || goalEffortSummary.recent.length > 0 ? (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'goalSupportingEvidence')}</Text>
+            </View>
 
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'effortsDrivingGoal')}</Text>
-        </View>
-        {goalEffortSummary.recent.length === 0 ? (
-          <QuestEmptyState questTheme={questTheme} icon="activity" title={t(lang, 'effortsDrivingGoal')} body={t(lang, 'noAttributedEfforts')} />
-        ) : (
-          <QuestCard questTheme={questTheme} variant="flat" style={[styles.recentCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]} className="goal-detail-card">
-            <Text style={[styles.skillMeta, { color: questTheme.colors.textMuted, marginBottom: 10 }]}>
-              {t(lang, 'thisWeek')}: {goalEffortSummary.weeklyCount} · {t(lang, 'directContribution')} {goalEffortSummary.directCount} · {t(lang, 'indirectContribution')} {goalEffortSummary.indirectCount}
-            </Text>
-            {goalEffortSummary.recent.map(({ link, effort }) => (
-              <View key={link.id} style={styles.recentRow}>
-                <Text style={[styles.skillName, { color: questTheme.colors.text }]}>{formatEffortUnitSummary(effort, lang)}</Text>
-                <Text style={[styles.skillMeta, { color: questTheme.colors.textMuted }]}>
-                  {link.contributionType === 'direct'
-                    ? t(lang, 'directContribution')
-                    : link.contributionType === 'indirect'
-                      ? t(lang, 'indirectContribution')
-                      : link.contributionType === 'recovery'
-                        ? t(lang, 'recoveryContribution')
-                        : t(lang, 'supportingContribution')}
+            {criteria.length > 0 ? (
+              <View style={styles.evidenceSection}>
+                <View style={styles.evidenceHeadingRow}>
+                  <View>
+                    <Text style={[styles.evidenceTitle, { color: questTheme.colors.text }]}>{t(lang, 'outcomeCriteria')}</Text>
+                    <Text style={[styles.sectionSub, { color: questTheme.colors.textMuted }]}>{t(lang, 'totalWeight')}: {totalWeight}</Text>
+                  </View>
+                  <QuestButton questTheme={questTheme} variant="ghost" icon="plus" label={t(lang, 'addCriterion')} onPress={() => openCriterion()} />
+                </View>
+                <QuestGroupedSurface questTheme={questTheme}>
+                  {criteria.map((criterion, index) => {
+                    const progress = calculateOutcomeCriterionProgress(criterion, skills);
+                    const linkedSkill = criterion.linkedSkillId ? skills.find((skill) => skill.id === criterion.linkedSkillId) : undefined;
+                    const current = criterion.metricType === 'binary'
+                      ? (criterion.completed ? t(lang, 'completed') : t(lang, 'planned'))
+                      : `${criterion.currentValue ?? 0} / ${criterion.targetValue ?? 0}${criterion.unit ?? ''}`;
+                    return (
+                      <TouchableOpacity
+                        key={criterion.id}
+                        onPress={() => openCriterion(criterion)}
+                        activeOpacity={0.8}
+                        style={[
+                          styles.evidenceRow,
+                          index > 0 ? { borderTopColor: questTheme.colors.border, borderTopWidth: 1 } : null,
+                        ]}
+                      >
+                        <View style={{ flex: 1, minWidth: 0 }}>
+                          <Text style={[styles.criterionTitle, { color: questTheme.colors.text }]}>{criterion.title}</Text>
+                          {criterion.description ? <Text style={[styles.skillMeta, { color: questTheme.colors.textMuted }]}>{criterion.description}</Text> : null}
+                          <Text style={[styles.skillMeta, { color: questTheme.colors.textMuted }]}>
+                            {metricTypeLabel(lang, criterion.metricType)} · {current} · {t(lang, 'weight')} {criterion.weight}
+                          </Text>
+                          {linkedSkill ? <Text style={[styles.skillMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'linkedSkillOptional')}: {linkedSkill.name}</Text> : null}
+                        </View>
+                        <Text style={[styles.criterionPercent, { color: questTheme.colors.primary }]}>{progress}%</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </QuestGroupedSurface>
+              </View>
+            ) : null}
+
+            {recentExecutionLogs.length > 0 ? (
+              <View style={styles.evidenceSection}>
+                <Text style={[styles.evidenceTitle, { color: questTheme.colors.text }]}>{t(lang, 'recentExecution')}</Text>
+                <QuestGroupedSurface questTheme={questTheme}>
+                  {recentExecutionLogs.map((log, index) => {
+                    const skill = log.linkedSkillId ? skills.find((item) => item.id === log.linkedSkillId) : undefined;
+                    return (
+                      <View
+                        key={log.id}
+                        style={[
+                          styles.evidenceRow,
+                          index > 0 ? { borderTopColor: questTheme.colors.border, borderTopWidth: 1 } : null,
+                        ]}
+                      >
+                        <QuestEntityIcon icon={skill?.icon} systemIcon={getSkillSemanticIcon(skill)} color={skill?.color} questTheme={questTheme} size="sm" />
+                        <View style={{ flex: 1, minWidth: 0 }}>
+                          <Text style={[styles.skillName, { color: questTheme.colors.text }]}>
+                            {skill?.name ?? log.orphanedSkillName ?? log.title ?? t(lang, 'deletedSkill')}
+                          </Text>
+                          <Text style={[styles.skillMeta, { color: questTheme.colors.textMuted }]}>
+                            {log.date} · {formatMetricUpdateSummary(log, skill, lang)}
+                            {log.qualityRating ? ` · ${t(lang, 'quality')} ${log.qualityRating}/5` : ''}
+                          </Text>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </QuestGroupedSurface>
+              </View>
+            ) : null}
+
+            {goalEffortSummary.recent.length > 0 ? (
+              <View style={styles.evidenceSection}>
+                <Text style={[styles.evidenceTitle, { color: questTheme.colors.text }]}>{t(lang, 'effortsDrivingGoal')}</Text>
+                <Text style={[styles.skillMeta, { color: questTheme.colors.textMuted, marginBottom: 8 }]}>
+                  {t(lang, 'thisWeek')}: {goalEffortSummary.weeklyCount} · {t(lang, 'directContribution')} {goalEffortSummary.directCount} · {t(lang, 'indirectContribution')} {goalEffortSummary.indirectCount}
+                </Text>
+                <QuestGroupedSurface questTheme={questTheme}>
+                  {goalEffortSummary.recent.map(({ link, effort }, index) => (
+                    <View
+                      key={link.id}
+                      style={[
+                        styles.evidenceRow,
+                        index > 0 ? { borderTopColor: questTheme.colors.border, borderTopWidth: 1 } : null,
+                      ]}
+                    >
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text style={[styles.skillName, { color: questTheme.colors.text }]}>{formatEffortUnitSummary(effort, lang)}</Text>
+                        <Text style={[styles.skillMeta, { color: questTheme.colors.textMuted }]}>
+                          {link.contributionType === 'direct'
+                            ? t(lang, 'directContribution')
+                            : link.contributionType === 'indirect'
+                              ? t(lang, 'indirectContribution')
+                              : link.contributionType === 'recovery'
+                                ? t(lang, 'recoveryContribution')
+                                : t(lang, 'supportingContribution')}
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+                </QuestGroupedSurface>
+                <Text style={[styles.evidenceCaution, { color: questTheme.colors.textSubtle }]}>
+                  {t(lang, 'effortAttributionCaution')}
                 </Text>
               </View>
-            ))}
-          </QuestCard>
-        )}
+            ) : null}
+          </>
+        ) : null}
 
       </ScrollView>
 
@@ -755,6 +780,11 @@ const styles = StyleSheet.create({
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, marginBottom: 8 },
   h2: { color: theme.text, fontSize: 16, fontWeight: '800' },
   sectionSub: { color: theme.textDim, fontSize: 12, marginTop: 4 },
+  evidenceSection: { marginBottom: 14 },
+  evidenceHeadingRow: { minHeight: questLayout.controlMinHeight, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  evidenceTitle: { fontSize: 14, lineHeight: 20, fontWeight: '800', marginBottom: 8 },
+  evidenceRow: { minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 10 },
+  evidenceCaution: { fontSize: 11, lineHeight: 16, marginTop: 7 },
   criterionCard: { backgroundColor: theme.card, padding: 14, borderRadius: 14, marginBottom: 10, borderWidth: 1, borderColor: theme.border },
   recentCard: { backgroundColor: theme.card, padding: 14, borderRadius: 14, marginBottom: 12, borderWidth: 1, borderColor: theme.border, gap: 10 },
   recentRow: { paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: theme.border },
