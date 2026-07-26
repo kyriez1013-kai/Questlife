@@ -360,6 +360,10 @@ export default function StatsScreen() {
   const hasBodyContextEvidence = objectiveContextBrief.status !== 'empty';
   const hasBehaviorEvidence = metacognition.behaviorLinks.length > 0;
   const weeklyMinutesTotal = last7.reduce((sum, day) => sum + day.minutes, 0);
+  const trendSampleCount = timeLogs.filter((log) => last7.some((day) => day.date === log.date)).length;
+  const trendActiveDays = last7.filter((day) => day.minutes > 0).length;
+  const hasComparableTrend = trendSampleCount >= 3 && trendActiveDays >= 3;
+  const trendRange = `${last7[0]?.date ?? ''} – ${last7[last7.length - 1]?.date ?? ''}`;
   const hasAdvancedEvidence = logs.length >= 3
     || (data.stateCheckIns || []).length >= 3
     || (data.contextLogs || []).length >= 2;
@@ -602,8 +606,19 @@ export default function StatsScreen() {
         {insightsView === 'trends' ? (
           <View style={styles.insightsLayer}>
             <QuestSectionHeader questTheme={questTheme} title={t(lang, 'insights_trends')} subtitle={t(lang, 'last7Days')} />
-            {weeklyMinutesTotal > 0 ? (
+            {hasComparableTrend ? (
               <>
+                <QuestGroupedSurface questTheme={questTheme} style={{ padding: questTheme.spacing.sm }}>
+                  <Text style={[styles.trendContextText, { color: questTheme.colors.text }]}>
+                    {t(lang, 'sampleRange')}: {trendRange}
+                  </Text>
+                  <Text style={[styles.trendContextText, { color: questTheme.colors.textMuted }]}>
+                    {t(lang, 'dataSource')}: {t(lang, 'recordedExecutionDuration')} · {t(lang, 'sampleN')}: {trendSampleCount} · {t(lang, 'activeDays')}: {trendActiveDays}
+                  </Text>
+                  <Text style={[styles.trendContextText, { color: questTheme.colors.textSubtle }]}>
+                    {t(lang, 'trendLimitation')}: {t(lang, 'trendLimitedToLoggedDuration')}
+                  </Text>
+                </QuestGroupedSurface>
                 <DailyBarChart days={last7} accent={accent} lang={lang} questTheme={questTheme} />
                 {weeklySkillShare ? (
                   <View style={[styles.shareCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>
@@ -624,7 +639,12 @@ export default function StatsScreen() {
                   {t(lang, 'dataStillAccumulating')}
                 </Text>
                 <Text style={[styles.insightLine, { color: questTheme.colors.textMuted }]}>
-                  {t(lang, 'notEnoughForDetailedInsights')}
+                  {t(lang, 'trendNeedsComparableDays')
+                    .replace('{days}', String(trendActiveDays))
+                    .replace('{samples}', String(trendSampleCount))}
+                </Text>
+                <Text style={[styles.trendContextText, { color: questTheme.colors.textSubtle }]}>
+                  {t(lang, 'dataSource')}: {t(lang, 'recordedExecutionDuration')} · {t(lang, 'sampleRange')}: {trendRange}
                 </Text>
               </QuestGroupedSurface>
             )}
@@ -1302,6 +1322,7 @@ const styles = StyleSheet.create({
   nextActionText: { fontSize: 14, fontWeight: '900', lineHeight: 20, marginTop: 3 },
   evidenceSource: { width: 112, flexShrink: 0, fontSize: 11, fontWeight: '800', lineHeight: 17 },
   evidenceDetail: { flex: 1, minWidth: 0, fontSize: 12, fontWeight: '800', lineHeight: 18 },
+  trendContextText: { fontSize: 11, fontWeight: '700', lineHeight: 17 },
   metaStrip: { marginTop: 10, borderWidth: 1 },
   metaSectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   metaSectionTitle: { fontSize: 15, fontWeight: '900' },
