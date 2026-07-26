@@ -105,6 +105,12 @@ function CardTitle({ titleKey, isBaseline, confidence, questTheme, lang, promine
   );
 }
 
+function abilitySignalKey(score: number) {
+  if (score >= 0.7) return 'abilitySignalEstablished';
+  if (score >= 0.4) return 'abilitySignalDeveloping';
+  return 'abilitySignalEmerging';
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Anomaly Strip (lightweight)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -169,8 +175,10 @@ export function GrowthCurveCard({ result, questTheme, lang, isExpanded, onToggle
 
   const trendLabel = !isBaseline && result.monthRatePct != null
     ? result.monthRatePct > 0
-      ? t(lang, 'ieGrowthMonthRateUp').replace('{pct}', String(Math.abs(result.monthRatePct)))
-      : t(lang, 'ieGrowthMonthRateDown').replace('{pct}', String(Math.abs(result.monthRatePct)))
+      ? t(lang, 'growthDirectionUp')
+      : result.monthRatePct < 0
+        ? t(lang, 'growthDirectionDown')
+        : t(lang, 'growthDirectionStable')
     : null;
 
   return (
@@ -348,18 +356,18 @@ export function AbilityRadarCard({ result, questTheme, lang, isExpanded, onToggl
 
         <View style={cardStyles.scoreGrid}>
           {result.dimensions.map((d) => {
-            const pct = Math.round(d.score * 100);
             const color = d.isBaseline
               ? questTheme.colors.textSubtle
               : getStateToneColor(Math.round(d.score * 5), questTheme);
+            const signalLabel = t(lang, abilitySignalKey(d.score));
             return (
               <View
                 key={d.key}
-                accessibilityLabel={`${t(lang, d.key)} ${pct}. ${t(lang, meaningKeys[d.key] ?? 'abilityMapExplanation')}`}
+                accessibilityLabel={`${t(lang, d.key)} ${signalLabel}. ${t(lang, meaningKeys[d.key] ?? 'abilityMapExplanation')}`}
                 style={[cardStyles.scoreItem, { backgroundColor: questTheme.colors.surfaceSubtle }]}
               >
                 <View style={cardStyles.scoreHeader}>
-                  <Text style={[cardStyles.scoreVal, { color }]}>{pct}</Text>
+                  <Text style={[cardStyles.scoreVal, { color }]}>{signalLabel}</Text>
                   <Text style={[cardStyles.scoreLabel, { color: questTheme.colors.text }]}>
                     {t(lang, d.key)}
                   </Text>
@@ -676,20 +684,33 @@ export function InsightCardsBlock({ insights, questTheme, lang, selfKnowledge }:
     if (next.has(key)) next.delete(key); else next.add(key);
     return next;
   });
+  const hasAbility = insights.abilityRadar.status === 'ok';
+  const hasTomorrow = insights.tomorrowPrediction.status === 'ok';
+  const hasMonthly = insights.monthlyTrend.status === 'ok';
+  const hasGrowth = insights.growthCurve.status === 'ok';
+  const hasAnomaly = insights.anomalies.status === 'ok' && insights.anomalies.anomalies.length > 0;
+  const hasCombination = insights.combination.status === 'ok';
+  const hasSignalGrid = hasTomorrow || hasMonthly || !!selfKnowledge || hasGrowth || hasAnomaly;
 
   return (
     <>
-      <Text style={[sectionStyles.title, { color: questTheme.colors.text }]}>{t(lang, 'coreSignals')}</Text>
-      <AbilityRadarCard
-        result={insights.abilityRadar}
-        questTheme={questTheme}
-        lang={lang}
-        isExpanded={expandedWhys.has('radar')}
-        onToggle={() => toggle('radar')}
-      />
-      <Text style={[sectionStyles.title, { color: questTheme.colors.text }]}>{t(lang, 'signalGrid')}</Text>
-      <View style={dashboardStyles.signalGrid}>
-        <View style={dashboardStyles.signalItem}>
+      {hasAbility ? (
+        <>
+          <Text style={[sectionStyles.title, { color: questTheme.colors.text }]}>{t(lang, 'coreSignals')}</Text>
+          <AbilityRadarCard
+            result={insights.abilityRadar}
+            questTheme={questTheme}
+            lang={lang}
+            isExpanded={expandedWhys.has('radar')}
+            onToggle={() => toggle('radar')}
+          />
+        </>
+      ) : null}
+      {hasSignalGrid ? (
+        <>
+          <Text style={[sectionStyles.title, { color: questTheme.colors.text }]}>{t(lang, 'signalGrid')}</Text>
+          <View style={dashboardStyles.signalGrid}>
+        {hasTomorrow ? <View style={dashboardStyles.signalItem}>
           <TomorrowPredictionCard
             result={insights.tomorrowPrediction}
             questTheme={questTheme}
@@ -697,8 +718,8 @@ export function InsightCardsBlock({ insights, questTheme, lang, selfKnowledge }:
             isExpanded={expandedWhys.has('tomorrow')}
             onToggle={() => toggle('tomorrow')}
           />
-        </View>
-        <View style={dashboardStyles.signalItem}>
+        </View> : null}
+        {hasMonthly ? <View style={dashboardStyles.signalItem}>
           <MonthlyTrendCard
             result={insights.monthlyTrend}
             questTheme={questTheme}
@@ -706,11 +727,11 @@ export function InsightCardsBlock({ insights, questTheme, lang, selfKnowledge }:
             isExpanded={expandedWhys.has('monthly')}
             onToggle={() => toggle('monthly')}
           />
-        </View>
-        <View style={dashboardStyles.signalItem}>
+        </View> : null}
+        {selfKnowledge ? <View style={dashboardStyles.signalItem}>
           <SelfKnowledgeSignalCard selfKnowledge={selfKnowledge} questTheme={questTheme} lang={lang} />
-        </View>
-        <View style={dashboardStyles.signalItem}>
+        </View> : null}
+        {hasGrowth ? <View style={dashboardStyles.signalItem}>
           <GrowthCurveCard
             result={insights.growthCurve}
             questTheme={questTheme}
@@ -718,19 +739,25 @@ export function InsightCardsBlock({ insights, questTheme, lang, selfKnowledge }:
             isExpanded={expandedWhys.has('growth')}
             onToggle={() => toggle('growth')}
           />
-        </View>
-        <View style={dashboardStyles.signalItem}>
+        </View> : null}
+        {hasAnomaly ? <View style={dashboardStyles.signalItem}>
           <AnomalySignalCard result={insights.anomalies} questTheme={questTheme} lang={lang} />
-        </View>
-      </View>
-      <Text style={[sectionStyles.title, { color: questTheme.colors.text }]}>{t(lang, 'deepAnalysis')}</Text>
-      <CombinationEffectCard
+        </View> : null}
+          </View>
+        </>
+      ) : null}
+      {hasCombination ? (
+        <>
+          <Text style={[sectionStyles.title, { color: questTheme.colors.text }]}>{t(lang, 'deepAnalysis')}</Text>
+          <CombinationEffectCard
         result={insights.combination}
         questTheme={questTheme}
         lang={lang}
         isExpanded={expandedWhys.has('combo')}
         onToggle={() => toggle('combo')}
-      />
+          />
+        </>
+      ) : null}
     </>
   );
 }

@@ -154,27 +154,6 @@ export default function StatsScreen() {
     return { rows, totalMin };
   }, [timeLogs, data.skills, last7, lang, accent]);
 
-  const instantInsight = useMemo(() => {
-    const weeklyMinutes = last7.reduce((sum, day) => sum + day.minutes, 0);
-    const weeklyLogs = logs.filter((log) => last7.some((day) => day.date === log.date));
-    const topSkill = weeklySkillShare?.rows[0];
-    const todayStr = fmtDate(new Date());
-    const todayBlocks = (data.scheduleBlocks || []).filter((block) => block.date === todayStr);
-    const done = todayBlocks.filter((block) => block.status === 'completed').length + logs.filter((log) => log.date === todayStr && log.source === 'one_tap').length;
-    const remaining = Math.max(0, todayBlocks.length - todayBlocks.filter((block) => block.status === 'completed').length);
-    const activeDayCount = new Set(logs.map((log) => log.date)).size;
-    return {
-      weeklyMinutes,
-      weeklyLogCount: weeklyLogs.length,
-      topSkill,
-      done,
-      remaining,
-      activeDayCount,
-      daysToFirstInsight: Math.max(0, 7 - activeDayCount),
-      firstInsightProgress: Math.min(7, activeDayCount),
-    };
-  }, [data.scheduleBlocks, last7, logs, weeklySkillShare]);
-
   const selfKnowledge = useMemo(() => {
     const predicted = logs.filter((log) => log.predictedDurationMinutes != null && log.durationMinutes != null);
     if (predicted.length < 3) return null;
@@ -370,14 +349,22 @@ export default function StatsScreen() {
   const hasStatePatternEvidence = metacognition.statePatterns.status === 'ok' && metacognition.statePatterns.patterns.length > 0;
   const hasBodyContextEvidence = objectiveContextBrief.status !== 'empty';
   const hasBehaviorEvidence = metacognition.behaviorLinks.length > 0;
-  const weeklyMinutesTotal = last7.reduce((sum, day) => sum + day.minutes, 0);
   const trendSampleCount = timeLogs.filter((log) => last7.some((day) => day.date === log.date)).length;
   const trendActiveDays = last7.filter((day) => day.minutes > 0).length;
   const hasComparableTrend = trendSampleCount >= 3 && trendActiveDays >= 3;
   const trendRange = `${last7[0]?.date ?? ''} – ${last7[last7.length - 1]?.date ?? ''}`;
-  const hasAdvancedEvidence = logs.length >= 3
-    || (data.stateCheckIns || []).length >= 3
-    || (data.contextLogs || []).length >= 2;
+  const advancedSignalCount = [
+    engineInsights.abilityRadar.status === 'ok',
+    engineInsights.tomorrowPrediction.status === 'ok',
+    engineInsights.monthlyTrend.status === 'ok',
+    engineInsights.growthCurve.status === 'ok',
+    engineInsights.anomalies.status === 'ok' && engineInsights.anomalies.anomalies.length > 0,
+    engineInsights.combination.status === 'ok',
+    !!selfKnowledge,
+  ].filter(Boolean).length;
+  const hasAdvancedEvidence = advancedSignalCount > 0
+    || hasComparableTrend
+    || rescueStats.total > 0;
   const mainInsight = useMemo(() => {
     if (metacognition.status === 'ok') {
       return {
@@ -744,30 +731,20 @@ export default function StatsScreen() {
 
         {advancedSignalsCardSize === 'large' && hasAdvancedEvidence ? (
           <>
-            <View style={[styles.commandStrip, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong }]}>
-              <View style={styles.commandCell}>
-                <Text style={[styles.commandValue, { color: questTheme.colors.primary }]}>{(instantInsight.weeklyMinutes / 60).toFixed(1)}h</Text>
-                <Text style={[styles.commandLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'weeklyOverview')}</Text>
-              </View>
-              <View style={styles.commandCell}>
-                <Text style={[styles.commandValue, { color: questTheme.colors.accent }]} numberOfLines={1}>
-                  {instantInsight.topSkill ? instantInsight.topSkill.label : t(lang, 'notEnoughDataYet')}
-                </Text>
-                <Text style={[styles.commandLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'keySignal')}</Text>
-              </View>
-              <View style={styles.commandCell}>
-                <Text style={[styles.commandValue, { color: dataHealthColor }]}>{t(lang, dataHealthLabelKey)}</Text>
-                <Text style={[styles.commandLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'dataHealth')}</Text>
-              </View>
-              <View style={styles.commandCell}>
-                <Text style={[styles.commandValue, { color: questTheme.colors.warning }]}>{instantInsight.done}/{instantInsight.done + instantInsight.remaining}</Text>
-                <Text style={[styles.commandLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'todayCompletion')}</Text>
-              </View>
-            </View>
+            <QuestGroupedSurface questTheme={questTheme} style={{ padding: questTheme.spacing.sm }}>
+              <Text style={[styles.trendContextText, { color: questTheme.colors.text }]}>{t(lang, 'advancedEvidenceContext')}</Text>
+              <Text style={[styles.trendContextText, { color: questTheme.colors.textMuted }]}>
+                {t(lang, 'dataSource')}: {t(lang, 'recordedExecutionAndState')} · {t(lang, 'sampleN')}: {logs.length} / {(data.stateCheckIns || []).length}
+              </Text>
+              <Text style={[styles.trendContextText, { color: questTheme.colors.textMuted }]}>
+                {t(lang, 'advancedAvailableSignals')}: {advancedSignalCount}
+              </Text>
+              <Text style={[styles.trendContextText, { color: questTheme.colors.textSubtle }]}>{t(lang, 'advancedEvidenceLimitation')}</Text>
+            </QuestGroupedSurface>
 
             <InsightCardsBlock insights={engineInsights} questTheme={questTheme} lang={lang} selfKnowledge={selfKnowledge} />
 
-            {weeklyQuality && (
+            {weeklyQuality && weeklyQuality.count >= 3 ? (
               <>
                 <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'weeklyAverageState')}</Text>
                 <View style={[styles.qCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong }]}>
@@ -777,65 +754,63 @@ export default function StatsScreen() {
                   <Text style={[styles.qSub, { color: questTheme.colors.textMuted }]}>{t(lang, 'total')} {weeklyQuality.count} {t(lang, 'validRecords')}</Text>
                 </View>
               </>
-            )}
+            ) : null}
 
-            {weeklyMinutesTotal > 0 ? (
+            {hasComparableTrend ? (
               <>
                 <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'last7Days')}</Text>
                 <DailyBarChart days={last7} accent={accent} lang={lang} questTheme={questTheme} />
               </>
             ) : null}
 
-            <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'rescueStarts')}</Text>
-            <QuestCard questTheme={questTheme} variant="flat" style={[styles.insightCard, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.borderStrong, borderLeftWidth: 3, borderLeftColor: questTheme.colors.warning }]} className="rescue-summary-card insight-card">
-              <Text style={[styles.insightLine, { color: questTheme.colors.text }]}>
-                {t(lang, 'week')}: <Text style={[styles.insightStrong, { color: questTheme.colors.primary }]}>{rescueStats.total}</Text>
-                {' · '}{t(lang, 'rescueCompletionRate')}: <Text style={[styles.insightStrong, { color: questTheme.colors.primary }]}>{rescueStats.completionRate}%</Text>
-              </Text>
-              <Text style={[styles.insightLine, { color: questTheme.colors.text }]}>
-                {t(lang, 'latestRescue')}: {rescueStats.latest?.startedAt ? new Date(rescueStats.latest.startedAt).toLocaleString() : t(lang, 'notEnoughRescueData')}
-              </Text>
-              <Text style={[styles.insightLine, { color: questTheme.colors.textMuted }]}>
-                {rescueStats.topTrigger ? `${rescueStats.topTrigger} · ` : ''}{t(lang, 'rescueInsightPlaceholder')}
-              </Text>
-            </QuestCard>
+            {rescueStats.total > 0 ? (
+              <>
+                <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'rescueStarts')}</Text>
+                <QuestCard questTheme={questTheme} variant="flat" style={[styles.insightCard, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.borderStrong, borderLeftWidth: 3, borderLeftColor: questTheme.colors.warning }]} className="rescue-summary-card insight-card">
+                  <Text style={[styles.insightLine, { color: questTheme.colors.text }]}>
+                    {t(lang, 'week')}: <Text style={[styles.insightStrong, { color: questTheme.colors.primary }]}>{rescueStats.total}</Text>
+                    {' · '}{t(lang, 'rescueCompletionRate')}: <Text style={[styles.insightStrong, { color: questTheme.colors.primary }]}>{rescueStats.completionRate}%</Text>
+                  </Text>
+                  <Text style={[styles.insightLine, { color: questTheme.colors.text }]}>
+                    {t(lang, 'latestRescue')}: {rescueStats.latest?.startedAt ? new Date(rescueStats.latest.startedAt).toLocaleString() : t(lang, 'notEnoughRescueData')}
+                  </Text>
+                  <Text style={[styles.insightLine, { color: questTheme.colors.textMuted }]}>
+                    {rescueStats.topTrigger ? `${rescueStats.topTrigger} · ` : ''}{t(lang, 'rescueInsightPlaceholder')}
+                  </Text>
+                </QuestCard>
+              </>
+            ) : null}
 
-            <View style={styles.statRow}>
+            {hasComparableTrend ? <View style={styles.statRow}>
               <Stat questTheme={questTheme} label={t(lang, 'weeklyExecutionTime')} value={fmt(last7.reduce((s, d) => s + d.minutes, 0))} accent={accent} />
               <Stat questTheme={questTheme} label={t(lang, 'totalHours')} value={(totalMin / 60).toFixed(1)} accent={accent} />
-            </View>
-            <View style={styles.statRow}>
+            </View> : null}
+            {hasComparableTrend ? <View style={styles.statRow}>
               <Stat questTheme={questTheme} label={t(lang, 'activeDays')} value={String(activeDays)} accent={accent} />
               <Stat questTheme={questTheme} label={t(lang, 'streak')} value={`${streak} ${t(lang, 'days')}`} accent={accent} />
               <Stat questTheme={questTheme} label={t(lang, 'weeklyHit')} value={`${weeklyHitDays}/7`} accent={accent} />
-            </View>
+            </View> : null}
 
-            <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'weeklyPatterns')}</Text>
-            <View style={[styles.insightCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>
-              {insight.locked ? (
-                <Text style={[styles.insightLocked, { color: questTheme.colors.textMuted }]}>
-                  {t(lang, 'patternLocked')}{'\n'}
-                  <Text style={[styles.insightLockedSub, { color: questTheme.colors.textMuted }]}>
-                    {insight.daysHave} {t(lang, 'days')}
-                  </Text>
-                </Text>
-              ) : (
-                <>
-                  <Text style={[styles.insightLine, { color: questTheme.colors.text }]}>
+            {!insight.locked ? (
+              <>
+                <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'weeklyPatterns')}</Text>
+                <View style={[styles.insightCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>
+                  <>
+                    <Text style={[styles.insightLine, { color: questTheme.colors.text }]}>
                     {t(lang, 'weeklyInvestment')}: <Text style={[styles.insightStrong, { color: questTheme.colors.primary }]}>{insight.bestLabel}</Text>
                     {' · '}<Text style={[styles.insightStrong, { color: questTheme.colors.primary }]}>{insight.bestMinutes} {t(lang, 'minutes')}</Text>
                   </Text>
                   <Text style={[styles.insightLine, { color: questTheme.colors.text }]}>
-                    {t(lang, 'averageQuality')}: <Text style={[styles.insightStrong, { color: questTheme.colors.primary }]}>{insight.avgPerDay} {t(lang, 'minutes')}</Text>
-                  </Text>
-                </>
-              )}
-            </View>
+                      {t(lang, 'averageQuality')}: <Text style={[styles.insightStrong, { color: questTheme.colors.primary }]}>{insight.avgPerDay} {t(lang, 'minutes')}</Text>
+                    </Text>
+                  </>
+                </View>
+              </>
+            ) : null}
 
-            <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'timeBySkill')}</Text>
-            {!weeklySkillShare ? (
-              <Text style={[styles.empty, { color: questTheme.colors.textMuted, backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>{t(lang, 'noExecutionInsights')}</Text>
-            ) : (
+            {hasComparableTrend && weeklySkillShare ? (
+              <>
+              <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'timeBySkill')}</Text>
               <View style={[styles.shareCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>
                 {weeklySkillShare.rows.map(({ label, icon, color, minutes, percent, skill }) => (
                   <View key={label} style={styles.shareRow}>
@@ -856,12 +831,12 @@ export default function StatsScreen() {
                   </View>
                 ))}
               </View>
-            )}
+              </>
+            ) : null}
 
-        <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'timeByTaskType')}</Text>
-        {!weeklyTaskTypeShare ? (
-          <Text style={[styles.empty, { color: questTheme.colors.textMuted, backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>{t(lang, 'noExecutionInsights')}</Text>
-        ) : (
+        {hasComparableTrend && weeklyTaskTypeShare ? (
+          <>
+          <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'timeByTaskType')}</Text>
           <View style={[styles.shareCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>
             {weeklyTaskTypeShare.rows.map(({ type, minutes, percent }) => (
               <View key={type} style={styles.shareRow}>
@@ -872,12 +847,12 @@ export default function StatsScreen() {
               </View>
             ))}
           </View>
-        )}
+          </>
+        ) : null}
 
-        <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'metricDistribution')}</Text>
-        {!weeklyMetricShare ? (
-          <Text style={[styles.empty, { color: questTheme.colors.textMuted, backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>{t(lang, 'noExecutionInsights')}</Text>
-        ) : (
+        {hasComparableTrend && weeklyMetricShare ? (
+          <>
+          <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'metricDistribution')}</Text>
           <View style={[styles.shareCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>
             {weeklyMetricShare.map(({ metric, minutes, count, percent }) => (
               <View key={metric} style={styles.shareRow}>
@@ -888,22 +863,16 @@ export default function StatsScreen() {
               </View>
             ))}
           </View>
-        )}
+          </>
+        ) : null}
 
         {/* 8 周热力图 */}
-        <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'heatmap8Weeks')}</Text>
-        <Heatmap cells={heat} lang={lang} questTheme={questTheme} accent={accent} />
-
-        {/* ── 系统自检（下沉：不是用户每次关心的信息）─────────────────────── */}
-
-        {/* 解锁进度提示（新用户友好，老用户可忽略）*/}
-        <QuestCard questTheme={questTheme} variant="flat" style={[styles.encourageCard, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.borderStrong }]} className="summary-card insight-card">
-          <Text style={[styles.instantTitle, { color: questTheme.colors.text }]}>{t(lang, 'dayCount').replace('{count}', String(instantInsight.firstInsightProgress))}</Text>
-          <Text style={[styles.instantText, { color: questTheme.colors.textMuted }]}>{t(lang, 'moreDaysToInsight').replace('{count}', String(instantInsight.daysToFirstInsight))}</Text>
-          <View style={[styles.encourageBarBg, { backgroundColor: questTheme.colors.surfaceSoft }]}>
-            <View style={[styles.encourageBarFg, { width: `${(instantInsight.firstInsightProgress / 7) * 100}%`, backgroundColor: questTheme.colors.primary }]} />
-          </View>
-        </QuestCard>
+        {hasComparableTrend ? (
+          <>
+            <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'heatmap8Weeks')}</Text>
+            <Heatmap cells={heat} lang={lang} questTheme={questTheme} accent={accent} />
+          </>
+        ) : null}
 
         {/* 系统闭环概览（系统健康度，开发者/高级用户参考）*/}
         <QuestCard questTheme={questTheme} variant="data" style={[styles.loopCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong, borderLeftWidth: 3, borderLeftColor: questTheme.colors.primary }]} className="system-loop-card insight-card">
@@ -1431,10 +1400,6 @@ const styles = StyleSheet.create({
   advancedHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderRadius: 16, padding: 12, marginTop: 8 },
   advancedTitle: { fontSize: 16, fontWeight: '900', lineHeight: 22 },
   advancedSubtitle: { fontSize: 12, fontWeight: '800', lineHeight: 18, marginTop: 2 },
-  commandStrip: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, borderWidth: 1, borderRadius: 16, padding: 10, marginTop: 10 },
-  commandCell: { flex: 1, minWidth: 132, paddingHorizontal: 8, paddingVertical: 8 },
-  commandValue: { fontSize: 16, fontWeight: '900', lineHeight: 22 },
-  commandLabel: { fontSize: 11, fontWeight: '800', marginTop: 2 },
   primaryPanel: {},
   primaryHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   primaryTitle: { fontSize: 20, fontWeight: '900', lineHeight: 26, marginTop: 2 },
@@ -1478,13 +1443,6 @@ const styles = StyleSheet.create({
   stat: { flex: 1, backgroundColor: theme.card, padding: 11, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
   statValue: { fontSize: 22, fontWeight: '800' },
   statLabel: { color: theme.textDim, fontSize: 12, marginTop: 2 },
-  instantGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 },
-  instantCard: { width: '31.8%', minHeight: 104, backgroundColor: theme.card, padding: 12, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
-  instantTitle: { color: theme.text, fontSize: 13, fontWeight: '900', lineHeight: 18 },
-  instantText: { color: theme.textDim, fontSize: 12, fontWeight: '700', lineHeight: 18, marginTop: 8 },
-  encourageCard: { marginTop: 8, backgroundColor: theme.card, padding: 14, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
-  encourageBarBg: { height: 8, backgroundColor: theme.cardAlt, borderRadius: 4, overflow: 'hidden', marginTop: 10 },
-  encourageBarFg: { height: '100%', borderRadius: 4 },
   loopCard: { marginTop: 12, backgroundColor: theme.card, padding: 14, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
   h2Inline: { color: theme.text, fontSize: 18, fontWeight: '800' },
   loopGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
