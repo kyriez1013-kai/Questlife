@@ -84,7 +84,6 @@ export default function GoalDetailScreen() {
   const [moduleDescription, setModuleDescription] = useState('');
   const [skillModuleId, setSkillModuleId] = useState<string | undefined>();
   const [existingModuleId, setExistingModuleId] = useState<string | undefined>();
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [criterionOpen, setCriterionOpen] = useState(false);
   const [editingCriterionId, setEditingCriterionId] = useState<string | undefined>();
   const [criterionTitle, setCriterionTitle] = useState('');
@@ -150,16 +149,6 @@ export default function GoalDetailScreen() {
       recent: rows.slice(0, 3),
     };
   }, [data.contributionLinks, data.effortUnits, categoryId]);
-
-  useEffect(() => {
-    setExpanded((prev) => {
-      const next = { ...prev };
-      modules.forEach((m, index) => {
-        if (next[m.id] == null) next[m.id] = index === 0;
-      });
-      return next;
-    });
-  }, [modules]);
 
   if (!cat) return null;
 
@@ -354,6 +343,32 @@ export default function GoalDetailScreen() {
         </QuestGroupedSurface>
 
         <View style={styles.sectionHeader}>
+          <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'modules')}</Text>
+          <QuestButton questTheme={questTheme} variant="secondary" icon="plus" label={t(lang, 'addModule')} onPress={openCreateModule} />
+        </View>
+
+        {modules.length === 0 ? (
+          <QuestEmptyState questTheme={questTheme} icon="folder" title={t(lang, 'modules')} body={t(lang, 'noModulesEmptyState')} />
+        ) : (
+          modules.map((module) => (
+            <ModuleGroup
+              key={module.id}
+              module={module}
+              skills={skillsForModule(module.id, skills, links)}
+              links={links.filter((link) => link.moduleId === module.id)}
+              addSkill={() => openAddSkill(module.id)}
+              addExisting={() => setExistingModuleId(module.id)}
+              removeSkill={(skillId) => removeSkillFromModule(module.id, skillId)}
+              editModule={() => openEditModule(module)}
+              deleteModule={() => confirmDeleteModule(module)}
+              openSkill={(skillId) => nav.navigate('SkillDetail', { skillId })}
+              lang={lang}
+              questTheme={questTheme}
+            />
+          ))
+        )}
+
+        <View style={styles.sectionHeader}>
           <View>
             <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'outcomeCriteria')}</Text>
             <Text style={[styles.sectionSub, { color: questTheme.colors.textMuted }]}>{t(lang, 'totalWeight')}: {totalWeight}</Text>
@@ -467,33 +482,6 @@ export default function GoalDetailScreen() {
           </QuestCard>
         )}
 
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'modules')}</Text>
-          <QuestButton questTheme={questTheme} variant="secondary" icon="plus" label={t(lang, 'addModule')} onPress={openCreateModule} />
-        </View>
-
-        {modules.length === 0 ? (
-          <QuestEmptyState questTheme={questTheme} icon="folder" title={t(lang, 'modules')} body={t(lang, 'noModulesEmptyState')} />
-        ) : (
-          modules.map((module) => (
-            <ModuleCard
-              key={module.id}
-              module={module}
-              skills={skillsForModule(module.id, skills, links)}
-              links={links.filter((l) => l.moduleId === module.id)}
-              expanded={!!expanded[module.id]}
-              toggle={() => setExpanded((prev) => ({ ...prev, [module.id]: !prev[module.id] }))}
-              addSkill={() => openAddSkill(module.id)}
-              addExisting={() => setExistingModuleId(module.id)}
-              removeSkill={(skillId) => removeSkillFromModule(module.id, skillId)}
-              editModule={() => openEditModule(module)}
-              deleteModule={() => confirmDeleteModule(module)}
-              openSkill={(skillId) => nav.navigate('SkillDetail', { skillId })}
-              lang={lang}
-              questTheme={questTheme}
-            />
-          ))
-        )}
       </ScrollView>
 
       <GoalForm visible={editing} onClose={() => setEditing(false)} initial={cat} />
@@ -610,14 +598,12 @@ export default function GoalDetailScreen() {
   );
 }
 
-function ModuleCard({
-  module, skills, links, expanded, toggle, addSkill, addExisting, removeSkill, editModule, deleteModule, openSkill, lang, questTheme,
+function ModuleGroup({
+  module, skills, links, addSkill, addExisting, removeSkill, editModule, deleteModule, openSkill, lang, questTheme,
 }: {
   module: QuestModule;
   skills: Skill[];
   links: ModuleSkillLink[];
-  expanded: boolean;
-  toggle: () => void;
   addSkill: () => void;
   addExisting: () => void;
   removeSkill: (skillId: string) => void;
@@ -628,38 +614,84 @@ function ModuleCard({
   questTheme: QuestTheme;
 }) {
   const progress = calculateModuleProgress(module, skills, links);
-  const openModuleMenu = () => {
-    deleteModule();
-  };
   return (
-    <QuestCard questTheme={questTheme} variant="flat" style={[styles.moduleCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong, borderLeftWidth: 3, borderLeftColor: questTheme.colors.primary }]} className="module-card module-row">
-      <TouchableOpacity style={styles.moduleHeader} onPress={toggle} activeOpacity={0.75}>
+    <QuestGroupedSurface
+      questTheme={questTheme}
+      elevated
+      style={[
+        styles.moduleGroup,
+        {
+          borderColor: questTheme.colors.borderStrong,
+          borderLeftColor: questTheme.colors.primary,
+        },
+      ]}
+    >
+      <TouchableOpacity
+        style={styles.moduleHeader}
+        onPress={editModule}
+        activeOpacity={0.75}
+        accessibilityRole="button"
+        accessibilityLabel={`${t(lang, 'editModule')}: ${displayModuleName(module, lang)}`}
+      >
         <QuestEntityIcon icon={module.icon} systemIcon={getModuleSemanticIcon(module)} questTheme={questTheme} />
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={[styles.moduleTitle, { color: questTheme.colors.text }]}>{displayModuleName(module, lang)}</Text>
           <Text style={[styles.moduleMeta, { color: questTheme.colors.textMuted }]}>
             {t(lang, 'moduleProgress')} {progress}% · {skills.length} {t(lang, 'skillCount')}
           </Text>
           {module.description ? <Text style={[styles.moduleMeta, { color: questTheme.colors.textMuted }]}>{module.description}</Text> : null}
         </View>
-        <TouchableOpacity style={[styles.moduleMenuBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]} onPress={openModuleMenu}>
+        <Text style={[styles.moduleEditHint, { color: questTheme.colors.primary }]}>{t(lang, 'edit')}</Text>
+        <TouchableOpacity
+          style={[styles.moduleMenuBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}
+          onPress={(event) => {
+            event.stopPropagation?.();
+            deleteModule();
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={`${t(lang, 'deleteModule')}: ${displayModuleName(module, lang)}`}
+        >
           <Text style={[styles.moduleMenuText, { color: questTheme.colors.textMuted }]}>•••</Text>
         </TouchableOpacity>
-        <QuestIcon name={expanded ? 'check' : 'target'} size={16} color={questTheme.colors.textSubtle} />
       </TouchableOpacity>
-      <QuestProgressBar questTheme={questTheme} value={progress} style={{ marginTop: 12 }} />
+      <QuestProgressBar questTheme={questTheme} value={progress} style={{ marginTop: questTheme.spacing.sm }} />
 
-      {expanded ? (
-        <View style={styles.moduleBody}>
-          {skills.length === 0 ? (
-            <Text style={[styles.emptySmall, { color: questTheme.colors.textMuted }]}>{t(lang, 'noSkillsUnderQuest')}</Text>
-          ) : (
-            skills.map((skill) => (
+      <View style={[styles.moduleBody, { borderLeftColor: questTheme.colors.borderStrong }]}>
+        {skills.length === 0 ? (
+          <Text style={[styles.emptySmall, { color: questTheme.colors.textMuted }]}>{t(lang, 'noSkillsUnderQuest')}</Text>
+        ) : (
+          skills.map((skill, index) => (
+            <TouchableOpacity
+              key={skill.id}
+              style={[
+                styles.skillHierarchyRow,
+                index > 0 ? { borderTopColor: questTheme.colors.border, borderTopWidth: 1 } : null,
+              ]}
+              onPress={() => openSkill(skill.id)}
+              onLongPress={() => {
+                confirmAction({
+                  title: t(lang, 'removeFromModuleTitle'),
+                  message: t(lang, 'removeFromModuleConfirm'),
+                  cancelText: t(lang, 'cancel'),
+                  confirmText: t(lang, 'removeFromModule'),
+                  destructive: true,
+                  onConfirm: () => removeSkill(skill.id),
+                });
+              }}
+              activeOpacity={0.75}
+              accessibilityRole="button"
+            >
+              <QuestEntityIcon icon={skill.icon} systemIcon={getSkillSemanticIcon(skill)} color={skill.color} questTheme={questTheme} size="sm" />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={[styles.skillName, { color: questTheme.colors.text }]}>{skill.name}</Text>
+                <Text style={[styles.skillMeta, { color: questTheme.colors.textMuted }]}>
+                  {progressTypeLabel(lang, progressTypeForSkill(skill))} · {progressSummary(skill, lang)}
+                </Text>
+              </View>
               <TouchableOpacity
-                key={skill.id}
-                style={[styles.skillCard, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.border, borderWidth: 1 }]}
-                onPress={() => openSkill(skill.id)}
-                onLongPress={() => {
+                style={[styles.unlinkIconButton, { borderColor: questTheme.colors.border }]}
+                onPress={(event) => {
+                  event.stopPropagation?.();
                   confirmAction({
                     title: t(lang, 'removeFromModuleTitle'),
                     message: t(lang, 'removeFromModuleConfirm'),
@@ -669,37 +701,21 @@ function ModuleCard({
                     onConfirm: () => removeSkill(skill.id),
                   });
                 }}
-                activeOpacity={0.75}
+                accessibilityRole="button"
+                accessibilityLabel={`${t(lang, 'removeFromModule')}: ${skill.name}`}
               >
-                <QuestEntityIcon icon={skill.icon} systemIcon={getSkillSemanticIcon(skill)} color={skill.color} questTheme={questTheme} size="sm" />
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.skillName, { color: questTheme.colors.text }]}>{skill.name}</Text>
-                  <Text style={[styles.skillMeta, { color: questTheme.colors.textMuted }]}>{progressTypeLabel(lang, progressTypeForSkill(skill))} · {progressSummary(skill, lang)}</Text>
-                </View>
-                <TouchableOpacity
-                  style={[styles.removeLinkBtn, { borderColor: questTheme.colors.border }]}
-                  onPress={() => {
-                    confirmAction({
-                      title: t(lang, 'removeFromModuleTitle'),
-                      message: t(lang, 'removeFromModuleConfirm'),
-                      cancelText: t(lang, 'cancel'),
-                      confirmText: t(lang, 'removeFromModule'),
-                      destructive: true,
-                      onConfirm: () => removeSkill(skill.id),
-                    });
-                  }}
-                >
-                  <Text style={[styles.removeLinkText, { color: questTheme.colors.textMuted }]}>{t(lang, 'removeFromModule')}</Text>
-                </TouchableOpacity>
-                <QuestIcon name="target" size={16} color={questTheme.colors.textSubtle} />
+                <Text style={[styles.unlinkIconText, { color: questTheme.colors.textMuted }]}>×</Text>
               </TouchableOpacity>
-            ))
-          )}
+              <QuestIcon name="target" size={16} color={questTheme.colors.textSubtle} />
+            </TouchableOpacity>
+          ))
+        )}
+        <View style={styles.moduleActions}>
           <QuestButton questTheme={questTheme} variant="secondary" icon="plus" label={t(lang, 'addExistingSkill')} onPress={addExisting} />
           <QuestButton questTheme={questTheme} variant="ghost" icon="plus" label={t(lang, 'createNewSkill')} onPress={addSkill} />
         </View>
-      ) : null}
-    </QuestCard>
+      </View>
+    </QuestGroupedSurface>
   );
 }
 
@@ -753,19 +769,22 @@ const styles = StyleSheet.create({
   addModuleBtn: { borderWidth: 1, borderColor: theme.border, borderRadius: 16, paddingHorizontal: 10, paddingVertical: 7 },
   addModuleText: { color: theme.text, fontSize: 12, fontWeight: '800' },
   empty: { color: theme.textDim, fontStyle: 'italic', backgroundColor: theme.card, padding: 14, borderRadius: 10 },
-  moduleCard: { backgroundColor: theme.card, padding: 12, borderRadius: 14, marginBottom: 8, borderWidth: 1, borderColor: theme.border },
-  moduleHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  moduleTitle: { color: theme.text, fontSize: 17, fontWeight: '800' },
+  moduleGroup: { padding: 12, marginBottom: 10, borderLeftWidth: 3 },
+  moduleHeader: { minHeight: questLayout.controlMinHeight, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  moduleTitle: { color: theme.text, fontSize: 16, fontWeight: '800' },
   moduleMeta: { color: theme.textDim, fontSize: 12, marginTop: 4 },
-  moduleMenuBtn: { width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: theme.border, alignItems: 'center', justifyContent: 'center' },
+  moduleEditHint: { fontSize: 12, fontWeight: '800' },
+  moduleMenuBtn: { width: questLayout.controlMinHeight, height: questLayout.controlMinHeight, borderRadius: 22, borderWidth: 1, borderColor: theme.border, alignItems: 'center', justifyContent: 'center' },
   moduleMenuText: { color: theme.textDim, fontSize: 15, fontWeight: '900', marginTop: -4 },
-  chev: { color: theme.textDim, fontSize: 22, fontWeight: '700' },
-  moduleBody: { marginTop: 12, gap: 8 },
-  emptySmall: { color: theme.textDim, fontSize: 12, paddingVertical: 6 },
-  skillCard: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: theme.cardAlt, padding: 10, borderRadius: 12 },
+  moduleBody: { marginTop: 10, marginLeft: 16, paddingLeft: 12, borderLeftWidth: 2 },
+  emptySmall: { color: theme.textDim, fontSize: 12, paddingVertical: 10 },
+  skillHierarchyRow: { minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 },
   skillIcon: { width: 38, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   skillName: { color: theme.text, fontSize: 15, fontWeight: '700' },
-  skillMeta: { color: theme.textDim, fontSize: 12, marginTop: 3 },
+  skillMeta: { color: theme.textDim, fontSize: 12, lineHeight: 17, marginTop: 3 },
+  unlinkIconButton: { width: questLayout.controlMinHeight, height: questLayout.controlMinHeight, borderWidth: 1, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  unlinkIconText: { fontSize: 20, lineHeight: 22, fontWeight: '500' },
+  moduleActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingTop: 8 },
   addSkillBtn: { borderWidth: 1, borderStyle: 'dashed', borderColor: theme.border, borderRadius: 12, paddingVertical: 10, alignItems: 'center' },
   addSkillText: { color: theme.primary, fontSize: 13, fontWeight: '800' },
   removeLinkBtn: { borderWidth: 1, borderColor: theme.border, borderRadius: 12, paddingHorizontal: 8, paddingVertical: 5 },
