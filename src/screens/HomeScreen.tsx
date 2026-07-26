@@ -59,6 +59,9 @@ import { createDecisionResultRecord } from '../utils/decisionMemory';
 import { createDecisionService, getLastDecisionServiceMeta, isDecisionAIEnabled, isDecisionAIShadowEnabled, isDecisionDailyBriefEnabled, isDecisionDebugEnabled, LegacyDecisionService, AiDecisionService, runDecisionShadowBrief, DecisionServiceMeta } from '../services/decisionService';
 import { buildScheduleProposalPatch, normalizeScheduleProposals, previewScheduleProposal, scheduleProposalActionKey, ScheduleProposal, ScheduleProposalStatus } from '../utils/scheduleProposal';
 import DashboardCardShell from '../components/dashboard/DashboardCardShell';
+import TodayDecisionSurface from '../components/today/TodayDecisionSurface';
+import TodayDecisionDetailsSheet from '../components/today/TodayDecisionDetailsSheet';
+import { buildTodayDecisionPresentation } from '../utils/todayDecisionPresentation';
 
 const FIXED_TODAY_CARD_SIZES = {
   smart_capture: 'large',
@@ -109,6 +112,15 @@ function nextFixtureShortenTime(block: ScheduleBlock) {
   const duration = Math.max(1, end - start);
   const shortened = Math.max(15, Math.floor(duration / 2));
   return scheduleTimeFromMinutes(start + shortened);
+}
+
+function todayCommandActionLabelKey(action: TodayCommandAction) {
+  if (action === 'rescue') return 'rescueTwoMinutes';
+  if (action === 'create_goal') return 'createFirstGoal';
+  if (action === 'review_feedback') return 'reviewLatestFeedback';
+  if (action === 'finish_pending_capture') return 'finishCurrentCapture';
+  if (action === 'log') return 'logSomething';
+  return 'startNow';
 }
 
 // 晨间状态选项
@@ -455,7 +467,7 @@ export default function HomeScreen() {
   const [dailyDecisionServiceMeta, setDailyDecisionServiceMeta] = useState<DecisionServiceMeta | null>(null);
   const [dailyDecisionResultId, setDailyDecisionResultId] = useState('');
   const [dailyDecisionFeedback, setDailyDecisionFeedback] = useState<'useful' | 'not_useful' | null>(null);
-  const [showDailyBriefEvidence, setShowDailyBriefEvidence] = useState(false);
+  const [todayDecisionDetailsOpen, setTodayDecisionDetailsOpen] = useState(false);
   const [scheduleProposalStatuses, setScheduleProposalStatuses] = useState<Record<string, ScheduleProposalStatus>>({});
   const [scheduleProposalUndo, setScheduleProposalUndo] = useState<{ proposalId: string; block: ScheduleBlock } | null>(null);
   const [debugScheduleProposalFixture, setDebugScheduleProposalFixture] = useState<ScheduleProposal | null>(null);
@@ -1522,70 +1534,6 @@ export default function HomeScreen() {
     return { title: t(lang, 'nextAction'), body: t(lang, 'noActiveBlockNextAction') };
   }, [todayScheduleBlocks, data.categories, data.skills, lang]);
 
-  const nowFocus = useMemo(() => {
-    if (activeSession) {
-      const skill = activeSession.linkedSkillId ? data.skills.find((s) => s.id === activeSession.linkedSkillId) : undefined;
-      return {
-        type: 'active_session' as const,
-        title: activeSession.title,
-        icon: '🟢',
-        linkedSkillId: activeSession.linkedSkillId,
-        linkedGoalId: activeSession.linkedGoalId,
-        linkedModuleId: activeSession.linkedModuleId,
-        linkedScheduleBlockId: activeSession.linkedScheduleBlockId,
-        taskType: activeSession.taskType,
-        metricType: skill ? progressTypeForSkill(skill) : undefined,
-        suggestionText: `${t(lang, 'running')} ${formatTimer(timerNow - new Date(activeSession.startedAt).getTime())}`,
-        plannedMinutes: undefined,
-      };
-    }
-    const now = new Date();
-    const nowMinutes = now.getHours() * 60 + now.getMinutes();
-    const activeBlock = todayScheduleBlocks.find((block) => (
-      block.status !== 'completed' && minuteOfDay(block.startTime) <= nowMinutes && nowMinutes < minuteOfDay(block.endTime)
-    ));
-    const nextBlock = activeBlock ?? todayScheduleBlocks.find((block) => block.status !== 'completed');
-    if (nextBlock) {
-      const skill = nextBlock.linkedSkillId ? data.skills.find((s) => s.id === nextBlock.linkedSkillId) : undefined;
-      return {
-        type: 'schedule_block' as const,
-        title: nextBlock.title,
-        icon: skill?.icon ?? '🗓️',
-        linkedSkillId: nextBlock.linkedSkillId,
-        linkedGoalId: nextBlock.linkedGoalId,
-        linkedScheduleBlockId: nextBlock.id,
-        taskType: nextBlock.taskType,
-        metricType: skill ? progressTypeForSkill(skill) : undefined,
-        suggestionText: skill ? metricPlanCopy(skill, nextBlock.plannedMinutes, lang) : `${nextBlock.startTime}-${nextBlock.endTime}`,
-        plannedMinutes: nextBlock.plannedMinutes,
-      };
-    }
-    const unloggedSkill = data.skills.find((skill) => !todayLogs.some((log) => log.linkedSkillId === skill.id));
-    const skill = unloggedSkill ?? data.skills[0];
-    if (skill) {
-      const link = findPrimaryLink(skill.id);
-      const plannedMinutes = skill.defaultDurationMinutes ?? skill.dailyTargetMinutes ?? 30;
-      return {
-        type: 'skill' as const,
-        title: skill.name,
-        icon: skill.icon,
-        linkedSkillId: skill.id,
-        linkedGoalId: link?.goalId,
-        linkedModuleId: link?.moduleId,
-        taskType: skill.taskType,
-        metricType: progressTypeForSkill(skill),
-        suggestionText: metricPlanCopy(skill, plannedMinutes, lang),
-        plannedMinutes,
-      };
-    }
-    return {
-      type: 'fallback' as const,
-      title: t(lang, 'logProgress'),
-      icon: '＋',
-      suggestionText: t(lang, 'noActiveBlockNextAction'),
-    };
-  }, [activeSession, data.skills, findPrimaryLink, lang, timerNow, todayLogs, todayScheduleBlocks]);
-
   const latestFeedbackLog = useMemo(() => {
     const latest = todayLogs.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
     if (!latest) return undefined;
@@ -1654,35 +1602,6 @@ export default function HomeScreen() {
 
   const commandTargetSkill = todayCommand.linkedSkillId ? data.skills.find((item) => item.id === todayCommand.linkedSkillId) : undefined;
 
-  const dailyDecisionReadinessKey = useMemo(() => {
-    const band = dailyDecisionBrief?.readiness?.band || 'unknown';
-    if (band === 'green') return 'pushReadyMode';
-    if (band === 'yellow') return 'stableProgressMode';
-    if (band === 'red') return 'protectRecoveryMode';
-    return 'insufficientDataMode';
-  }, [dailyDecisionBrief]);
-
-  const dailyDecisionPillVariant = useMemo(() => {
-    const band = dailyDecisionBrief?.readiness?.band || 'unknown';
-    if (band === 'green') return 'success' as const;
-    if (band === 'yellow') return 'warning' as const;
-    if (band === 'red') return 'danger' as const;
-    return 'muted' as const;
-  }, [dailyDecisionBrief]);
-
-  const dailyDecisionEvidenceItems = useMemo(() => {
-    const drivers = (dailyDecisionBrief?.readiness?.drivers || []).filter(Boolean).slice(0, 3);
-    if (drivers.length > 0) return drivers;
-    const audit = dailyDecisionPayloadAudit;
-    if (!audit) return [t(lang, 'dataStillAccumulating')];
-    const items: string[] = [];
-    if (audit.latestStateIncluded || audit.stateCheckInCount7d > 0) items.push(t(lang, 'evidenceFromState'));
-    if (audit.contextCount7d > 0 || audit.contextTypesPresent.length > 0) items.push(t(lang, 'evidenceFromContext'));
-    if (audit.executionRows28d > 0 || audit.executionRows7d > 0) items.push(t(lang, 'evidenceFromRecentExecution'));
-    if (audit.afterStateSampleCount > 0 || audit.confirmedPatternsCount + audit.inferredPatternsCount > 0) items.push(t(lang, 'evidenceFromPatterns'));
-    return items.length > 0 ? items.slice(0, 3) : [t(lang, 'dataStillAccumulating')];
-  }, [dailyDecisionBrief, dailyDecisionPayloadAudit, lang]);
-
   const debugScheduleProposalTargetBlock = useMemo(() => (
     todayScheduleBlocks.find((block) => block.status !== 'completed')
       ?? data.scheduleBlocks.find((block) => block.status !== 'completed')
@@ -1737,6 +1656,30 @@ export default function HomeScreen() {
     }));
   }, [dailyDecisionBrief, dailyDecisionGeneratedAt, dailyDecisionResultId, debugScheduleProposalFixture, scheduleProposalStatuses]);
 
+  const todayDecisionPresentation = useMemo(() => buildTodayDecisionPresentation({
+    todayCommand,
+    dailyOperatingBrief,
+    dailyDecisionBrief,
+    loading: dailyDecisionLoading,
+    error: dailyDecisionError,
+    source: dailyDecisionSource,
+    quality: dailyDecisionQuality,
+    decisionResultId: dailyDecisionResultId,
+    feedback: dailyDecisionFeedback,
+    scheduleProposals: dailyDecisionScheduleProposals,
+  }), [
+    dailyDecisionBrief,
+    dailyDecisionError,
+    dailyDecisionFeedback,
+    dailyDecisionLoading,
+    dailyDecisionQuality,
+    dailyDecisionResultId,
+    dailyDecisionScheduleProposals,
+    dailyDecisionSource,
+    dailyOperatingBrief,
+    todayCommand,
+  ]);
+
   const canApplyDailyScheduleProposal = useCallback((proposalId: string) => {
     const proposal = dailyDecisionScheduleProposals.find((item) => item.id === proposalId);
     if (!proposal) return false;
@@ -1781,18 +1724,6 @@ export default function HomeScreen() {
     setScheduleProposalStatuses((current) => ({ ...current, [scheduleProposalUndo.proposalId]: 'pending' }));
     setScheduleProposalUndo(null);
   }, [scheduleProposalUndo, updateScheduleBlock]);
-
-  const dailyDecisionSourceLabelKey = dailyDecisionSource === 'ai' ? 'aiSourceAI' : dailyDecisionSource === 'ai_failed_fallback' ? 'aiSourceFailedFallback' : 'aiSourceFallback';
-  const dailyDecisionQualityLabelKey = dailyDecisionQuality?.grade === 'bad' ? 'aiQualityBadFallback' : dailyDecisionQuality?.grade === 'weak' ? 'aiQualityWeak' : 'aiQuality';
-
-  const trackNowFocusAction = useCallback((action: 'start_timer' | 'one_tap' | 'log_progress') => {
-    trackEvent('today_now_focus_clicked', {
-      focusType: nowFocus.type,
-      taskType: nowFocus.taskType,
-      metricType: nowFocus.metricType,
-      action,
-    }, { page: 'today' });
-  }, [nowFocus]);
 
   const energyBudgetRows = useMemo(() => {
     // v1 uses 240 minutes as default daily execution budget. Future versions should make it configurable.
@@ -2078,7 +2009,6 @@ export default function HomeScreen() {
       style: todayCardWrapperStyle(cardId as keyof typeof FIXED_TODAY_CARD_SIZES),
     };
   }, [lang, questTheme, todayCardWrapperStyle]);
-  const dailyBriefDashboardSize = todayCardSize('daily_operating_brief');
   const bodyContextDashboardSize = todayCardSize('body_context');
   const recentFeedbackDashboardSize = todayCardSize('recent_feedback');
   const stateCheckinDashboardSize = todayCardSize('state_checkin');
@@ -2120,171 +2050,20 @@ export default function HomeScreen() {
 
         {todayCardVisible('daily_operating_brief') ? (
         <DashboardCardShell {...todayDashboardShellProps('daily_operating_brief')}>
-        <QuestCard questTheme={questTheme} variant="hero" style={styles.dailyBriefCard}>
-          <View style={styles.dailyBriefHeader}>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.strategyKicker, { color: questTheme.colors.textMuted }]}>{t(lang, 'dailyDecisionBrief')}</Text>
-              <Text style={[styles.dailyBriefTitle, { color: questTheme.colors.text }]}> 
-                {dailyDecisionLoading && !dailyDecisionBrief ? t(lang, 'generatingDailyBrief') : dailyDecisionBrief?.headline_insight || formatCommandCopy(dailyOperatingBrief.mainJudgementKey, dailyOperatingBrief.mainJudgementValues)}
-              </Text>
-            </View>
-            <QuestPill
-              questTheme={questTheme}
-              active
-              variant={dailyDecisionPillVariant}
-              label={t(lang, dailyDecisionReadinessKey)}
-            />
-          </View>
-
-          <View style={[styles.dailyBriefCompactAction, { backgroundColor: questTheme.colors.surfaceSoft }]}>
-            <QuestIcon name="zap" size={15} color={questTheme.colors.primary} />
-            <Text style={[styles.dailyBriefCompactActionText, { color: questTheme.colors.text }]} numberOfLines={2}>
-              {dailyDecisionBrief?.prescription?.do_first?.step || formatCommandCopy(dailyOperatingBrief.firstActionKey, dailyOperatingBrief.firstActionValues)}
-            </Text>
-            {typeof dailyDecisionBrief?.prescription?.do_first?.duration_min === 'number' ? (
-              <Text style={[styles.dailyBriefCompactDuration, { color: questTheme.colors.primary }]}>
-                {String(dailyDecisionBrief.prescription.do_first.duration_min) + t(lang, 'minutesShort')}
-              </Text>
-            ) : null}
-          </View>
-
-          {showDailyBriefEvidence ? (
-          <>
-          <View style={styles.dailyBriefMetaRow}>
-            <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}> 
-              {t(lang, 'readiness')}: {dailyDecisionBrief?.readiness?.score == null ? t(lang, 'readinessUnknown') : Math.round(dailyDecisionBrief.readiness.score)}
-            </Text>
-            {dailyDecisionQuality?.grade === 'weak' ? (
-              <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.warning }]}>{t(lang, 'aiQualityWeak')}</Text>
-            ) : null}
-            {dailyDecisionSource !== 'ai' ? (
-              <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textSubtle }]}>{t(lang, 'dailyBriefFallback')}</Text>
-            ) : null}
-          </View>
-
-          <View style={[styles.dailyBriefAction, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}> 
-            <QuestIcon name="zap" size={16} color={questTheme.colors.primary} />
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'firstStep')}</Text>
-              <Text style={[styles.dailyBriefActionText, { color: questTheme.colors.text }]}> 
-                {dailyDecisionBrief?.prescription?.do_first?.step || formatCommandCopy(dailyOperatingBrief.firstActionKey, dailyOperatingBrief.firstActionValues)}
-              </Text>
-              {showDailyBriefEvidence && dailyDecisionBrief?.prescription?.do_first?.why ? (
-                <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted, marginTop: 4 }]}>{dailyDecisionBrief.prescription.do_first.why}</Text>
-              ) : null}
-            </View>
-            {typeof dailyDecisionBrief?.prescription?.do_first?.duration_min === 'number' ? (
-              <QuestPill
-                questTheme={questTheme}
-                active
-                variant="default"
-                label={String(dailyDecisionBrief.prescription.do_first.duration_min) + t(lang, 'minutesShort')}
-              />
-            ) : null}
-          </View>
-
-          {showDailyBriefEvidence && dailyBriefDashboardSize !== 'small' ? (
-          <View style={[styles.dailyBriefSignalRow, { borderTopColor: questTheme.colors.divider }]}>
-            <Text style={[styles.dailyBriefSignalLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'keyEvidence')}</Text>
-            <Text style={[styles.dailyBriefSignalText, { color: questTheme.colors.text }]}>
-              {dailyDecisionEvidenceItems.slice(0, dailyBriefDashboardSize === 'medium' ? 2 : 3).join(' · ')}
-            </Text>
-          </View>
-          ) : null}
-
-          {showDailyBriefEvidence && dailyBriefDashboardSize === 'large' && dailyDecisionBrief?.perception_gap?.detected ? (
-            <View style={[styles.dailyBriefAction, { backgroundColor: questTheme.colors.accentSoft, borderColor: questTheme.colors.border }]}> 
-              <QuestIcon name="activity" size={16} color={questTheme.colors.accent} />
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'perceptionGapShort')}</Text>
-                <Text style={[styles.dailyBriefActionText, { color: questTheme.colors.text }]}>{dailyDecisionBrief.perception_gap.interpretation}</Text>
-              </View>
-            </View>
-          ) : null}
-
-          {dailyBriefDashboardSize === 'large' && (dailyDecisionBrief?.prescription?.do_not || []).length > 0 ? (
-            <View style={[styles.dailyBriefSignalRow, { borderTopColor: questTheme.colors.divider }]}>
-              <Text style={[styles.dailyBriefSignalLabel, { color: questTheme.colors.warning }]}>{t(lang, 'doNotToday')}</Text>
-              <Text style={[styles.dailyBriefSignalText, { color: questTheme.colors.text }]}>
-                {(dailyDecisionBrief?.prescription?.do_not || []).slice(0, 2).join(' · ')}
-              </Text>
-            </View>
-          ) : null}
-
-          {dailyBriefDashboardSize === 'large' && isDecisionDebugEnabled() ? (
-            <View style={[styles.scheduleProposalCard, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}>
-              <View style={styles.scheduleProposalHeader}>
-                <Text style={[styles.dailyBriefActionText, { color: questTheme.colors.text }]}>
-                  {t(lang, 'scheduleProposalTestFixture')}
-                </Text>
-                <QuestPill questTheme={questTheme} variant="muted" label={t(lang, 'debugFixtureOnly')} />
-              </View>
-              <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>
-                {debugScheduleProposalTargetBlock
-                  ? `${t(lang, 'selectedScheduleBlock')}: ${debugScheduleProposalTargetBlock.title} · ${debugScheduleProposalTargetBlock.startTime}-${debugScheduleProposalTargetBlock.endTime} · ${debugScheduleProposalTargetBlock.id}`
-                  : t(lang, 'noScheduleBlockForTest')}
-              </Text>
-              <View style={styles.scheduleProposalActions}>
-                <TouchableOpacity
-                  disabled={!debugScheduleProposalTargetBlock}
-                  onPress={() => makeDebugScheduleProposal('move')}
-                  style={[
-                    styles.dailyBriefRefreshBtn,
-                    {
-                      borderColor: debugScheduleProposalTargetBlock ? questTheme.colors.primary : questTheme.colors.border,
-                      backgroundColor: debugScheduleProposalTargetBlock ? questTheme.colors.primarySoft : questTheme.colors.surface,
-                    },
-                  ]}
-                >
-                  <Text style={[styles.dailyBriefRefreshText, { color: debugScheduleProposalTargetBlock ? questTheme.colors.primary : questTheme.colors.textSubtle }]}>
-                    {t(lang, 'generateMoveProposal')}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  disabled={!debugScheduleProposalTargetBlock}
-                  onPress={() => makeDebugScheduleProposal('shorten')}
-                  style={[
-                    styles.dailyBriefRefreshBtn,
-                    {
-                      borderColor: debugScheduleProposalTargetBlock ? questTheme.colors.primary : questTheme.colors.border,
-                      backgroundColor: debugScheduleProposalTargetBlock ? questTheme.colors.primarySoft : questTheme.colors.surface,
-                    },
-                  ]}
-                >
-                  <Text style={[styles.dailyBriefRefreshText, { color: debugScheduleProposalTargetBlock ? questTheme.colors.primary : questTheme.colors.textSubtle }]}>
-                    {t(lang, 'generateShortenProposal')}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  disabled={!debugScheduleProposalTargetBlock}
-                  onPress={() => makeDebugScheduleProposal('protect')}
-                  style={[
-                    styles.dailyBriefRefreshBtn,
-                    {
-                      borderColor: debugScheduleProposalTargetBlock ? questTheme.colors.primary : questTheme.colors.border,
-                      backgroundColor: debugScheduleProposalTargetBlock ? questTheme.colors.primarySoft : questTheme.colors.surface,
-                    },
-                  ]}
-                >
-                  <Text style={[styles.dailyBriefRefreshText, { color: debugScheduleProposalTargetBlock ? questTheme.colors.primary : questTheme.colors.textSubtle }]}>
-                    {t(lang, 'generateProtectProposal')}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  disabled={!debugScheduleProposalFixture}
-                  onPress={clearDebugScheduleProposalFixture}
-                  style={[styles.dailyBriefRefreshBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}
-                >
-                  <Text style={[styles.dailyBriefRefreshText, { color: debugScheduleProposalFixture ? questTheme.colors.textMuted : questTheme.colors.textSubtle }]}>
-                    {t(lang, 'clearTestProposal')}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ) : null}
-
-          {dailyBriefDashboardSize === 'large' && dailyDecisionScheduleProposals.length > 0 ? (
-            <View style={styles.dailyBriefSection}>
+          <TodayDecisionSurface
+            presentation={todayDecisionPresentation}
+            questTheme={questTheme}
+            language={lang}
+            formatCopy={(copy) => copy.kind === 'text' ? copy.text : formatCommandCopy(copy.key, copy.values)}
+            primaryActionLabel={t(lang, todayCommandActionLabelKey(todayCommand.primaryAction))}
+            secondaryActionLabel={todayCommand.secondaryActions[0]
+              ? t(lang, todayCommandActionLabelKey(todayCommand.secondaryActions[0]))
+              : undefined}
+            onExecuteAction={(action) => runTodayCommand(action)}
+            onOpenDetails={() => setTodayDecisionDetailsOpen(true)}
+          />
+          {dailyDecisionScheduleProposals.length > 0 ? (
+            <QuestCard questTheme={questTheme} variant="flat" style={styles.scheduleProposalReview}>
               <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>
                 {t(lang, 'reviewScheduleProposal')} · {t(lang, 'confirmBeforeApply')}
               </Text>
@@ -2301,7 +2080,9 @@ export default function HomeScreen() {
                       ? 'proposalApplyFailed'
                       : 'scheduleProposalNotApplied';
                 const qualityBlocked = proposal.status === 'pending' && applyResult.ok && !canApply;
-                const safetyKey = applyResult.ok ? (qualityBlocked ? 'qualityTooWeakForApply' : null) : (applyResult.messageKey || 'suggestionOnly');
+                const safetyKey = applyResult.ok
+                  ? (qualityBlocked ? 'qualityTooWeakForApply' : null)
+                  : (applyResult.messageKey || 'suggestionOnly');
                 return (
                   <View key={proposal.id} style={[styles.scheduleProposalCard, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}>
                     <View style={styles.scheduleProposalHeader}>
@@ -2320,51 +2101,24 @@ export default function HomeScreen() {
                     <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>
                       {t(lang, 'reason')}: {proposal.reason}
                     </Text>
-                    {isDecisionDebugEnabled() ? (
-                      <View style={[styles.contextPreviewBox, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}>
-                        <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>
-                          {t(lang, 'targetBlock')}: {block ? `${block.title} · ${block.id}` : '-'}
-                        </Text>
-                        {scheduleProposalUndo?.proposalId === proposal.id ? (
-                          <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>
-                            {t(lang, 'beforeApply')}: {scheduleProposalUndo.block.startTime}-{scheduleProposalUndo.block.endTime} · {scheduleProposalUndo.block.notes || '-'}
-                          </Text>
-                        ) : null}
-                        <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>
-                          {t(lang, 'afterApply')}: {block ? `${block.startTime}-${block.endTime} · ${block.notes || '-'}` : '-'}
-                        </Text>
-                      </View>
-                    ) : null}
                     {safetyKey ? (
-                      <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.warning }]}>
-                        {t(lang, safetyKey)}
-                      </Text>
+                      <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.warning }]}>{t(lang, safetyKey)}</Text>
                     ) : null}
                     <View style={styles.scheduleProposalActions}>
-                      <TouchableOpacity
+                      <QuestButton
+                        questTheme={questTheme}
+                        variant="secondary"
+                        label={t(lang, 'applyProposal')}
                         disabled={!canApply}
                         onPress={() => applyDailyScheduleProposal(proposal.id)}
-                        style={[
-                          styles.dailyBriefRefreshBtn,
-                          {
-                            borderColor: canApply ? questTheme.colors.primary : questTheme.colors.border,
-                            backgroundColor: canApply ? questTheme.colors.primarySoft : questTheme.colors.surface,
-                          },
-                        ]}
-                      >
-                        <Text style={[styles.dailyBriefRefreshText, { color: canApply ? questTheme.colors.primary : questTheme.colors.textSubtle }]}>
-                          {t(lang, 'applyProposal')}
-                        </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
+                      />
+                      <QuestButton
+                        questTheme={questTheme}
+                        variant="ghost"
+                        label={t(lang, 'dismissProposal')}
                         disabled={proposal.status !== 'pending'}
                         onPress={() => dismissDailyScheduleProposal(proposal.id)}
-                        style={[styles.dailyBriefRefreshBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}
-                      >
-                        <Text style={[styles.dailyBriefRefreshText, { color: proposal.status === 'pending' ? questTheme.colors.textMuted : questTheme.colors.textSubtle }]}>
-                          {t(lang, 'dismissProposal')}
-                        </Text>
-                      </TouchableOpacity>
+                      />
                     </View>
                   </View>
                 );
@@ -2372,100 +2126,16 @@ export default function HomeScreen() {
               {scheduleProposalUndo ? (
                 <View style={styles.scheduleProposalActions}>
                   <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.success }]}>{t(lang, 'proposalApplied')}</Text>
-                  <TouchableOpacity
+                  <QuestButton
+                    questTheme={questTheme}
+                    variant="ghost"
+                    label={t(lang, 'undoProposal')}
                     onPress={undoDailyScheduleProposal}
-                    style={[styles.dailyBriefRefreshBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}
-                  >
-                    <Text style={[styles.dailyBriefRefreshText, { color: questTheme.colors.primary }]}>{t(lang, 'undoProposal')}</Text>
-                  </TouchableOpacity>
+                  />
                 </View>
               ) : null}
-              {isDecisionDebugEnabled() ? (
-                <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textSubtle, marginTop: 4 }]}> 
-                  {JSON.stringify(dailyDecisionScheduleProposals)}
-                </Text>
-              ) : null}
-            </View>
+            </QuestCard>
           ) : null}
-
-          {showDailyBriefEvidence ? (
-            <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textSubtle }]}> 
-              {t(lang, 'evidenceBasis')}: {t(lang, dailyDecisionBrief?.evidence_basis === 'personal_pattern' ? 'basedOnRecentState' : 'basedOnContextAndHistory')} · {t(lang, 'confidence')}: {dailyDecisionBrief?.confidence == null ? t(lang, 'confidenceLow') : Math.round(dailyDecisionBrief.confidence * 100) + '%'} · {t(lang, 'noMedicalAdviceShort')}
-            </Text>
-          ) : null}
-
-          <View style={styles.dailyBriefFooter}>
-            <TouchableOpacity
-              onPress={() => setShowDailyBriefEvidence((value) => !value)}
-              style={[styles.dailyBriefDisclosureBtn, { backgroundColor: questTheme.colors.surfaceSoft }]}
-            >
-              <Text style={[styles.dailyBriefRefreshText, { color: questTheme.colors.textMuted }]}>
-                {t(lang, showDailyBriefEvidence ? 'hideEvidence' : 'viewEvidence')}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              disabled={dailyDecisionLoading}
-              onPress={() => generateDailyDecisionBrief('manual')}
-              style={[styles.dailyBriefRefreshBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}
-            >
-              <Text style={[styles.dailyBriefRefreshText, { color: questTheme.colors.primary }]}> 
-                {dailyDecisionLoading ? t(lang, 'generatingDailyBrief') : t(lang, 'refreshBrief')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {dailyDecisionBrief ? (
-            <View style={styles.instantFeedbackRow}>
-              <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'dailyBriefFeedback')}</Text>
-              {(['useful', 'not_useful'] as const).map((feedback) => {
-                const selected = dailyDecisionFeedback === feedback;
-                return (
-                  <TouchableOpacity
-                    key={feedback}
-                    style={[
-                      styles.instantFeedbackBtn,
-                      { borderColor: selected ? accent : questTheme.colors.border, backgroundColor: selected ? questTheme.colors.primarySoft : questTheme.colors.surface },
-                    ]}
-                    onPress={() => markDailyDecisionFeedback(feedback)}
-                  >
-                    <Text style={[styles.instantFeedbackText, { color: selected ? accent : questTheme.colors.textMuted }]}>
-                      {t(lang, feedback === 'useful' ? 'useful' : 'notUseful')}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          ) : null}
-
-          {isDecisionDebugEnabled() ? (
-            <View style={[styles.dailyBriefDebugBox, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}> 
-              <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}> 
-                {t(lang, 'aiSource')}: {t(lang, dailyDecisionSourceLabelKey)} · {t(lang, dailyDecisionQualityLabelKey)}{dailyDecisionQuality ? ' ' + dailyDecisionQuality.grade + '/' + dailyDecisionQuality.score : ''}
-              </Text>
-              <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textSubtle }]}> 
-                {t(lang, 'evidenceBasis')}: {dailyDecisionPayloadAudit?.evidenceRichness || 'unknown'} · model: {dailyDecisionServiceMeta?.model || '-'} · finish: {dailyDecisionServiceMeta?.finishReason || '-'}
-              </Text>
-              {dailyDecisionError ? (
-                <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.danger }]}>{dailyDecisionError}</Text>
-              ) : null}
-              {dailyDecisionGeneratedAt ? (
-                <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textSubtle }]}>{t(lang, 'generatedAt')}: {dailyDecisionGeneratedAt}</Text>
-              ) : null}
-            </View>
-          ) : null}
-          </>
-          ) : null}
-          {!showDailyBriefEvidence ? (
-            <TouchableOpacity
-              onPress={() => setShowDailyBriefEvidence(true)}
-              style={styles.dailyBriefCompactDisclosure}
-            >
-              <Text style={[styles.dailyBriefRefreshText, { color: questTheme.colors.primary }]}>
-                {t(lang, 'viewEvidence')}
-              </Text>
-            </TouchableOpacity>
-          ) : null}
-        </QuestCard>
         </DashboardCardShell>
         ) : null}
 
@@ -2608,74 +2278,6 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        <View style={[styles.nowFocusCard, themedCard, {
-          borderColor: todayCommand.type === 'rescue' ? questTheme.colors.warning : questTheme.colors.borderStrong,
-          borderLeftWidth: 4,
-          borderLeftColor: todayCommand.type === 'rescue' ? questTheme.colors.warning : questTheme.colors.primary,
-        }]}>
-          <View style={styles.nowFocusHeading}>
-            <View style={[styles.nowFocusIconShell, { backgroundColor: todayCommand.type === 'rescue' ? questTheme.colors.warningSoft : questTheme.colors.primarySoft }]}>
-              <QuestIcon
-                name={todayCommand.type === 'rescue' ? 'lifeBuoy' : todayCommand.type === 'continue_plan' ? 'calendar' : todayCommand.type === 'review_feedback' ? 'barChart' : 'target'}
-                size={22}
-                color={todayCommand.type === 'rescue' ? questTheme.colors.warning : accent}
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.strategyKicker, { color: questTheme.colors.textMuted }]}>{t(lang, 'commandCenter')}</Text>
-              <Text style={[styles.nowFocusTitle, { color: questTheme.colors.text }]}>{formatCommandCopy(todayCommand.titleKey, todayCommand.titleValues)}</Text>
-            </View>
-          </View>
-          {recentFeedbackDashboardSize !== 'small' ? (
-          <Text style={[styles.nextActionText, { color: questTheme.colors.textMuted }]}>
-            {t(lang, 'because')} {formatCommandCopy(todayCommand.reasonKey, todayCommand.reasonValues)}
-          </Text>
-          ) : null}
-          <Text style={[styles.commandStateLine, { color: questTheme.colors.textMuted }]}>
-            {t(lang, 'currentState')}: {stateSummaryLabel}{stateSummaryTime ? ` · ${stateSummaryTime}` : ''}
-          </Text>
-          {recentFeedbackDashboardSize !== 'small' ? (
-          <View style={styles.nowFocusActions}>
-            <QuestButton
-              questTheme={questTheme}
-              variant={todayCommand.primaryAction === 'rescue' ? 'emergency' : 'primary'}
-              icon={todayCommand.primaryAction === 'rescue' ? 'lifeBuoy' : todayCommand.primaryAction === 'create_goal' ? 'plus' : todayCommand.primaryAction === 'review_feedback' ? 'barChart' : 'play'}
-              label={t(lang, todayCommand.primaryAction === 'rescue'
-                ? 'rescueTwoMinutes'
-                : todayCommand.primaryAction === 'create_goal'
-                  ? 'createFirstGoal'
-                  : todayCommand.primaryAction === 'review_feedback'
-                    ? 'reviewLatestFeedback'
-                    : todayCommand.primaryAction === 'finish_pending_capture'
-                      ? 'finishCurrentCapture'
-                      : 'startNow')}
-              onPress={() => runTodayCommand()}
-            />
-            <QuestButton
-              questTheme={questTheme}
-              variant="secondary"
-              icon="plus"
-              label={t(lang, 'logSomething')}
-              onPress={() => runTodayCommand('log')}
-            />
-            {todayCommand.linkedSkillId ? (
-              <QuestButton
-                questTheme={questTheme}
-                variant="ghost"
-                icon="activity"
-                label={t(lang, 'reduceToFiveMinutes')}
-                onPress={() => {
-                  openModal(todayCommand.linkedSkillId, {
-                    logType: todayCommand.scheduleBlockId ? 'schedule' : 'skill',
-                    scheduleBlockId: todayCommand.scheduleBlockId ?? null,
-                    minutes: 5,
-                  });
-                }}
-              />
-            ) : null}
-          </View>
-          ) : null}
-        </View>
         </DashboardCardShell>
         ) : null}
 
@@ -3053,6 +2655,18 @@ export default function HomeScreen() {
         ) : null}
         </TileGrid>
       </ScrollView>
+
+      <TodayDecisionDetailsSheet
+        visible={todayDecisionDetailsOpen}
+        onClose={() => setTodayDecisionDetailsOpen(false)}
+        presentation={todayDecisionPresentation}
+        questTheme={questTheme}
+        language={lang}
+        formatCopy={(copy) => copy.kind === 'text' ? copy.text : formatCommandCopy(copy.key, copy.values)}
+        onFeedback={markDailyDecisionFeedback}
+        refreshing={dailyDecisionLoading}
+        onRefresh={() => generateDailyDecisionBrief('manual')}
+      />
 
       {/* 顶部横幅: 成就 / Streak — pointerEvents none 不挡交互 */}
       {topBanner && (
@@ -3974,42 +3588,12 @@ const styles = StyleSheet.create({
   },
   modeChipText: { color: theme.textDim, fontSize: 13, fontWeight: '700' },
   modeChipTextOn: { color: '#fff' },
-  nowFocusCard: {
-    marginTop: 10,
-    backgroundColor: theme.card,
-    borderRadius: theme.radius.lg,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: theme.border,
-    ...theme.shadow,
-  },
-  nowFocusHeading: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  nowFocusIconShell: { width: 40, height: 40, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  nowFocusTitle: { color: theme.text, fontSize: 21, fontWeight: '900', lineHeight: 26 },
-  nowFocusActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
-  dailyBriefCard: { gap: 6 },
-  dailyBriefHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  dailyBriefMetaRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 },
-  dailyBriefTitle: { fontSize: 16, fontWeight: '900', lineHeight: 21, marginTop: 1 },
-  dailyBriefCompactAction: { minHeight: 42, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  dailyBriefCompactActionText: { flex: 1, fontSize: 13, lineHeight: 18, fontWeight: '800' },
-  dailyBriefCompactDuration: { fontSize: 11, fontWeight: '900' },
-  dailyBriefCompactDisclosure: { alignSelf: 'flex-start', paddingVertical: 3, paddingHorizontal: 2 },
-  dailyBriefAction: { borderWidth: 0, borderRadius: 12, padding: 8, flexDirection: 'row', alignItems: 'center', gap: 8 },
   dailyBriefActionText: { fontSize: 13, fontWeight: '900', lineHeight: 18 },
   dailyBriefMeta: { fontSize: 11, fontWeight: '800', lineHeight: 16 },
-  dailyBriefSection: { gap: 5 },
-  dailyBriefSignalRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingTop: 6, borderTopWidth: 1 },
-  dailyBriefSignalLabel: { width: 58, flexShrink: 0, fontSize: 10, fontWeight: '900', lineHeight: 15 },
-  dailyBriefSignalText: { flex: 1, fontSize: 11, fontWeight: '800', lineHeight: 16 },
-  dailyBriefFooter: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'space-between', alignItems: 'center' },
-  dailyBriefDisclosureBtn: { borderRadius: 999, paddingHorizontal: 9, paddingVertical: 5 },
-  dailyBriefRefreshBtn: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 5 },
-  dailyBriefRefreshText: { fontSize: 11, fontWeight: '900' },
   scheduleProposalCard: { borderWidth: 1, borderRadius: 14, padding: 10, gap: 6 },
+  scheduleProposalReview: { gap: 8 },
   scheduleProposalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   scheduleProposalActions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
-  dailyBriefDebugBox: { marginTop: 4, borderWidth: 1, borderRadius: 14, padding: 8, gap: 4 },
   contextBridgeCard: { gap: 8 },
   contextBridgeHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   contextBriefTitle: { fontSize: 15, fontWeight: '900', lineHeight: 21, marginTop: 2 },
@@ -4023,10 +3607,6 @@ const styles = StyleSheet.create({
   contextMetricWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   contextMetricPill: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 5 },
   contextMetricText: { fontSize: 10, fontWeight: '900' },
-  nowFocusBtn: { borderWidth: 1, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 9 },
-  nowFocusBtnText: { fontSize: 12, fontWeight: '900' },
-  nowFocusPrimary: { borderRadius: 16, paddingHorizontal: 13, paddingVertical: 10 },
-  nowFocusPrimaryText: { color: '#fff', fontSize: 12, fontWeight: '900' },
   compactPlanCard: {
     marginTop: 0,
     backgroundColor: theme.card,

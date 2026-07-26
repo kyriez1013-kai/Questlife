@@ -16,6 +16,8 @@ type Props = {
   language: 'zh' | 'en';
   formatCopy: (copy: TodayDecisionCopy) => string;
   onFeedback?: (feedback: 'useful' | 'not_useful') => void;
+  refreshing?: boolean;
+  onRefresh?: () => void;
 };
 
 function confidenceKey(value: TodayDecisionPresentation['details']['confidence']['label']) {
@@ -57,6 +59,8 @@ export default function TodayDecisionDetailsSheet({
   language,
   formatCopy,
   onFeedback,
+  refreshing = false,
+  onRefresh,
 }: Props) {
   const { details } = presentation;
 
@@ -65,12 +69,25 @@ export default function TodayDecisionDetailsSheet({
       visible={visible}
       onClose={onClose}
       footer={(
-        <QuestButton
-          questTheme={questTheme}
-          variant="secondary"
-          label={t(language, 'closeDetails')}
-          onPress={onClose}
-        />
+        <View style={{ flexDirection: 'row', gap: questTheme.spacing.sm }}>
+          {onRefresh ? (
+            <QuestButton
+              questTheme={questTheme}
+              variant="ghost"
+              label={t(language, refreshing ? 'generatingDailyBrief' : 'refreshBrief')}
+              onPress={onRefresh}
+              disabled={refreshing}
+              style={{ flex: 1 }}
+            />
+          ) : null}
+          <QuestButton
+            questTheme={questTheme}
+            variant="secondary"
+            label={t(language, 'closeDetails')}
+            onPress={onClose}
+            style={{ flex: 1 }}
+          />
+        </View>
       )}
     >
       <QuestSectionHeader
