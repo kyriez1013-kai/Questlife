@@ -61,6 +61,8 @@ import { buildScheduleProposalPatch, normalizeScheduleProposals, previewSchedule
 import DashboardCardShell from '../components/dashboard/DashboardCardShell';
 import TodayDecisionSurface from '../components/today/TodayDecisionSurface';
 import TodayDecisionDetailsSheet from '../components/today/TodayDecisionDetailsSheet';
+import TodayRecentExecution, { TodayRecentExecutionItem } from '../components/today/TodayRecentExecution';
+import TodayStateStrip from '../components/today/TodayStateStrip';
 import { buildTodayDecisionPresentation } from '../utils/todayDecisionPresentation';
 
 const FIXED_TODAY_CARD_SIZES = {
@@ -690,21 +692,6 @@ export default function HomeScreen() {
     return sorted;
   }, [todayLogs]);
 
-  const groupedToday = useMemo(() => {
-    const map = new Map<string, ExecutionLog[]>();
-    displayedTodayLogs.forEach((log) => {
-      const sk = data.skills.find((s) => s.id === log.linkedSkillId);
-      const catId = log.linkedGoalId ?? sk?.categoryId ?? 'unknown';
-      const arr = map.get(catId) ?? [];
-      arr.push(log);
-      map.set(catId, arr);
-    });
-    return Array.from(map.entries()).map(([catId, logs]) => ({
-      cat: data.categories.find((c) => c.id === catId),
-      logs,
-    }));
-  }, [displayedTodayLogs, data.categories, data.skills]);
-
   const findPrimaryLink = useCallback((sid?: string) => {
     if (!sid) return undefined;
     return (data.moduleSkillLinks || []).find((link) => link.skillId === sid);
@@ -725,6 +712,37 @@ export default function HomeScreen() {
       .filter((value): value is string => Boolean(value));
     return Array.from(new Set(labels)).slice(0, 3);
   }, [data.categories, data.contributionLinks, data.effortUnits, data.modules, data.skills, lang]);
+
+  const confirmDeleteTodayLog = useCallback((logId: string) => {
+    confirmAction({
+      title: t(lang, 'deleteRecord'),
+      cancelText: t(lang, 'cancel'),
+      confirmText: t(lang, 'delete'),
+      destructive: true,
+      onConfirm: () => deleteExecutionLog(logId),
+    });
+  }, [deleteExecutionLog, lang]);
+
+  const recentExecutionItems = useMemo<TodayRecentExecutionItem[]>(() => (
+    displayedTodayLogs.slice(0, 3).map((log) => {
+      const skill = data.skills.find((item) => item.id === log.linkedSkillId);
+      const contributionLabels = contributionLabelsForLog(log.id);
+      const displayName = displayEntityName(skill?.name ?? log.orphanedSkillName ?? log.title ?? `(${t(lang, 'deleted')})`, lang);
+      return {
+        id: log.id,
+        title: `${displayName} · ${formatMetricUpdateSummary(log, skill, lang)}${log.qualityRating ? ` · ${t(lang, 'quality')} ${log.qualityRating}/5` : ''}`,
+        meta: (log.durationMinutes ?? 0) > 0
+          ? `${log.durationMinutes} ${t(lang, 'minutes')}`
+          : t(lang, 'scDurationNotRecorded'),
+        detail: contributionLabels.length > 0
+          ? `${t(lang, 'contributesTo')}: ${contributionLabels.join(' · ')}`
+          : log.note,
+        icon: skill?.icon,
+        systemIcon: skill ? getSkillSemanticIcon(skill) : 'target',
+        color: skill?.color,
+      };
+    })
+  ), [contributionLabelsForLog, data.skills, displayedTodayLogs, lang]);
 
   // ───────── 执行记录弹窗 ─────────
   const openModal = useCallback((presetSkillId?: string, preset?: Partial<{
@@ -2011,7 +2029,6 @@ export default function HomeScreen() {
   }, [lang, questTheme, todayCardWrapperStyle]);
   const bodyContextDashboardSize = todayCardSize('body_context');
   const recentFeedbackDashboardSize = todayCardSize('recent_feedback');
-  const stateCheckinDashboardSize = todayCardSize('state_checkin');
   const TileGrid = View as any;
 
   return (
@@ -2281,7 +2298,7 @@ export default function HomeScreen() {
         </DashboardCardShell>
         ) : null}
 
-        {todayCardVisible('rescue_strip') && unfinishedRescue ? (
+        {todayCardVisible('rescue_strip') && unfinishedRescue && todayCommand.primaryAction !== 'rescue' ? (
         <DashboardCardShell {...todayDashboardShellProps('rescue_strip')}>
         <TouchableOpacity
           style={[styles.rescueStrip, {
@@ -2364,32 +2381,21 @@ export default function HomeScreen() {
 
         {todayCardVisible('state_checkin') ? (
         <DashboardCardShell {...todayDashboardShellProps('state_checkin')}>
-        <View style={[styles.stateCheckInCard, themedCard]}>
-          <View style={styles.currentStateTop}>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.strategyKicker, { color: questTheme.colors.textMuted }]}>{t(lang, 'currentState')}</Text>
-              <Text style={[styles.currentStateTitle, { color: questTheme.colors.text }]}>{t(lang, 'logStateNow')}</Text>
-            </View>
-            {stateCheckinDashboardSize === 'large' ? (
-            <TouchableOpacity style={[styles.stateUpdateBtn, { borderColor: accent }]} onPress={openStateModal}>
-              <Text style={[styles.stateUpdateText, { color: accent }]}>＋ {t(lang, 'detailedCheckIn')}</Text>
-            </TouchableOpacity>
-            ) : null}
-          </View>
-          {stateCheckinDashboardSize !== 'small' ? (
-          <View style={styles.quickStateGrid}>
-            {dailyStateOptions.map((opt) => (
-              <TouchableOpacity
-                key={opt.value}
-                style={[styles.quickStateBtn, { backgroundColor: questTheme.colors.surfaceSoft }]}
-                onPress={() => saveStateCheckIn(opt.value)}
-              >
-                <View style={[styles.stateToneDot, { backgroundColor: getStateToneColor(opt.value, questTheme) }]} />
-                <Text style={[styles.stateLabel, { color: questTheme.colors.textMuted }]}>{opt.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          ) : null}
+        <View style={styles.stateSectionStack}>
+          <TodayStateStrip
+            questTheme={questTheme}
+            title={t(lang, 'currentState')}
+            summary={stateSummaryLabel}
+            time={stateSummaryTime}
+            detailedLabel={t(lang, 'detailedCheckIn')}
+            options={dailyStateOptions.map((option) => ({
+              value: option.value,
+              label: option.label,
+              toneColor: getStateToneColor(option.value, questTheme),
+            }))}
+            onSelect={(value) => saveStateCheckIn(value as DailyStateValue)}
+            onOpenDetailed={openStateModal}
+          />
           {instantDecisionStatus !== 'idle' ? (
             <View style={[styles.instantReadCard, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}>
               <View style={styles.instantReadHeader}>
@@ -2409,21 +2415,8 @@ export default function HomeScreen() {
                   <Text style={[styles.instantReadBody, { color: questTheme.colors.text }]}>
                     {instantDecisionBrief.headline_insight || t(lang, 'aiUnavailableFallback')}
                   </Text>
-                  {instantDecisionBrief.perception_gap?.detected ? (
-                    <Text style={[styles.instantReadMeta, { color: questTheme.colors.textMuted }]}>
-                      {t(lang, 'perceptionGap')}: {instantDecisionBrief.perception_gap.interpretation}
-                    </Text>
-                  ) : null}
                   <Text style={[styles.instantReadStep, { color: questTheme.colors.text }]}>
                     {t(lang, 'firstStep')}: {instantDecisionBrief.prescription.do_first.step || t(lang, 'tryLowFrictionTask')}
-                  </Text>
-                  {instantDecisionBrief.prescription.do_first.why ? (
-                    <Text style={[styles.instantReadMeta, { color: questTheme.colors.textMuted }]}>
-                      {instantDecisionBrief.prescription.do_first.why}
-                    </Text>
-                  ) : null}
-                  <Text style={[styles.instantReadMeta, { color: questTheme.colors.textSubtle }]}>
-                    {t(lang, 'evidenceBasis')}: {t(lang, instantDecisionBrief.evidence_basis === 'personal_pattern' ? 'basedOnRecentState' : 'basedOnContextAndHistory')} · {t(lang, 'confidence')}: {Math.round((instantDecisionBrief.confidence || 0) * 100)}%
                   </Text>
                   {isDecisionDebugEnabled() ? (
                     <Text style={[styles.instantReadMeta, { color: questTheme.colors.textSubtle }]}>
@@ -2466,72 +2459,16 @@ export default function HomeScreen() {
         {/* 今日记录 */}
         {todayCardVisible('today_records') ? (
         <DashboardCardShell {...todayDashboardShellProps('today_records')}>
-        <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'todayLogs')}</Text>
-        {data.categories.length === 0 ? (
-          <TouchableOpacity style={[styles.emptyCta, { borderColor: accent, backgroundColor: questTheme.colors.surface }]} onPress={goToGoals}>
-            <Text style={[styles.emptyCtaText, { color: accent }]}>{t(lang, 'noSkillsMsg')}</Text>
-          </TouchableOpacity>
-        ) : todayLogs.length === 0 ? (
-          <Text style={[styles.empty, { color: questTheme.colors.textMuted, backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>{t(lang, 'noLogsToday')}</Text>
-        ) : (
-          groupedToday.map(({ cat, logs }) => (
-            <View key={cat?.id ?? 'unknown'} style={styles.groupBox}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <QuestEntityIcon icon={cat?.emoji} systemIcon="target" color={cat?.color} questTheme={questTheme} size="sm" />
-                <Text style={[styles.groupHeader, { color: questTheme.colors.text }]}>{cat?.name ?? t(lang, 'uncategorized')}</Text>
-              </View>
-              {logs.map((a) => {
-                const skill = data.skills.find((s) => s.id === a.linkedSkillId);
-                const contributionLabels = contributionLabelsForLog(a.id);
-                return (
-                  <TouchableOpacity
-                    key={a.id}
-                    style={[styles.actionCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.border }]}
-                    onLongPress={() => {
-                      confirmAction({
-                        title: t(lang, 'deleteRecord'),
-                        cancelText: t(lang, 'cancel'),
-                        confirmText: t(lang, 'delete'),
-                        destructive: true,
-                        onConfirm: () => deleteExecutionLog(a.id),
-                      });
-                    }}
-                  >
-                    <View style={[styles.dot, { backgroundColor: skill?.color ?? accent }]} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.actionTitle, { color: questTheme.colors.text }]}>
-                        {displayEntityName(skill?.name ?? a.orphanedSkillName ?? a.title ?? `(${t(lang, 'deleted')})`, lang)} · {formatMetricUpdateSummary(a, skill, lang)}
-                        {a.qualityRating ? ` · ${t(lang, 'quality')} ${a.qualityRating}/5` : ''}
-                      </Text>
-                      <Text style={[styles.actionNote, { color: questTheme.colors.textMuted }]}>
-                        {(a.durationMinutes ?? 0) > 0 ? `${a.durationMinutes} ${t(lang, 'minutes')}` : t(lang, 'scDurationNotRecorded')}
-                      </Text>
-                      {contributionLabels.length > 0 ? (
-                        <Text style={[styles.actionNote, { color: questTheme.colors.textMuted }]}>
-                          {t(lang, 'contributesTo')}: {contributionLabels.join(' · ')}
-                        </Text>
-                      ) : null}
-                      {a.note ? <Text style={[styles.actionNote, { color: questTheme.colors.textMuted }]}>{a.note}</Text> : null}
-                    </View>
-                    <TouchableOpacity
-                      onPress={() => confirmAction({
-                        title: t(lang, 'deleteRecord'),
-                        cancelText: t(lang, 'cancel'),
-                        confirmText: t(lang, 'delete'),
-                        destructive: true,
-                        onConfirm: () => deleteExecutionLog(a.id),
-                      })}
-                      style={[styles.logDeleteBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}
-                    >
-                      <Text style={[styles.logDeleteText, { color: questTheme.colors.textMuted }]}>×</Text>
-                    </TouchableOpacity>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          ))
-        )}
-        {todayLogs.length > 0 && <Text style={[styles.tip, { color: questTheme.colors.textMuted }]}>{t(lang, 'longPressDelete')}</Text>}
+        <TodayRecentExecution
+          questTheme={questTheme}
+          title={t(lang, 'recentExecution')}
+          emptyText={data.categories.length === 0 ? t(lang, 'noSkillsMsg') : t(lang, 'noLogsToday')}
+          deleteLabel={t(lang, 'deleteRecord')}
+          moreLabel={t(lang, 'showMoreRecords')}
+          items={recentExecutionItems}
+          hiddenCount={Math.max(0, displayedTodayLogs.length - recentExecutionItems.length)}
+          onDelete={confirmDeleteTodayLog}
+        />
         </DashboardCardShell>
         ) : null}
 
@@ -3620,23 +3557,12 @@ const styles = StyleSheet.create({
   compactPlanMore: { alignItems: 'center', paddingTop: 9, paddingBottom: 2 },
   compactPlanTitle: { color: theme.text, fontSize: 14, fontWeight: '900' },
   compactPlanMeta: { color: theme.textDim, fontSize: 11, fontWeight: '700', marginTop: 3 },
-  stateCheckInCard: {
-    marginTop: 0,
-    backgroundColor: theme.card,
-    borderRadius: theme.radius.lg,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: theme.border,
-    ...theme.shadow,
-  },
-  quickStateGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 7 },
-  quickStateBtn: { width: '18%', minWidth: 52, alignItems: 'center', backgroundColor: theme.cardAlt, borderRadius: 12, paddingVertical: 6 },
-  stateToneDot: { width: 14, height: 14, borderRadius: 7, marginBottom: 3 },
-  instantReadCard: { marginTop: 12, borderWidth: 1, borderRadius: theme.radius.md, padding: 12 },
-  instantReadHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 6 },
-  instantReadTitle: { fontSize: 14, fontWeight: '900', lineHeight: 19 },
-  instantReadBody: { fontSize: 13, lineHeight: 19, fontWeight: '800' },
-  instantReadStep: { marginTop: 8, fontSize: 13, lineHeight: 19, fontWeight: '900' },
+  stateSectionStack: { gap: 8 },
+  instantReadCard: { marginTop: 0, borderWidth: 0, borderRadius: theme.radius.md, padding: 10 },
+  instantReadHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 4 },
+  instantReadTitle: { fontSize: 12, fontWeight: '900', lineHeight: 17 },
+  instantReadBody: { fontSize: 12, lineHeight: 18, fontWeight: '800' },
+  instantReadStep: { marginTop: 6, fontSize: 12, lineHeight: 18, fontWeight: '900' },
   instantReadMeta: { marginTop: 5, fontSize: 11, lineHeight: 16, fontWeight: '700' },
   instantFeedbackRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 8 },
   instantFeedbackBtn: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 5 },
@@ -3678,11 +3604,7 @@ const styles = StyleSheet.create({
     borderColor: theme.border,
     ...theme.shadow,
   },
-  currentStateTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  currentStateTitle: { color: theme.text, fontSize: 15, fontWeight: '800' },
   currentStateTime: { color: theme.textDim, fontSize: 12, marginTop: 10, lineHeight: 18 },
-  stateUpdateBtn: { borderWidth: 1, borderRadius: theme.radius.md, paddingHorizontal: 10, paddingVertical: 8 },
-  stateUpdateText: { fontSize: 12, fontWeight: '800' },
   stateMetricRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
   stateMetric: { color: theme.text, fontSize: 12, fontWeight: '700', backgroundColor: theme.cardAlt, paddingHorizontal: 9, paddingVertical: 5, borderRadius: 12 },
   stateHistoryText: { color: theme.textDim, fontSize: 11, marginTop: 10 },
@@ -3854,13 +3776,8 @@ const styles = StyleSheet.create({
   overChipText: { color: theme.success, fontSize: 11, fontWeight: '700' },
 
   // 今日记录
-  actionCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: theme.card, padding: 12, borderRadius: theme.radius.lg, marginBottom: 8, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
-  dot: { width: 10, height: 10, borderRadius: 5 },
   actionTitle: { color: theme.text, fontSize: 15, fontWeight: '600' },
   actionNote: { color: theme.textDim, marginTop: 4, fontSize: 13 },
-  logDeleteBtn: { width: 28, height: 28, borderRadius: 14, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  logDeleteText: { fontSize: 16, fontWeight: '900', lineHeight: 19 },
-  tip: { color: theme.textDim, fontSize: 11, textAlign: 'center', marginTop: 12 },
 
   // 顶部横幅 (成就 / Streak 共用基础样式)
   topBanner: {
