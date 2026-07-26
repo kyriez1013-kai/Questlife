@@ -36,6 +36,7 @@ import QuestPill from '../components/ui/QuestPill';
 import QuestProgressBar from '../components/ui/QuestProgressBar';
 import { confirmAction } from '../utils/confirm';
 import { formatEffortUnitSummary } from '../utils/effort';
+import { QuestGroupedSurface } from '../components/ui/QuestPrimitives';
 
 type ParamList = { GoalDetail: { categoryId: string } };
 
@@ -110,6 +111,7 @@ export default function GoalDetailScreen() {
   );
   const links = data.moduleSkillLinks || [];
   const goalProgress = cat ? calculateGoalProgress(cat, modules, skills, links) : 0;
+  const linkedSkillCount = new Set(links.filter((link) => link.goalId === categoryId).map((link) => link.skillId)).size;
   const criteria = cat?.outcomeCriteria ?? [];
   const totalWeight = criteria.reduce((sum, criterion) => sum + (criterion.weight || 0), 0);
   const suggestedModules = getSuggestedModulesForGoalType(cat?.goalType);
@@ -299,48 +301,57 @@ export default function GoalDetailScreen() {
         width: '100%',
         alignSelf: 'center',
       }}>
-        <View style={styles.titleRow}>
-          <QuestEntityIcon icon={cat.emoji} systemIcon={getGoalSemanticIcon(cat)} color={cat.color} questTheme={questTheme} size="lg" />
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.title, { color: questTheme.colors.text }]}>{cat.name}</Text>
-            <Text style={[styles.subline, { color: questTheme.colors.textMuted }]}>
-              {modules.length} {t(lang, 'modules')} · {new Set(links.filter((l) => l.goalId === cat.id).map((l) => l.skillId)).size} {t(lang, 'skillCount')} · {t(lang, 'goalProgress')} {goalProgress}%
-            </Text>
+        <QuestGroupedSurface
+          questTheme={questTheme}
+          elevated
+          style={{
+            padding: questTheme.spacing.md,
+            marginBottom: questTheme.spacing.md,
+            borderColor: questTheme.colors.borderStrong,
+          }}
+        >
+          <View style={styles.titleRow}>
+            <QuestEntityIcon icon={cat.emoji} systemIcon={getGoalSemanticIcon(cat)} color={cat.color} questTheme={questTheme} size="lg" />
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={[styles.title, { color: questTheme.colors.text }]}>{cat.name}</Text>
+              <Text style={[styles.subline, { color: questTheme.colors.textMuted }]}>
+                {modules.length} {t(lang, 'modules')} · {linkedSkillCount} {t(lang, 'skillCount')} · {t(lang, 'goalProgress')} {goalProgress}%
+              </Text>
+            </View>
+            <QuestPill questTheme={questTheme} label={goalTypeLabel(lang, cat.goalType)} variant="muted" />
           </View>
-        </View>
-        {cat.description ? <Text style={[styles.desc, { backgroundColor: questTheme.colors.surface, color: questTheme.colors.textMuted }]}>{cat.description}</Text> : null}
-        <View style={styles.goalMetaGrid}>
-          <QuestPill questTheme={questTheme} label={`${t(lang, 'goalType')}: ${goalTypeLabel(lang, cat.goalType)}`} variant="muted" />
-          <QuestPill questTheme={questTheme} label={`${t(lang, 'progressModel')}: ${progressModelLabel(lang, cat.progressModel)}`} variant="muted" />
-          {cat.targetDate ? (
-            <QuestPill questTheme={questTheme} label={`${t(lang, 'targetDate')}: ${cat.targetDate}`} variant="muted" />
+
+          {cat.description || cat.vision ? (
+            <Text style={[styles.summaryContext, {
+              color: questTheme.colors.textMuted,
+              marginTop: questTheme.spacing.sm,
+            }]}>
+              {cat.description || cat.vision}
+            </Text>
           ) : null}
-        </View>
-        <QuestCard questTheme={questTheme} variant="flat" style={[styles.visionCard, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.borderStrong }]} className="goal-detail-card">
-          <Text style={[styles.metaLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'vision')}</Text>
-          <Text style={[styles.visionText, { color: questTheme.colors.text }]}>{cat.vision || t(lang, 'noVision')}</Text>
-        </QuestCard>
 
-        <QuestProgressBar questTheme={questTheme} value={goalProgress} style={{ marginTop: 12 }} />
+          <QuestProgressBar questTheme={questTheme} value={goalProgress} style={{ marginTop: questTheme.spacing.sm }} />
 
-        {goalLoopStatus ? (
-          <QuestCard questTheme={questTheme} variant="data" style={[styles.loopCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong, borderLeftWidth: 3, borderLeftColor: questTheme.colors.primary }]} className="goal-loop-card">
-            <View style={styles.loopHeader}>
-              <View style={styles.cardTitleRow}>
-                <QuestIcon name={systemIcons.progress} size={18} color={questTheme.colors.primary} />
-                <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'goalLoop')}</Text>
-              </View>
-              <Text style={[styles.loopNext, { color: questTheme.colors.primary }]}>{t(lang, 'next')}: {goalLoopStatus.nextBestAction}</Text>
+          {goalLoopStatus ? (
+            <View style={[styles.nextActionStrip, {
+              backgroundColor: questTheme.colors.surfaceMuted,
+              borderColor: questTheme.colors.border,
+              marginTop: questTheme.spacing.sm,
+              padding: questTheme.spacing.sm,
+              borderRadius: questTheme.radius.md,
+            }]}>
+              <Text style={[styles.metaLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'next')}</Text>
+              <Text style={[styles.loopNext, { color: questTheme.colors.primary }]}>{goalLoopStatus.nextBestAction}</Text>
             </View>
-            <View style={styles.loopGrid}>
-              <LoopItem questTheme={questTheme} label={t(lang, 'goalDefinition')} value={goalLoopStatus.hasGoalDefinition ? t(lang, 'done') : t(lang, 'missing')} />
-              <LoopItem questTheme={questTheme} label={t(lang, 'modulePath')} value={`${goalLoopStatus.moduleCount}`} />
-              <LoopItem questTheme={questTheme} label={t(lang, 'linkedSkills')} value={`${goalLoopStatus.linkedSkillCount}`} />
-              <LoopItem questTheme={questTheme} label={t(lang, 'metricsConfigured')} value={`${goalLoopStatus.metricConfiguredCount} / ${goalLoopStatus.linkedSkillCount}`} />
-              <LoopItem questTheme={questTheme} label={t(lang, 'executionLogs')} value={`${goalLoopStatus.executionLogCount}`} />
-            </View>
-          </QuestCard>
-        ) : null}
+          ) : null}
+
+          <View style={[styles.goalMetaGrid, { marginTop: questTheme.spacing.sm }]}>
+            <QuestPill questTheme={questTheme} label={`${t(lang, 'progressModel')}: ${progressModelLabel(lang, cat.progressModel)}`} variant="muted" />
+            {cat.targetDate ? (
+              <QuestPill questTheme={questTheme} label={`${t(lang, 'targetDate')}: ${cat.targetDate}`} variant="muted" />
+            ) : null}
+          </View>
+        </QuestGroupedSurface>
 
         <View style={styles.sectionHeader}>
           <View>
@@ -692,15 +703,6 @@ function ModuleCard({
   );
 }
 
-function LoopItem({ label, value, questTheme }: { label: string; value: string; questTheme: QuestTheme }) {
-  return (
-    <View style={[styles.loopItem, { backgroundColor: questTheme.colors.surfaceSoft }]}>
-      <Text style={[styles.loopLabel, { color: questTheme.colors.textMuted }]}>{label}</Text>
-      <Text style={[styles.loopValue, { color: questTheme.colors.text }]}>{value}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.bg },
   header: {
@@ -721,6 +723,8 @@ const styles = StyleSheet.create({
   iconBox: { width: 64, height: 64, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.cardAlt },
   title: { color: theme.text, fontSize: 21, lineHeight: 26, fontWeight: '800' },
   subline: { color: theme.textDim, fontSize: 12, marginTop: 4 },
+  summaryContext: { fontSize: 13, lineHeight: 19 },
+  nextActionStrip: { borderWidth: 1 },
   desc: { color: theme.textDim, fontSize: 13, lineHeight: 19, marginTop: 8, backgroundColor: theme.card, padding: 10, borderRadius: 12 },
   goalMetaGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
   metaPill: { backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 9 },
@@ -731,12 +735,7 @@ const styles = StyleSheet.create({
   progressBarBg: { height: 8, backgroundColor: theme.cardAlt, borderRadius: 4, overflow: 'hidden', marginTop: 12 },
   progressBarFg: { height: '100%', borderRadius: 4, backgroundColor: theme.primary },
   loopCard: { backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border, borderRadius: 14, padding: 12, marginTop: 12 },
-  loopHeader: { gap: 4 },
   loopNext: { color: theme.primary, fontSize: 13, fontWeight: '800', lineHeight: 19 },
-  loopGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
-  loopItem: { width: '31%', minWidth: 92, backgroundColor: theme.cardAlt, borderRadius: 10, padding: 10 },
-  loopLabel: { color: theme.textDim, fontSize: 10, fontWeight: '800' },
-  loopValue: { color: theme.text, fontSize: 14, fontWeight: '900', marginTop: 4 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, marginBottom: 8 },
   h2: { color: theme.text, fontSize: 16, fontWeight: '800' },
   sectionSub: { color: theme.textDim, fontSize: 12, marginTop: 4 },
