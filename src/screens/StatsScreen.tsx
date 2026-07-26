@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Rect } from 'react-native-svg';
 import { useStore } from '../store';
 import { appAccent, theme } from '../theme';
-import { DashboardCardSize, Skill } from '../types';
+import { DashboardCardSize, PatternMemory, Skill } from '../types';
 import { getLanguage, progressTypeLabel, t, taskTypeLabel } from '../i18n';
 import { getAppCoreLoopStatus } from '../utils/coreLoop';
 import { trackEvent } from '../utils/analytics';
@@ -355,6 +355,17 @@ export default function StatsScreen() {
     () => buildObjectiveContextBrief(data.contextLogs || []),
     [data.contextLogs],
   );
+  const patternMemoryGroups = useMemo(() => {
+    const byRecency = (a: PatternMemory, b: PatternMemory) => (
+      (b.lastSeenAt || b.updatedAt || '').localeCompare(a.lastSeenAt || a.updatedAt || '')
+    );
+    const patterns = data.patternMemory || [];
+    return {
+      accepted: patterns.filter((pattern) => pattern.status === 'accepted').sort(byRecency),
+      candidate: patterns.filter((pattern) => pattern.status === 'candidate').sort(byRecency),
+      archived: patterns.filter((pattern) => pattern.status === 'archived').sort(byRecency),
+    };
+  }, [data.patternMemory]);
   const hasStateTrendEvidence = metacognition.stateTrend.direction !== 'unknown';
   const hasStatePatternEvidence = metacognition.statePatterns.status === 'ok' && metacognition.statePatterns.patterns.length > 0;
   const hasBodyContextEvidence = objectiveContextBrief.status !== 'empty';
@@ -654,9 +665,54 @@ export default function StatsScreen() {
         {insightsView === 'patterns' ? (
           <View style={styles.insightsLayer}>
             <QuestSectionHeader questTheme={questTheme} title={t(lang, 'insights_patterns')} />
-            {hasStatePatternEvidence ? <StatePatternsPanel metacognition={metacognition} questTheme={questTheme} lang={lang} /> : null}
-            {hasBehaviorEvidence ? <BehaviorLinksPanel metacognition={metacognition} questTheme={questTheme} lang={lang} /> : null}
-            {!hasStatePatternEvidence && !hasBehaviorEvidence ? (
+            <View style={styles.patternStatusGrid}>
+              {([
+                ['acceptedPatterns', patternMemoryGroups.accepted.length, questTheme.colors.success],
+                ['candidatePatterns', patternMemoryGroups.candidate.length, questTheme.colors.warning],
+                ['archivedPatterns', patternMemoryGroups.archived.length, questTheme.colors.textSubtle],
+              ] as const).map(([labelKey, count, color]) => (
+                <View key={labelKey} style={[styles.patternStatusCell, { backgroundColor: questTheme.colors.surfaceMuted, borderColor: questTheme.colors.border }]}>
+                  <Text style={[styles.patternStatusCount, { color }]}>{count}</Text>
+                  <Text style={[styles.patternStatusLabel, { color: questTheme.colors.textMuted }]}>{t(lang, labelKey)}</Text>
+                </View>
+              ))}
+            </View>
+            {patternMemoryGroups.accepted.length > 0 ? (
+              <PatternMemoryGroup
+                titleKey="acceptedPatterns"
+                descriptionKey="acceptedPatternMeaning"
+                patterns={patternMemoryGroups.accepted}
+                questTheme={questTheme}
+                lang={lang}
+              />
+            ) : null}
+            {patternMemoryGroups.candidate.length > 0 || hasStatePatternEvidence || hasBehaviorEvidence ? (
+              <>
+                <PatternMemoryGroup
+                  titleKey="candidatePatterns"
+                  descriptionKey="candidatePatternCaution"
+                  patterns={patternMemoryGroups.candidate}
+                  questTheme={questTheme}
+                  lang={lang}
+                />
+                {hasStatePatternEvidence ? <StatePatternsPanel metacognition={metacognition} questTheme={questTheme} lang={lang} /> : null}
+                {hasBehaviorEvidence ? <BehaviorLinksPanel metacognition={metacognition} questTheme={questTheme} lang={lang} /> : null}
+              </>
+            ) : null}
+            {patternMemoryGroups.archived.length > 0 ? (
+              <PatternMemoryGroup
+                titleKey="archivedPatterns"
+                descriptionKey="archivedPatternMeaning"
+                patterns={patternMemoryGroups.archived}
+                questTheme={questTheme}
+                lang={lang}
+              />
+            ) : null}
+            {patternMemoryGroups.accepted.length === 0
+              && patternMemoryGroups.candidate.length === 0
+              && patternMemoryGroups.archived.length === 0
+              && !hasStatePatternEvidence
+              && !hasBehaviorEvidence ? (
               <QuestGroupedSurface questTheme={questTheme} style={{ padding: questTheme.spacing.md }}>
                 <Text style={[styles.insightLine, { color: questTheme.colors.text }]}>{t(lang, 'dataStillAccumulating')}</Text>
                 <Text style={[styles.insightLine, { color: questTheme.colors.textMuted }]}>{t(lang, 'notEnoughForDetailedInsights')}</Text>
@@ -1154,6 +1210,67 @@ function BehaviorLinksPanel({
   );
 }
 
+function patternConfidenceKey(confidence: number) {
+  if (confidence >= 0.75) return 'confidenceHigh';
+  if (confidence >= 0.45) return 'confidenceMedium';
+  return 'confidenceLow';
+}
+
+function patternEvidenceBasisKey(basis: PatternMemory['evidenceBasis']) {
+  if (basis === 'personal_pattern') return 'patternEvidencePersonal';
+  if (basis === 'mixed') return 'patternEvidenceMixed';
+  return 'patternEvidenceGeneral';
+}
+
+function PatternMemoryGroup({
+  titleKey,
+  descriptionKey,
+  patterns,
+  questTheme,
+  lang,
+}: {
+  titleKey: string;
+  descriptionKey: string;
+  patterns: PatternMemory[];
+  questTheme: ReturnType<typeof getQuestTheme>;
+  lang: 'zh' | 'en';
+}) {
+  return (
+    <QuestGroupedSurface questTheme={questTheme} style={{ padding: questTheme.spacing.md }}>
+      <View style={styles.patternGroupHeader}>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={[styles.metaSectionTitle, { color: questTheme.colors.text }]}>{t(lang, titleKey)}</Text>
+          <Text style={[styles.patternGroupDescription, { color: questTheme.colors.textMuted }]}>{t(lang, descriptionKey)}</Text>
+        </View>
+        <Text style={[styles.patternGroupCount, { color: questTheme.colors.textSubtle }]}>{patterns.length}</Text>
+      </View>
+      {patterns.map((pattern) => {
+        const observedAt = pattern.lastSeenAt || pattern.updatedAt;
+        const observedLabel = observedAt
+          ? new Date(observedAt).toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-AU')
+          : t(lang, 'notEnoughDataYet');
+        return (
+          <View key={pattern.id} style={[styles.patternMemoryRow, { borderTopColor: questTheme.colors.divider }]}>
+            <Text style={[styles.behaviorTitle, { color: questTheme.colors.text }]}>{pattern.label}</Text>
+            <Text style={[styles.patternMemoryDescription, { color: questTheme.colors.textMuted }]}>{pattern.description}</Text>
+            <Text style={[styles.behaviorEvidence, { color: questTheme.colors.textSubtle }]}>
+              {t(lang, patternConfidenceKey(pattern.confidence))}
+              {' · '}{t(lang, 'evidenceCount')}: {pattern.sampleN}
+              {' · '}{t(lang, 'lastObserved')}: {observedLabel}
+            </Text>
+            <Text style={[styles.behaviorEvidence, { color: questTheme.colors.textSubtle }]}>
+              {t(lang, patternEvidenceBasisKey(pattern.evidenceBasis))}
+            </Text>
+            {pattern.caution ? (
+              <Text style={[styles.behaviorEvidence, { color: questTheme.colors.warning }]}>{pattern.caution}</Text>
+            ) : null}
+          </View>
+        );
+      })}
+    </QuestGroupedSurface>
+  );
+}
+
 // ───────── 近 7 天柱图 ─────────
 function DailyBarChart({
   days, accent, lang, questTheme,
@@ -1295,6 +1412,15 @@ const styles = StyleSheet.create({
   insightsTab: { flex: 1, minHeight: 36, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   insightsTabText: { fontSize: 11, fontWeight: '800' },
   insightsLayer: { width: '100%', gap: 8 },
+  patternStatusGrid: { flexDirection: 'row', gap: 8 },
+  patternStatusCell: { flex: 1, minWidth: 0, minHeight: 58, borderWidth: 1, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 8 },
+  patternStatusCount: { fontSize: 18, lineHeight: 22, fontWeight: '900' },
+  patternStatusLabel: { fontSize: 10, lineHeight: 14, fontWeight: '800', marginTop: 2 },
+  patternGroupHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  patternGroupDescription: { fontSize: 11, lineHeight: 17, fontWeight: '700', marginTop: 2 },
+  patternGroupCount: { fontSize: 13, lineHeight: 18, fontWeight: '900' },
+  patternMemoryRow: { borderTopWidth: 1, paddingTop: 10, marginTop: 10 },
+  patternMemoryDescription: { fontSize: 12, lineHeight: 18, fontWeight: '700', marginTop: 3 },
   h1: { color: theme.text, fontSize: 34, fontWeight: '800' },
   h2: { color: theme.text, fontSize: 18, fontWeight: '600', marginTop: 14, marginBottom: 8 },
   sub: { color: theme.textDim, marginTop: 4 },
