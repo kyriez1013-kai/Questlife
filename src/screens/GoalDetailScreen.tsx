@@ -24,11 +24,8 @@ import {
 import { uid } from '../storage';
 import { getGoalCoreLoopStatus } from '../utils/coreLoop';
 import { getQuestTheme, questLayout, QuestTheme } from '../design/tokens';
-import { systemIcons } from '../design/systemIcons';
 import { getGoalSemanticIcon, getModuleSemanticIcon, getSkillSemanticIcon } from '../design/entityIcons';
 import QuestButton from '../components/ui/QuestButton';
-import QuestCard from '../components/ui/QuestCard';
-import QuestEmptyState from '../components/ui/QuestEmptyState';
 import QuestEntityIcon from '../components/ui/QuestEntityIcon';
 import QuestIcon from '../components/ui/QuestIcon';
 import QuestInput from '../components/ui/QuestInput';
@@ -122,13 +119,13 @@ export default function GoalDetailScreen() {
       ? getGoalCoreLoopStatus(cat, data.modules || [], skills, links, data.scheduleBlocks || [], data.executionLogs || [], lang)
       : null
   ), [cat, data.modules, data.scheduleBlocks, data.executionLogs, skills, links, lang]);
-  const recentExecutionLogs = useMemo(() => {
+  const goalExecutionLogs = useMemo(() => {
     const linkedSkillIds = new Set(links.filter((link) => link.goalId === categoryId).map((link) => link.skillId));
     return (data.executionLogs || [])
       .filter((log) => log.linkedGoalId === categoryId || (!!log.linkedSkillId && linkedSkillIds.has(log.linkedSkillId)))
-      .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
-      .slice(0, 3);
+      .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
   }, [data.executionLogs, links, categoryId]);
+  const recentExecutionLogs = goalExecutionLogs.slice(0, 3);
   const goalEffortSummary = useMemo(() => {
     const relevantLinks = (data.contributionLinks || []).filter((link) => link.targetType === 'goal' && link.targetId === categoryId);
     const effortById = new Map((data.effortUnits || []).map((unit) => [unit.id, unit]));
@@ -274,6 +271,9 @@ export default function GoalDetailScreen() {
   const existingSkillOptions = activeExistingModule
     ? data.skills.filter((skill) => !links.some((link) => link.moduleId === activeExistingModule.id && link.skillId === skill.id))
     : [];
+  const firstHierarchySkill = modules
+    .flatMap((module) => skillsForModule(module.id, skills, links))
+    .find(Boolean);
 
   return (
     <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
@@ -344,56 +344,111 @@ export default function GoalDetailScreen() {
 
         <View style={styles.sectionHeader}>
           <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'modules')}</Text>
-          <QuestButton questTheme={questTheme} variant="secondary" icon="plus" label={t(lang, 'addModule')} onPress={openCreateModule} />
+          {modules.length > 0 ? (
+            <QuestButton questTheme={questTheme} variant="secondary" icon="plus" label={t(lang, 'addModule')} onPress={openCreateModule} />
+          ) : null}
         </View>
 
         {modules.length === 0 ? (
-          <QuestEmptyState questTheme={questTheme} icon="folder" title={t(lang, 'modules')} body={t(lang, 'noModulesEmptyState')} />
+          <QuestGroupedSurface
+            questTheme={questTheme}
+            elevated
+            style={[styles.lowDataSurface, { borderColor: questTheme.colors.borderStrong }]}
+          >
+            <View style={styles.lowDataHeading}>
+              <QuestIcon name="folder" size={20} color={questTheme.colors.primary} />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={[styles.lowDataTitle, { color: questTheme.colors.text }]}>{t(lang, 'goalNoStructureTitle')}</Text>
+                <Text style={[styles.lowDataBody, { color: questTheme.colors.textMuted }]}>{t(lang, 'goalNoStructureBody')}</Text>
+              </View>
+            </View>
+            {missingSuggestedModules.length > 0 ? (
+              <View style={styles.suggestedWrap}>
+                {missingSuggestedModules.map((name) => (
+                  <QuestPill key={name} questTheme={questTheme} label={name} variant="muted" />
+                ))}
+              </View>
+            ) : null}
+            <View style={styles.lowDataActions}>
+              <QuestButton questTheme={questTheme} variant="primary" icon="plus" label={t(lang, 'addModule')} onPress={openCreateModule} />
+              {missingSuggestedModules.length > 0 ? (
+                <QuestButton questTheme={questTheme} variant="ghost" icon="plus" label={t(lang, 'addSuggestedModules')} onPress={addSuggestedModules} />
+              ) : null}
+              <QuestButton questTheme={questTheme} variant="ghost" icon="plus" label={t(lang, 'addCriterion')} onPress={() => openCriterion()} />
+            </View>
+          </QuestGroupedSurface>
         ) : (
-          modules.map((module) => (
-            <ModuleGroup
-              key={module.id}
-              module={module}
-              skills={skillsForModule(module.id, skills, links)}
-              links={links.filter((link) => link.moduleId === module.id)}
-              addSkill={() => openAddSkill(module.id)}
-              addExisting={() => setExistingModuleId(module.id)}
-              removeSkill={(skillId) => removeSkillFromModule(module.id, skillId)}
-              editModule={() => openEditModule(module)}
-              deleteModule={() => confirmDeleteModule(module)}
-              openSkill={(skillId) => nav.navigate('SkillDetail', { skillId })}
-              lang={lang}
-              questTheme={questTheme}
-            />
-          ))
-        )}
+          <>
+            {modules.map((module) => (
+              <ModuleGroup
+                key={module.id}
+                module={module}
+                skills={skillsForModule(module.id, skills, links)}
+                links={links.filter((link) => link.moduleId === module.id)}
+                addSkill={() => openAddSkill(module.id)}
+                addExisting={() => setExistingModuleId(module.id)}
+                removeSkill={(skillId) => removeSkillFromModule(module.id, skillId)}
+                editModule={() => openEditModule(module)}
+                deleteModule={() => confirmDeleteModule(module)}
+                openSkill={(skillId) => nav.navigate('SkillDetail', { skillId })}
+                lang={lang}
+                questTheme={questTheme}
+              />
+            ))}
 
-        {missingSuggestedModules.length > 0 ? (
-          <QuestCard questTheme={questTheme} variant="data" style={[styles.suggestedCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.borderStrong, borderLeftWidth: 3, borderLeftColor: questTheme.colors.accent }]} className="suggested-modules-card">
-            <View style={styles.cardTitleRow}>
-              <QuestIcon name={systemIcons.suggestedModules} size={18} color={questTheme.colors.primary} />
-              <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'suggestedModules')}</Text>
-            </View>
-            <View style={styles.suggestedWrap}>
-              {suggestedModules.map((name) => (
-                <QuestPill key={name} questTheme={questTheme} label={name} active={missingSuggestedModules.includes(name)} variant={missingSuggestedModules.includes(name) ? 'default' : 'muted'} />
-              ))}
-            </View>
-            <QuestButton
-              questTheme={questTheme}
-              variant="primary"
-              icon="plus"
-              label={t(lang, 'addSuggestedModules')}
-              onPress={addSuggestedModules}
-              style={{ marginTop: 14 }}
-            />
-          </QuestCard>
-        ) : null}
+            {missingSuggestedModules.length > 0 ? (
+              <View style={[styles.compactSuggestionRow, { borderTopColor: questTheme.colors.border }]}>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={[styles.evidenceTitle, { color: questTheme.colors.text }]}>{t(lang, 'suggestedModules')}</Text>
+                  <Text style={[styles.skillMeta, { color: questTheme.colors.textMuted }]}>
+                    {missingSuggestedModules.join(' · ')}
+                  </Text>
+                </View>
+                <QuestButton questTheme={questTheme} variant="ghost" icon="plus" label={t(lang, 'addSuggestedModules')} onPress={addSuggestedModules} />
+              </View>
+            ) : null}
+
+            {goalExecutionLogs.length < 2 ? (
+              <QuestGroupedSurface
+                questTheme={questTheme}
+                style={[styles.lowDataSurface, { borderColor: questTheme.colors.border }]}
+              >
+                <Text style={[styles.lowDataTitle, { color: questTheme.colors.text }]}>
+                  {goalExecutionLogs.length === 0
+                    ? t(lang, 'goalStructureNoExecutionTitle')
+                    : t(lang, 'goalExecutionNeedsHistoryTitle')}
+                </Text>
+                <Text style={[styles.lowDataBody, { color: questTheme.colors.textMuted }]}>
+                  {goalExecutionLogs.length === 0
+                    ? t(lang, 'goalStructureNoExecutionBody')
+                    : t(lang, 'goalExecutionNeedsHistoryBody')}
+                </Text>
+                <View style={styles.lowDataActions}>
+                  {firstHierarchySkill ? (
+                    <QuestButton
+                      questTheme={questTheme}
+                      variant="primary"
+                      icon="activity"
+                      label={t(lang, 'logProgress')}
+                      onPress={() => nav.navigate('SkillDetail', { skillId: firstHierarchySkill.id })}
+                    />
+                  ) : null}
+                  {criteria.length === 0 ? (
+                    <QuestButton questTheme={questTheme} variant="ghost" icon="plus" label={t(lang, 'addCriterion')} onPress={() => openCriterion()} />
+                  ) : null}
+                </View>
+              </QuestGroupedSurface>
+            ) : null}
+          </>
+        )}
 
         {criteria.length > 0 || recentExecutionLogs.length > 0 || goalEffortSummary.recent.length > 0 ? (
           <>
             <View style={styles.sectionHeader}>
               <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'goalSupportingEvidence')}</Text>
+              {criteria.length === 0 ? (
+                <QuestButton questTheme={questTheme} variant="ghost" icon="plus" label={t(lang, 'addCriterion')} onPress={() => openCriterion()} />
+              ) : null}
             </View>
 
             {criteria.length > 0 ? (
@@ -759,7 +814,6 @@ const styles = StyleSheet.create({
   },
   headerBtnText: { color: theme.text, fontWeight: '600', fontSize: 13 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   inlineEntityRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   iconBox: { width: 64, height: 64, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.cardAlt },
   title: { color: theme.text, fontSize: 21, lineHeight: 26, fontWeight: '800' },
@@ -785,13 +839,18 @@ const styles = StyleSheet.create({
   evidenceTitle: { fontSize: 14, lineHeight: 20, fontWeight: '800', marginBottom: 8 },
   evidenceRow: { minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 10 },
   evidenceCaution: { fontSize: 11, lineHeight: 16, marginTop: 7 },
+  lowDataSurface: { padding: 14, marginBottom: 12 },
+  lowDataHeading: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  lowDataTitle: { fontSize: 15, lineHeight: 21, fontWeight: '800' },
+  lowDataBody: { fontSize: 13, lineHeight: 19, marginTop: 4 },
+  lowDataActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  compactSuggestionRow: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 8, borderTopWidth: 1, paddingVertical: 8, marginBottom: 8 },
   criterionCard: { backgroundColor: theme.card, padding: 14, borderRadius: 14, marginBottom: 10, borderWidth: 1, borderColor: theme.border },
   recentCard: { backgroundColor: theme.card, padding: 14, borderRadius: 14, marginBottom: 12, borderWidth: 1, borderColor: theme.border, gap: 10 },
   recentRow: { paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: theme.border },
   criterionHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   criterionTitle: { color: theme.text, fontSize: 15, fontWeight: '800' },
   criterionPercent: { color: theme.primary, fontSize: 18, fontWeight: '900' },
-  suggestedCard: { backgroundColor: theme.card, borderWidth: 1, borderColor: theme.border, borderRadius: 14, padding: 14, marginTop: 14 },
   suggestedWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   suggestedChip: { borderWidth: 1, borderColor: theme.primary, borderRadius: 16, paddingHorizontal: 10, paddingVertical: 6, backgroundColor: theme.cardAlt },
   suggestedChipMuted: { borderColor: theme.border, opacity: 0.5 },
