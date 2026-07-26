@@ -12,7 +12,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Svg, { Polygon, Line, Text as SvgText, Polyline, Circle } from 'react-native-svg';
-import { getStateToneColor, QuestTheme } from '../design/tokens';
+import { getStateToneColor, questLayout, QuestTheme } from '../design/tokens';
 import { t, Lang } from '../i18n';
 import QuestCard from '../components/ui/QuestCard';
 import {
@@ -63,7 +63,14 @@ function WhySection({ whyKey, isExpanded, onToggle, questTheme, lang }: {
     <View style={{ marginTop: questTheme.spacing.sm }}>
       <TouchableOpacity
         onPress={onToggle}
-        style={[whyStyles.toggle, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSubtle }]}
+        style={[
+          whyStyles.toggle,
+          {
+            minHeight: questLayout.controlMinHeight,
+            borderColor: questTheme.colors.border,
+            backgroundColor: questTheme.colors.surfaceSubtle,
+          },
+        ]}
         activeOpacity={0.7}
       >
         <Text style={[whyStyles.toggleText, { color: questTheme.colors.textMuted }]}>
@@ -772,13 +779,13 @@ const badgeStyles = StyleSheet.create({
 });
 
 const titleStyles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4, gap: 8 },
-  text: { fontWeight: '700', flex: 1 },
-  badges: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end', rowGap: 4 },
+  row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4, gap: 8 },
+  text: { fontWeight: '700', flex: 1, minWidth: 180 },
+  badges: { maxWidth: '100%', flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end', rowGap: 4 },
 });
 
 const whyStyles = StyleSheet.create({
-  toggle: { alignSelf: 'flex-start', borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 3, marginTop: 2 },
+  toggle: { alignSelf: 'flex-start', borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, marginTop: 2, justifyContent: 'center' },
   toggleText: { fontSize: 12, fontWeight: '600' },
   body: { marginTop: 6, padding: 10, borderRadius: 8, borderWidth: 1 },
   bodyText: { fontSize: 12, lineHeight: 18 },
@@ -800,8 +807,8 @@ const cardStyles = StyleSheet.create({
   caption: { fontSize: 11, marginTop: 6 },
   scoreGrid: { width: '100%', flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   scoreItem: { width: '49%', minHeight: 54, borderRadius: 10, paddingHorizontal: 9, paddingVertical: 8, justifyContent: 'center' },
-  scoreHeader: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
-  scoreVal: { fontSize: 22, fontWeight: '900' },
+  scoreHeader: { alignItems: 'flex-start', gap: 2 },
+  scoreVal: { fontSize: 13, lineHeight: 18, fontWeight: '900', flexShrink: 1 },
   scoreLabel: { fontSize: 12, fontWeight: '900' },
   scoreMeaning: { fontSize: 11, lineHeight: 16, marginTop: 4 },
   bigVal: { fontSize: 28, fontWeight: '800' },
@@ -813,7 +820,7 @@ const radarStyles = StyleSheet.create({
 });
 
 const monthStyles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8, marginBottom: 6, gap: 8 },
+  row: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', borderWidth: 1, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8, marginBottom: 6, gap: 8 },
 });
 
 const sectionStyles = StyleSheet.create({
@@ -822,7 +829,7 @@ const sectionStyles = StyleSheet.create({
 
 const dashboardStyles = StyleSheet.create({
   signalGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 8 },
-  signalItem: { width: '48%', minWidth: 280 },
+  signalItem: { width: '48%', minWidth: 280, maxWidth: '100%' },
 });
 
 const widgetStyles = StyleSheet.create({

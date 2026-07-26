@@ -508,7 +508,7 @@ export default function StatsScreen() {
         contentContainerStyle={{
           paddingHorizontal: questTheme.spacing.md,
           paddingTop: questTheme.spacing.sm,
-          paddingBottom: questLayout.contentBottomInset,
+          paddingBottom: questLayout.contentBottomInset + questTheme.spacing.lg,
           maxWidth: questLayout.contentMaxWidth,
           width: '100%',
           alignSelf: 'center',
@@ -529,7 +529,13 @@ export default function StatsScreen() {
             return (
               <TouchableOpacity
                 key={viewKey}
-                style={[styles.insightsTab, active && { backgroundColor: questTheme.colors.surfaceElevated }]}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: active }}
+                style={[
+                  styles.insightsTab,
+                  { minHeight: questLayout.controlMinHeight },
+                  active && { backgroundColor: questTheme.colors.surfaceElevated },
+                ]}
                 onPress={() => setInsightsView(viewKey)}
               >
                 <Text style={[styles.insightsTabText, { color: active ? questTheme.colors.text : questTheme.colors.textMuted }]}>
@@ -1378,7 +1384,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.bg },
   container: { flex: 1, backgroundColor: theme.bg },
   insightsTabs: { flexDirection: 'row', padding: 3, borderRadius: 12, marginBottom: 8 },
-  insightsTab: { flex: 1, minHeight: 36, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
+  insightsTab: { flex: 1, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   insightsTabText: { fontSize: 11, fontWeight: '800' },
   insightsLayer: { width: '100%', gap: 8 },
   patternStatusGrid: { flexDirection: 'row', gap: 8 },
@@ -1411,7 +1417,7 @@ const styles = StyleSheet.create({
   nextActionBox: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 8, marginTop: 8 },
   nextActionLabel: { fontSize: 11, fontWeight: '900', textTransform: 'uppercase' },
   nextActionText: { fontSize: 14, fontWeight: '900', lineHeight: 20, marginTop: 3 },
-  evidenceSource: { width: 112, flexShrink: 0, fontSize: 11, fontWeight: '800', lineHeight: 17 },
+  evidenceSource: { width: 104, flexShrink: 0, fontSize: 11, fontWeight: '800', lineHeight: 17 },
   evidenceDetail: { flex: 1, minWidth: 0, fontSize: 12, fontWeight: '800', lineHeight: 18 },
   trendContextText: { fontSize: 11, fontWeight: '700', lineHeight: 17 },
   metaStrip: { marginTop: 10, borderWidth: 1 },
