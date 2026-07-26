@@ -103,9 +103,9 @@ export default function GoalTreeScreen() {
                 className="goal-card goal-row"
               >
                 <QuestEntityIcon icon={c.emoji} systemIcon={getGoalSemanticIcon(c)} color={c.color ?? accent} questTheme={questTheme} size="lg" />
-                <View style={{ flex: 1 }}>
+                <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={[styles.name, { color: questTheme.colors.text }]}>{c.name}</Text>
-                {c.description ? <Text style={[styles.desc, { color: questTheme.colors.textMuted }]} numberOfLines={2}>{c.description}</Text> : null}
+                {c.description ? <Text style={[styles.desc, { color: questTheme.colors.textMuted }]}>{c.description}</Text> : null}
                   <Text style={[styles.meta, { color: accent }]}>{childCount} {t(lang, 'skillCount')}</Text>
                 </View>
                 <TouchableOpacity
@@ -114,6 +114,8 @@ export default function GoalTreeScreen() {
                     askDelete(c);
                   }}
                   style={[styles.deleteBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${t(lang, 'delete')}: ${c.name}`}
                 >
                   <Text style={[styles.deleteBtnText, { color: questTheme.colors.textMuted }]}>•••</Text>
                 </TouchableOpacity>
@@ -133,7 +135,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.bg },
   container: { flex: 1, backgroundColor: theme.bg },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerActions: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', alignItems: 'center', gap: 8 },
   h1: { color: theme.text, fontSize: 34, fontWeight: '800' },
   sub: { color: theme.textDim, marginTop: 4, marginBottom: 16 },
   addBtn: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: theme.radius.md, ...theme.shadow },
@@ -145,10 +147,10 @@ const styles = StyleSheet.create({
   emptyDesc: { color: theme.textDim, marginTop: 8, lineHeight: 22 },
   card: { minHeight: 78, flexDirection: 'row', backgroundColor: theme.card, paddingHorizontal: 10, paddingVertical: 9, borderRadius: theme.radius.lg, marginBottom: 5, alignItems: 'center', gap: 10, borderWidth: 0 },
   iconBox: { width: 52, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.cardAlt },
-  name: { color: theme.text, fontSize: 17, fontWeight: '600' },
-  desc: { color: theme.textDim, fontSize: 12, marginTop: 4 },
+  name: { color: theme.text, fontSize: 17, lineHeight: 22, fontWeight: '600' },
+  desc: { color: theme.textDim, fontSize: 12, lineHeight: 17, marginTop: 4 },
   meta: { color: theme.accent, fontSize: 11, marginTop: 4 },
-  deleteBtn: { width: 32, height: 32, borderRadius: 12, borderWidth: 0, alignItems: 'center', justifyContent: 'center' },
+  deleteBtn: { width: questLayout.controlMinHeight, height: questLayout.controlMinHeight, borderRadius: 22, borderWidth: 0, alignItems: 'center', justifyContent: 'center' },
   deleteBtnText: { fontSize: 13, fontWeight: '900', lineHeight: 18, letterSpacing: 0 },
   chev: { color: theme.textDim, fontSize: 24 },
 });
