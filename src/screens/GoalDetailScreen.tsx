@@ -446,7 +446,7 @@ export default function GoalDetailScreen() {
           <>
             <View style={styles.sectionHeader}>
               <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'goalSupportingEvidence')}</Text>
-              {criteria.length === 0 ? (
+              {criteria.length === 0 && modules.length > 0 ? (
                 <QuestButton questTheme={questTheme} variant="ghost" icon="plus" label={t(lang, 'addCriterion')} onPress={() => openCriterion()} />
               ) : null}
             </View>
