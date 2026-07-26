@@ -60,9 +60,22 @@ export default function QuestButton({
         style,
       ]}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, maxWidth: '100%' }}>
         {icon ? <QuestIcon name={icon} size={16} color={fg} strokeWidth={2.4} /> : null}
-        {children ?? <Text style={{ color: fg, fontSize: q.typography.buttonSize, fontWeight: '800' }}>{label}</Text>}
+        {children ?? (
+          <Text
+            numberOfLines={2}
+            style={{
+              color: fg,
+              fontSize: q.typography.buttonSize,
+              fontWeight: '800',
+              textAlign: 'center',
+              flexShrink: 1,
+            }}
+          >
+            {label}
+          </Text>
+        )}
       </View>
     </TouchableOpacity>
   );

@@ -91,7 +91,7 @@ export default function TodayRecentExecution({
             />
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text
-                numberOfLines={1}
+                numberOfLines={2}
                 style={{
                   color: questTheme.colors.text,
                   fontSize: questTheme.typography.cardTitleSize,

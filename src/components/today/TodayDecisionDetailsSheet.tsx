@@ -68,6 +68,7 @@ export default function TodayDecisionDetailsSheet({
     <BottomSheetForm
       visible={visible}
       onClose={onClose}
+      closeAccessibilityLabel={t(language, 'closeDetails')}
       footer={(
         <View style={{ flexDirection: 'row', gap: questTheme.spacing.sm }}>
           {onRefresh ? (

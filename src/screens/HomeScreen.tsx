@@ -2038,7 +2038,7 @@ export default function HomeScreen() {
         contentContainerStyle={{
           paddingHorizontal: questTheme.spacing.md,
           paddingTop: questTheme.spacing.sm,
-          paddingBottom: questLayout.contentBottomInset,
+          paddingBottom: questLayout.contentBottomInset + questTheme.spacing.lg,
           maxWidth: questLayout.contentMaxWidth,
           width: '100%',
           alignSelf: 'center',

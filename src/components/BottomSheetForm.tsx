@@ -32,11 +32,14 @@ export interface BottomSheetFormProps {
   onClose: () => void;
   children: ReactNode;
   footer?: ReactNode;
+  closeAccessibilityLabel?: string;
 }
 
-export default function BottomSheetForm({ visible, onClose, children, footer }: BottomSheetFormProps) {
+export default function BottomSheetForm({ visible, onClose, children, footer, closeAccessibilityLabel }: BottomSheetFormProps) {
   const { data } = useStore();
   const questTheme = getQuestTheme(data.settings.selectedThemeId);
+  const SheetView = View as any;
+  const FooterView = View as any;
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <KeyboardAvoidingView
@@ -46,9 +49,10 @@ export default function BottomSheetForm({ visible, onClose, children, footer }: 
         keyboardVerticalOffset={0}
       >
         {/* 点击半透明遮罩 = 关闭弹窗 (RN 会自动收起键盘) */}
-        <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="关闭" />
+        <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel={closeAccessibilityLabel} />
         {/* sheet 本身: 底部对齐, 圆角, 最大 92% */}
-        <View
+        <SheetView
+          className="bottom-sheet-form"
           style={[
             styles.sheet,
             {
@@ -70,7 +74,8 @@ export default function BottomSheetForm({ visible, onClose, children, footer }: 
             {children}
           </ScrollView>
           {footer ? (
-            <View
+            <FooterView
+              className="bottom-sheet-footer"
               style={[
                 styles.footer,
                 {
@@ -80,9 +85,9 @@ export default function BottomSheetForm({ visible, onClose, children, footer }: 
               ]}
             >
               {footer}
-            </View>
+            </FooterView>
           ) : null}
-        </View>
+        </SheetView>
       </KeyboardAvoidingView>
     </Modal>
   );

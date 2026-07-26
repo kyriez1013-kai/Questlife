@@ -168,6 +168,9 @@ export function buildTodayDecisionPresentation({
 }: BuildTodayDecisionPresentationInput): TodayDecisionPresentation {
   const status = presentationStatus({ dailyDecisionBrief, loading, error, source, quality });
   const canUseDecisionHeadline = !!dailyDecisionBrief && quality?.grade !== 'bad';
+  const actionReasonValues = todayCommand.reasonKey === 'basedOnYourPlan'
+    ? { time: '', ...todayCommand.reasonValues }
+    : todayCommand.reasonValues;
   const judgement = status === 'loading'
     ? operatingBriefCopy('generatingDailyBrief')
     : canUseDecisionHeadline
@@ -182,7 +185,7 @@ export function buildTodayDecisionPresentation({
     judgement,
     executableCommand: todayCommand,
     actionLabel: operatingBriefCopy(todayCommand.titleKey, todayCommand.titleValues),
-    actionReason: operatingBriefCopy(todayCommand.reasonKey, todayCommand.reasonValues),
+    actionReason: operatingBriefCopy(todayCommand.reasonKey, actionReasonValues),
     readiness: {
       band: dailyDecisionBrief?.readiness?.band ?? 'unknown',
       score: dailyDecisionBrief?.readiness?.score ?? null,

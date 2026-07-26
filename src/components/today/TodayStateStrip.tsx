@@ -109,13 +109,14 @@ export default function TodayStateStrip({
               }}
             />
             <Text
-              numberOfLines={1}
+              numberOfLines={2}
               style={{
                 color: questTheme.colors.textMuted,
                 fontSize: questTheme.typography.metaSize,
                 lineHeight: questTheme.typography.metaLineHeight,
                 fontWeight: questTheme.typography.weightBold,
                 maxWidth: '100%',
+                textAlign: 'center',
               }}
             >
               {option.label}
