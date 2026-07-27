@@ -21,6 +21,7 @@ import { buildPatternMemorySummary, derivePatternCandidates, mergePatternCandida
 import { parseHealthContextText, ParsedHealthContext } from '../utils/healthContextParser';
 import QuestInput from '../components/ui/QuestInput';
 import QuestButton from '../components/ui/QuestButton';
+import QuestPill from '../components/ui/QuestPill';
 import { QuestCompactRow, QuestGroupedSurface, QuestSectionHeader } from '../components/ui/QuestPrimitives';
 
 export default function SettingsScreen() {
@@ -58,6 +59,11 @@ export default function SettingsScreen() {
   );
   const patternMemorySummary = buildPatternMemorySummary(data.patternMemory || []);
   const patternPayload = sanitizePatternMemoryForPayload(data.patternMemory || []);
+  const contextLogCount = (data.contextLogs || []).length;
+  const stateSignalCount = (data.stateCheckIns || []).length;
+  const executionLogCount = (data.executionLogs || []).length;
+  const decisionResultCount = (data.decisionResults || []).length;
+  const hasUserSignals = contextLogCount + stateSignalCount + executionLogCount > 0;
   const decisionDebugVisible = (() => {
     if (typeof window === 'undefined') return false;
     try {
@@ -416,7 +422,17 @@ export default function SettingsScreen() {
             questTheme={questTheme}
             divider
             title={t(lang, 'manualContextSource')}
-            body={`${t(lang, 'contextLogs')}: ${(data.contextLogs || []).length}`}
+            body={contextLogCount > 0
+              ? `${t(lang, 'contextLogs')}: ${contextLogCount}`
+              : t(lang, 'addContextForCoverage')}
+            trailing={<QuestPill questTheme={questTheme} variant="success" label={t(lang, 'sourceAvailable')} />}
+          />
+          <QuestCompactRow
+            questTheme={questTheme}
+            divider
+            title={t(lang, 'externalDataSources')}
+            body={t(lang, 'noExternalDataSourceConnected')}
+            trailing={<QuestPill questTheme={questTheme} variant="muted" label={t(lang, 'notConnected')} />}
           />
         </QuestGroupedSurface>
 
@@ -429,13 +445,17 @@ export default function SettingsScreen() {
           <QuestCompactRow
             questTheme={questTheme}
             title={t(lang, 'decisionBriefStatus')}
-            body={`${t(lang, 'decisionAILab')}: ${t(lang, decisionFlagSnapshot.aiEnabled ? 'flagOn' : 'flagOff')} · ${t(lang, 'dailyDecisionBrief')}: ${t(lang, decisionFlagSnapshot.dailyBriefEnabled ? 'flagOn' : 'flagOff')}`}
+            body={decisionFlagSnapshot.aiEnabled
+              ? `${t(lang, 'dailyDecisionBrief')}: ${t(lang, decisionFlagSnapshot.dailyBriefEnabled ? 'flagOn' : 'flagOff')}`
+              : t(lang, 'localDecisionFallbackActive')}
           />
           <QuestCompactRow
             questTheme={questTheme}
             divider
             title={t(lang, 'decisionMemory')}
-            body={`${t(lang, 'totalDecisionResults')}: ${(data.decisionResults || []).length} · ${t(lang, 'last7dDecisionResults')}: ${decisionMemorySummary.recent_count_7d}`}
+            body={decisionResultCount > 0
+              ? `${t(lang, 'totalDecisionResults')}: ${decisionResultCount} · ${t(lang, 'last7dDecisionResults')}: ${decisionMemorySummary.recent_count_7d}`
+              : t(lang, 'noDecisionHistory')}
           />
         </QuestGroupedSurface>
 
@@ -448,8 +468,11 @@ export default function SettingsScreen() {
           <QuestCompactRow
             questTheme={questTheme}
             title={t(lang, 'storedSignals')}
-            body={`${t(lang, 'executionLogs')}: ${(data.executionLogs || []).length} · ${t(lang, 'stateSignals')}: ${(data.stateCheckIns || []).length} · ${t(lang, 'contextLogs')}: ${(data.contextLogs || []).length}`}
+            body={hasUserSignals
+              ? `${t(lang, 'executionLogs')}: ${executionLogCount} · ${t(lang, 'stateSignals')}: ${stateSignalCount} · ${t(lang, 'contextLogs')}: ${contextLogCount}`
+              : t(lang, 'dataStillAccumulating')}
           />
+          <QuestCompactRow questTheme={questTheme} divider title={t(lang, 'dataLimitations')} body={t(lang, 'dataCoverageLimitation')} />
           <QuestCompactRow questTheme={questTheme} divider title={t(lang, 'storage')} body={t(lang, 'storageText')} />
         </QuestGroupedSurface>
 
