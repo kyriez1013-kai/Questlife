@@ -29,6 +29,7 @@ export default function QuestInput({
       className="quest-input"
       data-state={status === 'default' ? (focused ? 'focused' : 'idle') : status}
       {...props}
+      accessibilityLabel={props.accessibilityLabel ?? props.placeholder}
       placeholderTextColor={placeholderTextColor ?? q.colors.textSubtle}
       onFocus={(event: any) => {
         setFocused(true);

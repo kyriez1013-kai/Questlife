@@ -91,6 +91,8 @@ export default function GoalTreeScreen() {
               key={c.id}
               onPress={() => goDetail(c.id)}
               onLongPress={() => askDelete(c)}
+              accessibilityRole="button"
+              accessibilityLabel={`${c.name} · ${childCount} ${t(lang, 'skillCount')}`}
             >
               <QuestCard
                 questTheme={questTheme}

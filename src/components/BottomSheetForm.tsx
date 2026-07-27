@@ -49,7 +49,12 @@ export default function BottomSheetForm({ visible, onClose, children, footer, cl
         keyboardVerticalOffset={0}
       >
         {/* 点击半透明遮罩 = 关闭弹窗 (RN 会自动收起键盘) */}
-        <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel={closeAccessibilityLabel} />
+        <Pressable
+          style={styles.backdrop}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel={closeAccessibilityLabel}
+        />
         {/* sheet 本身: 底部对齐, 圆角, 最大 92% */}
         <SheetView
           className="bottom-sheet-form"
@@ -62,6 +67,8 @@ export default function BottomSheetForm({ visible, onClose, children, footer, cl
             },
           ]}
           pointerEvents="box-none"
+          accessibilityRole="dialog"
+          accessibilityViewIsModal
         >
           <ScrollView
             keyboardShouldPersistTaps="handled"

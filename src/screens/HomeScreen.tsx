@@ -3292,7 +3292,13 @@ function SkillProgressRow({
   const untouched = todayMin === 0;
 
   return (
-    <TouchableOpacity style={[styles.skillRow, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={[styles.skillRow, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}
+      onPress={onPress}
+      activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={`${skill.name} · ${todayMin} / ${target}m`}
+    >
       <QuestEntityIcon icon={skill.icon} systemIcon={getSkillSemanticIcon(skill)} color={skill.color} questTheme={questTheme} size="md" />
       <View style={{ flex: 1 }}>
         <View style={styles.skillTopRow}>

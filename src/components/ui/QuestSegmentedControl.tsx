@@ -55,6 +55,7 @@ export default function QuestSegmentedControl<T extends string>({
             key={option.value}
             className="quest-segment-option"
             accessibilityRole="tab"
+            accessibilityLabel={option.label}
             accessibilityState={{ selected, disabled }}
             disabled={disabled}
             onPress={() => onChange(option.value)}

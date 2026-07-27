@@ -137,9 +137,10 @@ function CaptureCard({
         </Text>
         <TouchableOpacity
           onPress={() => onDelete(capture.id)}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           style={[styles.deleteBtn, { borderColor: questTheme.colors.border }]}
           activeOpacity={0.6}
+          accessibilityRole="button"
+          accessibilityLabel={t(lang, 'deleteRecord')}
         >
           <Text style={[styles.deleteBtnText, { color: questTheme.colors.textSubtle }]}>✕</Text>
         </TouchableOpacity>
@@ -590,9 +591,11 @@ const styles = StyleSheet.create({
   },
   deleteBtn: {
     borderWidth: 1,
-    borderRadius: 4,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   deleteBtnText: {
     fontSize: 11,

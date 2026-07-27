@@ -212,6 +212,24 @@
   padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px)) !important;
 }
 
+.questlife-root :where(
+  .quest-button,
+  .quest-pill,
+  .quest-segment-option,
+  .quest-input,
+  [role="button"],
+  [role="tab"],
+  [role="checkbox"]
+):focus-visible {
+  outline: 2px solid var(--ql-primary, currentColor) !important;
+  outline-offset: 2px;
+}
+
+.questlife-root :where(input, textarea, [contenteditable="true"]):focus-visible {
+  outline: 2px solid var(--ql-primary, currentColor) !important;
+  outline-offset: 2px;
+}
+
 @media (max-width: 480px) {
   .bottom-sheet-form {
     max-height: 88dvh !important;

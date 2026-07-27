@@ -529,7 +529,13 @@ export default function ScheduleScreen() {
               const blocks = allBlocks.filter((b) => b.date === d);
               const mins = blocks.reduce((s, b) => s + b.plannedMinutes, 0);
               return (
-                <TouchableOpacity key={d} style={[styles.weekDay, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]} onPress={() => { setSelectedDate(d); setView('day'); }}>
+                <TouchableOpacity
+                  key={d}
+                  style={[styles.weekDay, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}
+                  onPress={() => { setSelectedDate(d); setView('day'); }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${d} · ${blocks.length} ${t(lang, 'blocks')} · ${t(lang, 'totalPlanned')} ${mins}m`}
+                >
                   <Text style={[styles.weekDate, { color: questTheme.colors.text }]}>{d.slice(5)}</Text>
                   <Text style={[styles.weekTotal, { color: questTheme.colors.textMuted }]}>{t(lang, 'totalPlanned')} {mins}m</Text>
                   <Text style={[styles.weekTotal, { color: questTheme.colors.textMuted }]}>{blocks.length} {t(lang, 'blocks')}</Text>
@@ -591,7 +597,14 @@ export default function ScheduleScreen() {
               {QUALITY_OPTIONS.map((q) => {
                 const on = logQuality === q.value;
                 return (
-                  <TouchableOpacity key={q.value} style={[styles.qualityChip, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }, on && { borderColor: accent, backgroundColor: questTheme.colors.primarySoft }]} onPress={() => setLogQuality(on ? null : q.value)}>
+                  <TouchableOpacity
+                    key={q.value}
+                    style={[styles.qualityChip, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }, on && { borderColor: accent, backgroundColor: questTheme.colors.primarySoft }]}
+                    onPress={() => setLogQuality(on ? null : q.value)}
+                    accessibilityRole="button"
+                    accessibilityLabel={qualityLabel(lang, q.value)}
+                    accessibilityState={{ selected: on }}
+                  >
                     <Text style={[styles.qualityEmoji, { color: questTheme.colors.text }]}>{q.value}</Text>
                     <Text style={[styles.qualityText, { color: questTheme.colors.textMuted }]}>{qualityLabel(lang, q.value)}</Text>
                   </TouchableOpacity>
@@ -632,7 +645,14 @@ export default function ScheduleScreen() {
                     {checklistItems.length === 0 ? <Text style={[styles.blockMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'noProgressItems')}</Text> : checklistItems.map((item) => {
                       const checked = logChecklistIds.includes(item.id);
                       return (
-                        <TouchableOpacity key={item.id} style={styles.checkRow} onPress={() => setLogChecklistIds((ids) => checked ? ids.filter((id) => id !== item.id) : [...ids, item.id])}>
+                        <TouchableOpacity
+                          key={item.id}
+                          style={styles.checkRow}
+                          onPress={() => setLogChecklistIds((ids) => checked ? ids.filter((id) => id !== item.id) : [...ids, item.id])}
+                          accessibilityRole="checkbox"
+                          accessibilityState={{ checked: checked || item.completed }}
+                          accessibilityLabel={item.title}
+                        >
                           <Text style={styles.checkMark}>{checked || item.completed ? '✓' : '○'}</Text>
                           <Text style={[styles.blockMeta, { color: questTheme.colors.textMuted }]}>{item.title}</Text>
                         </TouchableOpacity>
@@ -692,7 +712,13 @@ export default function ScheduleScreen() {
               }
               if (metricType === 'binary') {
                 return (
-                  <TouchableOpacity style={styles.checkRow} onPress={() => setLogBinaryCompleted((value) => !value)}>
+                  <TouchableOpacity
+                    style={styles.checkRow}
+                    onPress={() => setLogBinaryCompleted((value) => !value)}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: logBinaryCompleted }}
+                    accessibilityLabel={t(lang, 'metricDescBinary')}
+                  >
                     <Text style={styles.checkMark}>{logBinaryCompleted ? '✓' : '○'}</Text>
                     <Text style={[styles.metricHint, { color: questTheme.colors.textMuted }]}>{t(lang, 'metricDescBinary')}</Text>
                   </TouchableOpacity>
@@ -740,6 +766,9 @@ function ChipGroup<T extends string>({ title, values, labels, value, onChange, a
               !value && { backgroundColor: accent, borderColor: accent },
             ]}
             onPress={() => onChange(undefined)}
+            accessibilityRole="button"
+            accessibilityLabel={noneLabel}
+            accessibilityState={{ selected: !value }}
           >
             <Text style={[styles.chipText, { color: !value ? questTheme.colors.primaryText : questTheme.colors.text }]}>{noneLabel}</Text>
           </TouchableOpacity>
@@ -755,6 +784,9 @@ function ChipGroup<T extends string>({ title, values, labels, value, onChange, a
                 on && { backgroundColor: accent, borderColor: accent },
               ]}
               onPress={() => onChange(v)}
+              accessibilityRole="button"
+              accessibilityLabel={labels?.[v] ?? v}
+              accessibilityState={{ selected: on }}
             >
               <Text style={[styles.chipText, { color: on ? questTheme.colors.primaryText : questTheme.colors.text }]}>{labels?.[v] ?? v}</Text>
             </TouchableOpacity>

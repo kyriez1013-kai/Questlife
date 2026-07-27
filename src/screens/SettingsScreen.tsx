@@ -319,6 +319,9 @@ export default function SettingsScreen() {
                       setSettings({ selectedThemeId: opt.id });
                       trackEvent('theme_changed', { themeId: opt.id }, { page: 'settings' });
                     }}
+                    accessibilityRole="button"
+                    accessibilityLabel={t(lang, opt.i18nKey)}
+                    accessibilityState={{ selected: on }}
                   >
                     <View style={styles.themeSwatches}>
                       <View style={[styles.themeSwatch, { backgroundColor: preview.colors.background }]} />

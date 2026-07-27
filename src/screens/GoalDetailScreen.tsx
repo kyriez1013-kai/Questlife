@@ -760,6 +760,7 @@ function ModuleGroup({
               }}
               activeOpacity={0.75}
               accessibilityRole="button"
+              accessibilityLabel={`${skill.name} · ${progressTypeLabel(lang, progressTypeForSkill(skill))} · ${progressSummary(skill, lang)}`}
             >
               <QuestEntityIcon icon={skill.icon} systemIcon={getSkillSemanticIcon(skill)} color={skill.color} questTheme={questTheme} size="sm" />
               <View style={{ flex: 1, minWidth: 0 }}>
