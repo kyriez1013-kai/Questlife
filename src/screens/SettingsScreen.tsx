@@ -21,6 +21,7 @@ import { buildPatternMemorySummary, derivePatternCandidates, mergePatternCandida
 import { parseHealthContextText, ParsedHealthContext } from '../utils/healthContextParser';
 import QuestInput from '../components/ui/QuestInput';
 import QuestButton from '../components/ui/QuestButton';
+import { QuestCompactRow, QuestGroupedSurface, QuestSectionHeader } from '../components/ui/QuestPrimitives';
 
 export default function SettingsScreen() {
   const { data, setSettings, addContextLogs, runIntegrityCheck, repairSafeIntegrityIssues, rebuildDerivedData, mergePatternMemoryCandidates, updatePatternMemoryStatus } = useStore();
@@ -66,6 +67,7 @@ export default function SettingsScreen() {
       return false;
     }
   })();
+  const developerToolsVisible = __DEV__ || decisionDebugVisible;
   const readLastDecisionFeedback = useCallback(() => {
     if (typeof window === 'undefined') return '';
     try {
@@ -270,157 +272,196 @@ export default function SettingsScreen() {
           alignSelf: 'center',
         }}
       >
-        <View style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, shadowColor: questTheme.colors.cardShadow }]}>
-          <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'language')}</Text>
-          <View style={styles.languageRow}>
-            {[
-              { value: 'zh' as const, label: '中文' },
-              { value: 'en' as const, label: 'English' },
-            ].map((opt) => {
-              const on = lang === opt.value;
-              return (
-                <TouchableOpacity
-                  key={opt.value}
-                  style={[styles.languageBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }, on && { backgroundColor: accent, borderColor: accent }]}
-                  onPress={() => setSettings({ language: opt.value })}
-                >
-                  <Text style={[styles.languageText, { color: questTheme.colors.text }, on && styles.languageTextOn]}>{opt.label}</Text>
-                </TouchableOpacity>
-              );
-            })}
+        <QuestSectionHeader
+          questTheme={questTheme}
+          title={t(lang, 'preferences')}
+          subtitle={t(lang, 'settingsSubtitle')}
+          style={styles.firstSectionHeader}
+        />
+        <QuestGroupedSurface questTheme={questTheme}>
+          <View style={styles.settingsGroupItem}>
+            <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'language')}</Text>
+            <View style={styles.languageRow}>
+              {[
+                { value: 'zh' as const, label: '中文' },
+                { value: 'en' as const, label: 'English' },
+              ].map((opt) => {
+                const on = lang === opt.value;
+                return (
+                  <TouchableOpacity
+                    key={opt.value}
+                    style={[styles.languageBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }, on && { backgroundColor: accent, borderColor: accent }]}
+                    onPress={() => setSettings({ language: opt.value })}
+                  >
+                    <Text style={[styles.languageText, { color: on ? questTheme.colors.primaryText : questTheme.colors.text }]}>{opt.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </View>
-        </View>
-
-        <View style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, shadowColor: questTheme.colors.cardShadow }]}>
-          <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'interfaceTheme')}</Text>
-          <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>{t(lang, 'visualStyle')}</Text>
-          <View style={styles.themeGrid}>
-            {themeOptions.map((opt) => {
-              const on = questTheme.id === opt.id;
-              const preview = getQuestTheme(opt.id);
-              return (
-                <TouchableOpacity
-                  key={opt.id}
-                  style={[
-                    styles.themeOption,
-                    { backgroundColor: preview.colors.surfaceSoft, borderColor: on ? preview.colors.primary : questTheme.colors.border },
-                    on && { borderWidth: 2 },
-                  ]}
-                  onPress={() => {
-                    setSettings({ selectedThemeId: opt.id });
-                    trackEvent('theme_changed', { themeId: opt.id }, { page: 'settings' });
-                  }}
-                >
-                  <View style={styles.themeSwatches}>
-                    <View style={[styles.themeSwatch, { backgroundColor: preview.colors.background }]} />
-                    <View style={[styles.themeSwatch, { backgroundColor: preview.colors.primary }]} />
-                    <View style={[styles.themeSwatch, { backgroundColor: preview.colors.accent }]} />
-                  </View>
-                  <Text style={[styles.languageText, { color: preview.colors.textPrimary }]}>{t(lang, opt.i18nKey)}</Text>
-                </TouchableOpacity>
-              );
-            })}
+          <View style={[styles.settingsGroupItem, styles.settingsGroupDivider, { borderTopColor: questTheme.colors.divider }]}>
+            <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'interfaceTheme')}</Text>
+            <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>{t(lang, 'visualStyle')}</Text>
+            <View style={styles.themeGrid}>
+              {themeOptions.map((opt) => {
+                const on = questTheme.id === opt.id;
+                const preview = getQuestTheme(opt.id);
+                return (
+                  <TouchableOpacity
+                    key={opt.id}
+                    style={[
+                      styles.themeOption,
+                      { backgroundColor: preview.colors.surfaceSoft, borderColor: on ? preview.colors.primary : questTheme.colors.border },
+                      on && { borderWidth: 2 },
+                    ]}
+                    onPress={() => {
+                      setSettings({ selectedThemeId: opt.id });
+                      trackEvent('theme_changed', { themeId: opt.id }, { page: 'settings' });
+                    }}
+                  >
+                    <View style={styles.themeSwatches}>
+                      <View style={[styles.themeSwatch, { backgroundColor: preview.colors.background }]} />
+                      <View style={[styles.themeSwatch, { backgroundColor: preview.colors.primary }]} />
+                      <View style={[styles.themeSwatch, { backgroundColor: preview.colors.accent }]} />
+                    </View>
+                    <Text style={[styles.languageText, { color: preview.colors.textPrimary }]}>{t(lang, opt.i18nKey)}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </View>
-        </View>
-
-        <View style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, shadowColor: questTheme.colors.cardShadow }]}>
-          <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'accentColor')}</Text>
-          <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>{t(lang, 'accentColorDesc')}</Text>
-          <View style={styles.colorPreviewRow}>
-            <View style={[styles.colorPreview, { backgroundColor: accent }]} />
-            <Text style={[styles.colorValue, { color: accent }]}>{accent}</Text>
+          <View style={[styles.settingsGroupItem, styles.settingsGroupDivider, { borderTopColor: questTheme.colors.divider }]}>
+            <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'accentColor')}</Text>
+            <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>{t(lang, 'accentColorDesc')}</Text>
+            <View style={styles.colorPreviewRow}>
+              <View style={[styles.colorPreview, { backgroundColor: accent }]} />
+              <Text style={[styles.colorValue, { color: accent }]}>{accent}</Text>
+            </View>
+            <ColorPicker colors={theme.accentPalette} value={accent} onChange={(color) => setSettings({ accentColor: color })} />
           </View>
-          <ColorPicker
-            colors={theme.accentPalette}
-            value={accent}
-            onChange={(color) => setSettings({ accentColor: color })}
-          />
-        </View>
-
-        <View style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, shadowColor: questTheme.colors.cardShadow }]}>
-          <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'dataSources')}</Text>
-          <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>{t(lang, 'manualContextInput')}</Text>
-          <QuestInput
+          <QuestCompactRow
             questTheme={questTheme}
-            value={contextPasteText}
-            onChangeText={(value) => {
-              setContextPasteText(value);
-              setContextPreview(null);
-              setContextSaved(false);
-            }}
-            placeholder={t(lang, 'pasteHealthContext')}
-            multiline
-            style={styles.contextInput}
+            divider
+            title={t(lang, 'restartOnboarding')}
+            body={t(lang, 'restartOnboardingDesc')}
+            trailing={(
+              <QuestButton
+                questTheme={questTheme}
+                variant="ghost"
+                label={t(lang, 'restartOnboarding')}
+                onPress={() => setSettings({ onboardingRestartRequested: true })}
+              />
+            )}
           />
-          {contextPreview ? (
-            <Text style={[styles.value, { color: contextPreview.contextLogs.length > 0 ? questTheme.colors.success : questTheme.colors.textMuted }]}>
-              {contextPreview.contextLogs.length > 0
-                ? t(lang, 'contextPreviewFound').replace('{count}', String(contextPreview.contextLogs.length))
-                : t(lang, 'contextPreviewEmpty')}
-            </Text>
-          ) : null}
-          {contextSaved ? (
-            <Text style={[styles.value, { color: questTheme.colors.success }]}>{t(lang, 'contextSaved')}</Text>
-          ) : null}
-          <View style={styles.dataSourceActions}>
-            <QuestButton
+          <QuestCompactRow questTheme={questTheme} divider title={t(lang, 'reminders')} body={t(lang, 'remindersText')} />
+          <QuestCompactRow questTheme={questTheme} divider title={t(lang, 'version')} body={t(lang, 'versionText')} />
+        </QuestGroupedSurface>
+
+        <QuestSectionHeader
+          questTheme={questTheme}
+          title={t(lang, 'dataSources')}
+          subtitle={t(lang, 'dataSourcesDescription')}
+        />
+        <QuestGroupedSurface questTheme={questTheme}>
+          <View style={styles.settingsGroupItem}>
+            <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'manualContextInput')}</Text>
+            <QuestInput
               questTheme={questTheme}
-              variant="secondary"
-              label={t(lang, 'parseContext')}
-              disabled={!contextPasteText.trim()}
-              onPress={() => {
-                setContextPreview(parseHealthContextText(contextPasteText));
+              value={contextPasteText}
+              onChangeText={(value) => {
+                setContextPasteText(value);
+                setContextPreview(null);
                 setContextSaved(false);
               }}
-              style={{ flex: 1 }}
+              placeholder={t(lang, 'pasteHealthContext')}
+              multiline
+              style={styles.contextInput}
             />
-            <QuestButton
-              questTheme={questTheme}
-              label={t(lang, 'saveContext')}
-              disabled={!contextPreview?.contextLogs.length}
-              onPress={() => {
-                if (!contextPreview?.contextLogs.length) return;
-                addContextLogs(contextPreview.contextLogs);
-                setContextPasteText('');
-                setContextPreview(null);
-                setContextSaved(true);
-              }}
-              style={{ flex: 1 }}
-            />
+            {contextPreview ? (
+              <Text style={[styles.value, { color: contextPreview.contextLogs.length > 0 ? questTheme.colors.success : questTheme.colors.textMuted }]}>
+                {contextPreview.contextLogs.length > 0
+                  ? t(lang, 'contextPreviewFound').replace('{count}', String(contextPreview.contextLogs.length))
+                  : t(lang, 'contextPreviewEmpty')}
+              </Text>
+            ) : null}
+            {contextSaved ? <Text style={[styles.value, { color: questTheme.colors.success }]}>{t(lang, 'contextSaved')}</Text> : null}
+            <View style={styles.dataSourceActions}>
+              <QuestButton
+                questTheme={questTheme}
+                variant="secondary"
+                label={t(lang, 'parseContext')}
+                disabled={!contextPasteText.trim()}
+                onPress={() => {
+                  setContextPreview(parseHealthContextText(contextPasteText));
+                  setContextSaved(false);
+                }}
+                style={{ flex: 1 }}
+              />
+              <QuestButton
+                questTheme={questTheme}
+                label={t(lang, 'saveContext')}
+                disabled={!contextPreview?.contextLogs.length}
+                onPress={() => {
+                  if (!contextPreview?.contextLogs.length) return;
+                  addContextLogs(contextPreview.contextLogs);
+                  setContextPasteText('');
+                  setContextPreview(null);
+                  setContextSaved(true);
+                }}
+                style={{ flex: 1 }}
+              />
+            </View>
           </View>
-          <Text style={[styles.value, { color: questTheme.colors.textSubtle }]}>
-            {t(lang, 'contextLogs')}: {(data.contextLogs || []).length}
-          </Text>
-        </View>
+          <QuestCompactRow
+            questTheme={questTheme}
+            divider
+            title={t(lang, 'manualContextSource')}
+            body={`${t(lang, 'contextLogs')}: ${(data.contextLogs || []).length}`}
+          />
+        </QuestGroupedSurface>
 
-        {/* Reminders/Storage/Version 合并为一张"关于"卡的三行,内容不变,只减少三份重复的卡片外壳(padding/shadow/margin) */}
-        <View style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, shadowColor: questTheme.colors.cardShadow }]}>
-          <View style={styles.aboutRow}>
-            <Text style={[styles.label, styles.aboutLabel, { color: questTheme.colors.text }]}>{t(lang, 'reminders')}</Text>
-            <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>{t(lang, 'remindersText')}</Text>
-          </View>
-          <View style={[styles.aboutRow, styles.aboutRowDivider, { borderTopColor: questTheme.colors.border }]}>
-            <Text style={[styles.label, styles.aboutLabel, { color: questTheme.colors.text }]}>{t(lang, 'storage')}</Text>
-            <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>{t(lang, 'storageText')}</Text>
-          </View>
-          <View style={[styles.aboutRow, styles.aboutRowDivider, { borderTopColor: questTheme.colors.border }]}>
-            <Text style={[styles.label, styles.aboutLabel, { color: questTheme.colors.text }]}>{t(lang, 'version')}</Text>
-            <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>{t(lang, 'versionText')}</Text>
-          </View>
-        </View>
+        <QuestSectionHeader
+          questTheme={questTheme}
+          title={t(lang, 'aiAndDecisions')}
+          subtitle={t(lang, 'aiAndDecisionsDescription')}
+        />
+        <QuestGroupedSurface questTheme={questTheme}>
+          <QuestCompactRow
+            questTheme={questTheme}
+            title={t(lang, 'decisionBriefStatus')}
+            body={`${t(lang, 'decisionAILab')}: ${t(lang, decisionFlagSnapshot.aiEnabled ? 'flagOn' : 'flagOff')} · ${t(lang, 'dailyDecisionBrief')}: ${t(lang, decisionFlagSnapshot.dailyBriefEnabled ? 'flagOn' : 'flagOff')}`}
+          />
+          <QuestCompactRow
+            questTheme={questTheme}
+            divider
+            title={t(lang, 'decisionMemory')}
+            body={`${t(lang, 'totalDecisionResults')}: ${(data.decisionResults || []).length} · ${t(lang, 'last7dDecisionResults')}: ${decisionMemorySummary.recent_count_7d}`}
+          />
+        </QuestGroupedSurface>
 
-        <View style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, shadowColor: questTheme.colors.cardShadow }]}>
-          <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'restartOnboarding')}</Text>
-          <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>{t(lang, 'restartOnboardingDesc')}</Text>
-          <TouchableOpacity
-            style={[styles.debugBtn, { alignSelf: 'flex-start', marginTop: 12, borderColor: accent, backgroundColor: questTheme.colors.primarySoft }]}
-            onPress={() => setSettings({ onboardingRestartRequested: true })}
-          >
-            <Text style={[styles.debugBtnText, { color: accent }]}>{t(lang, 'restartOnboarding')}</Text>
-          </TouchableOpacity>
-        </View>
+        <QuestSectionHeader
+          questTheme={questTheme}
+          title={t(lang, 'dataHealth')}
+          subtitle={t(lang, 'dataHealthDescription')}
+        />
+        <QuestGroupedSurface questTheme={questTheme}>
+          <QuestCompactRow
+            questTheme={questTheme}
+            title={t(lang, 'storedSignals')}
+            body={`${t(lang, 'executionLogs')}: ${(data.executionLogs || []).length} · ${t(lang, 'stateSignals')}: ${(data.stateCheckIns || []).length} · ${t(lang, 'contextLogs')}: ${(data.contextLogs || []).length}`}
+          />
+          <QuestCompactRow questTheme={questTheme} divider title={t(lang, 'storage')} body={t(lang, 'storageText')} />
+        </QuestGroupedSurface>
 
-        {__DEV__ ? (
+        {developerToolsVisible ? (
+          <QuestSectionHeader
+            questTheme={questTheme}
+            title={t(lang, 'developerTools')}
+            subtitle={t(lang, 'developerToolsDescription')}
+          />
+        ) : null}
+
+        {developerToolsVisible ? (
           <View style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, shadowColor: questTheme.colors.cardShadow }]}>
             <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'dataIntegrity')}</Text>
             <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>
@@ -672,6 +713,9 @@ const styles = StyleSheet.create({
   h1: { color: theme.text, fontSize: 34, fontWeight: '800' },
   sub: { color: theme.textDim, marginTop: 4, marginBottom: 18 },
   card: { backgroundColor: theme.card, padding: 14, borderRadius: theme.radius.lg, marginBottom: 8, borderWidth: 1, borderColor: theme.border },
+  firstSectionHeader: { marginTop: 6 },
+  settingsGroupItem: { padding: 14 },
+  settingsGroupDivider: { borderTopWidth: 1 },
   label: { color: theme.text, fontSize: 15, fontWeight: '800', marginBottom: 6 },
   value: { color: theme.textDim, fontSize: 12, lineHeight: 18 },
   aboutRow: { paddingVertical: 2 },
