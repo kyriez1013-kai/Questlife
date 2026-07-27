@@ -52,7 +52,11 @@ export default function ActivityHistorySheet({
     setVisibleCount(HISTORY_PAGE_SIZE);
 
     if (Platform.OS !== 'web' || typeof window === 'undefined') return;
-    window.history.pushState({ questlifeActivityHistory: true }, '');
+    window.history.pushState(
+      { questlifeActivityHistory: true },
+      '',
+      `${window.location.pathname}${window.location.search}#activity-history`,
+    );
     pushedHistoryEntry.current = true;
 
     const handlePopState = () => {
