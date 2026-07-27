@@ -17,7 +17,7 @@ import { getSkillSemanticIcon } from '../design/entityIcons';
 import { isStrengthPredictionSkill, strengthVolume } from '../utils/prediction';
 import QuestButton from '../components/ui/QuestButton';
 import QuestCard from '../components/ui/QuestCard';
-import { QuestContextBar } from '../components/ui/QuestPrimitives';
+import { QuestCompactRow, QuestContextBar, QuestGroupedSurface, QuestSectionHeader } from '../components/ui/QuestPrimitives';
 import QuestEntityIcon from '../components/ui/QuestEntityIcon';
 import QuestIcon from '../components/ui/QuestIcon';
 import QuestInput from '../components/ui/QuestInput';
@@ -342,27 +342,43 @@ export default function ScheduleScreen() {
 
         {view === 'day' ? (
           <>
-            <QuestCard questTheme={questTheme} variant="hero" style={[styles.nowNextCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.border }]} className="schedule-card current-next-card">
-              <View style={styles.nowNextRow}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.nowNextKicker, { color: questTheme.colors.textMuted }]}>
-                    {t(lang, 'nowNext')} · {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </Text>
-                  <Text style={[styles.nowNextMain, { color: questTheme.colors.text }]}>
-                    {nowInfo.active
-                      ? `${nowInfo.active.title} · ${nowInfo.active.startTime}-${nowInfo.active.endTime}`
-                      : `${t(lang, 'noBlockRightNow')}${lang === 'zh' ? '，' : '. '}${t(lang, 'addLightTask')}`}
-                  </Text>
-                </View>
-                {selectedDate === today() ? (
-                  <QuestButton questTheme={questTheme} variant="secondary" icon="activity" label={t(lang, 'jumpToNow')} onPress={jumpToNow} />
-                ) : null}
-              </View>
-              <Text style={[styles.nowNextSub, { color: questTheme.colors.textMuted }]} numberOfLines={1}>
-                {t(lang, 'nextBlock')}: {nowInfo.next ? `${nowInfo.next.title} · ${nowInfo.next.startTime}-${nowInfo.next.endTime}` : t(lang, 'noneBlock')}
-              </Text>
-            </QuestCard>
-            {dayBlocks.length === 0 ? <Text style={[styles.emptyInline, { color: questTheme.colors.textMuted }]}>{t(lang, 'noBlocksToday')}</Text> : null}
+            <QuestSectionHeader
+              questTheme={questTheme}
+              title={t(lang, 'nowNext')}
+              subtitle={selectedDate === today()
+                ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : dateWithWeekday(selectedDate, lang)}
+              trailing={selectedDate === today() ? (
+                <QuestButton questTheme={questTheme} variant="ghost" icon="activity" label={t(lang, 'jumpToNow')} onPress={jumpToNow} />
+              ) : undefined}
+              style={styles.firstSectionHeader}
+            />
+            <QuestGroupedSurface questTheme={questTheme} elevated style={styles.nowNextGroup}>
+              <QuestCompactRow
+                questTheme={questTheme}
+                title={`${t(lang, 'currentBlock')}: ${nowInfo.active?.title ?? t(lang, 'noCurrentBlock')}`}
+                body={nowInfo.active
+                  ? `${nowInfo.active.startTime}-${nowInfo.active.endTime} · ${statusLabel(lang, nowInfo.active.status)}`
+                  : t(lang, 'addLightTask')}
+                leading={<QuestIcon name="activity" size={18} color={nowInfo.active ? questTheme.colors.primary : questTheme.colors.textMuted} />}
+              />
+              <QuestCompactRow
+                questTheme={questTheme}
+                divider
+                title={`${t(lang, 'nextBlock')}: ${nowInfo.next?.title ?? t(lang, 'noNextBlock')}`}
+                body={nowInfo.next
+                  ? `${nowInfo.next.startTime}-${nowInfo.next.endTime} · ${nowInfo.next.plannedMinutes}m`
+                  : t(lang, 'noBlocksToday')}
+                leading={<QuestIcon name="calendar" size={18} color={nowInfo.next ? questTheme.colors.primary : questTheme.colors.textMuted} />}
+              />
+            </QuestGroupedSurface>
+
+            <QuestSectionHeader
+              questTheme={questTheme}
+              title={t(lang, 'laterSchedule')}
+              subtitle={dayBlocks.length === 0 ? t(lang, 'noBlocksToday') : `${dayBlocks.length} ${t(lang, 'blocks')}`}
+              style={styles.scheduleSectionHeader}
+            />
             <View style={[styles.timelineSurface, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>
               {selectedDate === today() && currentTimeTop() >= 0 && currentTimeTop() <= 1 ? (
                 <View style={[styles.nowLine, { top: `${currentTimeTop() * 100}%` }]}>
@@ -385,28 +401,29 @@ export default function ScheduleScreen() {
                           ? data.categories.find((item) => item.id === (b.linkedGoalId ?? link?.goalId))
                           : undefined;
                         const module = link?.moduleId ? (data.modules || []).find((item) => item.id === link.moduleId) : undefined;
+                        const contextLabel = [
+                          goal?.name,
+                          module ? (module.id.includes('-default') ? t(lang, 'defaultModule') : module.name) : undefined,
+                          skill?.name,
+                        ].filter(Boolean).join(' › ');
                         return (
                           <View key={b.id} style={[styles.timelineBlock, { backgroundColor: questTheme.colors.surfaceSoft, borderLeftColor: b.status === 'completed' ? questTheme.colors.success : questTheme.colors.primary }]}>
                             <View style={styles.blockTitleRow}>
                               <QuestEntityIcon icon={skill?.icon} systemIcon={skill ? getSkillSemanticIcon(skill) : systemIcons.schedule} color={skill?.color} questTheme={questTheme} size="sm" />
-                              <Text style={[styles.blockTitle, { color: questTheme.colors.text }]}>{b.title}</Text>
+                              <Text style={[styles.blockTitle, { color: questTheme.colors.text }]} numberOfLines={2}>{b.title}</Text>
+                              <QuestPill
+                                questTheme={questTheme}
+                                variant={b.status === 'completed' ? 'success' : 'muted'}
+                                label={statusLabel(lang, b.status)}
+                              />
                             </View>
-                            <Text style={[styles.blockMeta, { color: questTheme.colors.textMuted }]}>{b.startTime}-{b.endTime} · {taskTypeLabel(lang, b.taskType)} · {b.plannedMinutes}m · {statusLabel(lang, b.status)} · {sourceLabel(lang, b.source)}</Text>
-                            {skill ? (
-                              <Text style={[styles.blockMeta, { color: questTheme.colors.textMuted }]}>
-                                {skill.name} · {progressTypeLabel(lang, progressTypeForSkill(skill))} · {formatMetricSummary(skill, lang)}
-                              </Text>
-                            ) : (
-                              <Text style={[styles.blockMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'manualBlock')}</Text>
-                            )}
-                            {goal || module ? (
-                              <Text style={[styles.blockMeta, { color: questTheme.colors.textMuted }]}>
-                                {goal ? `${goal.name}` : ''}
-                                {goal && module ? ' > ' : ''}
-                                {module ? `${module.id.includes('-default') ? t(lang, 'defaultModule') : module.name}` : ''}
-                              </Text>
-                            ) : null}
-                            <QuestButton questTheme={questTheme} variant="secondary" icon="play" label={t(lang, 'logProgress')} onPress={() => openLogBlock(b)} style={{ alignSelf: 'flex-start', marginTop: 8 }} />
+                            <Text style={[styles.blockMeta, { color: questTheme.colors.textMuted }]}>
+                              {b.startTime}-{b.endTime} · {b.plannedMinutes}m
+                            </Text>
+                            <Text style={[styles.blockMeta, { color: questTheme.colors.textMuted }]} numberOfLines={2}>
+                              {contextLabel || t(lang, 'manualBlock')}
+                            </Text>
+                            <QuestButton questTheme={questTheme} variant="ghost" icon="play" label={t(lang, 'logProgress')} onPress={() => openLogBlock(b)} style={styles.blockAction} />
                           </View>
                         );
                       })}
@@ -672,12 +689,9 @@ const styles = StyleSheet.create({
   switchText: { color: theme.textDim, fontWeight: '800' },
   switchTextOn: { color: '#fff' },
   dateTitle: { color: theme.text, fontSize: 18, fontWeight: '800', marginTop: 16, marginBottom: 10 },
-  nowNextCard: { minHeight: 82, backgroundColor: theme.card, borderRadius: theme.radius.lg, paddingHorizontal: 11, paddingVertical: 9, borderWidth: 1, borderColor: theme.border, marginBottom: 8 },
-  nowNextKicker: { color: theme.textDim, fontSize: 11, fontWeight: '900', marginBottom: 2 },
-  nowNextRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  nowNextLabel: { color: theme.textDim, fontSize: 12, fontWeight: '800' },
-  nowNextMain: { color: theme.text, fontSize: 14, fontWeight: '800', lineHeight: 19, marginTop: 1 },
-  nowNextSub: { color: theme.textDim, fontSize: 11, fontWeight: '700', marginTop: 5 },
+  firstSectionHeader: { marginTop: 10 },
+  nowNextGroup: { marginBottom: 2 },
+  scheduleSectionHeader: { marginTop: 14 },
   jumpBtn: { borderWidth: 1, borderRadius: 16, paddingHorizontal: 10, paddingVertical: 7 },
   jumpText: { fontSize: 12, fontWeight: '900' },
   empty: { color: theme.textDim, backgroundColor: theme.card, borderRadius: theme.radius.lg, padding: 14, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
@@ -689,6 +703,7 @@ const styles = StyleSheet.create({
   hourContent: { flex: 1, paddingVertical: 5, paddingRight: 10, gap: 5 },
   timelineBlock: { backgroundColor: theme.cardAlt, borderRadius: theme.radius.md, padding: 8, borderLeftWidth: 3, borderLeftColor: theme.primary },
   blockTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  blockAction: { alignSelf: 'flex-start', marginTop: 4 },
   logBlockBtn: { alignSelf: 'flex-start', borderWidth: 1, borderRadius: 14, paddingHorizontal: 10, paddingVertical: 6, marginTop: 8 },
   logBlockText: { fontSize: 11, fontWeight: '900' },
   nowLine: { position: 'absolute', left: 50, right: 8, flexDirection: 'row', alignItems: 'center', zIndex: 10 },
@@ -698,7 +713,7 @@ const styles = StyleSheet.create({
   timeline: { gap: 10 },
   blockCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: theme.card, borderRadius: theme.radius.lg, padding: 14, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
   time: { color: theme.text, fontWeight: '800', width: 92 },
-  blockTitle: { color: theme.text, fontSize: 14, fontWeight: '800' },
+  blockTitle: { color: theme.text, fontSize: 14, fontWeight: '800', flex: 1 },
   blockMeta: { color: theme.textDim, fontSize: 11, marginTop: 3 },
   status: { color: theme.textDim, fontSize: 11, fontWeight: '800' },
   weekGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 18 },
