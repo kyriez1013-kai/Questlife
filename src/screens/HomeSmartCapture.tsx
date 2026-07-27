@@ -26,6 +26,7 @@ import QuestCard from '../components/ui/QuestCard';
 import QuestIcon from '../components/ui/QuestIcon';
 import QuestButton from '../components/ui/QuestButton';
 import QuestInput from '../components/ui/QuestInput';
+import ActivityHistorySheet from '../components/today/ActivityHistorySheet';
 import HomeCapturePending from './HomeCapturePending';
 import { confirmAction } from '../utils/confirm';
 import { buildFallbackEntriesFromRawText } from '../utils/captureCompletion';
@@ -108,12 +109,14 @@ function CaptureCard({
   questTheme,
   onRetry,
   onDelete,
+  expanded = false,
 }: {
   capture: RawCapture;
   lang: 'zh' | 'en';
   questTheme: ReturnType<typeof getQuestTheme>;
   onRetry: (id: string) => void;
   onDelete: (id: string) => void;
+  expanded?: boolean;
 }) {
   const insightType = capture.parsed?.insightType as InsightType | undefined;
   const insightText = capture.parsed?.insight?.[lang] ?? '';
@@ -147,7 +150,7 @@ function CaptureCard({
       </View>
 
       {/* Original text — always visible */}
-      <Text numberOfLines={1} style={[styles.captureText, { color: questTheme.colors.text, fontSize: questTheme.typography.bodySize }]}>
+      <Text numberOfLines={expanded ? undefined : 1} style={[styles.captureText, { color: questTheme.colors.text, fontSize: questTheme.typography.bodySize }]}>
         {capture.text}
       </Text>
 
@@ -166,7 +169,7 @@ function CaptureCard({
           <Text style={[styles.crossLinkTag, { color: insightBorderColor(insightType, questTheme) }]}>
             {t(lang, insightTagKey(insightType))}
           </Text>
-          <Text numberOfLines={2} style={[styles.insightText, { color: questTheme.colors.textMuted, fontSize: questTheme.typography.compactBodySize }]}>
+          <Text numberOfLines={expanded ? undefined : 2} style={[styles.insightText, { color: questTheme.colors.textMuted, fontSize: questTheme.typography.compactBodySize }]}>
             {insightText}
           </Text>
         </View>
@@ -211,22 +214,22 @@ export default function HomeSmartCapture() {
   const [inputText, setInputText]         = useState('');
   const [isPosting, setIsPosting]         = useState(false);
   const [greeting, setGreeting]           = useState('');
-  const [showAll, setShowAll]             = useState(false);
+  const [recentVisible, setRecentVisible] = useState(true);
+  const [recentExpanded, setRecentExpanded] = useState(true);
+  const [historyVisible, setHistoryVisible] = useState(false);
   const greetingRequestRef                = useRef(0);
   const activeCaptureHistory = useMemo(() => (
     (data.rawCaptures || []).filter((capture) => captureHasLiveContext(capture, data.executionLogs || []))
   ), [data.rawCaptures, data.executionLogs]);
 
-  // ALL captures sorted newest first — not filtered to today,
-  // so users can always access historical entries via expand
+  // ALL captures sorted newest first. Today renders only the latest item;
+  // the complete list lives in the incremental Activity History sheet.
   const allCaptures: RawCapture[] = (data.rawCaptures || [])
     .slice()
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
-  // Collapsed view: default 3 newest, expandable to all history
-  const todayCaptures = showAll ? allCaptures : allCaptures.slice(0, DEFAULT_VISIBLE);
-  const hiddenCount   = allCaptures.length - DEFAULT_VISIBLE;
-  const hasMore       = hiddenCount > 0;
+  const todayCaptures = recentVisible ? allCaptures.slice(0, DEFAULT_VISIBLE) : [];
+  const hasHistory    = allCaptures.length > 0;
 
   // ── Async parse helper ────────────────────────────────────────────────────
 
@@ -436,6 +439,50 @@ export default function HomeSmartCapture() {
     });
   }, [data.executionLogs, lang, deleteRawCapture]);
 
+  const renderCapture = (capture: RawCapture, expanded: boolean) => {
+    const parsedEntries = capture.parsed?.entries ?? [];
+    const fallbackEntries = buildFallbackEntriesFromRawText(capture.text);
+    const entriesForConfirmation = parsedEntries.length > 0 ? parsedEntries : fallbackEntries;
+    const hasTopLevelCompletion = capture.parsed?.completionSchema?.needsCompletion === true;
+    const canShowConfirmation =
+      (capture.parseStatus === 'done' || capture.parseStatus === 'failed') &&
+      (entriesForConfirmation.length > 0 || hasTopLevelCompletion) &&
+      !capture.parsed?.entriesDismissed;
+
+    return (
+      <View key={capture.id}>
+        <CaptureCard
+          capture={capture}
+          lang={lang}
+          questTheme={questTheme}
+          onRetry={handleRetry}
+          onDelete={handleDelete}
+          expanded={expanded}
+        />
+        {expanded && canShowConfirmation ? (
+          <HomeCapturePending
+            captureId={capture.id}
+            entries={entriesForConfirmation}
+            onDismiss={() => updateRawCapture(capture.id, {
+              parsed: {
+                type: capture.parsed?.type ?? 'misc',
+                fields: capture.parsed?.fields ?? {},
+                crossLinks: capture.parsed?.crossLinks ?? [],
+                insight: capture.parsed?.insight ?? { zh: '', en: '' },
+                matchedSkillIds: capture.parsed?.matchedSkillIds ?? [],
+                linkedGoalId: capture.parsed?.linkedGoalId,
+                insightType: capture.parsed?.insightType ?? 'encourage',
+                entries: capture.parsed?.entries ?? entriesForConfirmation,
+                entriesDismissed: true,
+                completionSchema: capture.parsed?.completionSchema,
+              },
+            })}
+          />
+        ) : null}
+      </View>
+    );
+  };
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
@@ -483,73 +530,59 @@ export default function HomeSmartCapture() {
         </View>
       </QuestCard>
 
-      {/* All captures (collapsed to DEFAULT_VISIBLE, expandable to full history) */}
+      {/* Today keeps one recent record. Full history is rendered in a separate sheet. */}
       {allCaptures.length > 0 && (
         <View style={{ marginTop: questTheme.spacing.xxs }}>
-          {todayCaptures.map((c) => {
-            const parsedEntries = c.parsed?.entries ?? [];
-            const fallbackEntries = buildFallbackEntriesFromRawText(c.text);
-            const entriesForConfirmation = parsedEntries.length > 0 ? parsedEntries : fallbackEntries;
-            const hasTopLevelCompletion = c.parsed?.completionSchema?.needsCompletion === true;
-            const canShowConfirmation =
-              (c.parseStatus === 'done' || c.parseStatus === 'failed') &&
-              (entriesForConfirmation.length > 0 || hasTopLevelCompletion) &&
-              !c.parsed?.entriesDismissed;
+          {todayCaptures.map((capture) => renderCapture(capture, recentExpanded))}
 
-            return (
-              <View key={c.id}>
-                <CaptureCard
-                  capture={c}
-                  lang={lang}
+          <View style={[styles.recentActions, { gap: questTheme.spacing.tight, marginTop: questTheme.spacing.tight }]}>
+            {recentVisible ? (
+              <>
+                <QuestButton
                   questTheme={questTheme}
-                  onRetry={handleRetry}
-                  onDelete={handleDelete}
+                  variant="ghost"
+                  label={t(lang, recentExpanded ? 'collapseRecentRecord' : 'expandRecentRecord')}
+                  onPress={() => setRecentExpanded((value) => !value)}
                 />
-                {/* B-3: show confirmation card when parsed or rule-based fallback entries are pending. */}
-                {canShowConfirmation && (
-                  <HomeCapturePending
-                    captureId={c.id}
-                    entries={entriesForConfirmation}
-                    onDismiss={() => updateRawCapture(c.id, {
-                      parsed: {
-                        type: c.parsed?.type ?? 'misc',
-                        fields: c.parsed?.fields ?? {},
-                        crossLinks: c.parsed?.crossLinks ?? [],
-                        insight: c.parsed?.insight ?? { zh: '', en: '' },
-                        matchedSkillIds: c.parsed?.matchedSkillIds ?? [],
-                        linkedGoalId: c.parsed?.linkedGoalId,
-                        insightType: c.parsed?.insightType ?? 'encourage',
-                        entries: c.parsed?.entries ?? entriesForConfirmation,
-                        entriesDismissed: true,
-                        completionSchema: c.parsed?.completionSchema,
-                      },
-                    })}
-                  />
-                )}
-              </View>
-            );
-          })}
-
-          {/* Expand / collapse button */}
-          {hasMore && (
-            <TouchableOpacity
-              onPress={() => setShowAll((v) => !v)}
-              style={[styles.expandBtn, {
-                marginTop: questTheme.spacing.tight,
-                borderColor: questTheme.colors.border,
-                backgroundColor: questTheme.colors.surfaceMuted,
-              }]}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.expandBtnText, { color: questTheme.colors.textMuted }]}>
-                {showAll
-                  ? t(lang, 'scCollapse')
-                  : t(lang, 'scMoreCaptures').replace('{n}', String(hiddenCount))}
-              </Text>
-            </TouchableOpacity>
-          )}
+                <QuestButton
+                  questTheme={questTheme}
+                  variant="ghost"
+                  label={t(lang, 'hideRecentRecord')}
+                  onPress={() => setRecentVisible(false)}
+                />
+              </>
+            ) : (
+              <QuestButton
+                questTheme={questTheme}
+                variant="ghost"
+                label={t(lang, 'showRecentRecord')}
+                onPress={() => setRecentVisible(true)}
+              />
+            )}
+            {hasHistory ? (
+              <QuestButton
+                questTheme={questTheme}
+                variant="secondary"
+                label={t(lang, 'openActivityHistory').replace('{n}', String(allCaptures.length))}
+                onPress={() => setHistoryVisible(true)}
+              />
+            ) : null}
+          </View>
         </View>
       )}
+
+      <ActivityHistorySheet
+        visible={historyVisible}
+        captures={allCaptures}
+        questTheme={questTheme}
+        title={t(lang, 'activityHistory')}
+        countLabel={t(lang, 'activityHistoryCount').replace('{n}', String(allCaptures.length))}
+        closeLabel={t(lang, 'closeActivityHistory')}
+        loadMoreLabel={t(lang, 'loadMoreRecords')}
+        emptyLabel={t(lang, 'activityHistoryEmpty')}
+        onClose={() => setHistoryVisible(false)}
+        renderCapture={(capture) => renderCapture(capture, true)}
+      />
     </View>
   );
 }
@@ -640,16 +673,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  // Expand / collapse button
-  expandBtn: {
-    marginTop: 8,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingVertical: 7,
+  recentActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
-  },
-  expandBtnText: {
-    fontSize: 12,
-    fontWeight: '600',
   },
 });
