@@ -19,6 +19,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useStore } from '../store';
 import { appAccent, theme } from '../theme';
 import { getQuestTheme, getStateToneColor, questLayout } from '../design/tokens';
+import { useQuestReducedMotion } from '../design/motion';
 import { getSurfaceStyle } from '../design/surfaces';
 import { today } from '../storage';
 import {
@@ -531,6 +532,7 @@ export default function HomeScreen() {
   const [topBanner, setTopBanner] = useState<TopBanner | null>(null);
   const bannerOpacity = useRef(new Animated.Value(0)).current;
   const bannerTranslateY = useRef(new Animated.Value(-60)).current;
+  const reducedMotion = useQuestReducedMotion();
 
   // 晨间状态: null=尚未加载, undefined=今日未设置, number=已设置
   const [dailyState, setDailyState] = useState<DailyStateValue | undefined | null>(null);
@@ -1122,6 +1124,12 @@ export default function HomeScreen() {
   // 庆祝浮层动画: 200ms fade-in + scale → 1100ms 停留 → 200ms fade-out
   useEffect(() => {
     if (!celebrate) return;
+    if (reducedMotion) {
+      celebrateOpacity.setValue(1);
+      celebrateScale.setValue(1);
+      const clear = setTimeout(() => setCelebrate(null), 1250);
+      return () => clearTimeout(clear);
+    }
     celebrateOpacity.setValue(0);
     celebrateScale.setValue(0.6);
     Animated.parallel([
@@ -1140,11 +1148,17 @@ export default function HomeScreen() {
       });
     }, 1250);
     return () => clearTimeout(fadeOut);
-  }, [celebrate, celebrateOpacity, celebrateScale]);
+  }, [celebrate, celebrateOpacity, celebrateScale, reducedMotion]);
 
   // 顶部横幅动画: 220ms 进 → 2.6s 停留 → 240ms 出 ≈ 3s
   useEffect(() => {
     if (!topBanner) return;
+    if (reducedMotion) {
+      bannerOpacity.setValue(1);
+      bannerTranslateY.setValue(0);
+      const clear = setTimeout(() => setTopBanner(null), 2600);
+      return () => clearTimeout(clear);
+    }
     bannerOpacity.setValue(0);
     bannerTranslateY.setValue(-60);
     Animated.parallel([
@@ -1164,7 +1178,7 @@ export default function HomeScreen() {
       ]).start(({ finished }) => { if (finished) setTopBanner(null); });
     }, 2600);
     return () => clearTimeout(hide);
-  }, [topBanner, bannerOpacity, bannerTranslateY]);
+  }, [topBanner, bannerOpacity, bannerTranslateY, reducedMotion]);
 
   // 每次切回 Tab 都重新读今日状态 (支持跨天切换场景)
   useFocusEffect(

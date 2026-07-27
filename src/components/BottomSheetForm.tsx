@@ -26,6 +26,7 @@ import {
 import { theme } from '../theme';
 import { useStore } from '../store';
 import { getQuestTheme } from '../design/tokens';
+import { useQuestReducedMotion } from '../design/motion';
 
 export interface BottomSheetFormProps {
   visible: boolean;
@@ -38,10 +39,11 @@ export interface BottomSheetFormProps {
 export default function BottomSheetForm({ visible, onClose, children, footer, closeAccessibilityLabel }: BottomSheetFormProps) {
   const { data } = useStore();
   const questTheme = getQuestTheme(data.settings.selectedThemeId);
+  const reducedMotion = useQuestReducedMotion();
   const SheetView = View as any;
   const FooterView = View as any;
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType={reducedMotion ? 'none' : 'slide'} onRequestClose={onClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.fill}

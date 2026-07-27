@@ -10,6 +10,11 @@
   --ql-primary: #38bdf8;
 }
 
+.questlife-root {
+  --ql-motion-fast: 120ms;
+  --ql-motion-standard: 180ms;
+}
+
 .questlife-theme-dark .quest-card,
 .questlife-theme-dark .card,
 .questlife-theme-dark .surface,
@@ -228,6 +233,42 @@
 .questlife-root :where(input, textarea, [contenteditable="true"]):focus-visible {
   outline: 2px solid var(--ql-primary, currentColor) !important;
   outline-offset: 2px;
+}
+
+.questlife-root :where(
+  .quest-button,
+  .quest-pill,
+  .quest-segment-option,
+  .quest-interactive
+) {
+  transition:
+    background-color var(--ql-motion-fast) ease,
+    border-color var(--ql-motion-fast) ease,
+    color var(--ql-motion-fast) ease,
+    opacity var(--ql-motion-fast) ease,
+    transform var(--ql-motion-fast) ease;
+}
+
+.questlife-root :where(.quest-input, .quest-grouped-surface, .bottom-sheet-form) {
+  transition:
+    background-color var(--ql-motion-standard) ease,
+    border-color var(--ql-motion-fast) ease,
+    box-shadow var(--ql-motion-standard) ease;
+}
+
+.questlife-root .quest-interactive:active:not([aria-disabled="true"]) {
+  transform: translateY(1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .questlife-root *,
+  .questlife-root *::before,
+  .questlife-root *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 
 @media (max-width: 480px) {
