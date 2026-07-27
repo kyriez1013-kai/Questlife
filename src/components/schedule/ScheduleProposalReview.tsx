@@ -117,7 +117,7 @@ export default function ScheduleProposalReview({
 
 const styles = StyleSheet.create({
   proposal: { padding: 14, gap: 6 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  header: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   title: { flex: 1, fontSize: 14, lineHeight: 20, fontWeight: '800' },
   preview: { fontSize: 13, lineHeight: 19, fontWeight: '700' },
   meta: { fontSize: 12, lineHeight: 18 },
@@ -128,6 +128,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 10,

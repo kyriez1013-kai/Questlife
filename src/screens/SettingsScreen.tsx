@@ -272,7 +272,7 @@ export default function SettingsScreen() {
         contentContainerStyle={{
           paddingHorizontal: questTheme.spacing.md,
           paddingTop: questTheme.spacing.sm,
-          paddingBottom: questLayout.contentBottomInset,
+          paddingBottom: questLayout.contentBottomInset + questTheme.spacing.lg,
           maxWidth: questLayout.contentMaxWidth,
           width: '100%',
           alignSelf: 'center',
@@ -401,7 +401,7 @@ export default function SettingsScreen() {
                   setContextPreview(parseHealthContextText(contextPasteText));
                   setContextSaved(false);
                 }}
-                style={{ flex: 1 }}
+                style={styles.dataSourceButton}
               />
               <QuestButton
                 questTheme={questTheme}
@@ -414,7 +414,7 @@ export default function SettingsScreen() {
                   setContextPreview(null);
                   setContextSaved(true);
                 }}
-                style={{ flex: 1 }}
+                style={styles.dataSourceButton}
               />
             </View>
           </View>
@@ -748,7 +748,8 @@ const styles = StyleSheet.create({
   colorPreview: { width: 34, height: 34, borderRadius: 17 },
   colorValue: { fontSize: 13, fontWeight: '800' },
   contextInput: { minHeight: 72, marginTop: 10, marginBottom: 8, textAlignVertical: 'top' },
-  dataSourceActions: { flexDirection: 'row', gap: 8, marginTop: 8, marginBottom: 8 },
+  dataSourceActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8, marginBottom: 8 },
+  dataSourceButton: { flexGrow: 1, flexBasis: 140, minWidth: 140 },
   languageRow: { flexDirection: 'row', gap: 8 },
   languageBtn: { flex: 1, minHeight: questLayout.controlMinHeight, alignItems: 'center', justifyContent: 'center', paddingVertical: 9, borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.border, backgroundColor: theme.cardAlt },
   languageText: { color: theme.text, fontWeight: '800' },
@@ -760,7 +761,7 @@ const styles = StyleSheet.create({
   themeSwatches: { flexDirection: 'row', gap: 6, marginBottom: 8 },
   themeSwatch: { width: 18, height: 18, borderRadius: 9, borderWidth: 1, borderColor: 'rgba(0,0,0,0.08)' },
   debugActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
-  debugBtn: { borderWidth: 1, borderRadius: theme.radius.md, paddingHorizontal: 10, paddingVertical: 9 },
+  debugBtn: { minHeight: questLayout.controlMinHeight, justifyContent: 'center', borderWidth: 1, borderRadius: theme.radius.md, paddingHorizontal: 10, paddingVertical: 9 },
   debugBtnText: { fontSize: 12, fontWeight: '800' },
   monoText: { marginTop: 12, borderWidth: 1, borderRadius: theme.radius.md, padding: 10, fontSize: 11, lineHeight: 16 } as any,
 });
