@@ -23,6 +23,7 @@ import QuestEntityIcon from '../components/ui/QuestEntityIcon';
 import QuestIcon from '../components/ui/QuestIcon';
 import QuestInput from '../components/ui/QuestInput';
 import QuestPill from '../components/ui/QuestPill';
+import QuestSegmentedControl from '../components/ui/QuestSegmentedControl';
 import ScheduleProposalReview from '../components/schedule/ScheduleProposalReview';
 import {
   buildScheduleProposalPatch,
@@ -398,13 +399,14 @@ export default function ScheduleScreen() {
           trailing={<QuestButton questTheme={questTheme} variant="primary" icon="plus" label={t(lang, 'addBlock')} onPress={() => setOpen(true)} />}
         />
 
-        <View style={[styles.switcher, { backgroundColor: questTheme.colors.surfaceSoft }]}>
-          {(['day', 'week', 'month', 'year'] as const).map((v) => (
-            <TouchableOpacity key={v} style={[styles.switchBtn, view === v && { backgroundColor: questTheme.colors.primary }]} onPress={() => setView(v)}>
-              <Text style={[styles.switchText, { color: view === v ? questTheme.colors.primaryText : questTheme.colors.textMuted }]}>{t(lang, v)}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <QuestSegmentedControl
+          value={view}
+          options={(['day', 'week', 'month', 'year'] as const).map((value) => ({ value, label: t(lang, value) }))}
+          onChange={setView}
+          questTheme={questTheme}
+          accessibilityLabel={t(lang, 'schedule')}
+          style={styles.switcher}
+        />
 
         {view === 'day' ? (
           <>
@@ -772,10 +774,7 @@ const styles = StyleSheet.create({
   sub: { color: theme.textDim, marginTop: 4, maxWidth: 230 },
   addBtn: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: theme.radius.md, ...theme.shadow },
   addBtnText: { color: '#fff', fontWeight: '800', fontSize: 12 },
-  switcher: { flexDirection: 'row', backgroundColor: theme.cardAlt, borderRadius: theme.radius.md, padding: 3, marginTop: 2, marginBottom: 8 },
-  switchBtn: { flex: 1, minHeight: questLayout.controlMinHeight, paddingVertical: 8, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  switchText: { color: theme.textDim, fontWeight: '800' },
-  switchTextOn: { color: '#fff' },
+  switcher: { marginTop: 2, marginBottom: 8 },
   dateTitle: { color: theme.text, fontSize: 18, fontWeight: '800', marginTop: 16, marginBottom: 10 },
   firstSectionHeader: { marginTop: 10 },
   nowNextGroup: { marginBottom: 2 },

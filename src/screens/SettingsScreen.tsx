@@ -23,6 +23,7 @@ import QuestInput from '../components/ui/QuestInput';
 import QuestButton from '../components/ui/QuestButton';
 import QuestPill from '../components/ui/QuestPill';
 import { QuestCompactRow, QuestGroupedSurface, QuestSectionHeader } from '../components/ui/QuestPrimitives';
+import QuestSegmentedControl from '../components/ui/QuestSegmentedControl';
 
 export default function SettingsScreen() {
   const { data, setSettings, addContextLogs, runIntegrityCheck, repairSafeIntegrityIssues, rebuildDerivedData, mergePatternMemoryCandidates, updatePatternMemoryStatus } = useStore();
@@ -287,23 +288,17 @@ export default function SettingsScreen() {
         <QuestGroupedSurface questTheme={questTheme}>
           <View style={styles.settingsGroupItem}>
             <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'language')}</Text>
-            <View style={styles.languageRow}>
-              {[
-                { value: 'zh' as const, label: '中文' },
-                { value: 'en' as const, label: 'English' },
-              ].map((opt) => {
-                const on = lang === opt.value;
-                return (
-                  <TouchableOpacity
-                    key={opt.value}
-                    style={[styles.languageBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }, on && { backgroundColor: accent, borderColor: accent }]}
-                    onPress={() => setSettings({ language: opt.value })}
-                  >
-                    <Text style={[styles.languageText, { color: on ? questTheme.colors.primaryText : questTheme.colors.text }]}>{opt.label}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+            <QuestSegmentedControl
+              value={lang}
+              options={[
+                { value: 'zh', label: '中文' },
+                { value: 'en', label: 'English' },
+              ]}
+              onChange={(language) => setSettings({ language })}
+              questTheme={questTheme}
+              accessibilityLabel={t(lang, 'language')}
+              style={styles.languageRow}
+            />
           </View>
           <View style={[styles.settingsGroupItem, styles.settingsGroupDivider, { borderTopColor: questTheme.colors.divider }]}>
             <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'interfaceTheme')}</Text>
@@ -750,8 +745,7 @@ const styles = StyleSheet.create({
   contextInput: { minHeight: 72, marginTop: 10, marginBottom: 8, textAlignVertical: 'top' },
   dataSourceActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8, marginBottom: 8 },
   dataSourceButton: { flexGrow: 1, flexBasis: 140, minWidth: 140 },
-  languageRow: { flexDirection: 'row', gap: 8 },
-  languageBtn: { flex: 1, minHeight: questLayout.controlMinHeight, alignItems: 'center', justifyContent: 'center', paddingVertical: 9, borderRadius: theme.radius.md, borderWidth: 1, borderColor: theme.border, backgroundColor: theme.cardAlt },
+  languageRow: { width: '100%' },
   languageText: { color: theme.text, fontWeight: '800' },
   languageTextOn: { color: '#fff' },
   themeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },

@@ -48,7 +48,7 @@ export default function QuestButton({
         {
           minHeight: questLayout.controlMinHeight,
           borderRadius: q.radius.pill,
-          paddingHorizontal: 13,
+          paddingHorizontal: q.spacing.md,
           paddingVertical: q.spacing.sm,
           borderWidth: variant === 'ghost' || variant === 'secondary' || disabled ? 1 : 0,
           borderColor,
@@ -60,7 +60,7 @@ export default function QuestButton({
         style,
       ]}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, maxWidth: '100%' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: q.spacing.tight, maxWidth: '100%' }}>
         {icon ? <QuestIcon name={icon} size={16} color={fg} strokeWidth={2.4} /> : null}
         {children ?? (
           <Text
@@ -68,7 +68,7 @@ export default function QuestButton({
             style={{
               color: fg,
               fontSize: q.typography.buttonSize,
-              fontWeight: '800',
+              fontWeight: q.typography.weightBold,
               textAlign: 'center',
               flexShrink: 1,
             }}

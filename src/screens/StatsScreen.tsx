@@ -32,6 +32,7 @@ import {
   QuestContextBar,
   QuestSectionHeader,
 } from '../components/ui/QuestPrimitives';
+import QuestSegmentedControl from '../components/ui/QuestSegmentedControl';
 
 const FIXED_INSIGHTS_CARD_SIZES: Record<string, DashboardCardSize> = {
   main_judgement: 'large',
@@ -523,28 +524,17 @@ export default function StatsScreen() {
           </View>}
         />
 
-        <View style={[styles.insightsTabs, { backgroundColor: questTheme.colors.surfaceSoft }]}>
-          {(['overview', 'trends', 'patterns', 'advanced'] as const).map((viewKey) => {
-            const active = insightsView === viewKey;
-            return (
-              <TouchableOpacity
-                key={viewKey}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: active }}
-                style={[
-                  styles.insightsTab,
-                  { minHeight: questLayout.controlMinHeight },
-                  active && { backgroundColor: questTheme.colors.surfaceElevated },
-                ]}
-                onPress={() => setInsightsView(viewKey)}
-              >
-                <Text style={[styles.insightsTabText, { color: active ? questTheme.colors.text : questTheme.colors.textMuted }]}>
-                  {t(lang, `insights_${viewKey}`)}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        <QuestSegmentedControl
+          value={insightsView}
+          options={(['overview', 'trends', 'patterns', 'advanced'] as const).map((value) => ({
+            value,
+            label: t(lang, `insights_${value}`),
+          }))}
+          onChange={setInsightsView}
+          questTheme={questTheme}
+          accessibilityLabel={t(lang, 'insights')}
+          style={styles.insightsTabs}
+        />
 
         <TileGrid
           nativeID="insights-dashboard-grid"
@@ -1383,9 +1373,7 @@ function LoopStat({ label, value, questTheme }: { label: string; value: string; 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.bg },
   container: { flex: 1, backgroundColor: theme.bg },
-  insightsTabs: { flexDirection: 'row', padding: 3, borderRadius: 12, marginBottom: 8 },
-  insightsTab: { flex: 1, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
-  insightsTabText: { fontSize: 11, fontWeight: '800' },
+  insightsTabs: { marginBottom: 8 },
   insightsLayer: { width: '100%', gap: 8 },
   patternStatusGrid: { flexDirection: 'row', gap: 8 },
   patternStatusCell: { flex: 1, minWidth: 0, minHeight: 58, borderWidth: 1, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 8 },

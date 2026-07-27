@@ -15,8 +15,9 @@ type ScreenHeaderProps = ThemeProps & {
 
 export function QuestScreenHeader({ title, subtitle, trailing, questTheme, style }: ScreenHeaderProps) {
   const q = questTheme ?? getQuestTheme();
+  const Header = View as any;
   return (
-    <View style={[{
+    <Header className="quest-screen-header" style={[{
       minHeight: 44,
       flexDirection: 'row',
       alignItems: 'center',
@@ -24,7 +25,7 @@ export function QuestScreenHeader({ title, subtitle, trailing, questTheme, style
       gap: q.spacing.md,
       marginBottom: q.spacing.sm,
     }, style]}>
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={{
           color: q.colors.text,
           fontSize: q.typography.screenTitleSize,
@@ -45,7 +46,7 @@ export function QuestScreenHeader({ title, subtitle, trailing, questTheme, style
         ) : null}
       </View>
       {trailing}
-    </View>
+    </Header>
   );
 }
 
@@ -58,8 +59,9 @@ type ContextBarProps = ThemeProps & {
 
 export function QuestContextBar({ primary, secondary, trailing, questTheme, style }: ContextBarProps) {
   const q = questTheme ?? getQuestTheme();
+  const Bar = View as any;
   return (
-    <View style={[{
+    <Bar className="quest-context-bar" style={[{
       minHeight: 48,
       flexDirection: 'row',
       alignItems: 'center',
@@ -94,7 +96,7 @@ export function QuestContextBar({ primary, secondary, trailing, questTheme, styl
         ) : null}
       </View>
       {trailing}
-    </View>
+    </Bar>
   );
 }
 
@@ -107,16 +109,17 @@ type SectionHeaderProps = ThemeProps & {
 
 export function QuestSectionHeader({ title, subtitle, trailing, questTheme, style }: SectionHeaderProps) {
   const q = questTheme ?? getQuestTheme();
+  const Header = View as any;
   return (
-    <View style={[{
+    <Header className="quest-section-header" style={[{
       flexDirection: 'row',
       alignItems: 'flex-end',
       justifyContent: 'space-between',
       gap: q.spacing.sm,
-      marginTop: q.spacing.lg,
+      marginTop: q.spacing.section,
       marginBottom: q.spacing.sm,
     }, style]}>
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={{
           color: q.colors.text,
           fontSize: q.typography.sectionTitleSize,
@@ -137,7 +140,7 @@ export function QuestSectionHeader({ title, subtitle, trailing, questTheme, styl
         ) : null}
       </View>
       {trailing}
-    </View>
+    </Header>
   );
 }
 
@@ -149,8 +152,9 @@ type GroupedSurfaceProps = ThemeProps & {
 
 export function QuestGroupedSurface({ children, elevated, questTheme, style }: GroupedSurfaceProps) {
   const q = questTheme ?? getQuestTheme();
+  const Surface = View as any;
   return (
-    <View style={[{
+    <Surface className={elevated ? 'quest-grouped-surface surface-elevated' : 'quest-grouped-surface surface'} style={[{
       backgroundColor: elevated ? q.colors.surfaceElevated : q.colors.surface,
       borderRadius: q.radius.lg,
       borderWidth: 1,
@@ -158,7 +162,7 @@ export function QuestGroupedSurface({ children, elevated, questTheme, style }: G
       overflow: 'hidden',
     }, style]}>
       {children}
-    </View>
+    </Surface>
   );
 }
 
@@ -181,8 +185,9 @@ export function QuestCompactRow({
   style,
 }: CompactRowProps) {
   const q = questTheme ?? getQuestTheme();
+  const Row = View as any;
   return (
-    <View style={[{
+    <Row className="quest-compact-row" style={[{
       minHeight: questLayout.controlMinHeight,
       flexDirection: 'row',
       alignItems: 'center',
@@ -193,7 +198,7 @@ export function QuestCompactRow({
       borderTopColor: q.colors.divider,
     }, style]}>
       {leading}
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={{
           color: q.colors.text,
           fontSize: q.typography.compactBodySize,
@@ -214,7 +219,7 @@ export function QuestCompactRow({
         ) : null}
       </View>
       {trailing}
-    </View>
+    </Row>
   );
 }
 
