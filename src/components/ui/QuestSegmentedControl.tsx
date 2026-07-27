@@ -57,6 +57,8 @@ export default function QuestSegmentedControl<T extends string>({
             accessibilityRole="tab"
             accessibilityLabel={option.label}
             accessibilityState={{ selected, disabled }}
+            aria-selected={selected}
+            aria-disabled={disabled}
             disabled={disabled}
             onPress={() => onChange(option.value)}
             style={({ pressed }: { pressed: boolean }) => ({

@@ -2366,3 +2366,46 @@ Production verification:
 - Verified the Settings Data Sources parser preview with a one-item sleep context result without saving another production context.
 - Compact empty states now replace centered oversized empty cards, and a suggested-module panel is not rendered when the goal already contains every suggestion.
 - New Smart Capture writes, destructive Goal/Skill actions, schedule proposal apply/undo and data reset were intentionally not repeated against the user's production data; their handlers and data semantics were not changed in this pass.
+
+## Phase 5 - System-wide Consistency, Interaction Polish and Final Acceptance
+
+Status: Implemented and locally verified; production verification follows the GitHub/Vercel deployment.
+
+Completed UI phases:
+- Phase 1: Today Decision Surface now presents one executable judgement with focused details.
+- Phase 2: Insights separates Overview, Trends, Patterns, and Advanced evidence.
+- Phase 3: Goal Detail presents Goal -> Module -> Skill -> Execution as a working hierarchy.
+- Phase 4: Schedule owns planning/proposal review and Settings owns preferences, sources, AI controls, data health, and gated developer tools.
+- Phase 5: shared visual primitives, interaction states, accessibility, and restrained motion are consistent across the five main tabs.
+
+Phase 5 changes:
+- Added one shared segmented control for Schedule views, Insights layers, and language selection.
+- Standardized screen/context/section headers, grouped surfaces, compact rows, buttons, and inputs on existing Quest tokens.
+- Added coherent pressed, selected, focused, disabled, loading, success, error, and empty-state presentation where those states exist.
+- Smart Capture now uses the shared input/button states without changing its parsing or save handlers.
+- Added keyboard-visible focus rings, explicit dialog/tab/button/checkbox semantics, selected/disabled accessibility state, and 44px high-frequency touch targets.
+- Bottom sheets and existing Today confirmation feedback respect reduced-motion preferences.
+- No schema, API, storage, Decision AI, PatternMemory, schedule calculation, or entity-semantic changes were made.
+
+Commits:
+- `0af6ee2` - shared visual-system consistency.
+- `b587899` - shared interaction states.
+- `ae9e52d` - accessibility and input hardening.
+- `ff95137` - restrained motion and reduced-motion support.
+
+Validation:
+- `npx tsc --noEmit` passed after every implementation commit.
+- `npm run build` passed.
+- Local release bundle: `index-524a4e3fc0c4c9cdfa17f2e75f3abbdd.js`.
+- Local web traversal passed for Today, Goals, Goal Detail, Schedule, Insights, and Settings.
+- Local browser console had no runtime errors; the only warning was the existing Expo Notifications web-support warning.
+
+Natural-state tests still pending:
+- Schedule proposal Apply / Undo remains pending until a natural safe proposal appears.
+- Rescue remains pending until the natural unfinished-rescue state appears.
+- No permanent production data will be manufactured solely to force either state.
+
+Genuine product gaps, not regressions:
+- Schedule edit/delete remains an open product decision; Phase 5 does not add it.
+- Apple Health and other external data sources remain unconnected and are described honestly.
+- Advanced analysis remains evidence-gated and may be sparse for low-data users.
