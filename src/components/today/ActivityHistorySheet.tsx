@@ -41,6 +41,11 @@ export default function ActivityHistorySheet({
 }: ActivityHistorySheetProps) {
   const [visibleCount, setVisibleCount] = useState(HISTORY_PAGE_SIZE);
   const pushedHistoryEntry = useRef(false);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (!visible) return;
@@ -52,11 +57,11 @@ export default function ActivityHistorySheet({
 
     const handlePopState = () => {
       pushedHistoryEntry.current = false;
-      onClose();
+      onCloseRef.current();
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [onClose, visible]);
+  }, [visible]);
 
   const requestClose = useCallback(() => {
     if (
@@ -67,8 +72,8 @@ export default function ActivityHistorySheet({
       window.history.back();
       return;
     }
-    onClose();
-  }, [onClose]);
+    onCloseRef.current();
+  }, []);
 
   const visibleCaptures = captures.slice(0, visibleCount);
   const hasMore = visibleCount < captures.length;

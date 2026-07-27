@@ -155,7 +155,7 @@ function CaptureCard({
       </Text>
 
       {/* Parse status row */}
-      {capture.parseStatus === 'pending' && (
+      {expanded && capture.parseStatus === 'pending' && (
         <View style={styles.statusRow}>
           <ActivityIndicator size="small" color={questTheme.colors.textMuted} />
           <Text style={[styles.statusLabel, { color: questTheme.colors.textMuted }]}>
@@ -164,7 +164,7 @@ function CaptureCard({
         </View>
       )}
 
-      {capture.parseStatus === 'done' && insightText ? (
+      {expanded && capture.parseStatus === 'done' && insightText ? (
         <View style={[styles.insightBox, { borderTopColor: questTheme.colors.divider }]}>
           <Text style={[styles.crossLinkTag, { color: insightBorderColor(insightType, questTheme) }]}>
             {t(lang, insightTagKey(insightType))}
@@ -175,7 +175,7 @@ function CaptureCard({
         </View>
       ) : null}
 
-      {capture.parseStatus === 'failed' && (
+      {expanded && capture.parseStatus === 'failed' && (
         <View style={styles.statusRow}>
           <Text style={[styles.statusLabel, { color: questTheme.colors.warning }]}>
             {t(lang, 'scParseFailed')}
