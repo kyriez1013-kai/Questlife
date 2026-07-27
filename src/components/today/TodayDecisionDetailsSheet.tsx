@@ -78,6 +78,7 @@ export default function TodayDecisionDetailsSheet({
               label={t(language, refreshing ? 'generatingDailyBrief' : 'refreshBrief')}
               onPress={onRefresh}
               disabled={refreshing}
+              loading={refreshing}
               style={{ flex: 1 }}
             />
           ) : null}

@@ -14,6 +14,7 @@ type Props<T extends string> = {
   questTheme?: QuestTheme;
   accessibilityLabel?: string;
   style?: ViewStyle | ViewStyle[];
+  disabled?: boolean;
 };
 
 export default function QuestSegmentedControl<T extends string>({
@@ -23,6 +24,7 @@ export default function QuestSegmentedControl<T extends string>({
   questTheme,
   accessibilityLabel,
   style,
+  disabled = false,
 }: Props<T>) {
   const q = questTheme ?? getQuestTheme();
   const Container = View as any;
@@ -53,7 +55,8 @@ export default function QuestSegmentedControl<T extends string>({
             key={option.value}
             className="quest-segment-option"
             accessibilityRole="tab"
-            accessibilityState={{ selected }}
+            accessibilityState={{ selected, disabled }}
+            disabled={disabled}
             onPress={() => onChange(option.value)}
             style={({ pressed }: { pressed: boolean }) => ({
               flex: 1,
@@ -71,6 +74,7 @@ export default function QuestSegmentedControl<T extends string>({
                 : pressed
                   ? q.colors.cardSurfaceHover
                   : 'transparent',
+              opacity: disabled ? 0.72 : 1,
             })}
           >
             <Text

@@ -15,7 +15,7 @@
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet,
+  View, Text, TouchableOpacity, ActivityIndicator, StyleSheet,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useStore } from '../store';
@@ -24,6 +24,8 @@ import { getLanguage, t } from '../i18n';
 import { RawCapture } from '../types';
 import QuestCard from '../components/ui/QuestCard';
 import QuestIcon from '../components/ui/QuestIcon';
+import QuestButton from '../components/ui/QuestButton';
+import QuestInput from '../components/ui/QuestInput';
 import HomeCapturePending from './HomeCapturePending';
 import { confirmAction } from '../utils/confirm';
 import { buildFallbackEntriesFromRawText } from '../utils/captureCompletion';
@@ -448,15 +450,12 @@ export default function HomeSmartCapture() {
         }}
       >
         <View style={styles.inputRow}>
-          <TextInput
+          <QuestInput
+            questTheme={questTheme}
             style={[
               styles.input,
               {
-                color: questTheme.colors.text,
-                fontSize: questTheme.typography.bodySize,
-                borderColor: questTheme.colors.inputBorder,
-                borderRadius: questTheme.radius.md,
-                backgroundColor: questTheme.colors.inputBg,
+                flex: 1,
               },
             ]}
             value={inputText}
@@ -467,33 +466,19 @@ export default function HomeSmartCapture() {
             returnKeyType="send"
             multiline={false}
             editable={!isPosting}
+            accessibilityLabel={t(lang, 'scPlaceholder')}
             accessibilityHint={greeting || undefined}
           />
-          <TouchableOpacity
+          <QuestButton
+            questTheme={questTheme}
+            variant="primary"
+            icon="zap"
             onPress={handleSend}
             disabled={isPosting || !inputText.trim()}
-            accessibilityRole="button"
+            loading={isPosting}
             accessibilityLabel={t(lang, 'scSend')}
-            style={[
-              styles.sendBtn,
-              {
-                backgroundColor: inputText.trim()
-                  ? questTheme.colors.primary
-                  : questTheme.colors.disabledBg,
-                borderRadius: questTheme.radius.md,
-                borderColor: inputText.trim()
-                  ? questTheme.colors.primary
-                  : questTheme.colors.inputBorder,
-              },
-            ]}
-            activeOpacity={0.8}
-          >
-            {isPosting ? (
-              <ActivityIndicator size="small" color={questTheme.colors.primaryText} />
-            ) : (
-              <QuestIcon name="zap" size={18} color={inputText.trim() ? questTheme.colors.primaryText : questTheme.colors.disabledText} />
-            )}
-          </TouchableOpacity>
+            style={styles.sendBtn}
+          />
         </View>
       </QuestCard>
 

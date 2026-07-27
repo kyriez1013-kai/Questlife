@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, TouchableOpacity, View, ViewStyle } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View, ViewStyle } from 'react-native';
 import { getQuestTheme, questLayout, QuestTheme } from '../../design/tokens';
 import QuestIcon, { QuestIconName } from './QuestIcon';
 
@@ -12,6 +12,9 @@ type Props = {
   onPress?: () => void;
   style?: ViewStyle | ViewStyle[];
   disabled?: boolean;
+  loading?: boolean;
+  status?: 'idle' | 'success' | 'error';
+  accessibilityLabel?: string;
 };
 
 export default function QuestButton({
@@ -23,37 +26,50 @@ export default function QuestButton({
   onPress,
   style,
   disabled,
+  loading = false,
+  status = 'idle',
+  accessibilityLabel,
 }: Props) {
   const q = questTheme ?? getQuestTheme();
-  const filled = ['primary', 'danger', 'success', 'emergency'].includes(variant);
+  const resolvedVariant =
+    status === 'success' ? 'success'
+      : status === 'error' ? 'danger'
+        : variant;
+  const isDisabled = disabled || loading;
   const bg =
-    disabled ? q.colors.disabledBg
-      : variant === 'danger' ? q.colors.danger
-      : variant === 'success' ? q.colors.success
-        : variant === 'emergency' ? q.colors.warning
-          : variant === 'secondary' ? q.colors.chipSelectedBg
-            : variant === 'ghost' ? q.colors.chipBg
+    isDisabled ? q.colors.disabledBg
+      : resolvedVariant === 'danger' ? q.colors.danger
+      : resolvedVariant === 'success' ? q.colors.success
+        : resolvedVariant === 'emergency' ? q.colors.warning
+          : resolvedVariant === 'secondary' ? q.colors.chipSelectedBg
+            : resolvedVariant === 'ghost' ? q.colors.chipBg
               : q.colors.primary;
-  const fg = disabled ? q.colors.disabledText : filled ? q.colors.primaryText : q.colors.primary;
+  const resolvedFilled = ['primary', 'danger', 'success', 'emergency'].includes(resolvedVariant);
+  const fg = isDisabled ? q.colors.disabledText : resolvedFilled ? q.colors.primaryText : q.colors.primary;
   const borderColor =
-    disabled ? q.colors.inputBorder
-      : variant === 'ghost' || variant === 'secondary' ? q.colors.chipBorder
+    isDisabled ? q.colors.inputBorder
+      : resolvedVariant === 'ghost' || resolvedVariant === 'secondary' ? q.colors.chipBorder
         : q.colors.borderStrong;
+  const Button = Pressable as any;
   return (
-    <TouchableOpacity
-      activeOpacity={0.78}
-      disabled={disabled}
+    <Button
+      className="quest-button quest-interactive"
+      data-state={isDisabled ? 'disabled' : loading ? 'loading' : status}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
+      disabled={isDisabled}
       onPress={onPress}
-      style={[
+      style={({ pressed }: { pressed: boolean }) => [
         {
           minHeight: questLayout.controlMinHeight,
           borderRadius: q.radius.pill,
           paddingHorizontal: q.spacing.md,
           paddingVertical: q.spacing.sm,
-          borderWidth: variant === 'ghost' || variant === 'secondary' || disabled ? 1 : 0,
+          borderWidth: resolvedVariant === 'ghost' || resolvedVariant === 'secondary' || isDisabled ? 1 : 0,
           borderColor,
           backgroundColor: bg,
-          opacity: 1,
+          opacity: pressed && !isDisabled ? 0.86 : 1,
           alignItems: 'center',
           justifyContent: 'center',
         },
@@ -61,7 +77,7 @@ export default function QuestButton({
       ]}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: q.spacing.tight, maxWidth: '100%' }}>
-        {icon ? <QuestIcon name={icon} size={16} color={fg} strokeWidth={2.4} /> : null}
+        {loading ? <ActivityIndicator size="small" color={fg} /> : icon ? <QuestIcon name={icon} size={16} color={fg} strokeWidth={2.4} /> : null}
         {children ?? (
           <Text
             numberOfLines={2}
@@ -77,6 +93,6 @@ export default function QuestButton({
           </Text>
         )}
       </View>
-    </TouchableOpacity>
+    </Button>
   );
 }
