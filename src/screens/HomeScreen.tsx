@@ -56,7 +56,7 @@ import { buildDecisionPayload } from '../utils/decisionPayload';
 import { DecisionBriefResult } from '../utils/decisionTypes';
 import { DecisionQualityEvaluation, evaluateDecisionBriefQuality } from '../utils/decisionQuality';
 import { DecisionPayloadAudit, auditDecisionPayload } from '../utils/decisionRealityAudit';
-import { createDecisionResultRecord } from '../utils/decisionMemory';
+import { createDecisionResultRecord, decisionResultToBrief } from '../utils/decisionMemory';
 import { createDecisionService, getLastDecisionServiceMeta, isDecisionAIEnabled, isDecisionAIShadowEnabled, isDecisionDailyBriefEnabled, isDecisionDebugEnabled, LegacyDecisionService, AiDecisionService, runDecisionShadowBrief, DecisionServiceMeta } from '../services/decisionService';
 import { normalizeScheduleProposals } from '../utils/scheduleProposal';
 import DashboardCardShell from '../components/dashboard/DashboardCardShell';
@@ -430,7 +430,11 @@ export default function HomeScreen() {
   const [instantDecisionDebugError, setInstantDecisionDebugError] = useState('');
   const [instantDecisionFeedback, setInstantDecisionFeedback] = useState<'useful' | 'not_useful' | null>(null);
   const [instantDecisionResultId, setInstantDecisionResultId] = useState('');
+  const [instantDecisionSource, setInstantDecisionSource] = useState<'ai' | 'legacy_fallback' | 'ai_failed_fallback'>('legacy_fallback');
+  const [instantReadExpanded, setInstantReadExpanded] = useState(true);
+  const [instantFeedbackStatus, setInstantFeedbackStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const instantDecisionRequestRef = useRef(0);
+  const instantFeedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [dailyDecisionBrief, setDailyDecisionBrief] = useState<DecisionBriefResult | null>(null);
   const [dailyDecisionLoading, setDailyDecisionLoading] = useState(false);
@@ -599,6 +603,33 @@ export default function HomeScreen() {
   }).length;
   const todayStateCheckIns = (data.stateCheckIns || []).filter((row) => row.date === todayStr);
   const latestStateCheckIn = todayStateCheckIns.slice().sort((a, b) => b.timestamp.localeCompare(a.timestamp))[0];
+  const latestPersistedInstantDecision = useMemo(() => (
+    (data.decisionResults || [])
+      .filter((result) => {
+        if (result.mode !== 'instant_micro' || result.trigger !== 'state_checkin') return false;
+        const createdAt = new Date(result.createdAt);
+        if (!Number.isFinite(createdAt.getTime())) return false;
+        const localDate = `${createdAt.getFullYear()}-${String(createdAt.getMonth() + 1).padStart(2, '0')}-${String(createdAt.getDate()).padStart(2, '0')}`;
+        return localDate === todayStr;
+      })
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
+  ), [data.decisionResults, todayStr]);
+
+  useEffect(() => {
+    if (!latestPersistedInstantDecision || instantDecisionStatus !== 'idle') return;
+    setInstantDecisionBrief(decisionResultToBrief(latestPersistedInstantDecision));
+    setInstantDecisionResultId(latestPersistedInstantDecision.id);
+    setInstantDecisionSource(latestPersistedInstantDecision.source);
+    setInstantDecisionFeedback(latestPersistedInstantDecision.userFeedback?.rating ?? null);
+    setInstantFeedbackStatus(latestPersistedInstantDecision.userFeedback ? 'saved' : 'idle');
+    setInstantReadExpanded(!latestPersistedInstantDecision.userFeedback);
+    setInstantDecisionStatus(latestPersistedInstantDecision.source === 'ai' ? 'ready' : 'fallback');
+  }, [instantDecisionStatus, latestPersistedInstantDecision]);
+
+  useEffect(() => () => {
+    if (instantFeedbackTimerRef.current) clearTimeout(instantFeedbackTimerRef.current);
+  }, []);
+
   const effectiveCurrentState: CurrentState | null = latestStateCheckIn
     ? {
         id: latestStateCheckIn.id,
@@ -1254,10 +1285,13 @@ export default function HomeScreen() {
   const generateInstantDecisionBrief = useCallback((checkIn: StateCheckIn) => {
     const requestId = Date.now();
     instantDecisionRequestRef.current = requestId;
+    if (instantFeedbackTimerRef.current) clearTimeout(instantFeedbackTimerRef.current);
     setInstantDecisionStatus('loading');
     setInstantDecisionDebugError('');
     setInstantDecisionFeedback(null);
+    setInstantFeedbackStatus('idle');
     setInstantDecisionResultId('');
+    setInstantReadExpanded(true);
     const dataWithCheckIn = { ...data, stateCheckIns: [...(data.stateCheckIns || []), checkIn] };
     const payload = buildDecisionPayload(dataWithCheckIn, { mode: 'instant_micro', trigger: 'state_checkin', locale: lang });
     payload.current_state = {
@@ -1292,6 +1326,7 @@ export default function HomeScreen() {
         }));
         setInstantDecisionResultId(record.id);
         setInstantDecisionBrief(result);
+        setInstantDecisionSource(source);
         setInstantDecisionStatus(isDecisionAIEnabled() ? 'ready' : 'fallback');
       })
       .catch((error) => {
@@ -1315,11 +1350,13 @@ export default function HomeScreen() {
             }));
             setInstantDecisionResultId(record.id);
             setInstantDecisionBrief(fallback);
+            setInstantDecisionSource(isDecisionAIEnabled() ? 'ai_failed_fallback' : 'legacy_fallback');
             setInstantDecisionStatus('fallback');
           })
           .catch((fallbackError) => {
             if (instantDecisionRequestRef.current !== requestId) return;
             if (isDecisionDebugEnabled()) console.warn('[decision instant fallback failed]', fallbackError);
+            setInstantDecisionBrief(null);
             setInstantDecisionStatus('error');
           });
       });
@@ -1420,8 +1457,14 @@ export default function HomeScreen() {
   }, [addDecisionResult, data, lang]);
 
   const markInstantDecisionFeedback = useCallback((feedback: 'useful' | 'not_useful') => {
+    if (!instantDecisionResultId) {
+      setInstantFeedbackStatus('error');
+      return;
+    }
+    if (instantFeedbackTimerRef.current) clearTimeout(instantFeedbackTimerRef.current);
     setInstantDecisionFeedback(feedback);
-    if (instantDecisionResultId) updateDecisionResultFeedback(instantDecisionResultId, feedback);
+    setInstantFeedbackStatus('saving');
+    updateDecisionResultFeedback(instantDecisionResultId, feedback);
     try {
       if (typeof window !== 'undefined') {
         window.localStorage?.setItem('questlife_decision_ai_last_feedback', JSON.stringify({
@@ -1432,8 +1475,12 @@ export default function HomeScreen() {
         }));
       }
     } catch {
-      // Feedback is best-effort and must never affect state check-in.
+      // DecisionResult remains the feedback source of truth; this key is compatibility-only.
     }
+    instantFeedbackTimerRef.current = setTimeout(() => {
+      setInstantFeedbackStatus('saved');
+      setInstantReadExpanded(false);
+    }, 450);
   }, [instantDecisionResultId, updateDecisionResultFeedback]);
 
   const markDailyDecisionFeedback = useCallback((feedback: 'useful' | 'not_useful') => {
@@ -2246,11 +2293,55 @@ export default function HomeScreen() {
           />
           {instantDecisionStatus !== 'idle' ? (
             <View style={[styles.instantReadCard, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}>
-              <View style={styles.instantReadHeader}>
-                <Text style={[styles.instantReadTitle, { color: questTheme.colors.text }]}>{t(lang, 'instantRead')}</Text>
-                <Text style={[styles.instantReadMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'noMedicalAdviceShort')}</Text>
-              </View>
-              {instantDecisionStatus === 'loading' ? (
+              <TouchableOpacity
+                style={styles.instantReadHeader}
+                onPress={() => setInstantReadExpanded((value) => !value)}
+                disabled={instantDecisionStatus === 'loading'}
+                accessibilityRole="button"
+                accessibilityLabel={t(lang, instantReadExpanded ? 'collapseInstantRead' : 'expandInstantRead')}
+                accessibilityState={{ expanded: instantReadExpanded, disabled: instantDecisionStatus === 'loading' }}
+              >
+                <View style={[styles.instantReadHeading, { gap: questTheme.spacing.tight }]}>
+                  <Text style={[styles.instantReadTitle, { color: questTheme.colors.text }]}>{t(lang, 'instantRead')}</Text>
+                  {instantDecisionStatus !== 'loading' && instantDecisionStatus !== 'error' ? (
+                    <QuestPill
+                      questTheme={questTheme}
+                      active
+                      variant={instantDecisionSource === 'ai' ? 'success' : 'warning'}
+                      label={t(
+                        lang,
+                        instantDecisionSource === 'ai'
+                          ? 'decisionSourceAI'
+                          : instantDecisionSource === 'ai_failed_fallback'
+                            ? 'decisionSourceAIFailedFallback'
+                            : 'decisionSourceFallback',
+                      )}
+                      style={styles.instantReadSourcePill}
+                    />
+                  ) : null}
+                </View>
+                <Text style={[styles.instantReadToggle, {
+                  color: questTheme.colors.primary,
+                  fontSize: questTheme.typography.metaSize,
+                  lineHeight: questTheme.typography.metaLineHeight,
+                  fontWeight: questTheme.typography.weightBold,
+                }]}>
+                  {t(lang, instantReadExpanded ? 'collapseInstantRead' : 'expandInstantRead')}
+                </Text>
+              </TouchableOpacity>
+
+              {!instantReadExpanded && instantDecisionBrief ? (
+                <View style={[styles.instantReadCollapsed, { gap: questTheme.spacing.xxs }]}>
+                  <Text numberOfLines={1} style={[styles.instantReadBody, { color: questTheme.colors.text }]}>
+                    {instantDecisionBrief.headline_insight || t(lang, 'aiUnavailableFallback')}
+                  </Text>
+                  {instantFeedbackStatus === 'saved' && instantDecisionFeedback ? (
+                    <Text style={[styles.instantReadMeta, { color: questTheme.colors.success }]}>
+                      {t(lang, 'feedbackSaved')} · {t(lang, instantDecisionFeedback === 'useful' ? 'useful' : 'notUseful')}
+                    </Text>
+                  ) : null}
+                </View>
+              ) : instantDecisionStatus === 'loading' ? (
                 <Text style={[styles.instantReadBody, { color: questTheme.colors.textMuted }]}>{t(lang, 'generatingInstantRead')}</Text>
               ) : instantDecisionStatus === 'error' || !instantDecisionBrief ? (
                 <>
@@ -2266,31 +2357,30 @@ export default function HomeScreen() {
                   <Text style={[styles.instantReadStep, { color: questTheme.colors.text }]}>
                     {t(lang, 'firstStep')}: {instantDecisionBrief.prescription.do_first.step || t(lang, 'tryLowFrictionTask')}
                   </Text>
-                  {isDecisionDebugEnabled() ? (
-                    <Text style={[styles.instantReadMeta, { color: questTheme.colors.textSubtle }]}>
-                      {t(lang, 'decisionSource')}: {t(lang, instantDecisionStatus === 'ready' ? 'decisionSourceAI' : instantDecisionDebugError ? 'decisionSourceAIFailedFallback' : 'decisionSourceFallback')}
-                    </Text>
-                  ) : null}
                   <View style={styles.instantFeedbackRow}>
                     <Text style={[styles.instantReadMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'instantReadFeedbackPrompt')}</Text>
                     {(['useful', 'not_useful'] as const).map((feedback) => {
                       const selected = instantDecisionFeedback === feedback;
                       return (
-                        <TouchableOpacity
+                        <QuestPill
                           key={feedback}
-                          style={[
-                            styles.instantFeedbackBtn,
-                            { borderColor: selected ? accent : questTheme.colors.border, backgroundColor: selected ? questTheme.colors.primarySoft : questTheme.colors.surface },
-                          ]}
+                          questTheme={questTheme}
+                          active={selected}
+                          variant={feedback === 'useful' ? 'success' : 'danger'}
+                          disabled={instantFeedbackStatus === 'saving'}
+                          label={t(lang, feedback === 'useful' ? 'useful' : 'notUseful')}
                           onPress={() => markInstantDecisionFeedback(feedback)}
-                        >
-                          <Text style={[styles.instantFeedbackText, { color: selected ? accent : questTheme.colors.textMuted }]}>
-                            {t(lang, feedback === 'useful' ? 'useful' : 'notUseful')}
-                          </Text>
-                        </TouchableOpacity>
+                        />
                       );
                     })}
                   </View>
+                  {instantFeedbackStatus === 'saving' ? (
+                    <Text style={[styles.instantReadMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'feedbackSaving')}</Text>
+                  ) : instantFeedbackStatus === 'saved' ? (
+                    <Text style={[styles.instantReadMeta, { color: questTheme.colors.success }]}>{t(lang, 'feedbackSaved')}</Text>
+                  ) : instantFeedbackStatus === 'error' ? (
+                    <Text style={[styles.instantReadMeta, { color: questTheme.colors.danger }]}>{t(lang, 'feedbackSaveError')}</Text>
+                  ) : null}
                   {instantDecisionDebugError && isDecisionDebugEnabled() ? (
                     <Text style={[styles.instantReadMeta, { color: questTheme.colors.danger }]}>{instantDecisionDebugError}</Text>
                   ) : null}
@@ -3419,13 +3509,15 @@ const styles = StyleSheet.create({
   stateSectionStack: { gap: 8 },
   instantReadCard: { marginTop: 0, borderWidth: 0, borderRadius: theme.radius.md, padding: 10 },
   instantReadHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 4 },
+  instantReadHeading: { flex: 1, minWidth: 0, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' },
+  instantReadSourcePill: { alignSelf: 'flex-start' },
+  instantReadToggle: { flexShrink: 0 },
+  instantReadCollapsed: { minWidth: 0 },
   instantReadTitle: { fontSize: 12, fontWeight: '900', lineHeight: 17 },
   instantReadBody: { fontSize: 12, lineHeight: 18, fontWeight: '800' },
   instantReadStep: { marginTop: 6, fontSize: 12, lineHeight: 18, fontWeight: '900' },
   instantReadMeta: { marginTop: 5, fontSize: 11, lineHeight: 16, fontWeight: '700' },
   instantFeedbackRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 8 },
-  instantFeedbackBtn: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 5 },
-  instantFeedbackText: { fontSize: 11, fontWeight: '900' },
   strategyCard: {
     marginTop: 10,
     backgroundColor: theme.card,

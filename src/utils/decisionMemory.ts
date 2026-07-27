@@ -105,6 +105,42 @@ export function compactDecisionResults(results: DecisionResult[], limit = MAX_DE
     .slice(0, limit);
 }
 
+export function decisionResultToBrief(result: DecisionResult): DecisionBriefResult {
+  return {
+    schema_version: '1.0',
+    generated_at: result.createdAt,
+    readiness: {
+      score: result.readinessScore ?? null,
+      band: result.readinessBand ?? 'unknown',
+      vs_baseline: 'unknown',
+      drivers: [],
+    },
+    headline_insight: result.headlineInsight,
+    perception_gap: {
+      detected: result.perceptionGapDetected === true,
+      subjective: '',
+      objective: '',
+      interpretation: '',
+      test_action: '',
+    },
+    deep_analysis: '',
+    prescription: {
+      do_first: {
+        step: result.firstStep?.step ?? '',
+        why: result.firstStep?.why ?? '',
+        duration_min: result.firstStep?.durationMin ?? null,
+      },
+      schedule_adjustments: [],
+      do_not: result.doNot ?? [],
+    },
+    patterns_surfaced: [],
+    confidence: result.confidence ?? 0,
+    evidence_basis: result.evidenceBasis ?? 'population_prior',
+    data_gaps: [],
+    tone: 'tentative',
+  };
+}
+
 function withinDays(createdAt: string, now: Date, days: number) {
   const ts = new Date(createdAt).getTime();
   if (!Number.isFinite(ts)) return false;
