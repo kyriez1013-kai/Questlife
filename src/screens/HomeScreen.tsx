@@ -23,7 +23,7 @@ import { getSurfaceStyle } from '../design/surfaces';
 import { today } from '../storage';
 import {
   skillMinutesOnDate, skillStreak, skillTotalMinutes, skillMilestones,
-  Skill, Category, Action, Quality, QUALITY_OPTIONS, HOUR_MILESTONES, TaskType, ExecutionLog, StateCheckIn, ScheduleBlock,
+  Skill, Category, Action, Quality, QUALITY_OPTIONS, HOUR_MILESTONES, TaskType, ExecutionLog, StateCheckIn,
   DomainRecordingField,
 } from '../types';
 import BottomSheetForm from '../components/BottomSheetForm';
@@ -57,7 +57,7 @@ import { DecisionQualityEvaluation, evaluateDecisionBriefQuality } from '../util
 import { DecisionPayloadAudit, auditDecisionPayload } from '../utils/decisionRealityAudit';
 import { createDecisionResultRecord } from '../utils/decisionMemory';
 import { createDecisionService, getLastDecisionServiceMeta, isDecisionAIEnabled, isDecisionAIShadowEnabled, isDecisionDailyBriefEnabled, isDecisionDebugEnabled, LegacyDecisionService, AiDecisionService, runDecisionShadowBrief, DecisionServiceMeta } from '../services/decisionService';
-import { buildScheduleProposalPatch, normalizeScheduleProposals, previewScheduleProposal, scheduleProposalActionKey, ScheduleProposal, ScheduleProposalStatus } from '../utils/scheduleProposal';
+import { normalizeScheduleProposals } from '../utils/scheduleProposal';
 import DashboardCardShell from '../components/dashboard/DashboardCardShell';
 import TodayDecisionSurface from '../components/today/TodayDecisionSurface';
 import TodayDecisionDetailsSheet from '../components/today/TodayDecisionDetailsSheet';
@@ -88,33 +88,6 @@ const FIXED_TODAY_CARD_ORDER: Record<keyof typeof FIXED_TODAY_CARD_SIZES, number
   today_records: 70,
   detailed_data: 90,
 };
-
-function scheduleMinutesOf(value: string) {
-  const [hour, minute] = value.split(':').map(Number);
-  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return 9 * 60;
-  return hour * 60 + minute;
-}
-
-function scheduleTimeFromMinutes(value: number) {
-  const total = Math.max(0, Math.min(23 * 60 + 59, value));
-  const hour = Math.floor(total / 60);
-  const minute = total % 60;
-  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-}
-
-function nextFixtureMoveTime(block: ScheduleBlock) {
-  const start = scheduleMinutesOf(block.startTime);
-  const shifted = start <= 23 * 60 ? start + 30 : Math.max(0, start - 30);
-  return scheduleTimeFromMinutes(shifted);
-}
-
-function nextFixtureShortenTime(block: ScheduleBlock) {
-  const start = scheduleMinutesOf(block.startTime);
-  const end = scheduleMinutesOf(block.endTime);
-  const duration = Math.max(1, end - start);
-  const shortened = Math.max(15, Math.floor(duration / 2));
-  return scheduleTimeFromMinutes(start + shortened);
-}
 
 function todayCommandActionLabelKey(action: TodayCommandAction) {
   if (action === 'rescue') return 'rescueTwoMinutes';
@@ -441,7 +414,6 @@ export default function HomeScreen() {
     setSettings,
     addDecisionResult,
     updateDecisionResultFeedback,
-    updateScheduleBlock,
   } = useStore();
   const navigation = useNavigation<any>();
   const questTheme = getQuestTheme(data.settings.selectedThemeId);
@@ -470,9 +442,6 @@ export default function HomeScreen() {
   const [dailyDecisionResultId, setDailyDecisionResultId] = useState('');
   const [dailyDecisionFeedback, setDailyDecisionFeedback] = useState<'useful' | 'not_useful' | null>(null);
   const [todayDecisionDetailsOpen, setTodayDecisionDetailsOpen] = useState(false);
-  const [scheduleProposalStatuses, setScheduleProposalStatuses] = useState<Record<string, ScheduleProposalStatus>>({});
-  const [scheduleProposalUndo, setScheduleProposalUndo] = useState<{ proposalId: string; block: ScheduleBlock } | null>(null);
-  const [debugScheduleProposalFixture, setDebugScheduleProposalFixture] = useState<ScheduleProposal | null>(null);
   const dailyDecisionRequestRef = useRef(0);
   const dailyDecisionInFlightRef = useRef(false);
   const dailyDecisionAutoKeyRef = useRef('');
@@ -1352,9 +1321,6 @@ export default function HomeScreen() {
     setDailyDecisionError('');
     setDailyDecisionFeedback(null);
     setDailyDecisionResultId('');
-    setScheduleProposalStatuses({});
-    setScheduleProposalUndo(null);
-    setDebugScheduleProposalFixture(null);
 
     const payload = buildDecisionPayload(data, { mode: 'daily_brief', trigger: 'manual', locale: lang });
     const payloadAudit = auditDecisionPayload(payload);
@@ -1620,59 +1586,12 @@ export default function HomeScreen() {
 
   const commandTargetSkill = todayCommand.linkedSkillId ? data.skills.find((item) => item.id === todayCommand.linkedSkillId) : undefined;
 
-  const debugScheduleProposalTargetBlock = useMemo(() => (
-    todayScheduleBlocks.find((block) => block.status !== 'completed')
-      ?? data.scheduleBlocks.find((block) => block.status !== 'completed')
-      ?? data.scheduleBlocks[0]
-  ), [data.scheduleBlocks, todayScheduleBlocks]);
-
-  const makeDebugScheduleProposal = useCallback((action: 'move' | 'shorten' | 'protect') => {
-    const block = debugScheduleProposalTargetBlock;
-    if (!block) return;
-    const proposalId = `schedule-proposal-fixture-${action}-${block.id}`;
-    const proposal: ScheduleProposal = {
-      id: proposalId,
-      sourceDecisionResultId: 'debug_fixture',
-      createdAt: new Date().toISOString(),
-      blockId: block.id,
-      action,
-      from: `${block.startTime}-${block.endTime}`,
-      to: action === 'move'
-        ? nextFixtureMoveTime(block)
-        : action === 'shorten'
-          ? nextFixtureShortenTime(block)
-          : undefined,
-      reason: t(lang, action === 'move'
-        ? 'debugFixtureMoveReason'
-        : action === 'shorten'
-          ? 'debugFixtureShortenReason'
-          : 'debugFixtureProtectReason'),
-      confidence: 1,
-      status: 'pending',
-    };
-    setDebugScheduleProposalFixture(proposal);
-    setScheduleProposalStatuses((current) => ({ ...current, [proposalId]: 'pending' }));
-    setScheduleProposalUndo(null);
-  }, [debugScheduleProposalTargetBlock, lang]);
-
-  const clearDebugScheduleProposalFixture = useCallback(() => {
-    setDebugScheduleProposalFixture(null);
-    setScheduleProposalUndo(null);
-  }, []);
-
   const dailyDecisionScheduleProposals = useMemo(() => {
-    const aiProposals = normalizeScheduleProposals(
+    return normalizeScheduleProposals(
       dailyDecisionBrief?.prescription?.schedule_adjustments || [],
       dailyDecisionResultId || dailyDecisionGeneratedAt || 'daily',
     );
-    const proposals = debugScheduleProposalFixture
-      ? [debugScheduleProposalFixture, ...aiProposals]
-      : aiProposals;
-    return proposals.map((proposal) => ({
-      ...proposal,
-      status: scheduleProposalStatuses[proposal.id] || proposal.status,
-    }));
-  }, [dailyDecisionBrief, dailyDecisionGeneratedAt, dailyDecisionResultId, debugScheduleProposalFixture, scheduleProposalStatuses]);
+  }, [dailyDecisionBrief, dailyDecisionGeneratedAt, dailyDecisionResultId]);
 
   const todayDecisionPresentation = useMemo(() => buildTodayDecisionPresentation({
     todayCommand,
@@ -1698,50 +1617,20 @@ export default function HomeScreen() {
     todayCommand,
   ]);
 
-  const canApplyDailyScheduleProposal = useCallback((proposalId: string) => {
-    const proposal = dailyDecisionScheduleProposals.find((item) => item.id === proposalId);
-    if (!proposal) return false;
-    if (proposal.status !== 'pending') return false;
-    const isDebugFixture = proposal.sourceDecisionResultId === 'debug_fixture';
-    if (!isDebugFixture && dailyDecisionQuality?.grade === 'bad') return false;
-    if (!isDebugFixture && dailyDecisionQuality?.grade === 'weak' && !isDecisionDebugEnabled()) return false;
-    const block = proposal.blockId ? data.scheduleBlocks.find((item) => item.id === proposal.blockId) : undefined;
-    const result = buildScheduleProposalPatch(proposal, block);
-    if (!result.ok) return false;
-    if (dailyDecisionBrief?.evidence_basis === 'population_prior' && (!proposal.blockId || proposal.reason.length < 8)) return false;
-    return true;
-  }, [dailyDecisionBrief, dailyDecisionQuality, dailyDecisionScheduleProposals, data.scheduleBlocks]);
-
-  const applyDailyScheduleProposal = useCallback((proposalId: string) => {
-    const proposal = dailyDecisionScheduleProposals.find((item) => item.id === proposalId);
-    if (!proposal || !canApplyDailyScheduleProposal(proposalId)) {
-      setScheduleProposalStatuses((current) => ({ ...current, [proposalId]: 'failed' }));
-      return;
-    }
-    const block = proposal.blockId ? data.scheduleBlocks.find((item) => item.id === proposal.blockId) : undefined;
-    const result = buildScheduleProposalPatch(proposal, block);
-    if (!result.ok || !block || !result.patch) {
-      setScheduleProposalStatuses((current) => ({ ...current, [proposalId]: 'failed' }));
-      return;
-    }
-    setScheduleProposalUndo({ proposalId, block });
-    updateScheduleBlock(block.id, result.patch);
-    setScheduleProposalStatuses((current) => ({ ...current, [proposalId]: 'applied' }));
-  }, [canApplyDailyScheduleProposal, dailyDecisionScheduleProposals, data.scheduleBlocks, updateScheduleBlock]);
-
-  const dismissDailyScheduleProposal = useCallback((proposalId: string) => {
-    setScheduleProposalStatuses((current) => ({ ...current, [proposalId]: 'dismissed' }));
-  }, []);
-
-  const undoDailyScheduleProposal = useCallback(() => {
-    if (!scheduleProposalUndo) return;
-    updateScheduleBlock(scheduleProposalUndo.block.id, {
-      ...scheduleProposalUndo.block,
-      notes: scheduleProposalUndo.block.notes,
+  const openScheduleProposalReview = useCallback(() => {
+    navigation.navigate('Schedule', {
+      scheduleProposalReview: {
+        proposals: dailyDecisionScheduleProposals,
+        qualityGrade: dailyDecisionQuality?.grade,
+        evidenceBasis: dailyDecisionBrief?.evidence_basis,
+      },
     });
-    setScheduleProposalStatuses((current) => ({ ...current, [scheduleProposalUndo.proposalId]: 'pending' }));
-    setScheduleProposalUndo(null);
-  }, [scheduleProposalUndo, updateScheduleBlock]);
+  }, [
+    dailyDecisionBrief?.evidence_basis,
+    dailyDecisionQuality?.grade,
+    dailyDecisionScheduleProposals,
+    navigation,
+  ]);
 
   const energyBudgetRows = useMemo(() => {
     // v1 uses 240 minutes as default daily execution budget. Future versions should make it configurable.
@@ -2080,78 +1969,23 @@ export default function HomeScreen() {
             onOpenDetails={() => setTodayDecisionDetailsOpen(true)}
           />
           {dailyDecisionScheduleProposals.length > 0 ? (
-            <QuestCard questTheme={questTheme} variant="flat" style={styles.scheduleProposalReview}>
-              <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>
-                {t(lang, 'reviewScheduleProposal')} · {t(lang, 'confirmBeforeApply')}
-              </Text>
-              {dailyDecisionScheduleProposals.slice(0, 2).map((proposal) => {
-                const block = proposal.blockId ? data.scheduleBlocks.find((item) => item.id === proposal.blockId) : undefined;
-                const preview = previewScheduleProposal(proposal, block);
-                const applyResult = buildScheduleProposalPatch(proposal, block);
-                const canApply = canApplyDailyScheduleProposal(proposal.id);
-                const statusKey = proposal.status === 'applied'
-                  ? 'proposalApplied'
-                  : proposal.status === 'dismissed'
-                    ? 'proposalDismissed'
-                    : proposal.status === 'failed'
-                      ? 'proposalApplyFailed'
-                      : 'scheduleProposalNotApplied';
-                const qualityBlocked = proposal.status === 'pending' && applyResult.ok && !canApply;
-                const safetyKey = applyResult.ok
-                  ? (qualityBlocked ? 'qualityTooWeakForApply' : null)
-                  : (applyResult.messageKey || 'suggestionOnly');
-                return (
-                  <View key={proposal.id} style={[styles.scheduleProposalCard, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}>
-                    <View style={styles.scheduleProposalHeader}>
-                      <Text style={[styles.dailyBriefActionText, { color: questTheme.colors.text }]}>
-                        {t(lang, 'scheduleProposal')} · {t(lang, scheduleProposalActionKey(proposal.action))}
-                      </Text>
-                      <QuestPill
-                        questTheme={questTheme}
-                        variant={proposal.status === 'applied' ? 'success' : proposal.status === 'failed' ? 'danger' : proposal.status === 'dismissed' ? 'muted' : 'default'}
-                        label={t(lang, statusKey)}
-                      />
-                    </View>
-                    <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>
-                      {t(lang, 'scheduleChangePreview')}: {preview.from || '-'} {preview.to ? `→ ${preview.to}` : ''}
-                    </Text>
-                    <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>
-                      {t(lang, 'reason')}: {proposal.reason}
-                    </Text>
-                    {safetyKey ? (
-                      <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.warning }]}>{t(lang, safetyKey)}</Text>
-                    ) : null}
-                    <View style={styles.scheduleProposalActions}>
-                      <QuestButton
-                        questTheme={questTheme}
-                        variant="secondary"
-                        label={t(lang, 'applyProposal')}
-                        disabled={!canApply}
-                        onPress={() => applyDailyScheduleProposal(proposal.id)}
-                      />
-                      <QuestButton
-                        questTheme={questTheme}
-                        variant="ghost"
-                        label={t(lang, 'dismissProposal')}
-                        disabled={proposal.status !== 'pending'}
-                        onPress={() => dismissDailyScheduleProposal(proposal.id)}
-                      />
-                    </View>
-                  </View>
-                );
-              })}
-              {scheduleProposalUndo ? (
-                <View style={styles.scheduleProposalActions}>
-                  <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.success }]}>{t(lang, 'proposalApplied')}</Text>
-                  <QuestButton
-                    questTheme={questTheme}
-                    variant="ghost"
-                    label={t(lang, 'undoProposal')}
-                    onPress={undoDailyScheduleProposal}
-                  />
-                </View>
-              ) : null}
-            </QuestCard>
+            <View style={[styles.scheduleProposalEntry, { borderTopColor: questTheme.colors.divider }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.dailyBriefActionText, { color: questTheme.colors.text }]}>
+                  {t(lang, 'scheduleProposalAvailable')}
+                </Text>
+                <Text style={[styles.dailyBriefMeta, { color: questTheme.colors.textMuted }]}>
+                  {t(lang, 'scheduleProposalReviewInSchedule')}
+                </Text>
+              </View>
+              <QuestButton
+                questTheme={questTheme}
+                variant="secondary"
+                icon="calendar"
+                label={t(lang, 'reviewInSchedule')}
+                onPress={openScheduleProposalReview}
+              />
+            </View>
           ) : null}
         </DashboardCardShell>
         ) : null}
@@ -3527,10 +3361,15 @@ const styles = StyleSheet.create({
   modeChipTextOn: { color: '#fff' },
   dailyBriefActionText: { fontSize: 13, fontWeight: '900', lineHeight: 18 },
   dailyBriefMeta: { fontSize: 11, fontWeight: '800', lineHeight: 16 },
-  scheduleProposalCard: { borderWidth: 1, borderRadius: 14, padding: 10, gap: 6 },
-  scheduleProposalReview: { gap: 8 },
-  scheduleProposalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  scheduleProposalActions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
+  scheduleProposalEntry: {
+    minHeight: 52,
+    borderTopWidth: 1,
+    marginTop: 8,
+    paddingTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   contextBridgeCard: { gap: 8 },
   contextBridgeHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   contextBriefTitle: { fontSize: 15, fontWeight: '900', lineHeight: 21, marginTop: 2 },

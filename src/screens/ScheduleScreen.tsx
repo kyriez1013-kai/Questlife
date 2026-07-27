@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRoute } from '@react-navigation/native';
 import { useStore } from '../store';
 import {
   flexibilityLabel, getLanguage, progressTypeLabel, qualityLabel, rigidityLabel, sourceLabel, statusLabel, t, taskTypeLabel,
@@ -22,6 +23,13 @@ import QuestEntityIcon from '../components/ui/QuestEntityIcon';
 import QuestIcon from '../components/ui/QuestIcon';
 import QuestInput from '../components/ui/QuestInput';
 import QuestPill from '../components/ui/QuestPill';
+import ScheduleProposalReview from '../components/schedule/ScheduleProposalReview';
+import {
+  buildScheduleProposalPatch,
+  ScheduleProposal,
+  ScheduleProposalStatus,
+} from '../utils/scheduleProposal';
+import { isDecisionDebugEnabled } from '../services/decisionService';
 
 const TASK_TYPES: TaskType[] = [
   'deep_study',
@@ -93,7 +101,8 @@ function dateWithWeekday(date: string, lang: 'zh' | 'en') {
 }
 
 export default function ScheduleScreen() {
-  const { data, addScheduleBlock, createExecutionLog } = useStore();
+  const { data, addScheduleBlock, createExecutionLog, updateScheduleBlock } = useStore();
+  const route = useRoute<any>();
   const lang = getLanguage(data.settings.language);
   const questTheme = getQuestTheme(data.settings.selectedThemeId);
   const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
@@ -131,6 +140,20 @@ export default function ScheduleScreen() {
   const [logBinaryCompleted, setLogBinaryCompleted] = useState(true);
   const [logQualitativeText, setLogQualitativeText] = useState('');
   const [logChecklistIds, setLogChecklistIds] = useState<string[]>([]);
+  const [proposalStatuses, setProposalStatuses] = useState<Record<string, ScheduleProposalStatus>>({});
+  const [proposalUndo, setProposalUndo] = useState<{ proposalId: string; block: ScheduleBlock } | null>(null);
+
+  const proposalReview = route.params?.scheduleProposalReview as {
+    proposals?: ScheduleProposal[];
+    qualityGrade?: 'excellent' | 'good' | 'weak' | 'bad';
+    evidenceBasis?: 'population_prior' | 'personal_pattern' | 'mixed';
+  } | undefined;
+  const scheduleProposals = useMemo(() => (
+    (proposalReview?.proposals || []).map((proposal) => ({
+      ...proposal,
+      status: proposalStatuses[proposal.id] || proposal.status,
+    }))
+  ), [proposalReview?.proposals, proposalStatuses]);
 
   const week = useMemo(() => weekDates(selectedDate), [selectedDate]);
   const generatedBlocks = useMemo(
@@ -311,6 +334,49 @@ export default function ScheduleScreen() {
     setLogBlock(null);
   };
 
+  const canApplyScheduleProposal = (proposalId: string) => {
+    const proposal = scheduleProposals.find((item) => item.id === proposalId);
+    if (!proposal || proposal.status !== 'pending') return false;
+    if (proposalReview?.qualityGrade === 'bad') return false;
+    if (proposalReview?.qualityGrade === 'weak' && !isDecisionDebugEnabled()) return false;
+    const block = proposal.blockId ? data.scheduleBlocks.find((item) => item.id === proposal.blockId) : undefined;
+    const result = buildScheduleProposalPatch(proposal, block);
+    if (!result.ok) return false;
+    if (proposalReview?.evidenceBasis === 'population_prior' && (!proposal.blockId || proposal.reason.length < 8)) return false;
+    return true;
+  };
+
+  const applyScheduleProposal = (proposalId: string) => {
+    const proposal = scheduleProposals.find((item) => item.id === proposalId);
+    if (!proposal || !canApplyScheduleProposal(proposalId)) {
+      setProposalStatuses((current) => ({ ...current, [proposalId]: 'failed' }));
+      return;
+    }
+    const block = proposal.blockId ? data.scheduleBlocks.find((item) => item.id === proposal.blockId) : undefined;
+    const result = buildScheduleProposalPatch(proposal, block);
+    if (!result.ok || !block || !result.patch) {
+      setProposalStatuses((current) => ({ ...current, [proposalId]: 'failed' }));
+      return;
+    }
+    setProposalUndo({ proposalId, block });
+    updateScheduleBlock(block.id, result.patch);
+    setProposalStatuses((current) => ({ ...current, [proposalId]: 'applied' }));
+  };
+
+  const dismissScheduleProposal = (proposalId: string) => {
+    setProposalStatuses((current) => ({ ...current, [proposalId]: 'dismissed' }));
+  };
+
+  const undoScheduleProposal = () => {
+    if (!proposalUndo) return;
+    updateScheduleBlock(proposalUndo.block.id, {
+      ...proposalUndo.block,
+      notes: proposalUndo.block.notes,
+    });
+    setProposalStatuses((current) => ({ ...current, [proposalUndo.proposalId]: 'pending' }));
+    setProposalUndo(null);
+  };
+
   return (
     <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
       <ScrollView
@@ -372,6 +438,28 @@ export default function ScheduleScreen() {
                 leading={<QuestIcon name="calendar" size={18} color={nowInfo.next ? questTheme.colors.primary : questTheme.colors.textMuted} />}
               />
             </QuestGroupedSurface>
+
+            {scheduleProposals.length > 0 ? (
+              <>
+                <QuestSectionHeader
+                  questTheme={questTheme}
+                  title={t(lang, 'reviewScheduleProposal')}
+                  subtitle={t(lang, 'confirmBeforeApply')}
+                  style={styles.scheduleSectionHeader}
+                />
+                <ScheduleProposalReview
+                  questTheme={questTheme}
+                  language={lang}
+                  proposals={scheduleProposals}
+                  scheduleBlocks={data.scheduleBlocks}
+                  canApply={canApplyScheduleProposal}
+                  onApply={applyScheduleProposal}
+                  onDismiss={dismissScheduleProposal}
+                  canUndo={!!proposalUndo}
+                  onUndo={undoScheduleProposal}
+                />
+              </>
+            ) : null}
 
             <QuestSectionHeader
               questTheme={questTheme}
