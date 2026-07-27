@@ -2369,7 +2369,7 @@ Production verification:
 
 ## Phase 5 - System-wide Consistency, Interaction Polish and Final Acceptance
 
-Status: Implemented and locally verified; production verification follows the GitHub/Vercel deployment.
+Status: Implemented and production web UI verified at desktop width on 2026-07-27; 390px production capture remains manual pending because the selected browser surface does not expose viewport resizing.
 
 Completed UI phases:
 - Phase 1: Today Decision Surface now presents one executable judgement with focused details.
@@ -2392,6 +2392,7 @@ Commits:
 - `b587899` - shared interaction states.
 - `ae9e52d` - accessibility and input hardening.
 - `ff95137` - restrained motion and reduced-motion support.
+- `8e4c0da` - final cross-product regression and Phase 5 acceptance record.
 
 Validation:
 - `npx tsc --noEmit` passed after every implementation commit.
@@ -2399,6 +2400,15 @@ Validation:
 - Local release bundle: `index-524a4e3fc0c4c9cdfa17f2e75f3abbdd.js`.
 - Local web traversal passed for Today, Goals, Goal Detail, Schedule, Insights, and Settings.
 - Local browser console had no runtime errors; the only warning was the existing Expo Notifications web-support warning.
+
+Production verification:
+- Verified the deployed bundle `index-524a4e3fc0c4c9cdfa17f2e75f3abbdd.js` at `https://questlife-alpha-orpin.vercel.app`.
+- Traversed Today, Goals, Goal Detail, Schedule, all four Insights layers, Settings, and the Today Decision details sheet in the real production web UI.
+- Verified Schedule and Insights segmented controls, disabled Smart Capture state, Decision details dialog semantics, and 1280px horizontal overflow for all five main tabs.
+- Switched production to English + cleanFocus, confirmed Today loaded, then restored the original Chinese + deepWork preferences.
+- Production browser console had no runtime errors; the only warning was the existing Expo Notifications web-support warning.
+- Captured desktop screenshots for all five main tabs plus Goal Detail and the Today Decision details sheet.
+- The selected in-app browser cannot resize its production tab to 390px, and its security policy prohibits iframe/data-URL viewport workarounds. Production 390px screenshots and touch-device keyboard checks therefore remain manual pending rather than being reported as passed.
 
 Natural-state tests still pending:
 - Schedule proposal Apply / Undo remains pending until a natural safe proposal appears.
