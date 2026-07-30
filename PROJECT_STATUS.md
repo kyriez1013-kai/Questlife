@@ -2494,8 +2494,8 @@ Boundary:
 
 ## QuestLife V11 Production Migration - Stage 1
 
-Status: Local token/component fixture complete on
-`design/questlife-product-v2`; physical iPhone Safari verification pending.
+Status: Approved after physical iPhone Safari owner verification on
+`design/questlife-product-v2`.
 
 Completed:
 - Added isolated `?questlife_v11_ui=stage1` component overview route. The
@@ -2528,14 +2528,22 @@ Local validation:
 - Standard motion resolves to 120/320/640ms tokens; the explicit reduced sample
   resolves to 0.001ms animation and transition durations.
 
+Physical iPhone Safari verification:
+- True glass / fallback distinction, directional borders, pill geometry,
+  unclipped shadows/bloom, dark/light readability, touch targets, overlap, and
+  reduced-motion fallback passed.
+- Repeated scrolling showed no visible flicker, material loss, or unacceptable
+  frame drop.
+- No unacceptable glow banding or hard edges were observed.
+
 UNVERIFIED:
-- Stage 1 physical iPhone Safari material, scrolling, reduced-motion, and
-  responsive checks. Use `QUESTLIFE_V11_STAGE1_IOS_SAFARI_CHECKLIST.md`.
-- Stage 0 exact Safari `standard=` and `-webkit=` readout values still await
-  owner transcription.
+- The exact Safari `standard=` and `-webkit=` readout values were provided as
+  `[true/false]` placeholders and still await literal owner transcription.
 
 Boundary:
-- Stage 2 has not started.
+- Stage 1 is approved.
+- Stage 2 has not started; implementation remains gated by the reviewed Today
+  feature mapping and implementation plan.
 - Nothing has been pushed or deployed.
 
 Documentation:

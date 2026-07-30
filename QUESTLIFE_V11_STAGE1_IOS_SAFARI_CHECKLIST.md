@@ -1,6 +1,21 @@
 # QuestLife V11 Stage 1 - iPhone Safari Manual Check
 
-Status: Owner verification pending.
+Status: Passed by owner on physical iPhone Safari.
+
+Owner-reported results:
+
+- true glass / fallback distinction: PASS;
+- directional borders and pill geometry: PASS;
+- shadows and bloom clipping: PASS;
+- dark/light readability: PASS;
+- repeated scrolling: no visible flicker, material loss, or unacceptable frame drop;
+- glow banding/hard edges: not observed;
+- touch targets and overlap: PASS;
+- reduced-motion fallback: PASS.
+
+The exact fixture readouts for `standard` and `-webkit` were supplied as
+`[true/false]` placeholders rather than literal booleans. They remain
+untranscribed and are not inferred here.
 
 The Mac and iPhone must be on the same local network. Open:
 
@@ -78,4 +93,5 @@ confirm:
 
 Record: PASS / FAIL.
 
-Stage 1 remains pending until the owner reports these physical-device results.
+Stage 1 physical-device verification is complete. Stage 2 remains separately
+gated by the approved feature mapping and implementation plan.
