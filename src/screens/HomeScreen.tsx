@@ -21,6 +21,7 @@ import { appAccent, theme } from '../theme';
 import { getQuestTheme, getStateToneColor, questLayout } from '../design/tokens';
 import { useQuestReducedMotion } from '../design/motion';
 import { getSurfaceStyle } from '../design/surfaces';
+import { isDarkTheme } from '../design/darkSurfaceGuard';
 import { today } from '../storage';
 import {
   skillMinutesOnDate, skillStreak, skillTotalMinutes, skillMilestones,
@@ -65,6 +66,10 @@ import TodayDecisionDetailsSheet from '../components/today/TodayDecisionDetailsS
 import TodayRecentExecution, { TodayRecentExecutionItem } from '../components/today/TodayRecentExecution';
 import TodayStateStrip from '../components/today/TodayStateStrip';
 import { buildTodayDecisionPresentation } from '../utils/todayDecisionPresentation';
+import { buildV11TodayPresentation } from '../v11/todayPresentation';
+import { getV11DebugEvidenceStage, isV11TodayEnabled } from '../v11/featureFlag';
+import useV11ReducedMotion from '../v11/useV11ReducedMotion';
+import V11TodaySurface from '../v11-today/V11TodaySurface';
 
 const FIXED_TODAY_CARD_SIZES = {
   smart_capture: 'large',
@@ -447,6 +452,7 @@ export default function HomeScreen() {
   const [dailyDecisionResultId, setDailyDecisionResultId] = useState('');
   const [dailyDecisionFeedback, setDailyDecisionFeedback] = useState<'useful' | 'not_useful' | null>(null);
   const [todayDecisionDetailsOpen, setTodayDecisionDetailsOpen] = useState(false);
+  const [v11EvidenceExpanded, setV11EvidenceExpanded] = useState(false);
   const dailyDecisionRequestRef = useRef(0);
   const dailyDecisionInFlightRef = useRef(false);
   const dailyDecisionAutoKeyRef = useRef('');
@@ -537,6 +543,8 @@ export default function HomeScreen() {
   const bannerOpacity = useRef(new Animated.Value(0)).current;
   const bannerTranslateY = useRef(new Animated.Value(-60)).current;
   const reducedMotion = useQuestReducedMotion();
+  const v11ReducedMotion = useV11ReducedMotion();
+  const v11TodayEnabled = isV11TodayEnabled();
 
   // 晨间状态: null=尚未加载, undefined=今日未设置, number=已设置
   const [dailyState, setDailyState] = useState<DailyStateValue | undefined | null>(null);
@@ -1678,6 +1686,25 @@ export default function HomeScreen() {
     todayCommand,
   ]);
 
+  const v11TodayPresentation = useMemo(() => {
+    const presentation = buildV11TodayPresentation({
+      today: todayStr,
+      stateCheckIns: data.stateCheckIns || [],
+      patternMemory: data.patternMemory || [],
+      patternReferences: todayDecisionPresentation.details.patternReferences,
+      decision: todayDecisionPresentation,
+    });
+    const debugStage = getV11DebugEvidenceStage(isDecisionDebugEnabled());
+    return debugStage
+      ? { ...presentation, evidenceStage: debugStage }
+      : presentation;
+  }, [
+    data.patternMemory,
+    data.stateCheckIns,
+    todayDecisionPresentation,
+    todayStr,
+  ]);
+
   const openScheduleProposalReview = useCallback(() => {
     navigation.navigate('Schedule', {
       scheduleProposalReview: {
@@ -1986,14 +2013,55 @@ export default function HomeScreen() {
       <ScrollView
         style={[styles.container, { backgroundColor: questTheme.colors.background }]}
         contentContainerStyle={{
-          paddingHorizontal: questTheme.spacing.md,
-          paddingTop: questTheme.spacing.sm,
+          paddingHorizontal: v11TodayEnabled ? 0 : questTheme.spacing.md,
+          paddingTop: v11TodayEnabled ? 0 : questTheme.spacing.sm,
           paddingBottom: questLayout.contentBottomInset + questTheme.spacing.lg,
           maxWidth: questLayout.contentMaxWidth,
           width: '100%',
           alignSelf: 'center',
         }}
       >
+        {v11TodayEnabled ? (
+          <V11TodaySurface
+            contextLine={formatCommandCopy(
+              todayDecisionPresentation.actionReason.kind === 'i18n'
+                ? todayDecisionPresentation.actionReason.key
+                : '',
+              todayDecisionPresentation.actionReason.kind === 'i18n'
+                ? todayDecisionPresentation.actionReason.values
+                : undefined,
+            ) || (todayDecisionPresentation.actionReason.kind === 'text'
+              ? todayDecisionPresentation.actionReason.text
+              : '')}
+            decision={v11TodayPresentation}
+            expanded={v11EvidenceExpanded}
+            formatCopy={(copy) => copy.kind === 'text'
+              ? copy.text
+              : formatCommandCopy(copy.key, copy.values)}
+            labels={{
+              capture: t(lang, 'v11Capture'),
+              collapseEvidence: t(lang, 'v11CollapseEvidence'),
+              currentState: t(lang, 'currentState'),
+              emptyReading: t(lang, 'v11RecordCurrentState'),
+              evidence: t(lang, 'evidence'),
+              evidenceStage: t(lang, 'v11EvidenceStage'),
+              expandEvidence: t(lang, 'v11ExpandEvidence'),
+              noEvidence: t(lang, 'v11NoEvidence'),
+              plan: t(lang, 'todayPlan'),
+              recentExecution: t(lang, 'recentExecution'),
+              stateOutOfFive: t(lang, 'v11StateOutOfFive'),
+              updateState: t(lang, 'v11UpdateState'),
+            }}
+            language={lang}
+            onCapture={() => undefined}
+            onExecute={() => runTodayCommand(todayCommand.primaryAction)}
+            onOpenState={openStateModal}
+            onToggleEvidence={() => setV11EvidenceExpanded((value) => !value)}
+            reducedMotion={v11ReducedMotion}
+            themeMode={isDarkTheme(questTheme) ? 'dark' : 'light'}
+            topLine={`${todayContextDate} · ${t(lang, currentTimeBlock)}`}
+          />
+        ) : (
         <TileGrid
           nativeID="today-dashboard-grid"
           className="dashboard-tile-grid today-dashboard-tile-grid"
@@ -2529,6 +2597,7 @@ export default function HomeScreen() {
         </DashboardCardShell>
         ) : null}
         </TileGrid>
+        )}
       </ScrollView>
 
       <TodayDecisionDetailsSheet
