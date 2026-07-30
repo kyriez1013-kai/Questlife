@@ -11,7 +11,7 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert,
-  Animated, Easing, Keyboard, Modal,
+  Animated, Easing, Keyboard, Modal, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -67,7 +67,13 @@ import TodayRecentExecution, { TodayRecentExecutionItem } from '../components/to
 import TodayStateStrip from '../components/today/TodayStateStrip';
 import { buildTodayDecisionPresentation } from '../utils/todayDecisionPresentation';
 import { buildV11TodayPresentation } from '../v11/todayPresentation';
-import { getV11DebugEvidenceStage, isV11TodayEnabled } from '../v11/featureFlag';
+import {
+  getV11DebugEvidenceStage,
+  getV11DebugPerformance,
+  getV11DebugReducedMotion,
+  getV11DebugStateValue,
+  isV11TodayEnabled,
+} from '../v11/featureFlag';
 import useV11ReducedMotion from '../v11/useV11ReducedMotion';
 import V11TodaySurface from '../v11-today/V11TodaySurface';
 import type { V11TodayRow } from '../v11-today/V11TodaySurface';
@@ -459,6 +465,9 @@ export default function HomeScreen() {
   const [v11EvidenceExpanded, setV11EvidenceExpanded] = useState(false);
   const [v11CaptureOpen, setV11CaptureOpen] = useState(false);
   const [v11ContextOpen, setV11ContextOpen] = useState(false);
+  const v11TodayScrollRef = useRef<any>(null);
+  const v11TodayScrollOffsetRef = useRef(0);
+  const v11TodayScrollRestoreRef = useRef(0);
   const dailyDecisionRequestRef = useRef(0);
   const dailyDecisionInFlightRef = useRef(false);
   const dailyDecisionAutoKeyRef = useRef('');
@@ -550,6 +559,8 @@ export default function HomeScreen() {
   const bannerTranslateY = useRef(new Animated.Value(-60)).current;
   const reducedMotion = useQuestReducedMotion();
   const v11ReducedMotion = useV11ReducedMotion();
+  const v11EffectiveReducedMotion = v11ReducedMotion
+    || getV11DebugReducedMotion(isDecisionDebugEnabled());
   const v11TodayEnabled = isV11TodayEnabled();
   const v11ThemeTokens = getV11ThemeTokens(isDarkTheme(questTheme) ? 'dark' : 'light');
 
@@ -1701,10 +1712,21 @@ export default function HomeScreen() {
       patternReferences: todayDecisionPresentation.details.patternReferences,
       decision: todayDecisionPresentation,
     });
-    const debugStage = getV11DebugEvidenceStage(isDecisionDebugEnabled());
-    return debugStage
-      ? { ...presentation, evidenceStage: debugStage }
-      : presentation;
+    const debugAllowed = isDecisionDebugEnabled();
+    const debugStage = getV11DebugEvidenceStage(debugAllowed);
+    const debugState = getV11DebugStateValue(debugAllowed);
+    return {
+      ...presentation,
+      evidenceStage: debugStage ?? presentation.evidenceStage,
+      reading: debugState == null
+        ? presentation.reading
+        : {
+            kind: 'state' as const,
+            value: debugState,
+            unitKey: 'stateOutOfFive' as const,
+            source: 'debug' as const,
+          },
+    };
   }, [
     data.patternMemory,
     data.stateCheckIns,
@@ -1938,6 +1960,63 @@ export default function HomeScreen() {
     setContextPreview(null);
   }, [addContextLogs, contextPreview]);
 
+  const rememberV11TodayScroll = useCallback(() => {
+    if (Platform.OS === 'web') {
+      const scrollTop = document.getElementById('v11-today-scroll')?.scrollTop;
+      if (typeof scrollTop === 'number') {
+        v11TodayScrollRestoreRef.current = scrollTop;
+        return;
+      }
+    }
+    v11TodayScrollRestoreRef.current = v11TodayScrollOffsetRef.current;
+  }, []);
+
+  const restoreV11TodayScroll = useCallback(() => {
+    const y = v11TodayScrollRestoreRef.current;
+    if (Platform.OS === 'web') {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          const scrollNode = document.getElementById('v11-today-scroll');
+          if (scrollNode) scrollNode.scrollTop = y;
+        });
+      });
+      return;
+    }
+    setTimeout(() => {
+      v11TodayScrollRef.current?.scrollTo({ animated: false, y });
+    }, 0);
+  }, []);
+
+  const openV11Capture = useCallback(() => {
+    rememberV11TodayScroll();
+    setV11CaptureOpen(true);
+  }, [rememberV11TodayScroll]);
+
+  const closeV11Capture = useCallback(() => {
+    setV11CaptureOpen(false);
+    restoreV11TodayScroll();
+  }, [restoreV11TodayScroll]);
+
+  const openV11Context = useCallback(() => {
+    rememberV11TodayScroll();
+    setV11ContextOpen(true);
+  }, [rememberV11TodayScroll]);
+
+  const closeV11Context = useCallback(() => {
+    setV11ContextOpen(false);
+    restoreV11TodayScroll();
+  }, [restoreV11TodayScroll]);
+
+  const openV11DecisionDetails = useCallback(() => {
+    rememberV11TodayScroll();
+    setTodayDecisionDetailsOpen(true);
+  }, [rememberV11TodayScroll]);
+
+  const closeV11DecisionDetails = useCallback(() => {
+    setTodayDecisionDetailsOpen(false);
+    restoreV11TodayScroll();
+  }, [restoreV11TodayScroll]);
+
   const formatContextMetricValue = useCallback((key: string, value?: number | string, unit?: string) => {
     if (value == null) return '';
     if (typeof value === 'number' && ['sleepDuration', 'deepSleep', 'remSleep'].includes(key)) {
@@ -1966,16 +2045,21 @@ export default function HomeScreen() {
 
   const runV11PrimaryCommand = useCallback(() => {
     if (todayCommand.primaryAction === 'finish_pending_capture') {
-      setV11CaptureOpen(true);
+      openV11Capture();
       return;
     }
     if (todayCommand.primaryAction === 'review_feedback') {
       setV11EvidenceExpanded(true);
-      setTodayDecisionDetailsOpen(true);
+      openV11DecisionDetails();
       return;
     }
     runTodayCommand(todayCommand.primaryAction);
-  }, [runTodayCommand, todayCommand.primaryAction]);
+  }, [
+    openV11Capture,
+    openV11DecisionDetails,
+    runTodayCommand,
+    todayCommand.primaryAction,
+  ]);
 
   const v11PlanRows = useMemo<V11TodayRow[]>(() => {
     const source = todayScheduleBlocks.length > 0
@@ -2076,12 +2160,12 @@ export default function HomeScreen() {
     {
       id: 'decision-details',
       label: t(lang, 'todayDecisionDetails'),
-      onPress: () => setTodayDecisionDetailsOpen(true),
+      onPress: openV11DecisionDetails,
     },
     {
       id: 'body-context',
       label: t(lang, 'bodySleepContext'),
-      onPress: () => setV11ContextOpen(true),
+      onPress: openV11Context,
     },
     ...(dailyDecisionScheduleProposals.length > 0 ? [{
       id: 'schedule-proposal',
@@ -2151,7 +2235,15 @@ export default function HomeScreen() {
   return (
     <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
       <ScrollView
+        ref={v11TodayScrollRef}
+        nativeID={v11TodayEnabled ? 'v11-today-scroll' : undefined}
         style={[styles.container, { backgroundColor: questTheme.colors.background }]}
+        onScroll={v11TodayEnabled
+          ? (event) => {
+              v11TodayScrollOffsetRef.current = event.nativeEvent.contentOffset.y;
+            }
+          : undefined}
+        scrollEventThrottle={v11TodayEnabled ? 16 : undefined}
         contentContainerStyle={{
           paddingHorizontal: v11TodayEnabled ? 0 : questTheme.spacing.md,
           paddingTop: v11TodayEnabled ? 0 : questTheme.spacing.sm,
@@ -2170,6 +2262,7 @@ export default function HomeScreen() {
                   todayDecisionPresentation.actionReason.values,
                 )}
             decision={v11TodayPresentation}
+            debugPerformance={getV11DebugPerformance(isDecisionDebugEnabled())}
             expanded={v11EvidenceExpanded}
             formatCopy={(copy) => copy.kind === 'text'
               ? copy.text
@@ -2190,12 +2283,13 @@ export default function HomeScreen() {
             }}
             language={lang}
             onCapture={() => setV11CaptureOpen(true)}
+            onCapturePressIn={rememberV11TodayScroll}
             onExecute={runV11PrimaryCommand}
             onOpenState={openStateModal}
             onToggleEvidence={() => setV11EvidenceExpanded((value) => !value)}
             planRows={v11PlanRows}
             recentRows={v11RecentRows}
-            reducedMotion={v11ReducedMotion}
+            reducedMotion={v11EffectiveReducedMotion}
             secondarySlot={(
               <V11TodayUtilities
                 feedback={instantDecisionFeedback}
@@ -2765,7 +2859,7 @@ export default function HomeScreen() {
         <>
           <V11TodayOverlaySheet
             closeLabel={t(lang, 'cancel')}
-            onClose={() => setV11CaptureOpen(false)}
+            onClose={closeV11Capture}
             reducedMotion={v11ReducedMotion}
             theme={v11ThemeTokens}
             title={t(lang, 'v11Capture')}
@@ -2776,7 +2870,7 @@ export default function HomeScreen() {
 
           <V11TodayOverlaySheet
             closeLabel={t(lang, 'cancel')}
-            onClose={() => setV11ContextOpen(false)}
+            onClose={closeV11Context}
             reducedMotion={v11ReducedMotion}
             theme={v11ThemeTokens}
             title={t(lang, 'bodySleepContext')}
@@ -2857,7 +2951,9 @@ export default function HomeScreen() {
 
       <TodayDecisionDetailsSheet
         visible={todayDecisionDetailsOpen}
-        onClose={() => setTodayDecisionDetailsOpen(false)}
+        onClose={v11TodayEnabled
+          ? closeV11DecisionDetails
+          : () => setTodayDecisionDetailsOpen(false)}
         presentation={todayDecisionPresentation}
         questTheme={questTheme}
         language={lang}

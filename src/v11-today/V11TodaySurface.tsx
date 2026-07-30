@@ -54,12 +54,14 @@ export type V11TodayLabels = {
 export type V11TodaySurfaceProps = {
   captureSlot?: React.ReactNode;
   contextLine?: string;
+  debugPerformance?: boolean;
   decision: V11TodayPresentation;
   expanded: boolean;
   formatCopy: (copy: V11TodayPresentation['judgement']) => string;
   labels: V11TodayLabels;
   language: 'zh' | 'en';
   onCapture: () => void;
+  onCapturePressIn?: () => void;
   onExecute: () => void;
   onOpenState: () => void;
   onToggleEvidence: () => void;
@@ -231,12 +233,14 @@ function CompactRows({
 export default function V11TodaySurface({
   captureSlot,
   contextLine,
+  debugPerformance = false,
   decision,
   expanded,
   formatCopy,
   labels,
   language,
   onCapture,
+  onCapturePressIn,
   onExecute,
   onOpenState,
   onToggleEvidence,
@@ -248,6 +252,7 @@ export default function V11TodaySurface({
   topLine,
 }: V11TodaySurfaceProps) {
   const theme = getV11ThemeTokens(themeMode);
+  const captureTriggerRef = useRef<any>(null);
   const readingAvailable = decision.reading.kind === 'state'
     && decision.reading.value != null;
   const evidenceLabel = expanded ? labels.collapseEvidence : labels.expandEvidence;
@@ -266,6 +271,53 @@ export default function V11TodaySurface({
     '--v11-today-supporting': theme.glow.supporting,
     '--v11-today-soft': theme.questTheme.colors.cardSurface,
   } as any;
+
+  useEffect(() => {
+    const node = captureTriggerRef.current;
+    if (!node || Platform.OS !== 'web') return;
+    const rememberBeforeFocus = (event: PointerEvent) => {
+      onCapturePressIn?.();
+      if (event.pointerType === 'mouse') event.preventDefault();
+    };
+    node.addEventListener('pointerdown', rememberBeforeFocus, true);
+    return () => node.removeEventListener('pointerdown', rememberBeforeFocus, true);
+  }, [onCapturePressIn]);
+
+  useEffect(() => {
+    if (!debugPerformance || reducedMotion || Platform.OS !== 'web') return;
+    let cancelled = false;
+    let frame = 0;
+    let last: number | null = null;
+    const intervals: number[] = [];
+    const tick = (now: number) => {
+      if (cancelled) return;
+      if (last != null) intervals.push(now - last);
+      last = now;
+      if (intervals.length < 240) {
+        frame = window.requestAnimationFrame(tick);
+        return;
+      }
+      const sorted = [...intervals].sort((a, b) => a - b);
+      const quantile = (value: number) => (
+        sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * value))]
+      );
+      console.info('[v11-performance]', JSON.stringify({
+        frames: intervals.length,
+        max: sorted[sorted.length - 1],
+        mean: intervals.reduce((sum, value) => sum + value, 0) / intervals.length,
+        over20: intervals.filter((value) => value > 20).length,
+        over32: intervals.filter((value) => value > 32).length,
+        p50: quantile(0.5),
+        p95: quantile(0.95),
+        p99: quantile(0.99),
+      }));
+    };
+    frame = window.requestAnimationFrame(tick);
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(frame);
+    };
+  }, [debugPerformance, reducedMotion]);
 
   return (
     <WebView
@@ -381,11 +433,13 @@ export default function V11TodaySurface({
 
       <WebView
         accessibilityElementsHidden={!expanded}
+        aria-hidden={!expanded}
         dataSet={{
           'v11-expanded': expanded ? 'true' : 'false',
           'v11-today-role': 'evidence-expand',
         }}
         importantForAccessibility={expanded ? 'auto' : 'no-hide-descendants'}
+        pointerEvents={expanded ? 'auto' : 'none'}
       >
         <WebView dataSet={{ 'v11-today-role': 'evidence-inner' }}>
           <Text style={[styles.sectionLabel, { color: theme.text.metadata }]}>
@@ -443,6 +497,7 @@ export default function V11TodaySurface({
 
       {captureSlot ?? (
         <WebPressable
+          ref={captureTriggerRef}
           accessibilityLabel={labels.capture}
           accessibilityRole="button"
           dataSet={{ 'v11-today-role': 'capture-trigger' }}
@@ -506,6 +561,6 @@ const styles = StyleSheet.create({
   supportingGlow: {
     position: 'absolute',
     top: 392,
-    right: -126,
+    right: 0,
   },
 });

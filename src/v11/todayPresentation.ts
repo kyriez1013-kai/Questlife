@@ -9,7 +9,7 @@ export type V11TodayReading = {
   kind: 'empty' | 'state';
   value: number | null;
   unitKey: 'stateOutOfFive' | null;
-  source: 'recorded' | 'none';
+  source: 'recorded' | 'debug' | 'none';
   recordedAt?: string;
 };
 

@@ -2549,3 +2549,56 @@ Boundary:
 Documentation:
 - `QUESTLIFE_V11_STAGE1_COMPONENTS.md`
 - `QUESTLIFE_V11_STAGE1_IOS_SAFARI_CHECKLIST.md`
+
+## QuestLife V11 Production Migration - Stage 2
+
+Status: local implementation and browser QA complete on
+`design/questlife-product-v2`; physical iPhone Safari approval is pending.
+Nothing has been pushed or deployed.
+
+Completed:
+- Added a deterministic Today presentation adapter for S0-S3 using existing
+  current-day state, explicit judgement pattern references, stored pattern
+  status, sample count, and support evidence.
+- Added no PatternMemory freshness cutoff. `lastSeenAt` and `updatedAt` remain
+  provenance metadata only.
+- Added the isolated V11 Today surface and kept `todayCommand` as the sole
+  executable authority.
+- Integrated V11 through `?questlife_v11_ui=stage2`; the unflagged legacy Today
+  remains the immediate rollback.
+- Preserved one outer HomeScreen ScrollView and limited Today Plan and Recent
+  Execution to three rows.
+- Connected existing State, Smart Capture, pending confirmation, Instant Read,
+  feedback, Decision details, direct Log, plan actions, recent execution,
+  Activity History, context, Schedule proposal, Rescue, and active-session
+  entries without changing their Store/API/persistence paths.
+- Added web scroll snapshot/restore around V11 Capture, context, and Decision
+  details overlays.
+- Added debug-only, non-persistent evidence-state, state-reading,
+  reduced-motion, and full-composition performance QA controls.
+
+Local validation:
+- `npx tsc --noEmit` passed.
+- Presentation adapter pure-function tests passed.
+- `npm run build` passed.
+- Final local bundle:
+  `index-92a11e80c889a9af70dbfac57211f99c.js`.
+- 375x667 and 393x852 have no horizontal overflow or Capture/action/navigation
+  touch-region overlap.
+- Full expanded S3 Today with repeated scrolling measured 240 frames at P95
+  17.2ms, with 0 intervals over 20ms.
+- English + cleanFocus and Chinese + deepWork rendered; original preferences
+  were restored.
+- All five tabs and the unflagged legacy rollback loaded.
+
+UNVERIFIED:
+- Physical iPhone Safari Stage 2 approval.
+- iOS soft-keyboard behavior.
+- Real-time motion recording.
+- Mutating/natural-state flows that were not forced: new state/Instant Read
+  save, Start/Finish, Done, deletion, pending confirmation, Schedule
+  Apply/Undo, and Rescue.
+
+Documentation:
+- `QUESTLIFE_V11_STAGE2_QA.md`
+- `artifacts/v11-stage2/`

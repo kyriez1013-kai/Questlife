@@ -256,13 +256,13 @@
   position: fixed;
   z-index: 20;
   right: max(20px, calc((100vw - 430px) / 2 + 20px));
-  bottom: calc(98px + env(safe-area-inset-bottom));
+  bottom: calc(70px + env(safe-area-inset-bottom));
   display: flex;
-  width: 56px;
-  height: 56px;
+  width: 48px;
+  height: 48px;
   align-items: center;
   justify-content: center;
-  border-radius: 28px;
+  border-radius: 24px;
   background: color-mix(in srgb, var(--v11-today-soft) 76%, transparent);
   box-shadow: 0 14px 34px color-mix(in srgb, var(--v11-today-bg) 64%, transparent);
   cursor: pointer;

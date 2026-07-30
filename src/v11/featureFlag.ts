@@ -19,3 +19,20 @@ export function getV11DebugEvidenceStage(
     ? value
     : null;
 }
+
+export function getV11DebugStateValue(debugAllowed: boolean): number | null {
+  if (!debugAllowed) return null;
+  const raw = query()?.get('debugState');
+  const value = raw == null ? Number.NaN : Number(raw);
+  return Number.isInteger(value) && value >= 1 && value <= 5
+    ? value
+    : null;
+}
+
+export function getV11DebugReducedMotion(debugAllowed: boolean): boolean {
+  return debugAllowed && query()?.get('debugReducedMotion') === '1';
+}
+
+export function getV11DebugPerformance(debugAllowed: boolean): boolean {
+  return debugAllowed && query()?.get('debugPerformance') === '1';
+}
