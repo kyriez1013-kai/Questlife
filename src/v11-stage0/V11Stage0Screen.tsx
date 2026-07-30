@@ -132,6 +132,9 @@ function DirectionalEdge({
   const resolvedRadius = isPill
     ? rectHeight / 2
     : Math.min(Math.max(0, radius - inset), rectHeight / 2);
+  const edgeHighlight = theme.id === 'cleanFocus'
+    ? theme.colors.surface
+    : theme.colors.text;
 
   const handleLayout = (event: LayoutChangeEvent) => {
     if (Platform.OS === 'web') return;
@@ -178,7 +181,7 @@ function DirectionalEdge({
         'v11-stroke-width': String(DIRECTIONAL_EDGE_STROKE_WIDTH),
       }}
       onLayout={handleLayout}
-      style={[StyleSheet.absoluteFill, { borderRadius: radius, overflow: 'hidden' }]}
+      style={[StyleSheet.absoluteFill, { borderRadius: radius }]}
     >
       {size.width > 0 && size.height > 0 ? (
         <Svg
@@ -190,9 +193,10 @@ function DirectionalEdge({
         >
           <Defs>
             <LinearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-              <Stop offset="0%" stopColor={theme.colors.text} stopOpacity={0.48} />
-              <Stop offset="42%" stopColor={theme.colors.text} stopOpacity={0.12} />
-              <Stop offset="100%" stopColor={theme.colors.text} stopOpacity={0.02} />
+              <Stop offset="0%" stopColor={edgeHighlight} stopOpacity={0.68} />
+              <Stop offset="26%" stopColor={edgeHighlight} stopOpacity={0.28} />
+              <Stop offset="58%" stopColor={theme.colors.text} stopOpacity={0.08} />
+              <Stop offset="100%" stopColor={theme.colors.text} stopOpacity={0.01} />
             </LinearGradient>
           </Defs>
           <Rect
@@ -298,7 +302,13 @@ function MaterialSample({
 
   return (
     <WebView dataSet={{ 'v11-role': 'material-sample' }}>
-      <DirectionalEdge theme={theme} radius={theme.radius.xl} />
+      <WebView
+        pointerEvents="none"
+        dataSet={{
+          'v11-role': 'material-light-field',
+          'v11-variant': variant,
+        }}
+      />
       <GlassSurface
         role="material-inner"
         fallback={usesFallback}
@@ -315,6 +325,7 @@ function MaterialSample({
               : t(lang, 'stage0BackdropUnavailable')}
         </Text>
       </GlassSurface>
+      <DirectionalEdge theme={theme} radius={theme.radius.xl} />
     </WebView>
   );
 }
@@ -359,10 +370,14 @@ export default function V11Stage0Screen() {
     '--v11-stage0-field-mid': theme.colors.background,
     '--v11-stage0-field-far': theme.colors.surfaceSubtle,
     '--v11-stage0-surface': theme.colors.cardSurface,
+    '--v11-stage0-surface-base': theme.colors.surface,
     '--v11-stage0-surface-fallback': theme.colors.surfaceElevated,
     '--v11-stage0-text': theme.colors.text,
     '--v11-stage0-muted': theme.colors.textMuted,
     '--v11-stage0-meta': theme.colors.textSubtle,
+    '--v11-stage0-highlight': theme.id === 'cleanFocus'
+      ? theme.colors.surface
+      : theme.colors.text,
     '--v11-stage0-primary': theme.colors.primary,
     '--v11-stage0-support': theme.colors.accent,
     '--v11-stage0-shadow': theme.colors.cardShadow,
@@ -430,13 +445,20 @@ export default function V11Stage0Screen() {
             }}
             onPress={triggerMaterialSweep}
           >
-            <DirectionalEdge theme={theme} radius={theme.radius.pill} />
+            <WebView
+              pointerEvents="none"
+              dataSet={{
+                'v11-role': 'material-light-field',
+                'v11-variant': 'action',
+              }}
+            />
             <GlassSurface role="action-inner" fallback={forceFallback || !blurSupported}>
               <Text style={[styles.sequence, { color: theme.colors.textSubtle }]}>01</Text>
               <Text style={[styles.actionLabel, { color: theme.colors.text }]}>
                 {t(lang, 'stage0Action')}
               </Text>
             </GlassSurface>
+            <DirectionalEdge theme={theme} radius={theme.radius.pill} />
           </WebPressable>
         </WebView>
 

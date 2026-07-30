@@ -67,6 +67,24 @@ route.
 
 No third-party dependency was added. `react-native-svg` was already installed.
 
+### Three-layer material correction
+
+The shared fixture material now separates geometry and depth into three
+independent layers:
+
+1. The outer wrapper uses `overflow: visible` and owns the restrained external
+   shadow plus the subtle field bloom beyond the material bounds.
+2. The inner glass clip uses `overflow: hidden`, owns the translucent fill,
+   backdrop blur, WebKit backdrop blur, saturation, and an independent 1px
+   upper internal highlight.
+3. The directional SVG overlay remains pointer-inert and exactly matches the
+   outer dimensions. Its 1.5px stroke keeps the accepted 0.75px inset geometry
+   and falls from 68% upper-left opacity to 1% lower-right opacity.
+
+The light-field variation is a separate layer behind the inner glass. It is not
+painted onto the pill surface. True glass can therefore refract that field,
+while the fallback surface intentionally occludes it with an opaque fill.
+
 ## Fallback
 
 When backdrop filtering is unavailable, or when the fixture's forced fallback
@@ -96,7 +114,9 @@ Build:
 - `npx tsc --noEmit`: passed.
 - `npm run build`: passed.
 - Expo Web output directory: `dist`.
-- Release bundle: `index-063a70171c9ecbe271633857e073028f.js`.
+- Release JavaScript bundle: `index-9c2122b209ce1ad32bc64aead810e224.js`.
+- Release Stage 0 stylesheet:
+  `v11-stage0-596d22bb56d0bb71d360000c9ffca011.css`.
 
 Serving path:
 
@@ -128,8 +148,15 @@ Actual Chrome, 375x667:
 - Fractional-width material samples: parent / edge layer / SVG all
   `166.5x132`; path `x=0.75`, `y=0.75`, `width=165`,
   `height=130.5`.
-- All directional-edge wrappers use `overflow: hidden`; no stroke extends
-  outside its material.
+- Outer action wrapper: `overflow: visible`, external shadow present.
+- Inner glass clip: `overflow: hidden`, computed background alpha 42%,
+  computed backdrop `blur(28px) saturate(1.6)`.
+- Directional SVG overlay: `pointer-events: none`, `overflow: visible`, with
+  the stroke fully inside its measured bounds.
+- Revised 375x667 fixture observation: P95 17.2ms; 0 / 180 intervals over
+  20ms.
+- Dark and light true-glass samples visibly retain the rear light-field
+  variation; their fallback counterparts remain intentionally opaque.
 
 In-app Chromium viewport checks:
 
@@ -174,6 +201,10 @@ Today composition.
 - `artifacts/v11-stage0/375-reading-baseline-fixed.png`
 - `artifacts/v11-stage0/375-material-comparison-fixed.png`
 - `artifacts/v11-stage0/375-directional-edge-fixed.png`
+- `artifacts/v11-stage0/375-glass-three-layer-dark.png`
+- `artifacts/v11-stage0/375-glass-comparison-dark.png`
+- `artifacts/v11-stage0/375-glass-three-layer-light.png`
+- `artifacts/v11-stage0/375-glass-comparison-light.png`
 
 Owner test:
 

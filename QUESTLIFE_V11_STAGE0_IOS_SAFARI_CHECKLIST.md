@@ -27,6 +27,11 @@ Expected visual behavior:
   refraction.
 - The right sample is labelled `降级软浮面`.
 - The right sample is opaque and has no backdrop filtering.
+- The upper-left SVG edge is visibly brighter and the lower-right edge nearly
+  disappears.
+- The separate 1px upper internal highlight remains visible inside both
+  geometries.
+- External shadow and bloom extend beyond each surface without clipping.
 - Selecting `强制降级材质` changes the primary action surface only. The
   comparison samples remain glass versus fallback.
 
@@ -50,6 +55,7 @@ Check for:
 - white or black flashes;
 - glass surfaces disappearing during scroll;
 - edge highlights detaching from their surfaces;
+- external shadow or bloom clipping at the rounded ends;
 - content jumping horizontally.
 
 Record: PASS / FAIL and a short observation.
@@ -84,7 +90,12 @@ Check:
 - the two pill end caps do not protrude outside the straight middle edge;
 - the highlight follows the material boundary continuously;
 - no edge is clipped or detached while scrolling;
+- the external shadow remains visible beyond the pill without a hard cut;
 - the two Material Comparison samples have no half-pixel horizontal mismatch.
+
+Repeat the geometry and material checks in both `深度工作` and `清醒专注`.
+The light variant must remain translucent and must not become an opaque grey
+capsule.
 
 Record: PASS / FAIL.
 

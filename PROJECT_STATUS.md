@@ -2443,8 +2443,11 @@ Completed:
 Validation:
 - `npx tsc --noEmit` passed.
 - `npm run build` passed.
-- Bundle: `index-063a70171c9ecbe271633857e073028f.js`.
-- Chrome 375x667 frame observation: P95 17.6ms; 0 / 180 intervals over 20ms.
+- JavaScript bundle: `index-9c2122b209ce1ad32bc64aead810e224.js`.
+- Stage 0 stylesheet:
+  `v11-stage0-596d22bb56d0bb71d360000c9ffca011.css`.
+- Earlier standalone Chrome 375x667 frame observation: P95 17.6ms;
+  0 / 180 intervals over 20ms.
 
 UNVERIFIED:
 - Physical iOS Safari and physical-device screenshots.
@@ -2459,9 +2462,18 @@ Stage 0 follow-up:
   iOS Safari owner verification.
 - The shared directional edge now measures the exact rendered container,
   including fractional Web widths. Its 1.5px SVG stroke is inset 0.75px,
-  pill radius is `(height - strokeWidth) / 2`, and the edge layer is clipped to
-  the material bounds. Chrome 375x667 geometry inspection found no end-cap
-  protrusion or SVG/container size mismatch.
+  pill radius is `(height - strokeWidth) / 2`, and the stroke remains fully
+  inside the material bounds. Chrome 375x667 geometry inspection found no
+  end-cap protrusion or SVG/container size mismatch.
+- Material depth was restored without reverting the accepted geometry. The
+  outer wrapper now owns unclipped shadow/bloom, the inner layer owns glass
+  clipping and backdrop refraction, and the exact-size SVG remains an
+  independent directional overlay.
+- Added a separate rear light-field variation and an independent 1px internal
+  upper highlight. Dark and light true-glass fixtures now remain visually
+  distinct from the opaque fallback surface.
+- Revised in-app Chromium 375x667 fixture observation: P95 17.2ms;
+  0 / 180 intervals over 20ms. This remains fixture-only evidence.
 - Stage 0 P95 values are fixture-only. Stage 2 must remeasure the full Today
   layer count, scrolling, flicker, and frame intervals.
 - `QUESTLIFE_V11_STAGE0_IOS_SAFARI_CHECKLIST.md` records the pending owner test.
