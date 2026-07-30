@@ -27,6 +27,13 @@ Path: existing `react-native-svg` dependency.
 - An absolute SVG `LinearGradient` runs from the stronger top-left highlight to
   the weaker bottom-right edge.
 - The SVG is the outer 1.5px material edge.
+- The stroke path is inset by 0.75px on every side, so the centered SVG stroke
+  remains fully inside the material bounds.
+- Pill radius is derived from the inset path:
+  `(height - strokeWidth) / 2`.
+- The shared edge wrapper measures its exact Web bounding box, including
+  fractional widths, and gives the SVG and `viewBox` those identical
+  dimensions.
 - The actual glass or fallback surface is inset inside that edge.
 - This avoids unsupported `border-image` and avoids a uniform grey border.
 
@@ -89,7 +96,7 @@ Build:
 - `npx tsc --noEmit`: passed.
 - `npm run build`: passed.
 - Expo Web output directory: `dist`.
-- Release bundle: `index-611f2b9693c8031aca31494c55ea4f6e.js`.
+- Release bundle: `index-063a70171c9ecbe271633857e073028f.js`.
 
 Serving path:
 
@@ -116,6 +123,13 @@ Actual Chrome, 375x667:
 - Forced fallback primary-text contrast: 15.24:1.
 - Forced fallback secondary-text contrast: 10.04:1.
 - Forced reduced-motion animation and transition duration: 0.001ms.
+- Shared pill edge geometry: parent / edge layer / SVG all `294x64`; path
+  `x=0.75`, `y=0.75`, `width=292.5`, `height=62.5`, `rx=31.25`.
+- Fractional-width material samples: parent / edge layer / SVG all
+  `166.5x132`; path `x=0.75`, `y=0.75`, `width=165`,
+  `height=130.5`.
+- All directional-edge wrappers use `overflow: hidden`; no stroke extends
+  outside its material.
 
 In-app Chromium viewport checks:
 
@@ -159,6 +173,7 @@ Today composition.
 - `artifacts/v11-stage0/393-full-material.png`
 - `artifacts/v11-stage0/375-reading-baseline-fixed.png`
 - `artifacts/v11-stage0/375-material-comparison-fixed.png`
+- `artifacts/v11-stage0/375-directional-edge-fixed.png`
 
 Owner test:
 

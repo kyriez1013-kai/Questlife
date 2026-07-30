@@ -1,5 +1,13 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
+  LayoutChangeEvent,
   Platform,
   Pressable,
   ScrollView,
@@ -47,6 +55,7 @@ const WebScrollView = ScrollView as any;
 const STAGE0_ROUTE = 'stage0';
 const FRAME_SAMPLE_TARGET = 180;
 const FRAME_BUDGET_MS = 20;
+const DIRECTIONAL_EDGE_STROKE_WIDTH = 1.5;
 
 function getInitialLanguage(): Lang {
   if (typeof window === 'undefined') return 'zh';
@@ -113,30 +122,93 @@ function DirectionalEdge({
   theme: QuestTheme;
   radius: number;
 }) {
+  const gradientId = `v11DirectionalEdge${useId().replace(/:/g, '')}`;
+  const edgeRef = useRef<HTMLElement | null>(null);
+  const [size, setSize] = useState({ width: 0, height: 0 });
+  const inset = DIRECTIONAL_EDGE_STROKE_WIDTH / 2;
+  const rectWidth = Math.max(0, size.width - DIRECTIONAL_EDGE_STROKE_WIDTH);
+  const rectHeight = Math.max(0, size.height - DIRECTIONAL_EDGE_STROKE_WIDTH);
+  const isPill = radius >= size.height / 2;
+  const resolvedRadius = isPill
+    ? rectHeight / 2
+    : Math.min(Math.max(0, radius - inset), rectHeight / 2);
+
+  const handleLayout = (event: LayoutChangeEvent) => {
+    if (Platform.OS === 'web') return;
+    const { width, height } = event.nativeEvent.layout;
+    setSize((current) => (
+      current.width === width && current.height === height
+        ? current
+        : { width, height }
+    ));
+  };
+
+  useLayoutEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const element = edgeRef.current;
+    if (!element) return;
+
+    const syncSize = () => {
+      const { width, height } = element.getBoundingClientRect();
+      setSize((current) => (
+        current.width === width && current.height === height
+          ? current
+          : { width, height }
+      ));
+    };
+
+    syncSize();
+
+    if (typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver(syncSize);
+      observer.observe(element);
+      return () => observer.disconnect();
+    }
+
+    window.addEventListener('resize', syncSize);
+    return () => window.removeEventListener('resize', syncSize);
+  }, []);
+
   return (
-    <Svg
+    <WebView
+      ref={edgeRef}
       pointerEvents="none"
-      width="100%"
-      height="100%"
-      style={StyleSheet.absoluteFill}
-      preserveAspectRatio="none"
+      dataSet={{
+        'v11-role': 'directional-edge',
+        'v11-stroke-width': String(DIRECTIONAL_EDGE_STROKE_WIDTH),
+      }}
+      onLayout={handleLayout}
+      style={[StyleSheet.absoluteFill, { borderRadius: radius, overflow: 'hidden' }]}
     >
-      <Defs>
-        <LinearGradient id="v11Stage0DirectionalEdge" x1="0%" y1="0%" x2="100%" y2="100%">
-          <Stop offset="0%" stopColor={theme.colors.text} stopOpacity={0.48} />
-          <Stop offset="42%" stopColor={theme.colors.text} stopOpacity={0.12} />
-          <Stop offset="100%" stopColor={theme.colors.text} stopOpacity={0.02} />
-        </LinearGradient>
-      </Defs>
-      <Rect
-        x={0}
-        y={0}
-        width="100%"
-        height="100%"
-        rx={radius}
-        fill="url(#v11Stage0DirectionalEdge)"
-      />
-    </Svg>
+      {size.width > 0 && size.height > 0 ? (
+        <Svg
+          pointerEvents="none"
+          width={size.width}
+          height={size.height}
+          viewBox={`0 0 ${size.width} ${size.height}`}
+          preserveAspectRatio="none"
+        >
+          <Defs>
+            <LinearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+              <Stop offset="0%" stopColor={theme.colors.text} stopOpacity={0.48} />
+              <Stop offset="42%" stopColor={theme.colors.text} stopOpacity={0.12} />
+              <Stop offset="100%" stopColor={theme.colors.text} stopOpacity={0.02} />
+            </LinearGradient>
+          </Defs>
+          <Rect
+            x={inset}
+            y={inset}
+            width={rectWidth}
+            height={rectHeight}
+            rx={resolvedRadius}
+            ry={resolvedRadius}
+            fill="none"
+            stroke={`url(#${gradientId})`}
+            strokeWidth={DIRECTIONAL_EDGE_STROKE_WIDTH}
+          />
+        </Svg>
+      ) : null}
+    </WebView>
   );
 }
 

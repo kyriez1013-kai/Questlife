@@ -2443,7 +2443,7 @@ Completed:
 Validation:
 - `npx tsc --noEmit` passed.
 - `npm run build` passed.
-- Bundle: `index-611f2b9693c8031aca31494c55ea4f6e.js`.
+- Bundle: `index-063a70171c9ecbe271633857e073028f.js`.
 - Chrome 375x667 frame observation: P95 17.6ms; 0 / 180 intervals over 20ms.
 
 UNVERIFIED:
@@ -2457,6 +2457,11 @@ Stage 0 follow-up:
 - The `2 / 5 state` reading now shares one horizontal baseline.
 - The fixture exposes standard and `-webkit-` backdrop support separately for
   iOS Safari owner verification.
+- The shared directional edge now measures the exact rendered container,
+  including fractional Web widths. Its 1.5px SVG stroke is inset 0.75px,
+  pill radius is `(height - strokeWidth) / 2`, and the edge layer is clipped to
+  the material bounds. Chrome 375x667 geometry inspection found no end-cap
+  protrusion or SVG/container size mismatch.
 - Stage 0 P95 values are fixture-only. Stage 2 must remeasure the full Today
   layer count, scrolling, flicker, and frame intervals.
 - `QUESTLIFE_V11_STAGE0_IOS_SAFARI_CHECKLIST.md` records the pending owner test.

@@ -75,7 +75,20 @@ portrait orientation.
 
 Record: PASS / FAIL.
 
-## 5. Evidence to Return
+## 5. Directional Edge Geometry
+
+Inspect the primary action pill and both Material Comparison samples.
+
+Check:
+
+- the two pill end caps do not protrude outside the straight middle edge;
+- the highlight follows the material boundary continuously;
+- no edge is clipped or detached while scrolling;
+- the two Material Comparison samples have no half-pixel horizontal mismatch.
+
+Record: PASS / FAIL.
+
+## 6. Evidence to Return
 
 Please provide:
 
