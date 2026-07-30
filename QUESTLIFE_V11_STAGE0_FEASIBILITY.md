@@ -74,6 +74,14 @@ control is selected:
 The forced fallback is a visual simulation of the unsupported-browser path. It
 is not evidence of an actual unsupported Safari engine.
 
+The material comparison is fixed as two independent samples:
+
+- left: requested live backdrop material;
+- right: fixed opaque fallback material.
+
+The global forced-fallback control affects the primary action surface, not the
+comparison samples.
+
 ## Local Verification
 
 Build:
@@ -81,11 +89,13 @@ Build:
 - `npx tsc --noEmit`: passed.
 - `npm run build`: passed.
 - Expo Web output directory: `dist`.
-- Release bundle: `index-b9ea0d0ac941c5e6a64e6166e4439507.js`.
+- Release bundle: `index-611f2b9693c8031aca31494c55ea4f6e.js`.
 
 Serving path:
 
 - The exported `dist` directory was served locally on port 8085.
+- The owner-test server is explicitly bound to `0.0.0.0` for same-network
+  iPhone Safari access.
 - Expo's local dev-server port scanner failed in this sandbox with
   `ERR_SOCKET_BAD_PORT` at port 65536, so the exported release output was used
   for browser verification.
@@ -135,6 +145,11 @@ Isolation:
 | Mobile software keyboard | UNVERIFIED - the fixture contains no text input |
 | Unsupported-browser automatic `@supports` path | UNVERIFIED on an actually unsupported engine; forced fallback was verified |
 
+The Stage 0 P95 observations apply only to this two-orb, two-blur-layer fixture.
+They must not be reused as a Stage 2 Today performance conclusion. Stage 2 must
+repeat frame, scroll, flicker, and layer-count measurements against the complete
+Today composition.
+
 ## Artifacts
 
 - `artifacts/v11-stage0/375-chrome-full-material.png`
@@ -142,6 +157,12 @@ Isolation:
 - `artifacts/v11-stage0/375-forced-fallback.png`
 - `artifacts/v11-stage0/375-light-material.png`
 - `artifacts/v11-stage0/393-full-material.png`
+- `artifacts/v11-stage0/375-reading-baseline-fixed.png`
+- `artifacts/v11-stage0/375-material-comparison-fixed.png`
+
+Owner test:
+
+- `QUESTLIFE_V11_STAGE0_IOS_SAFARI_CHECKLIST.md`
 
 ## Stage Boundary
 

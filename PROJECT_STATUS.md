@@ -2443,13 +2443,23 @@ Completed:
 Validation:
 - `npx tsc --noEmit` passed.
 - `npm run build` passed.
-- Bundle: `index-b9ea0d0ac941c5e6a64e6166e4439507.js`.
+- Bundle: `index-611f2b9693c8031aca31494c55ea4f6e.js`.
 - Chrome 375x667 frame observation: P95 17.6ms; 0 / 180 intervals over 20ms.
 
 UNVERIFIED:
 - Physical iOS Safari and physical-device screenshots.
 - Actual unsupported-browser automatic fallback; the forced fallback path was
   verified visually and through computed styles.
+
+Stage 0 follow-up:
+- The material comparison now remains live backdrop versus opaque fallback even
+  while the primary action is forced into fallback mode.
+- The `2 / 5 state` reading now shares one horizontal baseline.
+- The fixture exposes standard and `-webkit-` backdrop support separately for
+  iOS Safari owner verification.
+- Stage 0 P95 values are fixture-only. Stage 2 must remeasure the full Today
+  layer count, scrolling, flicker, and frame intervals.
+- `QUESTLIFE_V11_STAGE0_IOS_SAFARI_CHECKLIST.md` records the pending owner test.
 
 Documentation:
 - `QUESTLIFE_V11_STAGE0_FEASIBILITY.md`

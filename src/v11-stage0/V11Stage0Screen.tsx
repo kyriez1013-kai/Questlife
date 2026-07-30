@@ -28,6 +28,11 @@ type FrameStats = {
   overBudgetCount: number;
 };
 
+type BackdropSupport = {
+  standard: boolean;
+  webkit: boolean;
+};
+
 type GlassSurfaceProps = {
   children: React.ReactNode;
   fallback: boolean;
@@ -55,10 +60,15 @@ function getInitialTheme(): Stage0Theme {
     : 'deepWork';
 }
 
-function supportsWebBackdropFilter(): boolean {
-  if (Platform.OS !== 'web' || typeof CSS === 'undefined') return false;
-  return CSS.supports('backdrop-filter', 'blur(1px)')
-    || CSS.supports('-webkit-backdrop-filter', 'blur(1px)');
+function getWebBackdropSupport(): BackdropSupport {
+  if (Platform.OS !== 'web' || typeof CSS === 'undefined') {
+    return { standard: false, webkit: false };
+  }
+
+  return {
+    standard: CSS.supports('backdrop-filter', 'blur(1px)'),
+    webkit: CSS.supports('-webkit-backdrop-filter', 'blur(1px)'),
+  };
 }
 
 function useFrameObservation(enabled: boolean): FrameStats | null {
@@ -204,27 +214,29 @@ function RadialLightOrb({
 function MaterialSample({
   theme,
   lang,
-  fallback,
+  variant,
   blurSupported,
 }: {
   theme: QuestTheme;
   lang: Lang;
-  fallback: boolean;
+  variant: 'backdrop' | 'fallback';
   blurSupported: boolean;
 }) {
+  const usesFallback = variant === 'fallback' || !blurSupported;
+
   return (
     <WebView dataSet={{ 'v11-role': 'material-sample' }}>
       <DirectionalEdge theme={theme} radius={theme.radius.xl} />
       <GlassSurface
         role="material-inner"
-        fallback={fallback}
-        material={fallback ? 'fallback' : 'backdrop'}
+        fallback={usesFallback}
+        material={usesFallback ? 'fallback' : 'backdrop'}
       >
         <Text style={{ color: theme.colors.text, fontWeight: theme.typography.weightMedium }}>
-          {fallback ? t(lang, 'stage0OpaqueFallback') : t(lang, 'stage0LiveBackdrop')}
+          {variant === 'fallback' ? t(lang, 'stage0OpaqueFallback') : t(lang, 'stage0LiveBackdrop')}
         </Text>
         <Text style={{ color: theme.colors.textMuted, fontSize: theme.typography.captionSize }}>
-          {fallback
+          {variant === 'fallback'
             ? t(lang, 'stage0FallbackDescription')
             : blurSupported
               ? t(lang, 'stage0BackdropDescription')
@@ -243,7 +255,8 @@ export default function V11Stage0Screen() {
   const [reducedMotion, setReducedMotion] = useState(false);
   const [sweeping, setSweeping] = useState(false);
   const sweepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const blurSupported = useMemo(supportsWebBackdropFilter, []);
+  const backdropSupport = useMemo(getWebBackdropSupport, []);
+  const blurSupported = backdropSupport.standard || backdropSupport.webkit;
   const frameStats = useFrameObservation(!reducedMotion);
   const theme = getQuestTheme(themeId);
 
@@ -401,17 +414,20 @@ export default function V11Stage0Screen() {
           <Text style={[styles.sectionCopy, { color: theme.colors.textMuted }]}>
             {blurSupported ? t(lang, 'stage0SupportDetected') : t(lang, 'stage0SupportMissing')}
           </Text>
+          <Text style={[styles.supportDetail, { color: theme.colors.textSubtle }]}>
+            standard={String(backdropSupport.standard)} · -webkit={String(backdropSupport.webkit)}
+          </Text>
           <WebView dataSet={{ 'v11-role': 'material-grid' }}>
             <MaterialSample
               theme={theme}
               lang={lang}
-              fallback={forceFallback || !blurSupported}
+              variant="backdrop"
               blurSupported={blurSupported}
             />
             <MaterialSample
               theme={theme}
               lang={lang}
-              fallback
+              variant="fallback"
               blurSupported={blurSupported}
             />
           </WebView>
@@ -521,6 +537,12 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 12,
     lineHeight: 18,
+  },
+  supportDetail: {
+    marginTop: 3,
+    fontSize: 10,
+    lineHeight: 15,
+    letterSpacing: 0.2,
   },
   metricLabel: {
     fontSize: 10,
