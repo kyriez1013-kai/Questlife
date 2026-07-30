@@ -24,6 +24,11 @@ const WebPressable = Pressable as any;
 const WebText = Text as any;
 
 export type V11TodayRow = {
+  actions?: Array<{
+    id: string;
+    label: string;
+    onPress: () => void;
+  }>;
   id: string;
   title: string;
   metadata?: string;
@@ -174,13 +179,16 @@ function CompactRows({
   return (
     <WebView dataSet={{ 'v11-today-role': 'compact-rows' }}>
       {rows.slice(0, 3).map((row) => (
-        <WebPressable
-          accessibilityRole={row.onPress ? 'button' : undefined}
+        <WebView
           key={row.id}
-          onPress={row.onPress}
           dataSet={{ 'v11-today-role': 'compact-row' }}
         >
-          <WebView style={{ minWidth: 0, flex: 1 }}>
+          <WebPressable
+            accessibilityRole={row.onPress ? 'button' : undefined}
+            dataSet={{ 'v11-today-role': 'row-main' }}
+            disabled={!row.onPress}
+            onPress={row.onPress}
+          >
             <Text
               numberOfLines={1}
               style={[styles.rowTitle, { color: theme.text.primary }]}
@@ -195,13 +203,26 @@ function CompactRows({
                 {row.metadata}
               </Text>
             ) : null}
-          </WebView>
+          </WebPressable>
           {row.trailing ? (
             <Text style={[styles.rowMeta, { color: theme.text.metadata }]}>
               {row.trailing}
             </Text>
           ) : null}
-        </WebPressable>
+          {(row.actions || []).slice(0, 2).map((action) => (
+            <WebPressable
+              accessibilityLabel={action.label}
+              accessibilityRole="button"
+              dataSet={{ 'v11-today-role': 'row-action' }}
+              key={action.id}
+              onPress={action.onPress}
+            >
+              <Text style={[styles.rowMeta, { color: theme.text.primary }]}>
+                {action.label}
+              </Text>
+            </WebPressable>
+          ))}
+        </WebView>
       ))}
     </WebView>
   );
