@@ -2,7 +2,7 @@
 
 Date: 2026-07-30
 
-Status: Local technical fixture complete. Awaiting Stage 0 approval.
+Status: Approved after physical iPhone Safari owner verification.
 
 Branch: `design/questlife-product-v2`
 
@@ -182,7 +182,7 @@ Isolation:
 | Chromium responsive viewport 375x667 | VERIFIED |
 | Chromium responsive viewport 393x852 | VERIFIED |
 | `prefers-reduced-motion` CSS path | VERIFIED by forced reduced-motion state |
-| Physical iOS Safari | UNVERIFIED - no physical iOS Safari device was available |
+| Physical iOS Safari | VERIFIED manually by owner |
 | Mobile software keyboard | UNVERIFIED - the fixture contains no text input |
 | Unsupported-browser automatic `@supports` path | UNVERIFIED on an actually unsupported engine; forced fallback was verified |
 
@@ -190,6 +190,19 @@ The Stage 0 P95 observations apply only to this two-orb, two-blur-layer fixture.
 They must not be reused as a Stage 2 Today performance conclusion. Stage 2 must
 repeat frame, scroll, flicker, and layer-count measurements against the complete
 Today composition.
+
+Physical iPhone Safari owner verification passed:
+
+- true-glass blur and refraction;
+- intentionally opaque fallback material;
+- inset directional edge without protruding pill ends;
+- repeated S1 / S3 scrolling without visible flicker or disappearing material;
+- no unacceptable hard glow edge, rectangular clipping, or banding;
+- `2 / 5 state` baseline;
+- dark and light material depth.
+
+The exact `standard=` and `-webkit=` values remain pending transcription from
+the owner's device readout. They are not inferred in this document.
 
 ## Artifacts
 
@@ -214,5 +227,5 @@ Owner test:
 
 This fixture proves only the Web material paths and responsive feasibility.
 It does not implement V11 Today, does not map production Today functions, and
-does not begin the Stage 1 token layer. Stage 1 remains blocked until explicit
-approval.
+does not map any production data. Stage 0 is approved; Stage 1 may proceed
+behind its own isolated fixture route.

@@ -1,6 +1,6 @@
 # QuestLife V11 Stage 0 - iOS Safari Manual Check
 
-Status: Owner verification pending.
+Status: Passed and approved by owner on physical iPhone Safari.
 
 The Mac and iPhone must be connected to the same local network. Start the
 fixture with:
@@ -39,9 +39,9 @@ Record:
 
 - iPhone model:
 - iOS version:
-- Safari `standard` result:
-- Safari `-webkit` result:
-- Glass visually refracts the background: PASS / FAIL
+- Safari `standard` result: PENDING EXACT OWNER VALUE
+- Safari `-webkit` result: PENDING EXACT OWNER VALUE
+- Glass visually refracts the background: PASS
 
 ## 2. Scrolling Stability
 
@@ -58,7 +58,8 @@ Check for:
 - external shadow or bloom clipping at the rounded ends;
 - content jumping horizontally.
 
-Record: PASS / FAIL and a short observation.
+Record: PASS - repeated S1 / S3 scrolling had no visible flicker or material
+disappearance.
 
 ## 3. Orb Banding
 
@@ -72,14 +73,14 @@ Check:
 - no flicker during the S1 to S3 transition;
 - the supporting orb does not overpower the primary reading.
 
-Record: PASS / FAIL and whether banding is visible in S1, S3, or both.
+Record: PASS - no unacceptable hard edge, rectangular clipping, or banding.
 
 ## 4. Reading Baseline
 
 Confirm that `2`, `/ 5`, and `state` remain on one horizontal baseline in
 portrait orientation.
 
-Record: PASS / FAIL.
+Record: PASS.
 
 ## 5. Directional Edge Geometry
 
@@ -97,7 +98,7 @@ Repeat the geometry and material checks in both `深度工作` and `清醒专注
 The light variant must remain translucent and must not become an opaque grey
 capsule.
 
-Record: PASS / FAIL.
+Record: PASS.
 
 ## 6. Evidence to Return
 
@@ -109,4 +110,5 @@ Please provide:
 - a short note about banding;
 - a screen recording only if flicker or dropped frames are visible.
 
-Stage 0 remains pending until this owner verification is reported.
+Stage 0 is approved. The two support booleans above still require exact
+transcription from the tested device; they must not be guessed.

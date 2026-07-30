@@ -2422,8 +2422,8 @@ Genuine product gaps, not regressions:
 
 ## QuestLife V11 Production Migration - Stage 0
 
-Status: Local technical feasibility fixture complete on
-`design/questlife-product-v2`; awaiting explicit Stage 0 approval.
+Status: Approved after physical iPhone Safari owner verification on
+`design/questlife-product-v2`.
 
 Completed:
 - Added an isolated `?questlife_v11_ui=stage0` route. The default app and five-tab
@@ -2450,7 +2450,6 @@ Validation:
   0 / 180 intervals over 20ms.
 
 UNVERIFIED:
-- Physical iOS Safari and physical-device screenshots.
 - Actual unsupported-browser automatic fallback; the forced fallback path was
   verified visually and through computed styles.
 
@@ -2476,12 +2475,69 @@ Stage 0 follow-up:
   0 / 180 intervals over 20ms. This remains fixture-only evidence.
 - Stage 0 P95 values are fixture-only. Stage 2 must remeasure the full Today
   layer count, scrolling, flicker, and frame intervals.
-- `QUESTLIFE_V11_STAGE0_IOS_SAFARI_CHECKLIST.md` records the pending owner test.
+- `QUESTLIFE_V11_STAGE0_IOS_SAFARI_CHECKLIST.md` records the passed owner test
+  and the two support-value fields still awaiting exact transcription.
+- Physical iPhone Safari manual verification passed for true-glass refraction,
+  fallback opacity, directional geometry, S1 / S3 scrolling stability, glow
+  clipping/banding, baseline alignment, and dark/light depth.
+- The exact Safari `standard=` and `-webkit=` support values still await owner
+  transcription and are not guessed.
 
 Documentation:
 - `QUESTLIFE_V11_STAGE0_FEASIBILITY.md`
 - `artifacts/v11-stage0/`
 
 Boundary:
-- Stage 1 has not started.
+- Stage 0 is approved; Stage 1 may proceed only through an isolated fixture
+  route and reusable token/component layer.
 - Nothing has been pushed or deployed.
+
+## QuestLife V11 Production Migration - Stage 1
+
+Status: Local token/component fixture complete on
+`design/questlife-product-v2`; physical iPhone Safari verification pending.
+
+Completed:
+- Added isolated `?questlife_v11_ui=stage1` component overview route. The
+  default five-tab app and Stage 0 fixture remain available.
+- Added dark/light colour-field, glow-orb, true-glass, fallback-material,
+  directional-edge, typography, spacing, motion, easing, and evidence-stage
+  tokens.
+- Extracted the approved inset SVG edge geometry into a reusable directional
+  border primitive.
+- Added reusable three-layer pill and glass-sheet material primitives, a
+  radial glow object, and five micro-instruments: radial gauge, sparkline,
+  distribution, arc range, and dual-ended interval.
+- Added explicit standard/reduced-motion comparison. System
+  `prefers-reduced-motion` and the fixture override reduce animation and
+  transition durations to an immediate state.
+- No production screen, business logic, handler, prop contract, schema, API,
+  Store, or persistence path changed.
+- No third-party dependency was added.
+
+Local validation:
+- `npx tsc --noEmit` passes.
+- `npm run build` passes; Expo web output remains `dist`.
+- 375x667 and 393x852 responsive checks pass with no horizontal scroll.
+- Interactive controls are at least 48px high in the fixture and have no
+  overlapping hit regions.
+- Material outer wrappers remain overflow-visible; inner glass clips remain
+  overflow-hidden; edge SVG dimensions match their material containers.
+- Dark/light true-glass and intentionally opaque fallback surfaces were
+  inspected in the local web fixture.
+- Standard motion resolves to 120/320/640ms tokens; the explicit reduced sample
+  resolves to 0.001ms animation and transition durations.
+
+UNVERIFIED:
+- Stage 1 physical iPhone Safari material, scrolling, reduced-motion, and
+  responsive checks. Use `QUESTLIFE_V11_STAGE1_IOS_SAFARI_CHECKLIST.md`.
+- Stage 0 exact Safari `standard=` and `-webkit=` readout values still await
+  owner transcription.
+
+Boundary:
+- Stage 2 has not started.
+- Nothing has been pushed or deployed.
+
+Documentation:
+- `QUESTLIFE_V11_STAGE1_COMPONENTS.md`
+- `QUESTLIFE_V11_STAGE1_IOS_SAFARI_CHECKLIST.md`

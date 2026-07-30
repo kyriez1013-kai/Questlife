@@ -26,14 +26,16 @@ import OnboardingScreen from './src/screens/OnboardingScreen';
 import { trackEvent } from './src/utils/analytics';
 import { auditDataResidue, isDataResidueDebugEnabled } from './src/utils/dataResidueAudit';
 import V11Stage0Screen from './src/v11-stage0/V11Stage0Screen';
+import V11Stage1Screen from './src/v11-stage1/V11Stage1Screen';
 
 const Tab = createBottomTabNavigator();
 const SkillsStack = createNativeStackNavigator();
 const GoalsStack = createNativeStackNavigator();
 
-function isV11Stage0Route(): boolean {
-  if (Platform.OS !== 'web' || typeof window === 'undefined') return false;
-  return new URLSearchParams(window.location.search).get('questlife_v11_ui') === 'stage0';
+function getV11FixtureRoute(): 'stage0' | 'stage1' | null {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') return null;
+  const route = new URLSearchParams(window.location.search).get('questlife_v11_ui');
+  return route === 'stage0' || route === 'stage1' ? route : null;
 }
 
 function FocusedTabSurface({ children, backgroundColor }: { children: React.ReactNode; backgroundColor: string }) {
@@ -272,11 +274,15 @@ function AppContent() {
 }
 
 export default function App() {
-  if (isV11Stage0Route()) {
+  const v11FixtureRoute = getV11FixtureRoute();
+
+  if (v11FixtureRoute) {
     return (
       <SafeAreaProvider>
         <StatusBar style="auto" />
-        <V11Stage0Screen />
+        {v11FixtureRoute === 'stage0'
+          ? <V11Stage0Screen />
+          : <V11Stage1Screen />}
       </SafeAreaProvider>
     );
   }
