@@ -2419,3 +2419,42 @@ Genuine product gaps, not regressions:
 - Schedule edit/delete remains an open product decision; Phase 5 does not add it.
 - Apple Health and other external data sources remain unconnected and are described honestly.
 - Advanced analysis remains evidence-gated and may be sparse for low-data users.
+
+## QuestLife V11 Production Migration - Stage 0
+
+Status: Local technical feasibility fixture complete on
+`design/questlife-product-v2`; awaiting explicit Stage 0 approval.
+
+Completed:
+- Added an isolated `?questlife_v11_ui=stage0` route. The default app and five-tab
+  navigation remain unchanged.
+- Verified a directional SVG edge using the existing `react-native-svg`
+  dependency.
+- Verified SVG radial light orbs with 120px / 96px Web blur.
+- Verified a narrow Web material adapter for `backdrop-filter`, because Expo's
+  CSS export removes that property from stylesheets.
+- Verified an opaque soft-surface fallback and reduced-motion state.
+- Verified 375x667 and 393x852 responsive browser viewports without global
+  horizontal overflow.
+- Verified the exported `dist` release output in actual Chrome at 375x667.
+- Added no dependency, schema, API, Store, persistence, or production-screen
+  changes.
+
+Validation:
+- `npx tsc --noEmit` passed.
+- `npm run build` passed.
+- Bundle: `index-b9ea0d0ac941c5e6a64e6166e4439507.js`.
+- Chrome 375x667 frame observation: P95 17.6ms; 0 / 180 intervals over 20ms.
+
+UNVERIFIED:
+- Physical iOS Safari and physical-device screenshots.
+- Actual unsupported-browser automatic fallback; the forced fallback path was
+  verified visually and through computed styles.
+
+Documentation:
+- `QUESTLIFE_V11_STAGE0_FEASIBILITY.md`
+- `artifacts/v11-stage0/`
+
+Boundary:
+- Stage 1 has not started.
+- Nothing has been pushed or deployed.
