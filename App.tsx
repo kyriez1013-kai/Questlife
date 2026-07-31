@@ -27,15 +27,18 @@ import { trackEvent } from './src/utils/analytics';
 import { auditDataResidue, isDataResidueDebugEnabled } from './src/utils/dataResidueAudit';
 import V11Stage0Screen from './src/v11-stage0/V11Stage0Screen';
 import V11Stage1Screen from './src/v11-stage1/V11Stage1Screen';
+import V11Stage2RebaselineScreen from './src/v11-stage2-rebaseline/V11Stage2RebaselineScreen';
 
 const Tab = createBottomTabNavigator();
 const SkillsStack = createNativeStackNavigator();
 const GoalsStack = createNativeStackNavigator();
 
-function getV11FixtureRoute(): 'stage0' | 'stage1' | null {
+function getV11FixtureRoute(): 'stage0' | 'stage1' | 'stage2-rebaseline' | null {
   if (Platform.OS !== 'web' || typeof window === 'undefined') return null;
   const route = new URLSearchParams(window.location.search).get('questlife_v11_ui');
-  return route === 'stage0' || route === 'stage1' ? route : null;
+  return route === 'stage0' || route === 'stage1' || route === 'stage2-rebaseline'
+    ? route
+    : null;
 }
 
 function FocusedTabSurface({ children, backgroundColor }: { children: React.ReactNode; backgroundColor: string }) {
@@ -282,7 +285,9 @@ export default function App() {
         <StatusBar style="auto" />
         {v11FixtureRoute === 'stage0'
           ? <V11Stage0Screen />
-          : <V11Stage1Screen />}
+          : v11FixtureRoute === 'stage1'
+            ? <V11Stage1Screen />
+            : <V11Stage2RebaselineScreen />}
       </SafeAreaProvider>
     );
   }
