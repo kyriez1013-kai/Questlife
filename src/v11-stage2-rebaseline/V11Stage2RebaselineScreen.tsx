@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -60,6 +60,7 @@ function initialSheet(): RebaselineSheet {
   const value = query().get('sheet');
   return value === 'capture'
     || value === 'state'
+    || value === 'state-detail'
     || value === 'decision'
     || value === 'history'
     || value === 'record'
@@ -85,6 +86,10 @@ function stageLabelKey(scenario: RebaselineScenario) {
   return 'rebaselineStageStablePattern';
 }
 
+function stateLabelKey(value: number) {
+  return ['veryBad', 'bad', 'average', 'good', 'great'][Math.max(0, Math.min(4, value - 1))];
+}
+
 function navItems(language: Lang): Array<{
   icon: V11RebaselineIconName;
   key: string;
@@ -105,7 +110,6 @@ export default function V11Stage2RebaselineScreen() {
   const [language, setLanguage] = useState<Lang>(initialLanguage);
   const [expanded, setExpanded] = useState(initialLayerExpanded);
   const [sheet, setSheet] = useState<RebaselineSheet>(initialSheet);
-  const [latestExpanded, setLatestExpanded] = useState(false);
   const [instantExpanded, setInstantExpanded] = useState(
     query().get('instant') === 'open',
   );
@@ -117,6 +121,12 @@ export default function V11Stage2RebaselineScreen() {
         : buildRebaselineFixture(initialScenario()).instantFeedback,
   );
   const [stateValue, setStateValue] = useState<number | null>(null);
+  const [pendingStateValue, setPendingStateValue] = useState<number | null>(null);
+  const [stateSaveStatus, setStateSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [feedbackStatus, setFeedbackStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const stateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const closeStateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fixture = useMemo(() => buildRebaselineFixture(scenario), [scenario]);
   const calibratedDecision = useMemo(
     () => scenario === 's0' && stateValue != null
@@ -151,13 +161,46 @@ export default function V11Stage2RebaselineScreen() {
     '--v11-rebaseline-border': theme.questTheme.colors.border,
   } as any;
 
-  const openState = () => setSheet('state');
-  const selectState = (value: number) => {
-    setStateValue(value);
-    setSheet(null);
-    setExpanded(true);
-    setInstantExpanded(true);
+  const openState = () => {
+    setPendingStateValue(reading);
+    setStateSaveStatus('idle');
+    setSheet('state');
   };
+  const selectState = (value: number) => {
+    if (stateTimerRef.current) clearTimeout(stateTimerRef.current);
+    if (closeStateTimerRef.current) clearTimeout(closeStateTimerRef.current);
+    setPendingStateValue(value);
+    setStateSaveStatus('saving');
+    stateTimerRef.current = setTimeout(() => {
+      const shouldFail = query().get('debugDecision') === '1'
+        && query().get('stateSave') === 'error';
+      if (shouldFail) {
+        setStateSaveStatus('error');
+        return;
+      }
+      setStateValue(value);
+      setStateSaveStatus('saved');
+      setExpanded(true);
+      setInstantExpanded(true);
+      closeStateTimerRef.current = setTimeout(() => {
+        setSheet(null);
+        setStateSaveStatus('idle');
+      }, 640);
+    }, 320);
+  };
+
+  const selectFeedback = (value: 'useful' | 'not_useful') => {
+    if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    setFeedback(value);
+    setFeedbackStatus('saving');
+    feedbackTimerRef.current = setTimeout(() => setFeedbackStatus('saved'), 320);
+  };
+
+  useEffect(() => () => {
+    if (stateTimerRef.current) clearTimeout(stateTimerRef.current);
+    if (closeStateTimerRef.current) clearTimeout(closeStateTimerRef.current);
+    if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+  }, []);
 
   useEffect(() => {
     if (!debugPerformance || typeof window === 'undefined') return;
@@ -211,20 +254,27 @@ export default function V11Stage2RebaselineScreen() {
       }}
       style={cssVariables}
     >
-      <WebView dataSet={{ 'v11-rebaseline-role': 'field' }} pointerEvents="none" />
-      <V11GlowOrb
-        stage={effectiveStage}
-        style={{ position: 'absolute', top: 148, left: -92 }}
-        theme={theme}
-      />
-      <V11GlowOrb
-        stage={effectiveStage === 'S3' ? 'S2' : effectiveStage}
-        style={{ position: 'absolute', top: 430, right: -138 }}
-        theme={theme}
-        tone="supporting"
-      />
+      <WebView
+        dataSet={{
+          'v11-rebaseline-role': 'background-layer',
+          'v11-sheet-open': sheet ? 'true' : 'false',
+        }}
+        pointerEvents={sheet ? 'none' : 'auto'}
+      >
+        <WebView dataSet={{ 'v11-rebaseline-role': 'field' }} pointerEvents="none" />
+        <V11GlowOrb
+          stage={effectiveStage}
+          style={{ position: 'absolute', top: 148, left: -92 }}
+          theme={theme}
+        />
+        <V11GlowOrb
+          stage={effectiveStage === 'S3' ? 'S2' : effectiveStage}
+          style={{ position: 'absolute', top: 430, right: -138 }}
+          theme={theme}
+          tone="supporting"
+        />
 
-      {debugControls ? (
+        {debugControls ? (
         <WebView dataSet={{ 'v11-rebaseline-role': 'debug-controls' }}>
           {(['s0', 's1', 's3'] as const).map((value) => (
             <WebPressable
@@ -252,10 +302,10 @@ export default function V11Stage2RebaselineScreen() {
             <Text>{language.toUpperCase()}</Text>
           </WebPressable>
         </WebView>
-      ) : null}
+        ) : null}
 
       <WebScrollView
-        contentContainerStyle={{ paddingBottom: 124 }}
+        contentContainerStyle={{ paddingBottom: 164 }}
         dataSet={{ 'v11-rebaseline-role': 'scroll' }}
         showsVerticalScrollIndicator={false}
       >
@@ -269,51 +319,44 @@ export default function V11Stage2RebaselineScreen() {
             </Text>
           </WebView>
 
-          <WebPressable
-            accessibilityLabel={t(language, 'rebaselineCapturePlaceholder')}
-            accessibilityRole="button"
-            dataSet={{ 'v11-rebaseline-role': 'capture-entry' }}
-            onPress={() => setSheet('capture')}
-          >
-            <V11RebaselineIcon name="capture" size={18} color={theme.glow.primary} />
-            <Text
-              numberOfLines={1}
-              style={{ flex: 1, color: theme.text.secondary, fontSize: 14, lineHeight: 20 }}
-            >
-              {t(language, 'rebaselineCapturePlaceholder')}
-            </Text>
-            <WebView dataSet={{ 'v11-rebaseline-role': 'capture-send' }}>
-              <V11RebaselineIcon name="arrow" size={16} color={theme.text.primary} />
-            </WebView>
-          </WebPressable>
-
-          {fixture.latestRecordKey ? (
+          <WebView dataSet={{ 'v11-rebaseline-role': 'capture-group' }}>
             <WebPressable
+              accessibilityLabel={t(language, 'rebaselineCapturePlaceholder')}
               accessibilityRole="button"
-              accessibilityState={{ expanded: latestExpanded }}
-              dataSet={{ 'v11-rebaseline-role': 'latest-record' }}
-              onPress={() => setLatestExpanded((value) => !value)}
+              dataSet={{ 'v11-rebaseline-role': 'capture-entry' }}
+              onPress={() => setSheet('capture')}
             >
-              <WebView style={{ flex: 1, minWidth: 0 }}>
-                <Text style={{ color: theme.text.metadata, fontSize: 10, lineHeight: 15, letterSpacing: 0.7 }}>
-                  {t(language, 'rebaselineLatestRecordLabel')}
-                </Text>
-                <Text numberOfLines={1} style={{ color: theme.text.primary, fontSize: 14, lineHeight: 20, fontWeight: '500' }}>
-                  {t(language, fixture.latestRecordKey)}
-                </Text>
-                {latestExpanded ? (
-                  <Text style={{ color: theme.text.secondary, fontSize: 12, lineHeight: 18, marginTop: 4 }}>
-                    {t(language, fixture.latestRecordMetaKey || '')}
-                  </Text>
-                ) : null}
+              <V11RebaselineIcon name="capture" size={18} color={theme.glow.primary} />
+              <Text
+                numberOfLines={1}
+                style={{ flex: 1, color: theme.text.secondary, fontSize: 14, lineHeight: 20 }}
+              >
+                {t(language, 'rebaselineCapturePlaceholder')}
+              </Text>
+              <WebView dataSet={{ 'v11-rebaseline-role': 'capture-send' }}>
+                <V11RebaselineIcon name="arrow" size={16} color={theme.text.primary} />
               </WebView>
-              <V11RebaselineIcon
-                name={latestExpanded ? 'chevron-up' : 'chevron-down'}
-                size={16}
-                color={theme.text.secondary}
-              />
             </WebPressable>
-          ) : null}
+            <WebPressable
+              accessibilityLabel={t(language, fixture.latestRecordKey
+                ? 'rebaselineOpenActivityHistory'
+                : 'rebaselineNoLatestRecord')}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: !fixture.latestRecordKey }}
+              dataSet={{ 'v11-rebaseline-role': 'latest-record' }}
+              disabled={!fixture.latestRecordKey}
+              onPress={() => setSheet('history')}
+            >
+              <Text
+                numberOfLines={1}
+                style={{ color: theme.text.secondary, fontSize: 12.5, lineHeight: 18 }}
+              >
+                {fixture.latestRecordKey
+                  ? `${t(language, 'rebaselineLatestRecordLabel')} · ${t(language, fixture.latestRecordKey)} · ${t(language, 'rebaselineTimeMorning')}`
+                  : t(language, 'rebaselineNoLatestRecord')}
+              </Text>
+            </WebPressable>
+          </WebView>
 
           <WebView dataSet={{ 'v11-rebaseline-role': 'decision-group' }}>
             <WebView dataSet={{ 'v11-rebaseline-role': 'decision-copy' }}>
@@ -380,7 +423,7 @@ export default function V11Stage2RebaselineScreen() {
                 <Text style={{ color: theme.text.primary, fontSize: 22, lineHeight: 29, fontWeight: '400' }}>
                   {reading == null
                     ? t(language, 'rebaselineStateNotRecorded')
-                    : `${reading} / 5 · ${t(language, reading <= 2 ? 'low' : 'average')}`}
+                    : `${reading} / 5 · ${t(language, stateLabelKey(reading))}`}
                 </Text>
               </WebView>
               <V11RebaselineIcon
@@ -402,6 +445,31 @@ export default function V11Stage2RebaselineScreen() {
             </WebPressable>
           </WebView>
 
+          {fixture.plan.length > 0 ? (
+            <WebPressable
+              accessibilityLabel={t(language, expanded
+                ? 'rebaselineCollapseTodayDetails'
+                : 'rebaselineExpandTodayDetails')}
+              accessibilityRole="button"
+              accessibilityState={{ expanded }}
+              dataSet={{ 'v11-rebaseline-role': 'plan-preview' }}
+              onPress={() => setExpanded((value) => !value)}
+            >
+              <V11RebaselineIcon name="calendar" size={15} color={theme.glow.primary} />
+              <Text numberOfLines={1} style={{ flex: 1, color: theme.text.secondary, fontSize: 12.5, lineHeight: 18 }}>
+                {t(language, expanded ? 'rebaselinePlanPreviewExpanded' : 'rebaselinePlanPreview')
+                  .replace('{count}', String(fixture.plan.length))
+                  .replace('{time}', fixture.plan[0].time)
+                  .replace('{title}', t(language, fixture.plan[0].titleKey))}
+              </Text>
+              <V11RebaselineIcon
+                name={expanded ? 'chevron-up' : 'chevron-down'}
+                size={15}
+                color={theme.text.secondary}
+              />
+            </WebPressable>
+          ) : null}
+
           {expanded ? (
             <WebView dataSet={{ 'v11-rebaseline-role': 'l2' }}>
               {reading != null ? (
@@ -417,7 +485,9 @@ export default function V11Stage2RebaselineScreen() {
                         {t(language, 'instantRead')}
                       </Text>
                       <Text style={{ color: theme.text.secondary, fontSize: 12, lineHeight: 18 }}>
-                        {feedback
+                        {feedbackStatus === 'saving'
+                          ? t(language, 'feedbackSaving')
+                          : feedback
                           ? `${t(language, 'feedbackSaved')} · ${t(language, feedback === 'useful' ? 'useful' : 'notUseful')}`
                           : t(language, 'rebaselineInstantSummary')}
                       </Text>
@@ -442,7 +512,7 @@ export default function V11Stage2RebaselineScreen() {
                               'v11-selected': feedback === value ? 'true' : 'false',
                             }}
                             key={value}
-                            onPress={() => setFeedback(value)}
+                            onPress={() => selectFeedback(value)}
                           >
                             <Text style={{ color: theme.text.primary, fontSize: 12, fontWeight: '500' }}>
                               {t(language, value === 'useful' ? 'useful' : 'notUseful')}
@@ -450,6 +520,11 @@ export default function V11Stage2RebaselineScreen() {
                           </WebPressable>
                         ))}
                       </WebView>
+                      {feedbackStatus !== 'idle' ? (
+                        <Text accessibilityLiveRegion="polite" style={{ color: theme.text.secondary, fontSize: 12, lineHeight: 18 }}>
+                          {t(language, feedbackStatus === 'saving' ? 'feedbackSaving' : 'feedbackSaved')}
+                        </Text>
+                      ) : null}
                     </WebView>
                   ) : null}
                 </WebView>
@@ -489,46 +564,6 @@ export default function V11Stage2RebaselineScreen() {
                 ))}
               </WebView>
 
-              <WebView dataSet={{ 'v11-rebaseline-role': 'section' }}>
-                <WebView dataSet={{ 'v11-rebaseline-role': 'section-heading' }}>
-                  <Text style={{ color: theme.text.primary, fontSize: 16, lineHeight: 22, fontWeight: '500' }}>
-                    {t(language, 'recentExecution')}
-                  </Text>
-                  <WebPressable
-                    accessibilityRole="button"
-                    onPress={() => setSheet('history')}
-                  >
-                    <Text style={{ color: theme.text.secondary, fontSize: 12 }}>
-                      {t(language, 'rebaselineViewAll')}
-                    </Text>
-                  </WebPressable>
-                </WebView>
-                {fixture.recent.length === 0 ? (
-                  <Text style={{ color: theme.text.secondary, fontSize: 13, lineHeight: 20 }}>
-                    {t(language, 'rebaselineNoRecentExecution')}
-                  </Text>
-                ) : fixture.recent.slice(0, 3).map((row) => (
-                  <WebPressable
-                    accessibilityRole="button"
-                    dataSet={{ 'v11-rebaseline-role': 'execution-row' }}
-                    key={row.id}
-                    onPress={() => setSheet('record')}
-                  >
-                    <WebView style={{ flex: 1, minWidth: 0 }}>
-                      <Text numberOfLines={1} style={{ color: theme.text.primary, fontSize: 14, lineHeight: 20, fontWeight: '500' }}>
-                        {t(language, row.titleKey)}
-                      </Text>
-                      <Text numberOfLines={1} style={{ color: theme.text.secondary, fontSize: 12, lineHeight: 18 }}>
-                        {t(language, row.metaKey)} · {t(language, row.resultKey)}
-                      </Text>
-                    </WebView>
-                    <Text style={{ color: theme.text.metadata, fontSize: 11 }}>
-                      {t(language, row.timeKey)}
-                    </Text>
-                  </WebPressable>
-                ))}
-              </WebView>
-
               <WebPressable
                 accessibilityRole="button"
                 dataSet={{ 'v11-rebaseline-role': 'evidence-summary' }}
@@ -553,12 +588,26 @@ export default function V11Stage2RebaselineScreen() {
                   {t(language, 'viewEvidence')}
                 </Text>
               </WebPressable>
+              <WebPressable
+                accessibilityLabel={t(language, 'rebaselineCollapseTodayDetails')}
+                accessibilityRole="button"
+                dataSet={{ 'v11-rebaseline-role': 'l2-collapse-end' }}
+                onPress={() => setExpanded(false)}
+              >
+                <Text style={{ color: theme.text.secondary, fontSize: 12, lineHeight: 18 }}>
+                  {t(language, 'rebaselineCollapseTodayDetails')}
+                </Text>
+                <V11RebaselineIcon name="chevron-up" size={15} color={theme.text.secondary} />
+              </WebPressable>
             </WebView>
           ) : null}
         </WebView>
       </WebScrollView>
 
-      {!sheet ? (
+        <WebView
+          dataSet={{ 'v11-rebaseline-role': 'nav-shield' }}
+          pointerEvents="none"
+        />
         <WebView dataSet={{ 'v11-rebaseline-role': 'bottom-nav' }}>
           {navItems(language).map((item) => (
             <WebView
@@ -584,15 +633,25 @@ export default function V11Stage2RebaselineScreen() {
             </WebView>
           ))}
         </WebView>
-      ) : null}
+      </WebView>
 
       <V11Stage2RebaselineSheet
         feedback={feedback}
+        feedbackStatus={feedbackStatus}
         language={language}
-        onClose={() => setSheet(null)}
-        onFeedback={setFeedback}
+        onClose={() => {
+          setSheet(null);
+          setStateSaveStatus('idle');
+        }}
+        onDetailedState={() => setSheet('state-detail')}
+        onFeedback={selectFeedback}
+        onOpenRecord={() => setSheet('record')}
         onState={selectState}
+        recent={fixture.recent}
+        reducedMotion={reducedMotion}
+        selectedState={pendingStateValue ?? reading}
         sheet={sheet}
+        stateSaveStatus={stateSaveStatus}
         themeMode={themeMode}
       />
     </WebView>
