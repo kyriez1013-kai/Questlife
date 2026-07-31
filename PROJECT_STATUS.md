@@ -2602,3 +2602,55 @@ UNVERIFIED:
 Documentation:
 - `QUESTLIFE_V11_STAGE2_QA.md`
 - `artifacts/v11-stage2/`
+
+### Stage 2 Rebaseline
+
+Status: isolated local prototype and browser QA complete; physical iPhone
+Safari and product/visual approval pending. Nothing has been pushed or
+deployed.
+
+The previous Stage 2 Today implementation was rejected for product, visual,
+and information-architecture reasons. It remains isolated behind
+`?questlife_v11_ui=stage2`; it is not the approved production replacement.
+
+Rebaseline work:
+- Added an isolated `?questlife_v11_ui=stage2-rebaseline` route.
+- Kept the current production Today hierarchy as the IA source of truth:
+  date/context, Smart Capture, latest record, decision, state, plan, recent
+  execution, and progressive sheets.
+- Removed raw evidence strings, internal field names, unexplained fixture
+  instruments, ambiguous floating shortcuts, and the body/sleep Today shortcut.
+- Kept Direct Log contextual, Decision evidence named, Plan/Recent capped at
+  three rows, and full history in a sheet.
+- Reused the approved deterministic Evidence Stage adapter. No stage is
+  persisted and manual fixture selection remains debug-only.
+- Preserved distinct `useful` and `not_useful` Instant Read feedback semantics
+  in the mapping; the isolated fixture does not write Store or persistence.
+- Added explicit mobile bottom navigation and a non-overlapping desktop
+  navigation rail for 1280px QA.
+- Did not modify `HomeScreen`, Store, schemas, APIs, handlers, or persistence.
+
+Local validation:
+- `npx tsc --noEmit` passed.
+- Presentation adapter pure-function tests passed.
+- `npm run build` passed.
+- Final local bundle:
+  `index-174c03029bce31c75d82d4ca811d347f.js`.
+- 375x667, 393x852, and 1280x900 checks found no global horizontal overflow.
+- Full-composition P95 measured 17.6-17.7ms for L2 scrolling, Capture
+  open/close, light, reduced-motion, and desktop runs. One 100ms startup
+  interval occurred in the 375px Dark L1 run and is recorded in QA.
+- No local rebaseline runtime error was observed. The existing Expo
+  Notifications web-support warning remains.
+
+UNVERIFIED:
+- Physical iPhone Safari rebaseline approval and keyboard behavior.
+- Persisted Instant Read feedback after refresh through the rebased UI.
+- Production handler integration and deployment, because this stage stops
+  before `HomeScreen` integration and push.
+- Natural Schedule Proposal Apply/Undo and Rescue states.
+
+Documentation:
+- `QUESTLIFE_V11_STAGE2_REBASELINE_MAPPING.md`
+- `QUESTLIFE_V11_STAGE2_REBASELINE_QA.md`
+- `artifacts/v11-stage2-rebaseline/`

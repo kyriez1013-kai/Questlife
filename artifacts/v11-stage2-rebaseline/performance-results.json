@@ -1,0 +1,79 @@
+{
+  "bundle": "index-174c03029bce31c75d82d4ca811d347f.js",
+  "environment": "Codex in-app browser on macOS; exact browser engine version not exposed",
+  "viewportRuns": {
+    "darkL1_375": {
+      "frames": 300,
+      "max": 100,
+      "mean": 16.944333333333333,
+      "over20": 1,
+      "over32": 1,
+      "p50": 16.699999999999818,
+      "p95": 17.600000000000136,
+      "p99": 17.700000000000273,
+      "reducedMotion": false,
+      "theme": "dark"
+    },
+    "darkL2Scroll_375": {
+      "frames": 300,
+      "max": 17.700000000000273,
+      "mean": 16.663666666666668,
+      "over20": 0,
+      "over32": 0,
+      "p50": 16.699999999999818,
+      "p95": 17.600000000000136,
+      "p99": 17.700000000000273,
+      "reducedMotion": false,
+      "theme": "dark"
+    },
+    "captureOpenClose_375": {
+      "frames": 300,
+      "max": 17.699999999999818,
+      "mean": 16.665,
+      "over20": 0,
+      "over32": 0,
+      "p50": 16.699999999999818,
+      "p95": 17.59999999999991,
+      "p99": 17.600000000000364,
+      "reducedMotion": false,
+      "theme": "dark"
+    },
+    "lightL2Scroll_375": {
+      "frames": 300,
+      "max": 17.700000000000273,
+      "mean": 16.665,
+      "over20": 0,
+      "over32": 0,
+      "p50": 16.699999999999818,
+      "p95": 17.59999999999991,
+      "p99": 17.699999999999818,
+      "reducedMotion": false,
+      "theme": "light"
+    },
+    "reducedMotionL2Scroll_375": {
+      "frames": 300,
+      "max": 17.800000000000182,
+      "mean": 16.66833333333333,
+      "over20": 0,
+      "over32": 0,
+      "p50": 16.699999999999818,
+      "p95": 17.699999999999818,
+      "p99": 17.700000000000273,
+      "reducedMotion": true,
+      "theme": "dark"
+    },
+    "darkL2Scroll_1280": {
+      "frames": 300,
+      "max": 17.800000000000182,
+      "mean": 16.665,
+      "over20": 0,
+      "over32": 0,
+      "p50": 16.699999999999818,
+      "p95": 17.699999999999818,
+      "p99": 17.700000000000273,
+      "reducedMotion": false,
+      "theme": "dark"
+    }
+  },
+  "stage0Comparison": "Not reused. Stage 2 includes full Today hierarchy, 2 glow orbs, colour field, capture/state sheets, navigation, L2 plan/recent/evidence, scrolling, dark/light, and reduced motion."
+}
