@@ -2605,9 +2605,9 @@ Documentation:
 
 ### Stage 2 Rebaseline
 
-Status: isolated local prototype and browser QA complete; physical iPhone
-Safari and product/visual approval pending. Nothing has been pushed or
-deployed.
+Status: rejected baseline corrected in the isolated local prototype; local
+browser QA is complete, while physical iPhone Safari and product/visual
+approval remain pending. Nothing has been pushed or deployed.
 
 The previous Stage 2 Today implementation was rejected for product, visual,
 and information-architecture reasons. It remains isolated behind
@@ -2616,18 +2616,32 @@ and information-architecture reasons. It remains isolated behind
 Rebaseline work:
 - Added an isolated `?questlife_v11_ui=stage2-rebaseline` route.
 - Kept the current production Today hierarchy as the IA source of truth:
-  date/context, Smart Capture, latest record, decision, state, plan, recent
-  execution, and progressive sheets.
+  date/context, Smart Capture, one attached latest-record row, decision,
+  state, one L1 plan preview, maximum three L2 plan rows, and progressive
+  sheets.
 - Removed raw evidence strings, internal field names, unexplained fixture
   instruments, ambiguous floating shortcuts, and the body/sleep Today shortcut.
-- Kept Direct Log contextual, Decision evidence named, Plan/Recent capped at
-  three rows, and full history in a sheet.
+- Removed the duplicate inline Recent Execution section. The single route is
+  latest record -> Activity History -> Record Detail.
+- Kept Direct Log contextual, Decision evidence named, Plan capped at three
+  rows, and full history in an internally scrollable sheet.
+- Applied one L3 layering contract to State, State Detail, Capture, Decision,
+  Activity History, and Record: background scale/blur/dimming, full-screen
+  scrim including navigation, and foreground-only interaction.
+- Made State content-driven and restored the semantic five choices from
+  `很差` through `极佳`, including selected/saving/saved/error fixture states.
+- Added a real `记录更多状态信息` entry to the isolated detailed-state surface.
+- Added a clear L2 collapse action after the final evidence item and preserved
+  outer Today scroll position across sheet open/close.
 - Reused the approved deterministic Evidence Stage adapter. No stage is
   persisted and manual fixture selection remains debug-only.
-- Preserved distinct `useful` and `not_useful` Instant Read feedback semantics
-  in the mapping; the isolated fixture does not write Store or persistence.
+- Preserved distinct `useful` and `not_useful` Instant Read feedback values,
+  selected states, collapsed summary, and same-session reopening in the
+  isolated fixture. It does not write Store or persistence.
 - Added explicit mobile bottom navigation and a non-overlapping desktop
   navigation rail for 1280px QA.
+- Corrected the shared V11 directional border lower-right fade without
+  changing the approved inset geometry.
 - Did not modify `HomeScreen`, Store, schemas, APIs, handlers, or persistence.
 
 Local validation:
@@ -2635,17 +2649,22 @@ Local validation:
 - Presentation adapter pure-function tests passed.
 - `npm run build` passed.
 - Final local bundle:
-  `index-174c03029bce31c75d82d4ca811d347f.js`.
+  `index-b60e17974c002e9c297ad75f54c02ba4.js`.
 - 375x667, 393x852, and 1280x900 checks found no global horizontal overflow.
-- Full-composition P95 measured 17.6-17.7ms for L2 scrolling, Capture
-  open/close, light, reduced-motion, and desktop runs. One 100ms startup
-  interval occurred in the 375px Dark L1 run and is recorded in QA.
+- Full-composition P50 measured 16.7ms. P95 measured 17.6-18.6ms across L1,
+  L2 scrolling, all sheet types, Capture open/close, light, reduced-motion,
+  and 1280px desktop. Every run recorded 0 / 300 frames over 20ms.
+- All visible 393px controls meet the 44px target. At the 375px absolute L2
+  scroll bottom, final evidence and collapse controls remain above navigation.
 - No local rebaseline runtime error was observed. The existing Expo
   Notifications web-support warning remains.
 
 UNVERIFIED:
-- Physical iPhone Safari rebaseline approval and keyboard behavior.
+- Physical iPhone Safari revision approval, keyboard behavior, border seam,
+  glow banding, and device frame pacing.
 - Persisted Instant Read feedback after refresh through the rebased UI.
+- Store-backed state/Instant Read flows, production Activity History pagination,
+  deletion, and latest-summary refresh.
 - Production handler integration and deployment, because this stage stops
   before `HomeScreen` integration and push.
 - Natural Schedule Proposal Apply/Undo and Rescue states.
@@ -2653,4 +2672,4 @@ UNVERIFIED:
 Documentation:
 - `QUESTLIFE_V11_STAGE2_REBASELINE_MAPPING.md`
 - `QUESTLIFE_V11_STAGE2_REBASELINE_QA.md`
-- `artifacts/v11-stage2-rebaseline/`
+- `artifacts/v11-stage2-rebaseline-revision/`
