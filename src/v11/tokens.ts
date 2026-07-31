@@ -81,7 +81,7 @@ export const v11DirectionalBorder = {
     { offset: '0%', opacity: 0.68 },
     { offset: '26%', opacity: 0.28 },
     { offset: '58%', opacity: 0.08 },
-    { offset: '100%', opacity: 0.01 },
+    { offset: '100%', opacity: 0.045 },
   ],
 } as const;
 

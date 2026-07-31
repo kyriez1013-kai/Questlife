@@ -122,7 +122,10 @@ export default function V11DirectionalBorder({
             ry={resolvedRadius}
             fill="none"
             stroke={`url(#${gradientId})`}
+            strokeLinecap="round"
+            strokeLinejoin="round"
             strokeWidth={strokeWidth}
+            vectorEffect="non-scaling-stroke"
           />
         </Svg>
       ) : null}
