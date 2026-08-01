@@ -2692,3 +2692,42 @@ Responsive correction pass (local, approval pending):
 - Physical iPhone Safari safe-area/keyboard QA and production verification are
   still `UNVERIFIED`. Nothing has been pushed or deployed.
 - Focused artifacts: `artifacts/v11-stage2-rebaseline-responsive/`.
+
+### Stage 2 HomeScreen Integration
+
+Status: local feature-flag integration complete; physical iPhone Safari and
+production verification remain pending. Nothing has been pushed or deployed.
+
+- Integrated the approved rebaseline Today presentation with real Store data
+  behind `?questlife_v11_ui=stage2`.
+- Preserved the complete unflagged legacy Today as the immediate rollback.
+- Reused existing Capture, state check-in, Instant Read, Plan, execution,
+  Activity History, Decision Details, Schedule Proposal, Rescue, and logging
+  handlers. `todayCommand` remains the sole primary-action authority.
+- Kept Evidence Stage deterministic and non-persisted. Natural local data
+  exercised S0 and S1; S2 and S3 remain natural-state pending.
+- Preserved distinct persisted `useful` and `not_useful` Instant Read feedback;
+  refresh restored the selected `not_useful` value.
+- Limited the V11 presentation to one outer HomeScreen ScrollView, one attached
+  latest-record summary, maximum three plan rows, and no duplicate Recent
+  Execution or body/sleep shortcut.
+- Restored the approved `1040px` desktop V11 working width without changing the
+  legacy Today width.
+- Local full-composition samples measured P50 around 16.7ms and P95
+  17.7-18.4ms across L1, L2, Capture, State, Decision Details, Record, light,
+  and reduced-motion states. Steady samples recorded 0 / 300 frames over 20ms.
+- `npx tsc --noEmit` and `npm run build` pass. Local bundle:
+  `index-ddd9dc230f3f4bb137f80638ca958d3f.js`.
+
+UNVERIFIED:
+- Physical iPhone Safari integrated Stage 2 behavior and frame pacing.
+- Physical iOS soft-keyboard behavior.
+- Natural S2/S3, Schedule Proposal, and Rescue states.
+- AI-backed Instant Read success/error through the static local export server.
+- Destructive deletion confirmation because the browser automation dialog
+  controller could not accept the real web confirm.
+- Start and one-tap Done mutation were not repeated against the existing active
+  local session.
+
+Documentation:
+- `QUESTLIFE_V11_STAGE2_INTEGRATION_QA.md`
