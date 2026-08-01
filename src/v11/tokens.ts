@@ -132,6 +132,7 @@ export type V11ThemeTokens = {
     primary: string;
     secondary: string;
     metadata: string;
+    disabled: string;
   };
   glow: {
     primary: string;
@@ -168,9 +169,16 @@ function buildThemeTokens(mode: V11ThemeMode): V11ThemeTokens {
       directionDegrees: 145,
     },
     text: {
-      primary: questTheme.colors.text,
-      secondary: questTheme.colors.textMuted,
-      metadata: questTheme.colors.textSubtle,
+      primary: mode === 'light'
+        ? questTheme.colors.textPrimary
+        : questTheme.colors.text,
+      secondary: mode === 'light'
+        ? questTheme.colors.textSecondary
+        : questTheme.colors.textMuted,
+      metadata: mode === 'light'
+        ? questTheme.colors.textMuted
+        : questTheme.colors.textSubtle,
+      disabled: questTheme.colors.disabledText,
     },
     glow: {
       primary: questTheme.colors.primary,

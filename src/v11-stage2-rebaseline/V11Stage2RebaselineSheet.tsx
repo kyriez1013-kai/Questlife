@@ -121,7 +121,7 @@ export default function V11Stage2RebaselineSheet({
       >
         <WebView dataSet={{ 'v11-rebaseline-role': 'sheet-handle' }} />
         <WebView dataSet={{ 'v11-rebaseline-role': 'sheet-header' }}>
-          <Text style={{ color: theme.text.primary, fontSize: 20, lineHeight: 27, fontWeight: '500' }}>
+          <Text numberOfLines={2} style={{ flex: 1, flexShrink: 1, minWidth: 0, color: theme.text.primary, fontSize: 20, lineHeight: 27, fontWeight: '500' }}>
             {t(language, titleKey(sheet))}
           </Text>
           <WebPressable
@@ -211,7 +211,7 @@ export default function V11Stage2RebaselineSheet({
               onPress={onDetailedState}
             >
               <V11RebaselineIcon name="activity" size={16} color={theme.text.secondary} />
-              <Text style={{ color: theme.text.primary, fontSize: 13, fontWeight: '500' }}>
+              <Text numberOfLines={2} style={{ flex: 1, flexShrink: 1, minWidth: 0, color: theme.text.primary, fontSize: 13, lineHeight: 19, fontWeight: '500' }}>
                 {t(language, 'rebaselineRecordMoreState')}
               </Text>
             </WebPressable>
@@ -262,7 +262,7 @@ export default function V11Stage2RebaselineSheet({
             ].map((key) => (
               <WebView key={key} dataSet={{ 'v11-rebaseline-role': 'evidence-row' }}>
                 <V11RebaselineIcon name="activity" size={16} color={theme.glow.primary} />
-                <Text style={{ flex: 1, color: theme.text.primary, fontSize: 14, lineHeight: 21 }}>
+                <Text numberOfLines={2} style={{ flex: 1, flexShrink: 1, minWidth: 0, color: theme.text.primary, fontSize: 14, lineHeight: 21 }}>
                   {t(language, key)}
                 </Text>
               </WebView>
@@ -293,7 +293,7 @@ export default function V11Stage2RebaselineSheet({
               >
                 <V11RebaselineIcon name="activity" size={18} color={theme.glow.primary} />
                 <WebView style={{ flex: 1, minWidth: 0 }}>
-                  <Text numberOfLines={1} style={{ color: theme.text.primary, fontSize: 15, lineHeight: 21, fontWeight: '500' }}>
+                  <Text numberOfLines={2} style={{ flexShrink: 1, color: theme.text.primary, fontSize: 15, lineHeight: 21, fontWeight: '500' }}>
                     {t(language, row.titleKey)}
                   </Text>
                   <Text numberOfLines={2} style={{ color: theme.text.secondary, fontSize: 12, lineHeight: 18 }}>
@@ -311,11 +311,11 @@ export default function V11Stage2RebaselineSheet({
         {sheet === 'record' ? (
           <WebView dataSet={{ 'v11-rebaseline-role': 'history-row' }}>
             <V11RebaselineIcon name="activity" size={18} color={theme.glow.primary} />
-            <WebView style={{ flex: 1 }}>
-              <Text style={{ color: theme.text.primary, fontSize: 15, lineHeight: 21, fontWeight: '500' }}>
+            <WebView style={{ flex: 1, flexShrink: 1, minWidth: 0 }}>
+              <Text numberOfLines={2} style={{ flexShrink: 1, color: theme.text.primary, fontSize: 15, lineHeight: 21, fontWeight: '500' }}>
                 {t(language, 'rebaselineBenchPress')}
               </Text>
-              <Text style={{ color: theme.text.secondary, fontSize: 12, lineHeight: 18 }}>
+              <Text numberOfLines={2} style={{ flexShrink: 1, color: theme.text.secondary, fontSize: 12, lineHeight: 18 }}>
                 {t(language, 'rebaselineBenchMeta')} · {t(language, 'rebaselineQualityFour')}
               </Text>
             </WebView>
