@@ -2673,3 +2673,22 @@ Documentation:
 - `QUESTLIFE_V11_STAGE2_REBASELINE_MAPPING.md`
 - `QUESTLIFE_V11_STAGE2_REBASELINE_QA.md`
 - `artifacts/v11-stage2-rebaseline-revision/`
+
+Responsive correction pass (local, approval pending):
+- Audited all Stage 2 rebaseline text-bearing primitives and replaced
+  fixed-height double-line assumptions with content-driven minimum heights,
+  shrinkable text wrappers, and fixed trailing icon slots.
+- Shortened visible Smart Capture copy while preserving the complete
+  accessibility label and Capture-sheet placeholder.
+- Recalculated mobile scroll inset from navigation height, safe area, and 16px
+  clearance. L1 and L2 final controls clear navigation by 16px in local
+  375/393px exported-web checks.
+- Strengthened light-theme text through existing semantic tokens and recorded
+  WCAG contrast ratios in the QA document.
+- Added a subtle latest-record history affordance without restoring duplicate
+  Recent Execution content.
+- `npx tsc --noEmit` and `npm run build` pass; current local JS bundle is
+  `index-e19fd908fbae4ac79a503c23c6de1dc6.js`.
+- Physical iPhone Safari safe-area/keyboard QA and production verification are
+  still `UNVERIFIED`. Nothing has been pushed or deployed.
+- Focused artifacts: `artifacts/v11-stage2-rebaseline-responsive/`.

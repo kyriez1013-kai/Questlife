@@ -107,8 +107,9 @@ The S0 fixture displays `当前状态尚未记录`; no `x / 5` value is manufact
 ## Latest record and Activity History
 
 - Smart Capture and latest record use an 8px internal gap.
-- The latest row is 44px high, has no independent surface, border, rail, or
-  chevron, and remains present in the no-data fixture.
+- The latest row has no independent surface, border, or rail. When a record
+  exists it now includes one low-emphasis directional affordance in a fixed
+  trailing slot; the no-data row remains visually disabled and has no arrow.
 - Capture/latest group to judgement spacing is 35px at 375px.
 - Tapping the latest row opens Activity History without changing Today height.
 - Activity History renders action, result, time, and feedback metadata in its
@@ -227,6 +228,88 @@ revision.
 - JS bundle: `index-b60e17974c002e9c297ad75f54c02ba4.js`.
 - Rebaseline CSS bundle:
   `v11-stage2-rebaseline-470fefdf03918548c6ea8659b51f3c95.css`.
+
+## Responsive text and safe-area correction pass
+
+Status: local exported-web QA passed; physical iPhone Safari and production
+remain pending. This pass changes only the isolated
+`?questlife_v11_ui=stage2-rebaseline` route.
+
+Responsive text corrections:
+
+- The primary action is content-driven with an 80px minimum height, 20px
+  leading padding, 12px clearance before a fixed 32px trailing icon slot, and
+  independent two-line limits for title and support copy.
+- At 375px, the English action copy occupies `259x54px`; its trailing slot is
+  `32x44px`; measured overlap is `0px`.
+- Smart Capture displays `Capture action, thought, or state` at 375px without
+  truncation (`clientWidth=224px`, `scrollWidth=224px`). The full original
+  prompt remains its accessibility label and Capture-sheet placeholder.
+- Chinese Capture, the longest Chinese judgement, the long English action,
+  plan preview, plan rows, Instant Read summary, latest record, evidence
+  summary, and sheet headings use shrinkable, zero-min-width text wrappers.
+- Latest record and plan/evidence support copy may use two lines. The enclosing
+  rows grow rather than hiding the second line.
+- The evidence entry uses the same fixed trailing affordance pattern; its final
+  English support copy measures `36px` high with matching client/scroll height
+  and no ellipsis.
+
+Bottom inset contract:
+
+`64px navigation + max(8px, safe-area-inset-bottom) + 16px clearance`
+
+- Desktop-browser computed fallback bottom padding: `88px`.
+- 375x667 L1 absolute bottom: `16px` between plan preview and navigation.
+- 375x667 L2 absolute bottom: `16px` between collapse action and navigation.
+- 393x852 light L2 absolute bottom: `16px` between collapse action and
+  navigation.
+- 1280x900 uses the left navigation rail and has `0px` document/scroll-owner
+  horizontal overflow.
+- The outer Today ScrollView remains the only page-level vertical scroll
+  owner. Closing Decision Details preserved `scrollTop=551px` exactly.
+
+Light-theme contrast report against the cleanFocus field/surface:
+
+| Semantic role | Effective colour | Reference background | Contrast |
+| --- | --- | --- | ---: |
+| Primary text | `#111318` | `#F6F7FB` | 17.36:1 |
+| Secondary text | effective `#5A5C61` | `#F6F7FB` | 6.25:1 |
+| Metadata | `#667085` | `#F6F7FB` | 4.65:1 |
+| Disabled text | `#667085` | `#F6F7FB` | 4.65:1 |
+| Glass primary text | `#111318` | `#FCFCFD` reference | 18.12:1 |
+| Glass secondary text | effective `#5A5C61` | `#FCFCFD` reference | 6.53:1 |
+| Navigation labels | `#667085` | effective white nav | 4.97:1 |
+
+The light V11 mapping now uses existing semantic `textPrimary`,
+`textSecondary`, `textMuted`, and `disabledText` tokens. No uniform dark card
+border or component-specific colour patch was added.
+
+Final correction build:
+
+- `npx tsc --noEmit`: passed.
+- `npm run build`: passed.
+- Expo output: `dist`.
+- JS bundle: `index-e19fd908fbae4ac79a503c23c6de1dc6.js`.
+- Rebaseline CSS bundle:
+  `v11-stage2-rebaseline-184cfd0f1148a6d8ec0210b22853e660.css`.
+
+Focused screenshots:
+
+`artifacts/v11-stage2-rebaseline-responsive/`
+
+- `01-en-primary-capture-375.png`
+- `02-zh-primary-capture-375.png`
+- `03-en-capture-sheet-375.png`
+- `04-light-instant-plan-393.png`
+- `05-l2-bottom-375.png`
+- `06-desktop-1280.png`
+
+UNVERIFIED in this correction pass:
+
+- Physical iPhone Safari `safe-area-inset-bottom` value and keyboard movement.
+- Physical-device touch, text scaling, flicker, material loss, glow banding,
+  and frame pacing after the responsive changes.
+- Production web UI, because push and deployment are explicitly prohibited.
 
 ## Full-composition performance
 
