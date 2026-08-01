@@ -2283,7 +2283,7 @@ export default function HomeScreen() {
           paddingHorizontal: v11TodayEnabled ? 0 : questTheme.spacing.md,
           paddingTop: v11TodayEnabled ? 0 : questTheme.spacing.sm,
           paddingBottom: questLayout.contentBottomInset + questTheme.spacing.lg,
-          maxWidth: questLayout.contentMaxWidth,
+          maxWidth: v11TodayEnabled ? 1180 : questLayout.contentMaxWidth,
           width: '100%',
           alignSelf: 'center',
         }}
