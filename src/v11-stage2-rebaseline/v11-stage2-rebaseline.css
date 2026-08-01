@@ -604,7 +604,8 @@
 
 [data-v11-rebaseline-role="overlay"] [data-v11-component="material-clip"] {
   box-sizing: border-box;
-  min-height: 0;
+  height: 100%;
+  min-height: inherit;
   padding: 0;
   gap: 0;
 }

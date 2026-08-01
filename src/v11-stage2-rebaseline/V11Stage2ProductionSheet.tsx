@@ -69,7 +69,6 @@ export default function V11Stage2ProductionSheet({
           <V11GlassSheet
             accessibilityLabel={title}
             contentStyle={{
-              maxHeight: '88%',
               paddingHorizontal: 0,
               paddingTop: v11Spacing.sm,
               paddingBottom: 0,

@@ -3119,7 +3119,11 @@ export default function HomeScreen() {
                     if (first) setMinutes(String(first.plannedMinutes));
                   }
                 }}
-                style={[styles.chip, on && { backgroundColor: accent, borderColor: accent }]}
+                style={[
+                  styles.chip,
+                  v11TodayEnabled && { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.border },
+                  on && { backgroundColor: accent, borderColor: accent },
+                ]}
               >
                 <Text style={[styles.chipText, { color: questTheme.colors.text }, on && { color: questTheme.colors.primaryText, fontWeight: '700' }]}>{opt.label}</Text>
               </TouchableOpacity>
@@ -3145,7 +3149,11 @@ export default function HomeScreen() {
                       setSkillId(block.linkedSkillId ?? null);
                       setMinutes(String(block.plannedMinutes));
                     }}
-                    style={[styles.chip, on && { backgroundColor: accent, borderColor: accent }]}
+                    style={[
+                      styles.chip,
+                      v11TodayEnabled && { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.border },
+                      on && { backgroundColor: accent, borderColor: accent },
+                    ]}
                   >
                     <Text style={[styles.chipText, { color: questTheme.colors.text }, on && { color: questTheme.colors.primaryText, fontWeight: '700' }]}>
                       {block.startTime} {block.title}
@@ -3189,7 +3197,9 @@ export default function HomeScreen() {
               <Text style={[styles.minimumLabel, { color: questTheme.colors.text }]}>{t(lang, 'sessionPrediction')}</Text>
               <Text style={[styles.planReason, { color: questTheme.colors.textMuted }]}>{t(lang, 'predictionOptional')}</Text>
             </View>
-            <Text style={[styles.modalToggleText, { color: accent }]}>{showPrediction ? t(lang, 'skipPrediction') : t(lang, 'predictionOptional')}</Text>
+            <Text style={[styles.modalToggleText, { color: accent }]}>
+              {showPrediction ? t(lang, 'skipPrediction') : t(lang, v11TodayEnabled ? 'detailedPrediction' : 'predictionOptional')}
+            </Text>
           </TouchableOpacity>
 
           {showPrediction && modalPredictionSchema.showDuration ? (
