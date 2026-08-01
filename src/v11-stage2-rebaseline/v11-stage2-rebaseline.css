@@ -421,6 +421,47 @@
   width: 100%;
 }
 
+[data-v11-rebaseline-role="capture-workspace"] {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+[data-v11-rebaseline-role="capture-composer"] {
+  padding-bottom: 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--v11-rebaseline-text) 9%, transparent);
+}
+
+[data-v11-rebaseline-role="capture-record"] {
+  margin-top: 8px;
+  padding: 10px 0 10px 14px;
+  border-left-width: 2px;
+  border-left-style: solid;
+  background: transparent;
+}
+
+[data-v11-rebaseline-role="capture-pending"] {
+  margin-top: 12px;
+  padding-top: 14px;
+  border-top: 1px solid color-mix(in srgb, var(--v11-rebaseline-text) 10%, transparent);
+}
+
+[data-v11-rebaseline-role="capture-pending"][data-v11-capture-status="saved"] {
+  padding: 14px 0;
+}
+
+[data-v11-rebaseline-role="capture-pending-actions"] {
+  position: sticky;
+  z-index: 3;
+  bottom: -20px;
+  margin: 12px -20px -20px;
+  padding: 12px 20px max(16px, env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--v11-rebaseline-elevated) 92%, transparent);
+  box-shadow: 0 -16px 28px color-mix(in srgb, var(--v11-rebaseline-bg) 52%, transparent);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+}
+
 [data-v11-rebaseline-role="production-sheet-scroll"] {
   min-height: 0;
   flex: 1 1 auto;

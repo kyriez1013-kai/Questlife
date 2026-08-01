@@ -30,6 +30,9 @@ import ActivityHistorySheet from '../components/today/ActivityHistorySheet';
 import HomeCapturePending from './HomeCapturePending';
 import { confirmAction } from '../utils/confirm';
 import { buildFallbackEntriesFromRawText } from '../utils/captureCompletion';
+import { isV11TodayEnabled } from '../v11/featureFlag';
+
+const WebView = View as any;
 
 // ── Local time block ─────────────────────────────────────────────────────────
 
@@ -118,21 +121,12 @@ function CaptureCard({
   onDelete: (id: string) => void;
   expanded?: boolean;
 }) {
+  const v11TodayEnabled = isV11TodayEnabled();
   const insightType = capture.parsed?.insightType as InsightType | undefined;
   const insightText = capture.parsed?.insight?.[lang] ?? '';
 
-  return (
-    <QuestCard
-      questTheme={questTheme}
-      variant="flat"
-      style={{
-        marginTop: questTheme.spacing.tight,
-        paddingHorizontal: questTheme.spacing.sm,
-        paddingVertical: questTheme.spacing.tight,
-        borderLeftWidth: 3,
-        borderLeftColor: insightBorderColor(insightType, questTheme),
-      }}
-    >
+  const content = (
+    <>
       {/* Header row: timestamp + delete button — works on both web & mobile */}
       <View style={styles.cardHeader}>
         <Text style={[styles.timestamp, { color: questTheme.colors.textSubtle }]}>
@@ -191,6 +185,33 @@ function CaptureCard({
           </TouchableOpacity>
         </View>
       )}
+    </>
+  );
+
+  if (v11TodayEnabled) {
+    return (
+      <WebView
+        dataSet={{ 'v11-rebaseline-role': 'capture-record' }}
+        style={{ borderLeftColor: insightBorderColor(insightType, questTheme) }}
+      >
+        {content}
+      </WebView>
+    );
+  }
+
+  return (
+    <QuestCard
+      questTheme={questTheme}
+      variant="flat"
+      style={{
+        marginTop: questTheme.spacing.tight,
+        paddingHorizontal: questTheme.spacing.sm,
+        paddingVertical: questTheme.spacing.tight,
+        borderLeftWidth: 3,
+        borderLeftColor: insightBorderColor(insightType, questTheme),
+      }}
+    >
+      {content}
     </QuestCard>
   );
 }
@@ -210,6 +231,7 @@ export default function HomeSmartCapture() {
   const { data, addRawCapture, updateRawCapture, deleteRawCapture } = useStore();
   const lang = getLanguage(data.settings.language ?? data.settings.preferredLanguage);
   const questTheme = getQuestTheme(data.settings.selectedThemeId);
+  const v11TodayEnabled = isV11TodayEnabled();
 
   const [inputText, setInputText]         = useState('');
   const [isPosting, setIsPosting]         = useState(false);
@@ -485,50 +507,60 @@ export default function HomeSmartCapture() {
 
   // ── Render ────────────────────────────────────────────────────────────────
 
-  return (
-    <View>
-      <QuestCard
+  const composer = (
+    <View style={styles.inputRow}>
+      <QuestInput
         questTheme={questTheme}
-        variant="flat"
-        style={{
-          padding: questTheme.spacing.tight,
-          borderWidth: 1,
-          borderColor: questTheme.colors.inputBorder,
-          backgroundColor: questTheme.colors.surfaceElevated,
-        }}
-      >
-        <View style={styles.inputRow}>
-          <QuestInput
-            questTheme={questTheme}
-            style={[
-              styles.input,
-              {
-                flex: 1,
-              },
-            ]}
-            value={inputText}
-            onChangeText={setInputText}
-            placeholder={t(lang, 'scPlaceholder')}
-            placeholderTextColor={questTheme.colors.textSubtle}
-            onSubmitEditing={handleSend}
-            returnKeyType="send"
-            multiline={false}
-            editable={!isPosting}
-            accessibilityLabel={t(lang, 'scPlaceholder')}
-            accessibilityHint={greeting || undefined}
-          />
-          <QuestButton
-            questTheme={questTheme}
-            variant="primary"
-            icon="zap"
-            onPress={handleSend}
-            disabled={isPosting || !inputText.trim()}
-            loading={isPosting}
-            accessibilityLabel={t(lang, 'scSend')}
-            style={styles.sendBtn}
-          />
-        </View>
-      </QuestCard>
+        style={[
+          styles.input,
+          {
+            flex: 1,
+          },
+        ]}
+        value={inputText}
+        onChangeText={setInputText}
+        placeholder={t(lang, 'scPlaceholder')}
+        placeholderTextColor={questTheme.colors.textSubtle}
+        onSubmitEditing={handleSend}
+        returnKeyType="send"
+        multiline={false}
+        editable={!isPosting}
+        accessibilityLabel={t(lang, 'scPlaceholder')}
+        accessibilityHint={greeting || undefined}
+      />
+      <QuestButton
+        questTheme={questTheme}
+        variant="primary"
+        icon="zap"
+        onPress={handleSend}
+        disabled={isPosting || !inputText.trim()}
+        loading={isPosting}
+        accessibilityLabel={t(lang, 'scSend')}
+        style={styles.sendBtn}
+      />
+    </View>
+  );
+
+  return (
+    <WebView dataSet={v11TodayEnabled ? { 'v11-rebaseline-role': 'capture-workspace' } : undefined}>
+      {v11TodayEnabled ? (
+        <WebView dataSet={{ 'v11-rebaseline-role': 'capture-composer' }}>
+          {composer}
+        </WebView>
+      ) : (
+        <QuestCard
+          questTheme={questTheme}
+          variant="flat"
+          style={{
+            padding: questTheme.spacing.tight,
+            borderWidth: 1,
+            borderColor: questTheme.colors.inputBorder,
+            backgroundColor: questTheme.colors.surfaceElevated,
+          }}
+        >
+          {composer}
+        </QuestCard>
+      )}
 
       {/* Today keeps one recent record. Full history is rendered in a separate sheet. */}
       {allCaptures.length > 0 && (
@@ -583,7 +615,7 @@ export default function HomeSmartCapture() {
         onClose={() => setHistoryVisible(false)}
         renderCapture={(capture) => renderCapture(capture, true)}
       />
-    </View>
+    </WebView>
   );
 }
 
