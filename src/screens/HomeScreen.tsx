@@ -75,10 +75,13 @@ import {
   isV11TodayEnabled,
 } from '../v11/featureFlag';
 import useV11ReducedMotion from '../v11/useV11ReducedMotion';
-import V11TodaySurface from '../v11-today/V11TodaySurface';
-import type { V11TodayRow } from '../v11-today/V11TodaySurface';
-import V11TodayOverlaySheet from '../v11-today/V11TodayOverlaySheet';
-import V11TodayUtilities from '../v11-today/V11TodayUtilities';
+import V11IntegratedTodaySurface from '../v11-stage2-rebaseline/V11IntegratedTodaySurface';
+import type {
+  V11IntegratedLatestRecord,
+  V11IntegratedPlanRow,
+  V11IntegratedUtilityAction,
+} from '../v11-stage2-rebaseline/V11IntegratedTodaySurface';
+import V11Stage2ProductionSheet from '../v11-stage2-rebaseline/V11Stage2ProductionSheet';
 import { getV11ThemeTokens } from '../v11/tokens';
 
 const FIXED_TODAY_CARD_SIZES = {
@@ -464,10 +467,10 @@ export default function HomeScreen() {
   const [todayDecisionDetailsOpen, setTodayDecisionDetailsOpen] = useState(false);
   const [v11EvidenceExpanded, setV11EvidenceExpanded] = useState(false);
   const [v11CaptureOpen, setV11CaptureOpen] = useState(false);
-  const [v11ContextOpen, setV11ContextOpen] = useState(false);
   const v11TodayScrollRef = useRef<any>(null);
   const v11TodayScrollOffsetRef = useRef(0);
   const v11TodayScrollRestoreRef = useRef(0);
+  const v11TransientSheetRef = useRef<'state' | 'log' | null>(null);
   const dailyDecisionRequestRef = useRef(0);
   const dailyDecisionInFlightRef = useRef(false);
   const dailyDecisionAutoKeyRef = useRef('');
@@ -1997,16 +2000,6 @@ export default function HomeScreen() {
     restoreV11TodayScroll();
   }, [restoreV11TodayScroll]);
 
-  const openV11Context = useCallback(() => {
-    rememberV11TodayScroll();
-    setV11ContextOpen(true);
-  }, [rememberV11TodayScroll]);
-
-  const closeV11Context = useCallback(() => {
-    setV11ContextOpen(false);
-    restoreV11TodayScroll();
-  }, [restoreV11TodayScroll]);
-
   const openV11DecisionDetails = useCallback(() => {
     rememberV11TodayScroll();
     setTodayDecisionDetailsOpen(true);
@@ -2016,6 +2009,39 @@ export default function HomeScreen() {
     setTodayDecisionDetailsOpen(false);
     restoreV11TodayScroll();
   }, [restoreV11TodayScroll]);
+
+  const openV11State = useCallback(() => {
+    rememberV11TodayScroll();
+    v11TransientSheetRef.current = 'state';
+    openStateModal();
+  }, [openStateModal, rememberV11TodayScroll]);
+
+  const openV11DirectLog = useCallback(() => {
+    rememberV11TodayScroll();
+    v11TransientSheetRef.current = 'log';
+    openModal(todayCommand.linkedSkillId, {
+      logType: todayCommand.scheduleBlockId ? 'schedule' : todayCommand.linkedSkillId ? 'skill' : 'custom',
+      scheduleBlockId: todayCommand.scheduleBlockId ?? null,
+      minutes: todayCommand.plannedMinutes,
+    });
+  }, [openModal, rememberV11TodayScroll, todayCommand]);
+
+  const finishV11Session = useCallback(() => {
+    rememberV11TodayScroll();
+    v11TransientSheetRef.current = 'log';
+    finishSession();
+  }, [finishSession, rememberV11TodayScroll]);
+
+  useEffect(() => {
+    if (v11TransientSheetRef.current === 'state' && !stateModal) {
+      v11TransientSheetRef.current = null;
+      restoreV11TodayScroll();
+    }
+    if (v11TransientSheetRef.current === 'log' && !modal) {
+      v11TransientSheetRef.current = null;
+      restoreV11TodayScroll();
+    }
+  }, [modal, restoreV11TodayScroll, stateModal]);
 
   const formatContextMetricValue = useCallback((key: string, value?: number | string, unit?: string) => {
     if (value == null) return '';
@@ -2053,15 +2079,20 @@ export default function HomeScreen() {
       openV11DecisionDetails();
       return;
     }
+    if (todayCommand.primaryAction === 'log') {
+      openV11DirectLog();
+      return;
+    }
     runTodayCommand(todayCommand.primaryAction);
   }, [
     openV11Capture,
     openV11DecisionDetails,
+    openV11DirectLog,
     runTodayCommand,
     todayCommand.primaryAction,
   ]);
 
-  const v11PlanRows = useMemo<V11TodayRow[]>(() => {
+  const v11PlanRows = useMemo<V11IntegratedPlanRow[]>(() => {
     const source = todayScheduleBlocks.length > 0
       ? todayScheduleBlocks
       : data.skills;
@@ -2081,30 +2112,20 @@ export default function HomeScreen() {
         metadata: skill
           ? metricPlanCopy(skill, planned, lang)
           : `${t(lang, 'planned')} ${planned} ${t(lang, 'minutes')}`,
-        trailing: isBlock ? `${item.startTime}-${item.endTime}` : undefined,
-        actions: [
-          {
-            id: 'start',
-            label: t(lang, 'start'),
-            onPress: () => startSession({
-              linkedSkillId: skill?.id ?? item.linkedSkillId,
-              linkedGoalId: item.linkedGoalId ?? findPrimaryLink(skill?.id)?.goalId,
-              linkedModuleId: findPrimaryLink(skill?.id)?.moduleId,
-              linkedScheduleBlockId: isBlock ? item.id : undefined,
-              title: isBlock ? item.title : skill?.name ?? t(lang, 'logProgress'),
-              taskType: item.taskType ?? skill?.taskType,
-            }),
-          },
-          {
-            id: 'done',
-            label: t(lang, 'done'),
-            onPress: () => oneTapComplete({
-              block: isBlock ? item : undefined,
-              skill,
-              defaultMinutes: planned,
-            }),
-          },
-        ],
+        time: isBlock ? `${item.startTime}-${item.endTime}` : undefined,
+        onStart: () => startSession({
+          linkedSkillId: skill?.id ?? item.linkedSkillId,
+          linkedGoalId: item.linkedGoalId ?? findPrimaryLink(skill?.id)?.goalId,
+          linkedModuleId: findPrimaryLink(skill?.id)?.moduleId,
+          linkedScheduleBlockId: isBlock ? item.id : undefined,
+          title: isBlock ? item.title : skill?.name ?? t(lang, 'logProgress'),
+          taskType: item.taskType ?? skill?.taskType,
+        }),
+        onDone: () => oneTapComplete({
+          block: isBlock ? item : undefined,
+          skill,
+          defaultMinutes: planned,
+        }),
       };
     });
   }, [
@@ -2115,20 +2136,6 @@ export default function HomeScreen() {
     startSession,
     todayScheduleBlocks,
   ]);
-
-  const v11RecentRows = useMemo<V11TodayRow[]>(() => (
-    recentExecutionItems.slice(0, 3).map((item) => ({
-      id: item.id,
-      title: item.title,
-      metadata: item.detail,
-      trailing: item.meta,
-      actions: [{
-        id: 'delete',
-        label: t(lang, 'delete'),
-        onPress: () => confirmDeleteTodayLog(item.id),
-      }],
-    }))
-  ), [confirmDeleteTodayLog, lang, recentExecutionItems]);
 
   const instantDecisionSourceLabel = instantDecisionStatus === 'ready'
     ? t(lang, 'decisionSourceAI')
@@ -2141,32 +2148,13 @@ export default function HomeScreen() {
         )
       : '';
 
-  const v11UtilityActions = [
+  const v11UtilityActions: V11IntegratedUtilityAction[] = [
     ...(activeSession ? [{
       id: 'finish-session',
       label: t(lang, 'finishAndRecord'),
       metadata: `${activeSession.title} · ${formatTimer(Math.max(0, timerNow - new Date(activeSession.startedAt).getTime()))}`,
-      onPress: finishSession,
+      onPress: finishV11Session,
     }] : []),
-    {
-      id: 'direct-log',
-      label: t(lang, 'logAfterDone'),
-      onPress: () => openModal(todayCommand.linkedSkillId, {
-        logType: todayCommand.scheduleBlockId ? 'schedule' : todayCommand.linkedSkillId ? 'skill' : 'custom',
-        scheduleBlockId: todayCommand.scheduleBlockId ?? null,
-        minutes: todayCommand.plannedMinutes,
-      }),
-    },
-    {
-      id: 'decision-details',
-      label: t(lang, 'todayDecisionDetails'),
-      onPress: openV11DecisionDetails,
-    },
-    {
-      id: 'body-context',
-      label: t(lang, 'bodySleepContext'),
-      onPress: openV11Context,
-    },
     ...(dailyDecisionScheduleProposals.length > 0 ? [{
       id: 'schedule-proposal',
       label: t(lang, 'scheduleProposalAvailable'),
@@ -2180,6 +2168,53 @@ export default function HomeScreen() {
       onPress: () => openRescueFlow(unfinishedRescue.id),
     }] : []),
   ];
+
+  const v11LatestRecord = useMemo<V11IntegratedLatestRecord | undefined>(() => {
+    const execution = recentExecutionItems[0];
+    const latestCapture = (data.rawCaptures || [])
+      .slice()
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+    const executionLog = execution
+      ? (data.executionLogs || []).find((log) => log.id === execution.id)
+      : undefined;
+    const executionTime = executionLog?.createdAt ?? '';
+    const captureTime = latestCapture?.createdAt ?? '';
+
+    if (execution && executionTime >= captureTime) {
+      return {
+        accessibilityLabel: `${t(lang, 'rebaselineLatestRecordLabel')} ${execution.title}`,
+        title: execution.title,
+        metadata: [execution.meta, execution.detail].filter(Boolean).join(' · '),
+        onPress: openV11Capture,
+        onDelete: () => confirmDeleteTodayLog(execution.id),
+      };
+    }
+    if (!latestCapture) return undefined;
+    return {
+      accessibilityLabel: `${t(lang, 'rebaselineLatestRecordLabel')} ${latestCapture.text}`,
+      title: latestCapture.text,
+      metadata: new Date(latestCapture.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      onPress: openV11Capture,
+    };
+  }, [confirmDeleteTodayLog, data.executionLogs, data.rawCaptures, lang, openV11Capture, recentExecutionItems]);
+
+  const v11PlanPreview = v11PlanRows.length > 0
+    ? [t(lang, 'todayPlan'), String(v11PlanRows.length), v11PlanRows[0].time, v11PlanRows[0].title]
+        .filter(Boolean)
+        .join(' · ')
+    : t(lang, 'noScheduleToday');
+
+  const v11PerformanceMode = v11CaptureOpen
+    ? 'capture-open'
+    : stateModal
+      ? 'state-open'
+      : todayDecisionDetailsOpen
+        ? 'decision-details-open'
+        : modal
+          ? 'record-open'
+          : v11EvidenceExpanded
+            ? 'l2-expanded'
+            : 'l1';
 
   const modalSkill = skillId ? data.skills.find((item) => item.id === skillId) : undefined;
   const modalPredictionSchema = getPredictionSchemaForSkill(modalSkill);
@@ -2254,67 +2289,64 @@ export default function HomeScreen() {
         }}
       >
         {v11TodayEnabled ? (
-          <V11TodaySurface
-            contextLine={todayDecisionPresentation.actionReason.kind === 'text'
-              ? todayDecisionPresentation.actionReason.text
-              : formatCommandCopy(
-                  todayDecisionPresentation.actionReason.key,
-                  todayDecisionPresentation.actionReason.values,
-                )}
+          <V11IntegratedTodaySurface
+            capturePlaceholder={t(lang, 'scPlaceholder')}
+            contextLine={`${todayContextDate} · ${t(lang, currentTimeBlock)}`}
             decision={v11TodayPresentation}
             debugPerformance={getV11DebugPerformance(isDecisionDebugEnabled())}
             expanded={v11EvidenceExpanded}
             formatCopy={(copy) => copy.kind === 'text'
               ? copy.text
               : formatCommandCopy(copy.key, copy.values)}
+            instantRead={{
+              expanded: instantReadExpanded,
+              feedback: instantDecisionFeedback,
+              feedbackStatus: instantFeedbackStatus,
+              firstStep: instantDecisionBrief?.prescription.do_first.step,
+              headline: instantDecisionBrief?.headline_insight,
+              onFeedback: markInstantDecisionFeedback,
+              onToggle: () => setInstantReadExpanded((value) => !value),
+              source: instantDecisionSourceLabel,
+              status: instantDecisionStatus,
+            }}
             labels={{
               capture: t(lang, 'v11Capture'),
-              collapseEvidence: t(lang, 'v11CollapseEvidence'),
+              collapseDetails: t(lang, 'rebaselineCollapseTodayDetails'),
               currentState: t(lang, 'currentState'),
-              emptyReading: t(lang, 'v11RecordCurrentState'),
-              evidence: t(lang, 'evidence'),
+              decisionEvidence: t(lang, 'rebaselineDecisionLabel'),
+              deleteRecord: t(lang, 'deleteRecord'),
+              directLog: t(lang, 'logAfterDone'),
+              done: t(lang, 'done'),
               evidenceStage: t(lang, 'v11EvidenceStage'),
-              expandEvidence: t(lang, 'v11ExpandEvidence'),
-              noEvidence: t(lang, 'v11NoEvidence'),
+              expandDetails: t(lang, 'rebaselineExpandTodayDetails'),
+              feedbackSaved: t(lang, 'feedbackSaved'),
+              feedbackSaving: t(lang, 'feedbackSaving'),
+              generating: t(lang, 'generatingInstantRead'),
+              instantRead: t(lang, 'instantRead'),
+              instantReadUnavailable: t(lang, 'instantReadUnavailable'),
+              latestRecord: t(lang, 'rebaselineLatestRecordLabel'),
+              noLatestRecord: t(lang, 'rebaselineNoLatestRecord'),
+              notUseful: t(lang, 'notUseful'),
               plan: t(lang, 'todayPlan'),
-              recentExecution: t(lang, 'recentExecution'),
-              stateOutOfFive: t(lang, 'v11StateOutOfFive'),
+              planPreview: v11PlanPreview,
+              start: t(lang, 'start'),
+              threeItemsMaximum: t(lang, 'rebaselineThreeItemsMaximum'),
               updateState: t(lang, 'v11UpdateState'),
+              useful: t(lang, 'useful'),
             }}
-            language={lang}
-            onCapture={() => setV11CaptureOpen(true)}
-            onCapturePressIn={rememberV11TodayScroll}
-            onExecute={runV11PrimaryCommand}
-            onOpenState={openStateModal}
-            onToggleEvidence={() => setV11EvidenceExpanded((value) => !value)}
+            latestRecord={v11LatestRecord}
+            onCapture={openV11Capture}
+            onDecisionDetails={openV11DecisionDetails}
+            onDirectLog={openV11DirectLog}
+            onOpenState={openV11State}
+            onPrimaryAction={runV11PrimaryCommand}
+            onToggleExpanded={() => setV11EvidenceExpanded((value) => !value)}
+            performanceMode={v11PerformanceMode}
             planRows={v11PlanRows}
-            recentRows={v11RecentRows}
             reducedMotion={v11EffectiveReducedMotion}
-            secondarySlot={(
-              <V11TodayUtilities
-                feedback={instantDecisionFeedback}
-                feedbackStatus={instantFeedbackStatus}
-                instantExpanded={instantReadExpanded}
-                instantFirstStep={instantDecisionBrief?.prescription.do_first.step}
-                instantHeadline={instantDecisionBrief?.headline_insight}
-                instantSource={instantDecisionSourceLabel}
-                instantStatus={instantDecisionStatus}
-                labels={{
-                  feedbackSaved: t(lang, 'feedbackSaved'),
-                  generating: t(lang, 'generatingInstantRead'),
-                  instantRead: t(lang, 'instantRead'),
-                  notUseful: t(lang, 'notUseful'),
-                  unavailable: t(lang, 'instantReadUnavailable'),
-                  useful: t(lang, 'useful'),
-                }}
-                onFeedback={markInstantDecisionFeedback}
-                onToggleInstant={() => setInstantReadExpanded((value) => !value)}
-                primaryActions={v11UtilityActions}
-                theme={v11ThemeTokens}
-              />
-            )}
+            stateLabel={stateSummaryLabel}
             themeMode={isDarkTheme(questTheme) ? 'dark' : 'light'}
-            topLine={`${todayContextDate} · ${t(lang, currentTimeBlock)}`}
+            utilityActions={v11UtilityActions}
           />
         ) : (
         <TileGrid
@@ -2856,97 +2888,16 @@ export default function HomeScreen() {
       </ScrollView>
 
       {v11TodayEnabled ? (
-        <>
-          <V11TodayOverlaySheet
-            closeLabel={t(lang, 'cancel')}
-            onClose={closeV11Capture}
-            reducedMotion={v11ReducedMotion}
-            theme={v11ThemeTokens}
-            title={t(lang, 'v11Capture')}
-            visible={v11CaptureOpen}
-          >
-            <HomeSmartCapture />
-          </V11TodayOverlaySheet>
-
-          <V11TodayOverlaySheet
-            closeLabel={t(lang, 'cancel')}
-            onClose={closeV11Context}
-            reducedMotion={v11ReducedMotion}
-            theme={v11ThemeTokens}
-            title={t(lang, 'bodySleepContext')}
-            visible={v11ContextOpen}
-          >
-            <View style={{ gap: questTheme.spacing.sm }}>
-              <Text style={[styles.contextBriefTitle, { color: questTheme.colors.text }]}>
-                {t(lang, 'recoveryStatus')}: {t(lang, `recoveryStatus_${objectiveContextBrief.recoveryStatus}`)}
-              </Text>
-              <Text style={[styles.contextBriefBody, { color: questTheme.colors.textMuted }]}>
-                {t(lang, objectiveContextBrief.cognitiveLoadSuggestionKey)}
-              </Text>
-              <QuestInput
-                questTheme={questTheme}
-                value={contextPasteText}
-                onChangeText={(text) => {
-                  setContextPasteText(text);
-                  setContextSaveStatus('idle');
-                }}
-                placeholder={t(lang, 'pasteHealthContext')}
-                multiline
-                style={styles.contextInput}
-              />
-              <QuestButton
-                questTheme={questTheme}
-                variant="secondary"
-                icon="activity"
-                label={t(lang, 'parseContext')}
-                disabled={contextPasteText.trim().length === 0}
-                onPress={parseContextInput}
-              />
-              {contextPreview ? (
-                <View style={[styles.contextPreviewBox, {
-                  backgroundColor: questTheme.colors.surfaceSoft,
-                  borderColor: questTheme.colors.border,
-                }]}>
-                  <Text style={[styles.contextPreviewTitle, { color: questTheme.colors.text }]}>
-                    {contextPreview.contextLogs.length > 0
-                      ? t(lang, 'contextPreviewFound').replace('{count}', String(contextPreview.contextLogs.length))
-                      : t(lang, 'contextPreviewEmpty')}
-                  </Text>
-                  {contextMetricRows.length > 0 ? (
-                    <View style={styles.contextMetricWrap}>
-                      {contextMetricRows.map((row) => (
-                        <View
-                          key={row.key}
-                          style={[styles.contextMetricPill, {
-                            borderColor: questTheme.colors.border,
-                            backgroundColor: questTheme.colors.surface,
-                          }]}
-                        >
-                          <Text style={[styles.contextMetricText, { color: questTheme.colors.textMuted }]}>
-                            {t(lang, row.key)} · {formatContextMetricValue(row.key, row.value, row.unit)}
-                          </Text>
-                        </View>
-                      ))}
-                    </View>
-                  ) : null}
-                  <QuestButton
-                    questTheme={questTheme}
-                    variant="primary"
-                    icon="check"
-                    label={t(lang, 'saveContext')}
-                    disabled={contextPreview.contextLogs.length === 0}
-                    onPress={saveContextPreview}
-                  />
-                </View>
-              ) : null}
-              {contextSaveStatus === 'saved' || contextSaveStatus === 'saved_sleep' ? (
-                <Text style={[styles.contextBriefBody, { color: questTheme.colors.success }]}>
-                  {t(lang, contextSaveStatus === 'saved_sleep' ? 'sleepContextSaved' : 'contextSaved')}
-                </Text>
-              ) : null}
-            </View>
-          </V11TodayOverlaySheet>
-        </>
+        <V11Stage2ProductionSheet
+          closeLabel={t(lang, 'cancel')}
+          onClose={closeV11Capture}
+          reducedMotion={v11EffectiveReducedMotion}
+          theme={v11ThemeTokens}
+          title={t(lang, 'v11Capture')}
+          visible={v11CaptureOpen}
+        >
+          <HomeSmartCapture />
+        </V11Stage2ProductionSheet>
       ) : null}
 
       <TodayDecisionDetailsSheet
