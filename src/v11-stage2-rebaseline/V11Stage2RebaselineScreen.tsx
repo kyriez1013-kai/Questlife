@@ -23,6 +23,7 @@ import {
 import V11Stage2RebaselineSheet, {
   type RebaselineSheet,
 } from './V11Stage2RebaselineSheet';
+import V11CalibrationRail from './V11CalibrationRail';
 import V11RebaselineIcon, {
   type V11RebaselineIconName,
 } from './V11RebaselineIcon';
@@ -168,6 +169,9 @@ export default function V11Stage2RebaselineScreen() {
     '--v11-rebaseline-disabled': theme.text.disabled,
     '--v11-rebaseline-primary': theme.glow.primary,
     '--v11-rebaseline-supporting': theme.glow.supporting,
+    '--v11-state-low': theme.questTheme.colors.predicted,
+    '--v11-state-neutral': theme.questTheme.colors.textSubtle,
+    '--v11-state-high': theme.questTheme.colors.neutral,
     '--v11-rebaseline-soft': theme.questTheme.colors.cardSurface,
     '--v11-rebaseline-elevated': theme.questTheme.colors.surfaceElevated,
     '--v11-rebaseline-border': theme.questTheme.colors.border,
@@ -175,11 +179,6 @@ export default function V11Stage2RebaselineScreen() {
     '--v11-rebaseline-nav-clearance': `${v11Spacing.md}px`,
   } as any;
 
-  const openState = () => {
-    setPendingStateValue(reading);
-    setStateSaveStatus('idle');
-    setSheet('state');
-  };
   const selectState = (value: number, closeSheetAfterSave = true) => {
     if (stateTimerRef.current) clearTimeout(stateTimerRef.current);
     if (closeStateTimerRef.current) clearTimeout(closeStateTimerRef.current);
@@ -293,6 +292,7 @@ export default function V11Stage2RebaselineScreen() {
         'v11-layer': expanded ? 'l2' : 'l1',
         'v11-motion': reducedMotion ? 'reduced' : 'normal',
         'v11-rebaseline-role': 'root',
+        'v11-state-reading': reading == null ? 'none' : String(reading),
         'v11-theme': themeMode,
       }}
       style={cssVariables}
@@ -305,6 +305,9 @@ export default function V11Stage2RebaselineScreen() {
         pointerEvents={sheet ? 'none' : 'auto'}
       >
         <WebView dataSet={{ 'v11-rebaseline-role': 'field' }} pointerEvents="none" />
+        <WebView dataSet={{ 'v11-rebaseline-role': 'state-field-low' }} pointerEvents="none" />
+        <WebView dataSet={{ 'v11-rebaseline-role': 'state-field-neutral' }} pointerEvents="none" />
+        <WebView dataSet={{ 'v11-rebaseline-role': 'state-field-high' }} pointerEvents="none" />
         <V11GlowOrb
           stage={effectiveStage}
           style={{ position: 'absolute', top: 148, left: -92 }}
@@ -483,18 +486,6 @@ export default function V11Stage2RebaselineScreen() {
                 <Text style={{ color: theme.text.metadata, fontSize: 10, lineHeight: 15, letterSpacing: 0.7 }}>
                   {t(language, 'currentState')}
                 </Text>
-                <Text style={{ color: theme.text.primary, fontSize: reading == null ? 17 : 22, lineHeight: reading == null ? 24 : 29, fontWeight: '400' }}>
-                  {reading == null
-                    ? t(language, 'rebaselineStateQuestion')
-                    : `${reading} / 5 · ${t(language, stateLabelKey(reading))}`}
-                </Text>
-                {reading != null && stateRecordedAt ? (
-                  <Text style={{ color: theme.text.secondary, fontSize: 11, lineHeight: 17, marginTop: 2 }}>
-                    {t(language, stateRecordedAt === 'just_now'
-                      ? 'rebaselineStateRecordedJustNow'
-                      : 'rebaselineStateRecordedToday')}
-                  </Text>
-                ) : null}
               </WebView>
               {reading != null ? (
                 <WebPressable
@@ -511,37 +502,39 @@ export default function V11Stage2RebaselineScreen() {
                       : 'rebaselineUpdateStateShort')}
                   </Text>
                 </WebPressable>
+              ) : (
+                <Text style={{ color: theme.text.metadata, fontSize: 11, lineHeight: 16 }}>
+                  {t(language, 'rebaselineStageUncalibrated')}
+                </Text>
+              )}
+            </WebView>
+
+            <WebView dataSet={{ 'v11-rebaseline-role': 'state-reading-copy' }}>
+              <Text style={{ color: theme.text.primary, fontSize: reading == null ? 17 : 22, lineHeight: reading == null ? 24 : 29, fontWeight: '400' }}>
+                {reading == null
+                  ? t(language, 'rebaselineStateQuestionOverall')
+                  : `${reading} / 5 · ${t(language, stateLabelKey(reading))}`}
+              </Text>
+              {reading != null && stateRecordedAt ? (
+                <Text style={{ color: theme.text.secondary, fontSize: 11, lineHeight: 17, marginTop: 2 }}>
+                  {t(language, stateRecordedAt === 'just_now'
+                    ? 'rebaselineStateRecordedJustNow'
+                    : 'rebaselineStateRecordedToday')}
+                </Text>
               ) : null}
             </WebView>
 
             {(reading == null || quickStateExpanded) ? (
-              <WebView dataSet={{ 'v11-rebaseline-role': 'quick-state-grid' }}>
-                {[1, 2, 3, 4, 5].map((value) => (
-                  <WebPressable
-                    accessibilityLabel={`${value} ${t(language, stateLabelKey(value))}`}
-                    accessibilityRole="button"
-                    accessibilityState={{
-                      disabled: stateSaveStatus === 'saving',
-                      selected: pendingStateValue === value,
-                    }}
-                    dataSet={{
-                      'v11-rebaseline-role': 'quick-state-choice',
-                      'v11-save-status': pendingStateValue === value ? stateSaveStatus : 'idle',
-                      'v11-selected': pendingStateValue === value ? 'true' : 'false',
-                    }}
-                    disabled={stateSaveStatus === 'saving'}
-                    key={value}
-                    onPress={() => selectQuickState(value)}
-                  >
-                    <Text style={{ color: theme.text.primary, fontSize: 15, lineHeight: 19, fontWeight: '500' }}>
-                      {value}
-                    </Text>
-                    <Text numberOfLines={2} style={{ color: theme.text.secondary, fontSize: 10, lineHeight: 13, textAlign: 'center' }}>
-                      {t(language, stateLabelKey(value))}
-                    </Text>
-                  </WebPressable>
-                ))}
-              </WebView>
+              <V11CalibrationRail
+                accessibilityLabel={t(language, 'rebaselineCalibrationRailLabel')}
+                language={language}
+                onSelect={selectQuickState}
+                reducedMotion={reducedMotion}
+                selectedValue={pendingStateValue ?? reading}
+                status={stateSaveStatus}
+                theme={theme}
+                variant="today"
+              />
             ) : null}
 
             {stateSaveStatus !== 'idle' ? (
