@@ -876,6 +876,9 @@
   min-height: inherit;
   padding: 0;
   gap: 0;
+  overflow: hidden;
+  overflow: clip;
+  overscroll-behavior: none;
 }
 
 [data-v11-rebaseline-role="sheet-handle"] {
