@@ -114,6 +114,12 @@ export default function V11Stage2RebaselineScreen() {
   const [instantExpanded, setInstantExpanded] = useState(
     query().get('instant') === 'open',
   );
+  const [quickStateExpanded, setQuickStateExpanded] = useState(
+    initialScenario() === 's0',
+  );
+  const [instantStatus, setInstantStatus] = useState<'idle' | 'generating' | 'ready' | 'fallback' | 'error'>(
+    initialScenario() === 's0' ? 'idle' : 'ready',
+  );
   const [feedback, setFeedback] = useState<'useful' | 'not_useful' | null>(
     query().get('feedback') === 'not_useful'
       ? 'not_useful'
@@ -125,9 +131,13 @@ export default function V11Stage2RebaselineScreen() {
   const [pendingStateValue, setPendingStateValue] = useState<number | null>(null);
   const [stateSaveStatus, setStateSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [feedbackStatus, setFeedbackStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [stateRecordedAt, setStateRecordedAt] = useState<'fixture' | 'just_now' | null>(
+    initialScenario() === 's0' ? null : 'fixture',
+  );
   const stateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const closeStateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const instantTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fixture = useMemo(() => buildRebaselineFixture(scenario), [scenario]);
   const calibratedDecision = useMemo(
     () => scenario === 's0' && stateValue != null
@@ -170,9 +180,10 @@ export default function V11Stage2RebaselineScreen() {
     setStateSaveStatus('idle');
     setSheet('state');
   };
-  const selectState = (value: number) => {
+  const selectState = (value: number, closeSheetAfterSave = true) => {
     if (stateTimerRef.current) clearTimeout(stateTimerRef.current);
     if (closeStateTimerRef.current) clearTimeout(closeStateTimerRef.current);
+    if (instantTimerRef.current) clearTimeout(instantTimerRef.current);
     setPendingStateValue(value);
     setStateSaveStatus('saving');
     stateTimerRef.current = setTimeout(() => {
@@ -183,27 +194,55 @@ export default function V11Stage2RebaselineScreen() {
         return;
       }
       setStateValue(value);
+      setStateRecordedAt('just_now');
       setStateSaveStatus('saved');
-      setExpanded(true);
+      setQuickStateExpanded(false);
+      setInstantStatus('generating');
       setInstantExpanded(true);
-      closeStateTimerRef.current = setTimeout(() => {
-        setSheet(null);
-        setStateSaveStatus('idle');
+      instantTimerRef.current = setTimeout(() => {
+        const requestedStatus = query().get('instantState');
+        setInstantStatus(requestedStatus === 'fallback'
+          ? 'fallback'
+          : requestedStatus === 'error'
+            ? 'error'
+            : 'ready');
       }, 640);
+      if (closeSheetAfterSave) {
+        closeStateTimerRef.current = setTimeout(() => {
+          setSheet(null);
+          setStateSaveStatus('idle');
+        }, 640);
+      }
     }, 320);
   };
+
+  const selectQuickState = (value: number) => selectState(value, false);
 
   const selectFeedback = (value: 'useful' | 'not_useful') => {
     if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
     setFeedback(value);
     setFeedbackStatus('saving');
-    feedbackTimerRef.current = setTimeout(() => setFeedbackStatus('saved'), 320);
+    feedbackTimerRef.current = setTimeout(() => {
+      setFeedbackStatus('saved');
+      setInstantExpanded(false);
+    }, 320);
+  };
+
+  const retryInstantRead = () => {
+    if (instantTimerRef.current) clearTimeout(instantTimerRef.current);
+    setInstantStatus('generating');
+    setInstantExpanded(true);
+    instantTimerRef.current = setTimeout(() => {
+      const requestedStatus = query().get('instantState');
+      setInstantStatus(requestedStatus === 'error' ? 'error' : requestedStatus === 'fallback' ? 'fallback' : 'ready');
+    }, 640);
   };
 
   useEffect(() => () => {
     if (stateTimerRef.current) clearTimeout(stateTimerRef.current);
     if (closeStateTimerRef.current) clearTimeout(closeStateTimerRef.current);
     if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    if (instantTimerRef.current) clearTimeout(instantTimerRef.current);
   }, []);
 
   useEffect(() => {
@@ -288,6 +327,12 @@ export default function V11Stage2RebaselineScreen() {
               onPress={() => {
                 setScenario(value);
                 setStateValue(null);
+                setPendingStateValue(null);
+                setStateRecordedAt(value === 's0' ? null : 'fixture');
+                setQuickStateExpanded(value === 's0');
+                setInstantStatus(value === 's0' ? 'idle' : 'ready');
+                setInstantExpanded(false);
+                setStateSaveStatus('idle');
               }}
             >
               <Text>{value.toUpperCase()}</Text>
@@ -395,7 +440,9 @@ export default function V11Stage2RebaselineScreen() {
                   gap: 12,
                 }}
                 height={80}
-                onPress={displayScenario === 's0' ? openState : () => undefined}
+                onPress={displayScenario === 's0'
+                  ? () => setQuickStateExpanded(true)
+                  : () => undefined}
                 reducedMotion={reducedMotion}
                 stage={effectiveStage}
                 theme={theme}
@@ -430,42 +477,194 @@ export default function V11Stage2RebaselineScreen() {
             </WebView>
           </WebView>
 
-          <WebView dataSet={{ 'v11-rebaseline-role': 'state-summary' }}>
-            <WebPressable
-              accessibilityLabel={t(language, 'rebaselineToggleMore')}
-              accessibilityRole="button"
-              accessibilityState={{ expanded }}
-              dataSet={{ 'v11-rebaseline-role': 'state-reading' }}
-              onPress={() => setExpanded((value) => !value)}
-            >
-              <WebView>
+          <WebView dataSet={{ 'v11-rebaseline-role': 'state-section' }}>
+            <WebView dataSet={{ 'v11-rebaseline-role': 'state-section-heading' }}>
+              <WebView style={{ flex: 1, minWidth: 0 }}>
                 <Text style={{ color: theme.text.metadata, fontSize: 10, lineHeight: 15, letterSpacing: 0.7 }}>
                   {t(language, 'currentState')}
                 </Text>
-                <Text style={{ color: theme.text.primary, fontSize: 22, lineHeight: 29, fontWeight: '400' }}>
+                <Text style={{ color: theme.text.primary, fontSize: reading == null ? 17 : 22, lineHeight: reading == null ? 24 : 29, fontWeight: '400' }}>
                   {reading == null
-                    ? t(language, 'rebaselineStateNotRecorded')
+                    ? t(language, 'rebaselineStateQuestion')
                     : `${reading} / 5 · ${t(language, stateLabelKey(reading))}`}
                 </Text>
+                {reading != null && stateRecordedAt ? (
+                  <Text style={{ color: theme.text.secondary, fontSize: 11, lineHeight: 17, marginTop: 2 }}>
+                    {t(language, stateRecordedAt === 'just_now'
+                      ? 'rebaselineStateRecordedJustNow'
+                      : 'rebaselineStateRecordedToday')}
+                  </Text>
+                ) : null}
               </WebView>
-              <V11RebaselineIcon
-                name={expanded ? 'chevron-up' : 'chevron-down'}
-                size={17}
-                color={theme.text.secondary}
-              />
-            </WebPressable>
+              {reading != null ? (
+                <WebPressable
+                  accessibilityLabel={t(language, 'rebaselineUpdateState')}
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded: quickStateExpanded }}
+                  dataSet={{ 'v11-rebaseline-role': 'state-update-inline' }}
+                  onPress={() => setQuickStateExpanded((value) => !value)}
+                >
+                  <V11RebaselineIcon name="update" size={16} color={theme.text.primary} />
+                  <Text style={{ color: theme.text.primary, fontSize: 11, fontWeight: '500' }}>
+                    {t(language, quickStateExpanded
+                      ? 'rebaselineQuickStateCollapse'
+                      : 'rebaselineUpdateStateShort')}
+                  </Text>
+                </WebPressable>
+              ) : null}
+            </WebView>
+
+            {(reading == null || quickStateExpanded) ? (
+              <WebView dataSet={{ 'v11-rebaseline-role': 'quick-state-grid' }}>
+                {[1, 2, 3, 4, 5].map((value) => (
+                  <WebPressable
+                    accessibilityLabel={`${value} ${t(language, stateLabelKey(value))}`}
+                    accessibilityRole="button"
+                    accessibilityState={{
+                      disabled: stateSaveStatus === 'saving',
+                      selected: pendingStateValue === value,
+                    }}
+                    dataSet={{
+                      'v11-rebaseline-role': 'quick-state-choice',
+                      'v11-save-status': pendingStateValue === value ? stateSaveStatus : 'idle',
+                      'v11-selected': pendingStateValue === value ? 'true' : 'false',
+                    }}
+                    disabled={stateSaveStatus === 'saving'}
+                    key={value}
+                    onPress={() => selectQuickState(value)}
+                  >
+                    <Text style={{ color: theme.text.primary, fontSize: 15, lineHeight: 19, fontWeight: '500' }}>
+                      {value}
+                    </Text>
+                    <Text numberOfLines={2} style={{ color: theme.text.secondary, fontSize: 10, lineHeight: 13, textAlign: 'center' }}>
+                      {t(language, stateLabelKey(value))}
+                    </Text>
+                  </WebPressable>
+                ))}
+              </WebView>
+            ) : null}
+
+            {stateSaveStatus !== 'idle' ? (
+              <WebView dataSet={{ 'v11-rebaseline-role': 'state-inline-status' }}>
+                <Text
+                  accessibilityLiveRegion="polite"
+                  style={{ color: stateSaveStatus === 'error' ? theme.questTheme.colors.danger : theme.text.secondary, fontSize: 12, lineHeight: 18 }}
+                >
+                  {t(language, stateSaveStatus === 'saving'
+                    ? 'rebaselineStateSaving'
+                    : stateSaveStatus === 'error'
+                      ? 'rebaselineStateSaveError'
+                      : 'stateCheckInSaved')}
+                </Text>
+                {stateSaveStatus === 'error' && pendingStateValue != null ? (
+                  <WebPressable
+                    accessibilityRole="button"
+                    dataSet={{ 'v11-rebaseline-role': 'state-retry' }}
+                    onPress={() => selectQuickState(pendingStateValue)}
+                  >
+                    <Text style={{ color: theme.text.primary, fontSize: 12, fontWeight: '500' }}>
+                      {t(language, 'rebaselineRetry')}
+                    </Text>
+                  </WebPressable>
+                ) : null}
+              </WebView>
+            ) : null}
+
             <WebPressable
-              accessibilityLabel={t(language, 'rebaselineUpdateState')}
               accessibilityRole="button"
-              dataSet={{ 'v11-rebaseline-role': 'state-update' }}
-              onPress={openState}
+              dataSet={{ 'v11-rebaseline-role': 'state-detail-inline-action' }}
+              onPress={() => setSheet('state-detail')}
             >
-              <V11RebaselineIcon name="update" size={17} color={theme.text.primary} />
-              <Text style={{ color: theme.text.primary, fontSize: 11, fontWeight: '500' }}>
-                {t(language, 'rebaselineUpdateStateShort')}
+              <Text numberOfLines={2} style={{ flex: 1, flexShrink: 1, minWidth: 0, color: theme.text.secondary, fontSize: 12, lineHeight: 18 }}>
+                {t(language, 'rebaselineRecordMoreState')}
               </Text>
+              <V11RebaselineIcon name="arrow" size={14} color={theme.text.secondary} />
             </WebPressable>
           </WebView>
+
+          {reading != null && instantStatus !== 'idle' ? (
+            <WebView
+              dataSet={{
+                'v11-instant-status': instantStatus,
+                'v11-rebaseline-role': 'instant-read-inline',
+              }}
+            >
+              <WebPressable
+                accessibilityRole="button"
+                accessibilityState={{ expanded: instantExpanded }}
+                dataSet={{ 'v11-rebaseline-role': 'section-heading' }}
+                onPress={() => setInstantExpanded((value) => !value)}
+              >
+                <WebView style={{ flex: 1, flexShrink: 1, minWidth: 0 }}>
+                  <Text style={{ color: theme.text.primary, fontSize: 15, lineHeight: 21, fontWeight: '500' }}>
+                    {t(language, 'instantRead')}
+                  </Text>
+                  <Text numberOfLines={2} style={{ flexShrink: 1, color: theme.text.secondary, fontSize: 12, lineHeight: 18 }}>
+                    {instantStatus === 'generating'
+                      ? t(language, 'rebaselineInstantGenerating')
+                      : instantStatus === 'fallback'
+                        ? t(language, 'rebaselineInstantFallback')
+                        : instantStatus === 'error'
+                          ? t(language, 'rebaselineInstantError')
+                          : feedbackStatus === 'saving'
+                            ? t(language, 'feedbackSaving')
+                            : feedback
+                              ? `${t(language, 'feedbackSaved')} · ${t(language, feedback === 'useful' ? 'useful' : 'notUseful')}`
+                              : t(language, 'rebaselineInstantSummary')}
+                  </Text>
+                </WebView>
+                <V11RebaselineIcon
+                  name={instantExpanded ? 'chevron-up' : 'chevron-down'}
+                  size={16}
+                  color={theme.text.secondary}
+                />
+              </WebPressable>
+              {instantExpanded ? (
+                <WebView dataSet={{ 'v11-rebaseline-role': 'instant-body' }}>
+                  {instantStatus === 'generating' ? (
+                    <Text style={{ color: theme.text.secondary, fontSize: 13, lineHeight: 20 }}>
+                      {t(language, 'rebaselineInstantGenerating')}
+                    </Text>
+                  ) : instantStatus === 'error' ? (
+                    <WebPressable accessibilityRole="button" dataSet={{ 'v11-rebaseline-role': 'instant-retry' }} onPress={retryInstantRead}>
+                      <Text style={{ color: theme.text.primary, fontSize: 12, fontWeight: '500' }}>
+                        {t(language, 'rebaselineRetry')}
+                      </Text>
+                    </WebPressable>
+                  ) : (
+                    <>
+                      {instantStatus === 'fallback' ? (
+                        <Text style={{ color: theme.text.metadata, fontSize: 10, lineHeight: 15, letterSpacing: 0.7 }}>
+                          {t(language, 'rebaselineInstantFallbackBadge')}
+                        </Text>
+                      ) : null}
+                      <Text style={{ color: theme.text.primary, fontSize: 14, lineHeight: 21 }}>
+                        {t(language, displayScenario === 's3' ? 'rebaselineInstantS3' : 'rebaselineInstantS1')}
+                      </Text>
+                      <WebView dataSet={{ 'v11-rebaseline-role': 'feedback-row' }}>
+                        {(['useful', 'not_useful'] as const).map((value) => (
+                          <WebPressable
+                            accessibilityRole="button"
+                            accessibilityState={{ selected: feedback === value }}
+                            dataSet={{
+                              'v11-rebaseline-role': 'feedback-choice',
+                              'v11-selected': feedback === value ? 'true' : 'false',
+                            }}
+                            key={value}
+                            onPress={() => selectFeedback(value)}
+                          >
+                            <Text style={{ color: theme.text.primary, fontSize: 12, fontWeight: '500' }}>
+                              {t(language, value === 'useful' ? 'useful' : 'notUseful')}
+                            </Text>
+                          </WebPressable>
+                        ))}
+                      </WebView>
+                    </>
+                  )}
+                </WebView>
+              ) : null}
+            </WebView>
+          ) : null}
 
           {fixture.plan.length > 0 ? (
             <WebPressable
@@ -494,64 +693,6 @@ export default function V11Stage2RebaselineScreen() {
 
           {expanded ? (
             <WebView dataSet={{ 'v11-rebaseline-role': 'l2' }}>
-              {reading != null ? (
-                <WebView dataSet={{ 'v11-rebaseline-role': 'instant-read' }}>
-                  <WebPressable
-                    accessibilityRole="button"
-                    accessibilityState={{ expanded: instantExpanded }}
-                    dataSet={{ 'v11-rebaseline-role': 'section-heading' }}
-                    onPress={() => setInstantExpanded((value) => !value)}
-                  >
-                    <WebView style={{ flex: 1, flexShrink: 1, minWidth: 0 }}>
-                      <Text style={{ color: theme.text.primary, fontSize: 16, lineHeight: 22, fontWeight: '500' }}>
-                        {t(language, 'instantRead')}
-                      </Text>
-                      <Text numberOfLines={2} style={{ flexShrink: 1, color: theme.text.secondary, fontSize: 12, lineHeight: 18 }}>
-                        {feedbackStatus === 'saving'
-                          ? t(language, 'feedbackSaving')
-                          : feedback
-                          ? `${t(language, 'feedbackSaved')} · ${t(language, feedback === 'useful' ? 'useful' : 'notUseful')}`
-                          : t(language, 'rebaselineInstantSummary')}
-                      </Text>
-                    </WebView>
-                    <V11RebaselineIcon
-                      name={instantExpanded ? 'chevron-up' : 'chevron-down'}
-                      size={16}
-                      color={theme.text.secondary}
-                    />
-                  </WebPressable>
-                  {instantExpanded ? (
-                    <WebView dataSet={{ 'v11-rebaseline-role': 'instant-body' }}>
-                      <Text style={{ color: theme.text.primary, fontSize: 14, lineHeight: 21 }}>
-                        {t(language, displayScenario === 's3' ? 'rebaselineInstantS3' : 'rebaselineInstantS1')}
-                      </Text>
-                      <WebView dataSet={{ 'v11-rebaseline-role': 'feedback-row' }}>
-                        {(['useful', 'not_useful'] as const).map((value) => (
-                          <WebPressable
-                            accessibilityRole="button"
-                            dataSet={{
-                              'v11-rebaseline-role': 'feedback-choice',
-                              'v11-selected': feedback === value ? 'true' : 'false',
-                            }}
-                            key={value}
-                            onPress={() => selectFeedback(value)}
-                          >
-                            <Text style={{ color: theme.text.primary, fontSize: 12, fontWeight: '500' }}>
-                              {t(language, value === 'useful' ? 'useful' : 'notUseful')}
-                            </Text>
-                          </WebPressable>
-                        ))}
-                      </WebView>
-                      {feedbackStatus !== 'idle' ? (
-                        <Text accessibilityLiveRegion="polite" style={{ color: theme.text.secondary, fontSize: 12, lineHeight: 18 }}>
-                          {t(language, feedbackStatus === 'saving' ? 'feedbackSaving' : 'feedbackSaved')}
-                        </Text>
-                      ) : null}
-                    </WebView>
-                  ) : null}
-                </WebView>
-              ) : null}
-
               <WebView dataSet={{ 'v11-rebaseline-role': 'section' }}>
                 <WebView dataSet={{ 'v11-rebaseline-role': 'section-heading' }}>
                   <Text style={{ color: theme.text.primary, fontSize: 16, lineHeight: 22, fontWeight: '500' }}>
