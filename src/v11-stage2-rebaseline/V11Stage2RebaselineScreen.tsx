@@ -595,14 +595,14 @@ export default function V11Stage2RebaselineScreen() {
                   <Text numberOfLines={2} style={{ flexShrink: 1, color: theme.text.secondary, fontSize: 12, lineHeight: 18 }}>
                     {instantStatus === 'generating'
                       ? t(language, 'rebaselineInstantGenerating')
-                      : instantStatus === 'fallback'
-                        ? t(language, 'rebaselineInstantFallback')
-                        : instantStatus === 'error'
-                          ? t(language, 'rebaselineInstantError')
-                          : feedbackStatus === 'saving'
-                            ? t(language, 'feedbackSaving')
-                            : feedback
-                              ? `${t(language, 'feedbackSaved')} · ${t(language, feedback === 'useful' ? 'useful' : 'notUseful')}`
+                      : instantStatus === 'error'
+                        ? t(language, 'rebaselineInstantError')
+                        : feedbackStatus === 'saving'
+                          ? t(language, 'feedbackSaving')
+                          : feedback
+                            ? `${t(language, 'feedbackSaved')} · ${t(language, feedback === 'useful' ? 'useful' : 'notUseful')}`
+                            : instantStatus === 'fallback'
+                              ? t(language, 'rebaselineInstantFallback')
                               : t(language, 'rebaselineInstantSummary')}
                   </Text>
                 </WebView>
