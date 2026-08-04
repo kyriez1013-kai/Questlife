@@ -77,7 +77,7 @@ export default function V11Stage2ProductionSheet({
             minHeight={350}
             reducedMotion={reducedMotion}
             stage="S2"
-            style={{ width: '100%', maxWidth: 680, maxHeight: '88%' }}
+            style={{ maxWidth: 680 }}
             theme={theme}
           >
             <WebView dataSet={{ 'v11-rebaseline-role': 'sheet-handle' }} />

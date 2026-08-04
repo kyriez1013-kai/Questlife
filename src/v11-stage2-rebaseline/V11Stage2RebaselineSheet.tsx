@@ -13,6 +13,7 @@ import {
 } from '../v11/tokens';
 import { V11GlassSheet, V11Pill } from '../v11/components/V11Material';
 import type { RebaselineExecutionRow } from './fixtures';
+import V11CalibrationRail from './V11CalibrationRail';
 import V11RebaselineIcon from './V11RebaselineIcon';
 import V11Stage2ProductionSheet from './V11Stage2ProductionSheet';
 
@@ -170,28 +171,17 @@ export default function V11Stage2RebaselineSheet({
                     {value} · {t(language, stateLabels[value - 1])}
                   </Text>
                 </WebView>
-                <WebView dataSet={{ 'v11-rebaseline-role': 'state-detail-options' }}>
-                  {[1, 2, 3, 4, 5].map((option) => (
-                    <WebPressable
-                      accessibilityLabel={`${t(language, key)} ${option} ${t(language, stateLabels[option - 1])}`}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: value === option }}
-                      dataSet={{
-                        'v11-rebaseline-role': 'state-detail-choice',
-                        'v11-selected': value === option ? 'true' : 'false',
-                      }}
-                      key={option}
-                      onPress={() => setDetailValues((current) => ({ ...current, [key]: option }))}
-                    >
-                      <Text style={{ color: theme.text.primary, fontSize: 14, lineHeight: 18, fontWeight: '500' }}>
-                        {option}
-                      </Text>
-                      <Text numberOfLines={2} style={{ color: theme.text.secondary, fontSize: 9.5, lineHeight: 12, textAlign: 'center' }}>
-                        {t(language, stateLabels[option - 1])}
-                      </Text>
-                    </WebPressable>
-                  ))}
-                </WebView>
+                <V11CalibrationRail
+                  accessibilityLabel={t(language, key)}
+                  language={language}
+                  onSelect={(option) => setDetailValues((current) => ({ ...current, [key]: option }))}
+                  reducedMotion={reducedMotion}
+                  selectedValue={value}
+                  showSelectedMeaning={false}
+                  status={stateSaveStatus}
+                  theme={theme}
+                  variant="sheet"
+                />
               </WebView>
             );
           })}
@@ -358,33 +348,16 @@ export default function V11Stage2RebaselineSheet({
             <Text style={{ color: theme.text.secondary, fontSize: 13, lineHeight: 20 }}>
               {t(language, 'rebaselineStatePrompt')}
             </Text>
-            <WebView dataSet={{ 'v11-rebaseline-role': 'state-grid' }}>
-              {[1, 2, 3, 4, 5].map((value) => (
-                <WebPressable
-                  accessibilityLabel={`${value} / 5`}
-                  accessibilityRole="button"
-                  accessibilityState={{
-                    disabled: stateSaveStatus === 'saving',
-                    selected: selectedState === value,
-                  }}
-                  dataSet={{
-                    'v11-rebaseline-role': 'state-choice',
-                    'v11-save-status': selectedState === value ? stateSaveStatus : 'idle',
-                    'v11-selected': selectedState === value ? 'true' : 'false',
-                  }}
-                  disabled={stateSaveStatus === 'saving'}
-                  key={value}
-                  onPress={() => onState(value)}
-                >
-                  <Text style={{ color: theme.text.primary, fontSize: 18, fontWeight: '500' }}>
-                    {value}
-                  </Text>
-                  <Text style={{ color: theme.text.secondary, fontSize: 10, lineHeight: 14 }}>
-                    {t(language, stateLabels[value - 1])}
-                  </Text>
-                </WebPressable>
-              ))}
-            </WebView>
+            <V11CalibrationRail
+              accessibilityLabel={t(language, 'rebaselineCalibrationRailLabel')}
+              language={language}
+              onSelect={onState}
+              reducedMotion={reducedMotion}
+              selectedValue={selectedState}
+              status={stateSaveStatus}
+              theme={theme}
+              variant="today"
+            />
             {stateStatusKey ? (
               <Text
                 accessibilityLiveRegion="polite"
