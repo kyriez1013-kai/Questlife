@@ -814,9 +814,18 @@
   position: absolute;
   z-index: 0;
   inset: 0;
-  background: color-mix(in srgb, #000 76%, transparent);
+  background: var(--v11-rebaseline-overlay);
   backdrop-filter: blur(10px) brightness(0.72);
   -webkit-backdrop-filter: blur(10px) brightness(0.72);
+}
+
+[data-v11-rebaseline-role="overlay"][data-v11-theme="light"]
+  [data-v11-component="material-clip"][data-v11-material="glass"] {
+  background: color-mix(
+    in srgb,
+    var(--v11-rebaseline-elevated) 82%,
+    transparent
+  );
 }
 
 [data-v11-rebaseline-role="overlay"] > [data-v11-component="material-frame"] {

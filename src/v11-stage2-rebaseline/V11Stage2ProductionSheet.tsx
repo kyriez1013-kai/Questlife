@@ -57,14 +57,23 @@ export default function V11Stage2ProductionSheet({
             'v11-motion': reducedMotion ? 'reduced' : 'normal',
             'v11-rebaseline-role': 'overlay',
             'v11-sheet': sheet,
+            'v11-theme': theme.mode,
           }}
           onStartShouldSetResponder={() => true}
+          style={{
+            '--v11-rebaseline-bg': theme.field.background,
+            '--v11-rebaseline-elevated': theme.questTheme.colors.surfaceElevated,
+            '--v11-rebaseline-overlay': theme.questTheme.colors.overlay,
+            '--v11-rebaseline-primary': theme.glow.primary,
+            '--v11-rebaseline-text': theme.text.primary,
+          } as any}
         >
           <WebPressable
-            accessibilityLabel={closeLabel}
-            accessibilityRole="button"
+            accessible={false}
+            aria-hidden="true"
             dataSet={{ 'v11-rebaseline-role': 'scrim' }}
             onPress={onClose}
+            tabIndex={-1}
           />
           <V11GlassSheet
             accessibilityLabel={title}
