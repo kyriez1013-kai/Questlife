@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -14,6 +14,7 @@ import {
 import { V11GlassSheet, V11Pill } from '../v11/components/V11Material';
 import type { RebaselineExecutionRow } from './fixtures';
 import V11RebaselineIcon from './V11RebaselineIcon';
+import V11Stage2ProductionSheet from './V11Stage2ProductionSheet';
 
 const WebView = View as any;
 const WebPressable = Pressable as any;
@@ -73,6 +74,29 @@ export default function V11Stage2RebaselineSheet({
 }: Props) {
   const theme = getV11ThemeTokens(themeMode);
   const [captureText, setCaptureText] = useState('');
+  const [detailValues, setDetailValues] = useState<Record<string, number>>({
+    overall: selectedState ?? 3,
+    energy: 3,
+    focus: 3,
+    mood: 3,
+    physical: 3,
+    stress: 3,
+    sleepQuality: 3,
+  });
+  const [detailHealth, setDetailHealth] = useState<'normal' | 'tired' | 'sick' | 'recovery'>('normal');
+  const [detailContext, setDetailContext] = useState<Record<string, boolean>>({
+    postWorkout: false,
+    afterExam: false,
+    caffeine: false,
+    socialDrain: false,
+  });
+  const [detailNote, setDetailNote] = useState('');
+
+  useEffect(() => {
+    if (sheet !== 'state-detail') return;
+    setDetailValues((current) => ({ ...current, overall: selectedState ?? 3 }));
+  }, [selectedState, sheet]);
+
   if (!sheet) return null;
 
   const stateLabels = ['veryBad', 'bad', 'average', 'good', 'great'];
@@ -83,6 +107,172 @@ export default function V11Stage2RebaselineSheet({
       : stateSaveStatus === 'error'
         ? 'rebaselineStateSaveError'
         : null;
+
+  if (sheet === 'state-detail') {
+    const metricKeys = ['overall', 'energy', 'focus', 'mood', 'physical', 'stress', 'sleepQuality'];
+    const healthOptions = ['normal', 'tired', 'sick', 'recovery'] as const;
+    const healthKeys = {
+      normal: 'healthNormal',
+      tired: 'healthTired',
+      sick: 'healthSick',
+      recovery: 'healthRecovery',
+    } as const;
+    const contextKeys = ['postWorkout', 'afterExam', 'caffeine', 'socialDrain'];
+
+    return (
+      <V11Stage2ProductionSheet
+        closeLabel={t(language, 'close')}
+        footer={(
+          <WebView dataSet={{ 'v11-rebaseline-role': 'state-detail-footer-actions' }}>
+            <WebPressable
+              accessibilityRole="button"
+              dataSet={{ 'v11-action': 'secondary', 'v11-rebaseline-role': 'state-detail-footer-action' }}
+              onPress={onClose}
+            >
+              <Text style={{ color: theme.text.primary, fontSize: 13, fontWeight: '500' }}>
+                {t(language, 'cancel')}
+              </Text>
+            </WebPressable>
+            <WebPressable
+              accessibilityRole="button"
+              accessibilityState={{ disabled: stateSaveStatus === 'saving' }}
+              dataSet={{ 'v11-action': 'primary', 'v11-rebaseline-role': 'state-detail-footer-action' }}
+              disabled={stateSaveStatus === 'saving'}
+              onPress={() => onState(detailValues.overall)}
+            >
+              <Text style={{ color: theme.text.primary, fontSize: 13, fontWeight: '600' }}>
+                {t(language, stateSaveStatus === 'saving' ? 'rebaselineStateSaving' : 'save')}
+              </Text>
+            </WebPressable>
+          </WebView>
+        )}
+        onClose={onClose}
+        reducedMotion={reducedMotion}
+        sheet="state"
+        theme={theme}
+        title={t(language, 'detailedCheckIn')}
+        visible
+      >
+        <WebView dataSet={{ 'v11-form': 'state-detail', 'v11-rebaseline-role': 'state-detail-form' }}>
+          <Text style={{ color: theme.text.secondary, fontSize: 13, lineHeight: 20 }}>
+            {t(language, 'rebaselineDetailedStateAllPrompt')}
+          </Text>
+
+          {metricKeys.map((key) => {
+            const value = detailValues[key] ?? 3;
+            return (
+              <WebView dataSet={{ 'v11-rebaseline-role': 'state-detail-metric' }} key={key}>
+                <WebView dataSet={{ 'v11-rebaseline-role': 'state-detail-metric-heading' }}>
+                  <Text style={{ color: theme.text.primary, fontSize: 14, fontWeight: '500' }}>
+                    {t(language, key)}
+                  </Text>
+                  <Text style={{ color: theme.text.secondary, fontSize: 12 }}>
+                    {value} · {t(language, stateLabels[value - 1])}
+                  </Text>
+                </WebView>
+                <WebView dataSet={{ 'v11-rebaseline-role': 'state-detail-options' }}>
+                  {[1, 2, 3, 4, 5].map((option) => (
+                    <WebPressable
+                      accessibilityLabel={`${t(language, key)} ${option} ${t(language, stateLabels[option - 1])}`}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: value === option }}
+                      dataSet={{
+                        'v11-rebaseline-role': 'state-detail-choice',
+                        'v11-selected': value === option ? 'true' : 'false',
+                      }}
+                      key={option}
+                      onPress={() => setDetailValues((current) => ({ ...current, [key]: option }))}
+                    >
+                      <Text style={{ color: theme.text.primary, fontSize: 14, lineHeight: 18, fontWeight: '500' }}>
+                        {option}
+                      </Text>
+                      <Text numberOfLines={2} style={{ color: theme.text.secondary, fontSize: 9.5, lineHeight: 12, textAlign: 'center' }}>
+                        {t(language, stateLabels[option - 1])}
+                      </Text>
+                    </WebPressable>
+                  ))}
+                </WebView>
+              </WebView>
+            );
+          })}
+
+          <WebView dataSet={{ 'v11-rebaseline-role': 'state-detail-group' }}>
+            <Text style={{ color: theme.text.primary, fontSize: 14, fontWeight: '500' }}>
+              {t(language, 'health')}
+            </Text>
+            <WebView dataSet={{ 'v11-rebaseline-role': 'state-detail-tags' }}>
+              {healthOptions.map((value) => (
+                <WebPressable
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: detailHealth === value }}
+                  dataSet={{
+                    'v11-rebaseline-role': 'state-detail-tag',
+                    'v11-selected': detailHealth === value ? 'true' : 'false',
+                  }}
+                  key={value}
+                  onPress={() => setDetailHealth(value)}
+                >
+                  <Text style={{ color: theme.text.primary, fontSize: 12, fontWeight: '500' }}>
+                    {t(language, healthKeys[value])}
+                  </Text>
+                </WebPressable>
+              ))}
+            </WebView>
+          </WebView>
+
+          <WebView dataSet={{ 'v11-rebaseline-role': 'state-detail-group' }}>
+            <Text style={{ color: theme.text.primary, fontSize: 14, fontWeight: '500' }}>
+              {t(language, 'rebaselineStateContext')}
+            </Text>
+            <WebView dataSet={{ 'v11-rebaseline-role': 'state-detail-tags' }}>
+              {contextKeys.map((key) => (
+                <WebPressable
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: Boolean(detailContext[key]) }}
+                  dataSet={{
+                    'v11-rebaseline-role': 'state-detail-tag',
+                    'v11-selected': detailContext[key] ? 'true' : 'false',
+                  }}
+                  key={key}
+                  onPress={() => setDetailContext((current) => ({ ...current, [key]: !current[key] }))}
+                >
+                  <Text style={{ color: theme.text.primary, fontSize: 12, fontWeight: '500' }}>
+                    {t(language, key)}
+                  </Text>
+                </WebPressable>
+              ))}
+            </WebView>
+          </WebView>
+
+          <WebView dataSet={{ 'v11-rebaseline-role': 'state-detail-group' }}>
+            <Text style={{ color: theme.text.primary, fontSize: 14, fontWeight: '500' }}>
+              {t(language, 'notes')}
+            </Text>
+            <WebTextInput
+              accessibilityLabel={t(language, 'notes')}
+              dataSet={{ 'v11-rebaseline-role': 'state-detail-notes' }}
+              multiline
+              onChangeText={setDetailNote}
+              placeholder={t(language, 'stateNoteExample')}
+              placeholderTextColor={theme.text.metadata}
+              style={{ color: theme.text.primary, fontSize: 14, lineHeight: 20 }}
+              value={detailNote}
+            />
+          </WebView>
+
+          {stateStatusKey ? (
+            <Text
+              accessibilityLiveRegion="polite"
+              style={{ color: stateSaveStatus === 'error' ? theme.questTheme.colors.danger : theme.text.secondary, fontSize: 12, lineHeight: 18 }}
+            >
+              {t(language, stateStatusKey)}
+            </Text>
+          ) : null}
+        </WebView>
+      </V11Stage2ProductionSheet>
+    );
+  }
+
   return (
     <WebView
       dataSet={{
@@ -107,13 +297,11 @@ export default function V11Stage2RebaselineSheet({
         }}
         minHeight={sheet === 'state'
           ? 286
-          : sheet === 'state-detail'
-            ? 340
-            : sheet === 'capture'
-              ? 350
-              : sheet === 'history'
-                ? 420
-                : 390}
+          : sheet === 'capture'
+            ? 350
+            : sheet === 'history'
+              ? 420
+              : 390}
         reducedMotion={reducedMotion}
         stage="S2"
         style={{ width: '100%' }}
@@ -216,41 +404,6 @@ export default function V11Stage2RebaselineSheet({
               </Text>
             </WebPressable>
           </>
-        ) : null}
-
-        {sheet === 'state-detail' ? (
-          <WebScrollView
-            contentContainerStyle={{ gap: 10, paddingBottom: 4 }}
-            dataSet={{ 'v11-rebaseline-role': 'state-detail-scroll' }}
-            showsVerticalScrollIndicator={false}
-          >
-            <Text style={{ color: theme.text.secondary, fontSize: 13, lineHeight: 20 }}>
-              {t(language, 'rebaselineDetailedStatePrompt')}
-            </Text>
-            {(['energy', 'focus', 'mood'] as const).map((key) => (
-              <WebView dataSet={{ 'v11-rebaseline-role': 'state-detail-row' }} key={key}>
-                <Text style={{ color: theme.text.primary, fontSize: 14, fontWeight: '500' }}>
-                  {t(language, key)}
-                </Text>
-                <Text style={{ color: theme.text.secondary, fontSize: 13 }}>
-                  {selectedState ?? 3} / 5
-                </Text>
-              </WebView>
-            ))}
-            <V11Pill
-              accessibilityLabel={t(language, 'save')}
-              contentStyle={{ alignItems: 'center', justifyContent: 'center' }}
-              height={52}
-              onPress={() => onState(selectedState ?? 3)}
-              reducedMotion={reducedMotion}
-              stage="S2"
-              theme={theme}
-            >
-              <Text style={{ color: theme.text.primary, fontSize: 14, fontWeight: '500' }}>
-                {t(language, 'save')}
-              </Text>
-            </V11Pill>
-          </WebScrollView>
         ) : null}
 
         {sheet === 'decision' ? (
