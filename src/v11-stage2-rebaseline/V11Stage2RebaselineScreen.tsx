@@ -58,6 +58,14 @@ function initialLayerExpanded() {
   return query().get('layer') === 'l2';
 }
 
+function requestedHistoryCount(maximum: number) {
+  const requested = query().get('history');
+  if (requested == null) return maximum;
+  const value = Number(requested);
+  if (!Number.isFinite(value)) return maximum;
+  return Math.max(0, Math.min(maximum, Math.floor(value)));
+}
+
 function initialSheet(): RebaselineSheet {
   const value = query().get('sheet');
   return value === 'capture'
@@ -132,6 +140,7 @@ export default function V11Stage2RebaselineScreen() {
   const [pendingStateValue, setPendingStateValue] = useState<number | null>(null);
   const [stateSaveStatus, setStateSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [feedbackStatus, setFeedbackStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [captureSaved, setCaptureSaved] = useState(false);
   const [stateRecordedAt, setStateRecordedAt] = useState<'fixture' | 'just_now' | null>(
     initialScenario() === 's0' ? null : 'fixture',
   );
@@ -140,6 +149,22 @@ export default function V11Stage2RebaselineScreen() {
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const instantTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fixture = useMemo(() => buildRebaselineFixture(scenario), [scenario]);
+  const visibleRecent = useMemo(
+    () => {
+      const requested = fixture.recent.slice(0, requestedHistoryCount(fixture.recent.length));
+      if (!captureSaved) return requested;
+      return [{
+        id: 'fixture-execution-capture-saved',
+        titleKey: 'rebaselineLatestRecord',
+        metaKey: 'rebaselineLatestRecordMeta',
+        resultKey: 'rebaselineQualityFour',
+        timeKey: 'rebaselineJustNow',
+      }, ...requested];
+    },
+    [captureSaved, fixture.recent],
+  );
+  const latestRecordKey = captureSaved ? 'rebaselineLatestRecord' : fixture.latestRecordKey;
+  const hasLatestRecord = visibleRecent.length > 0 && Boolean(latestRecordKey);
   const calibratedDecision = useMemo(
     () => scenario === 's0' && stateValue != null
       ? buildRebaselineFixture('s1').decision
@@ -389,13 +414,13 @@ export default function V11Stage2RebaselineScreen() {
               </WebView>
             </WebPressable>
             <WebPressable
-              accessibilityLabel={t(language, fixture.latestRecordKey
+              accessibilityLabel={t(language, hasLatestRecord
                 ? 'rebaselineOpenActivityHistory'
                 : 'rebaselineNoLatestRecord')}
               accessibilityRole="button"
-              accessibilityState={{ disabled: !fixture.latestRecordKey }}
+              accessibilityState={{ disabled: !hasLatestRecord }}
               dataSet={{ 'v11-rebaseline-role': 'latest-record' }}
-              disabled={!fixture.latestRecordKey}
+              disabled={!hasLatestRecord}
               onPress={() => setSheet('history')}
             >
               <Text
@@ -404,16 +429,16 @@ export default function V11Stage2RebaselineScreen() {
                   flex: 1,
                   flexShrink: 1,
                   minWidth: 0,
-                  color: fixture.latestRecordKey ? theme.text.secondary : theme.text.disabled,
+                  color: hasLatestRecord ? theme.text.secondary : theme.text.disabled,
                   fontSize: 12.5,
                   lineHeight: 18,
                 }}
               >
-                {fixture.latestRecordKey
-                  ? `${t(language, 'rebaselineLatestRecordLabel')} · ${t(language, fixture.latestRecordKey)} · ${t(language, 'rebaselineTimeMorning')}`
+                {hasLatestRecord && latestRecordKey
+                  ? `${t(language, 'rebaselineLatestRecordLabel')} · ${t(language, latestRecordKey)} · ${t(language, captureSaved ? 'rebaselineJustNow' : 'rebaselineTimeMorning')}`
                   : t(language, 'rebaselineNoLatestRecord')}
               </Text>
-              {fixture.latestRecordKey ? (
+              {hasLatestRecord ? (
                 <WebView dataSet={{ 'v11-rebaseline-role': 'latest-record-trailing' }}>
                   <V11RebaselineIcon name="arrow" size={14} color={theme.text.metadata} />
                 </WebView>
@@ -795,6 +820,7 @@ export default function V11Stage2RebaselineScreen() {
         feedback={feedback}
         feedbackStatus={feedbackStatus}
         language={language}
+        onCaptureSaved={() => setCaptureSaved(true)}
         onClose={() => {
           setSheet(null);
           setStateSaveStatus('idle');
@@ -803,7 +829,7 @@ export default function V11Stage2RebaselineScreen() {
         onFeedback={selectFeedback}
         onOpenRecord={() => setSheet('record')}
         onState={selectState}
-        recent={fixture.recent}
+        recent={visibleRecent}
         reducedMotion={reducedMotion}
         selectedState={pendingStateValue ?? reading}
         sheet={sheet}
