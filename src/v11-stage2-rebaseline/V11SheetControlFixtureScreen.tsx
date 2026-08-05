@@ -3,9 +3,12 @@ import { SafeAreaView, ScrollView, Text, View } from 'react-native';
 import { Lang, t } from '../i18n';
 import {
   V11CategoricalChip,
+  V11CheckboxControl,
   V11DiscreteNumericRail,
+  V11InlineButton,
   V11SegmentedSelector,
   V11SheetButton,
+  V11StatusChip,
   V11StickySheetFooter,
   V11TextField,
 } from '../v11/components/V11SheetControls';
@@ -22,6 +25,7 @@ function languageFromQuery(): Lang {
 function ThemeFixture({ lang, theme }: { lang: Lang; theme: V11ThemeTokens }) {
   const [numeric, setNumeric] = useState(3);
   const [segment, setSegment] = useState<'first' | 'second'>('first');
+  const [checked, setChecked] = useState(true);
 
   return (
     <WebView
@@ -53,6 +57,12 @@ function ThemeFixture({ lang, theme }: { lang: Lang; theme: V11ThemeTokens }) {
         <V11CategoricalChip label={t(lang, 'rebaselineControlSelected')} onPress={() => undefined} selected theme={theme} />
         <V11CategoricalChip label={t(lang, 'rebaselineControlPressed')} onPress={() => undefined} selected={false} theme={theme} visualState="pressed" />
         <V11CategoricalChip disabled label={t(lang, 'rebaselineControlDisabled')} onPress={() => undefined} selected={false} theme={theme} />
+      </WebView>
+
+      <WebView style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+        <V11CheckboxControl accessibilityLabel={t(lang, 'rebaselineControlSelected')} checked={checked} onPress={() => setChecked((value) => !value)} theme={theme} />
+        <V11StatusChip label={t(lang, 'rebaselineControlSuccess')} theme={theme} />
+        <V11InlineButton label={t(lang, 'changeSelection')} onPress={() => undefined} theme={theme} />
       </WebView>
 
       <V11SegmentedSelector

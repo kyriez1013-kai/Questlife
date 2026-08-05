@@ -23,6 +23,16 @@ import {
   getPredictionSchemaForSkill,
   isStrengthPredictionSkill,
 } from '../../utils/prediction';
+import {
+  V11CategoricalChip,
+  V11DiscreteNumericRail,
+  V11InlineButton,
+  V11SelectionRow,
+  V11SegmentedSelector,
+  V11SheetButton,
+  V11TextField,
+} from '../../v11/components/V11SheetControls';
+import { getV11ThemeTokens } from '../../v11/tokens';
 import QuestButton from '../ui/QuestButton';
 import QuestEntityIcon from '../ui/QuestEntityIcon';
 import QuestInput from '../ui/QuestInput';
@@ -820,8 +830,38 @@ function V11Section({
   );
 }
 
+function V11RecordInput({
+  questTheme,
+  ...props
+}: React.ComponentProps<typeof QuestInput>) {
+  const themeTokens = getV11ThemeTokens(questTheme?.id === 'cleanFocus' ? 'light' : 'dark');
+  return <V11TextField {...props} theme={themeTokens} />;
+}
+
+function V11RecordButton({
+  label = '',
+  onPress = () => undefined,
+  questTheme,
+  style,
+  variant = 'secondary',
+  disabled,
+  loading,
+}: React.ComponentProps<typeof QuestButton>) {
+  const themeTokens = getV11ThemeTokens(questTheme?.id === 'cleanFocus' ? 'light' : 'dark');
+  return (
+    <V11SheetButton
+      disabled={disabled}
+      label={label}
+      loading={loading}
+      onPress={onPress}
+      style={style}
+      theme={themeTokens}
+      variant={variant === 'primary' ? 'primary' : 'secondary'}
+    />
+  );
+}
+
 function V11Segmented<T extends string>({
-  accent,
   onChange,
   options,
   questTheme,
@@ -833,46 +873,11 @@ function V11Segmented<T extends string>({
   questTheme: Props['questTheme'];
   value: T;
 }) {
-  return (
-    <View
-      accessibilityRole="radiogroup"
-      style={[styles.v11Segmented, { backgroundColor: questTheme.colors.surfaceSoft }]}
-    >
-      {options.map((option) => {
-        const selected = option.value === value;
-        return (
-          <TouchableOpacity
-            accessibilityRole="radio"
-            accessibilityState={{ checked: selected }}
-            activeOpacity={0.76}
-            key={option.value}
-            onPress={() => onChange(option.value)}
-            style={[
-              styles.v11Segment,
-              selected && {
-                backgroundColor: questTheme.colors.surfaceElevated,
-                borderColor: accent,
-              },
-            ]}
-          >
-            <Text
-              numberOfLines={2}
-              style={[
-                styles.v11SegmentText,
-                { color: selected ? questTheme.colors.text : questTheme.colors.textMuted },
-              ]}
-            >
-              {option.label}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-    </View>
-  );
+  const themeTokens = getV11ThemeTokens(questTheme.id === 'cleanFocus' ? 'light' : 'dark');
+  return <V11SegmentedSelector onChange={onChange} options={options} theme={themeTokens} value={value} />;
 }
 
 function V11RatingPicker({
-  accent,
   labelMode = 'semantic',
   lang,
   max = 5,
@@ -888,38 +893,20 @@ function V11RatingPicker({
   questTheme: Props['questTheme'];
   value: Quality | null;
 }) {
+  const themeTokens = getV11ThemeTokens(questTheme.id === 'cleanFocus' ? 'light' : 'dark');
   return (
-    <View style={styles.v11RatingRow}>
-      {Array.from({ length: max }, (_, index) => index + 1).map((number) => {
-        const rating = number as Quality;
-        const selected = value === rating;
-        return (
-          <TouchableOpacity
-            accessibilityLabel={labelMode === 'semantic' && max === 5 ? `${rating} ${qualityLabel(lang, rating)}` : String(rating)}
-            accessibilityRole="radio"
-            accessibilityState={{ checked: selected }}
-            activeOpacity={0.74}
-            key={number}
-            onPress={() => onChange(selected ? null : rating)}
-            style={[
-              styles.v11Rating,
-              {
-                backgroundColor: questTheme.colors.surfaceSoft,
-                borderColor: selected ? accent : questTheme.colors.border,
-              },
-              selected && { backgroundColor: questTheme.colors.primarySoft },
-            ]}
-          >
-            <Text style={[styles.v11RatingNumber, { color: questTheme.colors.text }]}>{number}</Text>
-            {labelMode === 'semantic' && max === 5 ? (
-              <Text numberOfLines={1} style={[styles.v11RatingLabel, { color: selected ? questTheme.colors.text : questTheme.colors.textMuted }]}>
-                {qualityLabel(lang, rating)}
-              </Text>
-            ) : null}
-          </TouchableOpacity>
-        );
+    <V11DiscreteNumericRail
+      onChange={(rating) => onChange(value === rating ? null : rating)}
+      options={Array.from({ length: max }, (_, index) => {
+        const rating = (index + 1) as Quality;
+        return {
+          value: rating,
+          label: labelMode === 'semantic' && max === 5 ? qualityLabel(lang, rating) : String(rating),
+        };
       })}
-    </View>
+      theme={themeTokens}
+      value={(value ?? 0) as Quality}
+    />
   );
 }
 
@@ -969,6 +956,9 @@ function V11RecordProgressContent(props: Props) {
     strengthWeight,
     todayScheduleBlocks,
   } = props;
+  const QuestInput = V11RecordInput;
+  const QuestButton = V11RecordButton;
+  const v11ThemeTokens = getV11ThemeTokens(questTheme.id === 'cleanFocus' ? 'light' : 'dark');
   const [entityPickerOpen, setEntityPickerOpen] = useState(!skillId);
   const [schedulePickerOpen, setSchedulePickerOpen] = useState(!scheduleBlockId);
   const [entityQuery, setEntityQuery] = useState('');
@@ -998,19 +988,14 @@ function V11RecordProgressContent(props: Props) {
     const selected = skill.id === skillId;
     const category = categoryForSkill(skill);
     return (
-      <TouchableOpacity
-        accessibilityRole="radio"
-        accessibilityState={{ checked: selected }}
+      <V11SelectionRow
         key={skill.id}
         onPress={() => {
           props.onSkillSelect(skill.id);
           setEntityPickerOpen(false);
         }}
-        style={[
-          styles.v11EntityOption,
-          { borderBottomColor: questTheme.colors.border },
-          selected && { backgroundColor: questTheme.colors.primarySoft },
-        ]}
+        selected={selected}
+        theme={v11ThemeTokens}
       >
         <QuestEntityIcon icon={skill.icon} systemIcon={getSkillSemanticIcon(skill)} color={skill.color} questTheme={questTheme} size="sm" />
         <View style={styles.v11EntityCopy}>
@@ -1018,7 +1003,7 @@ function V11RecordProgressContent(props: Props) {
           {category ? <Text numberOfLines={1} style={[styles.v11EntityMeta, { color: questTheme.colors.textMuted }]}>{category.name}</Text> : null}
         </View>
         {selected ? <Text style={[styles.v11SelectedMark, { color: accent }]}>✓</Text> : null}
-      </TouchableOpacity>
+      </V11SelectionRow>
     );
   };
 
@@ -1041,23 +1026,18 @@ function V11RecordProgressContent(props: Props) {
       return (
         <View key={field.key} style={styles.v11FieldGroup}>
           {inputLabel(label, field.required)}
-          <View style={styles.v11ChoiceWrap}>
+          <View style={styles.v11ChoiceWrap} accessibilityRole="radiogroup">
             {(field.options || []).map((option) => {
               const selected = value === option.value;
               return (
-                <TouchableOpacity
+                <V11CategoricalChip
                   accessibilityRole="radio"
-                  accessibilityState={{ checked: selected }}
                   key={option.value}
+                  label={lang === 'en' ? option.label : option.labelZh}
                   onPress={() => setSchemaValue(field.key, option.value)}
-                  style={[
-                    styles.v11Choice,
-                    { backgroundColor: questTheme.colors.surfaceSoft, borderColor: selected ? accent : questTheme.colors.border },
-                    selected && { backgroundColor: questTheme.colors.primarySoft },
-                  ]}
-                >
-                  <Text style={[styles.v11ChoiceText, { color: questTheme.colors.text }]}>{lang === 'en' ? option.label : option.labelZh}</Text>
-                </TouchableOpacity>
+                  selected={selected}
+                  theme={v11ThemeTokens}
+                />
               );
             })}
           </View>
@@ -1069,42 +1049,25 @@ function V11RecordProgressContent(props: Props) {
       return (
         <View key={field.key} style={styles.v11FieldGroup}>
           {inputLabel(label, field.required)}
-          <View style={styles.v11RatingRow}>
-            {Array.from({ length: max }, (_, index) => index + 1).map((rating) => {
-              const selected = Number(value) === rating;
-              return (
-                <TouchableOpacity
-                  accessibilityRole="radio"
-                  accessibilityState={{ checked: selected }}
-                  key={rating}
-                  onPress={() => setSchemaValue(field.key, rating)}
-                  style={[
-                    styles.v11Rating,
-                    { backgroundColor: questTheme.colors.surfaceSoft, borderColor: selected ? accent : questTheme.colors.border },
-                    selected && { backgroundColor: questTheme.colors.primarySoft },
-                  ]}
-                >
-                  <Text style={[styles.v11RatingNumber, { color: questTheme.colors.text }]}>{rating}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          <V11DiscreteNumericRail
+            onChange={(rating) => setSchemaValue(field.key, rating)}
+            options={Array.from({ length: max }, (_, index) => ({ value: index + 1, label: String(index + 1) }))}
+            theme={v11ThemeTokens}
+            value={Number(value) || 0}
+          />
         </View>
       );
     }
     if (field.type === 'boolean') {
       const selected = Boolean(value);
       return (
-        <TouchableOpacity
-          accessibilityRole="checkbox"
-          accessibilityState={{ checked: selected }}
+        <V11CategoricalChip
           key={field.key}
+          label={label}
           onPress={() => setSchemaValue(field.key, !selected)}
-          style={[styles.v11ToggleRow, { borderBottomColor: questTheme.colors.border }]}
-        >
-          <Text style={[styles.v11Check, { color: accent }]}>{selected ? '✓' : '○'}</Text>
-          <Text style={[styles.v11Body, { color: questTheme.colors.text }]}>{label}</Text>
-        </TouchableOpacity>
+          selected={selected}
+          theme={v11ThemeTokens}
+        />
       );
     }
     return (
@@ -1150,10 +1113,12 @@ function V11RecordProgressContent(props: Props) {
     }
     if (progressType === 'frequency') {
       return (
-        <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: frequencyCompleted }} onPress={() => props.onFrequencyCompletedChange((value) => !value)} style={styles.v11ToggleRow}>
-          <Text style={[styles.v11Check, { color: accent }]}>{frequencyCompleted ? '✓' : '○'}</Text>
-          <Text style={[styles.v11Body, { color: questTheme.colors.text }]}>{t(lang, 'metricDescFrequency')}</Text>
-        </TouchableOpacity>
+        <V11CategoricalChip
+          label={t(lang, 'metricDescFrequency')}
+          onPress={() => props.onFrequencyCompletedChange((value) => !value)}
+          selected={frequencyCompleted}
+          theme={v11ThemeTokens}
+        />
       );
     }
     if (progressType === 'curriculum' || progressType === 'checklist') {
@@ -1163,16 +1128,13 @@ function V11RecordProgressContent(props: Props) {
           {checklistItems.length === 0 ? <Text style={[styles.v11Body, { color: questTheme.colors.textMuted }]}>{t(lang, 'noProgressItems')}</Text> : checklistItems.map((item) => {
             const checked = completedCurriculumItemIds.includes(item.id);
             return (
-              <TouchableOpacity
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: checked || item.completed }}
+              <V11CategoricalChip
                 key={item.id}
+                label={item.title}
                 onPress={() => props.onCompletedCurriculumItemIdsChange((ids) => checked ? ids.filter((id) => id !== item.id) : [...ids, item.id])}
-                style={[styles.v11ToggleRow, { borderBottomColor: questTheme.colors.border }]}
-              >
-                <Text style={[styles.v11Check, { color: accent }]}>{checked || item.completed ? '✓' : '○'}</Text>
-                <Text style={[styles.v11Body, { color: questTheme.colors.text }]}>{item.title}</Text>
-              </TouchableOpacity>
+                selected={checked || item.completed}
+                theme={v11ThemeTokens}
+              />
             );
           })}
         </>
@@ -1218,10 +1180,12 @@ function V11RecordProgressContent(props: Props) {
     }
     if (progressType === 'binary') {
       return (
-        <TouchableOpacity accessibilityRole="checkbox" accessibilityState={{ checked: binaryCompleted }} onPress={() => props.onBinaryCompletedChange((value) => !value)} style={styles.v11ToggleRow}>
-          <Text style={[styles.v11Check, { color: accent }]}>{binaryCompleted ? '✓' : '○'}</Text>
-          <Text style={[styles.v11Body, { color: questTheme.colors.text }]}>{t(lang, 'metricDescBinary')}</Text>
-        </TouchableOpacity>
+        <V11CategoricalChip
+          label={t(lang, 'metricDescBinary')}
+          onPress={() => props.onBinaryCompletedChange((value) => !value)}
+          selected={binaryCompleted}
+          theme={v11ThemeTokens}
+        />
       );
     }
     if (progressType === 'qualitative') {
@@ -1265,9 +1229,11 @@ function V11RecordProgressContent(props: Props) {
                   <Text numberOfLines={2} style={[styles.v11EntityName, { color: questTheme.colors.text }]}>{selectedSkill.name}</Text>
                   <Text numberOfLines={1} style={[styles.v11EntityMeta, { color: questTheme.colors.textMuted }]}>{categoryForSkill(selectedSkill)?.name ?? t(lang, 'selectedEntity')}</Text>
                 </View>
-                <TouchableOpacity accessibilityRole="button" onPress={() => setEntityPickerOpen((value) => !value)} style={styles.v11InlineAction}>
-                  <Text style={[styles.v11InlineActionText, { color: accent }]}>{t(lang, entityPickerOpen ? 'closeSelection' : 'changeSelection')}</Text>
-                </TouchableOpacity>
+                <V11InlineButton
+                  label={t(lang, entityPickerOpen ? 'closeSelection' : 'changeSelection')}
+                  onPress={() => setEntityPickerOpen((value) => !value)}
+                  theme={v11ThemeTokens}
+                />
               </View>
             ) : null}
             {entityPickerOpen || !selectedSkill ? (
@@ -1292,9 +1258,11 @@ function V11RecordProgressContent(props: Props) {
                   <Text numberOfLines={2} style={[styles.v11EntityName, { color: questTheme.colors.text }]}>{selectedSchedule.title}</Text>
                   <Text style={[styles.v11EntityMeta, { color: questTheme.colors.textMuted }]}>{selectedSchedule.plannedMinutes} {t(lang, 'minutes')}</Text>
                 </View>
-                <TouchableOpacity accessibilityRole="button" onPress={() => setSchedulePickerOpen((value) => !value)} style={styles.v11InlineAction}>
-                  <Text style={[styles.v11InlineActionText, { color: accent }]}>{t(lang, schedulePickerOpen ? 'closeSelection' : 'changeSelection')}</Text>
-                </TouchableOpacity>
+                <V11InlineButton
+                  label={t(lang, schedulePickerOpen ? 'closeSelection' : 'changeSelection')}
+                  onPress={() => setSchedulePickerOpen((value) => !value)}
+                  theme={v11ThemeTokens}
+                />
               </View>
             ) : null}
             {schedulePickerOpen || !selectedSchedule ? (
@@ -1302,15 +1270,14 @@ function V11RecordProgressContent(props: Props) {
                 {todayScheduleBlocks.length ? todayScheduleBlocks.map((block) => {
                   const selected = block.id === scheduleBlockId;
                   return (
-                    <TouchableOpacity
-                      accessibilityRole="radio"
-                      accessibilityState={{ checked: selected }}
+                    <V11SelectionRow
                       key={block.id}
                       onPress={() => {
                         props.onScheduleBlockSelect(block);
                         setSchedulePickerOpen(false);
                       }}
-                      style={[styles.v11EntityOption, { borderBottomColor: questTheme.colors.border }, selected && { backgroundColor: questTheme.colors.primarySoft }]}
+                      selected={selected}
+                      theme={v11ThemeTokens}
                     >
                       <View style={styles.v11ScheduleTime}><Text style={[styles.v11ScheduleTimeText, { color: accent }]}>{block.startTime}</Text></View>
                       <View style={styles.v11EntityCopy}>
@@ -1318,7 +1285,7 @@ function V11RecordProgressContent(props: Props) {
                         <Text style={[styles.v11EntityMeta, { color: questTheme.colors.textMuted }]}>{block.plannedMinutes} {t(lang, 'minutes')}</Text>
                       </View>
                       {selected ? <Text style={[styles.v11SelectedMark, { color: accent }]}>✓</Text> : null}
-                    </TouchableOpacity>
+                    </V11SelectionRow>
                   );
                 }) : <Text style={[styles.v11EmptyText, { color: questTheme.colors.textMuted }]}>{t(lang, 'noScheduleToday')}</Text>}
               </ScrollView>
@@ -1415,9 +1382,14 @@ function V11RecordProgressContent(props: Props) {
                 ].map(([value, key]) => {
                   const selected = sessionType === value;
                   return (
-                    <TouchableOpacity key={value} onPress={() => props.onSessionTypeChange(value)} style={[styles.v11Choice, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: selected ? accent : questTheme.colors.border }, selected && { backgroundColor: questTheme.colors.primarySoft }]}>
-                      <Text style={[styles.v11ChoiceText, { color: questTheme.colors.text }]}>{t(lang, key)}</Text>
-                    </TouchableOpacity>
+                    <V11CategoricalChip
+                      accessibilityRole="radio"
+                      key={value}
+                      label={t(lang, key)}
+                      onPress={() => props.onSessionTypeChange(value)}
+                      selected={selected}
+                      theme={v11ThemeTokens}
+                    />
                   );
                 })}
               </View>
@@ -1426,7 +1398,14 @@ function V11RecordProgressContent(props: Props) {
               <View key={entry.id} style={[styles.v11ExerciseRow, { borderTopColor: questTheme.colors.border }]}>
                 <View style={styles.v11ExerciseHeading}>
                   <Text style={[styles.v11EntityName, { color: questTheme.colors.text }]}>{t(lang, 'exerciseName')} {index + 1}</Text>
-                  {exerciseEntries.length > 1 ? <TouchableOpacity onPress={() => props.onExerciseEntriesChange((current) => current.filter((item) => item.id !== entry.id))} style={styles.v11InlineAction}><Text style={[styles.v11InlineActionText, { color: questTheme.colors.danger }]}>{t(lang, 'delete')}</Text></TouchableOpacity> : null}
+                  {exerciseEntries.length > 1 ? (
+                    <V11InlineButton
+                      label={t(lang, 'delete')}
+                      onPress={() => props.onExerciseEntriesChange((current) => current.filter((item) => item.id !== entry.id))}
+                      theme={v11ThemeTokens}
+                      tone="danger"
+                    />
+                  ) : null}
                 </View>
                 <QuestInput questTheme={questTheme} value={entry.exerciseName} onChangeText={(text) => props.onExerciseEntriesChange((current) => current.map((item) => item.id === entry.id ? { ...item, exerciseName: text } : item))} placeholder={t(lang, 'exerciseName')} style={styles.v11Input} />
                 <View style={styles.v11InputGrid}>
@@ -1448,10 +1427,12 @@ function V11RecordProgressContent(props: Props) {
           </View>
         ) : null}
 
-        <TouchableOpacity accessibilityRole="button" onPress={() => props.onShowAdvancedFieldsChange((value) => !value)} style={[styles.v11DisclosureToggle, { borderColor: questTheme.colors.border }]}>
-          <Text style={[styles.v11DisclosureText, { color: accent }]}>{t(lang, showAdvancedFields ? 'hideAdvancedFields' : 'showAdvancedFields')}</Text>
-          <Text style={[styles.v11DisclosureGlyph, { color: accent }]}>{showAdvancedFields ? '−' : '+'}</Text>
-        </TouchableOpacity>
+        <V11SheetButton
+          label={`${t(lang, showAdvancedFields ? 'hideAdvancedFields' : 'showAdvancedFields')} ${showAdvancedFields ? '−' : '+'}`}
+          onPress={() => props.onShowAdvancedFieldsChange((value) => !value)}
+          theme={v11ThemeTokens}
+          variant="secondary"
+        />
 
         {showAdvancedFields ? (
           <View style={styles.v11Disclosure}>

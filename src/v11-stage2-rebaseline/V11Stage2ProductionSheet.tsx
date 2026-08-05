@@ -20,7 +20,7 @@ import {
   isV11SheetGeometryDebugEnabled,
   publishV11SheetGeometryDebug,
 } from './v11SheetGeometry';
-import { scheduleV11SheetControlAudit } from '../v11/sheetControlAudit';
+import { observeV11SheetControlDescendants, scheduleV11SheetControlAudit } from '../v11/sheetControlAudit';
 import './v11-stage2-rebaseline.css';
 
 const WebView = View as any;
@@ -70,6 +70,11 @@ export default function V11Stage2ProductionSheet({
       if (timeout != null && typeof window !== 'undefined') window.clearTimeout(timeout);
     };
   }, [children, footer, reducedMotion, sheet, title, visible]);
+
+  useEffect(() => {
+    if (!visible) return;
+    return observeV11SheetControlDescendants();
+  }, [visible]);
 
   return (
     <Modal
@@ -155,7 +160,11 @@ export default function V11Stage2ProductionSheet({
                   <WebPressable
                     accessibilityLabel={closeLabel}
                     accessibilityRole="button"
-                    dataSet={{ 'v11-rebaseline-role': 'icon-button' }}
+                    dataSet={{
+                      'v11-control': 'icon-button',
+                      'v11-control-file': 'src/v11-stage2-rebaseline/V11Stage2ProductionSheet.tsx',
+                      'v11-rebaseline-role': 'icon-button',
+                    }}
                     onPress={onClose}
                   >
                     <V11RebaselineIcon name="close" size={19} color={theme.text.secondary} />

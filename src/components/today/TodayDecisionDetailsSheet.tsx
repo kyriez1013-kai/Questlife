@@ -8,6 +8,7 @@ import { getV11ThemeTokens } from '../../v11/tokens';
 import useV11ReducedMotion from '../../v11/useV11ReducedMotion';
 import V11Stage2ProductionSheet from '../../v11-stage2-rebaseline/V11Stage2ProductionSheet';
 import BottomSheetForm from '../BottomSheetForm';
+import { V11CategoricalChip, V11SheetButton, V11StatusChip } from '../../v11/components/V11SheetControls';
 import QuestButton from '../ui/QuestButton';
 import { QuestEvidenceRow, QuestSectionHeader } from '../ui/QuestPrimitives';
 import QuestPill from '../ui/QuestPill';
@@ -70,7 +71,20 @@ export default function TodayDecisionDetailsSheet({
   const v11Enabled = isV11TodayEnabled();
   const reducedMotion = useV11ReducedMotion();
   const v11Theme = getV11ThemeTokens(questTheme.id === 'cleanFocus' ? 'light' : 'dark');
-  const footer = (
+  const renderSectionHeader = (title: string) => v11Enabled ? (
+    <Text style={{ color: v11Theme.text.primary, fontSize: 15, lineHeight: 21, fontWeight: '600' }}>{title}</Text>
+  ) : (
+    <QuestSectionHeader questTheme={questTheme} title={title} />
+  );
+  const renderEvidenceRow = (label: string, value: string, divider = false) => v11Enabled ? (
+    <View style={{ paddingVertical: questTheme.spacing.sm, borderBottomWidth: divider ? 1 : 0, borderBottomColor: v11Theme.control.borderSubtle }}>
+      <Text style={{ color: v11Theme.text.metadata, fontSize: 11, lineHeight: 16 }}>{label}</Text>
+      <Text style={{ color: v11Theme.text.secondary, fontSize: 13, lineHeight: 19, marginTop: 3 }}>{value}</Text>
+    </View>
+  ) : (
+    <QuestEvidenceRow questTheme={questTheme} label={label} value={value} divider={divider} />
+  );
+  const legacyFooter = (
     <View style={{ flexDirection: 'row', gap: questTheme.spacing.sm }}>
       {onRefresh ? (
         <QuestButton
@@ -89,6 +103,28 @@ export default function TodayDecisionDetailsSheet({
         label={t(language, 'closeDetails')}
         onPress={onClose}
         style={{ flex: 1 }}
+      />
+    </View>
+  );
+  const v11Footer = (
+    <View style={{ flexDirection: 'row', gap: questTheme.spacing.sm }}>
+      {onRefresh ? (
+        <V11SheetButton
+          disabled={refreshing}
+          label={t(language, refreshing ? 'generatingDailyBrief' : 'refreshBrief')}
+          loading={refreshing}
+          onPress={onRefresh}
+          style={{ flex: 1 }}
+          theme={v11Theme}
+          variant="secondary"
+        />
+      ) : null}
+      <V11SheetButton
+        label={t(language, 'closeDetails')}
+        onPress={onClose}
+        style={{ flex: 1 }}
+        theme={v11Theme}
+        variant="secondary"
       />
     </View>
   );
@@ -145,41 +181,28 @@ export default function TodayDecisionDetailsSheet({
 
       {details.evidence.length > 0 ? (
         <View style={{ marginTop: questTheme.spacing.section }}>
-          <QuestSectionHeader questTheme={questTheme} title={t(language, 'keyEvidence')} />
+          {renderSectionHeader(t(language, 'keyEvidence'))}
           <View style={{ marginTop: questTheme.spacing.xs }}>
             {details.evidence.map((item, index) => (
-              <QuestEvidenceRow
-                key={item.id}
-                questTheme={questTheme}
-                label={t(language, evidenceLabelKey(item.type))}
-                value={formatCopy(item.copy)}
-                divider={index < details.evidence.length - 1}
-              />
+              <React.Fragment key={item.id}>
+                {renderEvidenceRow(t(language, evidenceLabelKey(item.type)), formatCopy(item.copy), index < details.evidence.length - 1)}
+              </React.Fragment>
             ))}
           </View>
         </View>
       ) : null}
 
       <View style={{ marginTop: questTheme.spacing.section }}>
-        <QuestSectionHeader questTheme={questTheme} title={t(language, 'confidence')} />
-        <QuestEvidenceRow
-          questTheme={questTheme}
-          label={t(language, 'confidence')}
-          value={t(language, confidenceKey(details.confidence.label))}
-          divider={!!details.confidence.basis}
-        />
+        {renderSectionHeader(t(language, 'confidence'))}
+        {renderEvidenceRow(t(language, 'confidence'), t(language, confidenceKey(details.confidence.label)), !!details.confidence.basis)}
         {details.confidence.basis ? (
-          <QuestEvidenceRow
-            questTheme={questTheme}
-            label={t(language, 'evidenceBasis')}
-            value={t(language, evidenceBasisKey(details.confidence.basis))}
-          />
+          renderEvidenceRow(t(language, 'evidenceBasis'), t(language, evidenceBasisKey(details.confidence.basis)))
         ) : null}
       </View>
 
       {details.patternReferences.length > 0 ? (
         <View style={{ marginTop: questTheme.spacing.section }}>
-          <QuestSectionHeader questTheme={questTheme} title={t(language, 'patternReference')} />
+          {renderSectionHeader(t(language, 'patternReference'))}
           <View style={{ gap: questTheme.spacing.sm, marginTop: questTheme.spacing.xs }}>
             {details.patternReferences.map((reference, index) => (
               <View
@@ -202,16 +225,25 @@ export default function TodayDecisionDetailsSheet({
                   {reference.label}
                 </Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: questTheme.spacing.xs }}>
-                  <QuestPill
-                    questTheme={questTheme}
-                    variant={reference.status === 'accepted' ? 'success' : 'muted'}
-                    label={t(language, patternStatusKey(reference))}
-                  />
-                  <QuestPill
-                    questTheme={questTheme}
-                    variant="muted"
-                    label={t(language, patternUseKey(reference))}
-                  />
+                  {v11Enabled ? (
+                    <>
+                      <V11StatusChip label={t(language, patternStatusKey(reference))} theme={v11Theme} />
+                      <V11StatusChip label={t(language, patternUseKey(reference))} theme={v11Theme} />
+                    </>
+                  ) : (
+                    <>
+                      <QuestPill
+                        questTheme={questTheme}
+                        variant={reference.status === 'accepted' ? 'success' : 'muted'}
+                        label={t(language, patternStatusKey(reference))}
+                      />
+                      <QuestPill
+                        questTheme={questTheme}
+                        variant="muted"
+                        label={t(language, patternUseKey(reference))}
+                      />
+                    </>
+                  )}
                 </View>
               </View>
             ))}
@@ -221,7 +253,7 @@ export default function TodayDecisionDetailsSheet({
 
       {details.feedback.enabled && onFeedback ? (
         <View style={{ marginTop: questTheme.spacing.section }}>
-          <QuestSectionHeader questTheme={questTheme} title={t(language, 'dailyBriefFeedback')} />
+          {renderSectionHeader(t(language, 'dailyBriefFeedback'))}
           <View
             style={{
               flexDirection: 'row',
@@ -230,20 +262,41 @@ export default function TodayDecisionDetailsSheet({
               marginTop: questTheme.spacing.xs,
             }}
           >
-            <QuestPill
-              questTheme={questTheme}
-              active={details.feedback.value === 'useful'}
-              variant="success"
-              label={t(language, 'useful')}
-              onPress={() => onFeedback('useful')}
-            />
-            <QuestPill
-              questTheme={questTheme}
-              active={details.feedback.value === 'not_useful'}
-              variant="danger"
-              label={t(language, 'notUseful')}
-              onPress={() => onFeedback('not_useful')}
-            />
+            {v11Enabled ? (
+              <>
+                <V11CategoricalChip
+                  accessibilityRole="radio"
+                  label={t(language, 'useful')}
+                  onPress={() => onFeedback('useful')}
+                  selected={details.feedback.value === 'useful'}
+                  theme={v11Theme}
+                />
+                <V11CategoricalChip
+                  accessibilityRole="radio"
+                  label={t(language, 'notUseful')}
+                  onPress={() => onFeedback('not_useful')}
+                  selected={details.feedback.value === 'not_useful'}
+                  theme={v11Theme}
+                />
+              </>
+            ) : (
+              <>
+                <QuestPill
+                  questTheme={questTheme}
+                  active={details.feedback.value === 'useful'}
+                  variant="success"
+                  label={t(language, 'useful')}
+                  onPress={() => onFeedback('useful')}
+                />
+                <QuestPill
+                  questTheme={questTheme}
+                  active={details.feedback.value === 'not_useful'}
+                  variant="danger"
+                  label={t(language, 'notUseful')}
+                  onPress={() => onFeedback('not_useful')}
+                />
+              </>
+            )}
           </View>
         </View>
       ) : null}
@@ -254,7 +307,7 @@ export default function TodayDecisionDetailsSheet({
     return (
       <V11Stage2ProductionSheet
         closeLabel={t(language, 'closeDetails')}
-        footer={footer}
+        footer={v11Footer}
         onClose={onClose}
         reducedMotion={reducedMotion}
         sheet="production"
@@ -272,7 +325,7 @@ export default function TodayDecisionDetailsSheet({
       visible={visible}
       onClose={onClose}
       closeAccessibilityLabel={t(language, 'closeDetails')}
-      footer={footer}
+      footer={legacyFooter}
     >
       {content}
     </BottomSheetForm>

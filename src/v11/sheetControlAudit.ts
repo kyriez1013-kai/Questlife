@@ -75,3 +75,28 @@ export function scheduleV11SheetControlAudit(delayMs: number) {
   if (typeof __DEV__ === 'undefined' || !__DEV__ || !debugEnabled() || typeof window === 'undefined') return undefined;
   return window.setTimeout(auditV11SheetControlDescendants, delayMs);
 }
+
+export function observeV11SheetControlDescendants() {
+  if (
+    typeof __DEV__ === 'undefined'
+    || !__DEV__
+    || !debugEnabled()
+    || typeof window === 'undefined'
+    || typeof document === 'undefined'
+    || typeof MutationObserver === 'undefined'
+  ) return undefined;
+
+  let timeout: number | undefined;
+  const schedule = () => {
+    if (timeout != null) window.clearTimeout(timeout);
+    timeout = window.setTimeout(auditV11SheetControlDescendants, 60);
+  };
+  const observer = new MutationObserver(schedule);
+  observer.observe(document.body, { childList: true, subtree: true });
+  schedule();
+
+  return () => {
+    observer.disconnect();
+    if (timeout != null) window.clearTimeout(timeout);
+  };
+}

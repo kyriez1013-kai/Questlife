@@ -14,10 +14,10 @@ import { isV11TodayEnabled } from '../../v11/featureFlag';
 import { getV11ThemeTokens } from '../../v11/tokens';
 import useV11ReducedMotion from '../../v11/useV11ReducedMotion';
 import V11Stage2ProductionSheet from '../../v11-stage2-rebaseline/V11Stage2ProductionSheet';
+import { V11SheetButton } from '../../v11/components/V11SheetControls';
 import QuestButton from '../ui/QuestButton';
 
 const WebView = View as any;
-const WebPressable = Pressable as any;
 
 const HISTORY_PAGE_SIZE = 20;
 
@@ -130,22 +130,12 @@ export default function ActivityHistorySheet({
             <React.Fragment key={capture.id}>{renderCapture(capture)}</React.Fragment>
           ))}
           {hasMore ? (
-            <WebPressable
+            <V11SheetButton
+              label={loadMoreLabel}
               onPress={() => setVisibleCount((count) => Math.min(count + HISTORY_PAGE_SIZE, captures.length))}
-              accessibilityRole="button"
-              accessibilityLabel={loadMoreLabel}
-              dataSet={{ 'v11-rebaseline-role': 'history-load-more' }}
-            >
-              <Text
-                style={{
-                  color: questTheme.colors.textMuted,
-                  fontSize: questTheme.typography.buttonSize,
-                  fontWeight: questTheme.typography.weightBold,
-                }}
-              >
-                {loadMoreLabel}
-              </Text>
-            </WebPressable>
+              theme={v11Theme}
+              variant="secondary"
+            />
           ) : null}
         </WebView>
       </V11Stage2ProductionSheet>

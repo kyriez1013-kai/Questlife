@@ -84,6 +84,12 @@ import type {
 import V11Stage2ProductionSheet from '../v11-stage2-rebaseline/V11Stage2ProductionSheet';
 import V11RecordProgressForm from '../components/today/V11RecordProgressForm';
 import { getV11ThemeTokens } from '../v11/tokens';
+import {
+  V11CategoricalChip,
+  V11DiscreteNumericRail,
+  V11StickySheetFooter,
+  V11TextField,
+} from '../v11/components/V11SheetControls';
 
 const WebView = View as any;
 
@@ -131,61 +137,6 @@ function TodaySheetForm({
     >
       {children}
     </BottomSheetForm>
-  );
-}
-
-function V11StateMetricRow({
-  label,
-  onChange,
-  options,
-  questTheme,
-  value,
-}: {
-  label: string;
-  onChange: (value: DailyStateValue) => void;
-  options: { value: DailyStateValue; label: string }[];
-  questTheme: ReturnType<typeof getQuestTheme>;
-  value: DailyStateValue;
-}) {
-  const selectedMeaning = options.find((option) => option.value === value)?.label ?? '';
-  return (
-    <WebView dataSet={{ 'v11-rebaseline-role': 'state-metric-row' }}>
-      <WebView dataSet={{ 'v11-rebaseline-role': 'state-metric-heading' }}>
-        <Text style={{ color: questTheme.colors.text, fontSize: 14, fontWeight: '600' }}>{label}</Text>
-        <Text style={{ color: questTheme.colors.textMuted, fontSize: 12 }}>{value} · {selectedMeaning}</Text>
-      </WebView>
-      <WebView dataSet={{ 'v11-rebaseline-role': 'state-metric-options' }}>
-        {options.map((option) => {
-          const selected = option.value === value;
-          return (
-            <TouchableOpacity
-              key={option.value}
-              accessibilityLabel={`${label} ${option.value} ${option.label}`}
-              accessibilityRole="button"
-              accessibilityState={{ selected }}
-              activeOpacity={0.72}
-              onPress={() => onChange(option.value)}
-              style={{
-                minHeight: 52,
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: questTheme.radius.md,
-                backgroundColor: selected ? questTheme.colors.chipSelectedBg : questTheme.colors.chipBg,
-                borderColor: selected ? questTheme.colors.primary : questTheme.colors.chipBorder,
-                borderWidth: 1,
-              }}
-            >
-              <Text style={{ color: selected ? questTheme.colors.primary : questTheme.colors.text, fontSize: 14, fontWeight: '700' }}>
-                {option.value}
-              </Text>
-              <Text numberOfLines={2} style={{ color: questTheme.colors.textMuted, fontSize: 10, lineHeight: 13, textAlign: 'center' }}>
-                {option.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </WebView>
-    </WebView>
   );
 }
 
@@ -3085,7 +3036,17 @@ export default function HomeScreen() {
         useV11={v11TodayEnabled}
         visible={modal}
         onClose={closeModal}
-        footer={(
+        footer={v11TodayEnabled ? (
+          <V11StickySheetFooter
+            cancelLabel={t(lang, 'cancel')}
+            disabled={saveDisabled}
+            message={saveDisabledReason ?? undefined}
+            onCancel={closeModal}
+            onSave={submit}
+            saveLabel={t(lang, 'logProgress')}
+            theme={v11ThemeTokens}
+          />
+        ) : (
           <View>
             {saveDisabledReason ? <Text style={[styles.modalFooterHint, { color: questTheme.colors.disabledText }]}>{saveDisabledReason}</Text> : null}
             <View style={styles.modalFooterActions}>
@@ -3202,24 +3163,16 @@ export default function HomeScreen() {
       <TodaySheetForm
         closeAccessibilityLabel={t(lang, 'cancel')}
         footer={v11TodayEnabled ? (
-          <View>
-            {v11StateSheetStatus === 'error' ? (
-              <Text style={[styles.modalFooterHint, { color: questTheme.colors.danger }]}>
-                {t(lang, 'rebaselineStateSaveError')}
-              </Text>
-            ) : null}
-            <View style={styles.modalFooterActions}>
-              <QuestButton questTheme={questTheme} variant="ghost" label={t(lang, 'cancel')} onPress={() => setStateModal(false)} style={{ flex: 1 }} />
-              <QuestButton
-                questTheme={questTheme}
-                variant="primary"
-                label={t(lang, v11StateSheetStatus === 'saving' ? 'rebaselineStateSaving' : 'save')}
-                loading={v11StateSheetStatus === 'saving'}
-                onPress={saveV11StateAssessment}
-                style={{ flex: 1 }}
-              />
-            </View>
-          </View>
+          <V11StickySheetFooter
+            cancelLabel={t(lang, 'cancel')}
+            message={v11StateSheetStatus === 'error' ? t(lang, 'rebaselineStateSaveError') : undefined}
+            messageStatus={v11StateSheetStatus === 'error' ? 'error' : 'default'}
+            onCancel={() => setStateModal(false)}
+            onSave={saveV11StateAssessment}
+            saveLabel={t(lang, v11StateSheetStatus === 'saving' ? 'rebaselineStateSaving' : 'save')}
+            saving={v11StateSheetStatus === 'saving'}
+            theme={v11ThemeTokens}
+          />
         ) : undefined}
         onClose={() => setStateModal(false)}
         reducedMotion={v11EffectiveReducedMotion}
@@ -3245,12 +3198,12 @@ export default function HomeScreen() {
               { key: 'physical', value: statePhysical, set: setStatePhysical },
               { key: 'stress', value: stateStress, set: setStateStress },
             ].map((metric) => (
-              <V11StateMetricRow
+              <V11DiscreteNumericRail
                 key={metric.key}
                 label={t(lang, metric.key)}
                 onChange={metric.set}
                 options={dailyStateOptions.map((option) => ({ value: option.value, label: option.label }))}
-                questTheme={questTheme}
+                theme={v11ThemeTokens}
                 value={metric.value}
               />
             ))}
@@ -3343,14 +3296,23 @@ export default function HomeScreen() {
           </>
         )}
 
-        <Text style={styles.label}>{t(lang, 'health')}</Text>
+        <Text style={[styles.label, v11TodayEnabled ? { color: v11ThemeTokens.control.secondaryText } : null]}>{t(lang, 'health')}</Text>
         <View style={styles.chipsRow}>
           {healthOptions.map((opt) => {
             const on = stateHealth === opt.value;
-            return (
+            return v11TodayEnabled ? (
+              <V11CategoricalChip
+                accessibilityRole="radio"
+                key={opt.value}
+                label={opt.label}
+                onPress={() => setStateHealth(opt.value)}
+                selected={on}
+                theme={v11ThemeTokens}
+              />
+            ) : (
               <TouchableOpacity
                 key={opt.value}
-                style={[styles.chip, v11TodayEnabled ? styles.v11ChoiceChip : null, on && { backgroundColor: accent, borderColor: accent }]}
+                style={[styles.chip, on && { backgroundColor: accent, borderColor: accent }]}
                 onPress={() => setStateHealth(opt.value)}
               >
                 <Text style={[styles.chipText, { color: questTheme.colors.text }, on && { color: questTheme.colors.primaryText, fontWeight: '700' }]}>{opt.label}</Text>
@@ -3360,11 +3322,11 @@ export default function HomeScreen() {
         </View>
 
         {v11TodayEnabled ? (
-          <V11StateMetricRow
+          <V11DiscreteNumericRail
             label={t(lang, 'sleepQuality')}
             onChange={setContextSleepQuality}
             options={dailyStateOptions.map((option) => ({ value: option.value, label: option.label }))}
-            questTheme={questTheme}
+            theme={v11ThemeTokens}
             value={contextSleepQuality}
           />
         ) : (
@@ -3392,10 +3354,18 @@ export default function HomeScreen() {
             { key: 'afterExam', label: t(lang, 'afterExam'), value: contextAfterExam, set: setContextAfterExam },
             { key: 'caffeine', label: t(lang, 'caffeine'), value: contextCaffeine, set: setContextCaffeine },
             { key: 'socialDrain', label: t(lang, 'socialDrain'), value: contextSocialDrain, set: setContextSocialDrain },
-          ].map((item) => (
+          ].map((item) => v11TodayEnabled ? (
+            <V11CategoricalChip
+              key={item.key}
+              label={item.label}
+              onPress={() => item.set(!item.value)}
+              selected={item.value}
+              theme={v11ThemeTokens}
+            />
+          ) : (
             <TouchableOpacity
               key={item.key}
-              style={[styles.chip, v11TodayEnabled ? styles.v11ChoiceChip : null, item.value && { backgroundColor: accent, borderColor: accent }]}
+              style={[styles.chip, item.value && { backgroundColor: accent, borderColor: accent }]}
               onPress={() => item.set(!item.value)}
             >
               <Text style={[styles.chipText, { color: questTheme.colors.text }, item.value && { color: questTheme.colors.primaryText, fontWeight: '700' }]}>{item.label}</Text>
@@ -3403,10 +3373,10 @@ export default function HomeScreen() {
           ))}
         </View>
 
-        <Text style={styles.label}>{t(lang, 'noteOptional')}</Text>
+        <Text style={[styles.label, v11TodayEnabled ? { color: v11ThemeTokens.control.secondaryText } : null]}>{t(lang, 'noteOptional')}</Text>
         {v11TodayEnabled ? (
-          <QuestInput
-            questTheme={questTheme}
+          <V11TextField
+            theme={v11ThemeTokens}
             value={stateNote}
             onChangeText={setStateNote}
             style={{ minHeight: 72, textAlignVertical: 'top' }}
@@ -3929,7 +3899,6 @@ const styles = StyleSheet.create({
   chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 18, borderWidth: 1, borderColor: theme.border, backgroundColor: theme.card },
   chipText: { color: theme.text, fontSize: 13 },
-  v11ChoiceChip: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   v11FlatSection: { paddingHorizontal: 0, paddingVertical: 12, borderRadius: 0, borderBottomWidth: 1 },
   progressUpdateBox: { backgroundColor: '#151925', borderWidth: 1, borderColor: theme.border, borderRadius: 12, padding: 12, marginTop: 12, gap: 8 },
   curriculumRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 },

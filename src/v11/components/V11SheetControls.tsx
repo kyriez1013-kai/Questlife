@@ -96,8 +96,19 @@ export function V11DiscreteNumericRail<T extends number>({
               key={option.value}
               onPress={() => onChange(option.value)}
             >
-              <WebText dataSet={{ 'v11-control-role': 'numeric-value' }}>{option.value}</WebText>
-              <WebText dataSet={{ 'v11-control-role': 'numeric-label' }} numberOfLines={2}>{option.label}</WebText>
+              <WebText
+                dataSet={{ 'v11-control-role': 'numeric-value' }}
+                style={{ color: selected ? theme.control.selectedText : theme.control.primaryText }}
+              >
+                {option.value}
+              </WebText>
+              <WebText
+                dataSet={{ 'v11-control-role': 'numeric-label' }}
+                numberOfLines={2}
+                style={{ color: theme.control.secondaryText }}
+              >
+                {option.label}
+              </WebText>
             </WebPressable>
           );
         })}
@@ -145,9 +156,76 @@ export function V11CategoricalChip({
       onPress={onPress}
       style={controlVariables(theme)}
     >
-      <WebText dataSet={{ 'v11-control-role': 'chip-indicator' }}>{selected ? '✓' : ''}</WebText>
-      <WebText dataSet={{ 'v11-control-role': 'chip-label' }}>{label}</WebText>
+      <WebText
+        dataSet={{ 'v11-control-role': 'chip-indicator' }}
+        style={{ color: disabled ? theme.control.disabledText : selected ? theme.control.selectedText : theme.control.secondaryText }}
+      >
+        {selected ? '✓' : ''}
+      </WebText>
+      <WebText
+        dataSet={{ 'v11-control-role': 'chip-label' }}
+        style={{ color: disabled ? theme.control.disabledText : selected ? theme.control.selectedText : theme.control.secondaryText }}
+      >
+        {label}
+      </WebText>
     </WebPressable>
+  );
+}
+
+export function V11CheckboxControl({
+  accessibilityLabel,
+  checked,
+  disabled = false,
+  onPress,
+  theme,
+}: {
+  accessibilityLabel: string;
+  checked: boolean;
+  disabled?: boolean;
+  onPress: () => void;
+  theme: V11ThemeTokens;
+}) {
+  return (
+    <WebPressable
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked, disabled }}
+      dataSet={{
+        'v11-control': 'checkbox',
+        'v11-control-file': 'src/v11/components/V11SheetControls.tsx',
+        'v11-disabled': disabled ? 'true' : 'false',
+        'v11-selected': checked ? 'true' : 'false',
+      }}
+      disabled={disabled}
+      onPress={onPress}
+      style={controlVariables(theme)}
+    >
+      <WebText style={{ color: disabled ? theme.control.disabledText : checked ? theme.control.selectedText : theme.control.secondaryText }}>
+        {checked ? '✓' : ''}
+      </WebText>
+    </WebPressable>
+  );
+}
+
+export function V11StatusChip({
+  label,
+  theme,
+}: {
+  label: string;
+  theme: V11ThemeTokens;
+}) {
+  return (
+    <WebView
+      accessibilityLabel={label}
+      accessibilityRole="text"
+      dataSet={{
+        'v11-component': 'status-chip',
+        'v11-control-file': 'src/v11/components/V11SheetControls.tsx',
+      }}
+      style={controlVariables(theme)}
+    >
+      <Text style={{ color: theme.control.secondaryText }}>{label}</Text>
+    </WebView>
   );
 }
 
@@ -187,7 +265,12 @@ export function V11SegmentedSelector<T extends string>({
             key={option.value}
             onPress={() => onChange(option.value)}
           >
-            <Text numberOfLines={2}>{option.label}</Text>
+            <Text
+              numberOfLines={2}
+              style={{ color: disabled ? theme.control.disabledText : selected ? theme.control.selectedText : theme.control.secondaryText }}
+            >
+              {option.label}
+            </Text>
           </WebPressable>
         );
       })}
@@ -307,7 +390,63 @@ export function V11SheetButton({
       style={[controlVariables(theme), style]}
     >
       {loading ? <ActivityIndicator color={foreground} size="small" /> : null}
-      <Text>{label}</Text>
+      <Text style={{ color: foreground }}>{label}</Text>
+    </WebPressable>
+  );
+}
+
+export function V11InlineButton({
+  label,
+  onPress,
+  theme,
+  tone = 'default',
+}: {
+  label: string;
+  onPress: () => void;
+  theme: V11ThemeTokens;
+  tone?: 'default' | 'danger';
+}) {
+  return (
+    <WebPressable
+      accessibilityLabel={label}
+      accessibilityRole="button"
+      dataSet={{
+        'v11-control': 'inline-button',
+        'v11-control-file': 'src/v11/components/V11SheetControls.tsx',
+        'v11-tone': tone,
+      }}
+      onPress={onPress}
+      style={controlVariables(theme)}
+    >
+      <Text style={{ color: tone === 'danger' ? theme.control.error : theme.control.focus }}>{label}</Text>
+    </WebPressable>
+  );
+}
+
+export function V11SelectionRow({
+  children,
+  onPress,
+  selected,
+  theme,
+}: {
+  children: React.ReactNode;
+  onPress: () => void;
+  selected: boolean;
+  theme: V11ThemeTokens;
+}) {
+  return (
+    <WebPressable
+      accessibilityRole="radio"
+      accessibilityState={{ checked: selected }}
+      dataSet={{
+        'v11-control': 'selection-row',
+        'v11-control-file': 'src/v11/components/V11SheetControls.tsx',
+        'v11-selected': selected ? 'true' : 'false',
+      }}
+      onPress={onPress}
+      style={controlVariables(theme)}
+    >
+      {children}
     </WebPressable>
   );
 }
