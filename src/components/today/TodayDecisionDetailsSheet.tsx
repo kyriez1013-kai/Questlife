@@ -3,6 +3,10 @@ import { Text, View } from 'react-native';
 import { QuestTheme } from '../../design/tokens';
 import { t } from '../../i18n';
 import { TodayDecisionCopy, TodayDecisionEvidenceItem, TodayDecisionPatternReference, TodayDecisionPresentation } from '../../utils/todayDecisionPresentation';
+import { isV11TodayEnabled } from '../../v11/featureFlag';
+import { getV11ThemeTokens } from '../../v11/tokens';
+import useV11ReducedMotion from '../../v11/useV11ReducedMotion';
+import V11Stage2ProductionSheet from '../../v11-stage2-rebaseline/V11Stage2ProductionSheet';
 import BottomSheetForm from '../BottomSheetForm';
 import QuestButton from '../ui/QuestButton';
 import { QuestEvidenceRow, QuestSectionHeader } from '../ui/QuestPrimitives';
@@ -63,40 +67,51 @@ export default function TodayDecisionDetailsSheet({
   onRefresh,
 }: Props) {
   const { details } = presentation;
-
-  return (
-    <BottomSheetForm
-      visible={visible}
-      onClose={onClose}
-      closeAccessibilityLabel={t(language, 'closeDetails')}
-      footer={(
-        <View style={{ flexDirection: 'row', gap: questTheme.spacing.sm }}>
-          {onRefresh ? (
-            <QuestButton
-              questTheme={questTheme}
-              variant="ghost"
-              label={t(language, refreshing ? 'generatingDailyBrief' : 'refreshBrief')}
-              onPress={onRefresh}
-              disabled={refreshing}
-              loading={refreshing}
-              style={{ flex: 1 }}
-            />
-          ) : null}
-          <QuestButton
-            questTheme={questTheme}
-            variant="secondary"
-            label={t(language, 'closeDetails')}
-            onPress={onClose}
-            style={{ flex: 1 }}
-          />
-        </View>
-      )}
-    >
-      <QuestSectionHeader
+  const v11Enabled = isV11TodayEnabled();
+  const reducedMotion = useV11ReducedMotion();
+  const v11Theme = getV11ThemeTokens(questTheme.id === 'cleanFocus' ? 'light' : 'dark');
+  const footer = (
+    <View style={{ flexDirection: 'row', gap: questTheme.spacing.sm }}>
+      {onRefresh ? (
+        <QuestButton
+          questTheme={questTheme}
+          variant="ghost"
+          label={t(language, refreshing ? 'generatingDailyBrief' : 'refreshBrief')}
+          onPress={onRefresh}
+          disabled={refreshing}
+          loading={refreshing}
+          style={{ flex: 1 }}
+        />
+      ) : null}
+      <QuestButton
         questTheme={questTheme}
-        title={t(language, 'todayDecisionDetails')}
-        subtitle={t(language, 'judgementExplanation')}
+        variant="secondary"
+        label={t(language, 'closeDetails')}
+        onPress={onClose}
+        style={{ flex: 1 }}
       />
+    </View>
+  );
+
+  const content = (
+    <>
+      {v11Enabled ? (
+        <Text
+          style={{
+            color: questTheme.colors.textMuted,
+            fontSize: questTheme.typography.metaSize,
+            lineHeight: questTheme.typography.metaLineHeight,
+          }}
+        >
+          {t(language, 'judgementExplanation')}
+        </Text>
+      ) : (
+        <QuestSectionHeader
+          questTheme={questTheme}
+          title={t(language, 'todayDecisionDetails')}
+          subtitle={t(language, 'judgementExplanation')}
+        />
+      )}
 
       <View
         style={{
@@ -232,6 +247,34 @@ export default function TodayDecisionDetailsSheet({
           </View>
         </View>
       ) : null}
+    </>
+  );
+
+  if (v11Enabled) {
+    return (
+      <V11Stage2ProductionSheet
+        closeLabel={t(language, 'closeDetails')}
+        footer={footer}
+        onClose={onClose}
+        reducedMotion={reducedMotion}
+        sheet="production"
+        theme={v11Theme}
+        title={t(language, 'todayDecisionDetails')}
+        visible={visible}
+      >
+        {content}
+      </V11Stage2ProductionSheet>
+    );
+  }
+
+  return (
+    <BottomSheetForm
+      visible={visible}
+      onClose={onClose}
+      closeAccessibilityLabel={t(language, 'closeDetails')}
+      footer={footer}
+    >
+      {content}
     </BottomSheetForm>
   );
 }

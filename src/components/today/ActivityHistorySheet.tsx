@@ -10,7 +10,14 @@ import {
 } from 'react-native';
 import { QuestTheme, questLayout } from '../../design/tokens';
 import { RawCapture } from '../../types';
+import { isV11TodayEnabled } from '../../v11/featureFlag';
+import { getV11ThemeTokens } from '../../v11/tokens';
+import useV11ReducedMotion from '../../v11/useV11ReducedMotion';
+import V11Stage2ProductionSheet from '../../v11-stage2-rebaseline/V11Stage2ProductionSheet';
 import QuestButton from '../ui/QuestButton';
+
+const WebView = View as any;
+const WebPressable = Pressable as any;
 
 const HISTORY_PAGE_SIZE = 20;
 
@@ -42,6 +49,9 @@ export default function ActivityHistorySheet({
   const [visibleCount, setVisibleCount] = useState(HISTORY_PAGE_SIZE);
   const pushedHistoryEntry = useRef(false);
   const onCloseRef = useRef(onClose);
+  const v11Enabled = isV11TodayEnabled();
+  const reducedMotion = useV11ReducedMotion();
+  const v11Theme = getV11ThemeTokens(questTheme.id === 'cleanFocus' ? 'light' : 'dark');
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -81,6 +91,66 @@ export default function ActivityHistorySheet({
 
   const visibleCaptures = captures.slice(0, visibleCount);
   const hasMore = visibleCount < captures.length;
+
+  if (v11Enabled) {
+    return (
+      <V11Stage2ProductionSheet
+        closeLabel={closeLabel}
+        onClose={requestClose}
+        reducedMotion={reducedMotion}
+        sheet="production"
+        theme={v11Theme}
+        title={title}
+        visible={visible}
+      >
+        <Text
+          style={{
+            color: questTheme.colors.textMuted,
+            fontSize: questTheme.typography.metaSize,
+            lineHeight: questTheme.typography.metaLineHeight,
+            fontWeight: questTheme.typography.weightMedium,
+          }}
+        >
+          {countLabel}
+        </Text>
+        <WebView dataSet={{ 'v11-rebaseline-role': 'history-list' }}>
+          {visibleCaptures.length === 0 ? (
+            <Text
+              style={{
+                color: questTheme.colors.textMuted,
+                fontSize: questTheme.typography.bodySize,
+                lineHeight: questTheme.typography.bodyLineHeight,
+                textAlign: 'center',
+                paddingVertical: questTheme.spacing.xl,
+              }}
+            >
+              {emptyLabel}
+            </Text>
+          ) : visibleCaptures.map((capture) => (
+            <React.Fragment key={capture.id}>{renderCapture(capture)}</React.Fragment>
+          ))}
+          {hasMore ? (
+            <WebPressable
+              onPress={() => setVisibleCount((count) => Math.min(count + HISTORY_PAGE_SIZE, captures.length))}
+              accessibilityRole="button"
+              accessibilityLabel={loadMoreLabel}
+              dataSet={{ 'v11-rebaseline-role': 'history-load-more' }}
+            >
+              <Text
+                style={{
+                  color: questTheme.colors.textMuted,
+                  fontSize: questTheme.typography.buttonSize,
+                  fontWeight: questTheme.typography.weightBold,
+                }}
+              >
+                {loadMoreLabel}
+              </Text>
+            </WebPressable>
+          ) : null}
+        </WebView>
+      </V11Stage2ProductionSheet>
+    );
+  }
 
   return (
     <Modal
