@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Pressable,
   Text,
@@ -10,11 +10,16 @@ import {
   getV11ThemeTokens,
   type V11ThemeMode,
 } from '../v11/tokens';
-import { V11Pill } from '../v11/components/V11Material';
 import type { RebaselineExecutionRow } from './fixtures';
 import V11CalibrationRail from './V11CalibrationRail';
 import V11RebaselineIcon from './V11RebaselineIcon';
 import V11Stage2ProductionSheet from './V11Stage2ProductionSheet';
+import {
+  V11ComposerAction,
+  V11InlineButton,
+  V11StickySheetFooter,
+  V11TextField,
+} from '../v11/components/V11SheetControls';
 
 const WebView = View as any;
 const WebPressable = Pressable as any;
@@ -33,6 +38,7 @@ type Props = {
   feedback: 'useful' | 'not_useful' | null;
   feedbackStatus: 'idle' | 'saving' | 'saved';
   language: Lang;
+  onCaptureSaved?: () => void;
   onClose: () => void;
   onDetailedState: () => void;
   onFeedback: (value: 'useful' | 'not_useful') => void;
@@ -45,6 +51,30 @@ type Props = {
   stateSaveStatus: 'idle' | 'saving' | 'saved' | 'error';
   themeMode: V11ThemeMode;
 };
+
+type CaptureFlowStatus = 'idle' | 'loading' | 'error' | 'pending' | 'saved';
+
+function captureQuery() {
+  if (typeof window === 'undefined') return new URLSearchParams();
+  return new URLSearchParams(window.location.search);
+}
+
+function initialCaptureStatus(): CaptureFlowStatus {
+  const value = captureQuery().get('captureState');
+  return value === 'loading' || value === 'error' || value === 'pending' || value === 'saved'
+    ? value
+    : 'idle';
+}
+
+function initialCaptureText() {
+  const preset = captureQuery().get('capturePreset');
+  if (preset === 'short') return '卧推 80kg 3x5';
+  if (preset === 'multiline') return '今天练胸\n卧推 80kg 3x5\n上斜卧推 60kg 3x8';
+  if (preset === 'long-en') {
+    return 'Bench press 80 kg for three sets of five reps, then incline press 60 kg for three sets of eight. Energy felt steady and the final set was challenging.';
+  }
+  return '';
+}
 
 function titleKey(sheet: Exclude<RebaselineSheet, null>) {
   if (sheet === 'capture') return 'rebaselineCaptureTitle';
@@ -59,6 +89,7 @@ export default function V11Stage2RebaselineSheet({
   feedback,
   feedbackStatus,
   language,
+  onCaptureSaved,
   onClose,
   onDetailedState,
   onFeedback,
@@ -72,7 +103,10 @@ export default function V11Stage2RebaselineSheet({
   themeMode,
 }: Props) {
   const theme = getV11ThemeTokens(themeMode);
-  const [captureText, setCaptureText] = useState('');
+  const [captureText, setCaptureText] = useState(initialCaptureText);
+  const [captureStatus, setCaptureStatus] = useState<CaptureFlowStatus>(initialCaptureStatus);
+  const [captureInputHeight, setCaptureInputHeight] = useState(92);
+  const captureTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [detailValues, setDetailValues] = useState<Record<string, number>>({
     overall: selectedState ?? 3,
     energy: 3,
@@ -96,7 +130,26 @@ export default function V11Stage2RebaselineSheet({
     setDetailValues((current) => ({ ...current, overall: selectedState ?? 3 }));
   }, [selectedState, sheet]);
 
+  useEffect(() => () => {
+    if (captureTimerRef.current) clearTimeout(captureTimerRef.current);
+  }, []);
+
   if (!sheet) return null;
+
+  const submitCapture = () => {
+    if (!captureText.trim() || captureStatus === 'loading') return;
+    if (captureTimerRef.current) clearTimeout(captureTimerRef.current);
+    setCaptureStatus('loading');
+    captureTimerRef.current = setTimeout(() => {
+      setCaptureStatus(captureQuery().get('captureResult') === 'error' ? 'error' : 'pending');
+    }, 640);
+  };
+
+  const retryCapture = () => {
+    if (captureTimerRef.current) clearTimeout(captureTimerRef.current);
+    setCaptureStatus('loading');
+    captureTimerRef.current = setTimeout(() => setCaptureStatus('pending'), 640);
+  };
 
   const stateLabels = ['veryBad', 'bad', 'average', 'good', 'great'];
   const stateStatusKey = stateSaveStatus === 'saving'
@@ -106,6 +159,114 @@ export default function V11Stage2RebaselineSheet({
       : stateSaveStatus === 'error'
         ? 'rebaselineStateSaveError'
         : null;
+
+  if (sheet === 'capture') {
+    return (
+      <V11Stage2ProductionSheet
+        closeLabel={t(language, 'close')}
+        footer={captureStatus === 'pending' ? (
+          <V11StickySheetFooter
+            cancelLabel={t(language, 'cancel')}
+            onCancel={onClose}
+            onSave={() => {
+              setCaptureStatus('saved');
+              onCaptureSaved?.();
+            }}
+            saveLabel={t(language, 'rebaselineCaptureConfirm')}
+            theme={theme}
+          />
+        ) : undefined}
+        onClose={onClose}
+        reducedMotion={reducedMotion}
+        sheet="capture"
+        theme={theme}
+        title={t(language, 'rebaselineCaptureTitle')}
+        visible
+      >
+        <WebView dataSet={{ 'v11-rebaseline-role': 'capture-composer-form' }}>
+          <WebView dataSet={{ 'v11-rebaseline-role': 'capture-composer-row' }}>
+            <WebView dataSet={{ 'v11-rebaseline-role': 'capture-input-slot' }}>
+              <V11TextField
+                accessibilityLabel={t(language, 'rebaselineCapturePlaceholder')}
+                autoFocus
+                disabled={captureStatus === 'loading'}
+                multiline
+                onChangeText={(value) => {
+                  setCaptureText(value);
+                  if (captureStatus !== 'idle') setCaptureStatus('idle');
+                }}
+                onContentSizeChange={(event) => {
+                  const nextHeight = Math.max(92, Math.min(156, event.nativeEvent.contentSize.height + 24));
+                  setCaptureInputHeight(nextHeight);
+                }}
+                placeholder={t(language, 'rebaselineCapturePlaceholder')}
+                scrollEnabled
+                style={{ height: captureInputHeight, minHeight: 92, maxHeight: 156, textAlignVertical: 'top' }}
+                theme={theme}
+                value={captureText}
+              />
+            </WebView>
+            <WebView dataSet={{ 'v11-rebaseline-role': 'capture-action-slot' }}>
+              <V11ComposerAction
+                disabled={!captureText.trim()}
+                label={t(language, 'rebaselineSendCapture')}
+                loading={captureStatus === 'loading'}
+                onPress={submitCapture}
+                theme={theme}
+              >
+                <V11RebaselineIcon name="arrow" size={18} color={theme.control.primaryActionText} />
+              </V11ComposerAction>
+            </WebView>
+          </WebView>
+
+          <Text style={{ color: theme.text.secondary, fontSize: 13, lineHeight: 20 }}>
+            {t(language, 'rebaselineCaptureExplainer')}
+          </Text>
+
+          {captureStatus === 'loading' ? (
+            <Text accessibilityLiveRegion="polite" style={{ color: theme.text.secondary, fontSize: 13, lineHeight: 20 }}>
+              {t(language, 'rebaselineCaptureLoading')}
+            </Text>
+          ) : null}
+
+          {captureStatus === 'error' ? (
+            <WebView dataSet={{ 'v11-rebaseline-role': 'capture-flow-status', 'v11-status': 'error' }}>
+              <Text accessibilityLiveRegion="polite" style={{ color: theme.control.error, fontSize: 13, lineHeight: 20 }}>
+                {t(language, 'rebaselineCaptureParseFailed')}
+              </Text>
+              <V11InlineButton
+                label={t(language, 'rebaselineCaptureRetry')}
+                onPress={retryCapture}
+                theme={theme}
+              />
+            </WebView>
+          ) : null}
+
+          {captureStatus === 'pending' ? (
+            <WebView dataSet={{ 'v11-rebaseline-role': 'capture-confirmation' }}>
+              <Text style={{ color: theme.text.primary, fontSize: 15, lineHeight: 22, fontWeight: '500' }}>
+                {t(language, 'rebaselineCapturePendingTitle')}
+              </Text>
+              <Text style={{ color: theme.text.secondary, fontSize: 13, lineHeight: 20 }}>
+                {t(language, 'rebaselineCapturePendingSummary')}
+              </Text>
+              <V11InlineButton
+                label={t(language, 'rebaselineCaptureEdit')}
+                onPress={() => setCaptureStatus('idle')}
+                theme={theme}
+              />
+            </WebView>
+          ) : null}
+
+          {captureStatus === 'saved' ? (
+            <Text accessibilityLiveRegion="polite" style={{ color: theme.text.primary, fontSize: 13, lineHeight: 20 }}>
+              {t(language, 'rebaselineCaptureSaved')}
+            </Text>
+          ) : null}
+        </WebView>
+      </V11Stage2ProductionSheet>
+    );
+  }
 
   if (sheet === 'state-detail') {
     const metricKeys = ['overall', 'energy', 'focus', 'mood', 'physical', 'stress', 'sleepQuality'];
@@ -266,48 +427,17 @@ export default function V11Stage2RebaselineSheet({
       closeLabel={t(language, 'close')}
       onClose={onClose}
       reducedMotion={reducedMotion}
-      sheet={sheet === 'capture'
-        ? 'capture'
-        : sheet === 'state'
+      sheet={sheet === 'state'
           ? 'state'
           : sheet === 'record'
             ? 'record'
             : 'production'}
       theme={theme}
-      title={t(language, titleKey(sheet))}
+      title={sheet === 'history'
+        ? `${t(language, titleKey(sheet))} · ${recent.length}`
+        : t(language, titleKey(sheet))}
       visible
     >
-        {sheet === 'capture' ? (
-          <>
-            <WebTextInput
-              accessibilityLabel={t(language, 'rebaselineCapturePlaceholder')}
-              autoFocus
-              dataSet={{ 'v11-rebaseline-role': 'capture-field' }}
-              multiline
-              onChangeText={setCaptureText}
-              placeholder={t(language, 'rebaselineCapturePlaceholder')}
-              placeholderTextColor={theme.text.metadata}
-              style={{ color: theme.text.primary, fontSize: 15, lineHeight: 22 }}
-              value={captureText}
-            />
-            <Text style={{ color: theme.text.secondary, fontSize: 13, lineHeight: 20 }}>
-              {t(language, 'rebaselineCaptureExplainer')}
-            </Text>
-            <V11Pill
-              accessibilityLabel={t(language, 'rebaselineParseRecord')}
-              contentStyle={{ alignItems: 'center', justifyContent: 'center' }}
-              height={54}
-              onPress={() => undefined}
-              stage="S2"
-              theme={theme}
-            >
-              <Text style={{ color: theme.text.primary, fontSize: 15, fontWeight: '500' }}>
-                {t(language, 'rebaselineParseRecord')}
-              </Text>
-            </V11Pill>
-          </>
-        ) : null}
-
         {sheet === 'state' ? (
           <>
             <Text style={{ color: theme.text.secondary, fontSize: 13, lineHeight: 20 }}>

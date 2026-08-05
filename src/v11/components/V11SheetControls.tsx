@@ -395,6 +395,44 @@ export function V11SheetButton({
   );
 }
 
+export function V11ComposerAction({
+  children,
+  disabled = false,
+  label,
+  loading = false,
+  onPress,
+  theme,
+}: {
+  children: React.ReactNode;
+  disabled?: boolean;
+  label: string;
+  loading?: boolean;
+  onPress: () => void;
+  theme: V11ThemeTokens;
+}) {
+  const inactive = disabled || loading;
+
+  return (
+    <WebPressable
+      accessibilityLabel={label}
+      accessibilityRole="button"
+      accessibilityState={{ busy: loading, disabled: inactive }}
+      dataSet={{
+        'v11-control': 'composer-action',
+        'v11-control-file': 'src/v11/components/V11SheetControls.tsx',
+        'v11-disabled': inactive ? 'true' : 'false',
+      }}
+      disabled={inactive}
+      onPress={onPress}
+      style={controlVariables(theme)}
+    >
+      {loading
+        ? <ActivityIndicator color={theme.control.primaryActionText} size="small" />
+        : children}
+    </WebPressable>
+  );
+}
+
 export function V11InlineButton({
   label,
   onPress,

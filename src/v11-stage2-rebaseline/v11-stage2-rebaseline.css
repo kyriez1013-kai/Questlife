@@ -669,6 +669,54 @@
   gap: 14px;
 }
 
+[data-v11-rebaseline-role="capture-composer-form"] {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+[data-v11-rebaseline-role="capture-composer-row"] {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 50px;
+  align-items: end;
+  gap: 10px;
+}
+
+[data-v11-rebaseline-role="capture-input-slot"] {
+  width: 100%;
+  min-width: 0;
+}
+
+[data-v11-rebaseline-role="capture-input-slot"]
+  > [data-v11-control="textarea"] {
+  max-height: 156px;
+  overflow-y: auto;
+  resize: none;
+}
+
+[data-v11-rebaseline-role="capture-action-slot"] {
+  width: 50px;
+  min-width: 50px;
+  max-width: 50px;
+  display: flex;
+  flex: 0 0 50px;
+  align-items: flex-end;
+}
+
+[data-v11-rebaseline-role="capture-flow-status"],
+[data-v11-rebaseline-role="capture-confirmation"] {
+  min-width: 0;
+  padding-top: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--v11-rebaseline-text) 9%, transparent);
+}
+
 [data-v11-rebaseline-role="capture-composer"] {
   padding-bottom: 14px;
   border-bottom: 1px solid color-mix(in srgb, var(--v11-rebaseline-text) 9%, transparent);
@@ -1042,6 +1090,42 @@
     background 120ms cubic-bezier(0.32, 0.72, 0, 1),
     border-color 120ms cubic-bezier(0.32, 0.72, 0, 1),
     transform 120ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+[data-v11-control="composer-action"] {
+  box-sizing: border-box;
+  width: 50px;
+  min-width: 50px;
+  max-width: 50px;
+  height: 50px;
+  min-height: 50px;
+  padding: 0;
+  display: flex;
+  flex: 0 0 50px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 16px;
+  color: var(--v11-control-primary-action-text);
+  background: var(--v11-control-primary-action);
+  transition:
+    background 120ms cubic-bezier(0.32, 0.72, 0, 1),
+    box-shadow 120ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+[data-v11-control="composer-action"]:active:not([data-v11-disabled="true"]) {
+  background: var(--v11-control-pressed);
+}
+
+[data-v11-control="composer-action"][data-v11-disabled="true"] {
+  color: var(--v11-control-disabled-text);
+  background: var(--v11-control-disabled);
+  cursor: not-allowed;
+}
+
+[data-v11-control="composer-action"]:focus-visible {
+  outline: 2px solid var(--v11-control-focus);
+  outline-offset: 2px;
 }
 
 [data-v11-control="sheet-button"][data-v11-variant="primary"] {
