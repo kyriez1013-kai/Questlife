@@ -68,6 +68,19 @@ export const v11Spacing = {
   fieldGap: 120,
 } as const;
 
+export const v11SheetLayout = {
+  viewportInsetInline: 12,
+  viewportInsetTop: 12,
+  contentPaddingInline: 20,
+  contentPaddingInlineNarrow: 18,
+  contentPaddingTop: 8,
+  contentPaddingBottom: 20,
+  headerActionSlot: 44,
+  headerGap: 12,
+  footerGap: 12,
+  minimumMobileClearance: 18,
+} as const;
+
 export const v11Radius = {
   control: 16,
   panel: 20,

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
   Pressable,
-  ScrollView,
   Text,
   TextInput,
   View,
@@ -11,7 +10,7 @@ import {
   getV11ThemeTokens,
   type V11ThemeMode,
 } from '../v11/tokens';
-import { V11GlassSheet, V11Pill } from '../v11/components/V11Material';
+import { V11Pill } from '../v11/components/V11Material';
 import type { RebaselineExecutionRow } from './fixtures';
 import V11CalibrationRail from './V11CalibrationRail';
 import V11RebaselineIcon from './V11RebaselineIcon';
@@ -19,7 +18,6 @@ import V11Stage2ProductionSheet from './V11Stage2ProductionSheet';
 
 const WebView = View as any;
 const WebPressable = Pressable as any;
-const WebScrollView = ScrollView as any;
 const WebTextInput = TextInput as any;
 
 export type RebaselineSheet =
@@ -264,54 +262,21 @@ export default function V11Stage2RebaselineSheet({
   }
 
   return (
-    <WebView
-      dataSet={{
-        'v11-rebaseline-role': 'overlay',
-        'v11-sheet': sheet,
-      }}
-      onStartShouldSetResponder={() => true}
+    <V11Stage2ProductionSheet
+      closeLabel={t(language, 'close')}
+      onClose={onClose}
+      reducedMotion={reducedMotion}
+      sheet={sheet === 'capture'
+        ? 'capture'
+        : sheet === 'state'
+          ? 'state'
+          : sheet === 'record'
+            ? 'record'
+            : 'production'}
+      theme={theme}
+      title={t(language, titleKey(sheet))}
+      visible
     >
-      <WebPressable
-        accessibilityLabel={t(language, 'close')}
-        accessibilityRole="button"
-        dataSet={{ 'v11-rebaseline-role': 'scrim' }}
-        onPress={onClose}
-      />
-      <V11GlassSheet
-        accessibilityLabel={t(language, titleKey(sheet))}
-        contentStyle={{
-          paddingHorizontal: 20,
-          paddingTop: 14,
-          paddingBottom: 24,
-          gap: 16,
-        }}
-        minHeight={sheet === 'state'
-          ? 286
-          : sheet === 'capture'
-            ? 350
-            : sheet === 'history'
-              ? 420
-              : 390}
-        reducedMotion={reducedMotion}
-        stage="S2"
-        style={{ width: '100%' }}
-        theme={theme}
-      >
-        <WebView dataSet={{ 'v11-rebaseline-role': 'sheet-handle' }} />
-        <WebView dataSet={{ 'v11-rebaseline-role': 'sheet-header' }}>
-          <Text numberOfLines={2} style={{ flex: 1, flexShrink: 1, minWidth: 0, color: theme.text.primary, fontSize: 20, lineHeight: 27, fontWeight: '500' }}>
-            {t(language, titleKey(sheet))}
-          </Text>
-          <WebPressable
-            accessibilityLabel={t(language, 'close')}
-            accessibilityRole="button"
-            dataSet={{ 'v11-rebaseline-role': 'icon-button' }}
-            onPress={onClose}
-          >
-            <V11RebaselineIcon name="close" size={19} color={theme.text.secondary} />
-          </WebPressable>
-        </WebView>
-
         {sheet === 'capture' ? (
           <>
             <WebTextInput
@@ -400,12 +365,7 @@ export default function V11Stage2RebaselineSheet({
         ) : null}
 
         {sheet === 'history' ? (
-          <WebScrollView
-            contentContainerStyle={{ paddingBottom: 16 }}
-            dataSet={{ 'v11-rebaseline-role': 'history-scroll' }}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
+          <WebView dataSet={{ 'v11-rebaseline-role': 'history-list' }}>
             {recent.length === 0 ? (
               <Text style={{ color: theme.text.secondary, fontSize: 13, lineHeight: 20 }}>
                 {t(language, 'rebaselineNoLatestRecord')}
@@ -431,7 +391,7 @@ export default function V11Stage2RebaselineSheet({
                 </Text>
               </WebPressable>
             ))}
-          </WebScrollView>
+          </WebView>
         ) : null}
 
         {sheet === 'record' ? (
@@ -474,7 +434,6 @@ export default function V11Stage2RebaselineSheet({
             ) : null}
           </WebView>
         ) : null}
-      </V11GlassSheet>
-    </WebView>
+    </V11Stage2ProductionSheet>
   );
 }
