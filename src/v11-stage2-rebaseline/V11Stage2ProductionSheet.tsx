@@ -20,6 +20,7 @@ import {
   isV11SheetGeometryDebugEnabled,
   publishV11SheetGeometryDebug,
 } from './v11SheetGeometry';
+import { scheduleV11SheetControlAudit } from '../v11/sheetControlAudit';
 import './v11-stage2-rebaseline.css';
 
 const WebView = View as any;
@@ -59,6 +60,16 @@ export default function V11Stage2ProductionSheet({
     );
     return () => window.clearTimeout(timeout);
   }, [children, debugSafeArea, footer, reducedMotion, sheet, title, visible]);
+
+  useEffect(() => {
+    if (!visible) return;
+    const timeout = scheduleV11SheetControlAudit(
+      reducedMotion ? 0 : v11Motion.duration.standard + 40,
+    );
+    return () => {
+      if (timeout != null && typeof window !== 'undefined') window.clearTimeout(timeout);
+    };
+  }, [children, footer, reducedMotion, sheet, title, visible]);
 
   return (
     <Modal

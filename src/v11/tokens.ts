@@ -165,6 +165,26 @@ export type V11ThemeTokens = {
     upperHighlightOpacity: number;
     outerShadowOpacity: number;
   };
+  control: {
+    surface: string;
+    elevatedSurface: string;
+    selectedSurface: string;
+    pressedSurface: string;
+    primaryText: string;
+    secondaryText: string;
+    selectedText: string;
+    borderSubtle: string;
+    borderSelected: string;
+    focus: string;
+    disabledSurface: string;
+    disabledText: string;
+    error: string;
+    primaryAction: string;
+    primaryActionText: string;
+    secondaryAction: string;
+    secondaryActionText: string;
+    placeholder: string;
+  };
 };
 
 function buildThemeTokens(mode: V11ThemeMode): V11ThemeTokens {
@@ -212,6 +232,26 @@ function buildThemeTokens(mode: V11ThemeMode): V11ThemeTokens {
       saturation: 1.6,
       upperHighlightOpacity: mode === 'light' ? 0.82 : 0.74,
       outerShadowOpacity: mode === 'light' ? 0.24 : 0.28,
+    },
+    control: {
+      surface: questTheme.colors.surfaceSoft,
+      elevatedSurface: questTheme.colors.surfaceElevated,
+      selectedSurface: questTheme.colors.primarySoft,
+      pressedSurface: questTheme.colors.surfaceMuted,
+      primaryText: questTheme.colors.text,
+      secondaryText: questTheme.colors.textMuted,
+      selectedText: questTheme.colors.text,
+      borderSubtle: questTheme.colors.border,
+      borderSelected: questTheme.colors.primary,
+      focus: questTheme.colors.accentStrong,
+      disabledSurface: questTheme.colors.disabledBg,
+      disabledText: questTheme.colors.disabledText,
+      error: questTheme.colors.danger,
+      primaryAction: questTheme.colors.primary,
+      primaryActionText: questTheme.colors.primaryText,
+      secondaryAction: questTheme.colors.surfaceSoft,
+      secondaryActionText: questTheme.colors.text,
+      placeholder: questTheme.colors.textSubtle,
     },
   };
 }
