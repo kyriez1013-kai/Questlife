@@ -10,7 +10,7 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, TextInput, TextInputProps } from 'react-native';
 import { useStore } from '../store';
 import { getQuestTheme } from '../design/tokens';
 import { getLanguage, t } from '../i18n';
@@ -20,8 +20,154 @@ import { assessCaptureCompletion } from '../utils/captureCompletion';
 import { getSmartRouteResult, SmartRouteResult } from '../utils/smartRouting';
 import { buildPostSaveFeedback, PostSaveFeedback } from '../utils/progressFeedback';
 import { isV11TodayEnabled } from '../v11/featureFlag';
+import { getV11ThemeTokens } from '../v11/tokens';
+import {
+  V11CategoricalChip,
+  V11CheckboxControl,
+  V11SheetButton,
+  V11TextField,
+} from '../v11/components/V11SheetControls';
 
 const WebView = View as any;
+
+function pendingV11Theme(questTheme: ReturnType<typeof getQuestTheme>) {
+  return getV11ThemeTokens(questTheme.id === 'cleanFocus' ? 'light' : 'dark');
+}
+
+function PendingChip({
+  label,
+  legacyStyle,
+  legacyTextStyle,
+  onPress,
+  questTheme,
+  selected,
+}: {
+  label: string;
+  legacyStyle: any;
+  legacyTextStyle: any;
+  onPress: () => void;
+  questTheme: ReturnType<typeof getQuestTheme>;
+  selected: boolean;
+}) {
+  if (isV11TodayEnabled()) {
+    return (
+      <V11CategoricalChip
+        accessibilityRole="checkbox"
+        label={label}
+        onPress={onPress}
+        selected={selected}
+        theme={pendingV11Theme(questTheme)}
+      />
+    );
+  }
+  return (
+    <TouchableOpacity onPress={onPress} style={legacyStyle} activeOpacity={0.75}>
+      <Text style={legacyTextStyle}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
+function PendingTextField({
+  questTheme,
+  style,
+  placeholderTextColor,
+  ...props
+}: TextInputProps & { questTheme: ReturnType<typeof getQuestTheme> }) {
+  if (isV11TodayEnabled()) {
+    const flat = StyleSheet.flatten(style) || {};
+    return (
+      <V11TextField
+        {...props}
+        style={{
+          flex: flat.flex,
+          flexGrow: flat.flexGrow,
+          minWidth: flat.minWidth,
+          width: flat.width,
+        }}
+        theme={pendingV11Theme(questTheme)}
+      />
+    );
+  }
+  return <TextInput {...props} placeholderTextColor={placeholderTextColor} style={style} />;
+}
+
+function PendingAction({
+  disabled = false,
+  label,
+  legacyStyle,
+  legacyTextStyle,
+  loading = false,
+  onPress,
+  questTheme,
+  variant,
+}: {
+  disabled?: boolean;
+  label: string;
+  legacyStyle: any;
+  legacyTextStyle: any;
+  loading?: boolean;
+  onPress: () => void;
+  questTheme: ReturnType<typeof getQuestTheme>;
+  variant: 'primary' | 'secondary';
+}) {
+  if (isV11TodayEnabled()) {
+    const flat = StyleSheet.flatten(legacyStyle) || {};
+    const canGrow = flat.alignSelf !== 'flex-start';
+    return (
+      <V11SheetButton
+        disabled={disabled}
+        label={label}
+        loading={loading}
+        onPress={onPress}
+        style={{
+          alignSelf: flat.alignSelf,
+          flex: canGrow ? (flat.flex ?? 1) : flat.flex,
+          minWidth: 0,
+          width: 'auto',
+        }}
+        theme={pendingV11Theme(questTheme)}
+        variant={variant}
+      />
+    );
+  }
+  return (
+    <TouchableOpacity disabled={disabled} onPress={onPress} style={legacyStyle} activeOpacity={0.8}>
+      <Text style={legacyTextStyle}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
+function PendingCheckbox({
+  checked,
+  label,
+  legacyStyle,
+  legacyTextStyle,
+  onPress,
+  questTheme,
+}: {
+  checked: boolean;
+  label: string;
+  legacyStyle: any;
+  legacyTextStyle: any;
+  onPress: () => void;
+  questTheme: ReturnType<typeof getQuestTheme>;
+}) {
+  if (isV11TodayEnabled()) {
+    return (
+      <V11CheckboxControl
+        accessibilityLabel={label}
+        checked={checked}
+        onPress={onPress}
+        theme={pendingV11Theme(questTheme)}
+      />
+    );
+  }
+  return (
+    <TouchableOpacity onPress={onPress} style={legacyStyle} activeOpacity={0.7}>
+      {checked ? <Text style={legacyTextStyle}>✓</Text> : null}
+    </TouchableOpacity>
+  );
+}
 
 function CapturePendingSurface({
   children,
@@ -1257,34 +1403,37 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                     ] as const).map(([value, textKey]) => {
                       const selected = afterStateDraft[key] === value;
                       return (
-                        <TouchableOpacity
+                        <PendingChip
                           key={value}
+                          label={t(lang, textKey)}
+                          legacyStyle={chipStyle(selected)}
+                          legacyTextStyle={chipTextStyle(selected)}
                           onPress={() => setAfterStateValue(key, value)}
-                          style={chipStyle(selected)}
-                          activeOpacity={0.75}
-                        >
-                          <Text style={chipTextStyle(selected)}>{t(lang, textKey)}</Text>
-                        </TouchableOpacity>
+                          questTheme={questTheme}
+                          selected={selected}
+                        />
                       );
                     })}
                   </View>
                 </View>
               ))}
               <View style={pendStyles.afterStateActions}>
-                <TouchableOpacity
+                <PendingAction
+                  label={t(lang, 'saveStateChange')}
+                  legacyStyle={[pendStyles.confirmBtn, { backgroundColor: questTheme.colors.primary, borderRadius: questTheme.radius.sm }]}
+                  legacyTextStyle={[pendStyles.confirmText, { color: questTheme.colors.primaryText }]}
                   onPress={saveAfterStateDelta}
-                  style={[pendStyles.confirmBtn, { backgroundColor: questTheme.colors.primary, borderRadius: questTheme.radius.sm }]}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[pendStyles.confirmText, { color: questTheme.colors.primaryText }]}>
-                    {t(lang, 'saveStateChange')}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={skipAfterStateDelta} style={pendStyles.ignoreBtn} activeOpacity={0.7}>
-                  <Text style={[pendStyles.ignoreText, { color: questTheme.colors.textMuted }]}>
-                    {t(lang, 'skipStateChange')}
-                  </Text>
-                </TouchableOpacity>
+                  questTheme={questTheme}
+                  variant="primary"
+                />
+                <PendingAction
+                  label={t(lang, 'skipStateChange')}
+                  legacyStyle={pendStyles.ignoreBtn}
+                  legacyTextStyle={[pendStyles.ignoreText, { color: questTheme.colors.textMuted }]}
+                  onPress={skipAfterStateDelta}
+                  questTheme={questTheme}
+                  variant="secondary"
+                />
               </View>
             </View>
           ) : (
@@ -1292,15 +1441,14 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
               {t(lang, afterStateStatus === 'saved' ? 'stateChangeSaved' : 'stateChangeSkipped')}
             </Text>
           )}
-          <TouchableOpacity
+          <PendingAction
+            label={t(lang, 'done')}
+            legacyStyle={[pendStyles.confirmBtn, { backgroundColor: questTheme.colors.primary, borderRadius: questTheme.radius.sm, alignSelf: 'flex-start' }]}
+            legacyTextStyle={[pendStyles.confirmText, { color: questTheme.colors.primaryText }]}
             onPress={onDismiss}
-            style={[pendStyles.confirmBtn, { backgroundColor: questTheme.colors.primary, borderRadius: questTheme.radius.sm, alignSelf: 'flex-start' }]}
-            activeOpacity={0.8}
-          >
-            <Text style={[pendStyles.confirmText, { color: questTheme.colors.primaryText }]}>
-              {t(lang, 'done')}
-            </Text>
-          </TouchableOpacity>
+            questTheme={questTheme}
+            variant="primary"
+          />
         </CapturePendingSurface>
       );
     }
@@ -1309,11 +1457,14 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
         <Text style={[pendStyles.loggedText, { color: questTheme.colors.success }]}>
           {t(lang, 'scEntryLogged')}
         </Text>
-        <TouchableOpacity onPress={onDismiss} style={[pendStyles.ignoreBtn, { marginTop: 6 }]} activeOpacity={0.7}>
-          <Text style={[pendStyles.ignoreText, { color: questTheme.colors.textMuted }]}>
-            {t(lang, 'done')}
-          </Text>
-        </TouchableOpacity>
+        <PendingAction
+          label={t(lang, 'done')}
+          legacyStyle={[pendStyles.ignoreBtn, { marginTop: 6 }]}
+          legacyTextStyle={[pendStyles.ignoreText, { color: questTheme.colors.textMuted }]}
+          onPress={onDismiss}
+          questTheme={questTheme}
+          variant="secondary"
+        />
       </View>
     );
   }
@@ -1333,14 +1484,14 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
           : t(lang, 'scContextDetected')}
       </Text>
       {effectiveEntries.length > 1 ? (
-        <TouchableOpacity
+        <PendingAction
+          label={allActive ? t(lang, 'scDeselectAll') : t(lang, 'scSelectAll')}
+          legacyStyle={[pendStyles.bulkBtn, { borderColor: questTheme.colors.borderStrong, backgroundColor: questTheme.colors.surfaceMuted }]}
+          legacyTextStyle={[pendStyles.bulkText, { color: questTheme.colors.primary }]}
           onPress={() => setAllActive(!allActive)}
-          style={[pendStyles.bulkBtn, { borderColor: questTheme.colors.borderStrong, backgroundColor: questTheme.colors.surfaceMuted }]}
-        >
-          <Text style={[pendStyles.bulkText, { color: questTheme.colors.primary }]}>
-            {allActive ? t(lang, 'scDeselectAll') : t(lang, 'scSelectAll')}
-          </Text>
-        </TouchableOpacity>
+          questTheme={questTheme}
+          variant="secondary"
+        />
       ) : null}
 
       {/* Entry rows */}
@@ -1409,20 +1560,20 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
         return (
           <View key={i} style={[pendStyles.entryRow, v11TodayEnabled ? pendStyles.v11EntryRow : null, { borderColor: questTheme.colors.border }]}>
             {/* Toggle / checkbox */}
-            <TouchableOpacity
-              onPress={() => isExisting ? toggleInclude(i) : toggleCreateNew(i)}
-              style={[
+            <PendingCheckbox
+              checked={active}
+              label={entry.skillName}
+              legacyStyle={[
                 pendStyles.checkbox,
-                v11TodayEnabled ? pendStyles.v11Checkbox : null,
                 {
                   borderColor: active ? tagColor : questTheme.colors.border,
                   backgroundColor: active ? tagColor + '22' : 'transparent',
                 },
               ]}
-              activeOpacity={0.7}
-            >
-              {active && <Text style={[pendStyles.checkmark, { color: tagColor }]}>✓</Text>}
-            </TouchableOpacity>
+              legacyTextStyle={[pendStyles.checkmark, { color: tagColor }]}
+              onPress={() => isExisting ? toggleInclude(i) : toggleCreateNew(i)}
+              questTheme={questTheme}
+            />
 
             {/* Content */}
             <View style={{ flex: 1, gap: 3 }}>
@@ -1472,18 +1623,14 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                     {t(lang, 'scCompleteRecord')}
                   </Text>
                   {v11TodayEnabled ? (
-                    <TouchableOpacity
-                      accessibilityRole="button"
-                      accessibilityState={{ expanded: expandedRoutingRows.includes(i) }}
+                    <V11SheetButton
+                      label={t(lang, expandedRoutingRows.includes(i) ? 'hideAdvancedFields' : 'showAdvancedFields')}
                       onPress={() => setExpandedRoutingRows((current) => (
                         current.includes(i) ? current.filter((index) => index !== i) : [...current, i]
                       ))}
-                      style={[pendStyles.v11Disclosure, { borderColor: questTheme.colors.border }]}
-                    >
-                      <Text style={[pendStyles.optionText, { color: questTheme.colors.primary }]}>
-                        {t(lang, expandedRoutingRows.includes(i) ? 'hideAdvancedFields' : 'showAdvancedFields')}
-                      </Text>
-                    </TouchableOpacity>
+                      theme={pendingV11Theme(questTheme)}
+                      variant="secondary"
+                    />
                   ) : null}
                   {(!v11TodayEnabled || expandedRoutingRows.includes(i)) ? (
                   <View style={[pendStyles.routingBox, v11TodayEnabled ? pendStyles.v11RoutingGroup : null, { borderColor: questTheme.colors.border, backgroundColor: v11TodayEnabled ? 'transparent' : questTheme.colors.surfaceSubtle }]}>
@@ -1500,37 +1647,23 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                       {goalOptions.map((goal) => {
                         const selected = !ui.createNewGoal && ui.selectedGoalId !== null && selectedGoal?.id === goal.id;
                         return (
-                          <TouchableOpacity
+                          <PendingChip
                             key={goal.id}
+                            label={goal.name}
+                            legacyStyle={chipStyle(selected)}
+                            legacyTextStyle={chipTextStyle(selected)}
                             onPress={() => setSelectedGoal(i, goal.id)}
-                            style={chipStyle(selected)}
-                            activeOpacity={0.75}
-                          >
-                            <Text style={chipTextStyle(selected)}>{goal.name}</Text>
-                          </TouchableOpacity>
+                            questTheme={questTheme}
+                            selected={selected}
+                          />
                         );
                       })}
-                      <TouchableOpacity
-                        onPress={() => setNoGoal(i)}
-                        style={chipStyle(ui.selectedGoalId === null)}
-                        activeOpacity={0.75}
-                      >
-                        <Text style={chipTextStyle(ui.selectedGoalId === null)}>
-                          {t(lang, 'noGoal')}
-                        </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={() => setCreateGoal(i, suggestedGoal)}
-                        style={chipStyle(!!ui.createNewGoal)}
-                        activeOpacity={0.75}
-                      >
-                        <Text style={chipTextStyle(!!ui.createNewGoal)}>
-                          {t(lang, 'createNewGoal')}
-                        </Text>
-                      </TouchableOpacity>
+                      <PendingChip label={t(lang, 'noGoal')} legacyStyle={chipStyle(ui.selectedGoalId === null)} legacyTextStyle={chipTextStyle(ui.selectedGoalId === null)} onPress={() => setNoGoal(i)} questTheme={questTheme} selected={ui.selectedGoalId === null} />
+                      <PendingChip label={t(lang, 'createNewGoal')} legacyStyle={chipStyle(!!ui.createNewGoal)} legacyTextStyle={chipTextStyle(!!ui.createNewGoal)} onPress={() => setCreateGoal(i, suggestedGoal)} questTheme={questTheme} selected={!!ui.createNewGoal} />
                     </View>
                     {ui.createNewGoal ? (
-                      <TextInput
+                      <PendingTextField
+                        questTheme={questTheme}
                         value={ui.newGoalName ?? suggestedGoal}
                         onChangeText={(value) => setNewGoalName(i, value)}
                         placeholder={t(lang, 'goalName')}
@@ -1547,46 +1680,46 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                           {moduleOptions.map((module) => {
                             const selected = !ui.createNewModule && ui.selectedModuleId !== null && selectedModule?.id === module.id;
                             return (
-                              <TouchableOpacity
+                              <PendingChip
                                 key={module.id}
-                                onPress={() => setSelectedModule(i, module.id)}
-                                style={[pendStyles.optionChip, v11TodayEnabled ? pendStyles.v11OptionChip : null, {
+                                label={module.name}
+                                legacyStyle={[pendStyles.optionChip, {
                                   borderColor: selected ? questTheme.colors.primary : questTheme.colors.chipBorder,
                                   backgroundColor: selected ? questTheme.colors.chipSelectedBg : questTheme.colors.chipBg,
                                 }]}
-                                activeOpacity={0.75}
-                              >
-                                <Text style={chipTextStyle(selected)}>{module.name}</Text>
-                              </TouchableOpacity>
+                                legacyTextStyle={chipTextStyle(selected)}
+                                onPress={() => setSelectedModule(i, module.id)}
+                                questTheme={questTheme}
+                                selected={selected}
+                              />
                             );
                           })}
-                          <TouchableOpacity
-                            onPress={() => setNoModule(i)}
-                            style={[pendStyles.optionChip, v11TodayEnabled ? pendStyles.v11OptionChip : null, {
+                          <PendingChip
+                            label={t(lang, 'noModule')}
+                            legacyStyle={[pendStyles.optionChip, {
                               borderColor: ui.selectedModuleId === null ? questTheme.colors.primary : questTheme.colors.chipBorder,
                               backgroundColor: ui.selectedModuleId === null ? questTheme.colors.chipSelectedBg : questTheme.colors.chipBg,
                             }]}
-                            activeOpacity={0.75}
-                          >
-                            <Text style={chipTextStyle(ui.selectedModuleId === null)}>
-                              {t(lang, 'noModule')}
-                            </Text>
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            onPress={() => setCreateModule(i, suggestedModule)}
-                            style={[pendStyles.optionChip, v11TodayEnabled ? pendStyles.v11OptionChip : null, {
+                            legacyTextStyle={chipTextStyle(ui.selectedModuleId === null)}
+                            onPress={() => setNoModule(i)}
+                            questTheme={questTheme}
+                            selected={ui.selectedModuleId === null}
+                          />
+                          <PendingChip
+                            label={t(lang, 'createModule')}
+                            legacyStyle={[pendStyles.optionChip, {
                               borderColor: ui.createNewModule ? questTheme.colors.primary : questTheme.colors.chipBorder,
                               backgroundColor: ui.createNewModule ? questTheme.colors.chipSelectedBg : questTheme.colors.chipBg,
                             }]}
-                            activeOpacity={0.75}
-                          >
-                            <Text style={chipTextStyle(!!ui.createNewModule)}>
-                              {t(lang, 'createModule')}
-                            </Text>
-                          </TouchableOpacity>
+                            legacyTextStyle={chipTextStyle(!!ui.createNewModule)}
+                            onPress={() => setCreateModule(i, suggestedModule)}
+                            questTheme={questTheme}
+                            selected={!!ui.createNewModule}
+                          />
                         </View>
                         {ui.createNewModule ? (
-                          <TextInput
+                          <PendingTextField
+                            questTheme={questTheme}
                             value={ui.newModuleName ?? suggestedModule}
                             onChangeText={(value) => setNewModuleName(i, value)}
                             placeholder={t(lang, 'moduleName')}
@@ -1607,33 +1740,38 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                           const name = String((item as any).value ?? item.id);
                           const selected = selectedExerciseNames.includes(name);
                           return (
-                            <TouchableOpacity
+                            <PendingChip
                               key={item.id}
+                              label={item.label}
+                              legacyStyle={chipStyle(selected)}
+                              legacyTextStyle={chipTextStyle(selected)}
                               onPress={() => {
                                 if (llmDomain === 'fitness') toggleExercise(i, name);
                                 else setSelectedSkill(i, name, (item as any).skillId);
                               }}
-                              style={chipStyle(selected)}
-                            >
-                              <Text style={chipTextStyle(selected)}>{item.label}</Text>
-                            </TouchableOpacity>
+                              questTheme={questTheme}
+                              selected={selected}
+                            />
                           );
                         })}
                         {selectedExerciseNames
                           .filter((name) => !exerciseSuggestions.some((item) => normalizeName(String((item as any).value ?? item.id)) === normalizeName(name)))
                           .map((name) => (
-                            <TouchableOpacity
+                            <PendingChip
                               key={`custom:${normalizeName(name)}`}
+                              label={name}
+                              legacyStyle={chipStyle(true)}
+                              legacyTextStyle={chipTextStyle(true)}
                               onPress={() => toggleExercise(i, name)}
-                              style={chipStyle(true)}
-                            >
-                              <Text style={chipTextStyle(true)}>{name}</Text>
-                            </TouchableOpacity>
+                              questTheme={questTheme}
+                              selected
+                            />
                           ))}
                       </View>
                       <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>{t(lang, 'customExercise')}</Text>
                       <View style={pendStyles.customActionRow}>
-                        <TextInput
+                        <PendingTextField
+                          questTheme={questTheme}
                           value={ui.customExerciseName ?? ''}
                           onChangeText={(value) => setCustomExercise(i, value)}
                           placeholder={t(lang, 'addCustomExercise')}
@@ -1641,13 +1779,14 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                           onSubmitEditing={() => addCustomAction(i, llmDomain)}
                           style={[compactInputStyle, { flex: 1 }]}
                         />
-                        <TouchableOpacity
+                        <PendingAction
+                          label={t(lang, 'addCustomAction')}
+                          legacyStyle={[pendStyles.addCustomBtn, { borderColor: questTheme.colors.primary, backgroundColor: questTheme.colors.chipSelectedBg }]}
+                          legacyTextStyle={[pendStyles.optionText, { color: questTheme.colors.primary }]}
                           onPress={() => addCustomAction(i, llmDomain)}
-                          style={[pendStyles.addCustomBtn, { borderColor: questTheme.colors.primary, backgroundColor: questTheme.colors.chipSelectedBg }]}
-                          activeOpacity={0.75}
-                        >
-                          <Text style={[pendStyles.optionText, { color: questTheme.colors.primary }]}>{t(lang, 'addCustomAction')}</Text>
-                        </TouchableOpacity>
+                          questTheme={questTheme}
+                          variant="secondary"
+                        />
                       </View>
                       {selectedExerciseNames.length > 0 ? (
                         <View style={pendStyles.exerciseDetailsWrap}>
@@ -1658,7 +1797,8 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                               <View key={exerciseName} style={[pendStyles.exerciseDetailCard, v11TodayEnabled ? pendStyles.v11ExerciseDetail : null, { borderColor: questTheme.colors.borderStrong, backgroundColor: v11TodayEnabled ? 'transparent' : questTheme.colors.surfaceSubtle }]}>
                                 <Text style={[pendStyles.completionTitle, { color: questTheme.colors.text }]}>{exerciseName}</Text>
                                 <View style={pendStyles.detailInputRow}>
-                                  <TextInput
+                                  <PendingTextField
+                                    questTheme={questTheme}
                                     value={details.weight ?? ''}
                                     onChangeText={(value) => setExerciseDetail(i, exerciseName, 'weight', value)}
                                     placeholder={t(lang, 'weight')}
@@ -1666,7 +1806,8 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                                     keyboardType="numeric"
                                     style={miniInputStyle}
                                   />
-                                  <TextInput
+                                  <PendingTextField
+                                    questTheme={questTheme}
                                     value={details.sets ?? ''}
                                     onChangeText={(value) => setExerciseDetail(i, exerciseName, 'sets', value)}
                                     placeholder={t(lang, 'sets')}
@@ -1674,7 +1815,8 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                                     keyboardType="numeric"
                                     style={miniInputStyle}
                                   />
-                                  <TextInput
+                                  <PendingTextField
+                                    questTheme={questTheme}
                                     value={details.reps ?? ''}
                                     onChangeText={(value) => setExerciseDetail(i, exerciseName, 'reps', value)}
                                     placeholder={t(lang, 'reps')}
@@ -1687,21 +1829,18 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                                   {[6, 7, 8, 9, 10].map((rpeValue) => {
                                     const selected = details.rpe === rpeValue;
                                     return (
-                                      <TouchableOpacity
+                                      <PendingChip
                                         key={rpeValue}
+                                        label={`${t(lang, 'rpe')} ${rpeValue}`}
+                                        legacyStyle={chipStyle(selected)}
+                                        legacyTextStyle={chipTextStyle(selected)}
                                         onPress={() => setExerciseDetail(i, exerciseName, 'rpe', rpeValue)}
-                                        style={chipStyle(selected)}
-                                      >
-                                        <Text style={chipTextStyle(selected)}>{`${t(lang, 'rpe')} ${rpeValue}`}</Text>
-                                      </TouchableOpacity>
+                                        questTheme={questTheme}
+                                        selected={selected}
+                                      />
                                     );
                                   })}
-                                  <TouchableOpacity
-                                    onPress={() => setExerciseDetail(i, exerciseName, 'rpe', null)}
-                                    style={chipStyle(false)}
-                                  >
-                                    <Text style={chipTextStyle(false)}>{t(lang, 'scSkip')}</Text>
-                                  </TouchableOpacity>
+                                  <PendingChip label={t(lang, 'scSkip')} legacyStyle={chipStyle(false)} legacyTextStyle={chipTextStyle(false)} onPress={() => setExerciseDetail(i, exerciseName, 'rpe', null)} questTheme={questTheme} selected={false} />
                                 </View>
                               </View>
                             );
@@ -1717,28 +1856,26 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                         {scopeOptions.map((scope) => {
                           const selected = ui.scope === scope;
                           return (
-                            <TouchableOpacity
+                            <PendingChip
                               key={scope}
+                              label={t(lang, scope)}
+                              legacyStyle={chipStyle(selected)}
+                              legacyTextStyle={chipTextStyle(selected)}
                               onPress={() => setScope(i, scope)}
-                              style={chipStyle(selected)}
-                            >
-                              <Text style={chipTextStyle(selected)}>{t(lang, scope)}</Text>
-                            </TouchableOpacity>
+                              questTheme={questTheme}
+                              selected={selected}
+                            />
                           );
                         })}
                       </View>
                       {ui.scope && !scopeOptions.includes(ui.scope) ? (
                         <View style={pendStyles.chipRow}>
-                          <TouchableOpacity
-                            onPress={() => setScope(i, '')}
-                            style={chipStyle(true)}
-                          >
-                            <Text style={chipTextStyle(true)}>{ui.scope}</Text>
-                          </TouchableOpacity>
+                          <PendingChip label={ui.scope} legacyStyle={chipStyle(true)} legacyTextStyle={chipTextStyle(true)} onPress={() => setScope(i, '')} questTheme={questTheme} selected />
                         </View>
                       ) : null}
                       <View style={pendStyles.customActionRow}>
-                        <TextInput
+                        <PendingTextField
+                          questTheme={questTheme}
                           value={ui.customExerciseName ?? ''}
                           onChangeText={(value) => setCustomExercise(i, value)}
                           placeholder={t(lang, 'whatDidYouStudy')}
@@ -1746,13 +1883,14 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                           onSubmitEditing={() => addCustomAction(i, llmDomain)}
                           style={[compactInputStyle, { flex: 1 }]}
                         />
-                        <TouchableOpacity
+                        <PendingAction
+                          label={t(lang, 'addCustomAction')}
+                          legacyStyle={[pendStyles.addCustomBtn, { borderColor: questTheme.colors.primary, backgroundColor: questTheme.colors.chipSelectedBg }]}
+                          legacyTextStyle={[pendStyles.optionText, { color: questTheme.colors.primary }]}
                           onPress={() => addCustomAction(i, llmDomain)}
-                          style={[pendStyles.addCustomBtn, { borderColor: questTheme.colors.primary, backgroundColor: questTheme.colors.chipSelectedBg }]}
-                          activeOpacity={0.75}
-                        >
-                          <Text style={[pendStyles.optionText, { color: questTheme.colors.primary }]}>{t(lang, 'addCustomAction')}</Text>
-                        </TouchableOpacity>
+                          questTheme={questTheme}
+                          variant="secondary"
+                        />
                       </View>
                     </>
                   ) : null}
@@ -1764,15 +1902,15 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                           const value = typeof item.value === 'number' ? item.value : null;
                           const selected = ui.durationMinutes === value;
                           return (
-                            <TouchableOpacity
+                            <PendingChip
                               key={item.id}
+                              label={value == null ? t(lang, 'scSkip') : `${value}`}
+                              legacyStyle={chipStyle(selected)}
+                              legacyTextStyle={chipTextStyle(selected)}
                               onPress={() => setDuration(i, value)}
-                              style={chipStyle(selected)}
-                            >
-                              <Text style={chipTextStyle(selected)}>
-                                {value == null ? t(lang, 'scSkip') : `${value}`}
-                              </Text>
-                            </TouchableOpacity>
+                              questTheme={questTheme}
+                              selected={selected}
+                            />
                           );
                         })}
                       </View>
@@ -1786,13 +1924,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                           const value = Number(item.value);
                           const selected = ui.qualityRating === value;
                           return (
-                            <TouchableOpacity
-                              key={item.id}
-                              onPress={() => setQuality(i, value)}
-                              style={chipStyle(selected)}
-                            >
-                              <Text style={chipTextStyle(selected)}>{value}</Text>
-                            </TouchableOpacity>
+                            <PendingChip key={item.id} label={String(value)} legacyStyle={chipStyle(selected)} legacyTextStyle={chipTextStyle(selected)} onPress={() => setQuality(i, value)} questTheme={questTheme} selected={selected} />
                           );
                         })}
                       </View>
@@ -1806,13 +1938,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                           const value = Number(item.value);
                           const selected = ui.rpe === value;
                           return (
-                            <TouchableOpacity
-                              key={item.id}
-                              onPress={() => setRpe(i, value)}
-                              style={chipStyle(selected)}
-                            >
-                              <Text style={chipTextStyle(selected)}>{value}</Text>
-                            </TouchableOpacity>
+                            <PendingChip key={item.id} label={String(value)} legacyStyle={chipStyle(selected)} legacyTextStyle={chipTextStyle(selected)} onPress={() => setRpe(i, value)} questTheme={questTheme} selected={selected} />
                           );
                         })}
                       </View>
@@ -1838,30 +1964,25 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
         ]}
       >
         {recordableCount > 0 ? (
-          <TouchableOpacity
-            onPress={handleConfirm}
+          <PendingAction
             disabled={confirming}
-            accessibilityState={{ busy: confirming, disabled: confirming }}
-            style={[
-              pendStyles.confirmBtn,
-              v11TodayEnabled ? pendStyles.v11ConfirmBtn : null,
-              {
-                backgroundColor: confirming ? questTheme.colors.disabledBg : questTheme.colors.primary,
-                borderRadius: questTheme.radius.sm,
-              },
-            ]}
-            activeOpacity={0.8}
-          >
-            <Text style={[pendStyles.confirmText, { color: confirming ? questTheme.colors.disabledText : questTheme.colors.primaryText }]}>
-              {t(lang, confirming ? 'savingRecord' : 'scEntryConfirm')}
-            </Text>
-          </TouchableOpacity>
+            label={t(lang, confirming ? 'savingRecord' : 'scEntryConfirm')}
+            legacyStyle={[pendStyles.confirmBtn, { backgroundColor: confirming ? questTheme.colors.disabledBg : questTheme.colors.primary, borderRadius: questTheme.radius.sm }]}
+            legacyTextStyle={[pendStyles.confirmText, { color: confirming ? questTheme.colors.disabledText : questTheme.colors.primaryText }]}
+            loading={confirming}
+            onPress={handleConfirm}
+            questTheme={questTheme}
+            variant="primary"
+          />
         ) : null}
-        <TouchableOpacity onPress={onDismiss} style={pendStyles.ignoreBtn} activeOpacity={0.7}>
-          <Text style={[pendStyles.ignoreText, { color: questTheme.colors.textMuted }]}>
-            {t(lang, 'scEntryIgnore')}
-          </Text>
-        </TouchableOpacity>
+        <PendingAction
+          label={t(lang, 'scEntryIgnore')}
+          legacyStyle={pendStyles.ignoreBtn}
+          legacyTextStyle={[pendStyles.ignoreText, { color: questTheme.colors.textMuted }]}
+          onPress={onDismiss}
+          questTheme={questTheme}
+          variant="secondary"
+        />
       </WebView>
     </CapturePendingSurface>
   );

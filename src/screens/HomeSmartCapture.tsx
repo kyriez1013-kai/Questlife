@@ -31,6 +31,12 @@ import HomeCapturePending from './HomeCapturePending';
 import { confirmAction } from '../utils/confirm';
 import { buildFallbackEntriesFromRawText } from '../utils/captureCompletion';
 import { isV11TodayEnabled } from '../v11/featureFlag';
+import { getV11ThemeTokens } from '../v11/tokens';
+import {
+  V11InlineButton,
+  V11SheetButton,
+  V11TextField,
+} from '../v11/components/V11SheetControls';
 
 const WebView = View as any;
 
@@ -122,6 +128,7 @@ function CaptureCard({
   expanded?: boolean;
 }) {
   const v11TodayEnabled = isV11TodayEnabled();
+  const v11Theme = getV11ThemeTokens(questTheme.id === 'cleanFocus' ? 'light' : 'dark');
   const insightType = capture.parsed?.insightType as InsightType | undefined;
   const insightText = capture.parsed?.insight?.[lang] ?? '';
 
@@ -132,15 +139,19 @@ function CaptureCard({
         <Text style={[styles.timestamp, { color: questTheme.colors.textSubtle }]}>
           {new Date(capture.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </Text>
-        <TouchableOpacity
-          onPress={() => onDelete(capture.id)}
-          style={[styles.deleteBtn, { borderColor: questTheme.colors.border }]}
-          activeOpacity={0.6}
-          accessibilityRole="button"
-          accessibilityLabel={t(lang, 'deleteRecord')}
-        >
-          <Text style={[styles.deleteBtnText, { color: questTheme.colors.textSubtle }]}>✕</Text>
-        </TouchableOpacity>
+        {v11TodayEnabled ? (
+          <V11InlineButton label={t(lang, 'delete')} onPress={() => onDelete(capture.id)} theme={v11Theme} tone="danger" />
+        ) : (
+          <TouchableOpacity
+            onPress={() => onDelete(capture.id)}
+            style={[styles.deleteBtn, { borderColor: questTheme.colors.border }]}
+            activeOpacity={0.6}
+            accessibilityRole="button"
+            accessibilityLabel={t(lang, 'deleteRecord')}
+          >
+            <Text style={[styles.deleteBtnText, { color: questTheme.colors.textSubtle }]}>✕</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Original text — always visible */}
@@ -174,15 +185,19 @@ function CaptureCard({
           <Text style={[styles.statusLabel, { color: questTheme.colors.warning }]}>
             {t(lang, 'scParseFailed')}
           </Text>
-          <TouchableOpacity
-            onPress={() => onRetry(capture.id)}
-            style={[styles.retryBtn, { borderColor: questTheme.colors.primary }]}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.retryBtnText, { color: questTheme.colors.primary }]}>
-              {t(lang, 'scRetry')}
-            </Text>
-          </TouchableOpacity>
+          {v11TodayEnabled ? (
+            <V11InlineButton label={t(lang, 'scRetry')} onPress={() => onRetry(capture.id)} theme={v11Theme} />
+          ) : (
+            <TouchableOpacity
+              onPress={() => onRetry(capture.id)}
+              style={[styles.retryBtn, { borderColor: questTheme.colors.primary }]}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.retryBtnText, { color: questTheme.colors.primary }]}>
+                {t(lang, 'scRetry')}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
     </>
@@ -232,6 +247,7 @@ export default function HomeSmartCapture() {
   const lang = getLanguage(data.settings.language ?? data.settings.preferredLanguage);
   const questTheme = getQuestTheme(data.settings.selectedThemeId);
   const v11TodayEnabled = isV11TodayEnabled();
+  const v11Theme = getV11ThemeTokens(questTheme.id === 'cleanFocus' ? 'light' : 'dark');
 
   const [inputText, setInputText]         = useState('');
   const [isPosting, setIsPosting]         = useState(false);
@@ -507,7 +523,31 @@ export default function HomeSmartCapture() {
 
   // ── Render ────────────────────────────────────────────────────────────────
 
-  const composer = (
+  const composer = v11TodayEnabled ? (
+    <View style={styles.inputRow}>
+      <V11TextField
+        accessibilityHint={greeting || undefined}
+        accessibilityLabel={t(lang, 'scPlaceholder')}
+        disabled={isPosting}
+        onChangeText={setInputText}
+        onSubmitEditing={handleSend}
+        placeholder={t(lang, 'scPlaceholder')}
+        returnKeyType="send"
+        style={{ flex: 1 }}
+        theme={v11Theme}
+        value={inputText}
+      />
+      <V11SheetButton
+        disabled={isPosting || !inputText.trim()}
+        label={t(lang, 'scSend')}
+        loading={isPosting}
+        onPress={handleSend}
+        style={styles.sendBtn}
+        theme={v11Theme}
+        variant="primary"
+      />
+    </View>
+  ) : (
     <View style={styles.inputRow}>
       <QuestInput
         questTheme={questTheme}
@@ -568,6 +608,32 @@ export default function HomeSmartCapture() {
           {todayCaptures.map((capture) => renderCapture(capture, recentExpanded))}
 
           <View style={[styles.recentActions, { gap: questTheme.spacing.tight, marginTop: questTheme.spacing.tight }]}>
+            {v11TodayEnabled ? (
+              <>
+                {recentVisible ? (
+                  <>
+                    <V11SheetButton
+                      label={t(lang, recentExpanded ? 'collapseRecentRecord' : 'expandRecentRecord')}
+                      onPress={() => setRecentExpanded((value) => !value)}
+                      theme={v11Theme}
+                      variant="secondary"
+                    />
+                    <V11SheetButton label={t(lang, 'hideRecentRecord')} onPress={() => setRecentVisible(false)} theme={v11Theme} variant="secondary" />
+                  </>
+                ) : (
+                  <V11SheetButton label={t(lang, 'showRecentRecord')} onPress={() => setRecentVisible(true)} theme={v11Theme} variant="secondary" />
+                )}
+                {hasHistory ? (
+                  <V11SheetButton
+                    label={t(lang, 'openActivityHistory').replace('{n}', String(allCaptures.length))}
+                    onPress={() => setHistoryVisible(true)}
+                    theme={v11Theme}
+                    variant="secondary"
+                  />
+                ) : null}
+              </>
+            ) : (
+              <>
             {recentVisible ? (
               <>
                 <QuestButton
@@ -599,6 +665,8 @@ export default function HomeSmartCapture() {
                 onPress={() => setHistoryVisible(true)}
               />
             ) : null}
+              </>
+            )}
           </View>
         </View>
       )}
