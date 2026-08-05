@@ -82,6 +82,7 @@ import type {
   V11IntegratedUtilityAction,
 } from '../v11-stage2-rebaseline/V11IntegratedTodaySurface';
 import V11Stage2ProductionSheet from '../v11-stage2-rebaseline/V11Stage2ProductionSheet';
+import V11RecordProgressForm from '../components/today/V11RecordProgressForm';
 import { getV11ThemeTokens } from '../v11/tokens';
 
 const WebView = View as any;
@@ -3099,586 +3100,100 @@ export default function HomeScreen() {
           dataSet={v11TodayEnabled ? { 'v11-form': 'record', 'v11-rebaseline-role': 'today-sheet-form' } : undefined}
         >
 
-        <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'executionLog')}</Text>
-        <View style={styles.chipsRow}>
-          {[
-            { value: 'skill' as const, label: t(lang, 'logSkill') },
-            { value: 'schedule' as const, label: t(lang, 'logSchedule') },
-            { value: 'custom' as const, label: t(lang, 'customLog') },
-          ].map((opt) => {
-            const on = logType === opt.value;
-            return (
-              <TouchableOpacity
-                key={opt.value}
-                onPress={() => {
-                  setLogType(opt.value);
-                  if (opt.value === 'schedule') {
-                    const first = todayScheduleBlocks[0];
-                    setScheduleBlockId(first?.id ?? null);
-                    setSkillId(first?.linkedSkillId ?? data.skills[0]?.id ?? null);
-                    if (first) setMinutes(String(first.plannedMinutes));
-                  }
-                }}
-                style={[
-                  styles.chip,
-                  v11TodayEnabled && { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.border },
-                  on && { backgroundColor: accent, borderColor: accent },
-                ]}
-              >
-                <Text style={[styles.chipText, { color: questTheme.colors.text }, on && { color: questTheme.colors.primaryText, fontWeight: '700' }]}>{opt.label}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {logType === 'schedule' ? (
-          <>
-            <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'todaysSchedule')}</Text>
-            <View style={styles.chipsRow}>
-              {todayScheduleBlocks.length === 0 ? (
-                <Text style={[styles.empty, { color: questTheme.colors.textMuted, backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>
-                  {t(lang, 'noScheduleToday')}
-                </Text>
-              ) : todayScheduleBlocks.map((block) => {
-                const on = scheduleBlockId === block.id;
-                return (
-                  <TouchableOpacity
-                    key={block.id}
-                    onPress={() => {
-                      setScheduleBlockId(block.id);
-                      setSkillId(block.linkedSkillId ?? null);
-                      setMinutes(String(block.plannedMinutes));
-                    }}
-                    style={[
-                      styles.chip,
-                      v11TodayEnabled && { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.border },
-                      on && { backgroundColor: accent, borderColor: accent },
-                    ]}
-                  >
-                    <Text style={[styles.chipText, { color: questTheme.colors.text }, on && { color: questTheme.colors.primaryText, fontWeight: '700' }]}>
-                      {block.startTime} {block.title}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </>
-        ) : null}
-
-        {logType !== 'custom' ? <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'selectSkill')}</Text> : null}
-        <View style={styles.chipsRow}>
-          {logType !== 'custom' && data.skills.map((s) => {
-            const on = s.id === skillId;
-            const cat = catOf(s.id);
-            return (
-              <TouchableOpacity
-                key={s.id}
-                onPress={() => setSkillId(s.id)}
-                style={[styles.chip, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.border }, on && { backgroundColor: s.color ?? accent, borderColor: s.color ?? accent }]}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
-                  <QuestEntityIcon icon={s.icon} systemIcon={getSkillSemanticIcon(s)} color={s.color} questTheme={questTheme} size="sm" />
-                  <Text style={[styles.chipText, { color: questTheme.colors.text }, on && { color: questTheme.colors.primaryText, fontWeight: '700' }]}>
-                    {cat ? `${cat.name} → ` : ''}{s.name}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        <View style={[
-          styles.predictionBox,
-          v11TodayEnabled ? styles.v11FlatSection : null,
-          { backgroundColor: v11TodayEnabled ? 'transparent' : questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border },
-        ]}>
-          <TouchableOpacity style={styles.modalSectionHeader} onPress={() => setShowPrediction((value) => !value)} activeOpacity={0.75}>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.minimumLabel, { color: questTheme.colors.text }]}>{t(lang, 'sessionPrediction')}</Text>
-              <Text style={[styles.planReason, { color: questTheme.colors.textMuted }]}>{t(lang, 'predictionOptional')}</Text>
-            </View>
-            <Text style={[styles.modalToggleText, { color: accent }]}>
-              {showPrediction ? t(lang, 'skipPrediction') : t(lang, v11TodayEnabled ? 'detailedPrediction' : 'predictionOptional')}
-            </Text>
-          </TouchableOpacity>
-
-          {showPrediction && modalPredictionSchema.showDuration ? (
-            <>
-              <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>
-                {modalIsStrength ? t(lang, 'sessionDurationOptional') : t(lang, 'predictedMinutes')}
-              </Text>
-              <QuestInput
-                questTheme={questTheme}
-                value={predictedMinutes}
-                onChangeText={setPredictedMinutes}
-                keyboardType="number-pad"
-                placeholder="45"
-              />
-            </>
-          ) : null}
-
-          {showPrediction && modalPredictionSchema.showTargetValue && !modalIsStrength ? (
-            <>
-              <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'targetValueLog')}</Text>
-              <QuestInput
-                questTheme={questTheme}
-                value={predictedValue}
-                onChangeText={setPredictedValue}
-                keyboardType="decimal-pad"
-                placeholder="95"
-              />
-            </>
-          ) : null}
-
-          {showPrediction && modalIsStrength ? (
-            <TouchableOpacity style={[styles.modalMiniToggle, { borderColor: questTheme.colors.border }]} onPress={() => setShowDetailedPrediction((value) => !value)}>
-              <Text style={[styles.modalMiniToggleText, { color: accent }]}>
-                {showDetailedPrediction ? t(lang, 'hideAdvancedFields') : t(lang, 'detailedPrediction')}
-              </Text>
-            </TouchableOpacity>
-          ) : null}
-
-          {showPrediction && modalPredictionSchema.showStrength && showDetailedPrediction ? (
-            <>
-              <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'expectedWorkingWeight')}</Text>
-              <View style={styles.timeRow}>
-                <QuestInput questTheme={questTheme} value={predictedStrengthWeight} onChangeText={setPredictedStrengthWeight} keyboardType="decimal-pad" placeholder="75" style={{ flex: 1 }} />
-                <QuestInput questTheme={questTheme} value={predictedStrengthReps} onChangeText={setPredictedStrengthReps} keyboardType="number-pad" placeholder={t(lang, 'expectedReps')} style={{ flex: 1 }} />
-                <QuestInput questTheme={questTheme} value={predictedStrengthSets} onChangeText={setPredictedStrengthSets} keyboardType="number-pad" placeholder={t(lang, 'expectedSets')} style={{ flex: 1 }} />
-              </View>
-              <QuestInput questTheme={questTheme} value={predictedStrengthRpe} onChangeText={setPredictedStrengthRpe} keyboardType="decimal-pad" placeholder={t(lang, 'expectedRPE')} />
-            </>
-          ) : null}
-
-          {showPrediction && modalPredictionSchema.showQuality ? (
-            <>
-              <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'optionalQuality')}</Text>
-              <View style={styles.qRow}>
-                {QUALITY_OPTIONS.map((q) => {
-                  const on = predictedQuality === q.value;
-                  return (
-                    <TouchableOpacity
-                      key={q.value}
-                      onPress={() => setPredictedQuality(on ? null : q.value)}
-                      style={[
-                        styles.qBox,
-                        { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.border },
-                        on && { borderColor: accent, backgroundColor: questTheme.colors.primarySoft },
-                      ]}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={[styles.qEmoji, { color: questTheme.colors.text }]}>{q.value}</Text>
-                      <Text style={[styles.qLabel, { color: questTheme.colors.textMuted }, on && { color: questTheme.colors.text, fontWeight: '800' }]}>{qualityLabel(lang, q.value)}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </>
-          ) : null}
-        </View>
-
-        <View style={styles.modalSectionHeader}>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.minimumLabel, { color: questTheme.colors.text }]}>{t(lang, 'actualRecord')}</Text>
-            <Text style={[styles.planReason, { color: questTheme.colors.textMuted }]}>{t(lang, 'recordedWithoutPrediction')}</Text>
-          </View>
-          <TouchableOpacity style={[styles.modalMiniToggle, { borderColor: questTheme.colors.border }]} onPress={() => setShowAdvancedFields((value) => !value)}>
-            <Text style={[styles.modalMiniToggleText, { color: accent }]}>
-              {showAdvancedFields ? t(lang, 'hideAdvancedFields') : t(lang, 'showAdvancedFields')}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {modalIsStrength ? (
-          <View style={[styles.chipsRow, { marginTop: 8 }]}>
-            {[
-              { value: 'simple' as const, label: t(lang, 'simpleStrengthLog') },
-              { value: 'session' as const, label: t(lang, 'trainingSessionLog') },
-            ].map((opt) => {
-              const on = strengthLogMode === opt.value;
-              return (
-                <TouchableOpacity
-                  key={opt.value}
-                  onPress={() => setStrengthLogMode(opt.value)}
-                  style={[styles.chip, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.border }, on && { backgroundColor: accent, borderColor: accent }]}
-                >
-                  <Text style={[styles.chipText, { color: questTheme.colors.text }, on && { color: questTheme.colors.primaryText, fontWeight: '700' }]}>{opt.label}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        ) : null}
-
-        <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>
-          {modalIsStrength ? t(lang, 'sessionDurationOptional') : t(lang, 'actualMinutes')}
-        </Text>
-        <QuestInput
+        <V11RecordProgressForm
+          accent={accent}
+          amountAdded={amountAdded}
+          binaryCompleted={binaryCompleted}
+          categories={data.categories}
+          completedCurriculumItemIds={completedCurriculumItemIds}
+          difficulty={difficulty}
+          emotionalCost={emotionalCost}
+          exerciseEntries={exerciseEntries}
+          frequencyCompleted={frequencyCompleted}
+          lang={lang}
+          logType={logType}
+          mentalCost={mentalCost}
+          minutes={minutes}
+          newCurrentAmount={newCurrentAmount}
+          newCurrentValue={newCurrentValue}
+          note={note}
+          onAmountAddedChange={setAmountAdded}
+          onBinaryCompletedChange={setBinaryCompleted}
+          onCompletedCurriculumItemIdsChange={setCompletedCurriculumItemIds}
+          onDifficultyChange={setDifficulty}
+          onEmotionalCostChange={setEmotionalCost}
+          onExerciseEntriesChange={setExerciseEntries}
+          onFrequencyCompletedChange={setFrequencyCompleted}
+          onLogTypeChange={(value) => {
+            setLogType(value);
+            if (value === 'schedule') {
+              const first = todayScheduleBlocks[0];
+              setScheduleBlockId(first?.id ?? null);
+              setSkillId(first?.linkedSkillId ?? data.skills[0]?.id ?? null);
+              if (first) setMinutes(String(first.plannedMinutes));
+            }
+          }}
+          onMentalCostChange={setMentalCost}
+          onMinutesChange={setMinutes}
+          onNewCurrentAmountChange={setNewCurrentAmount}
+          onNewCurrentValueChange={setNewCurrentValue}
+          onNoteChange={setNote}
+          onPerformanceValueChange={setPerformanceValue}
+          onPhysicalCostChange={setPhysicalCost}
+          onPredictedMinutesChange={setPredictedMinutes}
+          onPredictedQualityChange={setPredictedQuality}
+          onPredictedStrengthRepsChange={setPredictedStrengthReps}
+          onPredictedStrengthRpeChange={setPredictedStrengthRpe}
+          onPredictedStrengthSetsChange={setPredictedStrengthSets}
+          onPredictedStrengthWeightChange={setPredictedStrengthWeight}
+          onPredictedValueChange={setPredictedValue}
+          onQualityChange={setQuality}
+          onQualitativeSummaryChange={setQualitativeSummary}
+          onScheduleBlockSelect={(block) => {
+            setScheduleBlockId(block.id);
+            setSkillId(block.linkedSkillId ?? null);
+            setMinutes(String(block.plannedMinutes));
+          }}
+          onSchemaValuesChange={setSchemaValues}
+          onSessionTypeChange={setSessionType}
+          onShowAdvancedFieldsChange={setShowAdvancedFields}
+          onShowDetailedPredictionChange={setShowDetailedPrediction}
+          onShowPredictionChange={setShowPrediction}
+          onSkillSelect={setSkillId}
+          onStateValueChange={setStateValue}
+          onStrengthLogModeChange={setStrengthLogMode}
+          onStrengthRepsChange={setStrengthReps}
+          onStrengthRpeChange={setStrengthRpe}
+          onStrengthSetsChange={setStrengthSets}
+          onStrengthWeightChange={setStrengthWeight}
+          performanceValue={performanceValue}
+          physicalCost={physicalCost}
+          predictedMinutes={predictedMinutes}
+          predictedQuality={predictedQuality}
+          predictedStrengthReps={predictedStrengthReps}
+          predictedStrengthRpe={predictedStrengthRpe}
+          predictedStrengthSets={predictedStrengthSets}
+          predictedStrengthWeight={predictedStrengthWeight}
+          predictedValue={predictedValue}
+          quality={quality}
+          qualitativeSummary={qualitativeSummary}
           questTheme={questTheme}
-          value={minutes}
-          onChangeText={setMinutes}
-          keyboardType="number-pad"
-          placeholder="30"
-          returnKeyType="done"
-          onSubmitEditing={Keyboard.dismiss}
-          blurOnSubmit
-        />
-
-        <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'optionalQuality')}</Text>
-        <View style={styles.qRow}>
-          {QUALITY_OPTIONS.map((q) => {
-            const on = quality === q.value;
-            return (
-              <TouchableOpacity
-                key={q.value}
-                onPress={() => setQuality(on ? null : q.value)} // 再点一次取消
-                style={[styles.qBox, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.border }, on && { borderColor: accent, backgroundColor: questTheme.colors.primarySoft }]}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.qEmoji, { color: questTheme.colors.text }]}>{q.value}</Text>
-                <Text style={[styles.qLabel, { color: questTheme.colors.textMuted }, on && { color: questTheme.colors.text, fontWeight: '800' }]}>{qualityLabel(lang, q.value)}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {showAdvancedFields ? (
-          <>
-            <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'difficulty')}</Text>
-            <View style={styles.qRow}>
-              {QUALITY_OPTIONS.map((q) => {
-                const on = difficulty === q.value;
-                return (
-                  <TouchableOpacity
-                    key={q.value}
-                    onPress={() => setDifficulty(on ? null : q.value)}
-                    style={[styles.qBox, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.border }, on && { borderColor: accent, backgroundColor: questTheme.colors.primarySoft }]}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.qEmoji, { color: questTheme.colors.text }]}>{q.value}</Text>
-                    <Text style={[styles.qLabel, { color: questTheme.colors.textMuted }, on && { color: questTheme.colors.text, fontWeight: '800' }]}>{qualityLabel(lang, q.value)}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            {[['mentalCost', mentalCost, setMentalCost], ['physicalCost', physicalCost, setPhysicalCost], ['emotionalCost', emotionalCost, setEmotionalCost]].map(([key, value, setter]) => (
-              <View key={key as string}>
-                <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, key as string)}</Text>
-                <View style={styles.qRow}>
-                  {QUALITY_OPTIONS.map((q) => {
-                    const on = value === q.value;
-                    return (
-                      <TouchableOpacity
-                        key={q.value}
-                        onPress={() => (setter as React.Dispatch<React.SetStateAction<Quality | null>>)(on ? null : q.value)}
-                        style={[styles.qBox, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.border }, on && { borderColor: accent, backgroundColor: questTheme.colors.primarySoft }]}
-                        activeOpacity={0.7}
-                      >
-                        <Text style={[styles.qEmoji, { color: questTheme.colors.text }]}>{q.value}</Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-            ))}
-          </>
-        ) : null}
-
-        {(() => {
-          const selectedSkill = data.skills.find((s) => s.id === skillId);
-          const rawSchemaFields = getRecordingFieldsForSkill(selectedSkill);
-          if (!selectedSkill || logType === 'custom' || rawSchemaFields.length === 0) return null;
-          const quickKeys = modalIsStrength
-            ? new Set(['weight', 'sets', 'reps', 'quality'])
-            : new Set(['durationMinutes', 'quality', 'wordCount', 'amount']);
-          const schemaFields = showAdvancedFields
-            ? rawSchemaFields
-            : rawSchemaFields.filter((field) => field.required || quickKeys.has(field.key)).slice(0, 4);
-          const setSchemaValue = (key: string, value: string | number | boolean) => {
-            setSchemaValues((current) => ({ ...current, [key]: value }));
-          };
-          const renderField = (field: DomainRecordingField) => {
-            const label = lang === 'en' ? field.label : field.labelZh;
-            const value = schemaValues[field.key];
-            if (field.type === 'select') {
-              return (
-                <View key={field.key}>
-                  <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{label}</Text>
-                  <View style={styles.chipsRow}>
-                    {(field.options || []).map((option) => {
-                      const on = value === option.value;
-                      return (
-                        <TouchableOpacity
-                          key={option.value}
-                          onPress={() => setSchemaValue(field.key, option.value)}
-                          style={[styles.chip, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.border }, on && { backgroundColor: accent, borderColor: accent }]}
-                        >
-                          <Text style={[styles.chipText, { color: questTheme.colors.text }, on && { color: questTheme.colors.primaryText }]}>{lang === 'en' ? option.label : option.labelZh}</Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                </View>
-              );
-            }
-            if (field.type === 'rating') {
-              const max = field.key === 'rpe' ? 10 : 5;
-              return (
-                <View key={field.key}>
-                  <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{label}</Text>
-                  <View style={styles.qRow}>
-                    {Array.from({ length: max }, (_, index) => index + 1).map((rating) => {
-                      const on = Number(value) === rating;
-                      return (
-                        <TouchableOpacity
-                          key={rating}
-                          onPress={() => setSchemaValue(field.key, rating)}
-                          style={[styles.qBox, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.border }, on && { borderColor: accent, backgroundColor: questTheme.colors.primarySoft }]}
-                        >
-                          <Text style={[styles.qEmoji, { color: questTheme.colors.text }]}>{rating}</Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                </View>
-              );
-            }
-            if (field.type === 'boolean') {
-              const on = Boolean(value);
-              return (
-                <TouchableOpacity key={field.key} style={styles.curriculumRow} onPress={() => setSchemaValue(field.key, !on)}>
-                  <Text style={styles.curriculumCheck}>{on ? '✓' : '○'}</Text>
-                  <Text style={[styles.planReason, { color: questTheme.colors.text }]}>{label}</Text>
-                </TouchableOpacity>
-              );
-            }
-            return (
-              <View key={field.key}>
-                <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{label}{field.unit ? ` (${field.unit})` : ''}</Text>
-                <QuestInput
-                  questTheme={questTheme}
-                  value={value == null ? '' : String(value)}
-                  onChangeText={(text) => setSchemaValue(field.key, field.type === 'number' || field.type === 'duration' ? text : text)}
-                  keyboardType={field.type === 'number' || field.type === 'duration' ? 'decimal-pad' : 'default'}
-                  placeholder={field.defaultValue == null ? label : String(field.defaultValue)}
-                  style={field.type === 'text' ? { minHeight: 58, textAlignVertical: 'top' } : undefined}
-                  multiline={field.type === 'text'}
-                />
-              </View>
-            );
-          };
-          return (
-            <View style={[styles.progressUpdateBox, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}>
-              <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'domainTemplate')}</Text>
-              <Text style={[styles.planReason, { color: questTheme.colors.textMuted }]}>
-                {showAdvancedFields ? t(lang, 'advancedFields') : t(lang, 'quickLog')}
-              </Text>
-              {schemaFields.map(renderField)}
-            </View>
-          );
-        })()}
-
-        {modalIsStrength && strengthLogMode === 'session' ? (
-          <View style={[styles.progressUpdateBox, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}>
-            <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'trainingSessionLog')}</Text>
-            <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'sessionType')}</Text>
-            <View style={styles.chipsRow}>
-              {['push', 'pull', 'legs', 'upper', 'lower', 'full_body', 'custom'].map((value) => {
-                const on = sessionType === value;
-                return (
-                  <TouchableOpacity
-                    key={value}
-                    onPress={() => setSessionType(value)}
-                    style={[styles.chip, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.border }, on && { backgroundColor: accent, borderColor: accent }]}
-                  >
-                    <Text style={[styles.chipText, { color: questTheme.colors.text }, on && { color: questTheme.colors.primaryText, fontWeight: '700' }]}>{value.replace('_', ' ')}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-            {exerciseEntries.slice(0, 5).map((entry, index) => (
-              <View key={entry.id} style={[styles.exerciseEntryCard, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.border }]}>
-                <View style={styles.modalSectionHeader}>
-                  <Text style={[styles.minimumLabel, { color: questTheme.colors.text }]}>{t(lang, 'exerciseName')} {index + 1}</Text>
-                  {exerciseEntries.length > 1 ? (
-                    <TouchableOpacity onPress={() => setExerciseEntries((current) => current.filter((item) => item.id !== entry.id))}>
-                      <Text style={[styles.modalMiniToggleText, { color: questTheme.colors.danger }]}>{t(lang, 'delete')}</Text>
-                    </TouchableOpacity>
-                  ) : null}
-                </View>
-                <QuestInput
-                  questTheme={questTheme}
-                  value={entry.exerciseName}
-                  onChangeText={(text) => setExerciseEntries((current) => current.map((item) => item.id === entry.id ? { ...item, exerciseName: text } : item))}
-                  placeholder={t(lang, 'exerciseName')}
-                />
-                <View style={styles.timeRow}>
-                  <QuestInput questTheme={questTheme} value={entry.weight} onChangeText={(text) => setExerciseEntries((current) => current.map((item) => item.id === entry.id ? { ...item, weight: text } : item))} keyboardType="decimal-pad" placeholder={t(lang, 'actualWorkingWeight')} style={{ flex: 1 }} />
-                  <QuestInput questTheme={questTheme} value={entry.sets} onChangeText={(text) => setExerciseEntries((current) => current.map((item) => item.id === entry.id ? { ...item, sets: text } : item))} keyboardType="number-pad" placeholder={t(lang, 'actualSets')} style={{ flex: 1 }} />
-                  <QuestInput questTheme={questTheme} value={entry.reps} onChangeText={(text) => setExerciseEntries((current) => current.map((item) => item.id === entry.id ? { ...item, reps: text } : item))} keyboardType="number-pad" placeholder={t(lang, 'actualReps')} style={{ flex: 1 }} />
-                </View>
-                {showAdvancedFields ? (
-                  <QuestInput
-                    questTheme={questTheme}
-                    value={entry.rpe}
-                    onChangeText={(text) => setExerciseEntries((current) => current.map((item) => item.id === entry.id ? { ...item, rpe: text } : item))}
-                    keyboardType="decimal-pad"
-                    placeholder={t(lang, 'actualRPE')}
-                  />
-                ) : null}
-              </View>
-            ))}
-            {exerciseEntries.length < 5 ? (
-              <QuestButton
-                questTheme={questTheme}
-                variant="secondary"
-                icon="plus"
-                label={t(lang, 'addExercise')}
-                onPress={() => setExerciseEntries((current) => [...current, { id: `exercise-${Date.now()}`, exerciseName: '', weight: '', sets: '3', reps: '', rpe: '', note: '' }])}
-                style={{ marginTop: 10 }}
-              />
-            ) : null}
-          </View>
-        ) : null}
-
-        {(() => {
-          const selectedSkill = data.skills.find((s) => s.id === skillId);
-          if (!selectedSkill || logType === 'custom') return null;
-          const progressType = selectedSkill.metricConfig?.metricType ?? selectedSkill.progressType ?? 'time_based';
-          const checklistItems = selectedSkill.metricConfig?.checklistItems ?? selectedSkill.curriculumItems ?? [];
-          return (
-            <View style={[styles.progressUpdateBox, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}>
-              <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{modalIsStrength ? t(lang, 'actualPerformance') : t(lang, 'progressUpdate')}</Text>
-              {progressType === 'time_based' ? (
-                <Text style={styles.planReason}>
-                  {t(lang, 'metricDescTime')}{'\n'}{t(lang, 'appliedToProgress')}: +{minutes || 0} {t(lang, 'minutes')}
-                </Text>
-              ) : progressType === 'target_value' ? (
-                <>
-                  <Text style={styles.planReason}>{t(lang, 'metricDescTarget')}</Text>
-                  <Text style={styles.planReason}>
-                    {(selectedSkill.metricConfig?.currentValue ?? selectedSkill.currentValue ?? 0)}{selectedSkill.metricConfig?.unit ?? selectedSkill.unit ?? ''} / {(selectedSkill.metricConfig?.targetValue ?? selectedSkill.targetValue ?? 0)}{selectedSkill.metricConfig?.unit ?? selectedSkill.unit ?? ''}
-                  </Text>
-                  <QuestInput
-                    questTheme={questTheme}
-                    value={newCurrentValue}
-                    onChangeText={setNewCurrentValue}
-                    keyboardType="decimal-pad"
-                    placeholder={t(lang, 'newCurrentValue')}
-                  />
-                  {modalIsStrength && strengthLogMode === 'simple' ? (
-                    <View style={styles.timeRow}>
-                      <QuestInput questTheme={questTheme} value={strengthWeight} onChangeText={setStrengthWeight} keyboardType="decimal-pad" placeholder={t(lang, 'actualWorkingWeight')} style={{ flex: 1 }} />
-                      <QuestInput questTheme={questTheme} value={strengthReps} onChangeText={setStrengthReps} keyboardType="number-pad" placeholder={t(lang, 'actualReps')} style={{ flex: 1 }} />
-                      <QuestInput questTheme={questTheme} value={strengthSets} onChangeText={setStrengthSets} keyboardType="number-pad" placeholder={t(lang, 'actualSets')} style={{ flex: 1 }} />
-                    </View>
-                  ) : null}
-                </>
-              ) : progressType === 'frequency' ? (
-                <TouchableOpacity style={styles.curriculumRow} onPress={() => setFrequencyCompleted((value) => !value)}>
-                  <Text style={styles.curriculumCheck}>{frequencyCompleted ? '✓' : '○'}</Text>
-                  <Text style={styles.planReason}>{t(lang, 'metricDescFrequency')}</Text>
-                </TouchableOpacity>
-              ) : progressType === 'curriculum' || progressType === 'checklist' ? (
-                <>
-                  <Text style={styles.planReason}>{t(lang, 'metricDescChecklist')}</Text>
-                  {checklistItems.length === 0 ? (
-                    <Text style={styles.planReason}>{t(lang, 'noProgressItems')}</Text>
-                  ) : (
-                    checklistItems.map((item) => {
-                      const checked = completedCurriculumItemIds.includes(item.id);
-                      return (
-                        <TouchableOpacity
-                          key={item.id}
-                          style={styles.curriculumRow}
-                          onPress={() => setCompletedCurriculumItemIds((ids) => (
-                            checked ? ids.filter((id) => id !== item.id) : [...ids, item.id]
-                          ))}
-                        >
-                          <Text style={styles.curriculumCheck}>{checked || item.completed ? '✓' : '○'}</Text>
-                          <Text style={styles.planReason}>{item.title}</Text>
-                        </TouchableOpacity>
-                      );
-                    })
-                  )}
-                </>
-              ) : progressType === 'performance_log' ? (
-                <>
-                  <Text style={styles.planReason}>{t(lang, 'metricDescPerformance')}</Text>
-                  {!modalIsStrength ? (
-                    <QuestInput questTheme={questTheme} value={performanceValue} onChangeText={setPerformanceValue} keyboardType="decimal-pad" placeholder={t(lang, 'performanceValue')} />
-                  ) : null}
-                  {selectedSkill.metricConfig?.performanceType === 'strength' && strengthLogMode === 'simple' ? (
-                    <View style={styles.timeRow}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'actualWorkingWeight')}</Text>
-                        <QuestInput questTheme={questTheme} value={strengthWeight} onChangeText={setStrengthWeight} keyboardType="decimal-pad" placeholder="75" />
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'actualReps')}</Text>
-                        <QuestInput questTheme={questTheme} value={strengthReps} onChangeText={setStrengthReps} keyboardType="number-pad" placeholder="5" />
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'actualSets')}</Text>
-                        <QuestInput questTheme={questTheme} value={strengthSets} onChangeText={setStrengthSets} keyboardType="number-pad" placeholder="3" />
-                      </View>
-                    </View>
-                  ) : null}
-                  <QuestInput questTheme={questTheme} value={strengthRpe} onChangeText={setStrengthRpe} keyboardType="decimal-pad" placeholder={t(lang, 'actualRPE')} />
-                </>
-              ) : progressType === 'quality_score' ? (
-                <Text style={styles.planReason}>{t(lang, 'metricDescQuality')}{'\n'}{t(lang, 'qualityScore')}: {quality ? `${quality}/5` : t(lang, 'quality')}</Text>
-              ) : progressType === 'state_based' ? (
-                <>
-                  <Text style={styles.planReason}>{t(lang, 'metricDescState')}</Text>
-                  <QuestInput questTheme={questTheme} value={stateValue} onChangeText={setStateValue} keyboardType="decimal-pad" placeholder={t(lang, 'stateMetric')} />
-                </>
-              ) : progressType === 'money_based' ? (
-                <>
-                  <Text style={styles.planReason}>{t(lang, 'metricDescMoney')}</Text>
-                  <View style={styles.timeRow}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.label}>{t(lang, 'amountAdded')}</Text>
-                      <QuestInput questTheme={questTheme} value={amountAdded} onChangeText={setAmountAdded} keyboardType="decimal-pad" placeholder="100" />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.label}>{t(lang, 'newCurrentAmount')}</Text>
-                      <QuestInput questTheme={questTheme} value={newCurrentAmount} onChangeText={setNewCurrentAmount} keyboardType="decimal-pad" placeholder="500" />
-                    </View>
-                  </View>
-                </>
-              ) : progressType === 'binary' ? (
-                <TouchableOpacity style={styles.curriculumRow} onPress={() => setBinaryCompleted((value) => !value)}>
-                  <Text style={styles.curriculumCheck}>{binaryCompleted ? '✓' : '○'}</Text>
-                  <Text style={styles.planReason}>{t(lang, 'metricDescBinary')}</Text>
-                </TouchableOpacity>
-              ) : progressType === 'qualitative' ? (
-                <>
-                  <Text style={styles.planReason}>{t(lang, 'metricDescQualitative')}</Text>
-                  <QuestInput
-                    questTheme={questTheme}
-                    value={qualitativeSummary}
-                    onChangeText={setQualitativeSummary}
-                    style={{ height: 70, textAlignVertical: 'top' }}
-                    multiline
-                    placeholder={t(lang, 'qualitativeSummary')}
-                  />
-                </>
-              ) : (
-                <Text style={styles.planReason}>{t(lang, 'noNumericProgress')}</Text>
-              )}
-            </View>
-          );
-        })()}
-
-        <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'noteOptional')}</Text>
-        <QuestInput
-          questTheme={questTheme}
-          value={note}
-          onChangeText={setNote}
-          style={{ height: 80, textAlignVertical: 'top' }}
-          multiline
-          placeholder={t(lang, 'notePlaceholder')}
+          scheduleBlockId={scheduleBlockId}
+          schemaValues={schemaValues}
+          sessionType={sessionType}
+          showAdvancedFields={showAdvancedFields}
+          showDetailedPrediction={showDetailedPrediction}
+          showPrediction={showPrediction}
+          skillId={skillId}
+          skills={data.skills}
+          stateValue={stateValue}
+          strengthLogMode={strengthLogMode}
+          strengthReps={strengthReps}
+          strengthRpe={strengthRpe}
+          strengthSets={strengthSets}
+          strengthWeight={strengthWeight}
+          todayScheduleBlocks={todayScheduleBlocks}
+          useV11={v11TodayEnabled}
         />
 
         </WebView>
