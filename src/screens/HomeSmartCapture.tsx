@@ -33,10 +33,12 @@ import { buildFallbackEntriesFromRawText } from '../utils/captureCompletion';
 import { isV11TodayEnabled } from '../v11/featureFlag';
 import { getV11ThemeTokens } from '../v11/tokens';
 import {
+  V11ComposerAction,
   V11InlineButton,
   V11SheetButton,
   V11TextField,
 } from '../v11/components/V11SheetControls';
+import V11RebaselineIcon from '../v11-stage2-rebaseline/V11RebaselineIcon';
 
 const WebView = View as any;
 
@@ -255,7 +257,9 @@ export default function HomeSmartCapture() {
   const [recentVisible, setRecentVisible] = useState(true);
   const [recentExpanded, setRecentExpanded] = useState(true);
   const [historyVisible, setHistoryVisible] = useState(false);
+  const [captureInputHeight, setCaptureInputHeight] = useState(68);
   const greetingRequestRef                = useRef(0);
+  const captureParseRequestRef            = useRef(new Map<string, number>());
   const activeCaptureHistory = useMemo(() => (
     (data.rawCaptures || []).filter((capture) => captureHasLiveContext(capture, data.executionLogs || []))
   ), [data.rawCaptures, data.executionLogs]);
@@ -272,6 +276,9 @@ export default function HomeSmartCapture() {
   // ── Async parse helper ────────────────────────────────────────────────────
 
   const triggerParse = useCallback(async (captureId: string, captureText: string) => {
+    const requestId = (captureParseRequestRef.current.get(captureId) ?? 0) + 1;
+    captureParseRequestRef.current.set(captureId, requestId);
+    const isCurrentRequest = () => captureParseRequestRef.current.get(captureId) === requestId;
     // 1. Recent capture history (raw, for cross-link detection)
     const history = activeCaptureHistory
       .filter((c) => c.parseStatus === 'done' && c.id !== captureId)
@@ -350,6 +357,7 @@ export default function HomeSmartCapture() {
         skillHistory,
         ...(debugParse ? { debugParse: true } : {}),
       });
+      if (!isCurrentRequest()) return;
       if (result.ok) {
         if (debugParse) {
           console.log('[parse result final]', JSON.stringify({
@@ -384,6 +392,7 @@ export default function HomeSmartCapture() {
         updateRawCapture(captureId, { parseStatus: 'failed' });
       }
     } catch {
+      if (!isCurrentRequest()) return;
       updateRawCapture(captureId, { parseStatus: 'failed' });
     }
   }, [activeCaptureHistory, data.skills, data.categories, data.executionLogs, updateRawCapture]);
@@ -459,6 +468,10 @@ export default function HomeSmartCapture() {
       confirmText: t(lang, 'delete'),
       destructive: true,
       onConfirm: () => {
+        captureParseRequestRef.current.set(
+          captureId,
+          (captureParseRequestRef.current.get(captureId) ?? 0) + 1,
+        );
         const linkedCount = (data.executionLogs || []).filter((log) => log.structuredData?.sourceCaptureId === captureId).length;
         if (linkedCount <= 0) {
           deleteRawCapture(captureId);
@@ -524,29 +537,45 @@ export default function HomeSmartCapture() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   const composer = v11TodayEnabled ? (
-    <View style={styles.inputRow}>
-      <V11TextField
-        accessibilityHint={greeting || undefined}
-        accessibilityLabel={t(lang, 'scPlaceholder')}
-        disabled={isPosting}
-        onChangeText={setInputText}
-        onSubmitEditing={handleSend}
-        placeholder={t(lang, 'scPlaceholder')}
-        returnKeyType="send"
-        style={{ flex: 1 }}
-        theme={v11Theme}
-        value={inputText}
-      />
-      <V11SheetButton
-        disabled={isPosting || !inputText.trim()}
-        label={t(lang, 'scSend')}
-        loading={isPosting}
-        onPress={handleSend}
-        style={styles.sendBtn}
-        theme={v11Theme}
-        variant="primary"
-      />
-    </View>
+    <WebView dataSet={{ 'v11-rebaseline-role': 'capture-composer-form' }}>
+      <WebView dataSet={{ 'v11-rebaseline-role': 'capture-composer-row' }}>
+        <WebView dataSet={{ 'v11-rebaseline-role': 'capture-input-slot' }}>
+          <V11TextField
+            accessibilityHint={greeting || undefined}
+            accessibilityLabel={t(lang, 'scPlaceholder')}
+            disabled={isPosting}
+            multiline
+            onChangeText={(value) => {
+              setInputText(value);
+              if (!value.trim()) setCaptureInputHeight(68);
+            }}
+            onContentSizeChange={(event) => {
+              if (!inputText.trim()) {
+                setCaptureInputHeight(68);
+                return;
+              }
+              setCaptureInputHeight(Math.max(68, Math.min(156, event.nativeEvent.contentSize.height + 16)));
+            }}
+            placeholder={t(lang, 'scPlaceholder')}
+            scrollEnabled
+            style={{ height: inputText.trim() ? captureInputHeight : 68, minHeight: 68, maxHeight: 156, textAlignVertical: 'top' }}
+            theme={v11Theme}
+            value={inputText}
+          />
+        </WebView>
+        <WebView dataSet={{ 'v11-rebaseline-role': 'capture-action-slot' }}>
+          <V11ComposerAction
+            disabled={isPosting || !inputText.trim()}
+            label={t(lang, 'scSend')}
+            loading={isPosting}
+            onPress={handleSend}
+            theme={v11Theme}
+          >
+            <V11RebaselineIcon name="arrow" size={18} color={v11Theme.control.primaryActionText} />
+          </V11ComposerAction>
+        </WebView>
+      </WebView>
+    </WebView>
   ) : (
     <View style={styles.inputRow}>
       <QuestInput
