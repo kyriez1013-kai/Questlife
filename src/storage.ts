@@ -3,6 +3,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppData, DEFAULT_DATA, Category, UNCATEGORIZED_ID, Skill, TaskType, ProgressType, QuestModule, ModuleSkillLink, ExecutionLog, RescueLog, StateCheckIn, ContextLog, DecisionResult, PatternMemory } from './types';
 import { isPersistenceDebugEnabled, recordPersistenceTrace } from './utils/persistenceTrace';
+import { rebaseAppDataWrite } from './utils/persistenceConsistency';
 
 export const APP_DATA_STORAGE_KEY = 'questlife.v1';
 const KEY = APP_DATA_STORAGE_KEY;
@@ -432,27 +433,56 @@ export async function loadData(): Promise<AppData> {
 /** 同步写入: 立刻把当前 AppData 序列化并 setItem.
  *  调用者通常不需要 await — 用 fire-and-forget 即可,
  *  但写失败会在 console 显示 [persist] 错误. */
-export function persist(data: AppData, context: PersistContext = {}): Promise<void> {
+function commitPersist(data: AppData, context: PersistContext, previousPersisted?: AppData) {
+  const committed = context.base && previousPersisted
+    ? rebaseAppDataWrite(context.base, data, previousPersisted)
+    : data;
   recordPersistenceTrace({
     storageKey: KEY,
-    operation: context.operation || 'setItem',
+    operation: context.base && previousPersisted ? 'rebase_and_set' : (context.operation || 'setItem'),
     source: context.source,
     caller: context.caller,
     hydrationStatus: context.hydrationStatus,
-    previousPersisted: readCurrentWebDataForTrace(),
+    previousPersisted,
     base: context.base,
-    next: data,
+    next: committed,
   });
-  return AsyncStorage.setItem(KEY, JSON.stringify(data))
-    .then(() => {
+  return committed;
+}
+
+let nativePersistQueue: Promise<AppData> = Promise.resolve(DEFAULT_DATA);
+
+export function persist(data: AppData, context: PersistContext = {}): Promise<AppData> {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const previousPersisted = parseStoredData(window.localStorage.getItem(KEY));
+      const committed = commitPersist(data, context, previousPersisted);
+      window.localStorage.setItem(KEY, JSON.stringify(committed));
       console.log(
-        `[persist] saved: ${data.categories.length} categories, ${(data.modules || []).length} modules, ${(data.moduleSkillLinks || []).length} links, ${data.skills.length} skills, ${data.actions.length} actions, ${data.scheduleBlocks.length} schedule blocks, ${(data.rescueLogs || []).length} rescue logs, ${(data.stateCheckIns || []).length} state check-ins`
+        `[persist] saved: ${committed.categories.length} categories, ${(committed.modules || []).length} modules, ${(committed.moduleSkillLinks || []).length} links, ${committed.skills.length} skills, ${committed.actions.length} actions, ${committed.scheduleBlocks.length} schedule blocks, ${(committed.rescueLogs || []).length} rescue logs, ${(committed.stateCheckIns || []).length} state check-ins`
       );
-    })
-    .catch((e) => {
-      console.warn('[persist] save FAILED — data may be lost on reload!', e);
-      throw e;
-    });
+      return Promise.resolve(committed);
+    } catch (error) {
+      console.warn('[persist] save FAILED — data may be lost on reload!', error);
+      return Promise.reject(error);
+    }
+  }
+
+  nativePersistQueue = nativePersistQueue.then(async () => {
+    const previousPersisted = parseStoredData(await AsyncStorage.getItem(KEY));
+    const committed = commitPersist(data, context, previousPersisted);
+    await AsyncStorage.setItem(KEY, JSON.stringify(committed));
+    return committed;
+  }).then((committed) => {
+    console.log(
+      `[persist] saved: ${committed.categories.length} categories, ${(committed.modules || []).length} modules, ${(committed.moduleSkillLinks || []).length} links, ${committed.skills.length} skills, ${committed.actions.length} actions, ${committed.scheduleBlocks.length} schedule blocks, ${(committed.rescueLogs || []).length} rescue logs, ${(committed.stateCheckIns || []).length} state check-ins`
+    );
+    return committed;
+  }).catch((e) => {
+    console.warn('[persist] save FAILED — data may be lost on reload!', e);
+    throw e;
+  });
+  return nativePersistQueue;
 }
 
 /** 用于完全清空 (调试用) */

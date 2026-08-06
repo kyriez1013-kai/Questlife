@@ -18,6 +18,7 @@ import { buildDashboardPreferencesForPreset, normalizeDashboardPreferences } fro
 import { compactDecisionResults } from './utils/decisionMemory';
 import { mergePatternCandidates as mergePatternCandidateList } from './utils/patternMemory';
 import { installPersistenceDebugBridge } from './utils/persistenceTrace';
+import { shouldPersistStoreMutation } from './utils/persistenceConsistency';
 
 function metricTypeForAnalytics(skill?: Skill) {
   return skill?.metricConfig?.metricType ?? skill?.progressType;
@@ -295,7 +296,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const caller = new Error().stack?.split('\n').slice(2, 5).join(' | ');
     setData((d) => {
       const next = fn(d);
-      if (loadedRef.current) {
+      if (shouldPersistStoreMutation(loadedRef.current)) {
         // fire-and-forget; 内部已有 catch + console 报警
         persist(next, {
           base: d,
@@ -303,21 +304,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           caller,
           operation: 'mutation',
           hydrationStatus: 'hydrated',
-        });
+        }).then((committed) => {
+          if (committed !== next) {
+            setData((current) => current === next ? committed : current);
+          }
+        }).catch(() => {});
       }
       return next;
     });
   }, []);
 
-  // 兜底: 万一某处直接 setData 而没走 mutate, 也写一遍.
+  // Data mutations persist through mutate(); this effect only queues server sync.
   useEffect(() => {
     if (loadedRef.current) {
-      persist(data, {
-        source: 'store.effect_fallback',
-        operation: 'state_effect',
-        hydrationStatus: 'hydrated',
-      });
-      // 本地落盘后再排队一次防抖的服务器同步 (见 syncService.ts 的触发模型说明).
       scheduleServerSync(data);
     }
   }, [data]);
@@ -328,6 +327,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     getStoreData: () => dataRef.current,
     readPersistedData: readPersistedDataForDebug,
   }), []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== 'questlife.v1' || !event.newValue || !loadedRef.current) return;
+      loadData().then((latest) => {
+        const integrity = validateAppDataIntegrity(latest);
+        setData(integrity.ok ? latest : repairAppDataIntegrity(latest));
+      }).catch((error) => console.warn('[persist] cross-tab reload failed', error));
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   const addGoal: Ctx['addGoal'] = useCallback((g) => {
     const goal: Goal = {
