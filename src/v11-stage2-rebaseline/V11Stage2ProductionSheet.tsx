@@ -32,6 +32,7 @@ export default function V11Stage2ProductionSheet({
   children,
   closeLabel,
   footer,
+  minHeight = 350,
   onClose,
   reducedMotion,
   sheet = 'production',
@@ -42,6 +43,7 @@ export default function V11Stage2ProductionSheet({
   children: React.ReactNode;
   closeLabel: string;
   footer?: React.ReactNode;
+  minHeight?: number;
   onClose: () => void;
   reducedMotion: boolean;
   sheet?: 'capture' | 'record' | 'state' | 'production';
@@ -129,7 +131,7 @@ export default function V11Stage2ProductionSheet({
               paddingBottom: 0,
               gap: 0,
             }}
-            minHeight={350}
+            minHeight={minHeight}
             reducedMotion={reducedMotion}
             stage="S2"
             style={{ maxWidth: 680 }}

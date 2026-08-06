@@ -644,6 +644,36 @@
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--v11-rebaseline-primary) 72%, transparent);
 }
 
+[data-v11-rebaseline-role="record-detail"] {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+[data-v11-rebaseline-role="record-detail-summary"] {
+  min-width: 0;
+  padding: 2px 0 16px;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--v11-rebaseline-text) 9%, transparent);
+}
+
+[data-v11-rebaseline-role="record-feedback"] {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+[data-v11-rebaseline-role="record-feedback-choices"] {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 [data-v11-rebaseline-role="utility-list"] {
   border-top: 1px solid color-mix(in srgb, var(--v11-rebaseline-text) 8%, transparent);
 }

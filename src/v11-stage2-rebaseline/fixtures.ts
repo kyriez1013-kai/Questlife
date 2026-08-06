@@ -22,9 +22,12 @@ export type RebaselinePlanRow = {
 export type RebaselineExecutionRow = {
   id: string;
   titleKey: string;
+  titleText?: string;
   metaKey: string;
   resultKey: string;
   timeKey: string;
+  feedbackTextKey?: string;
+  initialFeedback?: 'useful' | 'not_useful';
 };
 
 export type RebaselineFixture = {
@@ -260,6 +263,8 @@ const recent: RebaselineExecutionRow[] = [
     metaKey: 'rebaselineBenchMeta',
     resultKey: 'rebaselineQualityFour',
     timeKey: 'rebaselineTimeMorning',
+    feedbackTextKey: 'rebaselineBenchExecutionFeedback',
+    initialFeedback: 'useful',
   },
   {
     id: 'fixture-execution-sql',
@@ -274,6 +279,8 @@ const recent: RebaselineExecutionRow[] = [
     metaKey: 'rebaselineWritingMeta',
     resultKey: 'rebaselineQualityThree',
     timeKey: 'rebaselineTuesday',
+    feedbackTextKey: 'rebaselineWritingExecutionFeedback',
+    initialFeedback: 'not_useful',
   },
 ];
 

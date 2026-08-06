@@ -18,6 +18,7 @@ import '../v11/v11-components.css';
 import './v11-stage2-rebaseline.css';
 import {
   buildRebaselineFixture,
+  type RebaselineExecutionRow,
   type RebaselineScenario,
 } from './fixtures';
 import V11Stage2RebaselineSheet, {
@@ -140,31 +141,59 @@ export default function V11Stage2RebaselineScreen() {
   const [pendingStateValue, setPendingStateValue] = useState<number | null>(null);
   const [stateSaveStatus, setStateSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [feedbackStatus, setFeedbackStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
-  const [captureSaved, setCaptureSaved] = useState(false);
+  const [savedCaptureText, setSavedCaptureText] = useState<string | null>(null);
+  const [selectedRecordId, setSelectedRecordId] = useState<string | null>(
+    query().get('recordId'),
+  );
+  const [deletedFixtureRecordIds, setDeletedFixtureRecordIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [recordFeedbackById, setRecordFeedbackById] = useState<Record<string, 'useful' | 'not_useful'>>(
+    () => Object.fromEntries(
+      buildRebaselineFixture(initialScenario()).recent
+        .filter((row) => row.initialFeedback)
+        .map((row) => [row.id, row.initialFeedback]),
+    ) as Record<string, 'useful' | 'not_useful'>,
+  );
+  const [recordFeedbackStatusById, setRecordFeedbackStatusById] = useState<Record<string, 'idle' | 'saving' | 'saved'>>({});
   const [stateRecordedAt, setStateRecordedAt] = useState<'fixture' | 'just_now' | null>(
     initialScenario() === 's0' ? null : 'fixture',
   );
   const stateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const closeStateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const recordFeedbackTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const instantTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fixture = useMemo(() => buildRebaselineFixture(scenario), [scenario]);
   const visibleRecent = useMemo(
     () => {
-      const requested = fixture.recent.slice(0, requestedHistoryCount(fixture.recent.length));
-      if (!captureSaved) return requested;
-      return [{
-        id: 'fixture-execution-capture-saved',
-        titleKey: 'rebaselineLatestRecord',
-        metaKey: 'rebaselineLatestRecordMeta',
-        resultKey: 'rebaselineQualityFour',
-        timeKey: 'rebaselineJustNow',
-      }, ...requested];
+      const rows: RebaselineExecutionRow[] = savedCaptureText
+        ? [{
+          id: 'fixture-execution-capture-saved',
+          titleKey: 'rebaselineLatestRecord',
+          titleText: savedCaptureText,
+          metaKey: 'rebaselineLatestRecordMeta',
+          resultKey: 'rebaselineQualityFour',
+          timeKey: 'rebaselineJustNow',
+        }, ...fixture.recent]
+        : [...fixture.recent];
+      const liveRows = rows.filter((row) => !deletedFixtureRecordIds.has(row.id));
+      const orderedRows = query().get('historyOrder') === 'reverse'
+        ? [...liveRows].reverse()
+        : liveRows;
+      return orderedRows.slice(0, requestedHistoryCount(orderedRows.length));
     },
-    [captureSaved, fixture.recent],
+    [deletedFixtureRecordIds, fixture.recent, savedCaptureText],
   );
-  const latestRecordKey = captureSaved ? 'rebaselineLatestRecord' : fixture.latestRecordKey;
-  const hasLatestRecord = visibleRecent.length > 0 && Boolean(latestRecordKey);
+  const latestRecord = visibleRecent[0] ?? null;
+  const hasLatestRecord = Boolean(latestRecord);
+  const selectedRecord = visibleRecent.find((row) => row.id === selectedRecordId) ?? null;
+  const recordFeedback = selectedRecordId
+    ? recordFeedbackById[selectedRecordId] ?? selectedRecord?.initialFeedback ?? null
+    : null;
+  const recordFeedbackStatus = selectedRecordId
+    ? recordFeedbackStatusById[selectedRecordId] ?? 'idle'
+    : 'idle';
   const calibratedDecision = useMemo(
     () => scenario === 's0' && stateValue != null
       ? buildRebaselineFixture('s1').decision
@@ -252,6 +281,27 @@ export default function V11Stage2RebaselineScreen() {
     }, 320);
   };
 
+  const selectRecordFeedback = (recordId: string, value: 'useful' | 'not_useful') => {
+    const existingTimer = recordFeedbackTimersRef.current[recordId];
+    if (existingTimer) clearTimeout(existingTimer);
+    setRecordFeedbackById((current) => ({ ...current, [recordId]: value }));
+    setRecordFeedbackStatusById((current) => ({ ...current, [recordId]: 'saving' }));
+    recordFeedbackTimersRef.current[recordId] = setTimeout(() => {
+      setRecordFeedbackStatusById((current) => ({ ...current, [recordId]: 'saved' }));
+      delete recordFeedbackTimersRef.current[recordId];
+    }, 320);
+  };
+
+  const deleteFixtureRecord = (recordId: string) => {
+    const confirmed = typeof window === 'undefined'
+      ? true
+      : window.confirm(t(language, 'rebaselineDeleteFixtureConfirm'));
+    if (!confirmed) return;
+    setDeletedFixtureRecordIds((current) => new Set([...current, recordId]));
+    setSelectedRecordId(null);
+    setSheet(null);
+  };
+
   const retryInstantRead = () => {
     if (instantTimerRef.current) clearTimeout(instantTimerRef.current);
     setInstantStatus('generating');
@@ -266,6 +316,7 @@ export default function V11Stage2RebaselineScreen() {
     if (stateTimerRef.current) clearTimeout(stateTimerRef.current);
     if (closeStateTimerRef.current) clearTimeout(closeStateTimerRef.current);
     if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    Object.values(recordFeedbackTimersRef.current).forEach(clearTimeout);
     if (instantTimerRef.current) clearTimeout(instantTimerRef.current);
   }, []);
 
@@ -439,8 +490,8 @@ export default function V11Stage2RebaselineScreen() {
                   lineHeight: 18,
                 }}
               >
-                {hasLatestRecord && latestRecordKey
-                  ? `${t(language, 'rebaselineLatestRecordLabel')} · ${t(language, latestRecordKey)} · ${t(language, captureSaved ? 'rebaselineJustNow' : 'rebaselineTimeMorning')}`
+                {latestRecord
+                  ? `${t(language, 'rebaselineLatestRecordLabel')} · ${latestRecord.titleText ?? t(language, latestRecord.titleKey)} · ${t(language, latestRecord.timeKey)}`
                   : t(language, 'rebaselineNoLatestRecord')}
               </Text>
               {hasLatestRecord ? (
@@ -499,7 +550,10 @@ export default function V11Stage2RebaselineScreen() {
                 <WebPressable
                   accessibilityRole="button"
                   dataSet={{ 'v11-rebaseline-role': 'direct-log' }}
-                  onPress={() => setSheet('record')}
+                  onPress={() => {
+                    setSelectedRecordId(latestRecord?.id ?? null);
+                    setSheet('record');
+                  }}
                 >
                   <V11RebaselineIcon name="add" size={15} color={theme.text.secondary} />
                   <Text style={{ color: theme.text.secondary, fontSize: 12, lineHeight: 18 }}>
@@ -825,17 +879,26 @@ export default function V11Stage2RebaselineScreen() {
         feedback={feedback}
         feedbackStatus={feedbackStatus}
         language={language}
-        onCaptureSaved={() => setCaptureSaved(true)}
+        onCaptureSaved={(rawText) => setSavedCaptureText(rawText)}
         onClose={() => {
           setSheet(null);
+          setSelectedRecordId(null);
           setStateSaveStatus('idle');
         }}
+        onDeleteRecord={deleteFixtureRecord}
         onDetailedState={() => setSheet('state-detail')}
         onFeedback={selectFeedback}
-        onOpenRecord={() => setSheet('record')}
+        onOpenRecord={(recordId) => {
+          setSelectedRecordId(recordId);
+          setSheet('record');
+        }}
+        onRecordFeedback={selectRecordFeedback}
         onState={selectState}
         recent={visibleRecent}
+        recordFeedback={recordFeedback}
+        recordFeedbackStatus={recordFeedbackStatus}
         reducedMotion={reducedMotion}
+        selectedRecordId={selectedRecordId}
         selectedState={pendingStateValue ?? reading}
         sheet={sheet}
         stateSaveStatus={stateSaveStatus}

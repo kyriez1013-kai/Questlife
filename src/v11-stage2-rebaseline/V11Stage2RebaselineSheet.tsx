@@ -15,6 +15,7 @@ import V11CalibrationRail from './V11CalibrationRail';
 import V11RebaselineIcon from './V11RebaselineIcon';
 import V11Stage2ProductionSheet from './V11Stage2ProductionSheet';
 import {
+  V11CategoricalChip,
   V11ComposerAction,
   V11InlineButton,
   V11StickySheetFooter,
@@ -42,10 +43,15 @@ type Props = {
   onClose: () => void;
   onDetailedState: () => void;
   onFeedback: (value: 'useful' | 'not_useful') => void;
-  onOpenRecord: () => void;
+  onDeleteRecord?: (recordId: string) => void;
+  onOpenRecord: (recordId: string) => void;
+  onRecordFeedback: (recordId: string, value: 'useful' | 'not_useful') => void;
   onState: (value: number) => void;
   recent: RebaselineExecutionRow[];
+  recordFeedback: 'useful' | 'not_useful' | null;
+  recordFeedbackStatus: 'idle' | 'saving' | 'saved';
   reducedMotion: boolean;
+  selectedRecordId: string | null;
   selectedState: number | null;
   sheet: RebaselineSheet;
   stateSaveStatus: 'idle' | 'saving' | 'saved' | 'error';
@@ -93,10 +99,15 @@ export default function V11Stage2RebaselineSheet({
   onClose,
   onDetailedState,
   onFeedback,
+  onDeleteRecord,
   onOpenRecord,
+  onRecordFeedback,
   onState,
   recent,
+  recordFeedback,
+  recordFeedbackStatus,
   reducedMotion,
+  selectedRecordId,
   selectedState,
   sheet,
   stateSaveStatus,
@@ -125,6 +136,7 @@ export default function V11Stage2RebaselineSheet({
     socialDrain: false,
   });
   const [detailNote, setDetailNote] = useState('');
+  const selectedRecord = recent.find((row) => row.id === selectedRecordId) ?? null;
 
   useEffect(() => {
     if (sheet !== 'state-detail') return;
@@ -466,6 +478,7 @@ export default function V11Stage2RebaselineSheet({
       closeLabel={t(language, 'close')}
       onClose={onClose}
       reducedMotion={reducedMotion}
+      minHeight={sheet === 'record' ? 220 : undefined}
       sheet={sheet === 'state'
           ? 'state'
           : sheet === 'record'
@@ -544,12 +557,12 @@ export default function V11Stage2RebaselineSheet({
                 accessibilityRole="button"
                 dataSet={{ 'v11-rebaseline-role': 'history-row' }}
                 key={row.id}
-                onPress={onOpenRecord}
+                onPress={() => onOpenRecord(row.id)}
               >
                 <V11RebaselineIcon name="activity" size={18} color={theme.glow.primary} />
                 <WebView style={{ flex: 1, minWidth: 0 }}>
                   <Text numberOfLines={2} style={{ flexShrink: 1, color: theme.text.primary, fontSize: 15, lineHeight: 21, fontWeight: '500' }}>
-                    {t(language, row.titleKey)}
+                    {row.titleText ?? t(language, row.titleKey)}
                   </Text>
                   <Text numberOfLines={2} style={{ color: theme.text.secondary, fontSize: 12, lineHeight: 18 }}>
                     {t(language, row.metaKey)} · {t(language, row.resultKey)}
@@ -564,21 +577,70 @@ export default function V11Stage2RebaselineSheet({
         ) : null}
 
         {sheet === 'record' ? (
-          <WebView dataSet={{ 'v11-rebaseline-role': 'history-row' }}>
-            <V11RebaselineIcon name="activity" size={18} color={theme.glow.primary} />
-            <WebView style={{ flex: 1, flexShrink: 1, minWidth: 0 }}>
-              <Text numberOfLines={2} style={{ flexShrink: 1, color: theme.text.primary, fontSize: 15, lineHeight: 21, fontWeight: '500' }}>
-                {t(language, 'rebaselineBenchPress')}
-              </Text>
-              <Text numberOfLines={2} style={{ flexShrink: 1, color: theme.text.secondary, fontSize: 12, lineHeight: 18 }}>
-                {t(language, 'rebaselineBenchMeta')} · {t(language, 'rebaselineQualityFour')}
-              </Text>
+          selectedRecord ? (
+            <WebView dataSet={{ 'v11-rebaseline-role': 'record-detail' }}>
+              <WebView dataSet={{ 'v11-rebaseline-role': 'record-detail-summary' }}>
+                <V11RebaselineIcon name="activity" size={18} color={theme.glow.primary} />
+                <WebView style={{ flex: 1, flexShrink: 1, minWidth: 0 }}>
+                  <Text numberOfLines={3} style={{ flexShrink: 1, color: theme.text.primary, fontSize: 17, lineHeight: 24, fontWeight: '500' }}>
+                    {selectedRecord.titleText ?? t(language, selectedRecord.titleKey)}
+                  </Text>
+                  <Text numberOfLines={3} style={{ flexShrink: 1, color: theme.text.secondary, fontSize: 12, lineHeight: 18 }}>
+                    {t(language, selectedRecord.metaKey)} · {t(language, selectedRecord.resultKey)}
+                  </Text>
+                </WebView>
+                <Text style={{ color: theme.text.metadata, fontSize: 11 }}>
+                  {t(language, selectedRecord.timeKey)}
+                </Text>
+              </WebView>
+
+              {selectedRecord.feedbackTextKey ? (
+                <WebView dataSet={{ 'v11-rebaseline-role': 'record-feedback' }}>
+                  <Text style={{ color: theme.text.metadata, fontSize: 10, lineHeight: 15, letterSpacing: 0.7 }}>
+                    {t(language, 'rebaselineExecutionFeedbackTitle')}
+                  </Text>
+                  <Text style={{ color: theme.text.primary, fontSize: 14, lineHeight: 21 }}>
+                    {t(language, selectedRecord.feedbackTextKey)}
+                  </Text>
+                  <Text style={{ color: theme.text.secondary, fontSize: 12, lineHeight: 18 }}>
+                    {t(language, 'rebaselineExecutionFeedbackQuestion')}
+                  </Text>
+                  <WebView dataSet={{ 'v11-rebaseline-role': 'record-feedback-choices' }}>
+                    {(['useful', 'not_useful'] as const).map((value) => (
+                      <V11CategoricalChip
+                        accessibilityRole="radio"
+                        key={value}
+                        label={t(language, value === 'useful' ? 'useful' : 'notUseful')}
+                        onPress={() => onRecordFeedback(selectedRecord.id, value)}
+                        selected={recordFeedback === value}
+                        theme={theme}
+                      />
+                    ))}
+                  </WebView>
+                  {recordFeedbackStatus !== 'idle' ? (
+                    <Text accessibilityLiveRegion="polite" style={{ color: theme.text.secondary, fontSize: 12, lineHeight: 18 }}>
+                      {t(language, recordFeedbackStatus === 'saving' ? 'feedbackSaving' : 'feedbackSaved')}
+                    </Text>
+                  ) : null}
+                </WebView>
+              ) : null}
+
+              {onDeleteRecord ? (
+                <V11InlineButton
+                  label={t(language, 'rebaselineDeleteFixtureRecord')}
+                  onPress={() => onDeleteRecord(selectedRecord.id)}
+                  theme={theme}
+                />
+              ) : null}
             </WebView>
-            <Text style={{ color: theme.text.metadata, fontSize: 11 }}>08:10</Text>
-          </WebView>
+          ) : (
+            <Text style={{ color: theme.text.secondary, fontSize: 13, lineHeight: 20 }}>
+              {t(language, 'rebaselineRecordUnavailable')}
+            </Text>
+          )
         ) : null}
 
-        {(sheet === 'decision' || sheet === 'record') ? (
+        {sheet === 'decision' ? (
           <WebView dataSet={{ 'v11-rebaseline-role': 'feedback-row' }}>
             {(['useful', 'not_useful'] as const).map((value) => (
               <WebPressable
