@@ -1430,6 +1430,18 @@
   ) !important;
 }
 
+[data-v11-rebaseline-role="overlay"][data-v11-sheet="record"] > [data-v11-component="material-frame"] {
+  min-height: min(
+    260px,
+    calc(
+      100dvh
+      - env(safe-area-inset-top, 0px)
+      - var(--v11-sheet-viewport-inset-top)
+      - max(8px, env(safe-area-inset-bottom, 0px))
+    )
+  ) !important;
+}
+
 [data-v11-rebaseline-role="overlay"] [data-v11-component="material-clip"] {
   box-sizing: border-box;
   height: 100%;
