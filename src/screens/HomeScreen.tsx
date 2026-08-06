@@ -2305,8 +2305,6 @@ export default function HomeScreen() {
           log.qualityRating ? `${t(lang, 'quality')} ${log.qualityRating}/5` : '',
           path,
         ].filter(Boolean).join(' · ');
-        const feedbackItem = buildPostSaveFeedback({ savedLogs: [log], data, lang }).items
-          .find((item) => item.logId === log.id);
         return {
           id: log.id,
           title: [displayName, metricSummary].filter(Boolean).join(' · '),
@@ -2318,13 +2316,20 @@ export default function HomeScreen() {
             hour: '2-digit',
             minute: '2-digit',
           }),
-          feedback: feedbackItem ? {
-            summary: t(lang, feedbackItem.summaryKey),
-            detail: t(lang, feedbackItem.nextActionKey),
-          } : undefined,
         };
       })
   ), [data, lang]);
+
+  const getV11ActivityRecordFeedback = useCallback((logId: string) => {
+    const log = (data.executionLogs || []).find((item) => item.id === logId);
+    if (!log) return undefined;
+    const feedbackItem = buildPostSaveFeedback({ savedLogs: [log], data, lang }).items
+      .find((item) => item.logId === logId);
+    return feedbackItem ? {
+      summary: t(lang, feedbackItem.summaryKey),
+      detail: t(lang, feedbackItem.nextActionKey),
+    } : undefined;
+  }, [data, lang]);
 
   const v11PlanPreview = v11PlanRows.length > 0
     ? [t(lang, 'todayPlan'), String(v11PlanRows.length), v11PlanRows[0].time, v11PlanRows[0].title]
@@ -3037,6 +3042,7 @@ export default function HomeScreen() {
           detailTitle={t(lang, 'actualLog')}
           emptyLabel={t(lang, 'activityHistoryEmpty')}
           feedbackTitle={t(lang, 'savedFeedbackTitle')}
+          getRecordFeedback={getV11ActivityRecordFeedback}
           historyTitle={t(lang, 'activityHistory')}
           loadMoreLabel={t(lang, 'loadMoreRecords')}
           onClose={closeV11ActivityHistory}

@@ -13,10 +13,6 @@ const PAGE_SIZE = 20;
 
 export type V11ActivityRecord = {
   id: string;
-  feedback?: {
-    detail: string;
-    summary: string;
-  };
   metadata?: string;
   note?: string;
   time: string;
@@ -29,6 +25,7 @@ type Props = {
   detailTitle: string;
   emptyLabel: string;
   feedbackTitle: string;
+  getRecordFeedback: (id: string) => { detail: string; summary: string } | undefined;
   historyTitle: string;
   loadMoreLabel: string;
   onClose: () => void;
@@ -44,6 +41,7 @@ export default function V11ActivityHistorySheet({
   detailTitle,
   emptyLabel,
   feedbackTitle,
+  getRecordFeedback,
   historyTitle,
   loadMoreLabel,
   onClose,
@@ -58,6 +56,10 @@ export default function V11ActivityHistorySheet({
   const selectedRecord = useMemo(
     () => records.find((record) => record.id === selectedRecordId),
     [records, selectedRecordId],
+  );
+  const selectedFeedback = useMemo(
+    () => selectedRecord ? getRecordFeedback(selectedRecord.id) : undefined,
+    [getRecordFeedback, selectedRecord],
   );
 
   useEffect(() => {
@@ -114,16 +116,16 @@ export default function V11ActivityHistorySheet({
             </Text>
           ) : null}
 
-          {selectedRecord.feedback ? (
+          {selectedFeedback ? (
             <WebView dataSet={{ 'v11-rebaseline-role': 'record-feedback' }}>
               <Text style={{ color: theme.text.metadata, fontSize: 10, lineHeight: 15, letterSpacing: 0.7 }}>
                 {feedbackTitle}
               </Text>
               <Text style={{ color: theme.text.primary, fontSize: 14, lineHeight: 21 }}>
-                {selectedRecord.feedback.summary}
+                {selectedFeedback.summary}
               </Text>
               <Text style={{ color: theme.text.secondary, fontSize: 12, lineHeight: 18 }}>
-                {selectedRecord.feedback.detail}
+                {selectedFeedback.detail}
               </Text>
             </WebView>
           ) : null}
