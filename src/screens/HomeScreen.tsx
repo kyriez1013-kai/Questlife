@@ -2311,6 +2311,7 @@ export default function HomeScreen() {
           id: log.id,
           title: [displayName, metricSummary].filter(Boolean).join(' · '),
           metadata: measurements || log.note,
+          note: measurements ? log.note : undefined,
           time: new Date(log.createdAt).toLocaleString([], {
             month: 'short',
             day: 'numeric',

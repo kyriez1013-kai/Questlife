@@ -18,6 +18,7 @@ export type V11ActivityRecord = {
     summary: string;
   };
   metadata?: string;
+  note?: string;
   time: string;
   title: string;
 };
@@ -106,6 +107,12 @@ export default function V11ActivityHistorySheet({
               {selectedRecord.time}
             </Text>
           </WebView>
+
+          {selectedRecord.note ? (
+            <Text style={{ color: theme.text.secondary, fontSize: 13, lineHeight: 20 }}>
+              {selectedRecord.note}
+            </Text>
+          ) : null}
 
           {selectedRecord.feedback ? (
             <WebView dataSet={{ 'v11-rebaseline-role': 'record-feedback' }}>
