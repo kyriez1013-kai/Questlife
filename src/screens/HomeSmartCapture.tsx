@@ -15,7 +15,7 @@
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
-  View, Text, TouchableOpacity, ActivityIndicator, StyleSheet,
+  View, Text, TouchableOpacity, ActivityIndicator, Platform, StyleSheet,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useStore } from '../store';
@@ -547,7 +547,17 @@ export default function HomeSmartCapture() {
             multiline
             onChangeText={(value) => {
               setInputText(value);
-              if (!value.trim()) setCaptureInputHeight(68);
+              if (!value.trim()) {
+                setCaptureInputHeight(68);
+                return;
+              }
+              if (Platform.OS === 'web' && typeof window !== 'undefined') {
+                window.requestAnimationFrame(() => {
+                  const input = document.getElementById('v11-live-capture-input');
+                  if (!input) return;
+                  setCaptureInputHeight(Math.max(68, Math.min(156, input.scrollHeight + 4)));
+                });
+              }
             }}
             onContentSizeChange={(event) => {
               if (!inputText.trim()) {
@@ -557,6 +567,7 @@ export default function HomeSmartCapture() {
               setCaptureInputHeight(Math.max(68, Math.min(156, event.nativeEvent.contentSize.height + 16)));
             }}
             placeholder={t(lang, 'scPlaceholder')}
+            nativeID="v11-live-capture-input"
             scrollEnabled
             style={{ height: inputText.trim() ? captureInputHeight : 68, minHeight: 68, maxHeight: 156, textAlignVertical: 'top' }}
             theme={v11Theme}
