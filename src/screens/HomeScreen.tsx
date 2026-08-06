@@ -83,7 +83,9 @@ import type {
 } from '../v11-stage2-rebaseline/V11IntegratedTodaySurface';
 import V11Stage2ProductionSheet from '../v11-stage2-rebaseline/V11Stage2ProductionSheet';
 import V11RecordProgressForm from '../components/today/V11RecordProgressForm';
+import V11ActivityHistorySheet, { V11ActivityRecord } from '../components/today/V11ActivityHistorySheet';
 import { getV11ThemeTokens } from '../v11/tokens';
+import { buildPostSaveFeedback } from '../utils/progressFeedback';
 import {
   V11CategoricalChip,
   V11DiscreteNumericRail,
@@ -523,6 +525,7 @@ export default function HomeScreen() {
   const [todayDecisionDetailsOpen, setTodayDecisionDetailsOpen] = useState(false);
   const [v11EvidenceExpanded, setV11EvidenceExpanded] = useState(false);
   const [v11CaptureOpen, setV11CaptureOpen] = useState(false);
+  const [v11ActivityHistoryOpen, setV11ActivityHistoryOpen] = useState(false);
   const v11TodayScrollRef = useRef<any>(null);
   const v11TodayScrollOffsetRef = useRef(0);
   const v11TodayScrollRestoreRef = useRef(0);
@@ -2072,6 +2075,16 @@ export default function HomeScreen() {
     restoreV11TodayScroll();
   }, [restoreV11TodayScroll]);
 
+  const openV11ActivityHistory = useCallback(() => {
+    rememberV11TodayScroll();
+    setV11ActivityHistoryOpen(true);
+  }, [rememberV11TodayScroll]);
+
+  const closeV11ActivityHistory = useCallback(() => {
+    setV11ActivityHistoryOpen(false);
+    restoreV11TodayScroll();
+  }, [restoreV11TodayScroll]);
+
   const openV11DecisionDetails = useCallback(() => {
     rememberV11TodayScroll();
     setTodayDecisionDetailsOpen(true);
@@ -2257,7 +2270,7 @@ export default function HomeScreen() {
         accessibilityLabel: `${t(lang, 'rebaselineLatestRecordLabel')} ${execution.title}`,
         title: execution.title,
         metadata: [execution.meta, execution.detail].filter(Boolean).join(' · '),
-        onPress: openV11Capture,
+        onPress: openV11ActivityHistory,
         onDelete: () => confirmDeleteTodayLog(execution.id),
       };
     }
@@ -2268,7 +2281,49 @@ export default function HomeScreen() {
       metadata: new Date(latestCapture.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       onPress: openV11Capture,
     };
-  }, [confirmDeleteTodayLog, data.executionLogs, data.rawCaptures, lang, openV11Capture, recentExecutionItems]);
+  }, [confirmDeleteTodayLog, data.executionLogs, data.rawCaptures, lang, openV11ActivityHistory, openV11Capture, recentExecutionItems]);
+
+  const v11ActivityRecords = useMemo<V11ActivityRecord[]>(() => (
+    (data.executionLogs || [])
+      .slice()
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map((log) => {
+        const skill = data.skills.find((item) => item.id === log.linkedSkillId);
+        const goal = data.categories.find((item) => item.id === log.linkedGoalId);
+        const module = (data.modules || []).find((item) => item.id === log.linkedModuleId);
+        const displayName = displayEntityName(
+          skill?.name ?? log.orphanedSkillName ?? log.title ?? `(${t(lang, 'deleted')})`,
+          lang,
+        );
+        const metricSummary = formatMetricUpdateSummary(log, skill, lang);
+        const path = [goal?.name, module?.name]
+          .filter(Boolean)
+          .map((name) => displayEntityName(name, lang))
+          .join(' / ');
+        const measurements = [
+          log.durationMinutes > 0 ? `${log.durationMinutes} ${t(lang, 'minutes')}` : '',
+          log.qualityRating ? `${t(lang, 'quality')} ${log.qualityRating}/5` : '',
+          path,
+        ].filter(Boolean).join(' · ');
+        const feedbackItem = buildPostSaveFeedback({ savedLogs: [log], data, lang }).items
+          .find((item) => item.logId === log.id);
+        return {
+          id: log.id,
+          title: [displayName, metricSummary].filter(Boolean).join(' · '),
+          metadata: measurements || log.note,
+          time: new Date(log.createdAt).toLocaleString([], {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
+          feedback: feedbackItem ? {
+            summary: t(lang, feedbackItem.summaryKey),
+            detail: t(lang, feedbackItem.nextActionKey),
+          } : undefined,
+        };
+      })
+  ), [data, lang]);
 
   const v11PlanPreview = v11PlanRows.length > 0
     ? [t(lang, 'todayPlan'), String(v11PlanRows.length), v11PlanRows[0].time, v11PlanRows[0].title]
@@ -2278,6 +2333,8 @@ export default function HomeScreen() {
 
   const v11PerformanceMode = v11CaptureOpen
     ? 'capture-open'
+    : v11ActivityHistoryOpen
+      ? 'activity-history-open'
     : stateModal
       ? 'state-open'
       : todayDecisionDetailsOpen
@@ -2960,6 +3017,7 @@ export default function HomeScreen() {
       </ScrollView>
 
       {v11TodayEnabled ? (
+        <>
         <V11Stage2ProductionSheet
           closeLabel={t(lang, 'cancel')}
           onClose={closeV11Capture}
@@ -2971,6 +3029,22 @@ export default function HomeScreen() {
         >
           <HomeSmartCapture />
         </V11Stage2ProductionSheet>
+
+        <V11ActivityHistorySheet
+          closeLabel={t(lang, 'closeActivityHistory')}
+          deleteLabel={t(lang, 'deleteRecord')}
+          detailTitle={t(lang, 'actualLog')}
+          emptyLabel={t(lang, 'activityHistoryEmpty')}
+          feedbackTitle={t(lang, 'savedFeedbackTitle')}
+          historyTitle={t(lang, 'activityHistory')}
+          loadMoreLabel={t(lang, 'loadMoreRecords')}
+          onClose={closeV11ActivityHistory}
+          onDeleteRecord={confirmDeleteTodayLog}
+          records={v11ActivityRecords}
+          theme={v11ThemeTokens}
+          visible={v11ActivityHistoryOpen}
+        />
+        </>
       ) : null}
 
       <TodayDecisionDetailsSheet
