@@ -257,12 +257,16 @@ export default function V11Stage2RebaselineSheet({
                   if (captureStatus !== 'idle') setCaptureStatus('idle');
                 }}
                 onContentSizeChange={(event) => {
+                  if (!captureText.trim()) {
+                    setCaptureInputHeight(68);
+                    return;
+                  }
                   const nextHeight = Math.max(68, Math.min(156, event.nativeEvent.contentSize.height + 16));
                   setCaptureInputHeight(nextHeight);
                 }}
                 placeholder={t(language, 'rebaselineCapturePlaceholder')}
                 scrollEnabled
-                style={{ height: captureInputHeight, minHeight: 68, maxHeight: 156, textAlignVertical: 'top' }}
+                style={{ height: captureText.trim() ? captureInputHeight : 68, minHeight: 68, maxHeight: 156, textAlignVertical: 'top' }}
                 theme={theme}
                 value={captureText}
               />
