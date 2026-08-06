@@ -148,6 +148,16 @@ export default function V11Stage2RebaselineSheet({
     captureRequestRef.current += 1;
   }, []);
 
+  useEffect(() => {
+    if (sheet === 'capture') return;
+    if (captureTimerRef.current) {
+      clearTimeout(captureTimerRef.current);
+      captureTimerRef.current = null;
+    }
+    captureRequestRef.current += 1;
+    setCaptureStatus('idle');
+  }, [sheet]);
+
   if (!sheet) return null;
 
   const logCaptureFixtureQa = (
