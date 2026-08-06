@@ -80,7 +80,7 @@ No API key, environment value, header or persisted user data is logged.
 
 ## Local Web Verification
 
-Verified against the newly exported local web bundle:
+Verified against local web bundle `index-bcefac3268cc2734938154cb88d8de14.js`:
 
 - `打了篮球`, `SQL 学习了 40 分钟`, and `卧推 82.5 kg，5 次，3 组` each remained paired with its own current raw text.
 - No previous bench summary leaked into any of those pending confirmations.
@@ -92,6 +92,20 @@ Verified against the newly exported local web bundle:
 - Bench and report-edit open their own feedback text and maintain independent selected values in the current fixture session.
 - Fixture delete closes the selected detail, updates history count and latest-record summary, and is restored on refresh as expected for explicitly non-persisted fixture data.
 - Decision/Instant Read feedback remains in its separate state path.
+- Empty and short Capture composer height measured 68 px; the three-line case grows within the 156 px cap.
+- Document width equalled viewport width at 320×667, 375×667, 393×852 and 1280×900 in dark/light checks.
+- Browser console contained no runtime errors. The only warning was Expo Notifications' existing web limitation for push-token listeners.
+
+Representative local screenshots:
+
+- `/private/tmp/questlife-v11-capture-empty-375-final.png`
+- `/private/tmp/questlife-v11-capture-loading-320.png`
+- `/private/tmp/questlife-v11-capture-pending-320.png`
+- `/private/tmp/questlife-v11-history-375.png`
+- `/private/tmp/questlife-v11-bench-feedback-375.png`
+- `/private/tmp/questlife-v11-sql-detail-light-393-compact.png`
+- `/private/tmp/questlife-v11-history-1280.png`
+- `/private/tmp/questlife-v11-capture-en-light-320-loaded.png`
 
 ## Unsupported and Unverified Items
 
@@ -99,4 +113,3 @@ Verified against the newly exported local web bundle:
 - Physical iPhone Safari keyboard and touch QA: **UNVERIFIED** in this pass.
 - Production API, Store write, persisted feedback and persisted delete: **UNVERIFIED** because this task explicitly forbids HomeScreen integration, push and deploy.
 - Fixture screenshots prove presentation and local request isolation only. They do not prove AI parsing or persistence.
-
