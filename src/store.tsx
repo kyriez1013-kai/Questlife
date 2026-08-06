@@ -5,7 +5,7 @@
 // 这样无论 App 后续是否被 kill / 刷新, 数据都已经落盘.
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { AppData, DEFAULT_DATA, Goal, Skill, Action, Category, UNCATEGORIZED_ID, ScheduleBlock, QuestModule, ModuleSkillLink, ExecutionLog, RescueLog, StateCheckIn, EffortUnit, ContributionLink, RawCapture, ContextLog, DecisionResult, PatternMemory, DashboardCardSize, DashboardPresetId, DashboardSurface, DashboardPreferences } from './types';
-import { loadData, persist, uid, today } from './storage';
+import { loadData, persist, readPersistedDataForDebug, uid, today } from './storage';
 import { scheduleSkillReminder, cancelSkillReminder, rescheduleAllReminders } from './notifications';
 import { calculateModuleProgress, calculatePredictionDelta, progressTypeForSkill, skillsForModule } from './progress';
 import { trackEvent } from './utils/analytics';
@@ -17,6 +17,7 @@ import { getLinkedExecutionLogIdsForCapture, removeDerivedForLogs } from './util
 import { buildDashboardPreferencesForPreset, normalizeDashboardPreferences } from './utils/dashboardCards';
 import { compactDecisionResults } from './utils/decisionMemory';
 import { mergePatternCandidates as mergePatternCandidateList } from './utils/patternMemory';
+import { installPersistenceDebugBridge } from './utils/persistenceTrace';
 
 function metricTypeForAnalytics(skill?: Skill) {
   return skill?.metricConfig?.metricType ?? skill?.progressType;
@@ -278,19 +279,31 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setData(repaired);
       setLoading(false);
       loadedRef.current = true;
-      if (!integrity.ok) persist(repaired);
+      if (!integrity.ok) persist(repaired, {
+        base: d,
+        source: 'store.hydration_repair',
+        operation: 'repair_after_load',
+        hydrationStatus: 'hydrated',
+      });
       // 启动后重新排所有技能提醒 (防系统清掉)
       rescheduleAllReminders(repaired.skills).catch((e) => console.warn('[notify] reschedule failed', e));
     });
   }, []);
 
   /** 通用 mutation helper: 同时更新 React state 和 AsyncStorage. */
-  const mutate = useCallback((fn: (d: AppData) => AppData) => {
+  const mutate = useCallback((fn: (d: AppData) => AppData, source = 'store.mutation') => {
+    const caller = new Error().stack?.split('\n').slice(2, 5).join(' | ');
     setData((d) => {
       const next = fn(d);
       if (loadedRef.current) {
         // fire-and-forget; 内部已有 catch + console 报警
-        persist(next);
+        persist(next, {
+          base: d,
+          source,
+          caller,
+          operation: 'mutation',
+          hydrationStatus: 'hydrated',
+        });
       }
       return next;
     });
@@ -299,11 +312,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   // 兜底: 万一某处直接 setData 而没走 mutate, 也写一遍.
   useEffect(() => {
     if (loadedRef.current) {
-      persist(data);
+      persist(data, {
+        source: 'store.effect_fallback',
+        operation: 'state_effect',
+        hydrationStatus: 'hydrated',
+      });
       // 本地落盘后再排队一次防抖的服务器同步 (见 syncService.ts 的触发模型说明).
       scheduleServerSync(data);
     }
   }, [data]);
+
+  const dataRef = useRef(data);
+  dataRef.current = data;
+  useEffect(() => installPersistenceDebugBridge({
+    getStoreData: () => dataRef.current,
+    readPersistedData: readPersistedDataForDebug,
+  }), []);
 
   const addGoal: Ctx['addGoal'] = useCallback((g) => {
     const goal: Goal = {

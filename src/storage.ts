@@ -2,8 +2,41 @@
 // Web 平台会自动 fallback 到 localStorage; iOS/Android 写到原生本地存储.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppData, DEFAULT_DATA, Category, UNCATEGORIZED_ID, Skill, TaskType, ProgressType, QuestModule, ModuleSkillLink, ExecutionLog, RescueLog, StateCheckIn, ContextLog, DecisionResult, PatternMemory } from './types';
+import { isPersistenceDebugEnabled, recordPersistenceTrace } from './utils/persistenceTrace';
 
-const KEY = 'questlife.v1';
+export const APP_DATA_STORAGE_KEY = 'questlife.v1';
+const KEY = APP_DATA_STORAGE_KEY;
+
+export type PersistContext = {
+  base?: AppData;
+  source?: string;
+  caller?: string;
+  operation?: string;
+  hydrationStatus?: 'loading' | 'hydrated' | 'unknown';
+};
+
+function parseStoredData(raw: string | null): AppData | undefined {
+  if (!raw) return undefined;
+  try {
+    return JSON.parse(raw) as AppData;
+  } catch {
+    return undefined;
+  }
+}
+
+function readCurrentWebDataForTrace() {
+  if (!isPersistenceDebugEnabled() || typeof window === 'undefined') return undefined;
+  try {
+    return parseStoredData(window.localStorage?.getItem(KEY));
+  } catch {
+    return undefined;
+  }
+}
+
+export async function readPersistedDataForDebug(): Promise<AppData | undefined> {
+  if (!isPersistenceDebugEnabled()) return undefined;
+  return parseStoredData(await AsyncStorage.getItem(KEY));
+}
 
 function inferTaskType(name: string): TaskType {
   const n = name.toLowerCase();
@@ -377,6 +410,15 @@ export async function loadData(): Promise<AppData> {
         predictionDelta,
       };
     });
+    recordPersistenceTrace({
+      storageKey: KEY,
+      operation: 'load',
+      source: 'storage.loadData',
+      hydrationStatus: 'loading',
+      previousPersisted: parsed as AppData,
+      base: parsed as AppData,
+      next: migrated,
+    });
     console.log(
       `[persist] loaded: ${migrated.categories.length} categories, ${migrated.modules.length} modules, ${migrated.moduleSkillLinks.length} links, ${migrated.skills.length} skills, ${migrated.actions.length} actions, ${migrated.scheduleBlocks.length} schedule blocks, ${migrated.rescueLogs.length} rescue logs, ${migrated.stateCheckIns.length} state check-ins`
     );
@@ -390,7 +432,17 @@ export async function loadData(): Promise<AppData> {
 /** 同步写入: 立刻把当前 AppData 序列化并 setItem.
  *  调用者通常不需要 await — 用 fire-and-forget 即可,
  *  但写失败会在 console 显示 [persist] 错误. */
-export function persist(data: AppData): Promise<void> {
+export function persist(data: AppData, context: PersistContext = {}): Promise<void> {
+  recordPersistenceTrace({
+    storageKey: KEY,
+    operation: context.operation || 'setItem',
+    source: context.source,
+    caller: context.caller,
+    hydrationStatus: context.hydrationStatus,
+    previousPersisted: readCurrentWebDataForTrace(),
+    base: context.base,
+    next: data,
+  });
   return AsyncStorage.setItem(KEY, JSON.stringify(data))
     .then(() => {
       console.log(
