@@ -143,6 +143,16 @@
   gap: 14px;
 }
 
+[data-v11-rebaseline-role="fixture-indicator"] {
+  min-height: 24px;
+  padding: 4px 8px;
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--v11-rebaseline-elevated) 62%, transparent);
+}
+
 [data-v11-rebaseline-role="context-line"],
 [data-v11-rebaseline-role="section-heading"],
 [data-v11-rebaseline-role="sheet-header"] {

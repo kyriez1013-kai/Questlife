@@ -38,7 +38,7 @@ type Props = {
   feedback: 'useful' | 'not_useful' | null;
   feedbackStatus: 'idle' | 'saving' | 'saved';
   language: Lang;
-  onCaptureSaved?: () => void;
+  onCaptureSaved?: (rawText: string) => void;
   onClose: () => void;
   onDetailedState: () => void;
   onFeedback: (value: 'useful' | 'not_useful') => void;
@@ -105,8 +105,9 @@ export default function V11Stage2RebaselineSheet({
   const theme = getV11ThemeTokens(themeMode);
   const [captureText, setCaptureText] = useState(initialCaptureText);
   const [captureStatus, setCaptureStatus] = useState<CaptureFlowStatus>(initialCaptureStatus);
-  const [captureInputHeight, setCaptureInputHeight] = useState(92);
+  const [captureInputHeight, setCaptureInputHeight] = useState(68);
   const captureTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const captureRequestRef = useRef(0);
   const [detailValues, setDetailValues] = useState<Record<string, number>>({
     overall: selectedState ?? 3,
     energy: 3,
@@ -132,23 +133,59 @@ export default function V11Stage2RebaselineSheet({
 
   useEffect(() => () => {
     if (captureTimerRef.current) clearTimeout(captureTimerRef.current);
+    captureRequestRef.current += 1;
   }, []);
 
   if (!sheet) return null;
 
+  const logCaptureFixtureQa = (
+    requestId: string,
+    rawText: string,
+    status: 'loading' | 'pending' | 'error',
+  ) => {
+    if (captureQuery().get('debugCapture') !== '1') return;
+    console.info('[v11-capture-fixture-qa]', JSON.stringify({
+      requestTimestamp: new Date().toISOString(),
+      submittedRawText: rawText,
+      endpoint: null,
+      httpStatus: null,
+      responseIdentifier: requestId,
+      fallbackUsed: false,
+      fixtureMode: true,
+      status,
+    }));
+  };
+
   const submitCapture = () => {
     if (!captureText.trim() || captureStatus === 'loading') return;
     if (captureTimerRef.current) clearTimeout(captureTimerRef.current);
+    const requestNumber = captureRequestRef.current + 1;
+    captureRequestRef.current = requestNumber;
+    const requestId = `fixture-capture-${requestNumber}`;
+    const requestText = captureText.trim();
     setCaptureStatus('loading');
+    logCaptureFixtureQa(requestId, requestText, 'loading');
     captureTimerRef.current = setTimeout(() => {
-      setCaptureStatus(captureQuery().get('captureResult') === 'error' ? 'error' : 'pending');
+      if (captureRequestRef.current !== requestNumber) return;
+      const nextStatus = captureQuery().get('captureResult') === 'error' ? 'error' : 'pending';
+      setCaptureStatus(nextStatus);
+      logCaptureFixtureQa(requestId, requestText, nextStatus);
     }, 640);
   };
 
   const retryCapture = () => {
     if (captureTimerRef.current) clearTimeout(captureTimerRef.current);
+    const requestNumber = captureRequestRef.current + 1;
+    captureRequestRef.current = requestNumber;
+    const requestId = `fixture-capture-${requestNumber}`;
+    const requestText = captureText.trim();
     setCaptureStatus('loading');
-    captureTimerRef.current = setTimeout(() => setCaptureStatus('pending'), 640);
+    logCaptureFixtureQa(requestId, requestText, 'loading');
+    captureTimerRef.current = setTimeout(() => {
+      if (captureRequestRef.current !== requestNumber) return;
+      setCaptureStatus('pending');
+      logCaptureFixtureQa(requestId, requestText, 'pending');
+    }, 640);
   };
 
   const stateLabels = ['veryBad', 'bad', 'average', 'good', 'great'];
@@ -170,7 +207,7 @@ export default function V11Stage2RebaselineSheet({
             onCancel={onClose}
             onSave={() => {
               setCaptureStatus('saved');
-              onCaptureSaved?.();
+              onCaptureSaved?.(captureText.trim());
             }}
             saveLabel={t(language, 'rebaselineCaptureConfirm')}
             theme={theme}
@@ -192,16 +229,18 @@ export default function V11Stage2RebaselineSheet({
                 disabled={captureStatus === 'loading'}
                 multiline
                 onChangeText={(value) => {
+                  if (captureTimerRef.current) clearTimeout(captureTimerRef.current);
+                  captureRequestRef.current += 1;
                   setCaptureText(value);
                   if (captureStatus !== 'idle') setCaptureStatus('idle');
                 }}
                 onContentSizeChange={(event) => {
-                  const nextHeight = Math.max(92, Math.min(156, event.nativeEvent.contentSize.height + 24));
+                  const nextHeight = Math.max(68, Math.min(156, event.nativeEvent.contentSize.height + 16));
                   setCaptureInputHeight(nextHeight);
                 }}
                 placeholder={t(language, 'rebaselineCapturePlaceholder')}
                 scrollEnabled
-                style={{ height: captureInputHeight, minHeight: 92, maxHeight: 156, textAlignVertical: 'top' }}
+                style={{ height: captureInputHeight, minHeight: 68, maxHeight: 156, textAlignVertical: 'top' }}
                 theme={theme}
                 value={captureText}
               />
@@ -248,7 +287,7 @@ export default function V11Stage2RebaselineSheet({
                 {t(language, 'rebaselineCapturePendingTitle')}
               </Text>
               <Text style={{ color: theme.text.secondary, fontSize: 13, lineHeight: 20 }}>
-                {t(language, 'rebaselineCapturePendingSummary')}
+                {t(language, 'rebaselineCaptureCurrentRaw')} · {captureText.trim()}
               </Text>
               <V11InlineButton
                 label={t(language, 'rebaselineCaptureEdit')}
