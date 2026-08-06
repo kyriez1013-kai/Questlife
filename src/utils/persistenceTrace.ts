@@ -204,6 +204,11 @@ function downloadJson(filename: string, value: unknown) {
   return true;
 }
 
+export function downloadPersistenceSnapshot(data: AppData, label = 'before-test') {
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  return downloadJson(`questlife-${label}-${stamp}.json`, data);
+}
+
 export function installPersistenceDebugBridge(input: {
   getStoreData: () => AppData;
   readPersistedData: () => Promise<AppData | undefined>;
@@ -232,8 +237,7 @@ export function installPersistenceDebugBridge(input: {
     downloadSnapshot: async (label = 'before-test') => {
       const persisted = await input.readPersistedData();
       if (!persisted) return false;
-      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-      return downloadJson(`questlife-${label}-${stamp}.json`, persisted);
+      return downloadPersistenceSnapshot(persisted, label);
     },
   };
   console.log('[persistence trace] debug bridge ready');

@@ -29,6 +29,7 @@ import V11Stage0Screen from './src/v11-stage0/V11Stage0Screen';
 import V11Stage1Screen from './src/v11-stage1/V11Stage1Screen';
 import V11Stage2RebaselineScreen from './src/v11-stage2-rebaseline/V11Stage2RebaselineScreen';
 import V11SheetControlFixtureScreen from './src/v11-stage2-rebaseline/V11SheetControlFixtureScreen';
+import PersistenceDebugPanel from './src/components/debug/PersistenceDebugPanel';
 
 const Tab = createBottomTabNavigator();
 const SkillsStack = createNativeStackNavigator();
@@ -300,6 +301,7 @@ export default function App() {
       <StoreProvider>
         <StatusBar style="auto" />
         <AppContent />
+        <PersistenceDebugPanel />
       </StoreProvider>
     </SafeAreaProvider>
   );
