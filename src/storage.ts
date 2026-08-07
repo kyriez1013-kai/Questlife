@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppData, DEFAULT_DATA, Category, UNCATEGORIZED_ID, Skill, TaskType, ProgressType, QuestModule, ModuleSkillLink, ExecutionLog, RescueLog, StateCheckIn, ContextLog, DecisionResult, PatternMemory } from './types';
 import { isPersistenceDebugEnabled, recordPersistenceTrace } from './utils/persistenceTrace';
 import { rebaseAppDataWrite } from './utils/persistenceConsistency';
+import { createPersistenceWriteQueue, PersistenceLockManager } from './utils/persistenceLock';
 
 export const APP_DATA_STORAGE_KEY = 'questlife.v1';
 const KEY = APP_DATA_STORAGE_KEY;
@@ -451,21 +452,30 @@ function commitPersist(data: AppData, context: PersistContext, previousPersisted
 }
 
 let nativePersistQueue: Promise<AppData> = Promise.resolve(DEFAULT_DATA);
+const enqueueWebPersist = createPersistenceWriteQueue(
+  `${KEY}.persist`,
+  () => {
+    if (typeof navigator === 'undefined') return undefined;
+    return (navigator as Navigator & { locks?: PersistenceLockManager }).locks;
+  },
+);
 
 export function persist(data: AppData, context: PersistContext = {}): Promise<AppData> {
   if (typeof window !== 'undefined' && window.localStorage) {
-    try {
-      const previousPersisted = parseStoredData(window.localStorage.getItem(KEY));
-      const committed = commitPersist(data, context, previousPersisted);
-      window.localStorage.setItem(KEY, JSON.stringify(committed));
-      console.log(
-        `[persist] saved: ${committed.categories.length} categories, ${(committed.modules || []).length} modules, ${(committed.moduleSkillLinks || []).length} links, ${committed.skills.length} skills, ${committed.actions.length} actions, ${committed.scheduleBlocks.length} schedule blocks, ${(committed.rescueLogs || []).length} rescue logs, ${(committed.stateCheckIns || []).length} state check-ins`
-      );
-      return Promise.resolve(committed);
-    } catch (error) {
-      console.warn('[persist] save FAILED — data may be lost on reload!', error);
-      return Promise.reject(error);
-    }
+    return enqueueWebPersist(() => {
+      try {
+        const previousPersisted = parseStoredData(window.localStorage.getItem(KEY));
+        const committed = commitPersist(data, context, previousPersisted);
+        window.localStorage.setItem(KEY, JSON.stringify(committed));
+        console.log(
+          `[persist] saved: ${committed.categories.length} categories, ${(committed.modules || []).length} modules, ${(committed.moduleSkillLinks || []).length} links, ${committed.skills.length} skills, ${committed.actions.length} actions, ${committed.scheduleBlocks.length} schedule blocks, ${(committed.rescueLogs || []).length} rescue logs, ${(committed.stateCheckIns || []).length} state check-ins`
+        );
+        return committed;
+      } catch (error) {
+        console.warn('[persist] save FAILED — data may be lost on reload!', error);
+        throw error;
+      }
+    });
   }
 
   nativePersistQueue = nativePersistQueue.then(async () => {
