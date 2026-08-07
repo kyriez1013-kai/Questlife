@@ -110,6 +110,29 @@ export function rebaseAppDataWrite(base: AppData, next: AppData, current: AppDat
   return rebased;
 }
 
+/**
+ * A persist result can resolve after another local mutation has already run.
+ * Apply only the committed delta to the newer in-memory state in that case.
+ */
+export function reconcileCommittedAppData(
+  localNext: AppData,
+  committed: AppData,
+  current: AppData,
+) {
+  return current === localNext
+    ? committed
+    : rebaseAppDataWrite(localNext, committed, current);
+}
+
+/** Applies an external tab's exact old -> new delta without replacing newer local state. */
+export function reconcileExternalAppData(
+  previousPersisted: AppData,
+  incomingPersisted: AppData,
+  current: AppData,
+) {
+  return rebaseAppDataWrite(previousPersisted, incomingPersisted, current);
+}
+
 export function shouldPersistStoreMutation(hydrated: boolean) {
   return hydrated;
 }

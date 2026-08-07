@@ -1,8 +1,6 @@
 // 全局状态 Context
-// 持久化策略: 每次 mutation 都会:
-//   1) 用 setData 更新 React state
-//   2) 在 reducer 内部直接调 persist(newData) 立刻写入 AsyncStorage
-// 这样无论 App 后续是否被 kill / 刷新, 数据都已经落盘.
+// 持久化策略: 每次 mutation 先基于同步 ref 计算新状态, 再立即持久化.
+// React state updater 保持纯函数, 避免跨标签事件与批量更新吞掉写入.
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { AppData, DEFAULT_DATA, Goal, Skill, Action, Category, UNCATEGORIZED_ID, ScheduleBlock, QuestModule, ModuleSkillLink, ExecutionLog, RescueLog, StateCheckIn, EffortUnit, ContributionLink, RawCapture, ContextLog, DecisionResult, PatternMemory, DashboardCardSize, DashboardPresetId, DashboardSurface, DashboardPreferences } from './types';
 import { loadData, persist, readPersistedDataForDebug, uid, today } from './storage';
@@ -18,7 +16,11 @@ import { buildDashboardPreferencesForPreset, normalizeDashboardPreferences } fro
 import { compactDecisionResults } from './utils/decisionMemory';
 import { mergePatternCandidates as mergePatternCandidateList } from './utils/patternMemory';
 import { installPersistenceDebugBridge } from './utils/persistenceTrace';
-import { shouldPersistStoreMutation } from './utils/persistenceConsistency';
+import {
+  reconcileCommittedAppData,
+  reconcileExternalAppData,
+  shouldPersistStoreMutation,
+} from './utils/persistenceConsistency';
 
 function metricTypeForAnalytics(skill?: Skill) {
   return skill?.metricConfig?.metricType ?? skill?.progressType;
@@ -268,6 +270,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   // 标记是否已经完成首次加载, 防止 loading 阶段意外写盘把已有数据覆盖成空.
   const loadedRef = useRef(false);
+  const dataRef = useRef(data);
+  dataRef.current = data;
 
   // 启动时从 AsyncStorage 读取
   useEffect(() => {
@@ -277,6 +281,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (!integrity.ok) {
         console.warn('[coreFlow] integrity issues detected on load', integrity.issues);
       }
+      dataRef.current = repaired;
       setData(repaired);
       setLoading(false);
       loadedRef.current = true;
@@ -294,24 +299,28 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   /** 通用 mutation helper: 同时更新 React state 和 AsyncStorage. */
   const mutate = useCallback((fn: (d: AppData) => AppData, source = 'store.mutation') => {
     const caller = new Error().stack?.split('\n').slice(2, 5).join(' | ');
-    setData((d) => {
-      const next = fn(d);
-      if (shouldPersistStoreMutation(loadedRef.current)) {
-        // fire-and-forget; 内部已有 catch + console 报警
-        persist(next, {
-          base: d,
-          source,
-          caller,
-          operation: 'mutation',
-          hydrationStatus: 'hydrated',
-        }).then((committed) => {
-          if (committed !== next) {
-            setData((current) => current === next ? committed : current);
-          }
-        }).catch(() => {});
-      }
-      return next;
-    });
+    const base = dataRef.current;
+    const next = fn(base);
+    if (next === base) return;
+
+    dataRef.current = next;
+    setData(next);
+    if (!shouldPersistStoreMutation(loadedRef.current)) return;
+
+    // fire-and-forget; web commit 本身同步, native commit 由 storage queue 串行化.
+    persist(next, {
+      base,
+      source,
+      caller,
+      operation: 'mutation',
+      hydrationStatus: 'hydrated',
+    }).then((committed) => {
+      setData((current) => {
+        const reconciled = reconcileCommittedAppData(next, committed, current);
+        dataRef.current = reconciled;
+        return reconciled;
+      });
+    }).catch(() => {});
   }, []);
 
   // Data mutations persist through mutate(); this effect only queues server sync.
@@ -321,8 +330,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   }, [data]);
 
-  const dataRef = useRef(data);
-  dataRef.current = data;
   useEffect(() => installPersistenceDebugBridge({
     getStoreData: () => dataRef.current,
     readPersistedData: readPersistedDataForDebug,
@@ -332,10 +339,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (typeof window === 'undefined') return undefined;
     const handleStorage = (event: StorageEvent) => {
       if (event.key !== 'questlife.v1' || !event.newValue || !loadedRef.current) return;
-      loadData().then((latest) => {
-        const integrity = validateAppDataIntegrity(latest);
-        setData(integrity.ok ? latest : repairAppDataIntegrity(latest));
-      }).catch((error) => console.warn('[persist] cross-tab reload failed', error));
+      try {
+        const incoming = JSON.parse(event.newValue) as AppData;
+        const previous = event.oldValue ? JSON.parse(event.oldValue) as AppData : undefined;
+        const merged = previous
+          ? reconcileExternalAppData(previous, incoming, dataRef.current)
+          : incoming;
+        const integrity = validateAppDataIntegrity(merged);
+        const next = integrity.ok ? merged : repairAppDataIntegrity(merged);
+        dataRef.current = next;
+        setData(next);
+      } catch (error) {
+        console.warn('[persist] cross-tab merge failed', error);
+      }
     };
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);

@@ -1,7 +1,7 @@
 import type { AppData, ExecutionLog, RawCapture } from '../types';
 // Node's built-in TypeScript runner requires the extension; Expo typecheck does not.
 // @ts-expect-error Test-only Node TypeScript entry.
-import { rebaseAppDataWrite, shouldPersistStoreMutation } from './persistenceConsistency.ts';
+import { rebaseAppDataWrite, reconcileCommittedAppData, reconcileExternalAppData, shouldPersistStoreMutation } from './persistenceConsistency.ts';
 
 function equal(actual: unknown, expected: unknown, name: string) {
   if (actual !== expected) throw new Error(`${name}: expected ${String(expected)}, received ${String(actual)}`);
@@ -100,6 +100,26 @@ export function runPersistenceConsistencyTests() {
   const staleMerged = rebaseAppDataWrite(base, staleSettings, staleWithCapture);
   equal(ids(staleMerged.rawCaptures), 'capture-1', 'stale snapshot merge preserves capture');
   equal(ids(staleMerged.executionLogs), 'capture-capture-1-0', 'stale snapshot merge preserves execution log');
+
+  const localFirst = data({ executionLogs: [log('local-first')] });
+  const committedFirst = data({
+    executionLogs: [log('local-first')],
+    settings: { ...base.settings, selectedThemeId: 'deepWork' },
+  });
+  const localSecond = data({ executionLogs: [log('local-first'), log('local-second')] });
+  const reconciledCommit = reconcileCommittedAppData(localFirst, committedFirst, localSecond);
+  equal(ids(reconciledCommit.executionLogs), 'local-first,local-second', 'late commit preserves subsequent local mutation');
+  equal(reconciledCommit.settings.selectedThemeId, 'deepWork', 'late commit imports persisted external settings');
+
+  const sharedBefore = data({ executionLogs: [log('existing')] });
+  const externalThemeWrite = data({
+    executionLogs: [log('existing')],
+    settings: { ...base.settings, selectedThemeId: 'deepWork' },
+  });
+  const localRecordPending = data({ executionLogs: [log('existing'), log('pending-local')] });
+  const reconciledEvent = reconcileExternalAppData(sharedBefore, externalThemeWrite, localRecordPending);
+  equal(ids(reconciledEvent.executionLogs), 'existing,pending-local', 'storage event preserves pending local record');
+  equal(reconciledEvent.settings.selectedThemeId, 'deepWork', 'storage event applies external settings delta');
 }
 
 runPersistenceConsistencyTests();
