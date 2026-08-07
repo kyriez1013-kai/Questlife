@@ -35,7 +35,8 @@ The Stage 3 adapter does not persist an evidence stage and does not add threshol
 - S0: no live ExecutionLog, valid StateCheckIn, usable ContextLog, or stored PatternMemory.
 - S1: at least one direct observation exists, but no existing comparable helper or stored pattern supports a stronger state.
 - S2: an existing helper already reports comparable/emerging evidence, or a stored Candidate pattern exists.
-- S3: at least one stored Accepted PatternMemory has non-zero `sampleN` and stored support evidence.
+- S3 in Overview: a stored Accepted PatternMemory has non-zero `sampleN`, stored support evidence, and at least one support `sourceId` that directly matches the evidence selected for the current judgement.
+- S3 in Patterns: the selected pattern collection contains a stored Accepted PatternMemory with evidence. This describes the pattern workspace, not the unrelated Overview judgement.
 
 When requirements are missing, the lower state wins. Feature availability is displayed separately from evidence strength.
 
@@ -59,12 +60,12 @@ These are not implemented as fake controls. They may be documented as future pro
 - `src/v11-insights/V11InsightsVisuals.tsx`: real-data temporal marks, ranges, evidence intensity, and before/after visual primitives.
 - `src/v11-insights/V11InsightsEvidenceSheet.tsx`: L3 detail using the existing shared V11 production Sheet shell.
 - `src/v11-insights/v11-insights.css`: responsive composition and V11 material behaviour.
-- `src/v11-insights/insightsFixtures.ts`: explicit local QA-only, non-persisted states for visual coverage; never used by the ordinary route.
+- No Insights fixture-data module is used. Visual QA uses the current real Store. Non-persisted query overrides are limited to language, theme, reduced motion, initial mode, and performance measurement.
 
 ## Isolation Contract
 
 - Default `StatsScreen` remains untouched.
 - Only `?questlife_v11_ui=stage3-insights` selects the isolated Insights surface.
 - The screen reads the existing Store through `useStore()` and performs no writes.
-- A separate explicit QA query may substitute non-persisted fixture input and must visibly label it as fixture data.
+- `debugLanguage`, `debugTheme`, `debugReducedMotion`, and `debugPerformance` affect presentation or measurement only. They cannot substitute data or write Store state.
 - Removing the flag immediately returns the current production Insights.

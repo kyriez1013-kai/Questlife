@@ -2731,3 +2731,36 @@ UNVERIFIED:
 
 Documentation:
 - `QUESTLIFE_V11_STAGE2_INTEGRATION_QA.md`
+
+## V11 Stage 3 Insights Product Rebuild - Isolated Local Prototype
+
+Status: isolated local prototype and repository audit complete; visual approval, physical iPhone Safari, Preview, production integration, push, and deployment remain pending.
+
+- Added strict current Insights capability and reliability audit.
+- Added deterministic presentation adapter over existing Store/helper outputs; no new analytics, thresholds, schemas, APIs, writes, or persistence.
+- Added isolated `?questlife_v11_ui=stage3-insights` route. Default `StatsScreen` remains unchanged and is the immediate rollback.
+- Reframed Insights as `question -> range -> observation -> evidence -> limitation -> next action`.
+- Added compact Insight / Trend / Pattern / Analyse navigation.
+- Overview uses one judgement, bounded L2 evidence, one limitation, one existing next action, and shared L3 evidence Sheet.
+- Trends preserve the existing 3-log / 3-active-day gate, distinguish duration / untimed execution / missing, and never convert missing to zero.
+- Candidate, Accepted, and Archived pattern semantics remain separate; candidate wording remains non-causal.
+- Advanced presents one existing analysis mode at a time and suppresses generic helper baselines as personal results.
+- Added real-data micro-visuals for evidence stage, temporal points, distributions, ranges, and before/after comparison.
+- Added non-persisted QA-only language/theme/reduced-motion/performance overrides; they cannot replace Store data.
+- 375x667, 393x852, 768x900, and 1280x900 local browser checks found no document-level horizontal overflow.
+- Local real-data composition measured P50 16.7ms and P95 16.8-17.3ms across the four modes and L3 Sheet. The highest sample recorded 3/145 frames over 20ms.
+- `npx tsc --noEmit` and `npm run build` pass. Local bundle: `index-d30e5d1adbb43c876b9db6f87b134312.js`.
+- No push or deployment was performed.
+
+UNVERIFIED:
+- physical iPhone Safari and production/Preview behaviour
+- natural Overview S0/S2/S3, valid 3-day trend, and accepted/archived/multiple-pattern states
+- richer-data Advanced modes not available in the current real Store
+
+Documentation:
+- `QUESTLIFE_V11_STAGE3_CAPABILITY_AUDIT.md`
+- `QUESTLIFE_V11_STAGE3_MAPPING.md`
+- `QUESTLIFE_V11_STAGE3_VISUAL_PRIMITIVES.md`
+- `QUESTLIFE_V11_STAGE3_COMPONENT_AUDIT.md`
+- `QUESTLIFE_V11_STAGE3_QA.md`
+- `artifacts/v11-stage3-insights/`
