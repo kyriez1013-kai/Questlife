@@ -95,6 +95,7 @@ function consecutiveSegments(points: ReturnType<typeof plotGeometry>) {
 export function V11TrendCanvas({
   accessibilityLabel,
   baselineMinutes,
+  compact = false,
   onSelectPoint,
   points,
   selectedDate,
@@ -102,6 +103,7 @@ export function V11TrendCanvas({
 }: {
   accessibilityLabel: string;
   baselineMinutes: number | null;
+  compact?: boolean;
   onSelectPoint: (point: V11TrendPoint) => void;
   points: V11TrendPoint[];
   selectedDate?: string | null;
@@ -121,7 +123,7 @@ export function V11TrendCanvas({
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="image"
       dataSet={{ 'v11-insights-visual': 'trend-canvas' }}
-      style={styles.trendWrap}
+      style={[styles.trendWrap, compact && styles.trendWrapCompact]}
     >
       <Svg height="100%" preserveAspectRatio="none" viewBox={`0 0 ${PLOT_WIDTH} ${PLOT_HEIGHT}`} width="100%">
         {Array.from({ length: 13 }, (_, index) => {
@@ -215,6 +217,152 @@ export function V11TrendCanvas({
         ))}
       </View>
     </WebView>
+  );
+}
+
+export function V11EvidenceMeter({
+  accessibilityLabel,
+  activeDays,
+  theme,
+  windowDays = 7,
+}: {
+  accessibilityLabel: string;
+  activeDays: number;
+  theme: V11ThemeTokens;
+  windowDays?: number;
+}) {
+  const safeWindow = Math.max(1, Math.round(windowDays));
+  const safeActive = Math.max(0, Math.min(safeWindow, Math.round(activeDays)));
+
+  return (
+    <WebView
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole="image"
+      dataSet={{ 'v11-insights-visual': 'evidence-meter' }}
+      style={styles.evidenceMeter}
+    >
+      {Array.from({ length: safeWindow }, (_, index) => (
+        <View
+          key={index}
+          style={[
+            styles.evidenceSegment,
+            {
+              backgroundColor: index < safeActive
+                ? theme.glow.primary
+                : theme.questTheme.colors.border,
+              opacity: index < safeActive ? 0.78 : 0.52,
+            },
+          ]}
+        />
+      ))}
+    </WebView>
+  );
+}
+
+export function V11BaselineBand({
+  accessibilityLabel,
+  baselineMinutes,
+  currentMinutes,
+  observedRangeMinutes,
+  theme,
+}: {
+  accessibilityLabel: string;
+  baselineMinutes: number | null;
+  currentMinutes: number | null;
+  observedRangeMinutes: { min: number; max: number } | null;
+  theme: V11ThemeTokens;
+}) {
+  const scaleMax = Math.max(
+    1,
+    baselineMinutes ?? 0,
+    currentMinutes ?? 0,
+    observedRangeMinutes?.max ?? 0,
+  );
+  const percentage = (value: number) => Math.max(0, Math.min(100, value / scaleMax * 100));
+  const rangeLeft = observedRangeMinutes ? percentage(observedRangeMinutes.min) : 0;
+  const rangeRight = observedRangeMinutes ? percentage(observedRangeMinutes.max) : 0;
+  const rangeWidth = Math.max(2, rangeRight - rangeLeft);
+
+  return (
+    <WebView
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole="image"
+      dataSet={{ 'v11-insights-visual': 'baseline-band' }}
+      style={styles.baselineBand}
+    >
+      <View style={[styles.baselineTrack, { backgroundColor: theme.questTheme.colors.border }]}>
+        {observedRangeMinutes ? (
+          <View
+            style={[
+              styles.baselineRange,
+              {
+                backgroundColor: theme.glow.supporting,
+                left: `${rangeLeft}%`,
+                width: `${rangeWidth}%`,
+              },
+            ]}
+          />
+        ) : null}
+        {baselineMinutes != null ? (
+          <View
+            style={[
+              styles.baselineReference,
+              {
+                backgroundColor: theme.text.secondary,
+                left: `${percentage(baselineMinutes)}%`,
+              },
+            ]}
+          />
+        ) : null}
+        {currentMinutes != null ? (
+          <View
+            style={[
+              styles.baselineCurrent,
+              {
+                backgroundColor: theme.glow.primary,
+                borderColor: theme.text.primary,
+                left: `${percentage(currentMinutes)}%`,
+              },
+            ]}
+          />
+        ) : null}
+      </View>
+    </WebView>
+  );
+}
+
+export function V11SignalCard({
+  accessibilityLabel,
+  body,
+  evidence,
+  onPress,
+  status,
+  theme,
+  title,
+}: {
+  accessibilityLabel: string;
+  body: string;
+  evidence: string;
+  onPress: () => void;
+  status: string;
+  theme: V11ThemeTokens;
+  title: string;
+}) {
+  return (
+    <WebPressable
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole="button"
+      dataSet={{ 'v11-insights-visual': 'signal-card' }}
+      onPress={onPress}
+      style={[styles.signalCard, { borderTopColor: theme.questTheme.colors.border }]}
+    >
+      <View style={styles.signalMetaRow}>
+        <Text style={[styles.signalMeta, { color: theme.text.metadata }]}>{status}</Text>
+        <Text style={[styles.signalMeta, { color: theme.text.metadata }]}>{evidence}</Text>
+      </View>
+      <Text style={[styles.signalTitle, { color: theme.text.primary }]}>{title}</Text>
+      <Text style={[styles.signalBody, { color: theme.text.secondary }]} numberOfLines={3}>{body}</Text>
+    </WebPressable>
   );
 }
 
@@ -336,9 +484,22 @@ const styles = StyleSheet.create({
   stageMarker: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   stageTick: { width: 18, height: 2 },
   trendWrap: { width: '100%', height: 236, position: 'relative' },
+  trendWrapCompact: { height: 190 },
   trendHitRow: { position: 'absolute', left: 8, right: 4, bottom: 0, height: 44, flexDirection: 'row' },
   trendHit: { minWidth: 44, minHeight: 44, flex: 1, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 2 },
   trendDay: { fontSize: 10, lineHeight: 14, letterSpacing: 0.4 },
+  evidenceMeter: { width: '100%', minHeight: 12, flexDirection: 'row', alignItems: 'center', gap: 4 },
+  evidenceSegment: { height: 4, flex: 1, minWidth: 8 },
+  baselineBand: { width: '100%', minHeight: 28, justifyContent: 'center', paddingHorizontal: 6 },
+  baselineTrack: { position: 'relative', width: '100%', height: 2 },
+  baselineRange: { position: 'absolute', top: -4, height: 10, opacity: 0.24 },
+  baselineReference: { position: 'absolute', top: -7, width: 1, height: 16, opacity: 0.8 },
+  baselineCurrent: { position: 'absolute', top: -6, width: 12, height: 12, marginLeft: -6, borderRadius: 6, borderWidth: 1 },
+  signalCard: { width: '100%', minHeight: 132, paddingVertical: 14, gap: 8, borderTopWidth: 1 },
+  signalMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  signalMeta: { flexShrink: 1, fontSize: 10, lineHeight: 14, letterSpacing: 0.6 },
+  signalTitle: { fontSize: 17, lineHeight: 23, fontWeight: '500' },
+  signalBody: { fontSize: 12, lineHeight: 18 },
   rangeList: { width: '100%', gap: 12 },
   rangeRow: { width: '100%', gap: 7 },
   rangeHeader: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 },
@@ -359,4 +520,3 @@ const styles = StyleSheet.create({
   beforeAfterValue: { fontSize: 28, lineHeight: 34, fontWeight: '400' },
   beforeAfterArrow: { width: 48, alignItems: 'center', justifyContent: 'center' },
 });
-

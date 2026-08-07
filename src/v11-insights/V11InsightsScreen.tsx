@@ -38,6 +38,7 @@ import V11InsightsAdvancedCanvas from './V11InsightsAdvancedCanvas';
 import V11InsightsEvidenceSheet, {
   type V11InsightsDetailSelection,
 } from './V11InsightsEvidenceSheet';
+import V11QuantIntelligenceSurface from './V11QuantIntelligenceSurface';
 import {
   getV11InsightsDebugLanguage,
   getV11InsightsDebugTheme,
@@ -133,12 +134,12 @@ function usePerformanceProbe({
   debug,
   detailOpen,
   themeMode,
-  view,
+  surface,
 }: {
   debug: boolean;
   detailOpen: boolean;
   themeMode: string;
-  view: V11InsightsView;
+  surface: string;
 }) {
   const [result, setResult] = useState<PerformanceResult | null>(null);
 
@@ -171,7 +172,7 @@ function usePerformanceProbe({
       setResult(next);
       (window as any).__questlifeV11InsightsPerformance = {
         ...next,
-        view,
+        surface,
         detailOpen,
         themeMode,
         measuredAt: new Date().toISOString(),
@@ -184,7 +185,7 @@ function usePerformanceProbe({
       cancelled = true;
       window.cancelAnimationFrame(handle);
     };
-  }, [debug, detailOpen, themeMode, view]);
+  }, [debug, detailOpen, surface, themeMode]);
 
   return result;
 }
@@ -266,7 +267,8 @@ export default function V11InsightsScreen() {
   const reducedMotion = useV11ReducedMotion() || query().get('debugReducedMotion') === '1';
   const [view, setView] = useState<V11InsightsView>(initialView);
   const [overviewExpanded, setOverviewExpanded] = useState(query().get('layer') === 'l2');
-  const [patternFilter, setPatternFilter] = useState<V11PatternFilter>('accepted');
+  const [analysisLabOpen, setAnalysisLabOpen] = useState(query().get('analysisLab') === 'open');
+  const [patternFilter, setPatternFilter] = useState<V11PatternFilter>('candidate');
   const [advancedModeId, setAdvancedModeId] = useState<V11AdvancedModeId>(initialAdvancedMode);
   const [selectedTrendDate, setSelectedTrendDate] = useState<string | null>(null);
   const [detail, setDetail] = useState<V11InsightsDetailSelection>(null);
@@ -381,8 +383,13 @@ export default function V11InsightsScreen() {
     debug: debugPerformance,
     detailOpen: detail != null,
     themeMode: theme.mode,
-    view,
+    surface: analysisLabOpen ? 'quant-lab-open' : 'quant-overview',
   });
+
+  const openTrend = useCallback((point: V11TrendPoint) => {
+    setSelectedTrendDate(point.date);
+    setDetail({ kind: 'trend', item: point });
+  }, []);
 
   const changeView = useCallback((next: V11InsightsView) => {
     setView(next);
@@ -402,12 +409,8 @@ export default function V11InsightsScreen() {
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
-  const openTrend = useCallback((point: V11TrendPoint) => {
-    setSelectedTrendDate(point.date);
-    setDetail({ kind: 'trend', item: point });
-  }, []);
-
   const patternRows = presentation.patterns.rows.filter((row) => row.status === patternFilter);
+
   const cssVariables = {
     '--v11-insights-bg': theme.field.background,
     '--v11-insights-near': theme.field.near,
@@ -424,6 +427,76 @@ export default function V11InsightsScreen() {
     '--v11-insights-surface-soft': theme.questTheme.colors.surfaceSoft,
     '--v11-insights-bottom-inset': `${questLayout.contentBottomInset + v11Spacing.lg}px`,
   } as any;
+
+  if (query().get('quantIA') !== 'legacy') {
+    const quantStage = presentation.overview.stage;
+    return (
+      <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: theme.field.background }}>
+        <WebView
+          dataSet={{
+            'v11-insights-role': 'root',
+            'v11-insights-version': 'quant-3-5',
+            'v11-motion': reducedMotion ? 'reduced' : 'normal',
+            'v11-stage': quantStage.toLowerCase(),
+            'v11-theme': theme.mode,
+          }}
+          style={cssVariables}
+        >
+          <WebView dataSet={{ 'v11-insights-role': 'field' }} pointerEvents="none" />
+          <V11GlowOrb stage={quantStage} style={{ position: 'absolute', top: 92, left: '4%' }} theme={theme} />
+          <V11GlowOrb stage={quantStage} style={{ position: 'absolute', top: 248, right: '7%' }} theme={theme} tone="supporting" />
+
+          <WebScrollView
+            contentContainerStyle={{ paddingBottom: questLayout.contentBottomInset + v11Spacing.lg }}
+            dataSet={{ 'v11-insights-role': 'scroll' }}
+            showsVerticalScrollIndicator={false}
+          >
+            <V11QuantIntelligenceSurface
+              advancedMode={selectedAdvancedMode}
+              analysisLabOpen={analysisLabOpen}
+              language={language}
+              onAdvancedModeChange={(mode) => {
+                setAdvancedModeId(mode);
+                if (typeof window !== 'undefined') {
+                  const url = new URL(window.location.href);
+                  url.searchParams.set('analysis', mode);
+                  window.history.replaceState(window.history.state, '', url);
+                }
+              }}
+              onNextAction={() => navigation.navigate('Today')}
+              onOpenAdvancedDetail={(mode) => setDetail({ kind: 'advanced', item: mode })}
+              onOpenEvidence={(item) => setDetail({ kind: 'evidence', item })}
+              onOpenPattern={(pattern) => setDetail({ kind: 'pattern', item: pattern })}
+              onPatternFilterChange={setPatternFilter}
+              onSelectTrend={openTrend}
+              onToggleAnalysisLab={() => setAnalysisLabOpen((current) => !current)}
+              patternFilter={patternFilter}
+              presentation={presentation}
+              selectedTrendDate={selectedTrendDate}
+              stage={quantStage}
+              theme={theme}
+            />
+
+            {debugPerformance && performanceResult ? (
+              <WebView dataSet={{ 'v11-insights-role': 'performance-readout' }}>
+                <Text style={{ color: theme.text.metadata, ...v11Typography.metadata }}>
+                  P50 {performanceResult.p50}ms · P95 {performanceResult.p95}ms · &gt;20ms {performanceResult.over20}/{performanceResult.frames}
+                </Text>
+              </WebView>
+            ) : null}
+          </WebScrollView>
+
+          <V11InsightsEvidenceSheet
+            language={language}
+            onClose={() => setDetail(null)}
+            reducedMotion={reducedMotion}
+            selection={detail}
+            theme={theme}
+          />
+        </WebView>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: theme.field.background }}>
