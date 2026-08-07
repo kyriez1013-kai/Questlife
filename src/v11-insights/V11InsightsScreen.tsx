@@ -39,6 +39,10 @@ import V11InsightsEvidenceSheet, {
   type V11InsightsDetailSelection,
 } from './V11InsightsEvidenceSheet';
 import {
+  getV11InsightsDebugLanguage,
+  getV11InsightsDebugTheme,
+} from '../v11/featureFlag';
+import {
   buildV11InsightsPresentation,
   type V11AdvancedModeId,
   type V11InsightCopy,
@@ -249,10 +253,17 @@ function PatternRow({
 export default function V11InsightsScreen() {
   const { data } = useStore();
   const navigation = useNavigation<any>();
-  const language = getLanguage(data.settings.language);
-  const questTheme = getQuestTheme(data.settings.selectedThemeId);
+  const language = getV11InsightsDebugLanguage() ?? getLanguage(data.settings.language);
+  const debugTheme = getV11InsightsDebugTheme();
+  const questTheme = getQuestTheme(
+    debugTheme === 'light'
+      ? 'cleanFocus'
+      : debugTheme === 'dark'
+        ? 'deepWork'
+        : data.settings.selectedThemeId,
+  );
   const theme = getV11ThemeTokens(isDarkTheme(questTheme) ? 'dark' : 'light');
-  const reducedMotion = useV11ReducedMotion();
+  const reducedMotion = useV11ReducedMotion() || query().get('debugReducedMotion') === '1';
   const [view, setView] = useState<V11InsightsView>(initialView);
   const [overviewExpanded, setOverviewExpanded] = useState(query().get('layer') === 'l2');
   const [patternFilter, setPatternFilter] = useState<V11PatternFilter>('accepted');
@@ -696,4 +707,3 @@ export default function V11InsightsScreen() {
     </SafeAreaView>
   );
 }
-

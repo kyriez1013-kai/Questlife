@@ -49,6 +49,11 @@
   gap: 20px;
 }
 
+[data-v11-insights-role="context-row"] > div:first-child {
+  min-width: 0;
+  flex: 1;
+}
+
 [data-v11-insights-role="stage-context"] {
   display: flex;
   min-width: 0;
@@ -418,6 +423,7 @@
   }
 
   [data-v11-insights-role="stage-context"] {
+    flex: 0 1 auto;
     max-width: 48%;
   }
 
@@ -471,4 +477,3 @@
 [data-v11-insights-role="root"][data-v11-motion="reduced"] [data-v11-insights-role="mode-switch"] > [role="tab"]::after {
   transition-duration: 0.001ms;
 }
-

@@ -14,6 +14,18 @@ export function isV11InsightsEnabled() {
   return query()?.get('questlife_v11_ui') === 'stage3-insights';
 }
 
+export function getV11InsightsDebugLanguage(): 'zh' | 'en' | null {
+  if (!isV11InsightsEnabled()) return null;
+  const value = query()?.get('debugLanguage');
+  return value === 'zh' || value === 'en' ? value : null;
+}
+
+export function getV11InsightsDebugTheme(): 'dark' | 'light' | null {
+  if (!isV11InsightsEnabled()) return null;
+  const value = query()?.get('debugTheme');
+  return value === 'dark' || value === 'light' ? value : null;
+}
+
 export function getV11DebugEvidenceStage(
   debugAllowed: boolean,
 ): V11EvidenceStage | null {

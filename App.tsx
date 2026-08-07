@@ -30,7 +30,11 @@ import V11Stage1Screen from './src/v11-stage1/V11Stage1Screen';
 import V11Stage2RebaselineScreen from './src/v11-stage2-rebaseline/V11Stage2RebaselineScreen';
 import V11SheetControlFixtureScreen from './src/v11-stage2-rebaseline/V11SheetControlFixtureScreen';
 import V11InsightsScreen from './src/v11-insights/V11InsightsScreen';
-import { isV11InsightsEnabled } from './src/v11/featureFlag';
+import {
+  getV11InsightsDebugLanguage,
+  getV11InsightsDebugTheme,
+  isV11InsightsEnabled,
+} from './src/v11/featureFlag';
 import PersistenceDebugPanel from './src/components/debug/PersistenceDebugPanel';
 
 const Tab = createBottomTabNavigator();
@@ -106,7 +110,14 @@ function GoalsTabStack() {
 function AppContent() {
   const { data, loading } = useStore();
   const v11InsightsEnabled = isV11InsightsEnabled();
-  const questTheme = getQuestTheme(data.settings.selectedThemeId);
+  const v11InsightsDebugTheme = getV11InsightsDebugTheme();
+  const questTheme = getQuestTheme(
+    v11InsightsDebugTheme === 'light'
+      ? 'cleanFocus'
+      : v11InsightsDebugTheme === 'dark'
+        ? 'deepWork'
+        : data.settings.selectedThemeId,
+  );
   const darkTheme = isDarkTheme(questTheme);
   const RootView = View as any;
   const rootClassName = `questlife-root ${darkTheme ? 'questlife-theme-dark' : 'questlife-theme-light'}`;
@@ -128,7 +139,7 @@ function AppContent() {
     '--ql-primary': questTheme.colors.primary,
   } as any;
   const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
-  const lang = getLanguage(data.settings.language);
+  const lang = getV11InsightsDebugLanguage() ?? getLanguage(data.settings.language);
   const appOpenedTrackedRef = useRef(false);
   useEffect(() => {
     if (!loading && !appOpenedTrackedRef.current) {
