@@ -10,6 +10,10 @@ export function isV11TodayEnabled() {
   return query()?.get('questlife_v11_ui') === 'stage2';
 }
 
+export function isV11InsightsEnabled() {
+  return query()?.get('questlife_v11_ui') === 'stage3-insights';
+}
+
 export function getV11DebugEvidenceStage(
   debugAllowed: boolean,
 ): V11EvidenceStage | null {

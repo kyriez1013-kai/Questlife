@@ -29,6 +29,8 @@ import V11Stage0Screen from './src/v11-stage0/V11Stage0Screen';
 import V11Stage1Screen from './src/v11-stage1/V11Stage1Screen';
 import V11Stage2RebaselineScreen from './src/v11-stage2-rebaseline/V11Stage2RebaselineScreen';
 import V11SheetControlFixtureScreen from './src/v11-stage2-rebaseline/V11SheetControlFixtureScreen';
+import V11InsightsScreen from './src/v11-insights/V11InsightsScreen';
+import { isV11InsightsEnabled } from './src/v11/featureFlag';
 import PersistenceDebugPanel from './src/components/debug/PersistenceDebugPanel';
 
 const Tab = createBottomTabNavigator();
@@ -103,6 +105,7 @@ function GoalsTabStack() {
 // 根据加载状态和数据决定显示 Onboarding 还是正常 Tabs
 function AppContent() {
   const { data, loading } = useStore();
+  const v11InsightsEnabled = isV11InsightsEnabled();
   const questTheme = getQuestTheme(data.settings.selectedThemeId);
   const darkTheme = isDarkTheme(questTheme);
   const RootView = View as any;
@@ -202,6 +205,7 @@ function AppContent() {
       <NavigationContainer theme={navTheme}>
         <Tab.Navigator
           detachInactiveScreens={Platform.OS !== 'web'}
+          initialRouteName={v11InsightsEnabled ? 'Insights' : 'Today'}
           screenOptions={{
             headerShown: false,
             lazy: true,
@@ -261,7 +265,7 @@ function AppContent() {
           <Tab.Screen name="Insights" options={{ tabBarLabel: t(lang, 'insights'), tabBarIcon: ({ focused, color }) => <TabIcon name="barChart" focused={focused} color={color} /> }}>
             {() => (
               <FocusedTabSurface backgroundColor={questTheme.colors.background}>
-                <StatsScreen />
+                {v11InsightsEnabled ? <V11InsightsScreen /> : <StatsScreen />}
               </FocusedTabSurface>
             )}
           </Tab.Screen>
