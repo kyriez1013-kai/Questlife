@@ -134,6 +134,16 @@ export type V11InsightsPresentation = {
   range: { start: string; end: string; labelKey: string };
   overview: {
     stage: V11EvidenceStage;
+    currentReading: {
+      value: number;
+      scaleMax: 5;
+      observedAt: string;
+      sourceId: string;
+    } | null;
+    comparison: {
+      status: 'unavailable' | 'early' | 'comparable';
+      direction: MetacognitionSummary['stateTrend']['direction'];
+    };
     primary: {
       kind: 'metacognition' | 'state_pattern' | 'context' | 'state' | 'execution' | 'empty';
       title: V11InsightCopy;
@@ -152,6 +162,8 @@ export type V11InsightsPresentation = {
     sampleCount: number;
     activeDays: number;
     baselineMinutes: number | null;
+    currentMinutes: number | null;
+    observedRangeMinutes: { min: number; max: number } | null;
     skillAllocation: V11SkillAllocation[];
     limitation: V11InsightCopy;
   };
@@ -463,9 +475,24 @@ function buildOverview(input: BuildV11InsightsPresentationInput) {
         || input.metacognition.stateTrend.direction !== 'unknown'
         ? 'S2'
         : 'S1';
+  const comparisonStatus: V11InsightsPresentation['overview']['comparison']['status'] = input.metacognition.stateTrend.direction === 'unknown'
+    ? latestState ? 'early' : 'unavailable'
+    : 'comparable';
 
   return {
     stage,
+    currentReading: latestState
+      ? {
+        value: latestState.overall,
+        scaleMax: 5 as const,
+        observedAt: latestState.timestamp,
+        sourceId: latestState.id,
+      }
+      : null,
+    comparison: {
+      status: comparisonStatus,
+      direction: input.metacognition.stateTrend.direction,
+    },
     primary,
     evidence,
     limitation: stage === 'S0'
@@ -691,6 +718,10 @@ export function buildV11InsightsPresentation(
   const baselineMinutes = status === 'available' && observedMinutes.length > 0
     ? observedMinutes.reduce((sum, value) => sum + value, 0) / observedMinutes.length
     : null;
+  const currentMinutes = points[points.length - 1]?.minutes ?? null;
+  const observedRangeMinutes = observedMinutes.length > 0
+    ? { min: Math.min(...observedMinutes), max: Math.max(...observedMinutes) }
+    : null;
   const skillAllocation = allocationForRange(input.liveLogs, input.skills, points);
   const trendConfidence: V11Confidence = input.engine.weeklyPattern.status === 'ok'
     ? input.engine.weeklyPattern.conclusion.confidence
@@ -717,6 +748,8 @@ export function buildV11InsightsPresentation(
       sampleCount,
       activeDays,
       baselineMinutes,
+      currentMinutes,
+      observedRangeMinutes,
       skillAllocation,
       limitation: status === 'available'
         ? { kind: 'i18n', key: 'trendLimitedToLoggedDuration' }
@@ -726,4 +759,3 @@ export function buildV11InsightsPresentation(
     advanced: buildAdvanced(input, points, skillAllocation),
   };
 }
-

@@ -109,11 +109,14 @@ function build(
 
 const s0 = build();
 equal(s0.overview.stage, 'S0', 'no observation stays S0');
+equal(s0.overview.currentReading, null, 'S0 does not invent a main reading');
 equal(s0.trends.baselineMinutes, null, 'insufficient trend has no baseline');
 
 const s1 = build([], [state('state-one')]);
 equal(s1.overview.stage, 'S1', 'one direct observation is S1');
 equal(s1.overview.primary.kind, 'state', 'S1 exposes the direct observation');
+equal(s1.overview.currentReading?.value, 3, 'S1 exposes the real direct reading');
+equal(s1.overview.comparison.status, 'early', 'one reading does not invent a baseline comparison');
 
 const trend = build([
   log('one', '2026-08-05'),
@@ -122,6 +125,9 @@ const trend = build([
 ]);
 equal(trend.trends.status, 'available', 'existing 3 sample and 3 active day gate remains');
 equal(trend.trends.points[0]?.observation, 'missing', 'missing day is not rendered as zero');
+equal(trend.trends.currentMinutes, 20, 'current execution value comes from the real current day');
+equal(trend.trends.observedRangeMinutes?.min, 20, 'recorded range uses observed values only');
+equal(trend.trends.observedRangeMinutes?.max, 20, 'recorded range does not add placeholder values');
 
 const unrelated = build([], [state('state-one')], [pattern('unrelated', 'other-state')]);
 equal(unrelated.overview.stage, 'S1', 'unrelated accepted pattern cannot promote overview');
@@ -137,7 +143,10 @@ const linkedMeta: MetacognitionSummary = {
     confidence: 'medium',
   },
 };
+const comparable = build([], [state('state-one')], [], linkedMeta);
+equal(comparable.overview.stage, 'S2', 'comparable existing state evidence is S2 without accepted memory');
+equal(comparable.overview.comparison.status, 'comparable', 'S2 exposes only the existing comparable state direction');
+
 const linked = build([], [state('state-one')], [pattern('linked', 'state-one')], linkedMeta);
 equal(linked.overview.stage, 'S3', 'accepted pattern only promotes when its support is current evidence');
 equal(linked.patterns.counts.accepted, 1, 'accepted state remains separate');
-
