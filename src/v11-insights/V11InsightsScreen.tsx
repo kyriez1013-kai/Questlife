@@ -387,12 +387,13 @@ export default function V11InsightsScreen() {
   const changeView = useCallback((next: V11InsightsView) => {
     setView(next);
     setDetail(null);
+    scrollRef.current?.scrollTo({ y: 0, animated: !reducedMotion });
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
       url.searchParams.set('insightsMode', next);
       window.history.pushState({ insightsMode: next }, '', url);
     }
-  }, []);
+  }, [reducedMotion]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
