@@ -42,7 +42,12 @@ import V11QuantIntelligenceSurface from './V11QuantIntelligenceSurface';
 import {
   getV11InsightsDebugLanguage,
   getV11InsightsDebugTheme,
+  getV11QuantTerminalFixture,
+  isV11QuantTerminalEnabled,
 } from '../v11/featureFlag';
+import V11QuantTerminal from './quant-terminal/V11QuantTerminal';
+import { getQuantTerminalFixture } from './quant-terminal/quantTerminalFixtures';
+import { buildQuantTerminalPresentation } from './quant-terminal/quantTerminalPresentation';
 import {
   buildV11InsightsPresentation,
   type V11AdvancedModeId,
@@ -272,6 +277,7 @@ export default function V11InsightsScreen() {
   const [advancedModeId, setAdvancedModeId] = useState<V11AdvancedModeId>(initialAdvancedMode);
   const [selectedTrendDate, setSelectedTrendDate] = useState<string | null>(null);
   const [detail, setDetail] = useState<V11InsightsDetailSelection>(null);
+  const [terminalInspectorOpen, setTerminalInspectorOpen] = useState(false);
   const scrollRef = useRef<ScrollView | null>(null);
   const liveLogs = useMemo(
     () => getLiveExecutionLogs(data.executionLogs || [], { skills: data.skills }),
@@ -367,6 +373,18 @@ export default function V11InsightsScreen() {
       executionLogsThisWeek: appLoop.executionLogsThisWeek,
     },
   }), [appLoop, data.patternMemory, data.skills, data.stateCheckIns, engine, liveLogs, metacognition, objectiveContext, rescue, selfKnowledge]);
+  const quantTerminalFixtureId = getV11QuantTerminalFixture();
+  const quantTerminalPresentation = useMemo(() => {
+    if (quantTerminalFixtureId) return getQuantTerminalFixture(quantTerminalFixtureId);
+    return buildQuantTerminalPresentation({
+      now: new Date(),
+      base: presentation,
+      liveLogs,
+      stateCheckIns: data.stateCheckIns || [],
+      patternMemory: data.patternMemory || [],
+      objectiveContext,
+    });
+  }, [data.patternMemory, data.stateCheckIns, liveLogs, objectiveContext, presentation, quantTerminalFixtureId]);
   const selectedAdvancedMode = presentation.advanced.modes.find((mode) => mode.id === advancedModeId)
     ?? presentation.advanced.modes[0];
   const selectedStage = viewStage(
@@ -381,9 +399,11 @@ export default function V11InsightsScreen() {
   const debugPerformance = query().get('debugPerformance') === '1';
   const performanceResult = usePerformanceProbe({
     debug: debugPerformance,
-    detailOpen: detail != null,
+    detailOpen: isV11QuantTerminalEnabled() ? terminalInspectorOpen : detail != null,
     themeMode: theme.mode,
-    surface: analysisLabOpen ? 'quant-lab-open' : 'quant-overview',
+    surface: isV11QuantTerminalEnabled()
+      ? `quant-terminal-${quantTerminalFixtureId ?? 'real'}`
+      : analysisLabOpen ? 'quant-lab-open' : 'quant-overview',
   });
 
   const openTrend = useCallback((point: V11TrendPoint) => {
@@ -427,6 +447,48 @@ export default function V11InsightsScreen() {
     '--v11-insights-surface-soft': theme.questTheme.colors.surfaceSoft,
     '--v11-insights-bottom-inset': `${questLayout.contentBottomInset + v11Spacing.lg}px`,
   } as any;
+
+  if (isV11QuantTerminalEnabled()) {
+    const terminalVariables = {
+      '--quant-bg': theme.field.background,
+      '--quant-near': theme.field.near,
+      '--quant-middle': theme.field.middle,
+      '--quant-far': theme.field.far,
+      '--quant-grid': theme.field.grid,
+      '--quant-primary': theme.glow.primary,
+      '--quant-supporting': theme.glow.supporting,
+      '--quant-border': theme.questTheme.colors.border,
+    } as any;
+    const performanceReadout = debugPerformance && performanceResult
+      ? `P50 ${performanceResult.p50}ms · P95 ${performanceResult.p95}ms · >20ms ${performanceResult.over20}/${performanceResult.frames}`
+      : null;
+    return (
+      <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: theme.field.background }}>
+        <WebView
+          dataSet={{
+            'quant-terminal-root': 'true',
+            'quant-terminal-fixture': quantTerminalFixtureId ?? 'real',
+            'v11-motion': reducedMotion ? 'reduced' : 'normal',
+            'v11-stage': quantTerminalPresentation.stage.toLowerCase(),
+            'v11-theme': theme.mode,
+          }}
+          style={terminalVariables}
+        >
+          <V11GlowOrb stage={quantTerminalPresentation.stage} style={{ position: 'absolute', top: 74, left: '8%' }} theme={theme} />
+          <V11GlowOrb stage={quantTerminalPresentation.stage} style={{ position: 'absolute', top: 214, right: '8%' }} theme={theme} tone="supporting" />
+          <V11QuantTerminal
+            language={language}
+            model={quantTerminalPresentation}
+            onInspectorStateChange={setTerminalInspectorOpen}
+            onNextAction={() => navigation.navigate('Today')}
+            performanceReadout={performanceReadout}
+            reducedMotion={reducedMotion}
+            theme={theme}
+          />
+        </WebView>
+      </SafeAreaView>
+    );
+  }
 
   if (query().get('quantIA') !== 'legacy') {
     const quantStage = presentation.overview.stage;
