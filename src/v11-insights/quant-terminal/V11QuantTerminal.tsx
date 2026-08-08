@@ -234,7 +234,7 @@ export default function V11QuantTerminal({
                   <Text style={{ color: theme.text.primary }}>{t(language, 'quantSignals')}</Text>
                   <Text style={{ color: theme.text.metadata }}>{model.signals.length}</Text>
                 </WebView>
-                {model.signals.length > 0 ? model.signals.slice(0, 2).map((signal) => (
+                {model.signals.length > 0 ? model.signals.slice(0, 1).map((signal) => (
                   <SignalRow
                     key={signal.id}
                     language={language}
@@ -252,7 +252,7 @@ export default function V11QuantTerminal({
                   <Text style={{ color: theme.text.primary }}>{t(language, 'quantEvidence')}</Text>
                   <Text style={{ color: theme.text.metadata }}>{model.evidence.length}</Text>
                 </WebView>
-                {model.evidence.length > 0 ? model.evidence.slice(0, 2).map((evidence) => (
+                {model.evidence.length > 0 ? model.evidence.slice(0, 1).map((evidence) => (
                   <EvidenceRow
                     evidence={evidence}
                     key={evidence.id}

@@ -13,7 +13,7 @@ import type {
 export type QuantMetricId = 'state' | 'execution' | 'quality' | 'recovery';
 export type QuantBaselineStatus = 'unavailable' | 'forming' | 'provisional' | 'established';
 export type QuantSignalStatus = 'candidate' | 'supported' | 'archived';
-export type QuantFixtureId = 'forming' | 'signal' | 'mature';
+export type QuantFixtureId = 'empty' | 'forming' | 'signal' | 'mature';
 
 export type QuantTerminalPoint = {
   date: string;
@@ -372,4 +372,3 @@ export function buildQuantTerminalPresentation(
     maturityKey: maturityKey(stage),
   };
 }
-

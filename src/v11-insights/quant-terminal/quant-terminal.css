@@ -49,6 +49,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 18px;
+  flex-direction: row !important;
   border-bottom: 1px solid var(--quant-border);
 }
 
@@ -139,6 +140,7 @@
   display: flex;
   min-width: 0;
   align-items: baseline;
+  flex-direction: row !important;
   gap: 6px;
 }
 
@@ -178,6 +180,7 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: 14px;
+  flex-direction: row !important;
 }
 
 [data-quant-terminal-role="canvas-heading"] > div {
@@ -238,6 +241,7 @@
   width: 100%;
   min-width: 0;
   min-height: 64px;
+  flex-direction: row !important;
   align-items: center;
   gap: 10px;
   padding: 8px 0;
@@ -273,6 +277,7 @@
   display: flex;
   width: 100%;
   min-height: 64px;
+  flex-direction: row !important;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
@@ -335,6 +340,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  flex-direction: row !important;
   padding: 10px 18px;
   border-bottom: 1px solid var(--quant-border);
 }
@@ -403,6 +409,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  flex-direction: row !important;
   padding: 0 18px;
   border: 0;
   border-top: 1px solid var(--quant-border);
@@ -437,6 +444,16 @@
     padding-left: 16px;
     padding-right: 0;
     border-left: 1px solid var(--quant-border);
+  }
+}
+
+@media (min-width: 1100px) {
+  [data-quant-terminal-role="workspace"] {
+    min-height: 610px;
+  }
+
+  [data-quant-terminal-role="chart"] {
+    height: 430px;
   }
 }
 
@@ -502,7 +519,7 @@
   }
 
   [data-quant-terminal-role="chart"] {
-    height: 222px;
+    height: 184px;
   }
 
   [data-quant-terminal-role="chart-legend"] {
@@ -550,6 +567,21 @@
   }
 }
 
+@media (max-width: 340px) {
+  [data-quant-terminal-role="header"] {
+    min-height: 54px;
+    flex-direction: column !important;
+    align-items: stretch;
+    justify-content: center;
+    gap: 1px;
+    padding-bottom: 4px;
+  }
+
+  [data-quant-terminal-role="maturity"] {
+    align-items: flex-end;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   [data-quant-terminal-root="true"] *,
   [data-quant-terminal-root="true"] *::before,
@@ -559,4 +591,3 @@
     transition-duration: 0.001ms !important;
   }
 }
-

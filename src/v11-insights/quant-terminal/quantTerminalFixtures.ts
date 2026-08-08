@@ -104,6 +104,7 @@ function forming(): QuantTerminalPresentation {
     [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 3.0, null, 3.2, null, 3.1],
     { unitKey: 'quantUnitOutOfFive' },
   );
+  state.limitation = text('quantFixtureFormingLimitation');
   return {
     fixture: 'forming',
     range: { days: 30, start, end },
@@ -125,11 +126,32 @@ function forming(): QuantTerminalPresentation {
   };
 }
 
+function empty(): QuantTerminalPresentation {
+  const state = metric(
+    'state',
+    Array.from({ length: 30 }, () => null),
+    { unitKey: 'quantUnitOutOfFive' },
+  );
+  state.limitation = text('quantFixtureEmptyLimitation');
+  return {
+    fixture: 'empty',
+    range: { days: 30, start, end },
+    stage: 'S0',
+    metrics: [state],
+    defaultMetricId: 'state',
+    signals: [],
+    evidence: [],
+    implication: text('quantFixtureEmptyImplication'),
+    maturityKey: 'quantMaturityUnavailable',
+  };
+}
+
 function mature(fixture: QuantFixtureId): QuantTerminalPresentation {
-  const state = metric('state', matureValues, { baseline: 3.6, min: 3.2, max: 4.0, established: true, unitKey: 'quantUnitOutOfFive' });
-  const execution = metric('execution', matureValues.map((value) => value == null ? null : Math.round(value * 18)), { baseline: 66, min: 42, max: 82, established: true, unitKey: 'quantUnitMinutes' });
-  const quality = metric('quality', matureValues.map((value) => value == null ? null : Math.min(5, value + 0.3)), { baseline: 3.8, min: 3.4, max: 4.4, established: true, unitKey: 'quantUnitOutOfFive' });
-  const recovery = metric('recovery', matureValues.map((value) => value == null ? null : Math.round(value * 13)), { baseline: 48, min: 42, max: 55, established: true, unitKey: 'quantUnitMilliseconds' });
+  const established = fixture === 'mature';
+  const state = metric('state', matureValues, { baseline: 3.6, min: 3.2, max: 4.0, established, unitKey: 'quantUnitOutOfFive' });
+  const execution = metric('execution', matureValues.map((value) => value == null ? null : Math.round(value * 18)), { baseline: 66, min: 42, max: 82, established, unitKey: 'quantUnitMinutes' });
+  const quality = metric('quality', matureValues.map((value) => value == null ? null : Math.min(5, value + 0.3)), { baseline: 3.8, min: 3.4, max: 4.4, established, unitKey: 'quantUnitOutOfFive' });
+  const recovery = metric('recovery', matureValues.map((value) => value == null ? null : Math.round(value * 13)), { baseline: 48, min: 42, max: 55, established, unitKey: 'quantUnitMilliseconds' });
   return {
     fixture,
     range: { days: 30, start, end },
@@ -163,6 +185,6 @@ function mature(fixture: QuantFixtureId): QuantTerminalPresentation {
 }
 
 export function getQuantTerminalFixture(id: QuantFixtureId): QuantTerminalPresentation {
+  if (id === 'empty') return empty();
   return id === 'forming' ? forming() : mature(id);
 }
-

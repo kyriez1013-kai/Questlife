@@ -43,9 +43,12 @@ const forming = getQuantTerminalFixture('forming');
 equal(forming.fixture, 'forming', 'forming fixture is explicitly labelled');
 equal(forming.stage, 'S1', 'forming fixture stays early');
 
+const emptyFixture = getQuantTerminalFixture('empty');
+equal(emptyFixture.stage, 'S0', 'empty QA fixture exercises the honest S0 frame');
+equal(emptyFixture.metrics[0]?.current, null, 'empty QA fixture does not manufacture a reading');
+
 const mature = getQuantTerminalFixture('mature');
 equal(mature.stage, 'S3', 'mature QA fixture exercises S3');
 equal(mature.metrics.length, 4, 'mature QA fixture covers multiple metrics');
 equal(mature.signals[0]?.status, 'supported', 'mature QA fixture covers supported relation');
 equal(mature.metrics[0]?.points.some((point) => point.value == null), true, 'mature QA fixture includes missing values');
-

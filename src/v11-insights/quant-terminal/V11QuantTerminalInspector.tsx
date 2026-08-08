@@ -82,7 +82,7 @@ export default function V11QuantTerminalInspector({
   return (
     <WebView dataSet={{ 'quant-terminal-role': 'inspector-layer' }}>
       <WebPressable
-        accessibilityLabel={t(language, 'close')}
+        accessibilityLabel={t(language, 'closeDetails')}
         accessibilityRole="button"
         dataSet={{ 'quant-terminal-role': 'inspector-scrim' }}
         onPress={onClose}
@@ -104,7 +104,7 @@ export default function V11QuantTerminalInspector({
               {title(language, selection)}
             </Text>
           </WebView>
-          <WebPressable accessibilityLabel={t(language, 'close')} accessibilityRole="button" onPress={onClose}>
+          <WebPressable accessibilityLabel={t(language, 'closeDetails')} accessibilityRole="button" onPress={onClose}>
             <V11RebaselineIcon color={theme.text.primary} name="close" size={18} />
           </WebPressable>
         </WebView>
@@ -139,10 +139,24 @@ export default function V11QuantTerminalInspector({
               </Text>
             </WebView>
             {selection.kind === 'signal' ? (
-              <WebView>
-                <Text style={{ color: theme.text.metadata, ...v11Typography.metadata }}>{t(language, 'quantEvidenceSupport')}</Text>
-                <Text style={{ color: theme.text.primary }}>{selection.signal.evidenceCount}</Text>
-              </WebView>
+              <>
+                <WebView>
+                  <Text style={{ color: theme.text.metadata, ...v11Typography.metadata }}>{t(language, 'quantEvidenceSupport')}</Text>
+                  <Text style={{ color: theme.text.primary }}>{selection.signal.evidenceCount}</Text>
+                </WebView>
+                {selection.signal.counterexampleCount != null ? (
+                  <WebView>
+                    <Text style={{ color: theme.text.metadata, ...v11Typography.metadata }}>{t(language, 'quantCounterexamples')}</Text>
+                    <Text style={{ color: theme.text.primary }}>{selection.signal.counterexampleCount}</Text>
+                  </WebView>
+                ) : null}
+                {selection.signal.lastSeenAt ? (
+                  <WebView>
+                    <Text style={{ color: theme.text.metadata, ...v11Typography.metadata }}>{t(language, 'quantLastObserved')}</Text>
+                    <Text style={{ color: theme.text.primary }}>{selection.signal.lastSeenAt.slice(0, 10)}</Text>
+                  </WebView>
+                ) : null}
+              </>
             ) : null}
           </WebView>
 
@@ -177,4 +191,3 @@ export default function V11QuantTerminalInspector({
     </WebView>
   );
 }
-

@@ -19,10 +19,10 @@ export function isV11QuantTerminalEnabled() {
   return query()?.get('questlife_v11_ui') === 'stage3-quant-terminal';
 }
 
-export function getV11QuantTerminalFixture(): 'forming' | 'signal' | 'mature' | null {
+export function getV11QuantTerminalFixture(): 'empty' | 'forming' | 'signal' | 'mature' | null {
   if (!isV11QuantTerminalEnabled()) return null;
   const value = query()?.get('quantFixture');
-  return value === 'forming' || value === 'signal' || value === 'mature' ? value : null;
+  return value === 'empty' || value === 'forming' || value === 'signal' || value === 'mature' ? value : null;
 }
 
 export function getV11InsightsDebugLanguage(): 'zh' | 'en' | null {
