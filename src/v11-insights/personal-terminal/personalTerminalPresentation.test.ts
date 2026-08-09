@@ -4,7 +4,7 @@ import type { PersonalTerminalSeries } from './personalTerminalPresentation';
 // @ts-expect-error Test-only Node TypeScript entry.
 import { getPersonalTerminalFixture } from './personalTerminalFixtures.ts';
 // @ts-expect-error Test-only Node TypeScript entry.
-import { availableTimeframes, buildPersonalTerminalViewData } from './personalTerminalPresentation.ts';
+import { availableComparisonSeries, availableTimeframes, buildPersonalTerminalViewData } from './personalTerminalPresentation.ts';
 
 const mature = getPersonalTerminalFixture('mature');
 assert.equal(mature.fixture, 'mature');
@@ -20,6 +20,13 @@ assert.ok(all.line.length >= 11, 'same daily observations aggregate into a month
 assert.ok(all.candles.length > 0, 'multi-observation periods produce legitimate OHLC candles');
 assert.ok(all.observations.some((row) => row.provenance === 'historical_reference'));
 assert.ok(all.observations.some((row) => row.provenance === 'questlife_confirmed'));
+const marketComparisons = availableComparisonSeries(mature, 'market:personal', 'market:state');
+assert.deepEqual(marketComparisons.map((row) => row.id), ['market:index', 'market:execution', 'market:recovery']);
+assert.ok(marketComparisons.every((row) => row.unit), 'comparison candidates retain explicit independent units');
+assert.equal(mature.series.find((row) => row.id === 'market:state')?.events[0].category, 'training');
+assert.equal(mature.signals[0].lagDays, 1);
+assert.equal(mature.signals[0].maturity, 'established');
+assert.equal(mature.similarPeriods?.length, 2);
 
 const onePointSeries: PersonalTerminalSeries = {
   ...state,

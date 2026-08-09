@@ -14,6 +14,7 @@ export type PersonalTerminalTimeframe = '1D' | '7D' | '1M' | '3M' | '1Y' | 'ALL'
 export type PersonalTerminalIndicator = 'emaShort' | 'emaLong' | 'baseline' | 'load' | 'density' | 'events';
 export type PersonalTerminalFixtureId = 'forming' | 'mature' | 'portfolio' | 'skill' | 'volatile' | 'historical';
 export type PersonalTerminalProvenance = 'questlife_confirmed' | 'historical_reference' | 'derived_fixture';
+export type PersonalTerminalEventCategory = 'training' | 'exam' | 'travel' | 'schedule' | 'decision' | 'execution' | 'milestone';
 
 export type PersonalTerminalObservation = {
   id: string;
@@ -33,8 +34,12 @@ export type PersonalTerminalEvent = {
   id: string;
   timestamp: string;
   type: 'execution' | 'context' | 'decision' | 'milestone';
+  category: PersonalTerminalEventCategory;
   title: V11InsightCopy;
+  shortLabel: V11InsightCopy;
   detail: V11InsightCopy;
+  provenance: PersonalTerminalProvenance;
+  scopeId: string | null;
   sourceIds: string[];
 };
 
@@ -105,9 +110,22 @@ export type PersonalTerminalSignal = {
   relationship: V11InsightCopy;
   observationCount: number;
   counterexampleCount: number | null;
+  direction: 'higher' | 'lower' | 'mixed' | null;
+  lagDays: number | null;
+  maturity: 'forming' | 'provisional' | 'established';
+  windowDays: number | null;
   sourceIds: string[];
   lastSeenAt?: string;
   limitation: V11InsightCopy;
+};
+
+export type PersonalTerminalSimilarPeriod = {
+  id: string;
+  start: string;
+  end: string;
+  primaryChange: number | null;
+  relatedChange: number | null;
+  observationCount: number;
 };
 
 export type PersonalTerminalModel = {
@@ -122,6 +140,7 @@ export type PersonalTerminalModel = {
   implication: V11InsightCopy;
   breadth?: PersonalTerminalBreadth;
   marketMap?: PersonalTerminalMapRow[];
+  similarPeriods?: PersonalTerminalSimilarPeriod[];
   range: { start: string | null; end: string | null };
 };
 
@@ -210,12 +229,16 @@ function executionEvents(logs: ExecutionLog[], skills: Skill[]) {
     id: `event-${log.id}`,
     timestamp: timestampOf(log),
     type: 'execution',
+    category: 'execution',
     title: log.title
       ? { kind: 'text', text: log.title }
       : log.linkedSkillId && skillById.get(log.linkedSkillId)
         ? { kind: 'text', text: skillById.get(log.linkedSkillId)!.name }
         : copy('personalTerminalRecordedExecution'),
+    shortLabel: copy('personalTerminalRecordedExecution'),
     detail: copy('personalTerminalExecutionEventDetail', { minutes: Math.max(0, log.durationMinutes || 0) }),
+    provenance: 'questlife_confirmed',
+    scopeId: log.linkedSkillId || log.linkedGoalId || null,
     sourceIds: [log.id],
   }));
 }
@@ -239,12 +262,29 @@ function signalRows(base: V11InsightsPresentation): PersonalTerminalSignal[] {
     relationship: row.description,
     observationCount: row.evidenceCount,
     counterexampleCount: null,
+    direction: null,
+    lagDays: null,
+    maturity: row.status === 'accepted' ? 'established' : 'provisional',
+    windowDays: null,
     sourceIds: row.sourceIds,
     lastSeenAt: row.lastSeenAt,
     limitation: row.status === 'accepted'
       ? copy('quantSupportedNotCausal')
       : copy('stage3CandidatePatternLimitation'),
   }));
+}
+
+export function availableComparisonSeries(
+  model: PersonalTerminalModel,
+  entityId: string,
+  primarySeriesId: string,
+) {
+  const entity = model.entities.find((row) => row.id === entityId);
+  if (!entity) return [];
+  return entity.seriesIds.flatMap((id) => {
+    const row = model.series.find((series) => series.id === id);
+    return row && row.id !== primarySeriesId && row.observations.length > 0 ? [row] : [];
+  });
 }
 
 function sumMinutes(rows: ExecutionLog[]) {
