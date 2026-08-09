@@ -121,6 +121,7 @@ export type PersonalTerminalPoint = {
   value: number;
   observationCount: number;
   sourceIds: string[];
+  provenance: PersonalTerminalProvenance | 'mixed';
 };
 
 export type PersonalTerminalViewData = {
@@ -445,6 +446,7 @@ function lineBuckets(rows: PersonalTerminalObservation[], timeframe: PersonalTer
     value: values.reduce((sum, row) => sum + row.value, 0) / values.length,
     observationCount: values.length,
     sourceIds: values.flatMap((row) => row.sourceIds),
+    provenance: new Set(values.map((row) => row.provenance)).size > 1 ? 'mixed' : values[0].provenance,
   })).sort((a, b) => a.time.localeCompare(b.time));
 }
 
@@ -459,7 +461,7 @@ function candleBuckets(rows: PersonalTerminalObservation[], timeframe: PersonalT
   [...groups.entries()].forEach(([time, values]) => {
     const ordered = values.slice().sort((a, b) => a.timestamp.localeCompare(b.timestamp));
     if (ordered.length < 2) {
-      incompleteCandles.push({ time, value: ordered[0].value, observationCount: 1, sourceIds: ordered[0].sourceIds });
+      incompleteCandles.push({ time, value: ordered[0].value, observationCount: 1, sourceIds: ordered[0].sourceIds, provenance: ordered[0].provenance });
       return;
     }
     candles.push({
@@ -529,4 +531,3 @@ export function availableTimeframes(series: PersonalTerminalSeries, now: Date): 
   if (spanDays >= 365) result.push('ALL');
   return [...new Set(result)];
 }
-
