@@ -294,12 +294,6 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
           </Text>
         </WebView>
       ) : null}
-      <WebView dataSet={{ 'personal-terminal-role': 'chart-attribution' }}>
-        <Text style={{ color: theme.text.metadata }}>
-          {t(language, 'personalTerminalChartBy')}{' '}
-          <a href="https://www.tradingview.com/" rel="noreferrer" target="_blank">TradingView</a>
-        </Text>
-      </WebView>
     </WebView>
   );
 });

@@ -247,18 +247,19 @@ export default function V11PersonalTerminal({
   });
   const handleChartTime = useCallback((time: string) => {
     if (!series) return;
+    const selected = nearestSelection(series, time);
+    if (!selected) return;
     if (!rangeMode) {
-      const selection = nearestSelection(series, time);
-      if (selection) setSheet({ kind: 'observation', selection });
+      setSheet({ kind: 'observation', selection: selected });
       return;
     }
     setRangeSelection((currentRange) => {
-      if (!currentRange.start || currentRange.end) return { start: time, end: null };
-      const ordered = [currentRange.start, time].sort();
-      const start = nearestSelection(series, ordered[0]);
-      const end = nearestSelection(series, ordered[1]);
-      if (start && end) setSheet({ kind: 'range', start, end });
-      return { start: ordered[0], end: ordered[1] };
+      if (!currentRange.start || currentRange.end) return { start: selected.time, end: null };
+      const first = nearestSelection(series, currentRange.start);
+      if (!first) return { start: selected.time, end: null };
+      const [start, end] = [first, selected].sort((left, right) => new Date(left.time).getTime() - new Date(right.time).getTime());
+      setSheet({ kind: 'range', start, end });
+      return { start: start.time, end: end.time };
     });
   }, [rangeMode, series]);
   const handleCrosshair = useCallback((selection: PersonalTerminalChartSelection | null) => setCrosshair(selection), []);
