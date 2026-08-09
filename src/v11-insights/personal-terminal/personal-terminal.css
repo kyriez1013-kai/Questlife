@@ -673,7 +673,8 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  padding: 12px 12px max(12px, env(safe-area-inset-bottom));
+  flex-direction: row !important;
+  padding: 12px 12px calc(62px + env(safe-area-inset-bottom));
 }
 
 [data-personal-terminal-role="sheet-scrim"] {
@@ -687,9 +688,12 @@
 }
 
 [data-personal-terminal-role="sheet-layer"] > [data-v11-component="material-frame"] {
+  display: flex !important;
   width: min(680px, 100%) !important;
+  height: min(76dvh, 660px);
   max-height: min(76vh, 660px);
   overflow: hidden;
+  flex-direction: column;
 }
 
 [data-personal-terminal-role="sheet-layer"] [data-v11-component="material-clip"] {
@@ -1012,10 +1016,11 @@
   }
 
   [data-personal-terminal-role="sheet-layer"] {
-    padding: 8px 8px max(8px, env(safe-area-inset-bottom));
+    padding: 8px 8px calc(62px + env(safe-area-inset-bottom));
   }
 
   [data-personal-terminal-role="sheet-layer"] > [data-v11-component="material-frame"] {
+    height: min(78dvh, 620px);
     max-height: min(78vh, 620px);
   }
 }
@@ -1232,13 +1237,18 @@
 
 [data-personal-terminal-role="range-actions"] {
   display: flex;
+  flex-direction: row !important;
   flex-wrap: wrap;
   gap: 1px;
 }
 
 [data-personal-terminal-role="range-actions"] > [role="button"] {
+  display: flex;
   min-height: 44px;
+  align-items: center;
+  justify-content: center;
   flex: 1 1 150px;
+  padding: 0 12px;
   border: 0;
   border-bottom: 1px solid color-mix(in srgb, var(--pt-border) 58%, transparent);
   background: color-mix(in srgb, var(--pt-surface) 46%, transparent);
@@ -1300,6 +1310,15 @@
   [data-personal-terminal-role="analyst-sections"],
   [data-personal-terminal-role="similar-periods"] {
     grid-template-columns: 1fr;
+  }
+
+  [data-personal-terminal-role="range-actions"] {
+    flex-direction: column !important;
+    flex-wrap: nowrap;
+  }
+
+  [data-personal-terminal-role="range-actions"] > [role="button"] {
+    flex: 0 0 44px;
   }
 
   [data-personal-terminal-role="similar-periods"] > span:first-child,
@@ -1741,19 +1760,37 @@
 }
 
 [data-personal-terminal-role="signal-row"] {
+  min-height: 66px;
+  align-items: start;
   grid-template-columns: 20px minmax(0, 1fr) auto;
   gap: 8px;
+  padding: 8px 0;
+  overflow: hidden;
 }
 
-[data-personal-terminal-role="signal-copy"] span:first-child {
+[data-personal-terminal-role="signal-copy"] {
+  min-width: 0;
+}
+
+[data-personal-terminal-role="signal-copy"] > div:first-child {
+  display: -webkit-box;
+  overflow: hidden;
   font-size: 10px;
   line-height: 14px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
-[data-personal-terminal-role="signal-copy"] span:last-child,
-[data-personal-terminal-role="signal-row"] > span:last-child {
+[data-personal-terminal-role="signal-copy"] > div:last-child,
+[data-personal-terminal-role="signal-row"] > div:last-child {
+  display: block;
   font-size: 8px;
   line-height: 12px;
+}
+
+[data-personal-terminal-role="signal-row"] > div:last-child {
+  padding-top: 2px;
+  white-space: nowrap;
 }
 
 [data-personal-terminal-role="chart-license"] {
