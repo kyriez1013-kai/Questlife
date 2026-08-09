@@ -146,6 +146,7 @@ function series(
     supportsCandle?: boolean;
     unitKey?: string;
     qaIndex?: boolean;
+    stability?: PersonalTerminalSeries['qaStability'];
   },
 ): PersonalTerminalSeries {
   return {
@@ -169,12 +170,13 @@ function series(
     },
     limitation: text(options.qaIndex ? 'personalTerminalQaIndexLimitation' : 'personalTerminalFixtureLimitation'),
     qaDerivedIndex: options.qaIndex,
+    qaStability: options.stability,
   };
 }
 
-function skillRows(goalId: string, labels: string[]) {
+function skillRows(goalId: string, labels: string[], entityIds: string[] = []) {
   return labels.map((label, index) => ({
-    id: `${goalId}:skill:${index}`,
+    id: entityIds[index] || `${goalId}:skill:${index}`,
     label: text(label),
     value: [0.34, 0.27, 0.23, 0.16][index] || 0.1,
     direction: index === 0 || index === 2 ? 'rising' as const : index === 1 ? 'stable' as const : 'weakening' as const,
@@ -195,17 +197,21 @@ function matureModel(fixture: PersonalTerminalFixtureId): PersonalTerminalModel 
     {
       id: 'goal:quant-analyst', scope: 'goal', label: text('personalTerminalFixtureGoalQuant'), context: text('personalTerminalGoalPortfolioContext'),
       seriesIds: ['goal:quant-analyst:activity'], compositionBasis: text('personalTerminalDemoActivityComposition'),
-      composition: skillRows('goal:quant-analyst', ['personalTerminalFixtureSkillSql', 'personalTerminalFixtureSkillPython', 'personalTerminalFixtureSkillEconometrics', 'personalTerminalFixtureSkillFinance']),
+      composition: skillRows(
+        'goal:quant-analyst',
+        ['personalTerminalFixtureSkillSql', 'personalTerminalFixtureSkillPython', 'personalTerminalFixtureSkillEconometrics', 'personalTerminalFixtureSkillFinance'],
+        ['skill:sql'],
+      ),
     },
     {
       id: 'goal:strength', scope: 'goal', label: text('personalTerminalFixtureGoalStrength'), context: text('personalTerminalGoalPortfolioContext'),
       seriesIds: ['goal:strength:activity'], compositionBasis: text('personalTerminalDemoActivityComposition'),
-      composition: skillRows('goal:strength', ['personalTerminalFixtureSkillBench', 'personalTerminalFixtureSkillSquat', 'personalTerminalFixtureSkillPull', 'personalTerminalFixtureSkillRecovery']),
+      composition: skillRows('goal:strength', ['personalTerminalFixtureSkillBench', 'personalTerminalFixtureSkillSquat', 'personalTerminalFixtureSkillPull', 'personalTerminalFixtureSkillRecovery'], ['skill:bench']),
     },
     {
       id: 'goal:writing', scope: 'goal', label: text('personalTerminalFixtureGoalWriting'), context: text('personalTerminalGoalPortfolioContext'),
       seriesIds: ['goal:writing:activity'], compositionBasis: text('personalTerminalDemoActivityComposition'),
-      composition: skillRows('goal:writing', ['personalTerminalFixtureSkillResearch', 'personalTerminalFixtureSkillDraft', 'personalTerminalFixtureSkillRevision', 'personalTerminalFixtureSkillFinal']),
+      composition: skillRows('goal:writing', ['personalTerminalFixtureSkillResearch', 'personalTerminalFixtureSkillDraft', 'personalTerminalFixtureSkillRevision', 'personalTerminalFixtureSkillFinal'], ['skill:writing']),
     },
     {
       id: 'goal:recovery', scope: 'goal', label: text('personalTerminalFixtureGoalRecovery'), context: text('personalTerminalGoalPortfolioContext'),
@@ -217,9 +223,9 @@ function matureModel(fixture: PersonalTerminalFixtureId): PersonalTerminalModel 
     { id: 'skill:writing', scope: 'skill', label: text('personalTerminalFixtureSkillDraft'), context: text('personalTerminalSkillAssetContext'), seriesIds: ['skill:writing:performance', 'skill:writing:activity'] },
   ];
   const seriesRows: PersonalTerminalSeries[] = [
-    series('market:index', 'market:personal', 'personalTerminalQaDerivedIndex', marketObservations, { baseline: 69.2, low: 63.8, high: 73.5, semantic: 'derived_index', supportsCandle: true, unitKey: 'personalTerminalUnitIndex', qaIndex: true }),
-    series('market:state', 'market:personal', 'quantMetricState', stateObservations, { baseline: 3.62, low: 3.18, high: 4.08, supportsCandle: true }),
-    series('market:execution', 'market:personal', 'quantMetricExecution', executionObservations, { baseline: 66, low: 38, high: 88, semantic: 'duration', unitKey: 'quantUnitMinutes' }),
+    series('market:index', 'market:personal', 'personalTerminalQaDerivedIndex', marketObservations, { baseline: 69.2, low: 63.8, high: 73.5, semantic: 'derived_index', supportsCandle: true, unitKey: 'personalTerminalUnitIndex', qaIndex: true, stability: volatile ? 'variable' : 'stable' }),
+    series('market:state', 'market:personal', 'quantMetricState', stateObservations, { baseline: 3.62, low: 3.18, high: 4.08, supportsCandle: true, stability: volatile ? 'variable' : 'stable' }),
+    series('market:execution', 'market:personal', 'quantMetricExecution', executionObservations, { baseline: 66, low: 38, high: 88, semantic: 'duration', unitKey: 'quantUnitMinutes', stability: 'mixed' }),
     series('market:recovery', 'market:personal', 'quantMetricRecovery', dailySeries({ baseline: 52, amplitude: 7, slope: 0.012, volatile }), { baseline: 54, low: 45, high: 62, semantic: 'performance', unitKey: 'quantUnitMilliseconds' }),
     series('goal:quant-analyst:activity', 'goal:quant-analyst', 'personalTerminalGoalActivity', dailySeries({ baseline: 38, amplitude: 22, slope: 0.08, missingEvery: 8, volatile }), { baseline: 48, low: 20, high: 76, semantic: 'duration', unitKey: 'quantUnitMinutes' }),
     series('goal:strength:activity', 'goal:strength', 'personalTerminalGoalActivity', dailySeries({ baseline: 32, amplitude: 26, slope: 0.05, missingEvery: 10, volatile }), { baseline: 42, low: 18, high: 74, semantic: 'duration', unitKey: 'quantUnitMinutes' }),
@@ -234,7 +240,21 @@ function matureModel(fixture: PersonalTerminalFixtureId): PersonalTerminalModel 
   ];
   const selectedScope = fixture === 'portfolio' ? 'goal' : fixture === 'skill' ? 'skill' : 'market';
   const selectedEntity = selectedScope === 'goal' ? 'goal:quant-analyst' : selectedScope === 'skill' ? 'skill:sql' : 'market:personal';
-  const selectedSeries = selectedScope === 'goal' ? 'goal:quant-analyst:activity' : selectedScope === 'skill' ? 'skill:sql:performance' : 'market:index';
+  const selectedSeries = selectedScope === 'goal' ? 'goal:quant-analyst:activity' : selectedScope === 'skill' ? 'skill:sql:performance' : 'market:state';
+  const marketMap = entities
+    .filter((entity) => entity.scope === 'goal')
+    .flatMap((goal) => (goal.composition || []).map((row) => ({
+      ...row,
+      entityId: goal.id,
+      quantity: 'recent_activity' as const,
+    })));
+  const breadth = marketMap.reduce((result, row) => {
+    if (row.direction === 'rising') result.improving += 1;
+    else if (row.direction === 'stable') result.stable += 1;
+    else if (row.direction === 'weakening') result.weakening += 1;
+    else result.unavailable += 1;
+    return result;
+  }, { improving: 0, stable: 0, weakening: 0, unavailable: 0 });
   return {
     fixture,
     dataMode: 'qa_fixture',
@@ -245,6 +265,8 @@ function matureModel(fixture: PersonalTerminalFixtureId): PersonalTerminalModel 
     series: seriesRows,
     signals,
     implication: text('personalTerminalFixtureImplication'),
+    breadth,
+    marketMap,
     range: { start: '2025-08-09', end: '2026-08-08' },
   };
 }
@@ -276,4 +298,3 @@ function forming(): PersonalTerminalModel {
 export function getPersonalTerminalFixture(id: PersonalTerminalFixtureId): PersonalTerminalModel {
   return id === 'forming' ? forming() : matureModel(id);
 }
-

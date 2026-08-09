@@ -61,6 +61,7 @@ export type PersonalTerminalSeries = {
   baseline: PersonalTerminalBaseline;
   limitation: V11InsightCopy;
   qaDerivedIndex?: boolean;
+  qaStability?: 'stable' | 'mixed' | 'variable';
 };
 
 export type PersonalTerminalCompositionRow = {
@@ -69,6 +70,22 @@ export type PersonalTerminalCompositionRow = {
   value: number;
   direction: 'rising' | 'stable' | 'weakening' | 'unavailable';
   stage: V11EvidenceStage;
+};
+
+export type PersonalTerminalBreadth = {
+  improving: number;
+  stable: number;
+  weakening: number;
+  unavailable: number;
+};
+
+export type PersonalTerminalMapRow = {
+  id: string;
+  entityId: string;
+  label: V11InsightCopy;
+  value: number;
+  direction: PersonalTerminalCompositionRow['direction'];
+  quantity: 'recent_activity' | 'configured_weight' | 'time_allocation';
 };
 
 export type PersonalTerminalEntity = {
@@ -103,6 +120,8 @@ export type PersonalTerminalModel = {
   series: PersonalTerminalSeries[];
   signals: PersonalTerminalSignal[];
   implication: V11InsightCopy;
+  breadth?: PersonalTerminalBreadth;
+  marketMap?: PersonalTerminalMapRow[];
   range: { start: string | null; end: string | null };
 };
 
