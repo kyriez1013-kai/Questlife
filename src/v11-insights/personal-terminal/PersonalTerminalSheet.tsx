@@ -4,7 +4,7 @@ import type { Lang } from '../../i18n';
 import { t } from '../../i18n';
 import { V11GlassSheet } from '../../v11/components/V11Material';
 import type { V11ThemeTokens } from '../../v11/tokens';
-import V11RebaselineIcon from '../../v11-stage2-rebaseline/V11RebaselineIcon';
+import PersonalTerminalIcon from './PersonalTerminalIcon';
 
 const WebView = View as any;
 const WebPressable = Pressable as any;
@@ -54,7 +54,7 @@ export default function PersonalTerminalSheet({
             {subtitle ? <Text style={{ color: theme.text.secondary }}>{subtitle}</Text> : null}
           </WebView>
           <WebPressable accessibilityLabel={t(language, 'close')} accessibilityRole="button" onPress={onClose}>
-            <V11RebaselineIcon color={theme.text.primary} name="close" size={18} />
+            <PersonalTerminalIcon color={theme.text.primary} name="close" size={18} />
           </WebPressable>
         </WebView>
         <WebScrollView dataSet={{ 'personal-terminal-role': 'sheet-scroll' }} showsVerticalScrollIndicator={false}>

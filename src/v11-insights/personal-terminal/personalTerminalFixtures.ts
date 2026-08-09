@@ -196,7 +196,7 @@ function matureModel(fixture: PersonalTerminalFixtureId): PersonalTerminalModel 
     },
     {
       id: 'goal:quant-analyst', scope: 'goal', label: text('personalTerminalFixtureGoalQuant'), context: text('personalTerminalGoalPortfolioContext'),
-      seriesIds: ['goal:quant-analyst:activity'], compositionBasis: text('personalTerminalDemoActivityComposition'),
+      seriesIds: ['goal:quant-analyst:activity'], compositionBasis: text('personalTerminalRecentActivityShare'),
       composition: skillRows(
         'goal:quant-analyst',
         ['personalTerminalFixtureSkillSql', 'personalTerminalFixtureSkillPython', 'personalTerminalFixtureSkillEconometrics', 'personalTerminalFixtureSkillFinance'],
@@ -205,17 +205,17 @@ function matureModel(fixture: PersonalTerminalFixtureId): PersonalTerminalModel 
     },
     {
       id: 'goal:strength', scope: 'goal', label: text('personalTerminalFixtureGoalStrength'), context: text('personalTerminalGoalPortfolioContext'),
-      seriesIds: ['goal:strength:activity'], compositionBasis: text('personalTerminalDemoActivityComposition'),
+      seriesIds: ['goal:strength:activity'], compositionBasis: text('personalTerminalRecentActivityShare'),
       composition: skillRows('goal:strength', ['personalTerminalFixtureSkillBench', 'personalTerminalFixtureSkillSquat', 'personalTerminalFixtureSkillPull', 'personalTerminalFixtureSkillRecovery'], ['skill:bench']),
     },
     {
       id: 'goal:writing', scope: 'goal', label: text('personalTerminalFixtureGoalWriting'), context: text('personalTerminalGoalPortfolioContext'),
-      seriesIds: ['goal:writing:activity'], compositionBasis: text('personalTerminalDemoActivityComposition'),
+      seriesIds: ['goal:writing:activity'], compositionBasis: text('personalTerminalRecentActivityShare'),
       composition: skillRows('goal:writing', ['personalTerminalFixtureSkillResearch', 'personalTerminalFixtureSkillDraft', 'personalTerminalFixtureSkillRevision', 'personalTerminalFixtureSkillFinal'], ['skill:writing']),
     },
     {
       id: 'goal:recovery', scope: 'goal', label: text('personalTerminalFixtureGoalRecovery'), context: text('personalTerminalGoalPortfolioContext'),
-      seriesIds: ['goal:recovery:activity'], compositionBasis: text('personalTerminalDemoActivityComposition'),
+      seriesIds: ['goal:recovery:activity'], compositionBasis: text('personalTerminalRecentActivityShare'),
       composition: skillRows('goal:recovery', ['personalTerminalFixtureSkillSleep', 'personalTerminalFixtureSkillWalk', 'personalTerminalFixtureSkillMobility', 'personalTerminalFixtureSkillDownshift']),
     },
     { id: 'skill:sql', scope: 'skill', label: text('personalTerminalFixtureSkillSql'), context: text('personalTerminalSkillAssetContext'), seriesIds: ['skill:sql:performance', 'skill:sql:activity'] },

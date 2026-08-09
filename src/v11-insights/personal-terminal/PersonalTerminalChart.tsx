@@ -4,6 +4,7 @@ import React, {
   useImperativeHandle,
   useMemo,
   useRef,
+  useState,
 } from 'react';
 import { Text, View } from 'react-native';
 import type { Lang } from '../../i18n';
@@ -11,6 +12,7 @@ import { t } from '../../i18n';
 import type { V11ThemeTokens } from '../../v11/tokens';
 import type {
   PersonalTerminalChartKind,
+  PersonalTerminalEvent,
   PersonalTerminalIndicator,
   PersonalTerminalPoint,
   PersonalTerminalSeries,
@@ -71,6 +73,8 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
   indicators: Set<PersonalTerminalIndicator>;
   language: Lang;
   onCrosshair: (selection: PersonalTerminalChartSelection | null) => void;
+  onInteraction?: () => void;
+  onSelectEvent: (event: PersonalTerminalEvent) => void;
   onSelectTime: (time: string) => void;
   rangeSelection: { start: string | null; end: string | null };
   reducedMotion: boolean;
@@ -83,6 +87,8 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
   indicators,
   language,
   onCrosshair,
+  onInteraction,
+  onSelectEvent,
   onSelectTime,
   rangeSelection,
   reducedMotion,
@@ -95,6 +101,21 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
   const chartRef = useRef<any>(null);
   const visibleRangeRef = useRef<any>(null);
   const primarySeriesRef = useRef<any>(null);
+  const [baselineBand, setBaselineBand] = useState<{ top: number; height: number } | null>(null);
+
+  const evidenceCells = useMemo(() => {
+    const cells: Array<{ id: string; kind: 'observed' | 'missing'; count: number }> = [];
+    viewData.line.forEach((point, index) => {
+      if (index > 0) {
+        const previous = new Date(viewData.line[index - 1].time).getTime();
+        const current = new Date(point.time).getTime();
+        const gapDays = Math.round((current - previous) / 86_400_000);
+        if (gapDays > 1) cells.push({ id: `gap-${point.time}`, kind: 'missing', count: Math.min(gapDays - 1, 6) });
+      }
+      cells.push({ id: `point-${point.time}`, kind: 'observed', count: point.observationCount });
+    });
+    return cells.slice(-48);
+  }, [viewData.line]);
 
   useImperativeHandle(ref, () => ({
     zoomIn: () => {
@@ -133,6 +154,7 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
       chart = library.createChart(hostRef.current, {
         autoSize: true,
         layout: {
+          attributionLogo: false,
           background: { type: library.ColorType.Solid, color: 'transparent' },
           textColor: theme.text.metadata,
           fontFamily: 'Inter, ui-sans-serif, system-ui, -apple-system, sans-serif',
@@ -201,6 +223,17 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
       }
       primarySeriesRef.current = primary;
 
+      const updateBaselineBand = () => {
+        if (!indicators.has('baseline') || series.baseline.low == null || series.baseline.high == null) {
+          setBaselineBand(null);
+          return;
+        }
+        const high = primary.priceToCoordinate(series.baseline.high);
+        const low = primary.priceToCoordinate(series.baseline.low);
+        if (high == null || low == null) return;
+        setBaselineBand({ top: Math.min(high, low), height: Math.max(1, Math.abs(low - high)) });
+      };
+
       const first = viewData.line[0]?.time;
       const last = viewData.line[viewData.line.length - 1]?.time;
       if (indicators.has('baseline') && first && last && series.baseline.value != null) {
@@ -226,19 +259,24 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
         load.setData(pointsToData(viewData.load).map((row) => ({ ...row, color: theme.glow.supporting })) as any);
         chart.panes()[1]?.setStretchFactor(0.24);
       }
+      const markers: any[] = [];
       if (indicators.has('events') && series.events.length > 0) {
-        const markers = series.events.flatMap((event) => {
+        markers.push(...series.events.flatMap((event) => {
           const point = nearestPoint(viewData.line, event.timestamp);
           return point ? [{
+            id: `event:${event.id}`,
             time: chartTime(point.time),
-            position: 'aboveBar' as const,
+            position: event.type === 'context' ? 'belowBar' as const : 'aboveBar' as const,
             color: theme.text.secondary,
-            shape: 'circle' as const,
+            shape: event.type === 'decision' ? 'arrowUp' as const : event.type === 'context' ? 'arrowDown' as const : 'square' as const,
+            size: 0.35,
             text: '',
           }] : [];
-        });
-        if (markers.length) library.createSeriesMarkers(primary, markers as any);
+        }));
       }
+      const currentPoint = viewData.line[viewData.line.length - 1];
+      if (currentPoint) markers.push({ id: 'current-reading', time: chartTime(currentPoint.time), position: 'inBar', color: theme.glow.primary, shape: 'square', size: 0.5, text: '' });
+      if (markers.length) library.createSeriesMarkers(primary, markers as any);
 
       const selectionFor = (time: unknown, param?: any): PersonalTerminalChartSelection | null => {
         const rawKey = String(time);
@@ -251,17 +289,30 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
       const crosshairHandler = (param: any) => onCrosshair(param.time ? selectionFor(param.time, param) : null);
       const clickHandler = (param: any) => {
         if (!param.time) return;
+        const markerId = String(param.hoveredObjectId || '');
+        if (markerId.startsWith('event:')) {
+          const event = series.events.find((row) => `event:${row.id}` === markerId);
+          if (event) { onSelectEvent(event); return; }
+        }
         const selection = selectionFor(param.time, param);
         if (selection) onSelectTime(selection.time);
       };
       chart.subscribeCrosshairMove(crosshairHandler);
       chart.subscribeClick(clickHandler);
-      const rangeHandler = (range: any) => { visibleRangeRef.current = range; };
+      const rangeHandler = (range: any) => {
+        if (visibleRangeRef.current) onInteraction?.();
+        visibleRangeRef.current = range;
+        updateBaselineBand();
+      };
       chart.timeScale().subscribeVisibleLogicalRangeChange(rangeHandler);
       chart.timeScale().fitContent();
       if (visibleRangeRef.current) chart.timeScale().setVisibleLogicalRange(visibleRangeRef.current);
+      window.requestAnimationFrame(updateBaselineBand);
 
-      resizeObserver = new ResizeObserver(() => chart?.applyOptions({ width: hostRef.current?.clientWidth || 0, height: hostRef.current?.clientHeight || 0 }));
+      resizeObserver = new ResizeObserver(() => {
+        chart?.applyOptions({ width: hostRef.current?.clientWidth || 0, height: hostRef.current?.clientHeight || 0 });
+        window.requestAnimationFrame(updateBaselineBand);
+      });
       resizeObserver.observe(hostRef.current);
     })();
 
@@ -275,7 +326,7 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
       chartRef.current = null;
       primarySeriesRef.current = null;
     };
-  }, [chartKind, indicators, language, lookup, onCrosshair, onSelectTime, reducedMotion, series, theme, timeframe, viewData]);
+  }, [chartKind, indicators, language, lookup, onCrosshair, onInteraction, onSelectEvent, onSelectTime, reducedMotion, series, theme, timeframe, viewData]);
 
   return (
     <WebView dataSet={{ 'personal-terminal-role': 'chart-frame' }}>
@@ -285,6 +336,10 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
         dataSet={{ 'personal-terminal-role': 'chart-host' }}
         ref={(node: HTMLElement | null) => { hostRef.current = node; }}
       />
+      {baselineBand ? <WebView dataSet={{ 'personal-terminal-role': 'baseline-band' }} style={{ top: baselineBand.top, height: baselineBand.height }} /> : null}
+      <WebView dataSet={{ 'personal-terminal-role': 'evidence-rail' }}>
+        {evidenceCells.map((cell) => <WebView dataSet={{ 'personal-terminal-evidence-kind': cell.kind }} key={cell.id} style={{ flexGrow: Math.max(1, cell.count) }} />)}
+      </WebView>
       {rangeSelection.start ? (
         <WebView dataSet={{ 'personal-terminal-role': 'range-status' }}>
           <Text style={{ color: theme.text.primary }}>
