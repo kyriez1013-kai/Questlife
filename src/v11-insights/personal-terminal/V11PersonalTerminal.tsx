@@ -936,7 +936,7 @@ export default function V11PersonalTerminal({
               <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalAnalystObserved')}</Text><Text style={{ color: theme.text.primary }}>{copy(language, series.label)} · {t(language, `personalTerminalTrajectory_${trend}`)} · {change(delta)}</Text></WebView>
               <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalRelatedChanges')}</Text><Text style={{ color: theme.text.secondary }}>{comparisonSeries ? `${copy(language, comparisonSeries.label)} · ${copy(language, comparisonSeries.unit)} · ${t(language, 'personalTerminalIndependentScale')}` : t(language, 'personalTerminalNoComparison')}</Text></WebView>
               <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalKnownSignals')}</Text><Text style={{ color: theme.text.secondary }}>{visibleSignals.length ? copy(language, visibleSignals[0].title) : t(language, 'quantNoSignalYet')}</Text></WebView>
-              <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalAnalystLimitations')}</Text><Text style={{ color: theme.text.secondary }}>{copy(language, series.limitation)}</Text></WebView>
+              <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalAnalystLimitations')}</Text><Text style={{ color: theme.text.secondary }}>{debugFixture || !model.fixture ? copy(language, series.limitation) : t(language, 'personalTerminalEvidenceBoundary')}</Text></WebView>
             </WebView>
             <WebView dataSet={{ 'personal-terminal-role': 'analyst-prompts' }}>
               {['whyChange', 'comparePeriod', 'beforeMovement', 'similarPeriods', 'relatedSignals', 'unknown'].map((key) => (
