@@ -27,6 +27,7 @@ import type {
   PersonalTerminalTimeframe,
 } from './personalTerminalPresentation';
 import {
+  availableComparisonSeries,
   availableTimeframes,
   buildPersonalTerminalViewData,
 } from './personalTerminalPresentation';
@@ -46,6 +47,7 @@ type SheetState =
   | { kind: 'composition' }
   | { kind: 'entity' }
   | { kind: 'instrument' }
+  | { kind: 'compare' }
   | { kind: 'indicators' }
   | { kind: 'chart-type' }
   | { kind: 'events' }
@@ -87,6 +89,35 @@ function directionIcon(value: number | null): PersonalTerminalIconName {
   if (valueDirection === 'up') return 'trend-up';
   if (valueDirection === 'down') return 'trend-down';
   return 'trend-flat';
+}
+
+function nearestObservation(series: PersonalTerminalSeries, time: string) {
+  if (!series.observations.length) return null;
+  const target = new Date(time).getTime();
+  return series.observations.reduce((best, row) => (
+    Math.abs(new Date(row.timestamp).getTime() - target) < Math.abs(new Date(best.timestamp).getTime() - target) ? row : best
+  ));
+}
+
+function eventScopeLabel(language: Lang, model: PersonalTerminalModel, scopeId: string | null) {
+  if (!scopeId) return t(language, 'personalTerminalEventScopeUnlinked');
+  const matchedEntity = model.entities.find((item) => item.id === scopeId);
+  if (matchedEntity) return copy(language, matchedEntity.label);
+  const scope = scopeId.split(':')[0];
+  if (scope === 'market' || scope === 'goal' || scope === 'skill') {
+    return t(language, `personalTerminalResolution_${scope}`);
+  }
+  return t(language, 'personalTerminalEventScopeRecorded');
+}
+
+function periodChange(series: PersonalTerminalSeries, now: Date, days: number | null) {
+  const rows = series.observations.filter((row) => days == null || new Date(row.timestamp).getTime() >= now.getTime() - days * 86_400_000);
+  if (rows.length < 2) return null;
+  const first = rows[0].value;
+  const last = rows[rows.length - 1].value;
+  if (series.valueChangeMode === 'percentage') return first === 0 ? null : (last - first) / Math.abs(first) * 100;
+  if (series.valueChangeMode === 'none') return null;
+  return last - first;
 }
 
 function evidenceSummary(observations: PersonalTerminalSeries['observations'], timeframe: PersonalTerminalTimeframe) {
@@ -284,6 +315,7 @@ export default function V11PersonalTerminal({
   const [scope, setScope] = useState<PersonalTerminalScope>(model.defaultScope);
   const [entityId, setEntityId] = useState(model.defaultEntityId);
   const [seriesId, setSeriesId] = useState(model.defaultSeriesId);
+  const [comparisonSeriesId, setComparisonSeriesId] = useState<string | null>(null);
   const [chartKind, setChartKind] = useState<PersonalTerminalChartKind>(query().get('quantChart') === 'candle' ? 'candle' : 'line');
   const [timeframe, setTimeframe] = useState<PersonalTerminalTimeframe>(() => initialTimeframe(model, defaultSeries));
   const [indicators, setIndicators] = useState<Set<PersonalTerminalIndicator>>(initialIndicators);
@@ -292,6 +324,7 @@ export default function V11PersonalTerminal({
   const [rangeSelection, setRangeSelection] = useState<{ start: string | null; end: string | null }>({ start: null, end: null });
   const [sheet, setSheet] = useState<SheetState>(null);
   const [analystPrompt, setAnalystPrompt] = useState<string | null>(null);
+  const [showSimilarPeriods, setShowSimilarPeriods] = useState(false);
   const chartRef = useRef<PersonalTerminalChartHandle | null>(null);
   const lastCrosshairMeasurementRef = useRef(0);
   const lastChartRangeMeasurementRef = useRef(0);
@@ -302,6 +335,7 @@ export default function V11PersonalTerminal({
     setScope(model.defaultScope);
     setEntityId(model.defaultEntityId);
     setSeriesId(model.defaultSeriesId);
+    setComparisonSeriesId(null);
   }, [model]);
 
   const entities = useMemo(() => model.entities.filter((row) => row.scope === scope), [model.entities, scope]);
@@ -312,6 +346,13 @@ export default function V11PersonalTerminal({
   const now = useMemo(() => new Date(model.range.end ? `${model.range.end}T23:59:59.000` : Date.now()), [model.range.end]);
   const available = useMemo(() => series ? availableTimeframes(series, now) : ['1M'] as PersonalTerminalTimeframe[], [now, series]);
   const viewData = useMemo(() => series ? buildPersonalTerminalViewData(series, timeframe, now) : null, [now, series, timeframe]);
+  const comparisonRows = useMemo(() => (
+    entity ? availableComparisonSeries(model, entity.id, series?.id || '').filter((row) => (!row.qaDerivedIndex || debugFixture) && row.observations.length > 0) : []
+  ), [debugFixture, entity, model, series?.id]);
+  const comparisonSeries = comparisonRows.find((row) => row.id === comparisonSeriesId) || null;
+  const comparisonViewData = useMemo(() => (
+    comparisonSeries ? buildPersonalTerminalViewData(comparisonSeries, timeframe, now) : null
+  ), [comparisonSeries, now, timeframe]);
   const current = viewData?.line[viewData.line.length - 1]?.value ?? null;
   const delta = current == null || series?.baseline.value == null ? null : current - series.baseline.value;
   const candleAvailable = Boolean(series?.supportsCandle && viewData?.candles.length);
@@ -321,6 +362,15 @@ export default function V11PersonalTerminal({
   const evidence = viewData ? evidenceSummary(viewData.observations, timeframe) : { activeDays: 0, missing: null, latest: null };
   const trend = direction(delta);
   const activeIndicatorCount = [...indicators].filter((item) => item !== 'events').length;
+  const hasComparableData = (viewData?.observations.length || 0) > 1;
+  const longRange = useMemo(() => ([
+    ['7D', periodChange(series, now, 7)],
+    ['30D', periodChange(series, now, 30)],
+    ['90D', periodChange(series, now, 90)],
+    ['YTD', periodChange(series, now, Math.max(1, Math.ceil((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / 86_400_000)))],
+    ['1Y', periodChange(series, now, 365)],
+    ['ALL', periodChange(series, now, null)],
+  ] as Array<[string, number | null]>).filter((row) => row[1] != null), [now, series]);
 
   useEffect(() => {
     if (!available.includes(timeframe)) setTimeframe(available[0] || '1M');
@@ -338,6 +388,7 @@ export default function V11PersonalTerminal({
     setSeriesId(nextSeries?.id || firstEntity.seriesIds[0]);
     setCrosshair(null);
     setRangeSelection({ start: null, end: null });
+    setComparisonSeriesId(null);
   });
   const selectEntity = (next: PersonalTerminalEntity) => measureInteraction('entity-switch', () => {
     setEntityId(next.id);
@@ -345,12 +396,18 @@ export default function V11PersonalTerminal({
     setSeriesId(nextSeries?.id || next.seriesIds[0]);
     setCrosshair(null);
     setRangeSelection({ start: null, end: null });
+    setComparisonSeriesId(null);
     setSheet(null);
   });
   const selectSeries = (next: PersonalTerminalSeries) => measureInteraction('metric-switch', () => {
     setSeriesId(next.id);
     setCrosshair(null);
     setRangeSelection({ start: null, end: null });
+    setComparisonSeriesId(null);
+  });
+  const selectComparison = (next: PersonalTerminalSeries | null) => measureInteraction('compare-toggle', () => {
+    setComparisonSeriesId(next?.id || null);
+    setSheet(null);
   });
   const toggleIndicator = (indicator: PersonalTerminalIndicator) => measureInteraction(`indicator-${indicator}`, () => {
     setIndicators((currentSet) => {
@@ -391,14 +448,14 @@ export default function V11PersonalTerminal({
   }, []);
   const handleEvent = useCallback((event: PersonalTerminalEvent) => measureInteraction('event-sheet', () => setSheet({ kind: 'event', event })), []);
 
-  const openAnalyst = () => {
+  const openAnalyst = (prompt: string | null = null) => {
     measureInteraction('analyst-open', () => {
-      setAnalystPrompt(null);
+      setAnalystPrompt(prompt);
       setSheet({ kind: 'analyst' });
     });
   };
   const latestEvents = series?.events.filter((event) => !viewData?.observations.length || new Date(event.timestamp) >= new Date(viewData.observations[0].timestamp)).slice(-4) || [];
-  const visibleSignals = model.signals.slice(0, 3);
+  const visibleSignals = scope === 'market' ? model.signals.slice(0, 3) : [];
 
   if (!entity || !series || !viewData) return null;
 
@@ -412,6 +469,7 @@ export default function V11PersonalTerminal({
     if (sheet.kind === 'composition') return { eyebrow: t(language, 'personalTerminalComposition'), title: copy(language, entity.label), subtitle: entity.compositionBasis ? copy(language, entity.compositionBasis) : undefined };
     if (sheet.kind === 'entity') return { eyebrow: t(language, 'personalTerminalSelectEntity'), title: t(language, `personalTerminalScope_${scope}`), subtitle: t(language, 'personalTerminalOneInterface') };
     if (sheet.kind === 'instrument') return { eyebrow: t(language, 'personalTerminalInstrument'), title: copy(language, entity.label), subtitle: t(language, 'personalTerminalInstrumentHint') };
+    if (sheet.kind === 'compare') return { eyebrow: t(language, 'personalTerminalCompareWith'), title: copy(language, series.label), subtitle: t(language, 'personalTerminalIndependentScale') };
     if (sheet.kind === 'indicators') return { eyebrow: t(language, 'personalTerminalIndicators'), title: copy(language, series.label), subtitle: t(language, 'personalTerminalIndicatorsHint') };
     if (sheet.kind === 'chart-type') return { eyebrow: t(language, 'personalTerminalChartType'), title: copy(language, series.label), subtitle: t(language, 'personalTerminalChartTypeHint') };
     if (sheet.kind === 'events') return { eyebrow: t(language, 'personalTerminalEventTool'), title: copy(language, entity.label), subtitle: t(language, 'personalTerminalEventRailHint') };
@@ -514,15 +572,32 @@ export default function V11PersonalTerminal({
                     <TerminalButton key={item} label={item} onPress={() => measureInteraction('timeframe-switch', () => setTimeframe(item))} selected={timeframe === item} theme={theme} />
                   ))}
                 </WebView>
-                <WebView dataSet={{ 'personal-terminal-role': 'instrument-context' }}>
+                {viewData.observations.length ? <WebView dataSet={{ 'personal-terminal-role': 'instrument-context' }}>
                   <Text style={{ color: theme.text.metadata }}>{activeIndicatorCount} {t(language, 'personalTerminalIndicatorsActive')}</Text>
                   <Text style={{ color: theme.text.metadata }}>{chartKind === 'candle' ? t(language, 'personalTerminalCandle') : t(language, 'personalTerminalLine')}</Text>
-                </WebView>
+                </WebView> : null}
               </WebView>
 
-              <WebView dataSet={{ 'personal-terminal-role': 'chart-wrap' }}>
+              <WebView dataSet={{ 'personal-terminal-role': 'human-timeline-legend' }}>
+                <WebView>
+                  <WebView dataSet={{ 'personal-terminal-series': 'primary' }} />
+                  <Text style={{ color: theme.text.primary }}>{t(language, 'personalTerminalPrimarySeries')} · {copy(language, series.label)} · {copy(language, series.unit)}</Text>
+                </WebView>
+                {comparisonSeries ? (
+                  <WebPressable accessibilityRole="button" onPress={() => setSheet({ kind: 'compare' })}>
+                    <WebView dataSet={{ 'personal-terminal-series': 'secondary' }} />
+                    <Text style={{ color: theme.text.secondary }}>{t(language, 'personalTerminalSecondarySeries')} · {copy(language, comparisonSeries.label)} · {copy(language, comparisonSeries.unit)}</Text>
+                  </WebPressable>
+                ) : (
+                  <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalHumanTimeline')}</Text>
+                )}
+              </WebView>
+
+              <WebView dataSet={{ 'personal-terminal-empty': viewData.line.length ? 'false' : 'true', 'personal-terminal-role': 'chart-wrap' }}>
                 <PersonalTerminalChart
                   chartKind={chartKind}
+                  comparisonSeries={comparisonSeries}
+                  comparisonViewData={comparisonViewData}
                   indicators={indicators}
                   language={language}
                   onCrosshair={handleCrosshair}
@@ -545,20 +620,21 @@ export default function V11PersonalTerminal({
                 ) : null}
               </WebView>
 
-              <WebView dataSet={{ 'personal-terminal-role': 'toolbars' }}>
+              {viewData.observations.length || series.events.length || comparisonRows.length || (scope === 'market' && model.marketMap?.length) ? <WebView dataSet={{ 'personal-terminal-role': 'toolbars' }}>
                 <WebView dataSet={{ 'personal-terminal-role': 'analysis-tools' }}>
-                  <TerminalTool active={activeIndicatorCount > 0} icon="indicator" label={t(language, 'personalTerminalIndicators')} onPress={() => setSheet({ kind: 'indicators' })} theme={theme} />
-                  <TerminalTool active={indicators.has('events')} icon="event" label={t(language, 'personalTerminalEventTool')} onPress={() => setSheet({ kind: 'events' })} theme={theme} />
-                  <TerminalTool active={rangeMode} icon="range" label={rangeMode ? t(language, 'personalTerminalCancelRange') : t(language, 'personalTerminalCompare')} onPress={() => { setRangeMode((currentRangeMode) => !currentRangeMode); setRangeSelection({ start: null, end: null }); }} theme={theme} />
-                  <TerminalTool active={chartKind === 'candle'} icon="chart" label={t(language, 'personalTerminalChartType')} onPress={() => setSheet({ kind: 'chart-type' })} theme={theme} />
+                  {viewData.observations.length ? <TerminalTool active={activeIndicatorCount > 0} icon="indicator" label={t(language, 'personalTerminalIndicators')} onPress={() => setSheet({ kind: 'indicators' })} theme={theme} /> : null}
+                  {series.events.length ? <TerminalTool active={indicators.has('events')} icon="event" label={t(language, 'personalTerminalEventTool')} onPress={() => setSheet({ kind: 'events' })} theme={theme} /> : null}
+                  {comparisonRows.length ? <TerminalTool active={Boolean(comparisonSeries)} icon="compare" label={t(language, 'personalTerminalCompare')} onPress={() => setSheet({ kind: 'compare' })} theme={theme} /> : null}
+                  {hasComparableData ? <TerminalTool active={rangeMode} icon="range" label={rangeMode ? t(language, 'personalTerminalCancelRange') : t(language, 'personalTerminalRangeTool')} onPress={() => { setRangeMode((currentRangeMode) => !currentRangeMode); setRangeSelection({ start: null, end: null }); }} theme={theme} /> : null}
+                  {viewData.observations.length ? <TerminalTool active={chartKind === 'candle'} icon="chart" label={t(language, 'personalTerminalChartType')} onPress={() => setSheet({ kind: 'chart-type' })} theme={theme} /> : null}
                   {scope === 'market' && model.marketMap?.length ? <TerminalTool icon="market" label={t(language, 'personalTerminalOverviewTool')} onPress={() => setSheet({ kind: 'market-map' })} theme={theme} /> : null}
                 </WebView>
-                <WebView dataSet={{ 'personal-terminal-role': 'zoom-controls' }}>
+                {viewData.observations.length ? <WebView dataSet={{ 'personal-terminal-role': 'zoom-controls' }}>
                   <TerminalTool compact icon="zoom-out" label={t(language, 'personalTerminalZoomOut')} onPress={() => measureInteraction('zoom-out', () => chartRef.current?.zoomOut())} theme={theme} />
                   <TerminalTool compact icon="zoom-in" label={t(language, 'personalTerminalZoomIn')} onPress={() => measureInteraction('zoom-in', () => chartRef.current?.zoomIn())} theme={theme} />
                   <TerminalTool compact icon="reset" label={t(language, 'personalTerminalReset')} onPress={() => measureInteraction('zoom-reset', () => chartRef.current?.reset())} theme={theme} />
-                </WebView>
-              </WebView>
+                </WebView> : null}
+              </WebView> : null}
 
               <WebPressable
                 accessibilityLabel={t(language, 'personalTerminalEvidenceProvenance')}
@@ -566,7 +642,12 @@ export default function V11PersonalTerminal({
                 dataSet={{ 'personal-terminal-role': 'mobile-snapshot' }}
                 onPress={() => setSheet({ kind: 'evidence' })}
               >
-                {[
+                {!viewData.observations.length ? (
+                  <WebView dataSet={{ 'personal-terminal-role': 'accumulation-state' }}>
+                    <Text style={{ color: theme.text.primary }}>{t(language, 'personalTerminalAccumulationTitle')}</Text>
+                    <Text style={{ color: theme.text.secondary }}>{t(language, 'personalTerminalAccumulationBody')}</Text>
+                  </WebView>
+                ) : [
                   [t(language, 'quantCurrent'), number(current)],
                   [t(language, 'quantBaseline'), number(series.baseline.value)],
                   [t(language, 'quantChange'), change(delta)],
@@ -575,6 +656,17 @@ export default function V11PersonalTerminal({
                   [t(language, 'quantEvidence'), String(viewData.observations.length)],
                 ].map(([label, value]) => <WebView key={label}><Text style={{ color: theme.text.metadata }}>{label}</Text><Text style={{ color: theme.text.primary }}>{value}</Text></WebView>)}
               </WebPressable>
+
+              {longRange.length ? (
+                <WebView dataSet={{ 'personal-terminal-role': 'mobile-multiscale' }}>
+                  {longRange.slice(0, 3).map(([label, value]) => (
+                    <WebView key={label}>
+                      <Text style={{ color: theme.text.metadata }}>{label}</Text>
+                      <Text style={{ color: theme.text.primary }}>{change(value)}{series.valueChangeMode === 'percentage' ? '%' : ''}</Text>
+                    </WebView>
+                  ))}
+                </WebView>
+              ) : null}
 
               {entity.composition?.length ? (
                 <WebPressable accessibilityRole="button" dataSet={{ 'personal-terminal-role': 'mobile-portfolio' }} onPress={() => setSheet({ kind: 'composition' })}>
@@ -586,18 +678,18 @@ export default function V11PersonalTerminal({
                 </WebPressable>
               ) : null}
 
-              <WebView dataSet={{ 'personal-terminal-role': 'mobile-signal' }}>
-                {visibleSignals[0] ? <SignalRow language={language} onPress={() => setSheet({ kind: 'signal', signal: visibleSignals[0] })} signal={visibleSignals[0]} theme={theme} /> : (
-                  <Text style={{ color: theme.text.secondary }}>{t(language, 'quantNoSignalYet')}</Text>
-                )}
-              </WebView>
-              <WebPressable accessibilityRole="button" dataSet={{ 'personal-terminal-role': 'mobile-analyst-entry' }} onPress={openAnalyst}>
+              {visibleSignals[0] ? (
+                <WebView dataSet={{ 'personal-terminal-role': 'mobile-signal' }}>
+                  <SignalRow language={language} onPress={() => setSheet({ kind: 'signal', signal: visibleSignals[0] })} signal={visibleSignals[0]} theme={theme} />
+                </WebView>
+              ) : null}
+              {viewData.observations.length ? <WebPressable accessibilityRole="button" dataSet={{ 'personal-terminal-role': 'mobile-analyst-entry' }} onPress={() => openAnalyst()}>
                 <WebView>
                   <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalAnalyst')}</Text>
                   <Text style={{ color: theme.text.primary }}>{t(language, 'personalTerminalTalkToData')}</Text>
                 </WebView>
                 <PersonalTerminalIcon color={theme.text.primary} name="analyst" size={16} />
-              </WebPressable>
+              </WebPressable> : null}
             </WebView>
 
             <WebView dataSet={{ 'personal-terminal-role': 'side-panel' }}>
@@ -608,7 +700,12 @@ export default function V11PersonalTerminal({
                 onPress={() => setSheet({ kind: 'evidence' })}
               >
                 <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalQuantSnapshot')}</Text>
-                <WebView dataSet={{ 'personal-terminal-role': 'snapshot-list' }}>
+                {!viewData.observations.length ? (
+                  <WebView dataSet={{ 'personal-terminal-role': 'accumulation-state' }}>
+                    <Text style={{ color: theme.text.primary }}>{t(language, 'personalTerminalAccumulationTitle')}</Text>
+                    <Text style={{ color: theme.text.secondary }}>{t(language, 'personalTerminalAccumulationBody')}</Text>
+                  </WebView>
+                ) : <WebView dataSet={{ 'personal-terminal-role': 'snapshot-list' }}>
                   {[
                     [t(language, 'quantCurrent'), number(current)],
                     [t(language, 'quantBaseline'), number(series.baseline.value)],
@@ -617,9 +714,22 @@ export default function V11PersonalTerminal({
                     [t(language, 'personalTerminalStability'), series.qaStability ? t(language, `personalTerminalStability_${series.qaStability}`) : t(language, 'personalTerminalNotCalculated')],
                     [t(language, 'quantEvidence'), `${viewData.observations.length} / ${evidence.activeDays}${t(language, 'personalTerminalDayShort')}`],
                   ].map(([label, value]) => <WebView key={label}><Text style={{ color: theme.text.metadata }}>{label}</Text><Text style={{ color: theme.text.primary }}>{value}</Text></WebView>)}
-                </WebView>
+                </WebView>}
               </WebPressable>
-              {model.breadth ? (
+              {longRange.length ? (
+                <WebView dataSet={{ 'personal-terminal-role': 'panel-section' }}>
+                  <Text style={{ color: theme.text.metadata }}>{scope === 'goal' ? t(language, 'personalTerminalGoalDevelopment') : scope === 'skill' ? t(language, 'personalTerminalSkillDevelopment') : t(language, 'personalTerminalLongRange')}</Text>
+                  <WebView dataSet={{ 'personal-terminal-role': 'long-range-grid' }}>
+                    {longRange.map(([label, value]) => (
+                      <WebView key={label}>
+                        <Text style={{ color: theme.text.metadata }}>{label}</Text>
+                        <Text style={{ color: theme.text.primary }}>{change(value)}{series.valueChangeMode === 'percentage' ? '%' : ''}</Text>
+                      </WebView>
+                    ))}
+                  </WebView>
+                </WebView>
+              ) : null}
+              {scope === 'market' && model.breadth ? (
                 <WebPressable accessibilityRole="button" dataSet={{ 'personal-terminal-role': 'panel-section' }} onPress={() => setSheet({ kind: 'market-map' })}>
                   <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalBreadth')}</Text>
                   <WebView dataSet={{ 'personal-terminal-role': 'breadth-bar' }}>
@@ -641,14 +751,16 @@ export default function V11PersonalTerminal({
                   </WebView>
                 </WebPressable>
               ) : null}
-              <WebView dataSet={{ 'personal-terminal-role': 'panel-section' }}>
-                <Text style={{ color: theme.text.metadata }}>{t(language, 'quantSignals')}</Text>
-                {visibleSignals.length ? visibleSignals.map((signal) => <SignalRow key={signal.id} language={language} onPress={() => setSheet({ kind: 'signal', signal })} signal={signal} theme={theme} />) : <Text style={{ color: theme.text.secondary }}>{t(language, 'quantNoSignalYet')}</Text>}
-              </WebView>
-              <WebPressable accessibilityRole="button" dataSet={{ 'personal-terminal-role': 'analyst-entry' }} onPress={openAnalyst}>
+              {visibleSignals.length ? (
+                <WebView dataSet={{ 'personal-terminal-role': 'panel-section' }}>
+                  <Text style={{ color: theme.text.metadata }}>{t(language, 'quantSignals')}</Text>
+                  {visibleSignals.map((signal) => <SignalRow key={signal.id} language={language} onPress={() => setSheet({ kind: 'signal', signal })} signal={signal} theme={theme} />)}
+                </WebView>
+              ) : null}
+              {viewData.observations.length ? <WebPressable accessibilityRole="button" dataSet={{ 'personal-terminal-role': 'analyst-entry' }} onPress={() => openAnalyst()}>
                 <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalAnalyst')}</Text><Text style={{ color: theme.text.primary }}>{t(language, 'personalTerminalTalkToData')}</Text></WebView>
                 <PersonalTerminalIcon color={theme.text.primary} name="analyst" size={16} />
-              </WebPressable>
+              </WebPressable> : null}
             </WebView>
 
             <WebView dataSet={{ 'personal-terminal-role': 'bottom-panel' }}>
@@ -704,7 +816,10 @@ export default function V11PersonalTerminal({
               <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalSignalNonCausal')}</Text>
             </WebView>
             <WebView dataSet={{ 'personal-terminal-role': 'sheet-data-grid' }}>
-              <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalSignalWindow')}</Text><Text style={{ color: theme.text.primary }}>{timeframe}</Text></WebView>
+              <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalSignalWindow')}</Text><Text style={{ color: theme.text.primary }}>{sheet.signal.windowDays == null ? timeframe : t(language, 'personalTerminalWindowDays').replace('{days}', String(sheet.signal.windowDays))}</Text></WebView>
+              <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalSignalDirection')}</Text><Text style={{ color: theme.text.primary }}>{sheet.signal.direction ? t(language, `personalTerminalTrajectory_${sheet.signal.direction === 'higher' ? 'up' : sheet.signal.direction === 'lower' ? 'down' : 'flat'}`) : '—'}</Text></WebView>
+              <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalSignalLag')}</Text><Text style={{ color: theme.text.primary }}>{sheet.signal.lagDays == null ? '—' : t(language, 'personalTerminalLagDays').replace('{days}', String(sheet.signal.lagDays))}</Text></WebView>
+              <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalSignalMaturity')}</Text><Text style={{ color: theme.text.primary }}>{t(language, `quantBaseline_${sheet.signal.maturity}`)}</Text></WebView>
               <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'quantEvidenceSupport')}</Text><Text style={{ color: theme.text.primary }}>{sheet.signal.observationCount}</Text></WebView>
               <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'quantCounterexamples')}</Text><Text style={{ color: theme.text.primary }}>{sheet.signal.counterexampleCount ?? '—'}</Text></WebView>
               <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalMissingness')}</Text><Text style={{ color: theme.text.primary }}>{t(language, 'personalTerminalNotCalculated')}</Text></WebView>
@@ -722,18 +837,37 @@ export default function V11PersonalTerminal({
         {sheet?.kind === 'event' ? (
           <WebView dataSet={{ 'personal-terminal-role': 'sheet-content' }}>
             <Text style={{ color: theme.text.primary }}>{copy(language, sheet.event.detail)}</Text>
+            <WebView dataSet={{ 'personal-terminal-role': 'sheet-data-grid' }}>
+              <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalEventCategory')}</Text><Text style={{ color: theme.text.primary }}>{t(language, `personalTerminalEventCategory_${sheet.event.category}`)}</Text></WebView>
+              <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalSource')}</Text><Text style={{ color: theme.text.primary }}>{t(language, sheet.event.provenance === 'historical_reference' ? 'personalTerminalProvenanceHistorical' : sheet.event.provenance === 'derived_fixture' ? 'personalTerminalProvenanceDerived' : 'personalTerminalProvenanceManual')}</Text></WebView>
+              <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalEventScope')}</Text><Text style={{ color: theme.text.primary }}>{eventScopeLabel(language, model, sheet.event.scopeId)}</Text></WebView>
+            </WebView>
             <Text style={{ color: theme.text.secondary }}>{t(language, 'personalTerminalEventNotCause')}</Text>
             <Text style={{ color: theme.text.metadata }}>{t(language, 'quantSourceCount')}: {sheet.event.sourceIds.length}</Text>
           </WebView>
         ) : null}
         {sheet?.kind === 'observation' ? (
           <WebView dataSet={{ 'personal-terminal-role': 'sheet-content' }}>
+            {(() => {
+              const related = comparisonSeries ? nearestObservation(comparisonSeries, sheet.selection.time) : null;
+              const nearbyEvents = latestEvents.filter((event) => Math.abs(new Date(event.timestamp).getTime() - new Date(sheet.selection.time).getTime()) <= 86_400_000);
+              return (
+                <>
+                  <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalSelectedMovement')}</Text>
             <WebView dataSet={{ 'personal-terminal-role': 'sheet-data-grid' }}>
               <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'quantCurrent')}</Text><Text style={{ color: theme.text.primary }}>{number(sheet.selection.value)}</Text></WebView>
               <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'quantBaseline')}</Text><Text style={{ color: theme.text.primary }}>{number(sheet.selection.baseline)}</Text></WebView>
+              <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalBaselineDeviation')}</Text><Text style={{ color: theme.text.primary }}>{change(sheet.selection.value == null || sheet.selection.baseline == null ? null : sheet.selection.value - sheet.selection.baseline)}</Text></WebView>
+              <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalRelatedChanges')}</Text><Text style={{ color: theme.text.primary }}>{related ? `${number(related.value)} ${copy(language, comparisonSeries!.unit)}` : '—'}</Text></WebView>
+              <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalEventTool')}</Text><Text style={{ color: theme.text.primary }}>{nearbyEvents.length}</Text></WebView>
+              <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalSignalCount')}</Text><Text style={{ color: theme.text.primary }}>{visibleSignals.length}</Text></WebView>
               <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'quantSourceCount')}</Text><Text style={{ color: theme.text.primary }}>{sheet.selection.sourceIds.length}</Text></WebView>
             </WebView>
             <Text style={{ color: theme.text.secondary }}>{copy(language, series.limitation)}</Text>
+                  <TerminalButton label={t(language, 'personalTerminalAnalyseMovement')} onPress={openAnalyst} theme={theme} />
+                </>
+              );
+            })()}
           </WebView>
         ) : null}
         {sheet?.kind === 'range' ? (() => {
@@ -749,18 +883,42 @@ export default function V11PersonalTerminal({
             const value = new Date(event.timestamp).getTime();
             return value >= rangeStart && value <= rangeEnd;
           });
+          const relatedStart = comparisonSeries ? nearestObservation(comparisonSeries, sheet.start.time) : null;
+          const relatedEnd = comparisonSeries ? nearestObservation(comparisonSeries, sheet.end.time) : null;
+          const relatedDifference = relatedStart && relatedEnd ? relatedEnd.value - relatedStart.value : null;
+          const baselineDeviation = sheet.end.value == null || series.baseline.value == null ? null : sheet.end.value - series.baseline.value;
           return (
             <WebView dataSet={{ 'personal-terminal-role': 'sheet-content' }}>
               <WebView dataSet={{ 'personal-terminal-role': 'sheet-data-grid' }}>
                 <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalRangeStart')}</Text><Text style={{ color: theme.text.primary }}>{number(sheet.start.value)}</Text></WebView>
                 <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalRangeEnd')}</Text><Text style={{ color: theme.text.primary }}>{number(sheet.end.value)}</Text></WebView>
                 <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'quantChange')}</Text><Text style={{ color: theme.text.primary }}>{change(difference)}{percentage == null ? '' : ` · ${change(percentage)}%`}</Text></WebView>
+                <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalBaselineDeviation')}</Text><Text style={{ color: theme.text.primary }}>{change(baselineDeviation)}</Text></WebView>
+                <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalExecutionChange')}</Text><Text style={{ color: theme.text.primary }}>{relatedDifference == null ? '—' : `${change(relatedDifference)} ${comparisonSeries ? copy(language, comparisonSeries.unit) : ''}`}</Text></WebView>
                 <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalStability')}</Text><Text style={{ color: theme.text.primary }}>{series.qaStability ? t(language, `personalTerminalStability_${series.qaStability}`) : t(language, 'personalTerminalNotCalculated')}</Text></WebView>
                 <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalObservations')}</Text><Text style={{ color: theme.text.primary }}>{rangeObservations.length}</Text></WebView>
                 <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalEventTool')}</Text><Text style={{ color: theme.text.primary }}>{rangeEvents.length}</Text></WebView>
+                <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalSignalCount')}</Text><Text style={{ color: theme.text.primary }}>{visibleSignals.length}</Text></WebView>
+                <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalMissing')}</Text><Text style={{ color: theme.text.primary }}>{Math.max(0, Math.round((rangeEnd - rangeStart) / 86_400_000) + 1 - new Set(rangeObservations.map((row) => row.timestamp.slice(0, 10))).size)}</Text></WebView>
               </WebView>
               <Text style={{ color: theme.text.secondary }}>{t(language, 'personalTerminalRangeLimitation')}</Text>
-              <TerminalButton label={t(language, 'personalTerminalAskAboutRange')} onPress={openAnalyst} theme={theme} />
+              <WebView dataSet={{ 'personal-terminal-role': 'range-actions' }}>
+                <TerminalButton label={t(language, 'personalTerminalPreviousPeriod')} onPress={() => openAnalyst('comparePeriod')} theme={theme} />
+                <TerminalButton label={t(language, 'personalTerminalAnalyseMovement')} onPress={openAnalyst} theme={theme} />
+                <TerminalButton label={t(language, 'personalTerminalPrompt_similarPeriods')} onPress={() => setShowSimilarPeriods((currentValue) => !currentValue)} selected={showSimilarPeriods} theme={theme} />
+              </WebView>
+              {showSimilarPeriods && model.similarPeriods?.length ? (
+                <WebView dataSet={{ 'personal-terminal-role': 'similar-periods' }}>
+                  <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalSimilarPeriods')}</Text>
+                  {model.similarPeriods.map((period) => (
+                    <WebView key={period.id}>
+                      <Text style={{ color: theme.text.primary }}>{period.start.slice(5)} — {period.end.slice(5)}</Text>
+                      <Text style={{ color: theme.text.secondary }}>{change(period.primaryChange)} · {period.observationCount} {t(language, 'personalTerminalObservations')}</Text>
+                    </WebView>
+                  ))}
+                  <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalSimilarPeriodsFixture')}</Text>
+                </WebView>
+              ) : null}
             </WebView>
           );
         })() : null}
@@ -774,18 +932,21 @@ export default function V11PersonalTerminal({
                 <Text style={{ color: theme.text.secondary }}>{rangeSelection.start ? `${rangeSelection.start.slice(0, 10)} — ${rangeSelection.end?.slice(0, 10) || t(language, 'personalTerminalPendingRange')}` : t(language, 'personalTerminalVisibleRangeContext')}</Text>
               </WebView>
             </WebView>
-            <WebView dataSet={{ 'personal-terminal-role': 'analyst-facts' }}>
-              <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalAnalystKnows')}</Text>
-              <Text style={{ color: theme.text.secondary }}>{activeIndicatorCount} {t(language, 'personalTerminalIndicatorsActive')} · {latestEvents.length} {t(language, 'personalTerminalEventTool')} · {viewData.observations.length} {t(language, 'personalTerminalObservations')}</Text>
+            <WebView dataSet={{ 'personal-terminal-role': 'analyst-sections' }}>
+              <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalAnalystObserved')}</Text><Text style={{ color: theme.text.primary }}>{copy(language, series.label)} · {t(language, `personalTerminalTrajectory_${trend}`)} · {change(delta)}</Text></WebView>
+              <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalRelatedChanges')}</Text><Text style={{ color: theme.text.secondary }}>{comparisonSeries ? `${copy(language, comparisonSeries.label)} · ${copy(language, comparisonSeries.unit)} · ${t(language, 'personalTerminalIndependentScale')}` : t(language, 'personalTerminalNoComparison')}</Text></WebView>
+              <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalKnownSignals')}</Text><Text style={{ color: theme.text.secondary }}>{visibleSignals.length ? copy(language, visibleSignals[0].title) : t(language, 'quantNoSignalYet')}</Text></WebView>
+              <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalAnalystLimitations')}</Text><Text style={{ color: theme.text.secondary }}>{copy(language, series.limitation)}</Text></WebView>
             </WebView>
             <WebView dataSet={{ 'personal-terminal-role': 'analyst-prompts' }}>
-              {['whyChange', 'comparePeriod', 'beforeMovement', 'relatedSignals'].map((key) => (
+              {['whyChange', 'comparePeriod', 'beforeMovement', 'similarPeriods', 'relatedSignals', 'unknown'].map((key) => (
                 <TerminalButton key={key} label={t(language, `personalTerminalPrompt_${key}`)} onPress={() => setAnalystPrompt(key)} selected={analystPrompt === key} theme={theme} />
               ))}
             </WebView>
-            <Text style={{ color: theme.text.secondary }}>
-              {analystPrompt ? t(language, 'personalTerminalAnalystShellReady') : t(language, 'personalTerminalAnalystShellLimitation')}
-            </Text>
+            <WebView dataSet={{ 'personal-terminal-role': 'analyst-next-question' }}>
+              <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalAnalystNextQuestion')}</Text>
+              <Text style={{ color: theme.text.secondary }}>{analystPrompt ? t(language, 'personalTerminalAnalystShellReady') : t(language, 'personalTerminalAnalystShellLimitation')}</Text>
+            </WebView>
           </WebView>
         ) : null}
         {sheet?.kind === 'evidence' ? (
@@ -837,6 +998,22 @@ export default function V11PersonalTerminal({
               <WebPressable accessibilityRole="button" accessibilityState={{ selected: item.id === series.id }} key={item.id} onPress={() => { selectSeries(item); setSheet(null); }}>
                 <Text style={{ color: item.id === series.id ? theme.text.primary : theme.text.secondary }}>{copy(language, item.label)}</Text>
                 <Text style={{ color: theme.text.metadata }}>{copy(language, item.unit)} · {t(language, `quantBaseline_${item.baseline.status === 'qa_only' ? 'established' : item.baseline.status}`)}</Text>
+              </WebPressable>
+            ))}
+          </WebView>
+        ) : null}
+        {sheet?.kind === 'compare' ? (
+          <WebView dataSet={{ 'personal-terminal-role': 'control-sheet' }}>
+            <WebPressable accessibilityRole="button" accessibilityState={{ selected: comparisonSeries == null }} onPress={() => selectComparison(null)}>
+              <PersonalTerminalIcon color={comparisonSeries == null ? theme.text.primary : theme.text.metadata} name="compare" size={17} />
+              <Text style={{ color: comparisonSeries == null ? theme.text.primary : theme.text.secondary }}>{t(language, 'personalTerminalNoComparison')}</Text>
+              <Text style={{ color: theme.text.metadata }}>{copy(language, series.label)} · {copy(language, series.unit)}</Text>
+            </WebPressable>
+            {comparisonRows.map((item) => (
+              <WebPressable accessibilityRole="button" accessibilityState={{ selected: comparisonSeries?.id === item.id }} key={item.id} onPress={() => selectComparison(item)}>
+                <PersonalTerminalIcon color={comparisonSeries?.id === item.id ? theme.text.primary : theme.text.metadata} name="compare" size={17} />
+                <Text style={{ color: comparisonSeries?.id === item.id ? theme.text.primary : theme.text.secondary }}>{copy(language, item.label)}</Text>
+                <Text style={{ color: theme.text.metadata }}>{copy(language, item.unit)} · {t(language, 'personalTerminalIndependentScale')}</Text>
               </WebPressable>
             ))}
           </WebView>

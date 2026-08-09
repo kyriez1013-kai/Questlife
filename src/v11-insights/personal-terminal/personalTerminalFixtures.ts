@@ -167,6 +167,7 @@ function series(
     unitKey?: string;
     qaIndex?: boolean;
     stability?: PersonalTerminalSeries['qaStability'];
+    events?: PersonalTerminalEvent[];
   },
 ): PersonalTerminalSeries {
   return {
@@ -180,7 +181,7 @@ function series(
     supportsCandle: options.supportsCandle ?? false,
     observations,
     load: loadSeries(),
-    events: events(),
+    events: options.events || [],
     baseline: {
       status: options.qaIndex ? 'qa_only' : 'established',
       value: options.baseline,
@@ -243,15 +244,15 @@ function matureModel(fixture: PersonalTerminalFixtureId): PersonalTerminalModel 
     { id: 'skill:writing', scope: 'skill', label: text('personalTerminalFixtureSkillDraft'), context: text('personalTerminalSkillAssetContext'), seriesIds: ['skill:writing:performance', 'skill:writing:activity'] },
   ];
   const seriesRows: PersonalTerminalSeries[] = [
-    series('market:index', 'market:personal', 'personalTerminalQaDerivedIndex', marketObservations, { baseline: 69.2, low: 63.8, high: 73.5, semantic: 'derived_index', supportsCandle: true, unitKey: 'personalTerminalUnitIndex', qaIndex: true, stability: volatile ? 'variable' : 'stable' }),
-    series('market:state', 'market:personal', 'quantMetricState', stateObservations, { baseline: 3.62, low: 3.18, high: 4.08, supportsCandle: true, stability: volatile ? 'variable' : 'stable' }),
-    series('market:execution', 'market:personal', 'quantMetricExecution', executionObservations, { baseline: 66, low: 38, high: 88, semantic: 'duration', unitKey: 'quantUnitMinutes', stability: 'mixed' }),
-    series('market:recovery', 'market:personal', 'quantMetricRecovery', dailySeries({ baseline: 52, amplitude: 7, slope: 0.012, volatile }), { baseline: 54, low: 45, high: 62, semantic: 'performance', unitKey: 'quantUnitMilliseconds' }),
+    series('market:index', 'market:personal', 'personalTerminalQaDerivedIndex', marketObservations, { baseline: 69.2, low: 63.8, high: 73.5, semantic: 'derived_index', supportsCandle: true, unitKey: 'personalTerminalUnitIndex', qaIndex: true, stability: volatile ? 'variable' : 'stable', events: events() }),
+    series('market:state', 'market:personal', 'quantMetricState', stateObservations, { baseline: 3.62, low: 3.18, high: 4.08, supportsCandle: true, stability: volatile ? 'variable' : 'stable', events: events() }),
+    series('market:execution', 'market:personal', 'quantMetricExecution', executionObservations, { baseline: 66, low: 38, high: 88, semantic: 'duration', unitKey: 'quantUnitMinutes', stability: 'mixed', events: events() }),
+    series('market:recovery', 'market:personal', 'quantMetricRecovery', dailySeries({ baseline: 52, amplitude: 7, slope: 0.012, volatile }), { baseline: 54, low: 45, high: 62, semantic: 'performance', unitKey: 'quantUnitMilliseconds', events: events() }),
     series('goal:quant-analyst:activity', 'goal:quant-analyst', 'personalTerminalGoalActivity', dailySeries({ baseline: 38, amplitude: 22, slope: 0.08, missingEvery: 8, volatile }), { baseline: 48, low: 20, high: 76, semantic: 'duration', unitKey: 'quantUnitMinutes' }),
-    series('goal:strength:activity', 'goal:strength', 'personalTerminalGoalActivity', dailySeries({ baseline: 32, amplitude: 26, slope: 0.05, missingEvery: 10, volatile }), { baseline: 42, low: 18, high: 74, semantic: 'duration', unitKey: 'quantUnitMinutes' }),
+    series('goal:strength:activity', 'goal:strength', 'personalTerminalGoalActivity', dailySeries({ baseline: 32, amplitude: 26, slope: 0.05, missingEvery: 10, volatile }), { baseline: 42, low: 18, high: 74, semantic: 'duration', unitKey: 'quantUnitMinutes', events: events().filter((event) => event.scopeId === 'goal:strength') }),
     series('goal:writing:activity', 'goal:writing', 'personalTerminalGoalActivity', dailySeries({ baseline: 28, amplitude: 18, slope: 0.06, missingEvery: 7 }), { baseline: 38, low: 16, high: 62, semantic: 'duration', unitKey: 'quantUnitMinutes' }),
     series('goal:recovery:activity', 'goal:recovery', 'personalTerminalGoalActivity', dailySeries({ baseline: 18, amplitude: 9, slope: 0.02, missingEvery: 6 }), { baseline: 24, low: 10, high: 38, semantic: 'duration', unitKey: 'quantUnitMinutes' }),
-    series('skill:sql:performance', 'skill:sql', 'personalTerminalFixtureSkillSqlPerformance', dailySeries({ baseline: 58, amplitude: 6, slope: 0.055, missingEvery: 8, volatile }), { baseline: 70, low: 61, high: 79, semantic: 'performance', unitKey: 'personalTerminalUnitIndex' }),
+    series('skill:sql:performance', 'skill:sql', 'personalTerminalFixtureSkillSqlPerformance', dailySeries({ baseline: 58, amplitude: 6, slope: 0.055, missingEvery: 8, volatile }), { baseline: 70, low: 61, high: 79, semantic: 'derived_index', unitKey: 'personalTerminalUnitIndex', qaIndex: true }),
     series('skill:sql:activity', 'skill:sql', 'personalTerminalSkillActivity', dailySeries({ baseline: 28, amplitude: 20, slope: 0.06, missingEvery: 6 }), { baseline: 36, low: 12, high: 62, semantic: 'duration', unitKey: 'quantUnitMinutes' }),
     series('skill:bench:performance', 'skill:bench', 'personalTerminalFixtureSkillBenchPerformance', dailySeries({ baseline: 74, amplitude: 3, slope: 0.035, missingEvery: 13 }), { baseline: 82, low: 76, high: 88, semantic: 'performance', unitKey: 'personalTerminalUnitKg' }),
     series('skill:bench:activity', 'skill:bench', 'personalTerminalSkillActivity', dailySeries({ baseline: 18, amplitude: 15, slope: 0.02, missingEvery: 10 }), { baseline: 26, low: 8, high: 45, semantic: 'duration', unitKey: 'quantUnitMinutes' }),
@@ -260,7 +261,7 @@ function matureModel(fixture: PersonalTerminalFixtureId): PersonalTerminalModel 
   ];
   const selectedScope = fixture === 'portfolio' ? 'goal' : fixture === 'skill' ? 'skill' : 'market';
   const selectedEntity = selectedScope === 'goal' ? 'goal:quant-analyst' : selectedScope === 'skill' ? 'skill:sql' : 'market:personal';
-  const selectedSeries = selectedScope === 'goal' ? 'goal:quant-analyst:activity' : selectedScope === 'skill' ? 'skill:sql:performance' : 'market:state';
+  const selectedSeries = selectedScope === 'goal' ? 'goal:quant-analyst:activity' : selectedScope === 'skill' ? 'skill:sql:activity' : 'market:state';
   const marketMap = entities
     .filter((entity) => entity.scope === 'goal')
     .flatMap((goal) => (goal.composition || []).map((row) => ({

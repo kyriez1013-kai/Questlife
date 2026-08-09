@@ -6,7 +6,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import type { Lang } from '../../i18n';
 import { t } from '../../i18n';
 import type { V11ThemeTokens } from '../../v11/tokens';
@@ -21,6 +21,7 @@ import type {
 } from './personalTerminalPresentation';
 
 const WebView = View as any;
+const WebPressable = Pressable as any;
 
 export type PersonalTerminalChartSelection = {
   time: string;
@@ -56,6 +57,14 @@ function compactNumber(value: number) {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
+function eventLabel(language: Lang, event: PersonalTerminalEvent) {
+  if (event.shortLabel.kind === 'text') return event.shortLabel.text;
+  return Object.entries(event.shortLabel.values || {}).reduce(
+    (result, [key, replacement]) => result.replace(new RegExp(`\\{${key}\\}`, 'g'), String(replacement)),
+    t(language, event.shortLabel.key),
+  );
+}
+
 function pointsToData(rows: PersonalTerminalPoint[]) {
   return rows.map((row) => ({ time: chartTime(row.time), value: row.value }));
 }
@@ -70,6 +79,8 @@ function nearestPoint(rows: PersonalTerminalPoint[], selected: string) {
 
 const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
   chartKind: PersonalTerminalChartKind;
+  comparisonSeries?: PersonalTerminalSeries | null;
+  comparisonViewData?: PersonalTerminalViewData | null;
   indicators: Set<PersonalTerminalIndicator>;
   language: Lang;
   onCrosshair: (selection: PersonalTerminalChartSelection | null) => void;
@@ -84,6 +95,8 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
   viewData: PersonalTerminalViewData;
 }>(({
   chartKind,
+  comparisonSeries = null,
+  comparisonViewData = null,
   indicators,
   language,
   onCrosshair,
@@ -102,6 +115,20 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
   const visibleRangeRef = useRef<any>(null);
   const primarySeriesRef = useRef<any>(null);
   const [baselineBand, setBaselineBand] = useState<{ top: number; height: number } | null>(null);
+
+  const alignedEvents = useMemo(() => {
+    if (!viewData.line.length) return [];
+    const first = new Date(viewData.line[0].time).getTime();
+    const lastObservation = new Date(viewData.line[viewData.line.length - 1].time).getTime();
+    const lastEvent = series.events.reduce((latest, event) => Math.max(latest, new Date(event.timestamp).getTime()), lastObservation);
+    const last = Math.max(lastObservation, lastEvent);
+    const span = Math.max(1, last - first);
+    return series.events.flatMap((event) => {
+      const value = new Date(event.timestamp).getTime();
+      if (value < first || value > last) return [];
+      return [{ event, position: Math.max(2, Math.min(98, (value - first) / span * 100)) }];
+    });
+  }, [series.events, viewData.line]);
 
   const evidenceCells = useMemo(() => {
     const cells: Array<{ id: string; kind: 'observed' | 'missing'; count: number }> = [];
@@ -163,8 +190,8 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
         },
         localization: { priceFormatter: compactNumber },
         grid: {
-          vertLines: { color: theme.questTheme.colors.border, style: library.LineStyle.Dotted, visible: true },
-          horzLines: { color: theme.questTheme.colors.border, style: library.LineStyle.Dotted, visible: true },
+          vertLines: { color: theme.questTheme.colors.border, style: library.LineStyle.Dashed, visible: false },
+          horzLines: { color: theme.questTheme.colors.border, style: library.LineStyle.Dotted, visible: false },
         },
         crosshair: {
           mode: library.CrosshairMode.Normal,
@@ -174,8 +201,9 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
         handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false },
         handleScale: { axisDoubleClickReset: true, axisPressedMouseMove: true, mouseWheel: true, pinch: true },
         kineticScroll: { mouse: !reducedMotion, touch: !reducedMotion },
-        rightPriceScale: { borderColor: theme.questTheme.colors.border, scaleMargins: { top: 0.12, bottom: indicators.has('load') ? 0.24 : 0.1 } },
-        timeScale: { borderColor: theme.questTheme.colors.border, timeVisible: timeframe === '1D', secondsVisible: false, rightOffset: 2, barSpacing: timeframe === '1D' ? 34 : 10, minBarSpacing: 2 },
+        leftPriceScale: { visible: Boolean(comparisonSeries), borderVisible: false, scaleMargins: { top: 0.12, bottom: indicators.has('load') ? 0.24 : 0.1 } },
+        rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.12, bottom: indicators.has('load') ? 0.24 : 0.1 } },
+        timeScale: { borderVisible: false, timeVisible: timeframe === '1D', secondsVisible: false, rightOffset: 2, barSpacing: timeframe === '1D' ? 34 : 10, minBarSpacing: 2 },
       });
       chartRef.current = chart;
 
@@ -222,6 +250,21 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
         }
       }
       primarySeriesRef.current = primary;
+
+      if (comparisonSeries && comparisonViewData?.line.length) {
+        const comparison = chart.addSeries(library.LineSeries, {
+          color: theme.glow.supporting,
+          crosshairMarkerVisible: true,
+          lastValueVisible: true,
+          lineStyle: library.LineStyle.Dashed,
+          lineType: library.LineType.Curved,
+          lineWidth: 2,
+          pointMarkersVisible: false,
+          priceLineVisible: false,
+          priceScaleId: 'left',
+        });
+        comparison.setData(pointsToData(comparisonViewData.line) as any);
+      }
 
       const updateBaselineBand = () => {
         if (!indicators.has('baseline') || series.baseline.low == null || series.baseline.high == null) {
@@ -326,17 +369,45 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
       chartRef.current = null;
       primarySeriesRef.current = null;
     };
-  }, [chartKind, indicators, language, lookup, onCrosshair, onInteraction, onSelectEvent, onSelectTime, reducedMotion, series, theme, timeframe, viewData]);
+  }, [chartKind, comparisonSeries, comparisonViewData, indicators, language, lookup, onCrosshair, onInteraction, onSelectEvent, onSelectTime, reducedMotion, series, theme, timeframe, viewData]);
 
   return (
-    <WebView dataSet={{ 'personal-terminal-role': 'chart-frame' }}>
+    <WebView dataSet={{ 'personal-terminal-empty': viewData.line.length ? 'false' : 'true', 'personal-terminal-role': 'chart-frame' }}>
       <WebView
         accessibilityLabel={t(language, 'personalTerminalChartAccessibility')}
         accessibilityRole="image"
         dataSet={{ 'personal-terminal-role': 'chart-host' }}
         ref={(node: HTMLElement | null) => { hostRef.current = node; }}
       />
+      {!viewData.line.length ? (
+        <WebView dataSet={{ 'personal-terminal-role': 'chart-empty-state' }}>
+          <Text style={{ color: theme.text.primary }}>{t(language, 'personalTerminalEmptyChartTitle')}</Text>
+          <Text style={{ color: theme.text.secondary }}>{t(language, 'personalTerminalEmptyChartBody')}</Text>
+        </WebView>
+      ) : null}
       {baselineBand ? <WebView dataSet={{ 'personal-terminal-role': 'baseline-band' }} style={{ top: baselineBand.top, height: baselineBand.height }} /> : null}
+      <WebView dataSet={{ 'personal-terminal-role': 'time-calibration' }} pointerEvents="none" />
+      {alignedEvents.length ? (
+        <WebView dataSet={{ 'personal-terminal-role': 'event-rail' }}>
+          {alignedEvents.map(({ event, position }) => {
+            const value = new Date(event.timestamp).getTime();
+            const selected = rangeSelection.start && value >= new Date(rangeSelection.start).getTime() && (!rangeSelection.end || value <= new Date(rangeSelection.end).getTime());
+            return (
+            <WebPressable
+              accessibilityLabel={`${eventLabel(language, event)} · ${event.timestamp.slice(0, 10)}`}
+              accessibilityRole="button"
+              dataSet={{ 'personal-terminal-event-category': event.category, 'personal-terminal-selected': selected ? 'true' : 'false' }}
+              key={event.id}
+              onPress={() => onSelectEvent(event)}
+              style={{ left: `${position}%` }}
+            >
+              <WebView />
+              <Text style={{ color: theme.text.metadata }}>{event.timestamp.slice(5, 10)}</Text>
+            </WebPressable>
+            );
+          })}
+        </WebView>
+      ) : null}
       <WebView dataSet={{ 'personal-terminal-role': 'evidence-rail' }}>
         {evidenceCells.map((cell) => <WebView dataSet={{ 'personal-terminal-evidence-kind': cell.kind }} key={cell.id} style={{ flexGrow: Math.max(1, cell.count) }} />)}
       </WebView>

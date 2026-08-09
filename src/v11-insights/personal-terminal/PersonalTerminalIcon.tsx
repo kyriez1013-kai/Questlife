@@ -2,7 +2,7 @@ import React from 'react';
 import Svg, { Circle, Line, Path, Polyline, Rect } from 'react-native-svg';
 
 export type PersonalTerminalIconName =
-  | 'analyst' | 'chart' | 'close' | 'evidence' | 'event' | 'goal'
+  | 'analyst' | 'chart' | 'close' | 'compare' | 'evidence' | 'event' | 'goal'
   | 'indicator' | 'market' | 'range' | 'research' | 'reset' | 'signal'
   | 'skill' | 'trend-down' | 'trend-flat' | 'trend-up' | 'zoom-in' | 'zoom-out';
 
@@ -21,6 +21,7 @@ export default function PersonalTerminalIcon({ color, name, size = 18 }: { color
       {name === 'analyst' ? <><Circle {...line} cx="8.2" cy="8.2" r="4.3" /><Line {...line} x1="11.3" x2="16.5" y1="11.3" y2="16.5" /><Polyline {...line} points="5.8,9.5 7.4,7.8 9,8.8 10.8,6.5" /></> : null}
       {name === 'chart' ? <><Line {...line} x1="3" x2="17" y1="16" y2="16" /><Polyline {...line} points="3.5,13 7,9.5 10,11 15.8,4.5" /></> : null}
       {name === 'range' ? <><Line {...line} x1="4" x2="16" y1="10" y2="10" /><Line {...line} x1="4" x2="4" y1="5" y2="15" /><Line {...line} x1="16" x2="16" y1="5" y2="15" /></> : null}
+      {name === 'compare' ? <><Polyline {...line} points="3,7 6,4 9,7 12,5 17,8" /><Polyline {...line} points="3,14 6,12 9,13 12,10 17,11" /></> : null}
       {name === 'trend-up' ? <Polyline {...line} points="3,14 8,9 11,11 17,5 17,10" /> : null}
       {name === 'trend-down' ? <Polyline {...line} points="3,6 8,11 11,9 17,15 17,10" /> : null}
       {name === 'trend-flat' ? <><Line {...line} x1="3" x2="17" y1="10" y2="10" /><Polyline {...line} points="13,6 17,10 13,14" /></> : null}

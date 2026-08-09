@@ -50,6 +50,7 @@ assert.ok(portfolio.entities.find((row) => row.id === portfolio.defaultEntityId)
 
 const skill = getPersonalTerminalFixture('skill');
 assert.equal(skill.defaultScope, 'skill');
-assert.ok(skill.series.find((row) => row.id === skill.defaultSeriesId)?.semantic === 'performance');
+assert.ok(skill.series.find((row) => row.id === skill.defaultSeriesId)?.semantic === 'duration');
+assert.ok(skill.series.find((row) => row.id === 'skill:sql:performance')?.qaDerivedIndex === true);
 
 console.log('personalTerminalPresentation tests passed');
