@@ -42,9 +42,14 @@ import V11QuantIntelligenceSurface from './V11QuantIntelligenceSurface';
 import {
   getV11InsightsDebugLanguage,
   getV11InsightsDebugTheme,
+  getV11PersonalTerminalFixture,
   getV11QuantTerminalFixture,
+  isV11PersonalTerminalEnabled,
   isV11QuantTerminalEnabled,
 } from '../v11/featureFlag';
+import V11PersonalTerminal from './personal-terminal/V11PersonalTerminal';
+import { getPersonalTerminalFixture } from './personal-terminal/personalTerminalFixtures';
+import { buildPersonalTerminalPresentation } from './personal-terminal/personalTerminalPresentation';
 import V11QuantTerminal from './quant-terminal/V11QuantTerminal';
 import { getQuantTerminalFixture } from './quant-terminal/quantTerminalFixtures';
 import { buildQuantTerminalPresentation } from './quant-terminal/quantTerminalPresentation';
@@ -278,6 +283,7 @@ export default function V11InsightsScreen() {
   const [selectedTrendDate, setSelectedTrendDate] = useState<string | null>(null);
   const [detail, setDetail] = useState<V11InsightsDetailSelection>(null);
   const [terminalInspectorOpen, setTerminalInspectorOpen] = useState(false);
+  const [personalTerminalSheetOpen, setPersonalTerminalSheetOpen] = useState(false);
   const scrollRef = useRef<ScrollView | null>(null);
   const liveLogs = useMemo(
     () => getLiveExecutionLogs(data.executionLogs || [], { skills: data.skills }),
@@ -385,6 +391,19 @@ export default function V11InsightsScreen() {
       objectiveContext,
     });
   }, [data.patternMemory, data.stateCheckIns, liveLogs, objectiveContext, presentation, quantTerminalFixtureId]);
+  const personalTerminalFixtureId = getV11PersonalTerminalFixture();
+  const personalTerminalPresentation = useMemo(() => {
+    if (personalTerminalFixtureId) return getPersonalTerminalFixture(personalTerminalFixtureId);
+    return buildPersonalTerminalPresentation({
+      now: new Date(),
+      base: presentation,
+      liveLogs,
+      stateCheckIns: data.stateCheckIns || [],
+      patternMemory: data.patternMemory || [],
+      goals: data.categories || [],
+      skills: data.skills || [],
+    });
+  }, [data.categories, data.patternMemory, data.skills, data.stateCheckIns, liveLogs, personalTerminalFixtureId, presentation]);
   const selectedAdvancedMode = presentation.advanced.modes.find((mode) => mode.id === advancedModeId)
     ?? presentation.advanced.modes[0];
   const selectedStage = viewStage(
@@ -399,11 +418,15 @@ export default function V11InsightsScreen() {
   const debugPerformance = query().get('debugPerformance') === '1';
   const performanceResult = usePerformanceProbe({
     debug: debugPerformance,
-    detailOpen: isV11QuantTerminalEnabled() ? terminalInspectorOpen : detail != null,
+    detailOpen: isV11PersonalTerminalEnabled()
+      ? personalTerminalSheetOpen
+      : isV11QuantTerminalEnabled() ? terminalInspectorOpen : detail != null,
     themeMode: theme.mode,
-    surface: isV11QuantTerminalEnabled()
-      ? `quant-terminal-${quantTerminalFixtureId ?? 'real'}`
-      : analysisLabOpen ? 'quant-lab-open' : 'quant-overview',
+    surface: isV11PersonalTerminalEnabled()
+      ? `personal-terminal-${personalTerminalFixtureId ?? 'real'}`
+      : isV11QuantTerminalEnabled()
+        ? `quant-terminal-${quantTerminalFixtureId ?? 'real'}`
+        : analysisLabOpen ? 'quant-lab-open' : 'quant-overview',
   });
 
   const openTrend = useCallback((point: V11TrendPoint) => {
@@ -447,6 +470,47 @@ export default function V11InsightsScreen() {
     '--v11-insights-surface-soft': theme.questTheme.colors.surfaceSoft,
     '--v11-insights-bottom-inset': `${questLayout.contentBottomInset + v11Spacing.lg}px`,
   } as any;
+
+  if (isV11PersonalTerminalEnabled()) {
+    const terminalVariables = {
+      '--pt-bg': theme.field.background,
+      '--pt-near': theme.field.near,
+      '--pt-middle': theme.field.middle,
+      '--pt-far': theme.field.far,
+      '--pt-grid': theme.field.grid,
+      '--pt-primary': theme.glow.primary,
+      '--pt-supporting': theme.glow.supporting,
+      '--pt-border': theme.questTheme.colors.border,
+      '--pt-surface': theme.questTheme.colors.surfaceElevated,
+      '--pt-text': theme.text.primary,
+    } as any;
+    const performanceReadout = debugPerformance && performanceResult
+      ? `P50 ${performanceResult.p50}ms · P95 ${performanceResult.p95}ms · >20ms ${performanceResult.over20}/${performanceResult.frames}`
+      : null;
+    return (
+      <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: theme.field.background }}>
+        <WebView
+          dataSet={{
+            'personal-terminal-root': 'true',
+            'personal-terminal-fixture': personalTerminalFixtureId ?? 'real',
+            'v11-motion': reducedMotion ? 'reduced' : 'normal',
+            'v11-theme': theme.mode,
+          }}
+          style={terminalVariables}
+        >
+          <V11PersonalTerminal
+            language={language}
+            model={personalTerminalPresentation}
+            onNextAction={() => navigation.navigate('Today')}
+            onSheetStateChange={setPersonalTerminalSheetOpen}
+            performanceReadout={performanceReadout}
+            reducedMotion={reducedMotion}
+            theme={theme}
+          />
+        </WebView>
+      </SafeAreaView>
+    );
+  }
 
   if (isV11QuantTerminalEnabled()) {
     const terminalVariables = {

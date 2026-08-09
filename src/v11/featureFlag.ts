@@ -12,7 +12,19 @@ export function isV11TodayEnabled() {
 
 export function isV11InsightsEnabled() {
   const route = query()?.get('questlife_v11_ui');
-  return route === 'stage3-insights' || route === 'stage3-quant-terminal';
+  return route === 'stage3-insights' || route === 'stage3-quant-terminal' || route === 'stage3-personal-terminal';
+}
+
+export function isV11PersonalTerminalEnabled() {
+  return query()?.get('questlife_v11_ui') === 'stage3-personal-terminal';
+}
+
+export function getV11PersonalTerminalFixture(): 'forming' | 'mature' | 'portfolio' | 'skill' | 'volatile' | 'historical' | null {
+  if (!isV11PersonalTerminalEnabled()) return null;
+  const value = query()?.get('quantFixture');
+  return value === 'forming' || value === 'mature' || value === 'portfolio' || value === 'skill' || value === 'volatile' || value === 'historical'
+    ? value
+    : null;
 }
 
 export function isV11QuantTerminalEnabled() {
