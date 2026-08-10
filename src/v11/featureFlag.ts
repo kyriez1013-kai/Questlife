@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import type { V11EvidenceStage } from './tokens';
+import type { QuantV041LifecycleId } from '../v11-insights/personal-terminal/personalTerminalPresentation';
 
 function query() {
   if (Platform.OS !== 'web' || typeof window === 'undefined') return undefined;
@@ -23,6 +24,23 @@ export function getV11PersonalTerminalFixture(): 'forming' | 'mature' | 'portfol
   if (!isV11PersonalTerminalEnabled()) return null;
   const value = query()?.get('quantFixture');
   return value === 'forming' || value === 'mature' || value === 'portfolio' || value === 'skill' || value === 'volatile' || value === 'historical'
+    ? value
+    : null;
+}
+
+export function getV11QuantV041Lifecycle(): QuantV041LifecycleId | null {
+  if (!isV11PersonalTerminalEnabled()) return null;
+  const value = query()?.get('quantLifecycle');
+  return value === 'no-data'
+    || value === 'steps-only'
+    || value === 'sleep-only'
+    || value === 'rich-passive'
+    || value === 'day7'
+    || value === 'day30'
+    || value === 'day90'
+    || value === 'day180'
+    || value === 'goal'
+    || value === 'skill'
     ? value
     : null;
 }

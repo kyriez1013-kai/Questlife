@@ -43,6 +43,7 @@ import {
   getV11InsightsDebugLanguage,
   getV11InsightsDebugTheme,
   getV11PersonalTerminalFixture,
+  getV11QuantV041Lifecycle,
   getV11QuantTerminalFixture,
   isV11PersonalTerminalEnabled,
   isV11QuantTerminalEnabled,
@@ -50,6 +51,8 @@ import {
 import V11PersonalTerminal from './personal-terminal/V11PersonalTerminal';
 import { getPersonalTerminalFixture } from './personal-terminal/personalTerminalFixtures';
 import { buildPersonalTerminalPresentation } from './personal-terminal/personalTerminalPresentation';
+import { adaptQuantV041TerminalPayload } from './personal-terminal/quantV041Adapter';
+import { getQuantV041Fixture } from './personal-terminal/quantV041Fixtures';
 import V11QuantTerminal from './quant-terminal/V11QuantTerminal';
 import { getQuantTerminalFixture } from './quant-terminal/quantTerminalFixtures';
 import { buildQuantTerminalPresentation } from './quant-terminal/quantTerminalPresentation';
@@ -392,7 +395,9 @@ export default function V11InsightsScreen() {
     });
   }, [data.patternMemory, data.stateCheckIns, liveLogs, objectiveContext, presentation, quantTerminalFixtureId]);
   const personalTerminalFixtureId = getV11PersonalTerminalFixture();
+  const quantV041LifecycleId = getV11QuantV041Lifecycle();
   const personalTerminalPresentation = useMemo(() => {
+    if (quantV041LifecycleId) return adaptQuantV041TerminalPayload(getQuantV041Fixture(quantV041LifecycleId));
     if (personalTerminalFixtureId) return getPersonalTerminalFixture(personalTerminalFixtureId);
     return buildPersonalTerminalPresentation({
       now: new Date(),
@@ -403,7 +408,7 @@ export default function V11InsightsScreen() {
       goals: data.categories || [],
       skills: data.skills || [],
     });
-  }, [data.categories, data.patternMemory, data.skills, data.stateCheckIns, liveLogs, personalTerminalFixtureId, presentation]);
+  }, [data.categories, data.patternMemory, data.skills, data.stateCheckIns, liveLogs, personalTerminalFixtureId, presentation, quantV041LifecycleId]);
   const selectedAdvancedMode = presentation.advanced.modes.find((mode) => mode.id === advancedModeId)
     ?? presentation.advanced.modes[0];
   const selectedStage = viewStage(
@@ -423,7 +428,7 @@ export default function V11InsightsScreen() {
       : isV11QuantTerminalEnabled() ? terminalInspectorOpen : detail != null,
     themeMode: theme.mode,
     surface: isV11PersonalTerminalEnabled()
-      ? `personal-terminal-${personalTerminalFixtureId ?? 'real'}`
+      ? `personal-terminal-${quantV041LifecycleId ?? personalTerminalFixtureId ?? 'real'}`
       : isV11QuantTerminalEnabled()
         ? `quant-terminal-${quantTerminalFixtureId ?? 'real'}`
         : analysisLabOpen ? 'quant-lab-open' : 'quant-overview',
@@ -492,7 +497,7 @@ export default function V11InsightsScreen() {
         <WebView
           dataSet={{
             'personal-terminal-root': 'true',
-            'personal-terminal-fixture': personalTerminalFixtureId ?? 'real',
+            'personal-terminal-fixture': quantV041LifecycleId ?? personalTerminalFixtureId ?? 'real',
             'v11-motion': reducedMotion ? 'reduced' : 'normal',
             'v11-theme': theme.mode,
           }}
