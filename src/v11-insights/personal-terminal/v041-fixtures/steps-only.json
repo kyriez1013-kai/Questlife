@@ -1,0 +1,2511 @@
+{
+  "analyst": {
+    "activeObservationCount": 0,
+    "items": [
+      {
+        "constructKey": "activity.steps",
+        "evidenceCount": 355,
+        "evidenceReference": {
+          "count": 355,
+          "firstId": "passive:5e8e6831d72bc43209a9",
+          "lastId": "passive:f5d30c947adeab7bcffa",
+          "semanticHash": "7bf537d3e59cd1b677ef9deeb954266255ac0d4512ff6b97cc1d5977f0d64419"
+        },
+        "limitationCodes": [
+          "SYNTHETIC_HISTORICAL_SOURCE",
+          "COVERAGE_IS_NOT_MEASUREMENT_QUALITY"
+        ],
+        "type": "COVERAGE"
+      },
+      {
+        "constructKey": "activity.steps",
+        "evidenceCount": 7,
+        "evidenceReference": {
+          "count": 7,
+          "firstId": "passive:e3ba1b9774dfdd083ce7",
+          "lastId": "passive:f5d30c947adeab7bcffa",
+          "semanticHash": "8f627d648599cdd5f080f3c187b8df085c59105f00284a90c34dd51de6d65aab"
+        },
+        "limitationCodes": [
+          "REFERENCE_RELATIVE_NOT_NORMATIVE"
+        ],
+        "type": "RECENT_VS_REFERENCE"
+      },
+      {
+        "constructKey": "activity.steps",
+        "evidenceCount": 30,
+        "evidenceReference": {
+          "count": 30,
+          "firstId": "passive:d0dcfa7725b30f6d3f18",
+          "lastId": "passive:f5d30c947adeab7bcffa",
+          "semanticHash": "d7f6969c35768fc80825c38c4ccbf1833b52073bbc488af31df3bc7fc7441b58"
+        },
+        "limitationCodes": [
+          "DESCRIPTIVE_LINEAR_COMPARATOR",
+          "NOT_A_FORECAST"
+        ],
+        "type": "TREND"
+      },
+      {
+        "constructKey": "activity.steps",
+        "evidenceCount": 74,
+        "evidenceReference": {
+          "count": 74,
+          "firstId": "passive:675582c4f98cf33f730e",
+          "lastId": "passive:f5d30c947adeab7bcffa",
+          "semanticHash": "1fe0c1f1ee6d2b23a6bcc579d097bf832da14ac242b1e8850ac1758782070bcb"
+        },
+        "limitationCodes": [
+          "MAD_BASED_DESCRIPTIVE_COMPARISON"
+        ],
+        "type": "STABILITY_CHANGE"
+      },
+      {
+        "constructKey": "activity.steps",
+        "evidenceCount": 355,
+        "evidenceReference": {
+          "count": 355,
+          "firstId": "passive:0056ea1e3311cecd06a3",
+          "lastId": "passive:fe6abbed1f379ce6f097",
+          "semanticHash": "a706002eac240af47fb8936600987806bfa9e8fb66a9061a847ca2c310b76fdc"
+        },
+        "limitationCodes": [
+          "NO_CAUSAL_OR_BETTER_WORSE_INTERPRETATION"
+        ],
+        "type": "DAY_OF_WEEK_PATTERN"
+      }
+    ],
+    "limitations": [
+      "NO_POPULATION_PRIOR_AVAILABLE",
+      "NO_COMPOSITE_PERSONAL_SCORE",
+      "NO_MEDICAL_OR_CAUSAL_INTERPRETATION",
+      "ONBOARDING_CONTEXT_DOES_NOT_CHANGE_NUMERIC_EVIDENCE"
+    ],
+    "modelReadiness": [
+      {
+        "featureCoverage": {
+          "activity.steps": 0.9699453551912568
+        },
+        "independentDayCount": 355,
+        "modelKey": "state_space_readiness",
+        "observationCount": 355,
+        "reasons": [
+          "minimum structural research requirements are present; model validity is not implied"
+        ],
+        "status": "ELIGIBLE"
+      },
+      {
+        "featureCoverage": {
+          "activity.steps": 0.9699453551912568
+        },
+        "independentDayCount": 355,
+        "modelKey": "change_point_readiness",
+        "observationCount": 355,
+        "reasons": [
+          "minimum structural research requirements are present; model validity is not implied"
+        ],
+        "status": "ELIGIBLE"
+      },
+      {
+        "featureCoverage": {
+          "activity.steps": 0.9699453551912568
+        },
+        "independentDayCount": 355,
+        "modelKey": "hierarchical_bayes_readiness",
+        "observationCount": 355,
+        "reasons": [
+          "NO_POPULATION_PRIOR_AVAILABLE",
+          "multi-user calibration dataset is absent"
+        ],
+        "status": "NOT_ELIGIBLE"
+      },
+      {
+        "featureCoverage": {
+          "activity.steps": 0.9699453551912568
+        },
+        "independentDayCount": 355,
+        "modelKey": "n_of_1_readiness",
+        "observationCount": 355,
+        "reasons": [
+          "registered intervention and repeated outcome episodes are required"
+        ],
+        "status": "NOT_ELIGIBLE"
+      }
+    ]
+  },
+  "asOf": "2026-01-03T07:59:00+11:00",
+  "defaultEntityId": "market:person",
+  "defaultScope": "market",
+  "defaultSeriesId": "market:activity.steps",
+  "entities": [
+    {
+      "contextKey": "personal_history_and_active_evidence",
+      "id": "market:person",
+      "labelKey": "personal_market",
+      "scope": "market",
+      "seriesIds": [
+        "market:activity.steps"
+      ]
+    }
+  ],
+  "goalAvailable": false,
+  "nextActionKey": "inspect_current_reference",
+  "questlifeStartedAt": "2026-01-01T08:00:00+11:00",
+  "range": {
+    "end": "2026-01-02T23:59:00+11:00",
+    "start": "2025-01-02T23:59:00+11:00"
+  },
+  "scenarioId": "steps-only",
+  "schemaVersion": "questlife-terminal-presentation-v0.4.1",
+  "series": [
+    {
+      "availableTimeframes": [
+        "7D",
+        "30D",
+        "90D",
+        "1Y",
+        "ALL"
+      ],
+      "baseline": {
+        "high": 8666.294,
+        "independentDayCount": 87,
+        "low": 5137.706,
+        "observationCount": 87,
+        "referenceKind": "historical",
+        "status": "established",
+        "value": 6902.0
+      },
+      "chartCapabilities": {
+        "bar": true,
+        "candle": false,
+        "line": true,
+        "percent_change": true,
+        "reasons": {
+          "bar": "raw interval values remain visible",
+          "candle": "daily passive aggregates have no meaningful non-cumulative OHLC",
+          "line": "ordered observations required",
+          "percent_change": "ratio/count reference with comparable coverage required"
+        }
+      },
+      "constructKey": "activity.steps",
+      "coverage": {
+        "active_days": 355,
+        "coverage_ratio": 0.9699453551912568,
+        "expected_days": 366,
+        "first_available_at": "2026-01-01T08:00:00.000002+11:00",
+        "last_available_at": "2026-01-03T00:04:00+11:00",
+        "metric": "steps",
+        "missing_intervals": [
+          {
+            "end": "2025-02-01",
+            "start": "2025-02-01"
+          },
+          {
+            "end": "2025-03-04",
+            "start": "2025-03-04"
+          },
+          {
+            "end": "2025-04-04",
+            "start": "2025-04-04"
+          },
+          {
+            "end": "2025-05-05",
+            "start": "2025-05-05"
+          },
+          {
+            "end": "2025-06-05",
+            "start": "2025-06-05"
+          },
+          {
+            "end": "2025-07-06",
+            "start": "2025-07-06"
+          },
+          {
+            "end": "2025-08-06",
+            "start": "2025-08-06"
+          },
+          {
+            "end": "2025-09-06",
+            "start": "2025-09-06"
+          },
+          {
+            "end": "2025-10-07",
+            "start": "2025-10-07"
+          },
+          {
+            "end": "2025-11-07",
+            "start": "2025-11-07"
+          },
+          {
+            "end": "2025-12-08",
+            "start": "2025-12-08"
+          }
+        ],
+        "observed_days": 355,
+        "permission_state": "GRANTED",
+        "sampling_resolutions": [
+          "day"
+        ],
+        "source_count": 1
+      },
+      "defaultTimeframe": "30D",
+      "domain": "movement",
+      "entityId": "market:person",
+      "id": "market:activity.steps",
+      "labelKey": "steps",
+      "latestAt": "2026-01-02T23:59:00+11:00",
+      "latestValue": 7911.0,
+      "limitationCodes": [
+        "DESCRIPTIVE_HISTORICAL_REFERENCE",
+        "NO_NORMATIVE_OR_CAUSAL_INTERPRETATION",
+        "SYNTHETIC_HISTORICAL_SOURCE",
+        "COVERAGE_IS_NOT_MEASUREMENT_QUALITY",
+        "REFERENCE_RELATIVE_NOT_NORMATIVE",
+        "DESCRIPTIVE_LINEAR_COMPARATOR",
+        "NOT_A_FORECAST",
+        "MAD_BASED_DESCRIPTIVE_COMPARISON",
+        "NO_CAUSAL_OR_BETTER_WORSE_INTERPRETATION",
+        "DESCRIPTIVE_SEASONAL_REFERENCE_ONLY",
+        "HISTORICAL_PERSONAL_REFERENCE_NOT_POPULATION_DATA"
+      ],
+      "maturityLabel": "historical_reference",
+      "points": [
+        {
+          "id": "passive:5e8e6831d72bc43209a9",
+          "provenance": "historical_reference",
+          "timestamp": "2025-01-02T23:59:00+11:00",
+          "value": 7208.0
+        },
+        {
+          "id": "passive:4a06030e06ea4d5bea3d",
+          "provenance": "historical_reference",
+          "timestamp": "2025-01-03T23:59:00+11:00",
+          "value": 7919.0
+        },
+        {
+          "id": "passive:b13badd0d0c9f1b9b955",
+          "provenance": "historical_reference",
+          "timestamp": "2025-01-04T23:59:00+11:00",
+          "value": 8101.0
+        },
+        {
+          "id": "passive:f2c49eceefc6a69ca404",
+          "provenance": "historical_reference",
+          "timestamp": "2025-01-05T23:59:00+11:00",
+          "value": 7621.0
+        },
+        {
+          "id": "passive:56a96630cb6043d66eec",
+          "provenance": "historical_reference",
+          "timestamp": "2025-01-06T23:59:00+11:00",
+          "value": 6848.0
+        },
+        {
+          "id": "passive:c8623dab1c53cbadfe94",
+          "provenance": "historical_reference",
+          "timestamp": "2025-01-07T23:59:00+11:00",
+          "value": 6369.0
+        },
+        {
+          "id": "passive:da125cd280a5a8e5dade",
+          "provenance": "historical_reference",
+          "timestamp": "2025-01-08T23:59:00+11:00",
+          "value": 6550.0
+        },
+        {
+          "id": "passive:5344eace2d6696def0bd",
+          "provenance": "historical_reference",
+          "timestamp": "2025-01-09T23:59:00+11:00",
+          "value": 7262.0
+        },
+        {
+          "id": "passive:0b90ed8ed15e39ecc3dd",
+          "provenance": "historical_reference",
+          "timestamp": "2025-01-10T23:59:00+11:00",
+          "value": 7973.0
+        },
+        {
+          "id": "passive:36a5057423bd6d2c56c9",
+          "provenance": "historical_reference",
+          "timestamp": "2025-01-11T23:59:00+11:00",
+          "value": 8155.0
+        },
+        {
+          "id": "passive:fcbbaaba17a4603e4e35",
+          "provenance": "historical_reference",
+          "timestamp": "2025-01-12T23:59:00+11:00",
+          "value": 7675.0
+        },
+        {
+          "id": "passive:cc08826570709e1131e8",
+          "provenance": "historical_reference",
+          "timestamp": "2025-01-13T23:59:00+11:00",
+          "value": 6902.0
+        },
+        {
+          "id": "passive:aa5f7ab4cc9b5b3b80bb",
+          "provenance": "historical_reference",
+          "timestamp": "2025-01-14T23:59:00+11:00",
+          "value": 6422.0
+        },
+        {
+          "id": "passive:279a98be9a878fa87ba1",
+          "provenance": "historical_reference",
+          "timestamp": "2025-01-15T23:59:00+11:00",
+          "value": 6604.0
+        },
+        {
+          "id": "passive:cb1fcdcc164fa37c5f9b",
+          "provenance": "historical_reference",
+          "timestamp": "2025-01-16T23:59:00+11:00",
+          "value": 7315.0
+        },
+        {
+          "id": "passive:4bed17f083ae2b7a2979",
+          "provenance": "historical_reference",
+          "timestamp": "2025-01-17T23:59:00+11:00",
+          "value": 8026.0
+        },
+        {
+          "id": "passive:e941cee34afc24ff6d04",
+          "provenance": "historical_reference",
+          "timestamp": "2025-01-18T23:59:00+11:00",
+          "value": 8207.0
+        },
+        {
+          "id": "passive:07cae01f7d4108a822cc",
+          "provenance": "historical_reference",
+          "timestamp": "2025-01-19T23:59:00+11:00",
+          "value": 7728.0
+        },
+        {
+          "id": "passive:f43a6c2f68518a9c71a1",
+          "provenance": "historical_reference",
+          "timestamp": "2025-01-20T23:59:00+11:00",
+          "value": 6954.0
+        },
+        {
+          "id": "passive:8110d732c5440ca51f62",
+          "provenance": "historical_reference",
+          "timestamp": "2025-01-21T23:59:00+11:00",
+          "value": 6474.0
+        },
+        {
+          "id": "passive:d00431ab318ea1198b9f",
+          "provenance": "historical_reference",
+          "timestamp": "2025-01-22T23:59:00+11:00",
+          "value": 6656.0
+        },
+        {
+          "id": "passive:ab4cb66835cb660ca1be",
+          "provenance": "historical_reference",
+          "timestamp": "2025-01-23T23:59:00+11:00",
+          "value": 7366.0
+        },
+        {
+          "id": "passive:69791b22f705f0f07a83",
+          "provenance": "historical_reference",
+          "timestamp": "2025-01-24T23:59:00+11:00",
+          "value": 8077.0
+        },
+        {
+          "id": "passive:5f757be99b3c9e99301a",
+          "provenance": "historical_reference",
+          "timestamp": "2025-01-25T23:59:00+11:00",
+          "value": 8258.0
+        },
+        {
+          "id": "passive:069b391bf6f341612b91",
+          "provenance": "historical_reference",
+          "timestamp": "2025-01-26T23:59:00+11:00",
+          "value": 7778.0
+        },
+        {
+          "id": "passive:8926d233a6c1223c6380",
+          "provenance": "historical_reference",
+          "timestamp": "2025-01-27T23:59:00+11:00",
+          "value": 7004.0
+        },
+        {
+          "id": "passive:2ae699214e333593bd19",
+          "provenance": "historical_reference",
+          "timestamp": "2025-01-28T23:59:00+11:00",
+          "value": 6524.0
+        },
+        {
+          "id": "passive:ae7ea66ce58b62e95b4e",
+          "provenance": "historical_reference",
+          "timestamp": "2025-01-29T23:59:00+11:00",
+          "value": 6705.0
+        },
+        {
+          "id": "passive:49492d0d3303ec3456c2",
+          "provenance": "historical_reference",
+          "timestamp": "2025-01-30T23:59:00+11:00",
+          "value": 7415.0
+        },
+        {
+          "id": "passive:5cdf0089a42b0cfbc71b",
+          "provenance": "historical_reference",
+          "timestamp": "2025-01-31T23:59:00+11:00",
+          "value": 8126.0
+        },
+        {
+          "id": "passive:56f3d10951c5194d8755",
+          "provenance": "historical_reference",
+          "timestamp": "2025-02-02T23:59:00+11:00",
+          "value": 7826.0
+        },
+        {
+          "id": "passive:981d83c442375a08c2a8",
+          "provenance": "historical_reference",
+          "timestamp": "2025-02-03T23:59:00+11:00",
+          "value": 7052.0
+        },
+        {
+          "id": "passive:6961fee2fd4f7ea5fefb",
+          "provenance": "historical_reference",
+          "timestamp": "2025-02-04T23:59:00+11:00",
+          "value": 6571.0
+        },
+        {
+          "id": "passive:b4fff68d390745de229c",
+          "provenance": "historical_reference",
+          "timestamp": "2025-02-05T23:59:00+11:00",
+          "value": 6751.0
+        },
+        {
+          "id": "passive:c81593e3c192bc20ed2e",
+          "provenance": "historical_reference",
+          "timestamp": "2025-02-06T23:59:00+11:00",
+          "value": 7461.0
+        },
+        {
+          "id": "passive:7f5799f94ed8da7e9b83",
+          "provenance": "historical_reference",
+          "timestamp": "2025-02-07T23:59:00+11:00",
+          "value": 8171.0
+        },
+        {
+          "id": "passive:ceeebebd7e2c478b96a7",
+          "provenance": "historical_reference",
+          "timestamp": "2025-02-08T23:59:00+11:00",
+          "value": 8351.0
+        },
+        {
+          "id": "passive:8a058dca927f031e1086",
+          "provenance": "historical_reference",
+          "timestamp": "2025-02-09T23:59:00+11:00",
+          "value": 7870.0
+        },
+        {
+          "id": "passive:cea8484392684aab1b98",
+          "provenance": "historical_reference",
+          "timestamp": "2025-02-10T23:59:00+11:00",
+          "value": 7095.0
+        },
+        {
+          "id": "passive:9ce13bc498593c6c197d",
+          "provenance": "historical_reference",
+          "timestamp": "2025-02-11T23:59:00+11:00",
+          "value": 6614.0
+        },
+        {
+          "id": "passive:fc86b2320d27afc9cdcc",
+          "provenance": "historical_reference",
+          "timestamp": "2025-02-12T23:59:00+11:00",
+          "value": 6794.0
+        },
+        {
+          "id": "passive:805fe5f3031c89c9f4aa",
+          "provenance": "historical_reference",
+          "timestamp": "2025-02-13T23:59:00+11:00",
+          "value": 7503.0
+        },
+        {
+          "id": "passive:baac81c03cd4c46080ba",
+          "provenance": "historical_reference",
+          "timestamp": "2025-02-14T23:59:00+11:00",
+          "value": 8213.0
+        },
+        {
+          "id": "passive:42b0fe085cc4e7c6346a",
+          "provenance": "historical_reference",
+          "timestamp": "2025-02-15T23:59:00+11:00",
+          "value": 8392.0
+        },
+        {
+          "id": "passive:26742d559492c4f78eac",
+          "provenance": "historical_reference",
+          "timestamp": "2025-02-16T23:59:00+11:00",
+          "value": 7911.0
+        },
+        {
+          "id": "passive:fe6abbed1f379ce6f097",
+          "provenance": "historical_reference",
+          "timestamp": "2025-02-17T23:59:00+11:00",
+          "value": 7135.0
+        },
+        {
+          "id": "passive:c00bdba24c2362880919",
+          "provenance": "historical_reference",
+          "timestamp": "2025-02-18T23:59:00+11:00",
+          "value": 6654.0
+        },
+        {
+          "id": "passive:94d532506ac36c884de4",
+          "provenance": "historical_reference",
+          "timestamp": "2025-02-19T23:59:00+11:00",
+          "value": 6832.0
+        },
+        {
+          "id": "passive:7b560982f4537933cf05",
+          "provenance": "historical_reference",
+          "timestamp": "2025-02-20T23:59:00+11:00",
+          "value": 7541.0
+        },
+        {
+          "id": "passive:20e69db2f1e2e1a03fff",
+          "provenance": "historical_reference",
+          "timestamp": "2025-02-21T23:59:00+11:00",
+          "value": 8250.0
+        },
+        {
+          "id": "passive:ece8eeaf81d1bdf6176b",
+          "provenance": "historical_reference",
+          "timestamp": "2025-02-22T23:59:00+11:00",
+          "value": 8429.0
+        },
+        {
+          "id": "passive:127e0740d342d047e408",
+          "provenance": "historical_reference",
+          "timestamp": "2025-02-23T23:59:00+11:00",
+          "value": 7946.0
+        },
+        {
+          "id": "passive:06ea710d4eb3ff920c36",
+          "provenance": "historical_reference",
+          "timestamp": "2025-02-24T23:59:00+11:00",
+          "value": 7170.0
+        },
+        {
+          "id": "passive:53bfbe0c4002e2e9da38",
+          "provenance": "historical_reference",
+          "timestamp": "2025-02-25T23:59:00+11:00",
+          "value": 6688.0
+        },
+        {
+          "id": "passive:f6fff094c537780843b2",
+          "provenance": "historical_reference",
+          "timestamp": "2025-02-26T23:59:00+11:00",
+          "value": 6866.0
+        },
+        {
+          "id": "passive:1a1cc766678402c197d1",
+          "provenance": "historical_reference",
+          "timestamp": "2025-02-27T23:59:00+11:00",
+          "value": 7574.0
+        },
+        {
+          "id": "passive:252e454a5b78667d4081",
+          "provenance": "historical_reference",
+          "timestamp": "2025-02-28T23:59:00+11:00",
+          "value": 8282.0
+        },
+        {
+          "id": "passive:d2f159070edfcce51b8f",
+          "provenance": "historical_reference",
+          "timestamp": "2025-03-01T23:59:00+11:00",
+          "value": 8460.0
+        },
+        {
+          "id": "passive:81f1ad81c461cd5fb885",
+          "provenance": "historical_reference",
+          "timestamp": "2025-03-02T23:59:00+11:00",
+          "value": 7977.0
+        },
+        {
+          "id": "passive:69d10e7dd37e020bb793",
+          "provenance": "historical_reference",
+          "timestamp": "2025-03-03T23:59:00+11:00",
+          "value": 7200.0
+        },
+        {
+          "id": "passive:2980110525cc7380eb44",
+          "provenance": "historical_reference",
+          "timestamp": "2025-03-05T23:59:00+11:00",
+          "value": 6894.0
+        },
+        {
+          "id": "passive:462323254532ffb88676",
+          "provenance": "historical_reference",
+          "timestamp": "2025-03-06T23:59:00+11:00",
+          "value": 7601.0
+        },
+        {
+          "id": "passive:3087c64f03db40da031b",
+          "provenance": "historical_reference",
+          "timestamp": "2025-03-07T23:59:00+11:00",
+          "value": 8308.0
+        },
+        {
+          "id": "passive:04dfe3a1278d2f184858",
+          "provenance": "historical_reference",
+          "timestamp": "2025-03-08T23:59:00+11:00",
+          "value": 8486.0
+        },
+        {
+          "id": "passive:552b0149e1962c2b92d5",
+          "provenance": "historical_reference",
+          "timestamp": "2025-03-09T23:59:00+11:00",
+          "value": 8002.0
+        },
+        {
+          "id": "passive:1c96d84013f9878ffc5e",
+          "provenance": "historical_reference",
+          "timestamp": "2025-03-10T23:59:00+11:00",
+          "value": 7224.0
+        },
+        {
+          "id": "passive:b814f90c96d6ace3dbc8",
+          "provenance": "historical_reference",
+          "timestamp": "2025-03-11T23:59:00+11:00",
+          "value": 6740.0
+        },
+        {
+          "id": "passive:eab58bfc611f7d9ece93",
+          "provenance": "historical_reference",
+          "timestamp": "2025-03-12T23:59:00+11:00",
+          "value": 6917.0
+        },
+        {
+          "id": "passive:59b952d806a56f14cb0c",
+          "provenance": "historical_reference",
+          "timestamp": "2025-03-13T23:59:00+11:00",
+          "value": 7623.0
+        },
+        {
+          "id": "passive:ad8e64fc4a7fe1654cfe",
+          "provenance": "historical_reference",
+          "timestamp": "2025-03-14T23:59:00+11:00",
+          "value": 8329.0
+        },
+        {
+          "id": "passive:1805c305b18eb4456872",
+          "provenance": "historical_reference",
+          "timestamp": "2025-03-15T23:59:00+11:00",
+          "value": 8505.0
+        },
+        {
+          "id": "passive:bae55ee5a8a20fb7d6e0",
+          "provenance": "historical_reference",
+          "timestamp": "2025-03-16T23:59:00+11:00",
+          "value": 8021.0
+        },
+        {
+          "id": "passive:07347afaff397b4d4841",
+          "provenance": "historical_reference",
+          "timestamp": "2025-03-17T23:59:00+11:00",
+          "value": 7242.0
+        },
+        {
+          "id": "passive:2f3f0e9baa3278b8411f",
+          "provenance": "historical_reference",
+          "timestamp": "2025-03-18T23:59:00+11:00",
+          "value": 6757.0
+        },
+        {
+          "id": "passive:47c11c07ed3e071fad8e",
+          "provenance": "historical_reference",
+          "timestamp": "2025-03-19T23:59:00+11:00",
+          "value": 6933.0
+        },
+        {
+          "id": "passive:ba94acea1fc8289beaa5",
+          "provenance": "historical_reference",
+          "timestamp": "2025-03-20T23:59:00+11:00",
+          "value": 7638.0
+        },
+        {
+          "id": "passive:22ff50e78689d10560d4",
+          "provenance": "historical_reference",
+          "timestamp": "2025-03-21T23:59:00+11:00",
+          "value": 8344.0
+        },
+        {
+          "id": "passive:d4547eed01d92c81f6e4",
+          "provenance": "historical_reference",
+          "timestamp": "2025-03-22T23:59:00+11:00",
+          "value": 8519.0
+        },
+        {
+          "id": "passive:7ab2671e45020c44bec2",
+          "provenance": "historical_reference",
+          "timestamp": "2025-03-23T23:59:00+11:00",
+          "value": 8034.0
+        },
+        {
+          "id": "passive:d4f1d2ee9cff11490717",
+          "provenance": "historical_reference",
+          "timestamp": "2025-03-24T23:59:00+11:00",
+          "value": 7254.0
+        },
+        {
+          "id": "passive:dcd6e175ee07c58eae6f",
+          "provenance": "historical_reference",
+          "timestamp": "2025-03-25T23:59:00+11:00",
+          "value": 6768.0
+        },
+        {
+          "id": "passive:52d12d806fa7180590a6",
+          "provenance": "historical_reference",
+          "timestamp": "2025-03-26T23:59:00+11:00",
+          "value": 6943.0
+        },
+        {
+          "id": "passive:c8e243df5bc66f0eadb9",
+          "provenance": "historical_reference",
+          "timestamp": "2025-03-27T23:59:00+11:00",
+          "value": 7647.0
+        },
+        {
+          "id": "passive:41ba263caf8dd21b6ff3",
+          "provenance": "historical_reference",
+          "timestamp": "2025-03-28T23:59:00+11:00",
+          "value": 8352.0
+        },
+        {
+          "id": "passive:147b3c825def84d82cbc",
+          "provenance": "historical_reference",
+          "timestamp": "2025-03-29T23:59:00+11:00",
+          "value": 8526.0
+        },
+        {
+          "id": "passive:a0cb0b914175203b6c28",
+          "provenance": "historical_reference",
+          "timestamp": "2025-03-30T23:59:00+11:00",
+          "value": 8040.0
+        },
+        {
+          "id": "passive:05e027a512ce06d756f5",
+          "provenance": "historical_reference",
+          "timestamp": "2025-03-31T23:59:00+11:00",
+          "value": 7259.0
+        },
+        {
+          "id": "passive:db0784f0b11d06da24f7",
+          "provenance": "historical_reference",
+          "timestamp": "2025-04-01T23:59:00+11:00",
+          "value": 6772.0
+        },
+        {
+          "id": "passive:0b9d2dc33551e9344c76",
+          "provenance": "historical_reference",
+          "timestamp": "2025-04-02T23:59:00+11:00",
+          "value": 6946.0
+        },
+        {
+          "id": "passive:c2feb38e31092500eb1f",
+          "provenance": "historical_reference",
+          "timestamp": "2025-04-03T23:59:00+11:00",
+          "value": 7650.0
+        },
+        {
+          "id": "passive:783fd73783c17bf9b37a",
+          "provenance": "historical_reference",
+          "timestamp": "2025-04-05T23:59:00+11:00",
+          "value": 8527.0
+        },
+        {
+          "id": "passive:e90577b16efb76aaea3d",
+          "provenance": "historical_reference",
+          "timestamp": "2025-04-06T23:59:00+10:00",
+          "value": 8040.0
+        },
+        {
+          "id": "passive:21c4ff32c47eeb07372a",
+          "provenance": "historical_reference",
+          "timestamp": "2025-04-07T23:59:00+10:00",
+          "value": 7258.0
+        },
+        {
+          "id": "passive:a740a26c497d1c313724",
+          "provenance": "historical_reference",
+          "timestamp": "2025-04-08T23:59:00+10:00",
+          "value": 6770.0
+        },
+        {
+          "id": "passive:06dc95760c63c9606487",
+          "provenance": "historical_reference",
+          "timestamp": "2025-04-09T23:59:00+10:00",
+          "value": 6943.0
+        },
+        {
+          "id": "passive:b30f700fa0039ad61f1b",
+          "provenance": "historical_reference",
+          "timestamp": "2025-04-10T23:59:00+10:00",
+          "value": 7646.0
+        },
+        {
+          "id": "passive:86e7ebbe24db241bc0af",
+          "provenance": "historical_reference",
+          "timestamp": "2025-04-11T23:59:00+10:00",
+          "value": 8349.0
+        },
+        {
+          "id": "passive:83140164f281b7db5597",
+          "provenance": "historical_reference",
+          "timestamp": "2025-04-12T23:59:00+10:00",
+          "value": 8521.0
+        },
+        {
+          "id": "passive:7a05ff1e62e344d71b31",
+          "provenance": "historical_reference",
+          "timestamp": "2025-04-13T23:59:00+10:00",
+          "value": 8033.0
+        },
+        {
+          "id": "passive:b6f083d6da115e7175f8",
+          "provenance": "historical_reference",
+          "timestamp": "2025-04-14T23:59:00+10:00",
+          "value": 7250.0
+        },
+        {
+          "id": "passive:bad7bc29965df98d9af1",
+          "provenance": "historical_reference",
+          "timestamp": "2025-04-15T23:59:00+10:00",
+          "value": 6762.0
+        },
+        {
+          "id": "passive:1004198a033ae4261ff9",
+          "provenance": "historical_reference",
+          "timestamp": "2025-04-16T23:59:00+10:00",
+          "value": 6934.0
+        },
+        {
+          "id": "passive:e4d1f8562413524f8525",
+          "provenance": "historical_reference",
+          "timestamp": "2025-04-17T23:59:00+10:00",
+          "value": 7636.0
+        },
+        {
+          "id": "passive:f63126a55e43e36bf79e",
+          "provenance": "historical_reference",
+          "timestamp": "2025-04-18T23:59:00+10:00",
+          "value": 8337.0
+        },
+        {
+          "id": "passive:0cf93c86009a9ad7e878",
+          "provenance": "historical_reference",
+          "timestamp": "2025-04-19T23:59:00+10:00",
+          "value": 8509.0
+        },
+        {
+          "id": "passive:1b41f3ef6f711aea9669",
+          "provenance": "historical_reference",
+          "timestamp": "2025-04-20T23:59:00+10:00",
+          "value": 8020.0
+        },
+        {
+          "id": "passive:c0a18bfc7a217bfc8b9c",
+          "provenance": "historical_reference",
+          "timestamp": "2025-04-21T23:59:00+10:00",
+          "value": 7236.0
+        },
+        {
+          "id": "passive:1de399e3046b9397d6e6",
+          "provenance": "historical_reference",
+          "timestamp": "2025-04-22T23:59:00+10:00",
+          "value": 6747.0
+        },
+        {
+          "id": "passive:034c7178f84466780bad",
+          "provenance": "historical_reference",
+          "timestamp": "2025-04-23T23:59:00+10:00",
+          "value": 6918.0
+        },
+        {
+          "id": "passive:fbeb13430be2e812523a",
+          "provenance": "historical_reference",
+          "timestamp": "2025-04-24T23:59:00+10:00",
+          "value": 7619.0
+        },
+        {
+          "id": "passive:3924d7c342eb82735db4",
+          "provenance": "historical_reference",
+          "timestamp": "2025-04-25T23:59:00+10:00",
+          "value": 8320.0
+        },
+        {
+          "id": "passive:09c961d53e37c8c23a9f",
+          "provenance": "historical_reference",
+          "timestamp": "2025-04-26T23:59:00+10:00",
+          "value": 8490.0
+        },
+        {
+          "id": "passive:3c78bdb22a3ffd9b1276",
+          "provenance": "historical_reference",
+          "timestamp": "2025-04-27T23:59:00+10:00",
+          "value": 8000.0
+        },
+        {
+          "id": "passive:661c53fc510c91d602c0",
+          "provenance": "historical_reference",
+          "timestamp": "2025-04-28T23:59:00+10:00",
+          "value": 7216.0
+        },
+        {
+          "id": "passive:aefaadbb95b637fa66aa",
+          "provenance": "historical_reference",
+          "timestamp": "2025-04-29T23:59:00+10:00",
+          "value": 6726.0
+        },
+        {
+          "id": "passive:be8608924e727cb5178e",
+          "provenance": "historical_reference",
+          "timestamp": "2025-04-30T23:59:00+10:00",
+          "value": 6896.0
+        },
+        {
+          "id": "passive:c5df851efbe928ec34f5",
+          "provenance": "historical_reference",
+          "timestamp": "2025-05-01T23:59:00+10:00",
+          "value": 7596.0
+        },
+        {
+          "id": "passive:8f3b32f149d0712ae699",
+          "provenance": "historical_reference",
+          "timestamp": "2025-05-02T23:59:00+10:00",
+          "value": 8296.0
+        },
+        {
+          "id": "passive:3281e3884e3fb7b51652",
+          "provenance": "historical_reference",
+          "timestamp": "2025-05-03T23:59:00+10:00",
+          "value": 8466.0
+        },
+        {
+          "id": "passive:c7294fbf1d59838f1fb1",
+          "provenance": "historical_reference",
+          "timestamp": "2025-05-04T23:59:00+10:00",
+          "value": 7975.0
+        },
+        {
+          "id": "passive:e5a70bbd071794bdcb0d",
+          "provenance": "historical_reference",
+          "timestamp": "2025-05-06T23:59:00+10:00",
+          "value": 6699.0
+        },
+        {
+          "id": "passive:a2422b7bab29fcc1e17a",
+          "provenance": "historical_reference",
+          "timestamp": "2025-05-07T23:59:00+10:00",
+          "value": 6868.0
+        },
+        {
+          "id": "passive:22c2886e7e96afe0c639",
+          "provenance": "historical_reference",
+          "timestamp": "2025-05-08T23:59:00+10:00",
+          "value": 7567.0
+        },
+        {
+          "id": "passive:af3a47c23f7c6f45b4df",
+          "provenance": "historical_reference",
+          "timestamp": "2025-05-09T23:59:00+10:00",
+          "value": 8267.0
+        },
+        {
+          "id": "passive:d0cf28a37d5b7ba2529b",
+          "provenance": "historical_reference",
+          "timestamp": "2025-05-10T23:59:00+10:00",
+          "value": 8436.0
+        },
+        {
+          "id": "passive:0ac3be4d402756778a77",
+          "provenance": "historical_reference",
+          "timestamp": "2025-05-11T23:59:00+10:00",
+          "value": 7944.0
+        },
+        {
+          "id": "passive:18799eca2ee6e8d509f3",
+          "provenance": "historical_reference",
+          "timestamp": "2025-05-12T23:59:00+10:00",
+          "value": 7158.0
+        },
+        {
+          "id": "passive:46ab181fee67d993df07",
+          "provenance": "historical_reference",
+          "timestamp": "2025-05-13T23:59:00+10:00",
+          "value": 6666.0
+        },
+        {
+          "id": "passive:549804ec59983ae5fd60",
+          "provenance": "historical_reference",
+          "timestamp": "2025-05-14T23:59:00+10:00",
+          "value": 6835.0
+        },
+        {
+          "id": "passive:6b406bb275b8fd6c8b6d",
+          "provenance": "historical_reference",
+          "timestamp": "2025-05-15T23:59:00+10:00",
+          "value": 7534.0
+        },
+        {
+          "id": "passive:997b1f84b27498ee4c25",
+          "provenance": "historical_reference",
+          "timestamp": "2025-05-16T23:59:00+10:00",
+          "value": 8232.0
+        },
+        {
+          "id": "passive:e35afd2a229138ed7f3d",
+          "provenance": "historical_reference",
+          "timestamp": "2025-05-17T23:59:00+10:00",
+          "value": 8400.0
+        },
+        {
+          "id": "passive:342919ab46e4e2678648",
+          "provenance": "historical_reference",
+          "timestamp": "2025-05-18T23:59:00+10:00",
+          "value": 7908.0
+        },
+        {
+          "id": "passive:0ed0e2ba810a98b87ba8",
+          "provenance": "historical_reference",
+          "timestamp": "2025-05-19T23:59:00+10:00",
+          "value": 7121.0
+        },
+        {
+          "id": "passive:418b879206355c8d7e2e",
+          "provenance": "historical_reference",
+          "timestamp": "2025-05-20T23:59:00+10:00",
+          "value": 6629.0
+        },
+        {
+          "id": "passive:58722349f3523ac27d0a",
+          "provenance": "historical_reference",
+          "timestamp": "2025-05-21T23:59:00+10:00",
+          "value": 6797.0
+        },
+        {
+          "id": "passive:52df2f0b2a258eaf5a73",
+          "provenance": "historical_reference",
+          "timestamp": "2025-05-22T23:59:00+10:00",
+          "value": 7495.0
+        },
+        {
+          "id": "passive:db382627b8bdfa194fe8",
+          "provenance": "historical_reference",
+          "timestamp": "2025-05-23T23:59:00+10:00",
+          "value": 8193.0
+        },
+        {
+          "id": "passive:66b8f128ba3e69f3aca7",
+          "provenance": "historical_reference",
+          "timestamp": "2025-05-24T23:59:00+10:00",
+          "value": 8360.0
+        },
+        {
+          "id": "passive:99bc60641575338e23a4",
+          "provenance": "historical_reference",
+          "timestamp": "2025-05-25T23:59:00+10:00",
+          "value": 7867.0
+        },
+        {
+          "id": "passive:7c15ecd8a328e4f40c37",
+          "provenance": "historical_reference",
+          "timestamp": "2025-05-26T23:59:00+10:00",
+          "value": 7080.0
+        },
+        {
+          "id": "passive:114f5345a30db6b18e93",
+          "provenance": "historical_reference",
+          "timestamp": "2025-05-27T23:59:00+10:00",
+          "value": 6587.0
+        },
+        {
+          "id": "passive:b2773262fedb01b9e114",
+          "provenance": "historical_reference",
+          "timestamp": "2025-05-28T23:59:00+10:00",
+          "value": 6755.0
+        },
+        {
+          "id": "passive:e14859f52de56d1c21e7",
+          "provenance": "historical_reference",
+          "timestamp": "2025-05-29T23:59:00+10:00",
+          "value": 7452.0
+        },
+        {
+          "id": "passive:fa037e89b9e65a4e80a5",
+          "provenance": "historical_reference",
+          "timestamp": "2025-05-30T23:59:00+10:00",
+          "value": 8149.0
+        },
+        {
+          "id": "passive:d5cf9c2e2d9a9b0220a1",
+          "provenance": "historical_reference",
+          "timestamp": "2025-05-31T23:59:00+10:00",
+          "value": 8316.0
+        },
+        {
+          "id": "passive:09f772a64e9b1b704932",
+          "provenance": "historical_reference",
+          "timestamp": "2025-06-01T23:59:00+10:00",
+          "value": 7823.0
+        },
+        {
+          "id": "passive:4c7d924fe1e2f39c975a",
+          "provenance": "historical_reference",
+          "timestamp": "2025-06-02T23:59:00+10:00",
+          "value": 7035.0
+        },
+        {
+          "id": "passive:b25942df6320b35db70f",
+          "provenance": "historical_reference",
+          "timestamp": "2025-06-03T23:59:00+10:00",
+          "value": 6541.0
+        },
+        {
+          "id": "passive:aa971ae69ea8365c7328",
+          "provenance": "historical_reference",
+          "timestamp": "2025-06-04T23:59:00+10:00",
+          "value": 6708.0
+        },
+        {
+          "id": "passive:53bf0ae198dd160c1d3e",
+          "provenance": "historical_reference",
+          "timestamp": "2025-06-06T23:59:00+10:00",
+          "value": 8102.0
+        },
+        {
+          "id": "passive:73cba7c62a61dde849fb",
+          "provenance": "historical_reference",
+          "timestamp": "2025-06-07T23:59:00+10:00",
+          "value": 8269.0
+        },
+        {
+          "id": "passive:071410bf42f4b565ddda",
+          "provenance": "historical_reference",
+          "timestamp": "2025-06-08T23:59:00+10:00",
+          "value": 7775.0
+        },
+        {
+          "id": "passive:79e60fdd9c3e65260320",
+          "provenance": "historical_reference",
+          "timestamp": "2025-06-09T23:59:00+10:00",
+          "value": 6987.0
+        },
+        {
+          "id": "passive:db04408de41ad8f91197",
+          "provenance": "historical_reference",
+          "timestamp": "2025-06-10T23:59:00+10:00",
+          "value": 6493.0
+        },
+        {
+          "id": "passive:a39d08cb402800f6afa5",
+          "provenance": "historical_reference",
+          "timestamp": "2025-06-11T23:59:00+10:00",
+          "value": 6659.0
+        },
+        {
+          "id": "passive:9409ec7849f936c50d1d",
+          "provenance": "historical_reference",
+          "timestamp": "2025-06-12T23:59:00+10:00",
+          "value": 7356.0
+        },
+        {
+          "id": "passive:6165c3c6f513f954071c",
+          "provenance": "historical_reference",
+          "timestamp": "2025-06-13T23:59:00+10:00",
+          "value": 8052.0
+        },
+        {
+          "id": "passive:cc96e88176cbc491d6c0",
+          "provenance": "historical_reference",
+          "timestamp": "2025-06-14T23:59:00+10:00",
+          "value": 8218.0
+        },
+        {
+          "id": "passive:41a7734fdf351764ee12",
+          "provenance": "historical_reference",
+          "timestamp": "2025-06-15T23:59:00+10:00",
+          "value": 7724.0
+        },
+        {
+          "id": "passive:b570ecd6a3ac8f8595a4",
+          "provenance": "historical_reference",
+          "timestamp": "2025-06-16T23:59:00+10:00",
+          "value": 6936.0
+        },
+        {
+          "id": "passive:309c453842dcd95f2b90",
+          "provenance": "historical_reference",
+          "timestamp": "2025-06-17T23:59:00+10:00",
+          "value": 6441.0
+        },
+        {
+          "id": "passive:0e5fbdecfc87ec7296d7",
+          "provenance": "historical_reference",
+          "timestamp": "2025-06-18T23:59:00+10:00",
+          "value": 6608.0
+        },
+        {
+          "id": "passive:c3fb5e0ffbba5a8db6cb",
+          "provenance": "historical_reference",
+          "timestamp": "2025-06-19T23:59:00+10:00",
+          "value": 7304.0
+        },
+        {
+          "id": "passive:9e19356dc4e6001f2c77",
+          "provenance": "historical_reference",
+          "timestamp": "2025-06-20T23:59:00+10:00",
+          "value": 8000.0
+        },
+        {
+          "id": "passive:ae70c51c3eaac17934dc",
+          "provenance": "historical_reference",
+          "timestamp": "2025-06-21T23:59:00+10:00",
+          "value": 8166.0
+        },
+        {
+          "id": "passive:04cc3ae8d506ec83576d",
+          "provenance": "historical_reference",
+          "timestamp": "2025-06-22T23:59:00+10:00",
+          "value": 7671.0
+        },
+        {
+          "id": "passive:baaf455c23f2b1361c60",
+          "provenance": "historical_reference",
+          "timestamp": "2025-06-23T23:59:00+10:00",
+          "value": 6883.0
+        },
+        {
+          "id": "passive:4aec53cb1e4860b647b8",
+          "provenance": "historical_reference",
+          "timestamp": "2025-06-24T23:59:00+10:00",
+          "value": 6388.0
+        },
+        {
+          "id": "passive:c477098877fcc170f9de",
+          "provenance": "historical_reference",
+          "timestamp": "2025-06-25T23:59:00+10:00",
+          "value": 6554.0
+        },
+        {
+          "id": "passive:6d5f51cf9ef741233ff4",
+          "provenance": "historical_reference",
+          "timestamp": "2025-06-26T23:59:00+10:00",
+          "value": 7250.0
+        },
+        {
+          "id": "passive:d9b0906d1c2628d100be",
+          "provenance": "historical_reference",
+          "timestamp": "2025-06-27T23:59:00+10:00",
+          "value": 7946.0
+        },
+        {
+          "id": "passive:32097022599c219e1ee0",
+          "provenance": "historical_reference",
+          "timestamp": "2025-06-28T23:59:00+10:00",
+          "value": 8112.0
+        },
+        {
+          "id": "passive:d1fcf10da35d09ea33fe",
+          "provenance": "historical_reference",
+          "timestamp": "2025-06-29T23:59:00+10:00",
+          "value": 7618.0
+        },
+        {
+          "id": "passive:b94a99bd4e2f63c646be",
+          "provenance": "historical_reference",
+          "timestamp": "2025-06-30T23:59:00+10:00",
+          "value": 6829.0
+        },
+        {
+          "id": "passive:646fd65babd41d9bb323",
+          "provenance": "historical_reference",
+          "timestamp": "2025-07-01T23:59:00+10:00",
+          "value": 6334.0
+        },
+        {
+          "id": "passive:8c6230a20948f37b3f58",
+          "provenance": "historical_reference",
+          "timestamp": "2025-07-02T23:59:00+10:00",
+          "value": 6500.0
+        },
+        {
+          "id": "passive:e902eba3ff38a6f9ccf3",
+          "provenance": "historical_reference",
+          "timestamp": "2025-07-03T23:59:00+10:00",
+          "value": 7196.0
+        },
+        {
+          "id": "passive:f7ab94ecb1ef1ba6e949",
+          "provenance": "historical_reference",
+          "timestamp": "2025-07-04T23:59:00+10:00",
+          "value": 7892.0
+        },
+        {
+          "id": "passive:529947147fa328444418",
+          "provenance": "historical_reference",
+          "timestamp": "2025-07-05T23:59:00+10:00",
+          "value": 8058.0
+        },
+        {
+          "id": "passive:0bca89717f5515a2c46c",
+          "provenance": "historical_reference",
+          "timestamp": "2025-07-07T23:59:00+10:00",
+          "value": 6775.0
+        },
+        {
+          "id": "passive:822dcefe8b556618c48c",
+          "provenance": "historical_reference",
+          "timestamp": "2025-07-08T23:59:00+10:00",
+          "value": 6280.0
+        },
+        {
+          "id": "passive:99fe2dabfab82a38baae",
+          "provenance": "historical_reference",
+          "timestamp": "2025-07-09T23:59:00+10:00",
+          "value": 6446.0
+        },
+        {
+          "id": "passive:68c1b34c2946cc972f03",
+          "provenance": "historical_reference",
+          "timestamp": "2025-07-10T23:59:00+10:00",
+          "value": 7142.0
+        },
+        {
+          "id": "passive:b20ce609b13dbf46ff5f",
+          "provenance": "historical_reference",
+          "timestamp": "2025-07-11T23:59:00+10:00",
+          "value": 7838.0
+        },
+        {
+          "id": "passive:49e64d09f5a59b338545",
+          "provenance": "historical_reference",
+          "timestamp": "2025-07-12T23:59:00+10:00",
+          "value": 8004.0
+        },
+        {
+          "id": "passive:478071e48b3daa7342dd",
+          "provenance": "historical_reference",
+          "timestamp": "2025-07-13T23:59:00+10:00",
+          "value": 7510.0
+        },
+        {
+          "id": "passive:77f580acc1863223ef8b",
+          "provenance": "historical_reference",
+          "timestamp": "2025-07-14T23:59:00+10:00",
+          "value": 6721.0
+        },
+        {
+          "id": "passive:79a9eead93bb61b72dbb",
+          "provenance": "historical_reference",
+          "timestamp": "2025-07-15T23:59:00+10:00",
+          "value": 6226.0
+        },
+        {
+          "id": "passive:b753f2e1e00428286ef7",
+          "provenance": "historical_reference",
+          "timestamp": "2025-07-16T23:59:00+10:00",
+          "value": 6393.0
+        },
+        {
+          "id": "passive:9c3f3efe24c8046f39a5",
+          "provenance": "historical_reference",
+          "timestamp": "2025-07-17T23:59:00+10:00",
+          "value": 7089.0
+        },
+        {
+          "id": "passive:c75d2986cd0f9e31539b",
+          "provenance": "historical_reference",
+          "timestamp": "2025-07-18T23:59:00+10:00",
+          "value": 7785.0
+        },
+        {
+          "id": "passive:f9ec51c37b336d87c9fa",
+          "provenance": "historical_reference",
+          "timestamp": "2025-07-19T23:59:00+10:00",
+          "value": 7951.0
+        },
+        {
+          "id": "passive:977e9597dbe7d6f71073",
+          "provenance": "historical_reference",
+          "timestamp": "2025-07-20T23:59:00+10:00",
+          "value": 7457.0
+        },
+        {
+          "id": "passive:a4bde9ce0fbef8b28741",
+          "provenance": "historical_reference",
+          "timestamp": "2025-07-21T23:59:00+10:00",
+          "value": 6669.0
+        },
+        {
+          "id": "passive:3219f75cb544fb7623ca",
+          "provenance": "historical_reference",
+          "timestamp": "2025-07-22T23:59:00+10:00",
+          "value": 6174.0
+        },
+        {
+          "id": "passive:cd7fd88d8aca66bcad4f",
+          "provenance": "historical_reference",
+          "timestamp": "2025-07-23T23:59:00+10:00",
+          "value": 6341.0
+        },
+        {
+          "id": "passive:573dea3fbf4ee5082547",
+          "provenance": "historical_reference",
+          "timestamp": "2025-07-24T23:59:00+10:00",
+          "value": 7037.0
+        },
+        {
+          "id": "passive:f6a611fc8877e3d84e09",
+          "provenance": "historical_reference",
+          "timestamp": "2025-07-25T23:59:00+10:00",
+          "value": 7734.0
+        },
+        {
+          "id": "passive:2d1fc740589868fbbb54",
+          "provenance": "historical_reference",
+          "timestamp": "2025-07-26T23:59:00+10:00",
+          "value": 7900.0
+        },
+        {
+          "id": "passive:b7f63b298dbc88c590ca",
+          "provenance": "historical_reference",
+          "timestamp": "2025-07-27T23:59:00+10:00",
+          "value": 7406.0
+        },
+        {
+          "id": "passive:3bd59c0fcdba68bb6f51",
+          "provenance": "historical_reference",
+          "timestamp": "2025-07-28T23:59:00+10:00",
+          "value": 6618.0
+        },
+        {
+          "id": "passive:2df016890bfdd93baa3a",
+          "provenance": "historical_reference",
+          "timestamp": "2025-07-29T23:59:00+10:00",
+          "value": 6124.0
+        },
+        {
+          "id": "passive:9793cd3d854a6a25cb3f",
+          "provenance": "historical_reference",
+          "timestamp": "2025-07-30T23:59:00+10:00",
+          "value": 6291.0
+        },
+        {
+          "id": "passive:b2b1ab79fb52a48ad80e",
+          "provenance": "historical_reference",
+          "timestamp": "2025-07-31T23:59:00+10:00",
+          "value": 6988.0
+        },
+        {
+          "id": "passive:1eb4ec398403565d4392",
+          "provenance": "historical_reference",
+          "timestamp": "2025-08-01T23:59:00+10:00",
+          "value": 7685.0
+        },
+        {
+          "id": "passive:cdd379c41ed2af875e5d",
+          "provenance": "historical_reference",
+          "timestamp": "2025-08-02T23:59:00+10:00",
+          "value": 7852.0
+        },
+        {
+          "id": "passive:a0078167f6b26dd852a2",
+          "provenance": "historical_reference",
+          "timestamp": "2025-08-03T23:59:00+10:00",
+          "value": 7358.0
+        },
+        {
+          "id": "passive:a3ec8d810151b0530ccf",
+          "provenance": "historical_reference",
+          "timestamp": "2025-08-04T23:59:00+10:00",
+          "value": 6571.0
+        },
+        {
+          "id": "passive:8554160b2aff8ea28efb",
+          "provenance": "historical_reference",
+          "timestamp": "2025-08-05T23:59:00+10:00",
+          "value": 6077.0
+        },
+        {
+          "id": "passive:d027a74875cd168f40ea",
+          "provenance": "historical_reference",
+          "timestamp": "2025-08-07T23:59:00+10:00",
+          "value": 6942.0
+        },
+        {
+          "id": "passive:9bc807b3382f7bfa996c",
+          "provenance": "historical_reference",
+          "timestamp": "2025-08-08T23:59:00+10:00",
+          "value": 7639.0
+        },
+        {
+          "id": "passive:0a8dcaabf8d6f9e2058e",
+          "provenance": "historical_reference",
+          "timestamp": "2025-08-09T23:59:00+10:00",
+          "value": 7807.0
+        },
+        {
+          "id": "passive:3a5d78ea7fc07dbd9fa8",
+          "provenance": "historical_reference",
+          "timestamp": "2025-08-10T23:59:00+10:00",
+          "value": 7314.0
+        },
+        {
+          "id": "passive:c758297ec581adee88ef",
+          "provenance": "historical_reference",
+          "timestamp": "2025-08-11T23:59:00+10:00",
+          "value": 6527.0
+        },
+        {
+          "id": "passive:7f9b27807be3826ab3c7",
+          "provenance": "historical_reference",
+          "timestamp": "2025-08-12T23:59:00+10:00",
+          "value": 6034.0
+        },
+        {
+          "id": "passive:066592bc839175a396a1",
+          "provenance": "historical_reference",
+          "timestamp": "2025-08-13T23:59:00+10:00",
+          "value": 6202.0
+        },
+        {
+          "id": "passive:7067a8fad408cca32aca",
+          "provenance": "historical_reference",
+          "timestamp": "2025-08-14T23:59:00+10:00",
+          "value": 6899.0
+        },
+        {
+          "id": "passive:e444c830672e352a6ebe",
+          "provenance": "historical_reference",
+          "timestamp": "2025-08-15T23:59:00+10:00",
+          "value": 7597.0
+        },
+        {
+          "id": "passive:4d8889d4b91b747bf774",
+          "provenance": "historical_reference",
+          "timestamp": "2025-08-16T23:59:00+10:00",
+          "value": 7765.0
+        },
+        {
+          "id": "passive:32c4950cfb91b7d7534b",
+          "provenance": "historical_reference",
+          "timestamp": "2025-08-17T23:59:00+10:00",
+          "value": 7273.0
+        },
+        {
+          "id": "passive:0876b95f6ab05e19ff28",
+          "provenance": "historical_reference",
+          "timestamp": "2025-08-18T23:59:00+10:00",
+          "value": 6487.0
+        },
+        {
+          "id": "passive:e7768af9961f60c01fa2",
+          "provenance": "historical_reference",
+          "timestamp": "2025-08-19T23:59:00+10:00",
+          "value": 5994.0
+        },
+        {
+          "id": "passive:b32074677aef05e9d188",
+          "provenance": "historical_reference",
+          "timestamp": "2025-08-20T23:59:00+10:00",
+          "value": 6163.0
+        },
+        {
+          "id": "passive:23f5604b5f5b2dda533c",
+          "provenance": "historical_reference",
+          "timestamp": "2025-08-21T23:59:00+10:00",
+          "value": 6861.0
+        },
+        {
+          "id": "passive:6bde42807791f0d6f4bd",
+          "provenance": "historical_reference",
+          "timestamp": "2025-08-22T23:59:00+10:00",
+          "value": 7560.0
+        },
+        {
+          "id": "passive:f5231c097aea75f9d67f",
+          "provenance": "historical_reference",
+          "timestamp": "2025-08-23T23:59:00+10:00",
+          "value": 7729.0
+        },
+        {
+          "id": "passive:7c5ce69d9d0921c323d0",
+          "provenance": "historical_reference",
+          "timestamp": "2025-08-24T23:59:00+10:00",
+          "value": 7237.0
+        },
+        {
+          "id": "passive:51b09d2dbb91e6bf7291",
+          "provenance": "historical_reference",
+          "timestamp": "2025-08-25T23:59:00+10:00",
+          "value": 6451.0
+        },
+        {
+          "id": "passive:fdc44fdaf5f2aa71a620",
+          "provenance": "historical_reference",
+          "timestamp": "2025-08-26T23:59:00+10:00",
+          "value": 5960.0
+        },
+        {
+          "id": "passive:d645761d93ed9ef35fe8",
+          "provenance": "historical_reference",
+          "timestamp": "2025-08-27T23:59:00+10:00",
+          "value": 6129.0
+        },
+        {
+          "id": "passive:69f776b4c134edfa8065",
+          "provenance": "historical_reference",
+          "timestamp": "2025-08-28T23:59:00+10:00",
+          "value": 6828.0
+        },
+        {
+          "id": "passive:4ab57c89134f6d145c17",
+          "provenance": "historical_reference",
+          "timestamp": "2025-08-29T23:59:00+10:00",
+          "value": 7527.0
+        },
+        {
+          "id": "passive:d4703ce799323f99fcc5",
+          "provenance": "historical_reference",
+          "timestamp": "2025-08-30T23:59:00+10:00",
+          "value": 7697.0
+        },
+        {
+          "id": "passive:a5ce1025016932833749",
+          "provenance": "historical_reference",
+          "timestamp": "2025-08-31T23:59:00+10:00",
+          "value": 7206.0
+        },
+        {
+          "id": "passive:1b7753bfc307ea84b7a2",
+          "provenance": "historical_reference",
+          "timestamp": "2025-09-01T23:59:00+10:00",
+          "value": 6421.0
+        },
+        {
+          "id": "passive:d18148f7ce7ddbbf5e82",
+          "provenance": "historical_reference",
+          "timestamp": "2025-09-02T23:59:00+10:00",
+          "value": 5930.0
+        },
+        {
+          "id": "passive:6de73511935c01950749",
+          "provenance": "historical_reference",
+          "timestamp": "2025-09-03T23:59:00+10:00",
+          "value": 6100.0
+        },
+        {
+          "id": "passive:5c58578fa76179623c78",
+          "provenance": "historical_reference",
+          "timestamp": "2025-09-04T23:59:00+10:00",
+          "value": 6800.0
+        },
+        {
+          "id": "passive:d98379c03649ac65b8be",
+          "provenance": "historical_reference",
+          "timestamp": "2025-09-05T23:59:00+10:00",
+          "value": 7501.0
+        },
+        {
+          "id": "passive:d7b42d3eb4ab1e7b813b",
+          "provenance": "historical_reference",
+          "timestamp": "2025-09-07T23:59:00+10:00",
+          "value": 7181.0
+        },
+        {
+          "id": "passive:f8c44ffe8f9a8f34b4b3",
+          "provenance": "historical_reference",
+          "timestamp": "2025-09-08T23:59:00+10:00",
+          "value": 6397.0
+        },
+        {
+          "id": "passive:600830e345a278fbe3bb",
+          "provenance": "historical_reference",
+          "timestamp": "2025-09-09T23:59:00+10:00",
+          "value": 5907.0
+        },
+        {
+          "id": "passive:da669d0c703179b50053",
+          "provenance": "historical_reference",
+          "timestamp": "2025-09-10T23:59:00+10:00",
+          "value": 6078.0
+        },
+        {
+          "id": "passive:527c46c2ffe53c7b0b6c",
+          "provenance": "historical_reference",
+          "timestamp": "2025-09-11T23:59:00+10:00",
+          "value": 6778.0
+        },
+        {
+          "id": "passive:8c678daeee1e06a1323e",
+          "provenance": "historical_reference",
+          "timestamp": "2025-09-12T23:59:00+10:00",
+          "value": 7479.0
+        },
+        {
+          "id": "passive:95e7e81abf0e89755f55",
+          "provenance": "historical_reference",
+          "timestamp": "2025-09-13T23:59:00+10:00",
+          "value": 7651.0
+        },
+        {
+          "id": "passive:ed780a6fc3cc61479ec9",
+          "provenance": "historical_reference",
+          "timestamp": "2025-09-14T23:59:00+10:00",
+          "value": 7161.0
+        },
+        {
+          "id": "passive:c37b570d26ec6f91d9e4",
+          "provenance": "historical_reference",
+          "timestamp": "2025-09-15T23:59:00+10:00",
+          "value": 6378.0
+        },
+        {
+          "id": "passive:eb7c02a2b4bed2f5e2e0",
+          "provenance": "historical_reference",
+          "timestamp": "2025-09-16T23:59:00+10:00",
+          "value": 5889.0
+        },
+        {
+          "id": "passive:d5cfa58d6fdb96f91abf",
+          "provenance": "historical_reference",
+          "timestamp": "2025-09-17T23:59:00+10:00",
+          "value": 6061.0
+        },
+        {
+          "id": "passive:1a1cee06dae427144eee",
+          "provenance": "historical_reference",
+          "timestamp": "2025-09-18T23:59:00+10:00",
+          "value": 6763.0
+        },
+        {
+          "id": "passive:a8256fcec4a910c9423c",
+          "provenance": "historical_reference",
+          "timestamp": "2025-09-19T23:59:00+10:00",
+          "value": 7464.0
+        },
+        {
+          "id": "passive:374baa48da8bfa5e7cff",
+          "provenance": "historical_reference",
+          "timestamp": "2025-09-20T23:59:00+10:00",
+          "value": 7637.0
+        },
+        {
+          "id": "passive:b6ad01d805ed82b488d0",
+          "provenance": "historical_reference",
+          "timestamp": "2025-09-21T23:59:00+10:00",
+          "value": 7148.0
+        },
+        {
+          "id": "passive:a30c2c2826a89df2b227",
+          "provenance": "historical_reference",
+          "timestamp": "2025-09-22T23:59:00+10:00",
+          "value": 6366.0
+        },
+        {
+          "id": "passive:2b3fca74468f9089855b",
+          "provenance": "historical_reference",
+          "timestamp": "2025-09-23T23:59:00+10:00",
+          "value": 5878.0
+        },
+        {
+          "id": "passive:4019ee36d08e2523d642",
+          "provenance": "historical_reference",
+          "timestamp": "2025-09-24T23:59:00+10:00",
+          "value": 6050.0
+        },
+        {
+          "id": "passive:0214b296a53a0c5053f6",
+          "provenance": "historical_reference",
+          "timestamp": "2025-09-25T23:59:00+10:00",
+          "value": 6753.0
+        },
+        {
+          "id": "passive:791096103558e8e9f4d7",
+          "provenance": "historical_reference",
+          "timestamp": "2025-09-26T23:59:00+10:00",
+          "value": 7456.0
+        },
+        {
+          "id": "passive:5af6cab3d1bf2cf1e0d4",
+          "provenance": "historical_reference",
+          "timestamp": "2025-09-27T23:59:00+10:00",
+          "value": 7629.0
+        },
+        {
+          "id": "passive:0056ea1e3311cecd06a3",
+          "provenance": "historical_reference",
+          "timestamp": "2025-09-28T23:59:00+10:00",
+          "value": 7141.0
+        },
+        {
+          "id": "passive:8ceec7523aeca94c412f",
+          "provenance": "historical_reference",
+          "timestamp": "2025-09-29T23:59:00+10:00",
+          "value": 6360.0
+        },
+        {
+          "id": "passive:87cc2e1364580888f614",
+          "provenance": "historical_reference",
+          "timestamp": "2025-09-30T23:59:00+10:00",
+          "value": 5873.0
+        },
+        {
+          "id": "passive:d0d31eaab870a31edd2a",
+          "provenance": "historical_reference",
+          "timestamp": "2025-10-01T23:59:00+10:00",
+          "value": 6046.0
+        },
+        {
+          "id": "passive:b00aa62602f14e739ad1",
+          "provenance": "historical_reference",
+          "timestamp": "2025-10-02T23:59:00+10:00",
+          "value": 6750.0
+        },
+        {
+          "id": "passive:ce63a0db7d18875fca55",
+          "provenance": "historical_reference",
+          "timestamp": "2025-10-03T23:59:00+10:00",
+          "value": 7454.0
+        },
+        {
+          "id": "passive:09474de9eb096fb751d4",
+          "provenance": "historical_reference",
+          "timestamp": "2025-10-04T23:59:00+10:00",
+          "value": 7628.0
+        },
+        {
+          "id": "passive:fad8dd85e7c3363e64d2",
+          "provenance": "historical_reference",
+          "timestamp": "2025-10-05T23:59:00+11:00",
+          "value": 7141.0
+        },
+        {
+          "id": "passive:4024c384edbd503d24e4",
+          "provenance": "historical_reference",
+          "timestamp": "2025-10-06T23:59:00+11:00",
+          "value": 6361.0
+        },
+        {
+          "id": "passive:f1ce51ae3fa24e37aca0",
+          "provenance": "historical_reference",
+          "timestamp": "2025-10-08T23:59:00+11:00",
+          "value": 6049.0
+        },
+        {
+          "id": "passive:1ed0e58e8d04583d9cc7",
+          "provenance": "historical_reference",
+          "timestamp": "2025-10-09T23:59:00+11:00",
+          "value": 6754.0
+        },
+        {
+          "id": "passive:1fb4029c98d7c08087f6",
+          "provenance": "historical_reference",
+          "timestamp": "2025-10-10T23:59:00+11:00",
+          "value": 7458.0
+        },
+        {
+          "id": "passive:0d4c0b4e857e431504a6",
+          "provenance": "historical_reference",
+          "timestamp": "2025-10-11T23:59:00+11:00",
+          "value": 7633.0
+        },
+        {
+          "id": "passive:6170d65e5fb89485c57d",
+          "provenance": "historical_reference",
+          "timestamp": "2025-10-12T23:59:00+11:00",
+          "value": 7147.0
+        },
+        {
+          "id": "passive:6ce5b785caa5384ff0cd",
+          "provenance": "historical_reference",
+          "timestamp": "2025-10-13T23:59:00+11:00",
+          "value": 6368.0
+        },
+        {
+          "id": "passive:52bc0574302b05d17db6",
+          "provenance": "historical_reference",
+          "timestamp": "2025-10-14T23:59:00+11:00",
+          "value": 5883.0
+        },
+        {
+          "id": "passive:746ed1fa6162353b2c03",
+          "provenance": "historical_reference",
+          "timestamp": "2025-10-15T23:59:00+11:00",
+          "value": 6058.0
+        },
+        {
+          "id": "passive:b19348ff2088ade5d743",
+          "provenance": "historical_reference",
+          "timestamp": "2025-10-16T23:59:00+11:00",
+          "value": 6763.0
+        },
+        {
+          "id": "passive:c9be8e9f9b1cae9ba556",
+          "provenance": "historical_reference",
+          "timestamp": "2025-10-17T23:59:00+11:00",
+          "value": 7469.0
+        },
+        {
+          "id": "passive:85dec3d96dc1cc355bca",
+          "provenance": "historical_reference",
+          "timestamp": "2025-10-18T23:59:00+11:00",
+          "value": 7645.0
+        },
+        {
+          "id": "passive:675582c4f98cf33f730e",
+          "provenance": "historical_reference",
+          "timestamp": "2025-10-19T23:59:00+11:00",
+          "value": 7160.0
+        },
+        {
+          "id": "passive:8589bf1a349bc6565950",
+          "provenance": "historical_reference",
+          "timestamp": "2025-10-20T23:59:00+11:00",
+          "value": 6382.0
+        },
+        {
+          "id": "passive:aadc5b09fc902b2479ec",
+          "provenance": "historical_reference",
+          "timestamp": "2025-10-21T23:59:00+11:00",
+          "value": 5897.0
+        },
+        {
+          "id": "passive:f4523527fccbddb4d95f",
+          "provenance": "historical_reference",
+          "timestamp": "2025-10-22T23:59:00+11:00",
+          "value": 6073.0
+        },
+        {
+          "id": "passive:883fbf6ee9401bcd16f8",
+          "provenance": "historical_reference",
+          "timestamp": "2025-10-23T23:59:00+11:00",
+          "value": 6780.0
+        },
+        {
+          "id": "passive:ef8de9f7314f18fe77ab",
+          "provenance": "historical_reference",
+          "timestamp": "2025-10-24T23:59:00+11:00",
+          "value": 7486.0
+        },
+        {
+          "id": "passive:3d474e3fcaf831463c20",
+          "provenance": "historical_reference",
+          "timestamp": "2025-10-25T23:59:00+11:00",
+          "value": 7663.0
+        },
+        {
+          "id": "passive:98e353a088a44b4c1802",
+          "provenance": "historical_reference",
+          "timestamp": "2025-10-26T23:59:00+11:00",
+          "value": 7179.0
+        },
+        {
+          "id": "passive:9ddf0b9cd846d1bf2125",
+          "provenance": "historical_reference",
+          "timestamp": "2025-10-27T23:59:00+11:00",
+          "value": 6401.0
+        },
+        {
+          "id": "passive:95fbf75ba9d594e394a5",
+          "provenance": "historical_reference",
+          "timestamp": "2025-10-28T23:59:00+11:00",
+          "value": 5918.0
+        },
+        {
+          "id": "passive:92c1bbdf2f931dd7e94a",
+          "provenance": "historical_reference",
+          "timestamp": "2025-10-29T23:59:00+11:00",
+          "value": 6095.0
+        },
+        {
+          "id": "passive:873ff912698c9b719333",
+          "provenance": "historical_reference",
+          "timestamp": "2025-10-30T23:59:00+11:00",
+          "value": 6802.0
+        },
+        {
+          "id": "passive:eeea2de3fc0390a70021",
+          "provenance": "historical_reference",
+          "timestamp": "2025-10-31T23:59:00+11:00",
+          "value": 7509.0
+        },
+        {
+          "id": "passive:c63459c3827eefb1c4dd",
+          "provenance": "historical_reference",
+          "timestamp": "2025-11-01T23:59:00+11:00",
+          "value": 7687.0
+        },
+        {
+          "id": "passive:7fa5171be2444312474c",
+          "provenance": "historical_reference",
+          "timestamp": "2025-11-02T23:59:00+11:00",
+          "value": 7204.0
+        },
+        {
+          "id": "passive:770140aa4cc55e623a01",
+          "provenance": "historical_reference",
+          "timestamp": "2025-11-03T23:59:00+11:00",
+          "value": 6427.0
+        },
+        {
+          "id": "passive:287e6823eba3e69d8336",
+          "provenance": "historical_reference",
+          "timestamp": "2025-11-04T23:59:00+11:00",
+          "value": 5944.0
+        },
+        {
+          "id": "passive:12387d92b29cf530f520",
+          "provenance": "historical_reference",
+          "timestamp": "2025-11-05T23:59:00+11:00",
+          "value": 6122.0
+        },
+        {
+          "id": "passive:f9469141a41ede21dd02",
+          "provenance": "historical_reference",
+          "timestamp": "2025-11-06T23:59:00+11:00",
+          "value": 6830.0
+        },
+        {
+          "id": "passive:afc90947e7a3aa9f96cc",
+          "provenance": "historical_reference",
+          "timestamp": "2025-11-08T23:59:00+11:00",
+          "value": 7717.0
+        },
+        {
+          "id": "passive:9b43aa670f7b14627b50",
+          "provenance": "historical_reference",
+          "timestamp": "2025-11-09T23:59:00+11:00",
+          "value": 7235.0
+        },
+        {
+          "id": "passive:78ecc74fcf3a7c03e139",
+          "provenance": "historical_reference",
+          "timestamp": "2025-11-10T23:59:00+11:00",
+          "value": 6458.0
+        },
+        {
+          "id": "passive:5188ffcae9e96fe11fcc",
+          "provenance": "historical_reference",
+          "timestamp": "2025-11-11T23:59:00+11:00",
+          "value": 5976.0
+        },
+        {
+          "id": "passive:243b97830efcf7a71315",
+          "provenance": "historical_reference",
+          "timestamp": "2025-11-12T23:59:00+11:00",
+          "value": 6155.0
+        },
+        {
+          "id": "passive:c007c687f84279108428",
+          "provenance": "historical_reference",
+          "timestamp": "2025-11-13T23:59:00+11:00",
+          "value": 6864.0
+        },
+        {
+          "id": "passive:8118255dfe21a58ecd71",
+          "provenance": "historical_reference",
+          "timestamp": "2025-11-14T23:59:00+11:00",
+          "value": 7573.0
+        },
+        {
+          "id": "passive:de03182b1522c0fc9efe",
+          "provenance": "historical_reference",
+          "timestamp": "2025-11-15T23:59:00+11:00",
+          "value": 7752.0
+        },
+        {
+          "id": "passive:acdf34c0d4b60f535643",
+          "provenance": "historical_reference",
+          "timestamp": "2025-11-16T23:59:00+11:00",
+          "value": 7270.0
+        },
+        {
+          "id": "passive:e4f19f0232e95162f4a6",
+          "provenance": "historical_reference",
+          "timestamp": "2025-11-17T23:59:00+11:00",
+          "value": 6495.0
+        },
+        {
+          "id": "passive:1fc0da9831df9bc936ec",
+          "provenance": "historical_reference",
+          "timestamp": "2025-11-18T23:59:00+11:00",
+          "value": 6013.0
+        },
+        {
+          "id": "passive:7a0a9ea9e13219f96275",
+          "provenance": "historical_reference",
+          "timestamp": "2025-11-19T23:59:00+11:00",
+          "value": 6193.0
+        },
+        {
+          "id": "passive:6166f0f3d32a4fbf1489",
+          "provenance": "historical_reference",
+          "timestamp": "2025-11-20T23:59:00+11:00",
+          "value": 6902.0
+        },
+        {
+          "id": "passive:a22b553b47231ea47a38",
+          "provenance": "historical_reference",
+          "timestamp": "2025-11-21T23:59:00+11:00",
+          "value": 7612.0
+        },
+        {
+          "id": "passive:bb459e29a133b049ae1d",
+          "provenance": "historical_reference",
+          "timestamp": "2025-11-22T23:59:00+11:00",
+          "value": 7791.0
+        },
+        {
+          "id": "passive:4b86395de541f122a925",
+          "provenance": "historical_reference",
+          "timestamp": "2025-11-23T23:59:00+11:00",
+          "value": 7311.0
+        },
+        {
+          "id": "passive:e23b0634bcce575e17a2",
+          "provenance": "historical_reference",
+          "timestamp": "2025-11-24T23:59:00+11:00",
+          "value": 6536.0
+        },
+        {
+          "id": "passive:8284089030076b6b3d6b",
+          "provenance": "historical_reference",
+          "timestamp": "2025-11-25T23:59:00+11:00",
+          "value": 6055.0
+        },
+        {
+          "id": "passive:cbd63002f2796f8409a2",
+          "provenance": "historical_reference",
+          "timestamp": "2025-11-26T23:59:00+11:00",
+          "value": 6235.0
+        },
+        {
+          "id": "passive:ed706909c33b8117ba52",
+          "provenance": "historical_reference",
+          "timestamp": "2025-11-27T23:59:00+11:00",
+          "value": 6945.0
+        },
+        {
+          "id": "passive:e86d1bf45d5f4a693619",
+          "provenance": "historical_reference",
+          "timestamp": "2025-11-28T23:59:00+11:00",
+          "value": 7655.0
+        },
+        {
+          "id": "passive:c9230688f2f7f278ea38",
+          "provenance": "historical_reference",
+          "timestamp": "2025-11-29T23:59:00+11:00",
+          "value": 7835.0
+        },
+        {
+          "id": "passive:47449c410e53415eb72f",
+          "provenance": "historical_reference",
+          "timestamp": "2025-11-30T23:59:00+11:00",
+          "value": 7355.0
+        },
+        {
+          "id": "passive:69f516baca04d1e6048a",
+          "provenance": "historical_reference",
+          "timestamp": "2025-12-01T23:59:00+11:00",
+          "value": 6581.0
+        },
+        {
+          "id": "passive:334165876e3b02174b1e",
+          "provenance": "historical_reference",
+          "timestamp": "2025-12-02T23:59:00+11:00",
+          "value": 6100.0
+        },
+        {
+          "id": "passive:d0dcfa7725b30f6d3f18",
+          "provenance": "historical_reference",
+          "timestamp": "2025-12-03T23:59:00+11:00",
+          "value": 6281.0
+        },
+        {
+          "id": "passive:2498dc5d98169d3fd0f1",
+          "provenance": "historical_reference",
+          "timestamp": "2025-12-04T23:59:00+11:00",
+          "value": 6991.0
+        },
+        {
+          "id": "passive:3c59bdc794b16c24e2db",
+          "provenance": "historical_reference",
+          "timestamp": "2025-12-05T23:59:00+11:00",
+          "value": 7702.0
+        },
+        {
+          "id": "passive:21286b367e5bed5f0c7e",
+          "provenance": "historical_reference",
+          "timestamp": "2025-12-06T23:59:00+11:00",
+          "value": 7883.0
+        },
+        {
+          "id": "passive:ab8aadc04d9000e398ec",
+          "provenance": "historical_reference",
+          "timestamp": "2025-12-07T23:59:00+11:00",
+          "value": 7403.0
+        },
+        {
+          "id": "passive:e52edd53be55814080d6",
+          "provenance": "historical_reference",
+          "timestamp": "2025-12-09T23:59:00+11:00",
+          "value": 6149.0
+        },
+        {
+          "id": "passive:af9580d38017140f7d69",
+          "provenance": "historical_reference",
+          "timestamp": "2025-12-10T23:59:00+11:00",
+          "value": 6330.0
+        },
+        {
+          "id": "passive:78b39aad7bb978b7fed0",
+          "provenance": "historical_reference",
+          "timestamp": "2025-12-11T23:59:00+11:00",
+          "value": 7041.0
+        },
+        {
+          "id": "passive:86bbb00b5e7ef0e4e9af",
+          "provenance": "historical_reference",
+          "timestamp": "2025-12-12T23:59:00+11:00",
+          "value": 7752.0
+        },
+        {
+          "id": "passive:b6d453c333a2e9b96a7d",
+          "provenance": "historical_reference",
+          "timestamp": "2025-12-13T23:59:00+11:00",
+          "value": 7933.0
+        },
+        {
+          "id": "passive:d6bb051c06f2900dc3dd",
+          "provenance": "historical_reference",
+          "timestamp": "2025-12-14T23:59:00+11:00",
+          "value": 7453.0
+        },
+        {
+          "id": "passive:749e85ed2b98a306a102",
+          "provenance": "historical_reference",
+          "timestamp": "2025-12-15T23:59:00+11:00",
+          "value": 6680.0
+        },
+        {
+          "id": "passive:066f602d88dba9c34619",
+          "provenance": "historical_reference",
+          "timestamp": "2025-12-16T23:59:00+11:00",
+          "value": 6200.0
+        },
+        {
+          "id": "passive:949e103c2cb0f8429b9a",
+          "provenance": "historical_reference",
+          "timestamp": "2025-12-17T23:59:00+11:00",
+          "value": 6381.0
+        },
+        {
+          "id": "passive:23ec5e2d2ca0f4b4441b",
+          "provenance": "historical_reference",
+          "timestamp": "2025-12-18T23:59:00+11:00",
+          "value": 7093.0
+        },
+        {
+          "id": "passive:55fc3164a55f163bd455",
+          "provenance": "historical_reference",
+          "timestamp": "2025-12-19T23:59:00+11:00",
+          "value": 7804.0
+        },
+        {
+          "id": "passive:7a37163496771dd023eb",
+          "provenance": "historical_reference",
+          "timestamp": "2025-12-20T23:59:00+11:00",
+          "value": 7985.0
+        },
+        {
+          "id": "passive:efd18656ee4a3353e963",
+          "provenance": "historical_reference",
+          "timestamp": "2025-12-21T23:59:00+11:00",
+          "value": 7506.0
+        },
+        {
+          "id": "passive:2fdf6113ec08fb3a7bc3",
+          "provenance": "historical_reference",
+          "timestamp": "2025-12-22T23:59:00+11:00",
+          "value": 6732.0
+        },
+        {
+          "id": "passive:50c0c125b5a203a7d2a2",
+          "provenance": "historical_reference",
+          "timestamp": "2025-12-23T23:59:00+11:00",
+          "value": 6253.0
+        },
+        {
+          "id": "passive:10377e0619fc6ebcc717",
+          "provenance": "historical_reference",
+          "timestamp": "2025-12-24T23:59:00+11:00",
+          "value": 6435.0
+        },
+        {
+          "id": "passive:141aa0994738a48ebb61",
+          "provenance": "historical_reference",
+          "timestamp": "2025-12-25T23:59:00+11:00",
+          "value": 7146.0
+        },
+        {
+          "id": "passive:ae0151f323bec62b38f3",
+          "provenance": "historical_reference",
+          "timestamp": "2025-12-26T23:59:00+11:00",
+          "value": 7857.0
+        },
+        {
+          "id": "passive:e3ba1b9774dfdd083ce7",
+          "provenance": "historical_reference",
+          "timestamp": "2025-12-27T23:59:00+11:00",
+          "value": 8039.0
+        },
+        {
+          "id": "passive:1fdaf809f9a82221b28a",
+          "provenance": "historical_reference",
+          "timestamp": "2025-12-28T23:59:00+11:00",
+          "value": 7560.0
+        },
+        {
+          "id": "passive:b2e062b9ccd301b7e944",
+          "provenance": "historical_reference",
+          "timestamp": "2025-12-29T23:59:00+11:00",
+          "value": 6786.0
+        },
+        {
+          "id": "passive:81baa9865b6cde5491a8",
+          "provenance": "historical_reference",
+          "timestamp": "2025-12-30T23:59:00+11:00",
+          "value": 6307.0
+        },
+        {
+          "id": "passive:a6a00da235303dfb3e61",
+          "provenance": "historical_reference",
+          "timestamp": "2025-12-31T23:59:00+11:00",
+          "value": 6489.0
+        },
+        {
+          "id": "passive:1f5563079785806e9286",
+          "provenance": "passive_device",
+          "timestamp": "2026-01-01T23:59:00+11:00",
+          "value": 7200.0
+        },
+        {
+          "id": "passive:f5d30c947adeab7bcffa",
+          "provenance": "passive_device",
+          "timestamp": "2026-01-02T23:59:00+11:00",
+          "value": 7911.0
+        }
+      ],
+      "provenance": {
+        "active_questlife_observation_ids_reference": {
+          "count": 0,
+          "firstId": null,
+          "lastId": null,
+          "semanticHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        },
+        "historical_and_active_merged": false,
+        "historical_observation_ids_reference": {
+          "count": 355,
+          "firstId": "passive:5e8e6831d72bc43209a9",
+          "lastId": "passive:f5d30c947adeab7bcffa",
+          "semanticHash": "7bf537d3e59cd1b677ef9deeb954266255ac0d4512ff6b97cc1d5977f0d64419"
+        },
+        "source_conflicts_resolved": 0,
+        "source_profiles": [
+          {
+            "aggregation_method": "daily_sum",
+            "device_id": "synthetic-phone",
+            "provider": "synthetic-phone-provider",
+            "quality_dimensions": {
+              "aggregation_transparent": "true",
+              "event_time_resolved": "true",
+              "externally_user_entered": "false",
+              "quality_class": "device_measured",
+              "source_identity_resolved": "true"
+            },
+            "sampling_resolution": "day",
+            "source_app": "synthetic-health-history",
+            "source_regime_id": "phone-v1"
+          }
+        ]
+      },
+      "recentChange": {
+        "absolute_change": 298.0,
+        "classification": "near_reference",
+        "higher_is_better": null,
+        "percent_change": 4.31758910460736,
+        "recent_median": 7200.0,
+        "recent_observation_ids": [
+          "passive:e3ba1b9774dfdd083ce7",
+          "passive:1fdaf809f9a82221b28a",
+          "passive:b2e062b9ccd301b7e944",
+          "passive:81baa9865b6cde5491a8",
+          "passive:a6a00da235303dfb3e61",
+          "passive:1f5563079785806e9286",
+          "passive:f5d30c947adeab7bcffa"
+        ],
+        "recent_window": "7D",
+        "reference_median": 6902.0,
+        "reference_window": "up_to_90D"
+      },
+      "semantic": "count",
+      "stage": "S3",
+      "unit": "steps",
+      "valueChangeMode": "percentage",
+      "views": {
+        "1Y": {
+          "aggregation": "quant_source_points",
+          "axisPrecision": "month",
+          "endIndex": 355,
+          "pointCount": 354,
+          "startIndex": 1
+        },
+        "30D": {
+          "aggregation": "quant_source_points",
+          "axisPrecision": "month_day",
+          "endIndex": 355,
+          "pointCount": 29,
+          "startIndex": 326
+        },
+        "7D": {
+          "aggregation": "quant_source_points",
+          "axisPrecision": "month_day",
+          "endIndex": 355,
+          "pointCount": 7,
+          "startIndex": 348
+        },
+        "90D": {
+          "aggregation": "quant_source_points",
+          "axisPrecision": "month_day",
+          "endIndex": 355,
+          "pointCount": 87,
+          "startIndex": 268
+        },
+        "ALL": {
+          "aggregation": "quant_source_points",
+          "axisPrecision": "year_month",
+          "endIndex": 355,
+          "pointCount": 355,
+          "startIndex": 0
+        }
+      }
+    }
+  ],
+  "signals": [],
+  "skillAvailable": false,
+  "source": {
+    "canonicalArtifactHash": "65eb0c4862dc46d8532252d1e140a8c03a62d4b9bbcfd21e92615c89bfdde6d4",
+    "containsRealUserData": false,
+    "engineVersion": "questlife-cold-start-terminal-v0.4",
+    "materializedEngineVersion": "questlife-quant-v0.4.1-materialized",
+    "quantCommit": "fc0468c",
+    "sourceArtifact": "artifacts/v0.4/day1_steps_only.json",
+    "syntheticOnly": true
+  },
+  "state": "available"
+}

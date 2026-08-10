@@ -1,0 +1,120 @@
+{
+  "bridgeVersion": "questlife-app-quant-v0.4.1-fixture-bridge",
+  "sourceReleaseVersion": "questlife-terminal-presentation-release-v0.4.1",
+  "quantCommit": "fc0468c",
+  "syntheticOnly": true,
+  "containsRealUserData": false,
+  "runtimeDependencyOnSiblingRepository": false,
+  "scenarios": [
+    {
+      "canonicalArtifactHash": "2ad7b8c5c90000df42d6f7557110f7f289e9260ac0b234ac809fda1eb83e15ad",
+      "entityCount": 3,
+      "file": "day180.json",
+      "presentationHash": "6033b9b7a35bf46f27252229914564912ed9f0bb06348bba8d8afcc70fcf0bb4",
+      "scenario": "day180",
+      "seriesCount": 12,
+      "sizeBytes": 462683,
+      "state": "available",
+      "sourceFileSha256": "6d80924578f2cd24c8ebd5fc5ac53bc7e6048754e464ff8be84d6aaa43e530bf"
+    },
+    {
+      "canonicalArtifactHash": "383cf6fdf5cc7387b12f6ae03b8316f204ea87cbca5e34fc6f8882cf15ec44c7",
+      "entityCount": 3,
+      "file": "day30.json",
+      "presentationHash": "271c14d1dea84ddf63d744fd063f50ee14bae427977abd706d0f8a4272d5f38f",
+      "scenario": "day30",
+      "seriesCount": 12,
+      "sizeBytes": 309600,
+      "state": "available",
+      "sourceFileSha256": "2d8b731652e93b02a70b84b910b9b20fa3cfb40b285d4f13432f783dc9f3de75"
+    },
+    {
+      "canonicalArtifactHash": "c98c277581963f5119e747efb215f7aa1103440bdd44de9e4156422b99708b53",
+      "entityCount": 1,
+      "file": "day7.json",
+      "presentationHash": "5b492b1ed0b09d0bf7b09c33765a8cd00b152cfa55e91b70778e00aba16ba7dd",
+      "scenario": "day7",
+      "seriesCount": 8,
+      "sizeBytes": 279857,
+      "state": "available",
+      "sourceFileSha256": "3e80f4df2f62f319ffabd107faec345590bf0a7c90c4cfbf4450407dc5048348"
+    },
+    {
+      "canonicalArtifactHash": "1280c4ca6f627ea130c987cdd153d03dbfe99177c6d1e34aa3fed71fefa5b7fd",
+      "entityCount": 3,
+      "file": "day90.json",
+      "presentationHash": "8c4b2cca4f019c08b38bdb4402eb0d35425974fdc695aa832d7974bac432dc3d",
+      "scenario": "day90",
+      "seriesCount": 12,
+      "sizeBytes": 371828,
+      "state": "available",
+      "sourceFileSha256": "e581ad61f851744fc31f85aed1542fdc10ec07fe643958ebd9bb149dfc4da4a3"
+    },
+    {
+      "canonicalArtifactHash": "2ad7b8c5c90000df42d6f7557110f7f289e9260ac0b234ac809fda1eb83e15ad",
+      "entityCount": 3,
+      "file": "goal.json",
+      "presentationHash": "cebd7b1c1c3c1d61bafb64ab0de16a6d207813963d448a12c9eeb87a8fec3b2e",
+      "scenario": "goal",
+      "seriesCount": 12,
+      "sizeBytes": 462714,
+      "state": "available",
+      "sourceFileSha256": "1f1a17b6bed6525bd2bc48b5d1a5db8cb2a55aadc665629a26de8f8b6c170416"
+    },
+    {
+      "canonicalArtifactHash": "c159a638592bc2d4cf5716b9c988d881972240331c550b68675c4fcd825f22c1",
+      "entityCount": 0,
+      "file": "no-data.json",
+      "presentationHash": "815121179fd14844e337bd8af77010b29863ba5123766899f299dc8eb31df363",
+      "scenario": "no-data",
+      "seriesCount": 0,
+      "sizeBytes": 1035,
+      "state": "no_data",
+      "sourceFileSha256": "7583599f680993f94d9e81397ad89405196f1f959042c97ef35ae7f3188b9687"
+    },
+    {
+      "canonicalArtifactHash": "0194f1444c027a4a2d182b36cddde353fe3579435cb0651fe4c316e3ce08a001",
+      "entityCount": 1,
+      "file": "rich-passive.json",
+      "presentationHash": "f38140feedb908a349acec8c62d59d207a392deb6aa1db6297fe87445f485c7d",
+      "scenario": "rich-passive",
+      "seriesCount": 8,
+      "sizeBytes": 326690,
+      "state": "available",
+      "sourceFileSha256": "5f106477a348004af73a0ffac987cb46d80e312bbebd29b085267e2fa12057fd"
+    },
+    {
+      "canonicalArtifactHash": "2ad7b8c5c90000df42d6f7557110f7f289e9260ac0b234ac809fda1eb83e15ad",
+      "entityCount": 3,
+      "file": "skill.json",
+      "presentationHash": "36142fd629547fd049513af343e6d44107764a78baa8289aa41086c86dd038d5",
+      "scenario": "skill",
+      "seriesCount": 12,
+      "sizeBytes": 462700,
+      "state": "available",
+      "sourceFileSha256": "c9f5f92a53f8feb9c385b374ec140b9bc7b3ad6c962632038eb8720b2f2e41be"
+    },
+    {
+      "canonicalArtifactHash": "509cdc743ddae332dd82be186a88bb3eabb8a2d54d505e30febfcbce8840de9c",
+      "entityCount": 1,
+      "file": "sleep-only.json",
+      "presentationHash": "cf0cafd6675070d4d601d82d2d49f01dfa6eb5f3c6efa53b093ce68965c6b988",
+      "scenario": "sleep-only",
+      "seriesCount": 3,
+      "sizeBytes": 84217,
+      "state": "available",
+      "sourceFileSha256": "c427220993f4b97cff61ebbc191acf4e02b23536576344d447152389d1f7f45d"
+    },
+    {
+      "canonicalArtifactHash": "65eb0c4862dc46d8532252d1e140a8c03a62d4b9bbcfd21e92615c89bfdde6d4",
+      "entityCount": 1,
+      "file": "steps-only.json",
+      "presentationHash": "83b7fadcc76bc07606d96ecaba684b9bda07a7df5761a5821dfcb82c3fc2a6fa",
+      "scenario": "steps-only",
+      "seriesCount": 1,
+      "sizeBytes": 53777,
+      "state": "available",
+      "sourceFileSha256": "559904b9710edbeced018a5e0f71bb172dbc9f59c81d24be085ea63ece9e403e"
+    }
+  ]
+}
