@@ -10,11 +10,12 @@ import type { V11InsightCopy, V11InsightsPresentation } from '../insightsPresent
 
 export type PersonalTerminalScope = 'market' | 'goal' | 'skill';
 export type PersonalTerminalChartKind = 'line' | 'candle';
-export type PersonalTerminalTimeframe = '1D' | '7D' | '1M' | '3M' | '1Y' | 'ALL';
+export type PersonalTerminalTimeframe = '4H' | '12H' | '24H' | '1D' | '7D' | '30D' | '1M' | '90D' | '3M' | '1Y' | 'ALL';
 export type PersonalTerminalIndicator = 'emaShort' | 'emaLong' | 'baseline' | 'load' | 'density' | 'events';
 export type PersonalTerminalFixtureId = 'forming' | 'mature' | 'portfolio' | 'skill' | 'volatile' | 'historical';
-export type PersonalTerminalProvenance = 'questlife_confirmed' | 'historical_reference' | 'derived_fixture';
+export type PersonalTerminalProvenance = 'questlife_confirmed' | 'historical_reference' | 'passive_device' | 'derived_research' | 'derived_fixture';
 export type PersonalTerminalEventCategory = 'training' | 'exam' | 'travel' | 'schedule' | 'decision' | 'execution' | 'milestone';
+export type QuantV041LifecycleId = 'no-data' | 'steps-only' | 'sleep-only' | 'rich-passive' | 'day7' | 'day30' | 'day90' | 'day180' | 'goal' | 'skill';
 
 export type PersonalTerminalObservation = {
   id: string;
@@ -57,7 +58,7 @@ export type PersonalTerminalSeries = {
   label: V11InsightCopy;
   unit: V11InsightCopy;
   stage: V11EvidenceStage;
-  semantic: 'ordinal_state' | 'duration' | 'quality' | 'performance' | 'derived_index';
+  semantic: 'ordinal_state' | 'duration' | 'quality' | 'performance' | 'count' | 'timing' | 'derived_index';
   valueChangeMode: 'absolute' | 'percentage' | 'none';
   supportsCandle: boolean;
   observations: PersonalTerminalObservation[];
@@ -67,6 +68,49 @@ export type PersonalTerminalSeries = {
   limitation: V11InsightCopy;
   qaDerivedIndex?: boolean;
   qaStability?: 'stable' | 'mixed' | 'variable';
+  constructKey?: string;
+  domain?: string;
+  latestValue?: number | null;
+  latestAt?: string | null;
+  availableTimeframes?: PersonalTerminalTimeframe[];
+  defaultTimeframe?: PersonalTerminalTimeframe;
+  availableIndicators?: PersonalTerminalIndicator[];
+  chartCapabilities?: {
+    line: boolean;
+    bar: boolean;
+    candle: boolean;
+    percentChange: boolean;
+  };
+  coverage?: {
+    observedDays: number;
+    expectedDays: number | null;
+    coverageRatio: number | null;
+    firstAvailableAt: string | null;
+    lastAvailableAt: string | null;
+    sourceCount: number;
+  };
+  recentChange?: {
+    absoluteChange: number | null;
+    percentChange: number | null;
+    recentMedian: number | null;
+    referenceMedian: number | null;
+    classification: string;
+    recentWindow: string;
+    referenceWindow: string;
+  } | null;
+  maturityLabel?: string;
+  precomputedViews?: Partial<Record<PersonalTerminalTimeframe, {
+    axisPrecision: 'month_day' | 'month' | 'year_month';
+    startIndex: number;
+    endIndex: number;
+    pointCount: number;
+  }>>;
+  provenanceSummary?: {
+    historicalCount: number;
+    activeCount: number;
+    sourceConflictsResolved: number;
+    sourceLabels: string[];
+  };
 };
 
 export type PersonalTerminalCompositionRow = {
@@ -130,7 +174,9 @@ export type PersonalTerminalSimilarPeriod = {
 
 export type PersonalTerminalModel = {
   fixture: PersonalTerminalFixtureId | null;
-  dataMode: 'real' | 'qa_fixture';
+  dataMode: 'real' | 'qa_fixture' | 'quant_v041_fixture';
+  availability?: 'available' | 'no_data';
+  lifecycleScenario?: QuantV041LifecycleId;
   defaultScope: PersonalTerminalScope;
   defaultEntityId: string;
   defaultSeriesId: string;
@@ -142,6 +188,28 @@ export type PersonalTerminalModel = {
   marketMap?: PersonalTerminalMapRow[];
   similarPeriods?: PersonalTerminalSimilarPeriod[];
   range: { start: string | null; end: string | null };
+  questlifeStartedAt?: string | null;
+  sourceMetadata?: {
+    schemaVersion: string;
+    engineVersion: string;
+    materializedEngineVersion: string;
+    quantCommit: string;
+    canonicalArtifactHash: string;
+    sourceArtifact: string;
+    syntheticOnly: boolean;
+    containsRealUserData: boolean;
+  };
+  analyst?: {
+    activeObservationCount: number;
+    items: Array<{
+      type: string;
+      constructKey: string;
+      evidenceCount: number;
+      limitationCodes: string[];
+    }>;
+    limitations: string[];
+  };
+  nextAction?: V11InsightCopy;
 };
 
 export type PersonalTerminalCandle = {
@@ -551,6 +619,27 @@ export function buildPersonalTerminalViewData(
   timeframe: PersonalTerminalTimeframe,
   now: Date,
 ): PersonalTerminalViewData {
+  const precomputed = series.precomputedViews?.[timeframe];
+  if (precomputed) {
+    const observations = series.observations.slice(precomputed.startIndex, precomputed.endIndex);
+    const line = observations.map<PersonalTerminalPoint>((row) => ({
+      time: row.timestamp,
+      value: row.value,
+      observationCount: 1,
+      sourceIds: row.sourceIds,
+      provenance: row.provenance,
+    }));
+    return {
+      observations,
+      line,
+      candles: [],
+      incompleteCandles: [],
+      load: [],
+      emaShort: [],
+      emaLong: [],
+      timeframe,
+    };
+  }
   const start = startForTimeframe(now, timeframe);
   const observations = series.observations.filter((row) => new Date(row.timestamp).getTime() >= start);
   const line = lineBuckets(observations, timeframe);
@@ -577,6 +666,7 @@ export function buildPersonalTerminalViewData(
 }
 
 export function availableTimeframes(series: PersonalTerminalSeries, now: Date): PersonalTerminalTimeframe[] {
+  if (series.availableTimeframes?.length) return series.availableTimeframes;
   if (!series.observations.length) return ['1M'];
   const first = new Date(series.observations[0].timestamp).getTime();
   const spanDays = Math.max(0, (now.getTime() - first) / 86_400_000);
