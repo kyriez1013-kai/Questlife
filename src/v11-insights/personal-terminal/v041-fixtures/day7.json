@@ -456,7 +456,7 @@
   "asOf": "2026-01-09T07:59:00+11:00",
   "defaultEntityId": "market:person",
   "defaultScope": "market",
-  "defaultSeriesId": "market:sleep.start_time",
+  "defaultSeriesId": "market:state.focus",
   "entities": [
     {
       "contextKey": "personal_history_and_active_evidence",
@@ -13348,7 +13348,7 @@
     "containsRealUserData": false,
     "engineVersion": "questlife-cold-start-terminal-v0.4",
     "materializedEngineVersion": "questlife-quant-v0.4.1-materialized",
-    "quantCommit": "fc0468c",
+    "quantCommit": "0dcacab",
     "sourceArtifact": "artifacts/v0.4/day7_early_questlife.json",
     "syntheticOnly": true
   },

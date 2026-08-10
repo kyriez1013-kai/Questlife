@@ -22252,7 +22252,7 @@
     "containsRealUserData": false,
     "engineVersion": "questlife-cold-start-terminal-v0.4",
     "materializedEngineVersion": "questlife-quant-v0.4.1-materialized",
-    "quantCommit": "fc0468c",
+    "quantCommit": "0dcacab",
     "sourceArtifact": "artifacts/v0.4/day180_personalized.json",
     "syntheticOnly": true
   },
