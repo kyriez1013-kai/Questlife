@@ -24,6 +24,26 @@ const PointSchema = z.object({
   value: z.number().finite(),
   provenance: z.enum(['historical_reference', 'passive_device', 'questlife_confirmed', 'derived_research']),
 });
+const CandleSchema = z.object({
+  start: z.string().min(1),
+  end: z.string().min(1),
+  open: NullableNumber,
+  high: NullableNumber,
+  low: NullableNumber,
+  close: NullableNumber,
+  openAt: z.string().nullable(),
+  highAt: z.string().nullable(),
+  lowAt: z.string().nullable(),
+  closeAt: z.string().nullable(),
+  average: NullableNumber,
+  observationCount: z.number().int().nonnegative(),
+  expectedObservationCount: z.number().int().positive().nullable(),
+  complete: z.boolean(),
+  pointValue: NullableNumber,
+  sourceIds: z.array(z.string().min(1)),
+  representation: z.enum(['OBSERVATIONAL_SCALAR_OHLC', 'NATIVE_OHLC']),
+  bucketSemantics: z.string().min(1),
+});
 const ViewSchema = z.object({
   aggregation: z.literal('quant_source_points'),
   axisPrecision: z.enum(['month_day', 'month', 'year_month']),
@@ -88,7 +108,11 @@ const SeriesSchema = z.object({
     bar: z.boolean(),
     candle: z.boolean(),
     percent_change: z.boolean(),
+    candleRepresentation: z.enum(['NONE', 'OBSERVATIONAL_SCALAR_OHLC', 'NATIVE_OHLC']).optional(),
+    candleTimeframes: z.array(TimeframeSchema).optional(),
+    bucketSemantics: z.record(z.string(), z.string()).optional(),
   }).passthrough(),
+  candleViews: z.record(z.string(), z.array(CandleSchema)),
   baseline: BaselineSchema,
   coverage: CoverageSchema,
   recentChange: RecentChangeSchema.nullable(),
@@ -134,6 +158,29 @@ const SourceSchema = z.object({
   syntheticOnly: z.literal(true),
   containsRealUserData: z.literal(false),
 });
+const SignalSchema = z.object({
+  id: z.string().min(1),
+  relationship: z.string().min(1),
+  claimType: z.literal('association'),
+  sourceConstruct: z.string().min(1),
+  targetConstruct: z.string().min(1),
+  lag: z.string().min(1),
+  sourceWindow: z.string().min(1),
+  targetWindow: z.string().min(1),
+  sampleN: z.number().int().nonnegative(),
+  independentDayN: z.number().int().nonnegative(),
+  supportCount: z.number().int().nonnegative(),
+  counterexampleCount: z.number().int().nonnegative(),
+  effectEstimate: NullableNumber,
+  interval: z.tuple([z.number().finite(), z.number().finite()]).nullable(),
+  evidenceGrade: z.string().min(1),
+  freshnessSeconds: NullableNumber,
+  missingness: z.record(z.string(), z.number().int().nonnegative()),
+  limitationCodes: z.array(z.string()),
+  alternativeExplanationKeys: z.array(z.string()),
+  provenance: z.record(z.string(), z.unknown()),
+  analysisFamily: z.string().min(1),
+});
 
 export const QuantV041TerminalPayloadSchema = z.object({
   schemaVersion: z.literal('questlife-terminal-presentation-v0.4.1'),
@@ -151,7 +198,7 @@ export const QuantV041TerminalPayloadSchema = z.object({
   entities: z.array(EntitySchema),
   series: z.array(SeriesSchema),
   analyst: AnalystSchema,
-  signals: z.array(z.unknown()),
+  signals: z.array(SignalSchema),
   nextActionKey: z.string().min(1),
 });
 
@@ -192,6 +239,39 @@ function validateRelationships(payload: QuantV041TerminalPayload) {
       if (!view || view.endIndex > series.points.length || view.endIndex - view.startIndex !== view.pointCount) {
         throw new Error(`Invalid precomputed ${timeframe} view for ${series.id}.`);
       }
+    });
+    const points = new Map(series.points.map((point) => [point.id, point]));
+    const declaredCandleTimeframes = new Set<string>(series.chartCapabilities.candleTimeframes || []);
+    Object.entries(series.candleViews).forEach(([timeframe, candles]) => {
+      if (!declaredCandleTimeframes.has(timeframe)) {
+        throw new Error(`Undeclared candle timeframe ${timeframe} for ${series.id}.`);
+      }
+      candles.forEach((candle) => {
+        if (!candle.complete) return;
+        const source = candle.sourceIds.map((id) => points.get(id));
+        if (source.some((point) => !point) || source.length !== candle.observationCount || source.length < 2) {
+          throw new Error(`Invalid candle lineage for ${series.id} ${timeframe}.`);
+        }
+        const ordered = source.slice().sort((left, right) => (
+          left!.timestamp.localeCompare(right!.timestamp) || left!.id.localeCompare(right!.id)
+        ));
+        const values = ordered.map((point) => point!.value);
+        const highIndex = values.indexOf(Math.max(...values));
+        const lowIndex = values.indexOf(Math.min(...values));
+        const average = values.reduce((sum, value) => sum + value, 0) / values.length;
+        if (
+          candle.open !== values[0]
+          || candle.high !== values[highIndex]
+          || candle.low !== values[lowIndex]
+          || candle.close !== values[values.length - 1]
+          || candle.openAt !== ordered[0]!.timestamp
+          || candle.highAt !== ordered[highIndex]!.timestamp
+          || candle.lowAt !== ordered[lowIndex]!.timestamp
+          || candle.closeAt !== ordered[ordered.length - 1]!.timestamp
+          || candle.average == null
+          || Math.abs(candle.average - average) > 1e-9
+        ) throw new Error(`Candle values do not reconstruct from Quant source points for ${series.id} ${timeframe}.`);
+      });
     });
   });
 }
@@ -241,7 +321,34 @@ function mapSeries(row: QuantV041TerminalPayload['series'][number]): PersonalTer
       bar: row.chartCapabilities.bar,
       candle: row.chartCapabilities.candle,
       percentChange: row.chartCapabilities.percent_change,
+      candleRepresentation: row.chartCapabilities.candleRepresentation,
+      candleTimeframes: row.chartCapabilities.candleTimeframes as PersonalTerminalTimeframe[] | undefined,
+      bucketSemantics: row.chartCapabilities.bucketSemantics as Partial<Record<PersonalTerminalTimeframe, string>> | undefined,
     },
+    precomputedCandles: Object.fromEntries(Object.entries(row.candleViews).map(([timeframe, candles]) => [
+      timeframe,
+      candles.flatMap((candle) => candle.complete && candle.open != null && candle.high != null && candle.low != null && candle.close != null
+        && candle.openAt && candle.highAt && candle.lowAt && candle.closeAt && candle.average != null
+        ? [{
+          time: candle.start,
+          endTime: candle.end,
+          open: candle.open,
+          high: candle.high,
+          low: candle.low,
+          close: candle.close,
+          openAt: candle.openAt,
+          highAt: candle.highAt,
+          lowAt: candle.lowAt,
+          closeAt: candle.closeAt,
+          average: candle.average,
+          observationCount: candle.observationCount,
+          expectedObservationCount: candle.expectedObservationCount,
+          sourceIds: candle.sourceIds,
+          representation: candle.representation,
+          bucketSemantics: candle.bucketSemantics,
+        }]
+        : []),
+    ])) as PersonalTerminalSeries['precomputedCandles'],
     coverage: {
       observedDays: row.coverage.observed_days,
       expectedDays: row.coverage.expected_days,
@@ -300,7 +407,39 @@ export function adaptQuantV041TerminalPayload(input: unknown): PersonalTerminalM
     defaultSeriesId: payload.defaultSeriesId || '',
     entities,
     series: payload.series.map(mapSeries),
-    signals: [],
+    signals: payload.signals.map((signal) => {
+      const lagMatch = /^P(\d+)D$/.exec(signal.lag);
+      const supported = signal.evidenceGrade.startsWith('E2');
+      const observedAt = signal.freshnessSeconds == null
+        ? undefined
+        : new Date(new Date(payload.asOf).getTime() - signal.freshnessSeconds * 1000).toISOString();
+      const knownSleepFocus = signal.sourceConstruct === 'sleep.duration' && signal.targetConstruct === 'state.focus';
+      return {
+        id: signal.id,
+        status: supported ? 'supported' as const : 'candidate' as const,
+        title: knownSleepFocus ? i18nCopy('personalTerminalSignalSleepFocusTitle') : { kind: 'text' as const, text: signal.relationship },
+        relationship: knownSleepFocus ? i18nCopy('personalTerminalSignalSleepFocusRelationship') : { kind: 'text' as const, text: signal.relationship },
+        observationCount: signal.supportCount,
+        counterexampleCount: signal.counterexampleCount,
+        direction: signal.effectEstimate == null ? null : signal.effectEstimate > 0 ? 'higher' as const : signal.effectEstimate < 0 ? 'lower' as const : 'mixed' as const,
+        lagDays: lagMatch ? Number(lagMatch[1]) : null,
+        maturity: supported ? 'established' as const : 'provisional' as const,
+        windowDays: null,
+        sourceIds: [],
+        lastSeenAt: observedAt,
+        limitation: i18nCopy('personalTerminalSignalObservationalLimitation'),
+        sourceConstruct: signal.sourceConstruct,
+        targetConstruct: signal.targetConstruct,
+        sourceWindow: signal.sourceWindow,
+        targetWindow: signal.targetWindow,
+        independentDayCount: signal.independentDayN,
+        effectEstimate: signal.effectEstimate,
+        interval: signal.interval,
+        evidenceGrade: signal.evidenceGrade,
+        missingness: signal.missingness,
+        alternativeExplanations: signal.alternativeExplanationKeys,
+      };
+    }),
     implication: i18nCopy(`personalTerminalV041Next_${payload.nextActionKey}`),
     range: payload.range,
     questlifeStartedAt: payload.questlifeStartedAt,

@@ -33,7 +33,7 @@
     "containsRealUserData": false,
     "engineVersion": "questlife-cold-start-terminal-v0.4",
     "materializedEngineVersion": "questlife-quant-v0.4.1-materialized",
-    "quantCommit": "0dcacab",
+    "quantCommit": "34efaf2",
     "sourceArtifact": "artifacts/v0.4/day1_no_data.json",
     "syntheticOnly": true
   },

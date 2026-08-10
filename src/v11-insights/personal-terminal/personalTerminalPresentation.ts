@@ -80,7 +80,11 @@ export type PersonalTerminalSeries = {
     bar: boolean;
     candle: boolean;
     percentChange: boolean;
+    candleRepresentation?: 'NONE' | 'OBSERVATIONAL_SCALAR_OHLC' | 'NATIVE_OHLC';
+    candleTimeframes?: PersonalTerminalTimeframe[];
+    bucketSemantics?: Partial<Record<PersonalTerminalTimeframe, string>>;
   };
+  precomputedCandles?: Partial<Record<PersonalTerminalTimeframe, PersonalTerminalCandle[]>>;
   coverage?: {
     observedDays: number;
     expectedDays: number | null;
@@ -161,6 +165,16 @@ export type PersonalTerminalSignal = {
   sourceIds: string[];
   lastSeenAt?: string;
   limitation: V11InsightCopy;
+  sourceConstruct?: string;
+  targetConstruct?: string;
+  sourceWindow?: string;
+  targetWindow?: string;
+  independentDayCount?: number;
+  effectEstimate?: number | null;
+  interval?: [number, number] | null;
+  evidenceGrade?: string;
+  missingness?: Record<string, number>;
+  alternativeExplanations?: string[];
 };
 
 export type PersonalTerminalSimilarPeriod = {
@@ -214,12 +228,21 @@ export type PersonalTerminalModel = {
 
 export type PersonalTerminalCandle = {
   time: string;
+  endTime: string;
   open: number;
   high: number;
   low: number;
   close: number;
+  openAt: string;
+  highAt: string;
+  lowAt: string;
+  closeAt: string;
+  average: number;
   observationCount: number;
+  expectedObservationCount: number | null;
   sourceIds: string[];
+  representation: 'OBSERVATIONAL_SCALAR_OHLC' | 'NATIVE_OHLC';
+  bucketSemantics: string;
 };
 
 export type PersonalTerminalPoint = {
@@ -577,33 +600,6 @@ function lineBuckets(rows: PersonalTerminalObservation[], timeframe: PersonalTer
   })).sort((a, b) => a.time.localeCompare(b.time));
 }
 
-function candleBuckets(rows: PersonalTerminalObservation[], timeframe: PersonalTerminalTimeframe) {
-  const groups = new Map<string, PersonalTerminalObservation[]>();
-  rows.forEach((row) => {
-    const key = bucketKey(row.timestamp, timeframe);
-    groups.set(key, [...(groups.get(key) || []), row]);
-  });
-  const candles: PersonalTerminalCandle[] = [];
-  const incompleteCandles: PersonalTerminalPoint[] = [];
-  [...groups.entries()].forEach(([time, values]) => {
-    const ordered = values.slice().sort((a, b) => a.timestamp.localeCompare(b.timestamp));
-    if (ordered.length < 2) {
-      incompleteCandles.push({ time, value: ordered[0].value, observationCount: 1, sourceIds: ordered[0].sourceIds, provenance: ordered[0].provenance });
-      return;
-    }
-    candles.push({
-      time,
-      open: ordered[0].value,
-      high: Math.max(...ordered.map((row) => row.value)),
-      low: Math.min(...ordered.map((row) => row.value)),
-      close: ordered[ordered.length - 1].value,
-      observationCount: ordered.length,
-      sourceIds: ordered.flatMap((row) => row.sourceIds),
-    });
-  });
-  return { candles, incompleteCandles };
-}
-
 function ema(points: PersonalTerminalPoint[], period: number) {
   if (!points.length) return [];
   const alpha = 2 / (period + 1);
@@ -632,7 +628,7 @@ export function buildPersonalTerminalViewData(
     return {
       observations,
       line,
-      candles: [],
+      candles: series.precomputedCandles?.[timeframe] || [],
       incompleteCandles: [],
       load: [],
       emaShort: [],
@@ -643,7 +639,6 @@ export function buildPersonalTerminalViewData(
   const start = startForTimeframe(now, timeframe);
   const observations = series.observations.filter((row) => new Date(row.timestamp).getTime() >= start);
   const line = lineBuckets(observations, timeframe);
-  const { candles, incompleteCandles } = candleBuckets(observations, timeframe);
   const loadObservations = series.load
     .filter((row) => new Date(row.timestamp).getTime() >= start)
     .map<PersonalTerminalObservation>((row, index) => ({
@@ -656,8 +651,8 @@ export function buildPersonalTerminalViewData(
   return {
     observations,
     line,
-    candles,
-    incompleteCandles,
+    candles: series.precomputedCandles?.[timeframe] || [],
+    incompleteCandles: [],
     load: lineBuckets(loadObservations, timeframe),
     emaShort: ema(line, 7),
     emaLong: ema(line, 30),

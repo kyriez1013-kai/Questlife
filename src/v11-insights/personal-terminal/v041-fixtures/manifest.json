@@ -1,120 +1,109 @@
 {
-  "bridgeVersion": "questlife-app-quant-v0.4.1-fixture-bridge",
-  "sourceReleaseVersion": "questlife-terminal-presentation-release-v0.4.1",
-  "quantCommit": "0dcacab",
-  "syntheticOnly": true,
   "containsRealUserData": false,
+  "quantCommit": "34efaf2",
+  "releaseVersion": "questlife-terminal-presentation-release-v0.4.1",
   "runtimeDependencyOnSiblingRepository": false,
   "scenarios": [
     {
-      "canonicalArtifactHash": "2ad7b8c5c90000df42d6f7557110f7f289e9260ac0b234ac809fda1eb83e15ad",
+      "canonicalArtifactHash": "90e646c500e8b5c49eccf9e5c037744c514ff32e8c7c9e89fe55c2e92bd8b034",
       "entityCount": 3,
       "file": "day180.json",
-      "presentationHash": "19a8eeb192844ee0e363fe27db6a388f0b433e03be44e9f3694c2105b96b4e93",
+      "presentationHash": "e4a8dc1cd0c6e60671bbdc277d230118e3918dff07cd8b4fd735ee0de6802396",
       "scenario": "day180",
-      "seriesCount": 12,
-      "sizeBytes": 462678,
-      "state": "available",
-      "sourceFileSha256": "74042bb71682c211f5a5fbf659896ad8bc11c3cbf087be2c454c4ace0b46e9f1"
+      "seriesCount": 13,
+      "sizeBytes": 985337,
+      "state": "available"
     },
     {
-      "canonicalArtifactHash": "383cf6fdf5cc7387b12f6ae03b8316f204ea87cbca5e34fc6f8882cf15ec44c7",
+      "canonicalArtifactHash": "e8a18eefe25743e53ed86eef0ae91876455122c79b56ebd6418133f194d805aa",
       "entityCount": 3,
       "file": "day30.json",
-      "presentationHash": "a36a45a7f14f13a51023ec3e8af814c6540d34975945758c7485737c16d36924",
+      "presentationHash": "fbf915708d10a94d78ac3bf2da93f39a54fe52298a14330c4010f45b0ab33af1",
       "scenario": "day30",
-      "seriesCount": 12,
-      "sizeBytes": 309595,
-      "state": "available",
-      "sourceFileSha256": "d1d4b1d55fc3602cf99b8becc23488fe30e27549bd836d88f748474ba117227d"
+      "seriesCount": 13,
+      "sizeBytes": 741405,
+      "state": "available"
     },
     {
-      "canonicalArtifactHash": "c98c277581963f5119e747efb215f7aa1103440bdd44de9e4156422b99708b53",
+      "canonicalArtifactHash": "5a513f69ee65678e08d8624cdaf6cbf66bd95051a37b45634a480e4c47e3320e",
       "entityCount": 1,
       "file": "day7.json",
-      "presentationHash": "9ac58887a1889acc1e64b1dd86292b4778951708c6061c52d9ec868f16d71fa7",
+      "presentationHash": "1f1c5356f7526e5dd43de7a96cd5ec41a0bf58391e1cc9764f69315ea75703d0",
       "scenario": "day7",
-      "seriesCount": 8,
-      "sizeBytes": 279852,
-      "state": "available",
-      "sourceFileSha256": "3aa69193e97811adb13272bda265211595ec75f516b2c87d04246ed918ade2d9"
+      "seriesCount": 9,
+      "sizeBytes": 701012,
+      "state": "available"
     },
     {
-      "canonicalArtifactHash": "1280c4ca6f627ea130c987cdd153d03dbfe99177c6d1e34aa3fed71fefa5b7fd",
+      "canonicalArtifactHash": "19dbbfd29bc26a8829036918d0b2d4ecb11c41910f86600992c2215e289f7c5c",
       "entityCount": 3,
       "file": "day90.json",
-      "presentationHash": "f9fa284385f9b42aa094b2e1c3642e2630095e5a50a84031058a1fcc6e3fea2c",
+      "presentationHash": "841f006e83bd1eca3f653e3436864949020179d0fc56cf48099130d33f365b35",
       "scenario": "day90",
-      "seriesCount": 12,
-      "sizeBytes": 371823,
-      "state": "available",
-      "sourceFileSha256": "a395047f722eb0f000e3799ba00f56b37ddfd7440f797fec022c4c1d569e9572"
+      "seriesCount": 13,
+      "sizeBytes": 851567,
+      "state": "available"
     },
     {
-      "canonicalArtifactHash": "2ad7b8c5c90000df42d6f7557110f7f289e9260ac0b234ac809fda1eb83e15ad",
+      "canonicalArtifactHash": "90e646c500e8b5c49eccf9e5c037744c514ff32e8c7c9e89fe55c2e92bd8b034",
       "entityCount": 3,
       "file": "goal.json",
-      "presentationHash": "c96d61309367079e3810ca28dea415f1a01c8284a53b00500cf96e6b02d8fa27",
+      "presentationHash": "4d04300483887be2cc7c7b42817b8e623a78fd5b777a0605f368beb7e94faf4a",
       "scenario": "goal",
-      "seriesCount": 12,
-      "sizeBytes": 462714,
-      "state": "available",
-      "sourceFileSha256": "ca80644bafe2a07a99544eebea6170a5eb5d7c906646428c797f547b998ac662"
+      "seriesCount": 13,
+      "sizeBytes": 985373,
+      "state": "available"
     },
     {
       "canonicalArtifactHash": "c159a638592bc2d4cf5716b9c988d881972240331c550b68675c4fcd825f22c1",
       "entityCount": 0,
       "file": "no-data.json",
-      "presentationHash": "2fdb8f4465d78e2192c991338cc12fe63895b93832722214852aa65708619beb",
+      "presentationHash": "23445af30a6535466ca75d1c35f04e80c0ccf1bddd162c4a9e00382f950f9eca",
       "scenario": "no-data",
       "seriesCount": 0,
       "sizeBytes": 1035,
-      "state": "no_data",
-      "sourceFileSha256": "1c645732d58e3b768682fe38206f14d236c3adc2bf389c89ba5ab3ec87eda37a"
+      "state": "no_data"
     },
     {
-      "canonicalArtifactHash": "0194f1444c027a4a2d182b36cddde353fe3579435cb0651fe4c316e3ce08a001",
+      "canonicalArtifactHash": "b973a8ed9956cd63b48ec9e2231dc3ab047e0724667322ee81aa6a2f006a8aed",
       "entityCount": 1,
       "file": "rich-passive.json",
-      "presentationHash": "469e878ac4b2faaba0b508fc7a17f3f975bc07103402cab9564b8f31178b11f5",
+      "presentationHash": "1309f77f10e82d69d7d551f66dd5e92021899b0df60d7eaa0402cf28efbdabf1",
       "scenario": "rich-passive",
       "seriesCount": 8,
-      "sizeBytes": 326690,
-      "state": "available",
-      "sourceFileSha256": "5ba9e9418efeaf0cf6e6329f82add9d84d0cb78df08afe686d853f405e53b071"
+      "sizeBytes": 687060,
+      "state": "available"
     },
     {
-      "canonicalArtifactHash": "2ad7b8c5c90000df42d6f7557110f7f289e9260ac0b234ac809fda1eb83e15ad",
+      "canonicalArtifactHash": "90e646c500e8b5c49eccf9e5c037744c514ff32e8c7c9e89fe55c2e92bd8b034",
       "entityCount": 3,
       "file": "skill.json",
-      "presentationHash": "76f4681e94b357310b68b73e7fe24cf3b54cc5f1a5ff097b5ded1414a3b61add",
+      "presentationHash": "fc6f4d7bd89426b7f3144e7e50e1e4db7a7cdded34936463f3a5bd650640e280",
       "scenario": "skill",
-      "seriesCount": 12,
-      "sizeBytes": 462700,
-      "state": "available",
-      "sourceFileSha256": "f338cfe31df242a93efbdb312a851f3a2517ae2c16985b9f9225e3a0cf4407d8"
+      "seriesCount": 13,
+      "sizeBytes": 985359,
+      "state": "available"
     },
     {
-      "canonicalArtifactHash": "509cdc743ddae332dd82be186a88bb3eabb8a2d54d505e30febfcbce8840de9c",
+      "canonicalArtifactHash": "3bf06d26c50a02f2b8517c1f76ef78107597010de6cc2e5b7595f8c31b91a8be",
       "entityCount": 1,
       "file": "sleep-only.json",
-      "presentationHash": "74170c727a30aa09ae514a67259c952aa9f8c7a489e2f66087344e2b2be3e139",
+      "presentationHash": "f70d39f5cb5a1d9fd0f31b4e29d4e5b9622bba386302cc370847503ef5522ccd",
       "scenario": "sleep-only",
       "seriesCount": 3,
-      "sizeBytes": 84217,
-      "state": "available",
-      "sourceFileSha256": "20822aa05e315aeabbf1184206af45099854d38eaa4eeb2d2a2e88945aac0699"
+      "sizeBytes": 148292,
+      "state": "available"
     },
     {
-      "canonicalArtifactHash": "65eb0c4862dc46d8532252d1e140a8c03a62d4b9bbcfd21e92615c89bfdde6d4",
+      "canonicalArtifactHash": "e3ddf99f3bbd3f375adf24cc29ca7ddfc5e601469d965cc649e5f003e030d515",
       "entityCount": 1,
       "file": "steps-only.json",
-      "presentationHash": "2451ba6f4fac0a516cf78adde2502ce663b7a9a646b57f3ae058aa5c6e8c26d0",
+      "presentationHash": "f5ee4e2144f21c4e61b359189ce446e706a5bf3a169ce7f896d606ca243b0d1e",
       "scenario": "steps-only",
       "seriesCount": 1,
-      "sizeBytes": 53777,
-      "state": "available",
-      "sourceFileSha256": "a2793079a487c1f3c3a8d26bad9ad41a4336c2a8896c6cb636d99762544ad9c6"
+      "sizeBytes": 102226,
+      "state": "available"
     }
-  ]
+  ],
+  "syntheticOnly": true
 }
