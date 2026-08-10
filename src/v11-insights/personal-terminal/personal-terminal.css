@@ -1277,7 +1277,17 @@
 
 @media (max-width: 920px) {
   [data-personal-terminal-version="3.11"] [data-personal-terminal-role="workstation"] {
-    grid-template-columns: minmax(0, 1fr);
+    display: block;
+  }
+
+  [data-personal-terminal-version="3.11"] [data-personal-terminal-role="entity-rail"],
+  [data-personal-terminal-version="3.11"] [data-personal-terminal-role="bottom-panel"] {
+    display: none;
+  }
+
+  [data-personal-terminal-version="3.11"] [data-personal-terminal-role="center"] {
+    grid-column: auto;
+    padding: 0;
   }
 }
 
@@ -2675,11 +2685,14 @@
 
 /* Stage 3.11 final interaction overrides intentionally follow legacy layers. */
 [data-personal-terminal-version="3.11"] [data-personal-terminal-role="questlife-transition"] > div {
+  position: absolute;
+  top: 0;
   right: 6px;
   left: auto;
   display: block;
-  min-width: 96px;
-  max-width: none;
+  width: max-content;
+  min-width: 0;
+  max-width: 112px;
   text-align: right;
   white-space: nowrap;
   writing-mode: horizontal-tb;
@@ -2692,7 +2705,7 @@
 
   [data-personal-terminal-version="3.11"] [data-personal-terminal-role="questlife-transition"] > div {
     display: block;
-    min-width: 84px;
+    max-width: 84px;
     font-size: 7px;
     line-height: 10px;
   }
