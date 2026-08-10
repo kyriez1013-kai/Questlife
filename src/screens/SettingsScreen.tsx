@@ -1,7 +1,7 @@
 // V2: "设置" Tab
 // 提醒已移到每个技能内, 这里只保留版本号 + 本地存储说明
 import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { Linking, View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import ColorPicker from '../components/ColorPicker';
@@ -24,6 +24,10 @@ import QuestButton from '../components/ui/QuestButton';
 import QuestPill from '../components/ui/QuestPill';
 import { QuestCompactRow, QuestGroupedSurface, QuestSectionHeader } from '../components/ui/QuestPrimitives';
 import QuestSegmentedControl from '../components/ui/QuestSegmentedControl';
+import { isV11PersonalTerminalEnabled } from '../v11/featureFlag';
+
+const TRADINGVIEW_URL = 'https://www.tradingview.com/';
+const LIGHTWEIGHT_CHARTS_LICENSE_URL = 'https://github.com/tradingview/lightweight-charts/blob/v5.2.0/LICENSE';
 
 export default function SettingsScreen() {
   const { data, setSettings, addContextLogs, runIntegrityCheck, repairSafeIntegrityIssues, rebuildDerivedData, mergePatternMemoryCandidates, updatePatternMemoryStatus } = useStore();
@@ -75,6 +79,7 @@ export default function SettingsScreen() {
     }
   })();
   const developerToolsVisible = __DEV__ || decisionDebugVisible;
+  const personalTerminalLegalVisible = isV11PersonalTerminalEnabled();
   const readLastDecisionFeedback = useCallback(() => {
     if (typeof window === 'undefined') return '';
     try {
@@ -473,6 +478,51 @@ export default function SettingsScreen() {
           <QuestCompactRow questTheme={questTheme} divider title={t(lang, 'dataLimitations')} body={t(lang, 'dataCoverageLimitation')} />
           <QuestCompactRow questTheme={questTheme} divider title={t(lang, 'storage')} body={t(lang, 'storageText')} />
         </QuestGroupedSurface>
+
+        {personalTerminalLegalVisible ? (
+          <>
+            <QuestSectionHeader
+              questTheme={questTheme}
+              title={t(lang, 'aboutAndLegal')}
+              subtitle={t(lang, 'aboutAndLegalDescription')}
+            />
+            <QuestGroupedSurface questTheme={questTheme}>
+              <QuestCompactRow
+                questTheme={questTheme}
+                title={t(lang, 'openSourceNotices')}
+                body={t(lang, 'lightweightChartsAttribution')}
+              />
+              <QuestCompactRow
+                questTheme={questTheme}
+                divider
+                title={t(lang, 'tradingViewCreator')}
+                body={t(lang, 'tradingViewCreatorDescription')}
+                trailing={(
+                  <QuestButton
+                    questTheme={questTheme}
+                    variant="ghost"
+                    label={t(lang, 'visitTradingView')}
+                    onPress={() => { void Linking.openURL(TRADINGVIEW_URL); }}
+                  />
+                )}
+              />
+              <QuestCompactRow
+                questTheme={questTheme}
+                divider
+                title={t(lang, 'apacheLicense')}
+                body={t(lang, 'apacheLicenseDescription')}
+                trailing={(
+                  <QuestButton
+                    questTheme={questTheme}
+                    variant="ghost"
+                    label={t(lang, 'viewLicense')}
+                    onPress={() => { void Linking.openURL(LIGHTWEIGHT_CHARTS_LICENSE_URL); }}
+                  />
+                )}
+              />
+            </QuestGroupedSurface>
+          </>
+        ) : null}
 
         {developerToolsVisible ? (
           <QuestSectionHeader
