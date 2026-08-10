@@ -2764,3 +2764,67 @@ Documentation:
 - `QUESTLIFE_V11_STAGE3_COMPONENT_AUDIT.md`
 - `QUESTLIFE_V11_STAGE3_QA.md`
 - `artifacts/v11-stage3-insights/`
+
+## Stage 3.11 - Commercial Personal Quant Terminal
+
+Status: local isolated implementation and acceptance package complete on
+`design/questlife-product-v2`; physical iPhone Safari, Preview, production,
+push, and deployment remain pending.
+
+Completed:
+- Replaced smooth product-review waves with separate seeded realistic
+  longitudinal fixtures while preserving controlled scientific fixtures.
+- Added explicit observational scalar candle capability and Quant-generated
+  weekly/monthly/quarterly OHLC artifacts with exact source lineage,
+  timestamps, averages, and coverage.
+- Restored capability-driven Line/Candle selection without financial good/bad
+  color semantics or frontend OHLC calculation.
+- Strengthened Day-1 current/reference/coverage interpretation and made Day-90
+  visibly richer through existing Signal, evidence, and Analyst content.
+- Added traceable Signal examples and compact detail for relationship, window,
+  lag, support, counterexamples, interval, missingness, alternatives, and
+  limitations without causal wording.
+- Added the visible historical-to-QuestLife-active provenance transition,
+  passive instrument rail, personal reference band, candle inspector, range
+  analysis, and responsive desktop Analyst inspector.
+- Removed chart-adjacent TradingView branding after an authoritative license
+  audit and moved the required creator/link/license access to Settings -> About
+  and legal information.
+- Kept `lightweight-charts` 5.2.0. A custom renderer is not currently justified.
+- Fixed the 768px collapsed-rail regression and mobile transition-label
+  clipping discovered during final responsive QA.
+
+Validation:
+- `npx tsc --noEmit` passed.
+- `npm run build` passed; JS bundle
+  `index-6f28c3cf89dee05dba9de3a5cbf2c499.js`.
+- Quant adapter tests passed.
+- Candle-focused Quant tests: 5 passed.
+- Full Quant regression: 603 passed in 439.514 seconds.
+- 320/375/393/768/1280, zh/en, dark/light, and reduced-motion local checks
+  found no document-level horizontal overflow.
+- Complete local Chromium composition: P50 16.7ms, worst P95 18.7ms, 0 of
+  3,082 sampled frames above 20ms.
+- Fresh-console checks found no runtime error; the existing Expo Notifications
+  web-support warning remains.
+
+Commercial verdict:
+- Stage 3.10 baseline: approximately 5/10.
+- Stage 3.11 local screenshot review: approximately 7.5/10.
+- 8/10 is not claimed before physical Safari and deployed product review.
+
+UNVERIFIED:
+- physical iPhone Safari;
+- Vercel Preview and production;
+- real Health/passive data;
+- production API/schema integration.
+
+No push or deployment was performed. No real user data, real Health data,
+advanced Quant model, production schema, or production API was added.
+
+Documentation:
+- `QUESTLIFE_STAGE3_11_COMMERCIAL_AUDIT.md`
+- `QUESTLIFE_STAGE3_11_LICENSE_AUDIT.md`
+- `QUESTLIFE_STAGE3_11_CHART_ENGINE_AUDIT.md`
+- `QUESTLIFE_STAGE3_11_QA.md`
+- `artifacts/v11-stage3-11/`
