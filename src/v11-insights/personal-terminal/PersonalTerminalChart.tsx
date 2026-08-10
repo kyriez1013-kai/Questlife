@@ -11,6 +11,7 @@ import type { Lang } from '../../i18n';
 import { t } from '../../i18n';
 import type { V11ThemeTokens } from '../../v11/tokens';
 import type {
+  PersonalTerminalCandle,
   PersonalTerminalChartKind,
   PersonalTerminalEvent,
   PersonalTerminalIndicator,
@@ -29,6 +30,7 @@ export type PersonalTerminalChartSelection = {
   baseline: number | null;
   sourceIds: string[];
   observationCount: number;
+  candle?: PersonalTerminalCandle;
 };
 
 export type PersonalTerminalChartHandle = {
@@ -128,7 +130,7 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
   onCrosshair: (selection: PersonalTerminalChartSelection | null) => void;
   onInteraction?: () => void;
   onSelectEvent: (event: PersonalTerminalEvent) => void;
-  onSelectTime: (time: string) => void;
+  onSelectSelection: (selection: PersonalTerminalChartSelection) => void;
   questlifeStartedAt?: string | null;
   rangeSelection: { start: string | null; end: string | null };
   reducedMotion: boolean;
@@ -145,7 +147,7 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
   onCrosshair,
   onInteraction,
   onSelectEvent,
-  onSelectTime,
+  onSelectSelection,
   questlifeStartedAt = null,
   rangeSelection,
   reducedMotion,
@@ -157,14 +159,14 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
   const hostRef = useRef<HTMLElement | null>(null);
   const chartRef = useRef<any>(null);
   const visibleRangeRef = useRef<any>(null);
+  const viewIdentityRef = useRef('');
   const primarySeriesRef = useRef<any>(null);
   const [baselineBand, setBaselineBand] = useState<{ top: number; height: number } | null>(null);
 
   const transitionPosition = useMemo(() => {
     if (!questlifeStartedAt || viewData.line.length < 2) return null;
     const hasHistorical = viewData.line.some((point) => isHistorical(point.provenance));
-    const hasActive = viewData.line.some((point) => !isHistorical(point.provenance));
-    if (!hasHistorical || !hasActive) return null;
+    if (!hasHistorical) return null;
     const first = new Date(viewData.line[0].time).getTime();
     const last = new Date(viewData.line[viewData.line.length - 1].time).getTime();
     const transition = new Date(questlifeStartedAt).getTime();
@@ -224,7 +226,18 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
     return result;
   }, [viewData.line]);
 
+  const candleLookup = useMemo(() => {
+    const result = new Map<string, PersonalTerminalCandle>();
+    viewData.candles.forEach((candle) => result.set(String(chartTime(candle.time)), candle));
+    return result;
+  }, [viewData.candles]);
+
   useEffect(() => {
+    const viewIdentity = `${series.id}:${timeframe}:${chartKind}`;
+    if (viewIdentityRef.current !== viewIdentity) {
+      visibleRangeRef.current = null;
+      viewIdentityRef.current = viewIdentity;
+    }
     let disposed = false;
     let resizeObserver: ResizeObserver | null = null;
     let chart: any = null;
@@ -277,10 +290,10 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
       let primary: any;
       if (chartKind === 'candle' && series.supportsCandle && viewData.candles.length > 0) {
         primary = chart.addSeries(library.CandlestickSeries, {
-          upColor: theme.glow.primary,
-          downColor: theme.glow.supporting,
+          upColor: 'transparent',
+          downColor: theme.glow.primary,
           borderUpColor: theme.glow.primary,
-          borderDownColor: theme.glow.supporting,
+          borderDownColor: theme.glow.primary,
           wickUpColor: theme.text.secondary,
           wickDownColor: theme.text.secondary,
           priceLineVisible: false,
@@ -295,7 +308,7 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
         primary = chart.addSeries(library.LineSeries, {
           color: theme.glow.primary,
           lineWidth: 2,
-          lineType: library.LineType.Curved,
+          lineType: library.LineType.Simple,
           pointMarkersVisible: viewData.line.length < 40,
           pointMarkersRadius: 2,
           priceLineVisible: false,
@@ -324,7 +337,7 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
           crosshairMarkerVisible: true,
           lastValueVisible: true,
           lineStyle: library.LineStyle.Dashed,
-          lineType: library.LineType.Curved,
+          lineType: library.LineType.Simple,
           lineWidth: 2,
           pointMarkersVisible: false,
           priceLineVisible: false,
@@ -390,6 +403,18 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
 
       const selectionFor = (time: unknown, param?: any): PersonalTerminalChartSelection | null => {
         const rawKey = String(time);
+        const candle = chartKind === 'candle' ? candleLookup.get(rawKey) : undefined;
+        if (candle) {
+          const data = param?.seriesData?.get(primary);
+          return {
+            time: candle.time,
+            value: data?.close ?? candle.close,
+            baseline: series.baseline.value,
+            sourceIds: candle.sourceIds,
+            observationCount: candle.observationCount,
+            candle,
+          };
+        }
         const point = lookup.get(rawKey) || nearestPoint(viewData.line, timeLabel(time));
         if (!point) return null;
         const data = param?.seriesData?.get(primary);
@@ -405,7 +430,7 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
           if (event) { onSelectEvent(event); return; }
         }
         const selection = selectionFor(param.time, param);
-        if (selection) onSelectTime(selection.time);
+        if (selection) onSelectSelection(selection);
       };
       chart.subscribeCrosshairMove(crosshairHandler);
       chart.subscribeClick(clickHandler);
@@ -436,7 +461,7 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
       chartRef.current = null;
       primarySeriesRef.current = null;
     };
-  }, [chartKind, comparisonSeries, comparisonViewData, indicators, language, lookup, onCrosshair, onInteraction, onSelectEvent, onSelectTime, reducedMotion, series, theme, timeframe, viewData]);
+  }, [candleLookup, chartKind, comparisonSeries, comparisonViewData, indicators, language, lookup, onCrosshair, onInteraction, onSelectEvent, onSelectSelection, reducedMotion, series, theme, timeframe, viewData]);
 
   return (
     <WebView dataSet={{ 'personal-terminal-empty': viewData.line.length ? 'false' : 'true', 'personal-terminal-role': 'chart-frame' }}>
