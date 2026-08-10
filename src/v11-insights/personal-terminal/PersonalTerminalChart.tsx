@@ -57,6 +57,48 @@ function compactNumber(value: number) {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
+function seriesValueLabel(series: PersonalTerminalSeries, value: number) {
+  if (series.semantic === 'timing') {
+    const minutes = (Math.round(value + 12 * 60) + 24 * 60) % (24 * 60);
+    return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+  }
+  if (series.constructKey === 'sleep.duration') return `${Math.round(value / 6) / 10}`;
+  return compactNumber(value);
+}
+
+function dateFromChartTime(value: unknown) {
+  const label = timeLabel(value);
+  if (!label) return null;
+  const date = new Date(label.length <= 10 ? `${label}T12:00:00` : label);
+  return Number.isFinite(date.getTime()) ? date : null;
+}
+
+function axisLabel(language: Lang, timeframe: PersonalTerminalTimeframe, value: unknown) {
+  const date = dateFromChartTime(value);
+  if (!date) return '';
+  const locale = language === 'zh' ? 'zh-CN' : 'en-AU';
+  if (timeframe === '4H' || timeframe === '12H' || timeframe === '24H' || timeframe === '1D') {
+    return new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit', hour12: false }).format(date);
+  }
+  if (timeframe === 'ALL') return new Intl.DateTimeFormat(locale, { year: 'numeric' }).format(date);
+  if (timeframe === '1Y') return new Intl.DateTimeFormat(locale, { month: 'short', year: '2-digit' }).format(date);
+  return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' }).format(date);
+}
+
+function fullDateLabel(language: Lang, value: unknown) {
+  const date = dateFromChartTime(value);
+  if (!date) return '';
+  return new Intl.DateTimeFormat(language === 'zh' ? 'zh-CN' : 'en-AU', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(date);
+}
+
+function isHistorical(value: PersonalTerminalPoint['provenance']) {
+  return value === 'historical_reference' || value === 'passive_device';
+}
+
 function eventLabel(language: Lang, event: PersonalTerminalEvent) {
   if (event.shortLabel.kind === 'text') return event.shortLabel.text;
   return Object.entries(event.shortLabel.values || {}).reduce(
@@ -87,6 +129,7 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
   onInteraction?: () => void;
   onSelectEvent: (event: PersonalTerminalEvent) => void;
   onSelectTime: (time: string) => void;
+  questlifeStartedAt?: string | null;
   rangeSelection: { start: string | null; end: string | null };
   reducedMotion: boolean;
   series: PersonalTerminalSeries;
@@ -103,6 +146,7 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
   onInteraction,
   onSelectEvent,
   onSelectTime,
+  questlifeStartedAt = null,
   rangeSelection,
   reducedMotion,
   series,
@@ -115,6 +159,18 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
   const visibleRangeRef = useRef<any>(null);
   const primarySeriesRef = useRef<any>(null);
   const [baselineBand, setBaselineBand] = useState<{ top: number; height: number } | null>(null);
+
+  const transitionPosition = useMemo(() => {
+    if (!questlifeStartedAt || viewData.line.length < 2) return null;
+    const hasHistorical = viewData.line.some((point) => isHistorical(point.provenance));
+    const hasActive = viewData.line.some((point) => !isHistorical(point.provenance));
+    if (!hasHistorical || !hasActive) return null;
+    const first = new Date(viewData.line[0].time).getTime();
+    const last = new Date(viewData.line[viewData.line.length - 1].time).getTime();
+    const transition = new Date(questlifeStartedAt).getTime();
+    if (!Number.isFinite(transition) || transition <= first || transition >= last) return null;
+    return Math.max(2, Math.min(98, (transition - first) / Math.max(1, last - first) * 100));
+  }, [questlifeStartedAt, viewData.line]);
 
   const alignedEvents = useMemo(() => {
     if (!viewData.line.length) return [];
@@ -188,7 +244,10 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
           fontSize: 10,
           panes: { separatorColor: theme.questTheme.colors.border, separatorHoverColor: theme.glow.primary },
         },
-        localization: { priceFormatter: compactNumber },
+        localization: {
+          priceFormatter: (value: number) => seriesValueLabel(series, value),
+          timeFormatter: (value: unknown) => fullDateLabel(language, value),
+        },
         grid: {
           vertLines: { color: theme.questTheme.colors.border, style: library.LineStyle.Dashed, visible: false },
           horzLines: { color: theme.questTheme.colors.border, style: library.LineStyle.Dotted, visible: false },
@@ -203,7 +262,15 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
         kineticScroll: { mouse: !reducedMotion, touch: !reducedMotion },
         leftPriceScale: { visible: Boolean(comparisonSeries), borderVisible: false, scaleMargins: { top: 0.12, bottom: indicators.has('load') ? 0.24 : 0.1 } },
         rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.12, bottom: indicators.has('load') ? 0.24 : 0.1 } },
-        timeScale: { borderVisible: false, timeVisible: timeframe === '1D', secondsVisible: false, rightOffset: 2, barSpacing: timeframe === '1D' ? 34 : 10, minBarSpacing: 2 },
+        timeScale: {
+          borderVisible: false,
+          timeVisible: timeframe === '4H' || timeframe === '12H' || timeframe === '24H' || timeframe === '1D',
+          secondsVisible: false,
+          rightOffset: 2,
+          barSpacing: timeframe === '4H' || timeframe === '12H' || timeframe === '24H' || timeframe === '1D' ? 34 : 10,
+          minBarSpacing: 2,
+          tickMarkFormatter: (value: unknown) => axisLabel(language, timeframe, value),
+        },
       });
       chartRef.current = chart;
 
@@ -234,8 +301,8 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
           priceLineVisible: false,
           lastValueVisible: true,
         });
-        const confirmed = viewData.line.filter((row) => row.provenance !== 'historical_reference');
-        const historical = viewData.line.filter((row) => row.provenance === 'historical_reference');
+        const confirmed = viewData.line.filter((row) => !isHistorical(row.provenance));
+        const historical = viewData.line.filter((row) => isHistorical(row.provenance));
         primary.setData(pointsToData(confirmed.length ? confirmed : viewData.line) as any);
         if (historical.length > 0 && confirmed.length > 0) {
           const historicalSeries = chart.addSeries(library.LineSeries, {
@@ -387,6 +454,11 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
       ) : null}
       {baselineBand ? <WebView dataSet={{ 'personal-terminal-role': 'baseline-band' }} style={{ top: baselineBand.top, height: baselineBand.height }} /> : null}
       <WebView dataSet={{ 'personal-terminal-role': 'time-calibration' }} pointerEvents="none" />
+      {transitionPosition != null ? (
+        <WebView dataSet={{ 'personal-terminal-role': 'questlife-transition' }} pointerEvents="none" style={{ left: `${transitionPosition}%` }}>
+          <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalV041QuestLifeStarted')}</Text>
+        </WebView>
+      ) : null}
       {alignedEvents.length ? (
         <WebView dataSet={{ 'personal-terminal-role': 'event-rail' }}>
           {alignedEvents.map(({ event, position }) => {

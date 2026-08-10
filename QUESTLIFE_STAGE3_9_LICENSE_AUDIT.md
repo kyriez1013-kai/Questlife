@@ -12,18 +12,20 @@ Checked: 2026-08-10
 
 ## Attribution obligation
 
-The upstream project distributes a `NOTICE` attribution and its documentation
-requires an attribution notice plus a link to `https://www.tradingview.com/`
-on a user-accessible page. The chart option `layout.attributionLogo` is one
-permitted way to provide the link, but the official API documentation states
-that it can be disabled when the requirement is fulfilled elsewhere.
+The installed README requires an attribution notice plus a link to
+`https://www.tradingview.com/` on a user-accessible page. It refers to an
+upstream `NOTICE`, but the installed npm package does not contain that file.
+The installed `LICENSE` identifies `Copyright 2023 TradingView, Inc.` The chart
+option `layout.attributionLogo` is one permitted way to provide the link, while
+the README also permits satisfying the requirement on another user-accessible
+page.
 
 QuestLife treatment:
 
 1. `layout.attributionLogo` remains `false`, so third-party branding does not
    appear inside the primary QuestLife analytical canvas.
 2. A quiet technology/legal footer outside the canvas retains:
-   `TradingView Lightweight Charts(TM) - Copyright 2025 TradingView, Inc.`
+   `TradingView Lightweight Charts(TM) - Copyright 2023 TradingView, Inc.`
 3. The footer includes a user-accessible `https://www.tradingview.com/` link.
 4. The footer is visually separated from QuestLife branding and cannot read as
    a QuestLife logo or product endorsement.
@@ -38,9 +40,7 @@ the engine cannot express without branded visual constraints.
 
 - Installed `node_modules/lightweight-charts/package.json`
 - Installed `node_modules/lightweight-charts/LICENSE`
-- Installed `node_modules/lightweight-charts/NOTICE`
 - https://github.com/tradingview/lightweight-charts
 - https://github.com/tradingview/lightweight-charts/blob/master/NOTICE
 - https://tradingview.github.io/lightweight-charts/docs/5.1/api/interfaces/LayoutOptions
 - https://tradingview.github.io/lightweight-charts/docs/api
-
