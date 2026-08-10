@@ -175,6 +175,16 @@ export type PersonalTerminalSignal = {
   evidenceGrade?: string;
   missingness?: Record<string, number>;
   alternativeExplanations?: string[];
+  recentExamples?: Array<{
+    sourceObservationId: string;
+    sourceAt: string;
+    sourceValue: number;
+    sourceUnit: string;
+    targetObservationId: string;
+    targetAt: string;
+    targetValue: number;
+    targetUnit: string;
+  }>;
 };
 
 export type PersonalTerminalSimilarPeriod = {

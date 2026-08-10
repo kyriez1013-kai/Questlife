@@ -63,6 +63,12 @@ assert.equal(day90.signals[0].targetConstruct, 'state.focus');
 assert.equal(day90.signals[0].independentDayCount, 72);
 assert.equal(day90.signals[0].counterexampleCount, 3);
 assert.ok((day90.signals[0].effectEstimate || 0) > 0);
+assert.equal(day90.signals[0].recentExamples?.length, 3);
+assert.equal(
+  (new Date(`${day90.signals[0].recentExamples![0].targetAt.slice(0, 10)}T00:00:00Z`).getTime()
+    - new Date(`${day90.signals[0].recentExamples![0].sourceAt.slice(0, 10)}T00:00:00Z`).getTime()) / 86_400_000,
+  1,
+);
 
 const goal = adaptQuantV041TerminalPayload(load('goal'));
 assert.equal(goal.defaultScope, 'goal');

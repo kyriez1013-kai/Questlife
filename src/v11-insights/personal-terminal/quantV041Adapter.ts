@@ -180,6 +180,16 @@ const SignalSchema = z.object({
   alternativeExplanationKeys: z.array(z.string()),
   provenance: z.record(z.string(), z.unknown()),
   analysisFamily: z.string().min(1),
+  recentExamples: z.array(z.object({
+    sourceObservationId: z.string().min(1),
+    sourceAt: z.string().min(1),
+    sourceValue: z.number().finite(),
+    sourceUnit: z.string().min(1),
+    targetObservationId: z.string().min(1),
+    targetAt: z.string().min(1),
+    targetValue: z.number().finite(),
+    targetUnit: z.string().min(1),
+  })),
 });
 
 export const QuantV041TerminalPayloadSchema = z.object({
@@ -438,6 +448,7 @@ export function adaptQuantV041TerminalPayload(input: unknown): PersonalTerminalM
         evidenceGrade: signal.evidenceGrade,
         missingness: signal.missingness,
         alternativeExplanations: signal.alternativeExplanationKeys,
+        recentExamples: signal.recentExamples,
       };
     }),
     implication: i18nCopy(`personalTerminalV041Next_${payload.nextActionKey}`),

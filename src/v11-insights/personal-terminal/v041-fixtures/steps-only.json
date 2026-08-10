@@ -4308,7 +4308,7 @@
     "containsRealUserData": false,
     "engineVersion": "questlife-cold-start-terminal-v0.4",
     "materializedEngineVersion": "questlife-quant-v0.4.1-materialized",
-    "quantCommit": "34efaf2",
+    "quantCommit": "10b37c8",
     "sourceArtifact": "artifacts/v0.4/day1_steps_only_product_review.json",
     "syntheticOnly": true
   },

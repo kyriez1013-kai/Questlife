@@ -43164,6 +43164,38 @@
           "semanticHash": "fe422028e0b4eb73a86aab9e9afc2ae4e10668a866afcf01d566b7818b1fcc05"
         }
       },
+      "recentExamples": [
+        {
+          "sourceAt": "2026-06-25T23:59:00+10:00",
+          "sourceObservationId": "passive:e34dc26834dc55ada761",
+          "sourceUnit": "minutes",
+          "sourceValue": 417.0,
+          "targetAt": "2026-06-26T20:00:00+10:00",
+          "targetObservationId": "product-review-v0.4.1:active:state-focus:176",
+          "targetUnit": "/5",
+          "targetValue": 2.0
+        },
+        {
+          "sourceAt": "2026-06-28T23:59:00+10:00",
+          "sourceObservationId": "passive:832b324547a33a2e84a7",
+          "sourceUnit": "minutes",
+          "sourceValue": 438.4,
+          "targetAt": "2026-06-29T20:00:00+10:00",
+          "targetObservationId": "product-review-v0.4.1:active:state-focus:179",
+          "targetUnit": "/5",
+          "targetValue": 3.0
+        },
+        {
+          "sourceAt": "2026-06-29T23:59:00+10:00",
+          "sourceObservationId": "passive:d54ec85070d308afedab",
+          "sourceUnit": "minutes",
+          "sourceValue": 392.7,
+          "targetAt": "2026-06-30T20:00:00+10:00",
+          "targetObservationId": "product-review-v0.4.1:active:state-focus:180",
+          "targetUnit": "/5",
+          "targetValue": 3.0
+        }
+      ],
       "relationship": "Previous-night sleep duration is associated with next-day focus",
       "sampleN": 147,
       "sourceConstruct": "sleep.duration",
@@ -43179,7 +43211,7 @@
     "containsRealUserData": false,
     "engineVersion": "questlife-cold-start-terminal-v0.4",
     "materializedEngineVersion": "questlife-quant-v0.4.1-materialized",
-    "quantCommit": "34efaf2",
+    "quantCommit": "10b37c8",
     "sourceArtifact": "artifacts/v0.4/day180_personalized.json",
     "syntheticOnly": true
   },
