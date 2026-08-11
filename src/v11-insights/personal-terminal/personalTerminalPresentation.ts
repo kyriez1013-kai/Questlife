@@ -9,7 +9,7 @@ import type { V11EvidenceStage } from '../../v11/tokens';
 import type { V11InsightCopy, V11InsightsPresentation } from '../insightsPresentation';
 
 export type PersonalTerminalScope = 'market' | 'goal' | 'skill';
-export type PersonalTerminalChartKind = 'line' | 'candle';
+export type PersonalTerminalChartKind = 'line' | 'bar' | 'candle';
 export type PersonalTerminalTimeframe = 'RECENT' | '4H' | '12H' | '24H' | '1D' | '7D' | '30D' | '1M' | '90D' | '3M' | '1Y' | 'ALL';
 export type PersonalTerminalIndicator = 'emaShort' | 'emaLong' | 'baseline' | 'load' | 'density' | 'events';
 export type PersonalTerminalFixtureId = 'forming' | 'mature' | 'portfolio' | 'skill' | 'volatile' | 'historical';
