@@ -280,7 +280,8 @@ export default function PersonalTerminalWorkspaceSurface({
 }) {
   const catalog = useMemo(() => buildPersonalTerminalCatalog(model), [model]);
   const debugPerformance = query().get('debugQuantPerformance') === '1';
-  const [preferences, setPreferences] = useState<PersonalTerminalPreferences>(() => readPersonalTerminalPreferences(catalog));
+  const preferenceNamespace = model.fixture ? `fixture:${model.fixture}` : 'real';
+  const [preferences, setPreferences] = useState<PersonalTerminalPreferences>(() => readPersonalTerminalPreferences(catalog, preferenceNamespace));
   const [activePaneId, setActivePaneId] = useState(preferences.workspaces.find((workspace) => workspace.id === preferences.activeWorkspaceId)?.panes[0]?.id || '');
   const [comparisonSeriesId, setComparisonSeriesId] = useState<string | null>(null);
   const [analystPeekOpen, setAnalystPeekOpen] = useState(false);
@@ -304,7 +305,7 @@ export default function PersonalTerminalWorkspaceSurface({
     setPreferences((current) => normalizePersonalTerminalPreferences(current, catalog));
   }, [catalog]);
 
-  useEffect(() => writePersonalTerminalPreferences(preferences), [preferences]);
+  useEffect(() => writePersonalTerminalPreferences(preferences, preferenceNamespace), [preferenceNamespace, preferences]);
   useEffect(() => onSheetStateChange?.(sheet != null), [onSheetStateChange, sheet]);
   useEffect(() => setAnalystPeekOpen(false), [activePaneId]);
   useEffect(() => {

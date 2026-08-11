@@ -14,6 +14,7 @@ import {
   createDefaultPersonalTerminalPreferences,
   defaultCandleSource,
   normalizePersonalTerminalPreferences,
+  personalTerminalPreferencesStorageKey,
   removeWatchlistItem,
   reorderWatchlist,
   resolveDisplayRangeWindow,
@@ -80,6 +81,8 @@ const model: PersonalTerminalModel = {
 const catalog = buildPersonalTerminalCatalog(model);
 assert.equal(catalog.find((item) => item.id === goalSeries.id)?.group, 'goal');
 assert.equal(catalog.find((item) => item.id === skillSeries.id)?.group, 'skill');
+assert.equal(personalTerminalPreferencesStorageKey(), 'questlife_v11_personal_terminal_preferences_v1');
+assert.equal(personalTerminalPreferencesStorageKey('fixture:focus_1_observation'), 'questlife_v11_personal_terminal_preferences_v1:fixture%3Afocus_1_observation');
 
 const defaults = createDefaultPersonalTerminalPreferences(catalog);
 assert.deepEqual(defaults.watchlistOrder.slice(0, 4), [marketOne.id, marketTwo.id, goalSeries.id, skillSeries.id]);

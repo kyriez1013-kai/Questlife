@@ -12,6 +12,11 @@ import {
 
 export const PERSONAL_TERMINAL_PREFERENCES_KEY = 'questlife_v11_personal_terminal_preferences_v1';
 
+export function personalTerminalPreferencesStorageKey(namespace = 'real') {
+  if (!namespace || namespace === 'real') return PERSONAL_TERMINAL_PREFERENCES_KEY;
+  return `${PERSONAL_TERMINAL_PREFERENCES_KEY}:${encodeURIComponent(namespace)}`;
+}
+
 export type PersonalTerminalQuickRange =
   | '1D'
   | '2D'
@@ -272,10 +277,10 @@ export function normalizePersonalTerminalPreferences(raw: unknown, catalog: Pers
   };
 }
 
-export function readPersonalTerminalPreferences(catalog: PersonalTerminalCatalogItem[]) {
+export function readPersonalTerminalPreferences(catalog: PersonalTerminalCatalogItem[], namespace = 'real') {
   if (typeof window === 'undefined') return createDefaultPersonalTerminalPreferences(catalog);
   try {
-    const raw = window.localStorage.getItem(PERSONAL_TERMINAL_PREFERENCES_KEY);
+    const raw = window.localStorage.getItem(personalTerminalPreferencesStorageKey(namespace));
     return normalizePersonalTerminalPreferences(raw ? JSON.parse(raw) : null, catalog);
   } catch (error) {
     console.warn('[personal terminal] preference read failed', error);
@@ -283,10 +288,10 @@ export function readPersonalTerminalPreferences(catalog: PersonalTerminalCatalog
   }
 }
 
-export function writePersonalTerminalPreferences(preferences: PersonalTerminalPreferences) {
+export function writePersonalTerminalPreferences(preferences: PersonalTerminalPreferences, namespace = 'real') {
   if (typeof window === 'undefined') return;
   try {
-    window.localStorage.setItem(PERSONAL_TERMINAL_PREFERENCES_KEY, JSON.stringify(preferences));
+    window.localStorage.setItem(personalTerminalPreferencesStorageKey(namespace), JSON.stringify(preferences));
   } catch (error) {
     console.warn('[personal terminal] preference write failed', error);
   }
