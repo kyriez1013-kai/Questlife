@@ -2828,3 +2828,73 @@ Documentation:
 - `QUESTLIFE_STAGE3_11_CHART_ENGINE_AUDIT.md`
 - `QUESTLIFE_STAGE3_11_QA.md`
 - `artifacts/v11-stage3-11/`
+
+## Stage 3.12 - Personal Market + Adaptive Temporal Intelligence
+
+Status: local isolated implementation and QA package complete on
+`design/questlife-product-v2`; physical iPhone Safari, Preview, production,
+push, and deployment remain pending.
+
+Completed:
+- Added a true Personal Market overview above the existing instrument, Goal,
+  and Skill terminal hierarchy without creating a composite Life Score.
+- Added exact categorical Market Breadth, an independent-scale synchronized
+  timeline, transparent Top Moves, and a structured non-causal Market Analyst.
+- Added first/second/third-observation product responses so the terminal is
+  useful before a personal baseline or Signal exists.
+- Added Quant-supplied `OBSERVATION_COUNT` micro Candles for eligible scalar
+  instruments while preserving Stage 3.11 `TIME` bucket semantics.
+- Kept Line as the default for early data and exposed Candle only when the
+  artifact declares it available.
+- Added 17 deterministic lifecycle scenarios, including passive-only,
+  QuestLife-only, mixed, Focus 1/2/3/5/10, Execution 3/7, Goal, Skill, and
+  no-data.
+- Added compact materializable Personal Market overview payloads. Mature
+  eight-instrument overview payloads are approximately 1.4%-2.1% of their full
+  terminal artifacts.
+- Audited current/reference/deviation math. Steps `11,400` against `7,571`
+  displays `+50.6%`; ordinal/timing percentages remain forbidden.
+- Bounded derived ordinal reference values to the legal `1-5` display scale
+  without modifying source observations.
+- Preserved Stage 3.11 chart attribution/legal access, isolated route, legacy
+  Insights rollback, and frontend no-OHLC-calculation boundary.
+
+Validation:
+- `npx tsc --noEmit` passed.
+- `npm run build` passed; JS bundle
+  `index-32d34d05afe32e51a8a796c116ee5170.js`.
+- V0.4.1 adapter, V0.4.2 adapter, and presentation-math tests passed.
+- Targeted Quant V0.4.2 tests: 13 passed.
+- Full Quant suite: 616 tests passed in 433.027 seconds.
+- Fresh synthetic V0.4.2 release generation completed in 13.82 seconds for 17
+  full payloads, 17 compact overviews, and one manifest.
+- 320/375/393/768/1280, zh/en, dark/light, and reduced-motion local checks had
+  no document-level horizontal overflow.
+- Complete local Chromium probes: P50 `16.7ms`, worst P95 `16.9ms`, and
+  `1 / 1,595` frames over 20ms. The single slow frame occurred during Market
+  to instrument drill-down.
+- No local runtime error was captured. Existing RN Web deprecation, Expo
+  Notifications web-support, and local sync warnings remain.
+- 26 screenshots with verified pixel dimensions are in
+  `artifacts/v11-stage3-12/`.
+
+Commercial verdict:
+- Personal Market, early feedback, and adaptive representation are materially
+  stronger than Stage 3.11.
+- An 8/10 commercial score is not claimed before physical Safari and deployed
+  product review.
+
+UNVERIFIED:
+- physical iPhone Safari;
+- Vercel Preview and production;
+- real Health/passive data;
+- production API/schema integration;
+- real-user Day 1 -> Day 90 lifecycle behavior.
+
+No push or deployment was performed. No real user data, real Health data,
+advanced Quant model, production schema, or production API was added. Stage 4
+was not started.
+
+Documentation:
+- `QUESTLIFE_STAGE3_12_QA.md`
+- `artifacts/v11-stage3-12/`
