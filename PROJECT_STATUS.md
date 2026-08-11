@@ -2899,52 +2899,60 @@ Documentation:
 - `QUESTLIFE_STAGE3_12_QA.md`
 - `artifacts/v11-stage3-12/`
 
-## Stage 3.13 - Personal Quant Terminal Presentation Redesign
+## Stage 3.13 - Professional Personal Quant Terminal UX Rewrite
 
-Status: isolated local presentation implementation and QA complete on
+Status: isolated local implementation and commercial QA package complete on
 `design/questlife-product-v2`; physical iPhone Safari, Preview, production,
 push, and deployment remain pending.
 
 Completed:
-- Replaced the indicator-list-first market surface with a professional
-  `summary -> chart -> tools -> evidence -> Analyst -> details` hierarchy.
-- Made the existing line/candle canvas the primary analytical object while
-  keeping timeframe and chart controls capability-driven by Quant artifacts.
-- Added Personal Market domain navigation for Overview, Movement, Recovery,
-  Sleep, Focus, Goals, and Skills without inventing a composite score.
-- Added a compact summary for current reading, personal reference, deviation,
-  evidence, and coverage. Coverage is explicitly measurement reach, not
-  probability or conclusion confidence.
-- Reframed Analyst content as Observation, Evidence, Interpretation, and
-  Limitation, preserving descriptive and non-causal language.
-- Collapsed secondary evidence, methodology, events, and advanced tools by
-  default while preserving their existing handlers and Sheets.
-- Preserved non-market artifact defaults so Goal and Skill lifecycle fixtures
-  open in their own scopes rather than being forced into Personal Market.
-- Kept legal attribution in Settings -> About and legal information; the
-  user-facing terminal exposes no chart-library or implementation copy.
-- No Quant Engine, Observation Ledger, artifact, calculation, candle, signal,
+- Rebuilt the isolated terminal around a mobile-first professional watchlist,
+  chart, tool, interpretation, and inspector workflow.
+- Added an editable Personal Watchlist with add/search, remove, pin, reorder,
+  mini-series, accessible move controls, and Goal/Skill support.
+- Added capability-filtered quick ranges, configurable range shortcuts, exact
+  last-N-days, calendar range, and last-N-observations presentation controls.
+- Kept display range separate from Quant-provided candle intervals. The
+  frontend does not calculate OHLC.
+- Added compact chart View, Indicators, Compare, and Reset controls plus
+  progressive Analyst, Evidence, and Signal inspectors.
+- Added local one/two/four/six-pane workspaces, independent pane controls,
+  optional time/crosshair sync contracts, and a compact Market Board.
+- Isolated fixture preferences by lifecycle scenario without changing the
+  real-data preference key.
+- Preserved Personal Market, Goal, Skill, evidence maturity, source lineage,
+  non-causal Signal language, and legacy Insights rollback.
+- Fixed the first-observation presentation boundary so one real Focus reading
+  displays `4 / 5` and a real point without fabricating a baseline or trend.
+- No Quant Engine, Observation Ledger, artifact, calculation, candle, Signal,
   schema, Store, API, persistence, or production-pipeline change was made.
 
 Validation:
-- S0, steps-only, sleep-only, mixed passive, mixed mature, Goal, Skill, Day 1,
-  Day 7, Day 30, and Day 90 fixture states were checked locally.
-- 375/393/768/1280, zh/en, dark/light, reduced motion, details, Evidence Sheet,
-  domain navigation, and unflagged rollback were checked in exported web.
-- No horizontal overflow or runtime console error was found in the final local
-  pass.
-- Complete local composition measured P50 `16.7ms`, worst P95 `17.4ms`, and
-  `0/290` sampled frames over 20ms across mobile dark and desktop light probes.
-- `npx tsc --noEmit`, `npm run build`, and targeted Personal Terminal tests
-  passed. Local bundle: `index-237af9d66203914513da0ba2244807ef.js`.
+- Required no-data, passive, mixed, Focus 1/2/3, Goal, Skill, mature, and
+  multi-pane fixture states were checked locally.
+- 375/393/768/1280, zh/en, dark/light, watchlist editing, custom 4D/9D ranges,
+  Analyst states, Evidence/Signal Sheets, Compare, indicators, and 1/2/4/6
+  panes were checked in exported web.
+- `npx tsc --noEmit`, `npm run build`, and the Personal Terminal workspace
+  pure-function test passed.
+- Local bundle: `index-48bcfe7afefd092c52e4eb154878456e.js`.
+- Complete local composition measured P50 `16.6-16.7ms` and worst P95
+  `17.7ms`. One 1280px custom-range-open sample exceeded 20ms (`1/38`);
+  sampled mobile and tablet operations recorded zero frames over 20ms.
+- The 37 requested screenshots plus two comparison states are stored in
+  `artifacts/v11-stage3-13-market-ux/`.
 
 UNVERIFIED:
 - physical iPhone Safari;
 - Vercel Preview and production;
 - real Health/passive data and production API/schema integration;
-- real-user Day 1 -> Day 90 lifecycle behaviour.
+- real-user Day 1 -> Day 90 lifecycle behaviour;
+- physical long-press drag, pinch/pan, and visible synchronized crosshair.
 
 No push or deployment was performed. Stage 4 was not started.
 
 Documentation:
+- `QUESTLIFE_STAGE3_13_MARKET_UX_RESEARCH.md`
+- `QUESTLIFE_STAGE3_13_COMPONENT_AUDIT.md`
 - `QUESTLIFE_STAGE3_13_QA.md`
+- `artifacts/v11-stage3-13-market-ux/`
