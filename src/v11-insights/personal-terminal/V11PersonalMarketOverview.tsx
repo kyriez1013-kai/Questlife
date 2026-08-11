@@ -259,7 +259,7 @@ export default function V11PersonalMarketOverview({
           <Text style={{ color: theme.text.metadata }}>{historyLabel}</Text>
         </WebView>
         <WebView>
-          <Text style={{ color: theme.text.metadata }}>{t(language, 'personalMarketAvailable')}</Text>
+          <Text style={{ color: theme.text.metadata }}>{t(language, compactOverview ? 'personalMarketAvailableShort' : 'personalMarketAvailable')}</Text>
           <Text style={{ color: theme.text.primary }}>{overview.instrumentCount}</Text>
         </WebView>
       </WebView>
