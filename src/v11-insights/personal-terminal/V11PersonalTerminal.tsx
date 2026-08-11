@@ -13,6 +13,7 @@ import PersonalTerminalChart, {
   type PersonalTerminalChartHandle,
   type PersonalTerminalChartSelection,
 } from './PersonalTerminalChart';
+import V11PersonalMarketOverview from './V11PersonalMarketOverview';
 import PersonalTerminalSheet from './PersonalTerminalSheet';
 import PersonalTerminalIcon, { type PersonalTerminalIconName } from './PersonalTerminalIcon';
 import type {
@@ -316,6 +317,19 @@ function initialTimeframe(model: PersonalTerminalModel, series?: PersonalTermina
   return available[0] || '1M';
 }
 
+function initialMarketOverview(model: PersonalTerminalModel) {
+  if (!model.marketOverview) return false;
+  const requested = query().get('quantView');
+  if (requested === 'instrument') return false;
+  if (requested === 'market') return true;
+  const lifecycle = model.lifecycleScenario || '';
+  return lifecycle === 'no_data'
+    || lifecycle.startsWith('market_')
+    || lifecycle === 'day30'
+    || lifecycle === 'day90'
+    || lifecycle === 'day180';
+}
+
 type InteractionPerformanceRow = {
   duration: number;
   frames: number;
@@ -479,6 +493,7 @@ export default function V11PersonalTerminal({
 }) {
   const defaultSeries = model.series.find((row) => row.id === model.defaultSeriesId) || model.series[0];
   const [scope, setScope] = useState<PersonalTerminalScope>(model.defaultScope);
+  const [marketOverviewOpen, setMarketOverviewOpen] = useState(() => initialMarketOverview(model));
   const [entityId, setEntityId] = useState(model.defaultEntityId);
   const [seriesId, setSeriesId] = useState(model.defaultSeriesId);
   const [comparisonSeriesId, setComparisonSeriesId] = useState<string | null>(null);
@@ -503,6 +518,7 @@ export default function V11PersonalTerminal({
     setEntityId(model.defaultEntityId);
     setSeriesId(model.defaultSeriesId);
     setComparisonSeriesId(null);
+    setMarketOverviewOpen(initialMarketOverview(model));
   }, [model]);
 
   const scopes = useMemo(() => (['market', 'goal', 'skill'] as const).filter((item) => model.entities.some((row) => row.scope === item)), [model.entities]);
@@ -560,6 +576,12 @@ export default function V11PersonalTerminal({
   }, [candleAvailable, chartKind]);
 
   const selectScope = (next: PersonalTerminalScope) => measureInteraction('scope-switch', () => {
+    if (next === 'market' && model.marketOverview) {
+      setMarketOverviewOpen(true);
+      setScope('market');
+      setSheet(null);
+      return;
+    }
     const firstEntity = model.entities.find((row) => row.scope === next);
     if (!firstEntity) return;
     setScope(next);
@@ -569,6 +591,7 @@ export default function V11PersonalTerminal({
     setCrosshair(null);
     setRangeSelection({ start: null, end: null });
     setComparisonSeriesId(null);
+    setMarketOverviewOpen(false);
   });
   const selectEntity = (next: PersonalTerminalEntity) => measureInteraction('entity-switch', () => {
     setEntityId(next.id);
@@ -578,6 +601,7 @@ export default function V11PersonalTerminal({
     setRangeSelection({ start: null, end: null });
     setComparisonSeriesId(null);
     setSheet(null);
+    setMarketOverviewOpen(false);
   });
   const selectSeries = (next: PersonalTerminalSeries) => measureInteraction('metric-switch', () => {
     setSeriesId(next.id);
@@ -585,6 +609,24 @@ export default function V11PersonalTerminal({
     setCrosshair(null);
     setRangeSelection({ start: null, end: null });
     setComparisonSeriesId(null);
+    setMarketOverviewOpen(false);
+  });
+
+  const selectOverviewSeries = (nextSeriesId: string) => measureInteraction('market-instrument-drilldown', () => {
+    const nextSeries = model.series.find((row) => row.id === nextSeriesId);
+    if (!nextSeries) return;
+    const nextEntity = model.entities.find((row) => row.id === nextSeries.entityId);
+    if (nextEntity) {
+      setScope(nextEntity.scope);
+      setEntityId(nextEntity.id);
+    }
+    setSeriesId(nextSeries.id);
+    setTimeframe(nextSeries.defaultTimeframe || availableTimeframes(nextSeries, now)[0] || 'ALL');
+    setChartKind(nextSeries.adaptive?.defaultView === 'point' ? 'line' : nextSeries.adaptive?.defaultView || 'line');
+    setComparisonSeriesId(null);
+    setCrosshair(null);
+    setRangeSelection({ start: null, end: null });
+    setMarketOverviewOpen(false);
   });
   const selectComparison = (next: PersonalTerminalSeries | null) => measureInteraction('compare-toggle', () => {
     setComparisonSeriesId(next?.id || null);
@@ -633,6 +675,28 @@ export default function V11PersonalTerminal({
       setSheet({ kind: 'analyst' });
     });
   };
+
+  if (marketOverviewOpen && model.marketOverview) {
+    return (
+      <WebScrollView
+        contentContainerStyle={{ paddingBottom: 116 }}
+        dataSet={{ 'personal-terminal-role': 'scroll' }}
+        showsVerticalScrollIndicator={false}
+      >
+        <WebView dataSet={{ 'personal-terminal-role': 'terminal', 'personal-terminal-version': '3.12' }}>
+          <V11PersonalMarketOverview
+            language={language}
+            onNextAction={onNextAction}
+            onSelectScope={selectScope}
+            onSelectSeries={selectOverviewSeries}
+            overview={model.marketOverview}
+            performanceReadout={performanceReadout}
+            theme={theme}
+          />
+        </WebView>
+      </WebScrollView>
+    );
+  }
 
   if (!entity || !series || !viewData) {
     return <NoDataTerminal language={language} model={model} onNextAction={onNextAction} performanceReadout={performanceReadout} theme={theme} />;

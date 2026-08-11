@@ -2716,3 +2716,545 @@
     height: 236px;
   }
 }
+
+/* Stage 3.12 Personal Market is one analytical plane, separated by rules rather than cards. */
+[data-personal-terminal-version="3.12"] [data-personal-market-role="overview"] {
+  min-width: 0;
+  padding-bottom: 28px;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="header"] {
+  display: flex;
+  min-height: 54px;
+  align-items: center;
+  justify-content: space-between;
+  flex-direction: row;
+  gap: 20px;
+  border-bottom: 1px solid var(--pt-border);
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="header"] > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="header"] > div:last-child {
+  align-items: flex-end;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="header"] > div:first-child > span:first-child {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: 0.7px;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="header"] > div:last-child > span:last-child {
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 22px;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="workstation"] {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 168px minmax(0, 1fr) 258px;
+  border-bottom: 1px solid var(--pt-border);
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="browser"],
+[data-personal-terminal-version="3.12"] [data-personal-market-role="side"] {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="browser"] {
+  gap: 3px;
+  padding: 16px 12px 16px 0;
+  border-right: 1px solid var(--pt-border);
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="browser"] > span,
+[data-personal-terminal-version="3.12"] [data-personal-market-role="top-moves"] > span:first-child,
+[data-personal-terminal-version="3.12"] [data-personal-market-role="boundary"] > span:first-child,
+[data-personal-terminal-version="3.12"] [data-personal-market-role="section-label"] > span {
+  font-size: 9px;
+  line-height: 13px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="browser"] > [role="button"] {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  flex-direction: row;
+  gap: 9px;
+  padding: 5px 7px;
+  border: 0;
+  border-left: 1px solid transparent;
+  outline: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="browser"] > [role="button"]:first-of-type {
+  border-left-color: var(--pt-primary);
+  background: color-mix(in srgb, var(--pt-primary) 7%, transparent);
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="browser"] > [role="button"] > div {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  justify-content: space-between;
+  flex-direction: row;
+  gap: 6px;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="browser"] > span:last-child {
+  margin-top: auto;
+  padding: 14px 7px 0;
+  line-height: 15px;
+  text-transform: none;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="canvas"] {
+  min-width: 0;
+  padding: 0 16px;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="breadth"] {
+  display: flex;
+  min-height: 92px;
+  justify-content: center;
+  flex-direction: column;
+  gap: 9px;
+  border-bottom: 1px solid var(--pt-border);
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="section-label"],
+[data-personal-terminal-version="3.12"] [data-personal-market-role="timeline-header"] {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  flex-direction: row;
+  gap: 10px;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="breadth-strip"] {
+  display: flex;
+  height: 18px;
+  min-width: 0;
+  overflow: hidden;
+  flex-direction: row;
+  background: color-mix(in srgb, var(--pt-border) 45%, transparent);
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="breadth-strip"] > div {
+  display: flex;
+  min-width: 20px;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid var(--pt-bg);
+  background: color-mix(in srgb, var(--pt-primary) 20%, transparent);
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="breadth-strip"] > div:nth-child(2) {
+  background: color-mix(in srgb, var(--pt-secondary) 16%, transparent);
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="breadth-strip"] > div:nth-child(3) {
+  background: color-mix(in srgb, var(--pt-text) 11%, transparent);
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="breadth-strip"] > div:nth-child(4) {
+  background: color-mix(in srgb, var(--pt-border) 74%, transparent);
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="breadth-strip"] span {
+  font-size: 9px;
+  line-height: 12px;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="breadth-labels"] {
+  display: flex;
+  min-width: 0;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="breadth-labels"] span {
+  font-size: 8px;
+  line-height: 11px;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="timeline"] {
+  min-width: 0;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="timeline-header"] {
+  min-height: 48px;
+  border-bottom: 1px solid var(--pt-border);
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="timeline-header"] > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="timeline-header"] span {
+  font-size: 9px;
+  line-height: 13px;
+  letter-spacing: 0.45px;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="instrument-row"] {
+  display: grid;
+  min-height: 70px;
+  min-width: 0;
+  align-items: center;
+  grid-template-columns: minmax(118px, 1fr) minmax(112px, 1.35fr) 96px 112px 116px 16px;
+  gap: 10px;
+  padding: 7px 0;
+  border: 0;
+  border-bottom: 1px solid var(--pt-border);
+  outline: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="instrument-row"]:hover,
+[data-personal-terminal-version="3.12"] [data-personal-market-role="instrument-row"]:focus-visible {
+  background: color-mix(in srgb, var(--pt-primary) 5%, transparent);
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="instrument-identity"] {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  flex-direction: row;
+  gap: 9px;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="instrument-identity"] > div:first-child {
+  width: 2px;
+  height: 30px;
+  flex: none;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="instrument-identity"] > div:last-child,
+[data-personal-terminal-version="3.12"] [data-personal-market-role="instrument-reading"],
+[data-personal-terminal-version="3.12"] [data-personal-market-role="instrument-reference"],
+[data-personal-terminal-version="3.12"] [data-personal-market-role="instrument-evidence"] {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="instrument-identity"] span:first-child,
+[data-personal-terminal-version="3.12"] [data-personal-market-role="instrument-reading"] span:first-child {
+  font-size: 12px;
+  line-height: 16px;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="instrument-identity"] span:last-child,
+[data-personal-terminal-version="3.12"] [data-personal-market-role="instrument-reading"] span:not(:first-child),
+[data-personal-terminal-version="3.12"] [data-personal-market-role="instrument-reference"] span,
+[data-personal-terminal-version="3.12"] [data-personal-market-role="instrument-evidence"] span {
+  font-size: 8px;
+  line-height: 12px;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="instrument-track"] {
+  min-width: 0;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="expand"] {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-bottom: 1px solid var(--pt-border);
+  outline: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="side"] {
+  border-left: 1px solid var(--pt-border);
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="analyst-answer"],
+[data-personal-terminal-version="3.12"] [data-personal-market-role="top-moves"],
+[data-personal-terminal-version="3.12"] [data-personal-market-role="boundary"] {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 9px;
+  padding: 16px;
+  border-bottom: 1px solid var(--pt-border);
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="analyst-answer"] > span:nth-child(2) {
+  font-size: 14px;
+  line-height: 21px;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="analyst-answer"] > span:last-child,
+[data-personal-terminal-version="3.12"] [data-personal-market-role="boundary"] > span:last-child {
+  font-size: 10px;
+  line-height: 16px;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="top-moves"] > div {
+  display: flex;
+  min-height: 42px;
+  justify-content: center;
+  flex-direction: column;
+  gap: 2px;
+  border-bottom: 1px solid color-mix(in srgb, var(--pt-border) 68%, transparent);
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="top-moves"] > div span:first-child {
+  font-size: 11px;
+  line-height: 15px;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="top-moves"] > div span:last-child {
+  font-size: 10px;
+  line-height: 14px;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="no-data"] {
+  display: flex;
+  min-height: calc(100dvh - 160px);
+  justify-content: center;
+  flex-direction: column;
+  gap: 18px;
+  padding: 48px 8px 80px;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="no-data"] > span:nth-of-type(2) {
+  max-width: 640px;
+  font-size: 34px;
+  font-weight: 300;
+  line-height: 40px;
+  letter-spacing: -1px;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="no-data"] > span:nth-of-type(3) {
+  max-width: 520px;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="no-data"] > [role="button"] {
+  display: flex;
+  width: fit-content;
+  min-height: 48px;
+  align-items: center;
+  flex-direction: row;
+  gap: 16px;
+  padding: 0 16px;
+  border: 1px solid var(--pt-border);
+  outline: none;
+  background: color-mix(in srgb, var(--pt-primary) 8%, transparent);
+  cursor: pointer;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="no-data-calibration"] {
+  display: flex;
+  width: min(360px, 86vw);
+  height: 16px;
+  flex-direction: row;
+  gap: 7px;
+}
+
+[data-personal-terminal-version="3.12"] [data-personal-market-role="no-data-calibration"] > div {
+  flex: 1;
+  border-bottom: 1px solid var(--pt-border);
+}
+
+@media (max-width: 900px) {
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="workstation"] {
+    grid-template-columns: 138px minmax(0, 1fr);
+  }
+
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="side"] {
+    grid-column: 1 / 3;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-top: 1px solid var(--pt-border);
+    border-left: 0;
+  }
+
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="analyst-answer"],
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="top-moves"],
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="boundary"] {
+    border-right: 1px solid var(--pt-border);
+    border-bottom: 0;
+  }
+
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="instrument-row"] {
+    grid-template-columns: minmax(112px, 1fr) minmax(90px, 1.1fr) 86px 100px 16px;
+  }
+
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="instrument-evidence"] {
+    display: none;
+  }
+}
+
+@media (max-width: 620px) {
+  [data-personal-terminal-version="3.12"] {
+    width: min(100%, calc(100% - 20px));
+    padding-top: 2px;
+  }
+
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="header"] {
+    min-height: 48px;
+  }
+
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="workstation"] {
+    display: flex;
+    flex-direction: column;
+  }
+
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="browser"] {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    padding: 6px 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--pt-border);
+  }
+
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="browser"] > span:first-child,
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="browser"] > span:last-child {
+    display: none;
+  }
+
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="browser"] > [role="button"] {
+    min-height: 44px;
+    border-left: 0;
+    border-bottom: 1px solid transparent;
+  }
+
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="browser"] > [role="button"]:first-of-type {
+    border-bottom-color: var(--pt-primary);
+  }
+
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="browser"] > [role="button"] > div {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="canvas"] {
+    padding: 0;
+  }
+
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="breadth"] {
+    min-height: 78px;
+  }
+
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="timeline-header"] {
+    min-height: 44px;
+  }
+
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="timeline-header"] > span {
+    display: none;
+  }
+
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="instrument-row"] {
+    min-height: 82px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto 28px auto;
+    gap: 2px 8px;
+    padding: 7px 0;
+  }
+
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="instrument-identity"] {
+    grid-column: 1 / 2;
+    grid-row: 1;
+  }
+
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="instrument-reading"] {
+    grid-column: 2 / 3;
+    grid-row: 1;
+    align-items: flex-end;
+  }
+
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="instrument-track"] {
+    grid-column: 1 / 3;
+    grid-row: 2;
+  }
+
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="instrument-reference"] {
+    grid-column: 1 / 2;
+    grid-row: 3;
+  }
+
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="instrument-evidence"] {
+    display: flex;
+    grid-column: 2 / 3;
+    grid-row: 3;
+    align-items: flex-end;
+  }
+
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="instrument-row"] > svg {
+    display: none;
+  }
+
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="side"] {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--pt-border);
+  }
+
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="analyst-answer"],
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="top-moves"],
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="boundary"] {
+    padding: 14px 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--pt-border);
+  }
+
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="no-data"] {
+    min-height: calc(100dvh - 170px);
+    padding: 38px 4px 72px;
+  }
+
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="no-data"] > span:nth-of-type(2) {
+    font-size: 28px;
+    line-height: 34px;
+  }
+}
+
+@media (max-width: 340px) {
+  [data-personal-terminal-version="3.12"] {
+    width: min(100%, calc(100% - 16px));
+  }
+
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="header"] > div:first-child > span:first-child {
+    font-size: 13px;
+  }
+
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="instrument-row"] {
+    min-height: 88px;
+  }
+
+  [data-personal-terminal-version="3.12"] [data-personal-market-role="instrument-evidence"] span:last-child {
+    max-width: 126px;
+    text-align: right;
+  }
+}
