@@ -1380,6 +1380,74 @@
   }
 }
 
+/* Stage 3.12 adaptive lifecycle overlays retain the accepted Stage 3.11 workstation geometry. */
+[data-personal-terminal-adaptive-version="3.12"] [data-personal-terminal-role="view-info"] {
+  display: flex;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  outline: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+[data-personal-terminal-adaptive-version="3.12"] [data-personal-terminal-role="baseline-readout"][data-personal-terminal-adaptive="first_observation"],
+[data-personal-terminal-adaptive-version="3.12"] [data-personal-terminal-role="baseline-readout"][data-personal-terminal-adaptive="comparison_available"],
+[data-personal-terminal-adaptive-version="3.12"] [data-personal-terminal-role="baseline-readout"][data-personal-terminal-adaptive="short_window_forming"] {
+  min-width: 132px;
+}
+
+[data-personal-terminal-adaptive-version="3.12"] [data-personal-terminal-role="baseline-readout"][data-personal-terminal-adaptive] > span:nth-child(2) {
+  max-width: 150px;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-personal-terminal-adaptive-version="3.12"] [data-personal-terminal-role="baseline-readout"][data-personal-terminal-adaptive] > span:last-child {
+  max-width: 170px;
+  font-size: 8px;
+  line-height: 12px;
+}
+
+[data-personal-terminal-role="chart-meaning"] {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 14px 0;
+  border-top: 1px solid var(--pt-border);
+}
+
+[data-personal-terminal-role="chart-meaning"] span:first-child {
+  font-size: 9px;
+  line-height: 13px;
+  letter-spacing: 0.5px;
+}
+
+[data-personal-terminal-role="chart-meaning"] span:last-child {
+  font-size: 11px;
+  line-height: 18px;
+}
+
+@media (max-width: 620px) {
+  [data-personal-terminal-adaptive-version="3.12"] [data-personal-terminal-role="baseline-readout"][data-personal-terminal-adaptive] > span:nth-child(2) {
+    max-width: none;
+    font-size: 12px;
+    line-height: 16px;
+  }
+
+  [data-personal-terminal-adaptive-version="3.12"] [data-personal-terminal-role="baseline-readout"][data-personal-terminal-adaptive] > span:last-child {
+    max-width: none;
+  }
+}
+
 /* Stage 3.9 human-system terminal */
 [data-personal-terminal-root="true"]::before {
   background:

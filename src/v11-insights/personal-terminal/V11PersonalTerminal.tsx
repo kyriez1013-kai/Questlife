@@ -18,6 +18,7 @@ import PersonalTerminalSheet from './PersonalTerminalSheet';
 import PersonalTerminalIcon, { type PersonalTerminalIconName } from './PersonalTerminalIcon';
 import type {
   PersonalTerminalChartKind,
+  PersonalTerminalCandle,
   PersonalTerminalEntity,
   PersonalTerminalEvent,
   PersonalTerminalIndicator,
@@ -32,6 +33,7 @@ import {
   availableTimeframes,
   buildPersonalTerminalViewData,
 } from './personalTerminalPresentation';
+import { resolvePersonalTerminalDisplayChange } from './personalTerminalValueMath';
 import './personal-terminal.css';
 
 const WebView = View as any;
@@ -92,12 +94,17 @@ function readingUnit(language: Lang, series: PersonalTerminalSeries) {
     : copy(language, series.unit);
 }
 
-function changeReading(language: Lang, series: PersonalTerminalSeries, value: number | null) {
+function changeReading(
+  language: Lang,
+  series: PersonalTerminalSeries,
+  currentValue: number | null,
+  referenceValue: number | null,
+) {
+  const resolved = resolvePersonalTerminalDisplayChange(series, currentValue, referenceValue);
+  const value = resolved.percent ?? resolved.absolute;
   if (value == null) return '—';
-  if (series.recentChange?.percentChange != null && series.chartCapabilities?.percentChange) {
-    return `${value > 0 ? '+' : ''}${new Intl.NumberFormat(language === 'zh' ? 'zh-CN' : 'en-AU', { maximumFractionDigits: 1 }).format(series.recentChange.percentChange)}%`;
-  }
   const formatted = new Intl.NumberFormat(language === 'zh' ? 'zh-CN' : 'en-AU', { maximumFractionDigits: 1 }).format(value);
+  if (resolved.percent != null) return `${value > 0 ? '+' : ''}${formatted}%`;
   const suffix = series.semantic === 'timing' || series.constructKey === 'sleep.duration'
     ? ` ${t(language, 'personalTerminalV041Unit_minutes')}`
     : '';
@@ -105,9 +112,61 @@ function changeReading(language: Lang, series: PersonalTerminalSeries, value: nu
 }
 
 function maturityLabel(language: Lang, series: PersonalTerminalSeries) {
+  if (series.adaptive) return t(language, `personalMarketMaturity_${series.adaptive.state}`);
   return series.maturityLabel
     ? t(language, `personalTerminalV041Maturity_${series.maturityLabel}`)
     : t(language, `quantBaseline_${series.baseline.status === 'qa_only' ? 'established' : series.baseline.status}`);
+}
+
+function baselineLabel(language: Lang, series: PersonalTerminalSeries) {
+  if (series.baseline.referenceKind === 'historical') return t(language, 'personalMarketHistoricalReference');
+  if (series.baseline.referenceKind === 'active') return t(language, 'personalMarketActiveReference');
+  return t(language, 'personalMarketPersonalReference');
+}
+
+function adaptiveSummaryRows(language: Lang, series: PersonalTerminalSeries): Array<[string, string]> | null {
+  const adaptive = series.adaptive;
+  if (!adaptive || adaptive.referenceAvailable) return null;
+  const unit = readingUnit(language, series);
+  const withUnit = (value: number | null) => `${reading(language, series, value)} ${unit}`.trim();
+  const observationCount = `${adaptive.observationCount} ${t(language, 'personalMarketObservationsShort')}`;
+  if (adaptive.state === 'first_observation') {
+    return [
+      [t(language, 'personalTerminalCurrentObservation'), withUnit(adaptive.current)],
+      [t(language, 'personalTerminalRecordedAt'), adaptive.lastObservedAt ? timestampLabel(language, adaptive.lastObservedAt) : '—'],
+      [t(language, 'quantEvidence'), observationCount],
+    ];
+  }
+  if (adaptive.state === 'comparison_available') {
+    return [
+      [t(language, 'personalTerminalCurrentObservation'), withUnit(adaptive.current)],
+      [t(language, 'personalTerminalPreviousObservation'), withUnit(adaptive.previous)],
+      [t(language, 'personalTerminalChangeFromPrevious'), changeReading(language, series, adaptive.current, adaptive.previous)],
+      [t(language, 'quantEvidence'), observationCount],
+    ];
+  }
+  if (adaptive.state === 'short_window_forming') {
+    return [
+      [t(language, 'personalTerminalCurrentObservation'), withUnit(adaptive.current)],
+      [t(language, 'personalTerminalObservedRange'), `${reading(language, series, adaptive.rangeLow)} — ${reading(language, series, adaptive.rangeHigh)} ${unit}`.trim()],
+      [t(language, 'personalTerminalFirstToLatest'), changeReading(language, series, adaptive.current, adaptive.first)],
+      [t(language, 'quantEvidence'), observationCount],
+    ];
+  }
+  return null;
+}
+
+function adaptiveAnalystBody(language: Lang, series: PersonalTerminalSeries) {
+  const adaptive = series.adaptive;
+  if (!adaptive || adaptive.referenceAvailable) return null;
+  if (adaptive.state === 'first_observation') return t(language, 'personalTerminalAdaptiveFirstObservationBody');
+  if (adaptive.state === 'comparison_available') {
+    return `${t(language, 'personalTerminalAdaptiveSecondObservationBody')} ${t(language, 'personalTerminalChangeFromPrevious')}: ${changeReading(language, series, adaptive.current, adaptive.previous)}.`;
+  }
+  if (adaptive.state === 'short_window_forming') {
+    return `${t(language, 'personalTerminalAdaptiveShortWindowBody')} ${t(language, 'personalTerminalObservedRange')}: ${reading(language, series, adaptive.rangeLow)} — ${reading(language, series, adaptive.rangeHigh)} ${readingUnit(language, series)}.`;
+  }
+  return null;
 }
 
 function timestampLabel(language: Lang, value: string) {
@@ -120,11 +179,22 @@ function timestampLabel(language: Lang, value: string) {
   }).format(date);
 }
 
-function candleBucketLabel(language: Lang, semantics: string) {
-  if (semantics.includes('calendar_week')) return t(language, 'personalTerminalCandleBucketWeek');
-  if (semantics.includes('calendar_month')) return t(language, 'personalTerminalCandleBucketMonth');
-  if (semantics.includes('calendar_quarter')) return t(language, 'personalTerminalCandleBucketQuarter');
+function candleBucketLabel(language: Lang, candle: PersonalTerminalCandle) {
+  if (candle.bucketType === 'OBSERVATION_COUNT') {
+    return `${t(language, 'personalTerminalObservationBucket')} · ${candle.bucketSize ?? candle.observationCount}`;
+  }
+  if (candle.bucketSemantics.includes('calendar_week')) return t(language, 'personalTerminalCandleBucketWeek');
+  if (candle.bucketSemantics.includes('calendar_month')) return t(language, 'personalTerminalCandleBucketMonth');
+  if (candle.bucketSemantics.includes('calendar_quarter')) return t(language, 'personalTerminalCandleBucketQuarter');
   return t(language, 'personalTerminalCandleBucketPeriod');
+}
+
+function candleMeaning(language: Lang, candle: PersonalTerminalCandle) {
+  if (candle.bucketType === 'OBSERVATION_COUNT') {
+    return t(language, 'personalTerminalObservationCandleMeaning')
+      .replace('{count}', String(candle.bucketSize ?? candle.observationCount));
+  }
+  return t(language, 'personalTerminalTimeCandleMeaning');
 }
 
 function change(value: number | null) {
@@ -170,7 +240,7 @@ function analystItemBody(
     return t(language, 'personalTerminalV041AnalystReferenceBody')
       .replace('{recent}', reading(language, series, series.recentChange.recentMedian))
       .replace('{reference}', reading(language, series, series.recentChange.referenceMedian))
-      .replace('{change}', changeReading(language, series, series.recentChange.absoluteChange));
+      .replace('{change}', changeReading(language, series, series.recentChange.recentMedian, series.recentChange.referenceMedian));
   }
   return t(language, 'personalTerminalV041AnalystEvidenceBody').replace('{count}', String(item.evidenceCount));
 }
@@ -540,9 +610,18 @@ export default function V11PersonalTerminal({
       : null
   ), [comparisonSeries, now, timeframe]);
   const current = viewData?.line[viewData.line.length - 1]?.value ?? null;
-  const delta = series?.recentChange?.absoluteChange
-    ?? (current == null || series?.baseline.value == null ? null : current - series.baseline.value);
-  const candleAvailable = Boolean(series?.supportsCandle && viewData?.candles.length);
+  const referenceAvailable = series?.adaptive
+    ? series.adaptive.referenceAvailable
+    : series?.baseline.value != null;
+  const comparisonReference = referenceAvailable
+    ? series?.baseline.value ?? null
+    : series?.adaptive?.previous ?? null;
+  const delta = current == null || comparisonReference == null ? null : current - comparisonReference;
+  const candleAvailable = Boolean(
+    series?.supportsCandle
+      && (!series.adaptive || series.adaptive.availableViews.includes('candle'))
+      && viewData?.candles.length,
+  );
   const lastPoint = viewData?.line[viewData.line.length - 1] ?? null;
   const historicalCount = series?.provenanceSummary?.historicalCount
     ?? viewData?.observations.filter((row) => isHistoricalProvenance(row.provenance)).length
@@ -556,7 +635,10 @@ export default function V11PersonalTerminal({
     latest: series.coverage.lastAvailableAt || series.latestAt || null,
   } : viewData ? evidenceSummary(viewData.observations, timeframe) : { activeDays: 0, missing: null, latest: null };
   const trend = direction(delta);
-  const availableIndicators = series?.availableIndicators || (['baseline', 'emaShort', 'emaLong', 'load', 'density', 'events'] as PersonalTerminalIndicator[]);
+  const configuredIndicators = series?.availableIndicators || (['baseline', 'emaShort', 'emaLong', 'load', 'density', 'events'] as PersonalTerminalIndicator[]);
+  const availableIndicators = series?.adaptive && !referenceAvailable
+    ? configuredIndicators.filter((item) => item === 'load' || item === 'density' || item === 'events')
+    : configuredIndicators;
   const activeIndicatorCount = [...indicators].filter((item) => item !== 'events' && availableIndicators.includes(item)).length;
   const hasComparableData = (viewData?.observations.length || 0) > 1;
   const longRange = useMemo(() => !series || series.precomputedViews ? [] : ([
@@ -567,6 +649,7 @@ export default function V11PersonalTerminal({
     ['1Y', periodChange(series, now, 365)],
     ['ALL', periodChange(series, now, null)],
   ] as Array<[string, number | null]>).filter((row) => row[1] != null), [now, series]);
+  const adaptiveRows = series ? adaptiveSummaryRows(language, series) : null;
 
   useEffect(() => {
     if (!available.includes(timeframe)) setTimeframe(series?.defaultTimeframe || available[0] || '30D');
@@ -683,7 +766,7 @@ export default function V11PersonalTerminal({
         dataSet={{ 'personal-terminal-role': 'scroll' }}
         showsVerticalScrollIndicator={false}
       >
-        <WebView dataSet={{ 'personal-terminal-role': 'terminal', 'personal-terminal-version': '3.12' }}>
+        <WebView dataSet={{ 'personal-terminal-adaptive-version': '3.12', 'personal-terminal-role': 'terminal', 'personal-terminal-version': '3.11' }}>
           <V11PersonalMarketOverview
             language={language}
             onNextAction={onNextAction}
@@ -705,7 +788,18 @@ export default function V11PersonalTerminal({
   const latestEvents = series?.events.filter((event) => !viewData?.observations.length || new Date(event.timestamp) >= new Date(viewData.observations[0].timestamp)).slice(-4) || [];
   const visibleSignals = scope === 'market' ? model.signals.slice(0, 3) : [];
   const analystItems = (model.analyst?.items || []).filter((item) => item.constructKey === series?.constructKey).slice(0, 4);
-  const analystPreviewRows = analystItems.length ? analystItems.slice(0, 3).map((item) => ({
+  const earlyAnalystBody = adaptiveAnalystBody(language, series);
+  const analystPreviewRows = earlyAnalystBody ? [{
+    label: t(language, series.adaptive?.state === 'first_observation'
+      ? 'personalTerminalAdaptiveFirstObservation'
+      : series.adaptive?.state === 'comparison_available'
+        ? 'personalTerminalAdaptiveSecondObservation'
+        : 'personalTerminalAdaptiveShortWindow'),
+    body: earlyAnalystBody,
+  }, {
+    label: t(language, 'personalTerminalAnalystCoverage'),
+    body: `${series.adaptive?.observationCount ?? viewData.observations.length} ${t(language, 'personalMarketObservationsShort')} · ${t(language, 'personalTerminalReferenceForming')}`,
+  }] : analystItems.length ? analystItems.slice(0, 3).map((item) => ({
     label: analystItemLabel(language, item.type),
     body: analystItemBody(language, series, item),
   })) : [
@@ -714,7 +808,7 @@ export default function V11PersonalTerminal({
       body: t(language, 'personalTerminalAnalystCurrentReference')
         .replace('{current}', `${reading(language, series, current)} ${readingUnit(language, series)}`)
         .replace('{reference}', `${reading(language, series, series.baseline.value)} ${readingUnit(language, series)}`)
-        .replace('{change}', changeReading(language, series, delta)),
+        .replace('{change}', changeReading(language, series, current, series.baseline.value)),
     },
     {
       label: t(language, 'personalTerminalAnalystRelated'),
@@ -763,7 +857,7 @@ export default function V11PersonalTerminal({
         dataSet={{ 'personal-terminal-role': 'scroll' }}
         showsVerticalScrollIndicator={false}
       >
-        <WebView dataSet={{ 'personal-terminal-role': 'terminal', 'personal-terminal-version': '3.11' }}>
+        <WebView dataSet={{ 'personal-terminal-role': 'terminal', 'personal-terminal-version': '3.12' }}>
           <WebView dataSet={{ 'personal-terminal-role': 'topbar' }}>
             <WebView dataSet={{ 'personal-terminal-role': 'brand-context' }}>
               <PersonalTerminalIcon color={theme.text.primary} name="market" size={17} />
@@ -855,13 +949,23 @@ export default function V11PersonalTerminal({
                   </WebView>
                   <Text numberOfLines={1} style={{ color: theme.text.secondary }}>{copy(language, series.label)}</Text>
                 </WebPressable>
-                <WebView dataSet={{ 'personal-terminal-role': 'baseline-readout' }}>
-                  <Text style={{ color: theme.text.metadata }}>{t(language, 'quantBaseline')}</Text>
-                  <Text style={{ color: theme.text.primary }}>{reading(language, series, series.baseline.value)}</Text>
-                  <WebView dataSet={{ 'personal-terminal-role': 'trajectory-readout' }}>
-                    <PersonalTerminalIcon color={theme.text.secondary} name={directionIcon(delta)} size={13} />
-                    <Text style={{ color: theme.text.secondary }}>{t(language, `personalTerminalTrajectory_${trend}`)} · {changeReading(language, series, delta)}</Text>
-                  </WebView>
+                <WebView dataSet={{ 'personal-terminal-adaptive': series.adaptive?.state || 'legacy', 'personal-terminal-role': 'baseline-readout' }}>
+                  {adaptiveRows ? (
+                    <>
+                      <Text style={{ color: theme.text.metadata }}>{maturityLabel(language, series)}</Text>
+                      <Text style={{ color: theme.text.primary }}>{adaptiveRows[1]?.[1] || adaptiveRows[0]?.[1]}</Text>
+                      <Text style={{ color: theme.text.secondary }}>{adaptiveRows[2]?.[0]} · {adaptiveRows[2]?.[1]}</Text>
+                    </>
+                  ) : (
+                    <>
+                      <Text style={{ color: theme.text.metadata }}>{baselineLabel(language, series)}</Text>
+                      <Text style={{ color: theme.text.primary }}>{reading(language, series, series.baseline.value)}</Text>
+                      <WebView dataSet={{ 'personal-terminal-role': 'trajectory-readout' }}>
+                        <PersonalTerminalIcon color={theme.text.secondary} name={directionIcon(delta)} size={13} />
+                        <Text style={{ color: theme.text.secondary }}>{t(language, `personalTerminalTrajectory_${trend}`)} · {changeReading(language, series, current, series.baseline.value)}</Text>
+                      </WebView>
+                    </>
+                  )}
                 </WebView>
               </WebView>
 
@@ -875,11 +979,14 @@ export default function V11PersonalTerminal({
                   <WebView dataSet={{ 'personal-terminal-role': 'view-switch' }}>
                     <TerminalButton label={t(language, 'personalTerminalLine')} onPress={() => measureInteraction('chart-line', () => setChartKind('line'))} selected={chartKind === 'line'} theme={theme} />
                     <TerminalButton label={t(language, 'personalTerminalCandle')} onPress={() => measureInteraction('chart-candle', () => setChartKind('candle'))} selected={chartKind === 'candle'} theme={theme} />
+                    <WebPressable accessibilityLabel={t(language, 'personalTerminalChartTypeHint')} accessibilityRole="button" dataSet={{ 'personal-terminal-role': 'view-info' }} onPress={() => setSheet({ kind: 'chart-type' })}>
+                      <PersonalTerminalIcon color={theme.text.metadata} name="chart" size={14} />
+                    </WebPressable>
                   </WebView>
                 ) : viewData.observations.length ? (
                   <WebView dataSet={{ 'personal-terminal-role': 'instrument-context' }}>
-                    <Text style={{ color: theme.text.metadata }}>{activeIndicatorCount} {t(language, 'personalTerminalIndicatorsActive')}</Text>
-                    <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalLine')}</Text>
+                    <Text style={{ color: theme.text.metadata }}>{series.adaptive && !referenceAvailable ? maturityLabel(language, series) : `${activeIndicatorCount} ${t(language, 'personalTerminalIndicatorsActive')}`}</Text>
+                    <Text style={{ color: theme.text.metadata }}>{series.adaptive?.state === 'first_observation' ? t(language, 'personalTerminalCurrentObservation') : t(language, 'personalTerminalLine')}</Text>
                   </WebView>
                 ) : null}
               </WebView>
@@ -922,20 +1029,20 @@ export default function V11PersonalTerminal({
                 {crosshair ? (
                   <WebView dataSet={{ 'personal-terminal-role': 'crosshair-readout' }}>
                     <Text style={{ color: theme.text.metadata }}>{crosshair.candle ? `${timestampLabel(language, crosshair.candle.openAt)} — ${timestampLabel(language, crosshair.candle.closeAt)}` : timestampLabel(language, crosshair.time)}</Text>
-                    <Text style={{ color: theme.text.primary }}>{reading(language, series, crosshair.value)} {readingUnit(language, series)} · {crosshair.candle ? t(language, 'personalTerminalCandleClose') : `Δ ${changeReading(language, series, crosshair.value == null || crosshair.baseline == null ? null : crosshair.value - crosshair.baseline)}`}</Text>
+                    <Text style={{ color: theme.text.primary }}>{reading(language, series, crosshair.value)} {readingUnit(language, series)} · {crosshair.candle ? t(language, 'personalTerminalCandleClose') : crosshair.baseline == null ? maturityLabel(language, series) : `Δ ${changeReading(language, series, crosshair.value, crosshair.baseline)}`}</Text>
                   </WebView>
                 ) : null}
               </WebView>
 
               {viewData.observations.length || series.events.length || comparisonRows.length || (scope === 'market' && model.marketMap?.length) ? <WebView dataSet={{ 'personal-terminal-role': 'toolbars' }}>
                 <WebView dataSet={{ 'personal-terminal-role': 'analysis-tools' }}>
-                  {viewData.observations.length ? <TerminalTool active={activeIndicatorCount > 0} icon="indicator" label={t(language, 'personalTerminalIndicators')} onPress={() => setSheet({ kind: 'indicators' })} theme={theme} /> : null}
+                  {viewData.observations.length && referenceAvailable ? <TerminalTool active={activeIndicatorCount > 0} icon="indicator" label={t(language, 'personalTerminalIndicators')} onPress={() => setSheet({ kind: 'indicators' })} theme={theme} /> : null}
                   {series.events.length ? <TerminalTool active={indicators.has('events')} icon="event" label={t(language, 'personalTerminalEventTool')} onPress={() => setSheet({ kind: 'events' })} theme={theme} /> : null}
                   {comparisonRows.length ? <TerminalTool active={Boolean(comparisonSeries)} icon="compare" label={t(language, 'personalTerminalCompare')} onPress={() => setSheet({ kind: 'compare' })} theme={theme} /> : null}
                   {hasComparableData ? <TerminalTool active={rangeMode} icon="range" label={rangeMode ? t(language, 'personalTerminalCancelRange') : t(language, 'personalTerminalRangeTool')} onPress={() => { setRangeMode((currentRangeMode) => !currentRangeMode); setRangeSelection({ start: null, end: null }); }} theme={theme} /> : null}
                   {scope === 'market' && model.marketMap?.length ? <TerminalTool icon="market" label={t(language, 'personalTerminalOverviewTool')} onPress={() => setSheet({ kind: 'market-map' })} theme={theme} /> : null}
                 </WebView>
-                {viewData.observations.length ? <WebView dataSet={{ 'personal-terminal-role': 'zoom-controls' }}>
+                {viewData.observations.length > 2 ? <WebView dataSet={{ 'personal-terminal-role': 'zoom-controls' }}>
                   <TerminalTool compact icon="zoom-out" label={t(language, 'personalTerminalZoomOut')} onPress={() => measureInteraction('zoom-out', () => chartRef.current?.zoomOut())} theme={theme} />
                   <TerminalTool compact icon="zoom-in" label={t(language, 'personalTerminalZoomIn')} onPress={() => measureInteraction('zoom-in', () => chartRef.current?.zoomIn())} theme={theme} />
                   <TerminalTool compact icon="reset" label={t(language, 'personalTerminalReset')} onPress={() => measureInteraction('zoom-reset', () => chartRef.current?.reset())} theme={theme} />
@@ -953,12 +1060,12 @@ export default function V11PersonalTerminal({
                     <Text style={{ color: theme.text.primary }}>{t(language, 'personalTerminalAccumulationTitle')}</Text>
                     <Text style={{ color: theme.text.secondary }}>{t(language, 'personalTerminalAccumulationBody')}</Text>
                   </WebView>
-                ) : [
+                ) : (adaptiveRows || [
                   [t(language, 'quantCurrent'), `${reading(language, series, current)} ${readingUnit(language, series)}`],
-                  [t(language, 'quantBaseline'), `${reading(language, series, series.baseline.value)} ${readingUnit(language, series)}`],
-                  [t(language, 'quantChange'), changeReading(language, series, delta)],
+                  [baselineLabel(language, series), `${reading(language, series, series.baseline.value)} ${readingUnit(language, series)}`],
+                  [t(language, 'quantChange'), changeReading(language, series, current, series.baseline.value)],
                   [t(language, 'quantEvidence'), t(language, 'personalTerminalAnalystCoverageSummary').replace('{observed}', String(evidence.activeDays)).replace('{missing}', evidence.missing == null ? '—' : String(evidence.missing))],
-                ].map(([label, value]) => <WebView key={label}><Text style={{ color: theme.text.metadata }}>{label}</Text><Text style={{ color: theme.text.primary }}>{value}</Text></WebView>)}
+                ]).map(([label, value]) => <WebView key={label}><Text style={{ color: theme.text.metadata }}>{label}</Text><Text style={{ color: theme.text.primary }}>{value}</Text></WebView>)}
               </WebPressable>
 
               {longRange.length ? (
@@ -1010,12 +1117,12 @@ export default function V11PersonalTerminal({
                     <Text style={{ color: theme.text.secondary }}>{t(language, 'personalTerminalAccumulationBody')}</Text>
                   </WebView>
                 ) : <WebView dataSet={{ 'personal-terminal-role': 'snapshot-list' }}>
-                  {[
+                  {(adaptiveRows || [
                     [t(language, 'quantCurrent'), `${reading(language, series, current)} ${readingUnit(language, series)}`],
-                    [t(language, 'quantBaseline'), `${reading(language, series, series.baseline.value)} ${readingUnit(language, series)}`],
-                    [t(language, 'quantChange'), changeReading(language, series, delta)],
+                    [baselineLabel(language, series), `${reading(language, series, series.baseline.value)} ${readingUnit(language, series)}`],
+                    [t(language, 'quantChange'), changeReading(language, series, current, series.baseline.value)],
                     [t(language, 'quantEvidence'), t(language, 'personalTerminalAnalystCoverageSummary').replace('{observed}', String(evidence.activeDays)).replace('{missing}', evidence.missing == null ? '—' : String(evidence.missing))],
-                  ].map(([label, value]) => <WebView key={label}><Text style={{ color: theme.text.metadata }}>{label}</Text><Text style={{ color: theme.text.primary }}>{value}</Text></WebView>)}
+                  ]).map(([label, value]) => <WebView key={label}><Text style={{ color: theme.text.metadata }}>{label}</Text><Text style={{ color: theme.text.primary }}>{value}</Text></WebView>)}
                 </WebView>}
               </WebPressable>
               {longRange.length ? (
@@ -1184,7 +1291,7 @@ export default function V11PersonalTerminal({
               const nearbyEvents = latestEvents.filter((event) => Math.abs(new Date(event.timestamp).getTime() - new Date(sheet.selection.time).getTime()) <= 86_400_000);
               return (
                 <>
-                  <Text style={{ color: theme.text.metadata }}>{sheet.selection.candle ? candleBucketLabel(language, sheet.selection.candle.bucketSemantics) : t(language, 'personalTerminalSelectedMovement')}</Text>
+                  <Text style={{ color: theme.text.metadata }}>{sheet.selection.candle ? candleBucketLabel(language, sheet.selection.candle) : t(language, 'personalTerminalSelectedMovement')}</Text>
                   {sheet.selection.candle ? (
                     <>
                       <WebView dataSet={{ 'personal-terminal-role': 'candle-inspector' }}>
@@ -1204,16 +1311,17 @@ export default function V11PersonalTerminal({
                       <WebView dataSet={{ 'personal-terminal-role': 'sheet-data-grid' }}>
                         <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalCandleAverage')}</Text><Text style={{ color: theme.text.primary }}>{reading(language, series, sheet.selection.candle.average)} {readingUnit(language, series)}</Text></WebView>
                         <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalCandleObservations')}</Text><Text style={{ color: theme.text.primary }}>{sheet.selection.candle.observationCount} / {sheet.selection.candle.expectedObservationCount ?? '—'}</Text></WebView>
-                        <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'quantBaseline')}</Text><Text style={{ color: theme.text.primary }}>{reading(language, series, sheet.selection.baseline)} {readingUnit(language, series)}</Text></WebView>
+                        {referenceAvailable ? <WebView><Text style={{ color: theme.text.metadata }}>{baselineLabel(language, series)}</Text><Text style={{ color: theme.text.primary }}>{reading(language, series, sheet.selection.baseline)} {readingUnit(language, series)}</Text></WebView> : null}
                       </WebView>
-                      <Text style={{ color: theme.text.secondary }}>{t(language, 'personalTerminalObservationalCandleMeaning')}</Text>
+                      <Text style={{ color: theme.text.secondary }}>{candleMeaning(language, sheet.selection.candle)}</Text>
                     </>
                   ) : (
                     <>
                       <WebView dataSet={{ 'personal-terminal-role': 'sheet-data-grid' }}>
-                        <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'quantCurrent')}</Text><Text style={{ color: theme.text.primary }}>{number(sheet.selection.value)}</Text></WebView>
-                        <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'quantBaseline')}</Text><Text style={{ color: theme.text.primary }}>{number(sheet.selection.baseline)}</Text></WebView>
-                        <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalBaselineDeviation')}</Text><Text style={{ color: theme.text.primary }}>{change(sheet.selection.value == null || sheet.selection.baseline == null ? null : sheet.selection.value - sheet.selection.baseline)}</Text></WebView>
+                        <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'quantCurrent')}</Text><Text style={{ color: theme.text.primary }}>{reading(language, series, sheet.selection.value)} {readingUnit(language, series)}</Text></WebView>
+                        {referenceAvailable ? <WebView><Text style={{ color: theme.text.metadata }}>{baselineLabel(language, series)}</Text><Text style={{ color: theme.text.primary }}>{reading(language, series, sheet.selection.baseline)} {readingUnit(language, series)}</Text></WebView> : null}
+                        {referenceAvailable ? <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalBaselineDeviation')}</Text><Text style={{ color: theme.text.primary }}>{changeReading(language, series, sheet.selection.value, sheet.selection.baseline)}</Text></WebView> : null}
+                        {!referenceAvailable ? <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalReferenceForming')}</Text><Text style={{ color: theme.text.primary }}>{maturityLabel(language, series)}</Text></WebView> : null}
                         <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalRelatedChanges')}</Text><Text style={{ color: theme.text.primary }}>{related ? `${number(related.value)} ${copy(language, comparisonSeries!.unit)}` : '—'}</Text></WebView>
                         <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalEventTool')}</Text><Text style={{ color: theme.text.primary }}>{nearbyEvents.length}</Text></WebView>
                         <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalSignalCount')}</Text><Text style={{ color: theme.text.primary }}>{visibleSignals.length}</Text></WebView>
@@ -1251,7 +1359,7 @@ export default function V11PersonalTerminal({
                 <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalRangeStart')}</Text><Text style={{ color: theme.text.primary }}>{number(sheet.start.value)}</Text></WebView>
                 <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalRangeEnd')}</Text><Text style={{ color: theme.text.primary }}>{number(sheet.end.value)}</Text></WebView>
                 <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'quantChange')}</Text><Text style={{ color: theme.text.primary }}>{change(difference)}{percentage == null ? '' : ` · ${change(percentage)}%`}</Text></WebView>
-                <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalBaselineDeviation')}</Text><Text style={{ color: theme.text.primary }}>{change(baselineDeviation)}</Text></WebView>
+                {referenceAvailable ? <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalBaselineDeviation')}</Text><Text style={{ color: theme.text.primary }}>{change(baselineDeviation)}</Text></WebView> : null}
                 <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalExecutionChange')}</Text><Text style={{ color: theme.text.primary }}>{relatedDifference == null ? '—' : `${change(relatedDifference)} ${comparisonSeries ? copy(language, comparisonSeries.unit) : ''}`}</Text></WebView>
                 <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalStability')}</Text><Text style={{ color: theme.text.primary }}>{series.qaStability ? t(language, `personalTerminalStability_${series.qaStability}`) : t(language, 'personalTerminalNotCalculated')}</Text></WebView>
                 <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalObservations')}</Text><Text style={{ color: theme.text.primary }}>{rangeObservations.length}</Text></WebView>
@@ -1291,13 +1399,18 @@ export default function V11PersonalTerminal({
               </WebView>
             </WebView>
             <WebView dataSet={{ 'personal-terminal-role': 'analyst-sections' }}>
-              {analystItems.length ? analystItems.map((item) => (
+              {earlyAnalystBody ? (
+                <WebView>
+                  <Text style={{ color: theme.text.metadata }}>{analystPreviewRows[0].label}</Text>
+                  <Text style={{ color: theme.text.primary }}>{earlyAnalystBody}</Text>
+                </WebView>
+              ) : analystItems.length ? analystItems.map((item) => (
                 <WebView key={`${item.type}:${item.constructKey}`}>
                   <Text style={{ color: theme.text.metadata }}>{analystItemLabel(language, item.type)}</Text>
                   <Text style={{ color: theme.text.primary }}>{analystItemBody(language, series, item)}</Text>
                 </WebView>
               )) : (
-                <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalAnalystObserved')}</Text><Text style={{ color: theme.text.primary }}>{copy(language, series.label)} · {t(language, `personalTerminalTrajectory_${trend}`)} · {changeReading(language, series, delta)}</Text></WebView>
+                <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalAnalystObserved')}</Text><Text style={{ color: theme.text.primary }}>{copy(language, series.label)} · {t(language, `personalTerminalTrajectory_${trend}`)} · {changeReading(language, series, current, series.baseline.value)}</Text></WebView>
               )}
               <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalRelatedChanges')}</Text><Text style={{ color: theme.text.secondary }}>{comparisonSeries ? `${copy(language, comparisonSeries.label)} · ${readingUnit(language, comparisonSeries)} · ${t(language, 'personalTerminalIndependentScale')}` : t(language, 'personalTerminalNoComparison')}</Text></WebView>
               <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalKnownSignals')}</Text><Text style={{ color: theme.text.secondary }}>{visibleSignals.length ? copy(language, visibleSignals[0].title) : t(language, 'personalTerminalV041NoEligibleRelationship')}</Text></WebView>
@@ -1362,7 +1475,7 @@ export default function V11PersonalTerminal({
             {seriesRows.map((item) => (
               <WebPressable accessibilityRole="button" accessibilityState={{ selected: item.id === series.id }} key={item.id} onPress={() => { selectSeries(item); setSheet(null); }}>
                 <Text style={{ color: item.id === series.id ? theme.text.primary : theme.text.secondary }}>{copy(language, item.label)}</Text>
-                <Text style={{ color: theme.text.metadata }}>{copy(language, item.unit)} · {t(language, `quantBaseline_${item.baseline.status === 'qa_only' ? 'established' : item.baseline.status}`)}</Text>
+                <Text style={{ color: theme.text.metadata }}>{copy(language, item.unit)} · {maturityLabel(language, item)}</Text>
               </WebPressable>
             ))}
           </WebView>
@@ -1402,6 +1515,12 @@ export default function V11PersonalTerminal({
             {candleAvailable ? <WebPressable accessibilityRole="button" accessibilityState={{ selected: chartKind === 'candle' }} onPress={() => { measureInteraction('chart-candle', () => setChartKind('candle')); setSheet(null); }}>
               <PersonalTerminalIcon color={theme.text.primary} name="chart" size={17} /><Text style={{ color: theme.text.primary }}>{t(language, 'personalTerminalCandle')}</Text><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalCandleHint')}</Text>
             </WebPressable> : null}
+            {candleAvailable && viewData.candles[0] ? (
+              <WebView dataSet={{ 'personal-terminal-role': 'chart-meaning' }}>
+                <Text style={{ color: theme.text.metadata }}>{candleBucketLabel(language, viewData.candles[0])}</Text>
+                <Text style={{ color: theme.text.secondary }}>{candleMeaning(language, viewData.candles[0])}</Text>
+              </WebView>
+            ) : null}
           </WebView>
         ) : null}
         {sheet?.kind === 'events' ? (
