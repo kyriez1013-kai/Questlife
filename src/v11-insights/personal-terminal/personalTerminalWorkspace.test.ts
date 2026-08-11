@@ -14,6 +14,7 @@ import {
   createDefaultPersonalTerminalPreferences,
   defaultCandleSource,
   normalizePersonalTerminalPreferences,
+  personalTerminalPreferenceNamespace,
   personalTerminalPreferencesStorageKey,
   removeWatchlistItem,
   reorderWatchlist,
@@ -81,6 +82,8 @@ const model: PersonalTerminalModel = {
 const catalog = buildPersonalTerminalCatalog(model);
 assert.equal(catalog.find((item) => item.id === goalSeries.id)?.group, 'goal');
 assert.equal(catalog.find((item) => item.id === skillSeries.id)?.group, 'skill');
+assert.equal(personalTerminalPreferenceNamespace({ dataMode: 'real', fixture: null }), 'real');
+assert.equal(personalTerminalPreferenceNamespace({ dataMode: 'quant_v042_fixture', fixture: null, lifecycleScenario: 'focus_1_observation' }), 'fixture:focus_1_observation');
 assert.equal(personalTerminalPreferencesStorageKey(), 'questlife_v11_personal_terminal_preferences_v1');
 assert.equal(personalTerminalPreferencesStorageKey('fixture:focus_1_observation'), 'questlife_v11_personal_terminal_preferences_v1:fixture%3Afocus_1_observation');
 

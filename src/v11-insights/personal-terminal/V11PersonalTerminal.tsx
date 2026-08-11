@@ -34,6 +34,7 @@ import {
   buildPersonalTerminalViewData,
 } from './personalTerminalPresentation';
 import { resolvePersonalTerminalDisplayChange } from './personalTerminalValueMath';
+import { personalTerminalPreferenceNamespace } from './personalTerminalWorkspace';
 import './personal-terminal.css';
 
 const WebView = View as any;
@@ -1655,5 +1656,5 @@ export function V11PersonalTerminalLegacy({
 
 export default function V11PersonalTerminal(props: React.ComponentProps<typeof V11PersonalTerminalLegacy>) {
   if (query().get('personalTerminalLegacy') === '1') return <V11PersonalTerminalLegacy {...props} />;
-  return <PersonalTerminalWorkspaceSurface {...props} />;
+  return <PersonalTerminalWorkspaceSurface key={personalTerminalPreferenceNamespace(props.model)} {...props} />;
 }

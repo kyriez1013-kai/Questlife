@@ -44,6 +44,7 @@ import {
   createDefaultPersonalTerminalPreferences,
   defaultCandleSource,
   normalizePersonalTerminalPreferences,
+  personalTerminalPreferenceNamespace,
   readPersonalTerminalPreferences,
   removeWatchlistItem,
   reorderWatchlist,
@@ -280,7 +281,7 @@ export default function PersonalTerminalWorkspaceSurface({
 }) {
   const catalog = useMemo(() => buildPersonalTerminalCatalog(model), [model]);
   const debugPerformance = query().get('debugQuantPerformance') === '1';
-  const preferenceNamespace = model.fixture ? `fixture:${model.fixture}` : 'real';
+  const preferenceNamespace = personalTerminalPreferenceNamespace(model);
   const [preferences, setPreferences] = useState<PersonalTerminalPreferences>(() => readPersonalTerminalPreferences(catalog, preferenceNamespace));
   const [activePaneId, setActivePaneId] = useState(preferences.workspaces.find((workspace) => workspace.id === preferences.activeWorkspaceId)?.panes[0]?.id || '');
   const [comparisonSeriesId, setComparisonSeriesId] = useState<string | null>(null);
