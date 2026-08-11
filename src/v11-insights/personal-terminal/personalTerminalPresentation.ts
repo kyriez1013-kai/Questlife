@@ -10,12 +10,30 @@ import type { V11InsightCopy, V11InsightsPresentation } from '../insightsPresent
 
 export type PersonalTerminalScope = 'market' | 'goal' | 'skill';
 export type PersonalTerminalChartKind = 'line' | 'candle';
-export type PersonalTerminalTimeframe = '4H' | '12H' | '24H' | '1D' | '7D' | '30D' | '1M' | '90D' | '3M' | '1Y' | 'ALL';
+export type PersonalTerminalTimeframe = 'RECENT' | '4H' | '12H' | '24H' | '1D' | '7D' | '30D' | '1M' | '90D' | '3M' | '1Y' | 'ALL';
 export type PersonalTerminalIndicator = 'emaShort' | 'emaLong' | 'baseline' | 'load' | 'density' | 'events';
 export type PersonalTerminalFixtureId = 'forming' | 'mature' | 'portfolio' | 'skill' | 'volatile' | 'historical';
 export type PersonalTerminalProvenance = 'questlife_confirmed' | 'historical_reference' | 'passive_device' | 'derived_research' | 'derived_fixture';
 export type PersonalTerminalEventCategory = 'training' | 'exam' | 'travel' | 'schedule' | 'decision' | 'execution' | 'milestone';
 export type QuantV041LifecycleId = 'no-data' | 'steps-only' | 'sleep-only' | 'rich-passive' | 'day7' | 'day30' | 'day90' | 'day180' | 'goal' | 'skill';
+export type QuantV042LifecycleId =
+  | 'market_steps_only'
+  | 'market_rich_passive'
+  | 'market_questlife_only'
+  | 'market_mixed_mature'
+  | 'focus_1_observation'
+  | 'focus_2_observations'
+  | 'focus_3_observations'
+  | 'focus_5_observations'
+  | 'focus_10_observations'
+  | 'execution_3_observations'
+  | 'execution_7_observations'
+  | 'day30'
+  | 'day90'
+  | 'day180'
+  | 'goal'
+  | 'skill'
+  | 'no_data';
 
 export type PersonalTerminalObservation = {
   id: string;
@@ -50,7 +68,19 @@ export type PersonalTerminalBaseline = {
   low: number | null;
   high: number | null;
   referenceKind: 'none' | 'active' | 'historical' | 'qa_derived';
+  referenceType?: string | null;
+  observationCount?: number;
+  independentDayCount?: number;
+  windowStart?: string | null;
+  windowEnd?: string | null;
 };
+
+export type PersonalTerminalAdaptiveState =
+  | 'no_observation'
+  | 'first_observation'
+  | 'comparison_available'
+  | 'short_window_forming'
+  | 'reference_available';
 
 export type PersonalTerminalSeries = {
   id: string;
@@ -114,6 +144,28 @@ export type PersonalTerminalSeries = {
     activeCount: number;
     sourceConflictsResolved: number;
     sourceLabels: string[];
+  };
+  adaptive?: {
+    state: PersonalTerminalAdaptiveState;
+    analystKey: string;
+    observationCount: number;
+    current: number | null;
+    previous: number | null;
+    changeFromPrevious: number | null;
+    first: number | null;
+    changeFromFirst: number | null;
+    rangeLow: number | null;
+    rangeHigh: number | null;
+    firstObservedAt: string | null;
+    lastObservedAt: string | null;
+    referenceAvailable: boolean;
+    limitations: string[];
+    defaultView: 'point' | 'line';
+    availableViews: Array<'point' | 'line' | 'candle' | 'range'>;
+    availableTimeframes: PersonalTerminalTimeframe[];
+    microCandleAvailable: boolean;
+    microCandleBucketSize: number | null;
+    microCandleBucketType: 'OBSERVATION_COUNT' | null;
   };
 };
 
@@ -198,9 +250,9 @@ export type PersonalTerminalSimilarPeriod = {
 
 export type PersonalTerminalModel = {
   fixture: PersonalTerminalFixtureId | null;
-  dataMode: 'real' | 'qa_fixture' | 'quant_v041_fixture';
+  dataMode: 'real' | 'qa_fixture' | 'quant_v041_fixture' | 'quant_v042_fixture';
   availability?: 'available' | 'no_data';
-  lifecycleScenario?: QuantV041LifecycleId;
+  lifecycleScenario?: QuantV041LifecycleId | QuantV042LifecycleId;
   defaultScope: PersonalTerminalScope;
   defaultEntityId: string;
   defaultSeriesId: string;
@@ -234,6 +286,86 @@ export type PersonalTerminalModel = {
     limitations: string[];
   };
   nextAction?: V11InsightCopy;
+  marketOverview?: PersonalMarketOverview;
+};
+
+export type PersonalMarketPosition = 'above_reference' | 'near_reference' | 'below_reference' | 'forming';
+export type PersonalMarketDirection = 'higher' | 'lower' | 'flat' | 'unavailable';
+
+export type PersonalMarketInstrument = {
+  seriesId: string;
+  constructKey: string;
+  domain: string;
+  label: V11InsightCopy;
+  unit: V11InsightCopy;
+  semantic: PersonalTerminalSeries['semantic'];
+  current: number | null;
+  currentAt: string | null;
+  reference: number | null;
+  referenceLow: number | null;
+  referenceHigh: number | null;
+  referenceKind: 'none' | 'active' | 'historical';
+  referenceType: string | null;
+  referenceWindow: {
+    start: string;
+    end: string;
+    observationCount: number;
+    independentDayCount: number;
+  } | null;
+  deviationAbsolute: number | null;
+  deviationPercent: number | null;
+  position: PersonalMarketPosition;
+  direction: PersonalMarketDirection;
+  maturity: PersonalTerminalAdaptiveState;
+  evidenceStage: V11EvidenceStage;
+  observationCount: number;
+  independentDayCount: number;
+  coverageRatio: number | null;
+  provenanceFamily: 'mixed' | 'passive_historical' | 'questlife_native';
+  miniSeries: Array<{ timestamp: string; value: number }>;
+  adaptive: NonNullable<PersonalTerminalSeries['adaptive']>;
+  limitationCodes: string[];
+};
+
+export type PersonalMarketOverview = {
+  state: 'available' | 'no_data';
+  asOf: string;
+  instrumentCount: number;
+  historyPeriod: { start: string | null; end: string | null };
+  breadth: {
+    aboveReference: number;
+    nearReference: number;
+    belowReference: number;
+    forming: number;
+    basis: 'categorical_instrument_count';
+  };
+  instruments: PersonalMarketInstrument[];
+  topMoves: Array<{
+    kind: 'reference_relative_change' | 'new_capability' | 'eligible_signal';
+    seriesId: string | null;
+    signalId?: string | null;
+    rankBasis: string;
+    magnitude: number | null;
+    deviationPercent?: number | null;
+    capability?: string | null;
+  }>;
+  signals: {
+    activeCount: number;
+    newlyEligibleCount: number;
+    items: Array<{
+      id: string | null;
+      sourceConstruct: string | null;
+      targetConstruct: string | null;
+      evidenceGrade: string | null;
+    }>;
+  };
+  analyst: {
+    state: 'structured_observation' | 'acquisition';
+    rows: Array<Record<string, string | number | null>>;
+    causalClaimsAllowed: false;
+  };
+  entitySummary: { goalCount: number; skillCount: number };
+  limitations: string[];
 };
 
 export type PersonalTerminalCandle = {
@@ -253,6 +385,13 @@ export type PersonalTerminalCandle = {
   sourceIds: string[];
   representation: 'OBSERVATIONAL_SCALAR_OHLC' | 'NATIVE_OHLC';
   bucketSemantics: string;
+  bucketType?: 'TIME' | 'OBSERVATION_COUNT';
+  bucketSize?: number | null;
+  observationWindow?: {
+    start: string | null;
+    end: string | null;
+    observationCount: number;
+  };
 };
 
 export type PersonalTerminalPoint = {

@@ -1,0 +1,312 @@
+{
+  "analyst": {
+    "activeObservationCount": 1,
+    "items": [],
+    "limitations": [
+      "NO_POPULATION_PRIOR_AVAILABLE",
+      "NO_COMPOSITE_PERSONAL_SCORE",
+      "NO_MEDICAL_OR_CAUSAL_INTERPRETATION",
+      "ONBOARDING_CONTEXT_DOES_NOT_CHANGE_NUMERIC_EVIDENCE"
+    ],
+    "modelReadiness": [
+      {
+        "featureCoverage": {
+          "sleep.duration": null,
+          "state.focus": null
+        },
+        "independentDayCount": 0,
+        "modelKey": "signal_readiness:sleep.duration->state.focus",
+        "observationCount": 0,
+        "reasons": [
+          "requires 20 paired independent days; found 0"
+        ],
+        "status": "NOT_ELIGIBLE"
+      },
+      {
+        "featureCoverage": {
+          "state.focus": 1.0
+        },
+        "independentDayCount": 1,
+        "modelKey": "state_space_readiness:state.focus",
+        "observationCount": 1,
+        "reasons": [
+          "requires at least 60 active observations; found 1",
+          "requires at least 45 independent active days; found 1"
+        ],
+        "status": "NOT_ELIGIBLE"
+      }
+    ]
+  },
+  "asOf": "2026-01-04T07:59:00+11:00",
+  "defaultEntityId": "market:person",
+  "defaultScope": "market",
+  "defaultSeriesId": "market:state.focus",
+  "entities": [
+    {
+      "contextKey": "personal_history_and_active_evidence",
+      "id": "market:person",
+      "labelKey": "personal_market",
+      "scope": "market",
+      "seriesIds": [
+        "market:state.focus"
+      ]
+    }
+  ],
+  "goalAvailable": false,
+  "nextActionKey": "inspect_current_reference",
+  "overview": {
+    "analyst": {
+      "causalClaimsAllowed": false,
+      "rows": [
+        {
+          "count": 1,
+          "kind": "forming_instruments"
+        },
+        {
+          "count": 1,
+          "kind": "coverage_unknown"
+        }
+      ],
+      "state": "structured_observation"
+    },
+    "asOf": "2026-01-04T07:59:00+11:00",
+    "breadth": {
+      "aboveReference": 0,
+      "basis": "categorical_instrument_count",
+      "belowReference": 0,
+      "forming": 1,
+      "nearReference": 0
+    },
+    "entitySummary": {
+      "goalCount": 0,
+      "skillCount": 0
+    },
+    "historyPeriod": {
+      "end": "2026-01-02T20:00:00+11:00",
+      "start": "2026-01-02T20:00:00+11:00"
+    },
+    "instrumentCount": 1,
+    "instruments": [
+      {
+        "adaptive": {
+          "analystKey": "first_observation",
+          "availableTimeframes": [
+            "RECENT",
+            "ALL"
+          ],
+          "availableViews": [
+            "point"
+          ],
+          "changeFromFirst": null,
+          "changeFromPrevious": null,
+          "current": 4.0,
+          "defaultView": "point",
+          "first": 4.0,
+          "firstObservedAt": "2026-01-02T20:00:00+11:00",
+          "lastObservedAt": "2026-01-02T20:00:00+11:00",
+          "limitations": [
+            "NO_COMPARISON_YET",
+            "NO_PERSONAL_REFERENCE_YET",
+            "NO_TREND_OR_PATTERN_LANGUAGE"
+          ],
+          "microCandleAvailable": false,
+          "microCandleBucketSize": null,
+          "microCandleBucketType": null,
+          "observationCount": 1,
+          "previous": null,
+          "rangeHigh": 4.0,
+          "rangeLow": 4.0,
+          "referenceAvailable": false,
+          "state": "first_observation"
+        },
+        "constructKey": "state.focus",
+        "coverageRatio": null,
+        "current": 4.0,
+        "currentAt": "2026-01-02T20:00:00+11:00",
+        "deviationAbsolute": null,
+        "deviationPercent": null,
+        "direction": "unavailable",
+        "domain": "active_questlife",
+        "evidenceStage": "S1",
+        "independentDayCount": 1,
+        "labelKey": "focus_state",
+        "limitationCodes": [
+          "ACTIVE_QUESTLIFE_ONLY",
+          "NO_CAUSAL_INTERPRETATION"
+        ],
+        "maturity": "first_observation",
+        "miniSeries": [
+          {
+            "timestamp": "2026-01-02T20:00:00+11:00",
+            "value": 4.0
+          }
+        ],
+        "observationCount": 1,
+        "position": "forming",
+        "provenanceFamily": "questlife_native",
+        "reference": null,
+        "referenceHigh": null,
+        "referenceKind": "active",
+        "referenceLow": null,
+        "referenceType": null,
+        "referenceWindow": null,
+        "semantic": "ordinal_state",
+        "seriesId": "market:state.focus",
+        "unit": "/5"
+      }
+    ],
+    "limitations": [
+      "NO_COMPOSITE_PERSONAL_INDEX",
+      "POSITION_IS_NOT_GOOD_OR_BAD",
+      "DIRECTION_IS_DESCRIPTIVE_NOT_CAUSAL",
+      "INDEPENDENT_INSTRUMENT_SCALES"
+    ],
+    "schemaVersion": "questlife-personal-market-overview-v0.4.2",
+    "signals": {
+      "activeCount": 0,
+      "items": [],
+      "newlyEligibleCount": 0
+    },
+    "state": "available",
+    "topMoves": []
+  },
+  "questlifeStartedAt": "2026-01-01T08:00:00+11:00",
+  "range": {
+    "end": "2026-01-02T20:00:00+11:00",
+    "start": "2026-01-02T20:00:00+11:00"
+  },
+  "scenarioId": "focus_1_observation",
+  "schemaVersion": "questlife-terminal-presentation-v0.4.2",
+  "series": [
+    {
+      "adaptive": {
+        "analystKey": "first_observation",
+        "availableTimeframes": [
+          "RECENT",
+          "ALL"
+        ],
+        "availableViews": [
+          "point"
+        ],
+        "changeFromFirst": null,
+        "changeFromPrevious": null,
+        "current": 4.0,
+        "defaultView": "point",
+        "first": 4.0,
+        "firstObservedAt": "2026-01-02T20:00:00+11:00",
+        "lastObservedAt": "2026-01-02T20:00:00+11:00",
+        "limitations": [
+          "NO_COMPARISON_YET",
+          "NO_PERSONAL_REFERENCE_YET",
+          "NO_TREND_OR_PATTERN_LANGUAGE"
+        ],
+        "microCandleAvailable": false,
+        "microCandleBucketSize": null,
+        "microCandleBucketType": null,
+        "observationCount": 1,
+        "previous": null,
+        "rangeHigh": 4.0,
+        "rangeLow": 4.0,
+        "referenceAvailable": false,
+        "state": "first_observation"
+      },
+      "availableTimeframes": [
+        "RECENT",
+        "ALL"
+      ],
+      "baseline": {
+        "high": null,
+        "independentDayCount": 1,
+        "low": null,
+        "observationCount": 1,
+        "referenceKind": "active",
+        "status": "forming",
+        "value": null
+      },
+      "candleViews": {},
+      "chartCapabilities": {
+        "bar": false,
+        "bucketSemantics": {},
+        "candle": false,
+        "candleRepresentation": "OBSERVATIONAL_SCALAR_OHLC",
+        "candleTimeframes": [],
+        "line": false,
+        "percent_change": false,
+        "reasons": {
+          "candle": "ordered scalar observations require at least two values per calendar bucket"
+        }
+      },
+      "constructKey": "state.focus",
+      "coverage": {
+        "active_days": 1,
+        "coverage_ratio": null,
+        "expected_days": null,
+        "observed_days": 1,
+        "source_count": 1
+      },
+      "defaultTimeframe": "RECENT",
+      "domain": "active_questlife",
+      "entityId": "market:person",
+      "id": "market:state.focus",
+      "labelKey": "focus_state",
+      "latestAt": "2026-01-02T20:00:00+11:00",
+      "latestValue": 4.0,
+      "limitationCodes": [
+        "ACTIVE_QUESTLIFE_ONLY",
+        "NO_CAUSAL_INTERPRETATION"
+      ],
+      "maturityLabel": "initial_observation",
+      "points": [
+        {
+          "id": "stage312-focus-1-observation:active:state-focus:001",
+          "provenance": "questlife_confirmed",
+          "timestamp": "2026-01-02T20:00:00+11:00",
+          "value": 4.0
+        }
+      ],
+      "provenance": {
+        "active_questlife_observation_ids_reference": {
+          "count": 1,
+          "firstId": "stage312-focus-1-observation:active:state-focus:001",
+          "lastId": "stage312-focus-1-observation:active:state-focus:001",
+          "semanticHash": "5f0f7b2c7fa1dbcd7cc0fe717866c5f2a2f0d15f0004c918aa8d83fe04ae1420"
+        },
+        "historical_and_active_merged": false
+      },
+      "recentChange": null,
+      "semantic": "ordinal_state",
+      "stage": "S1",
+      "unit": "/5",
+      "valueChangeMode": "absolute",
+      "views": {
+        "ALL": {
+          "aggregation": "quant_source_points",
+          "axisPrecision": "year_month",
+          "endIndex": 1,
+          "pointCount": 1,
+          "startIndex": 0
+        },
+        "RECENT": {
+          "aggregation": "quant_source_points",
+          "axisPrecision": "month_day",
+          "endIndex": 1,
+          "pointCount": 1,
+          "startIndex": 0
+        }
+      }
+    }
+  ],
+  "signals": [],
+  "skillAvailable": false,
+  "source": {
+    "canonicalArtifactHash": "6fe48438a9ef77c3ca6a7a847069b4cfc8ba9d3a5c445fe57c0a5ec37d3d211b",
+    "containsRealUserData": false,
+    "engineVersion": "questlife-cold-start-terminal-v0.4",
+    "materializedEngineVersion": "questlife-quant-v0.4.1-materialized",
+    "presentationParentVersion": "questlife-terminal-presentation-v0.4.1",
+    "quantCommit": "53c8654",
+    "sourceArtifact": "synthetic/stage3.12/focus_1_observation",
+    "syntheticOnly": true
+  },
+  "state": "available"
+}

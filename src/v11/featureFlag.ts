@@ -1,6 +1,9 @@
 import { Platform } from 'react-native';
 import type { V11EvidenceStage } from './tokens';
-import type { QuantV041LifecycleId } from '../v11-insights/personal-terminal/personalTerminalPresentation';
+import type {
+  QuantV041LifecycleId,
+  QuantV042LifecycleId,
+} from '../v11-insights/personal-terminal/personalTerminalPresentation';
 
 function query() {
   if (Platform.OS !== 'web' || typeof window === 'undefined') return undefined;
@@ -30,6 +33,7 @@ export function getV11PersonalTerminalFixture(): 'forming' | 'mature' | 'portfol
 
 export function getV11QuantV041Lifecycle(): QuantV041LifecycleId | null {
   if (!isV11PersonalTerminalEnabled()) return null;
+  if (query()?.get('quantVersion') !== 'v041' && getV11QuantV042Lifecycle()) return null;
   const value = query()?.get('quantLifecycle');
   return value === 'no-data'
     || value === 'steps-only'
@@ -41,6 +45,31 @@ export function getV11QuantV041Lifecycle(): QuantV041LifecycleId | null {
     || value === 'day180'
     || value === 'goal'
     || value === 'skill'
+    ? value
+    : null;
+}
+
+export function getV11QuantV042Lifecycle(): QuantV042LifecycleId | null {
+  if (!isV11PersonalTerminalEnabled() || query()?.get('quantVersion') === 'v041') return null;
+  const value = query()?.get('quantLifecycle');
+  if (value === 'no-data') return 'no_data';
+  return value === 'market_steps_only'
+    || value === 'market_rich_passive'
+    || value === 'market_questlife_only'
+    || value === 'market_mixed_mature'
+    || value === 'focus_1_observation'
+    || value === 'focus_2_observations'
+    || value === 'focus_3_observations'
+    || value === 'focus_5_observations'
+    || value === 'focus_10_observations'
+    || value === 'execution_3_observations'
+    || value === 'execution_7_observations'
+    || value === 'day30'
+    || value === 'day90'
+    || value === 'day180'
+    || value === 'goal'
+    || value === 'skill'
+    || value === 'no_data'
     ? value
     : null;
 }

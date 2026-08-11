@@ -57,8 +57,11 @@ const BaselineSchema = z.object({
   low: NullableNumber,
   high: NullableNumber,
   referenceKind: z.enum(['none', 'active', 'historical']),
+  referenceType: z.string().nullable().optional(),
   observationCount: z.number().int().nonnegative(),
   independentDayCount: z.number().int().nonnegative(),
+  windowStart: z.string().nullable().optional(),
+  windowEnd: z.string().nullable().optional(),
 });
 const CoverageSchema = z.object({
   observed_days: z.number().int().nonnegative(),
@@ -317,6 +320,11 @@ function mapSeries(row: QuantV041TerminalPayload['series'][number]): PersonalTer
       low: row.baseline.low,
       high: row.baseline.high,
       referenceKind: row.baseline.referenceKind,
+      referenceType: row.baseline.referenceType ?? null,
+      observationCount: row.baseline.observationCount,
+      independentDayCount: row.baseline.independentDayCount,
+      windowStart: row.baseline.windowStart ?? null,
+      windowEnd: row.baseline.windowEnd ?? null,
     },
     limitation: i18nCopy('personalTerminalV041DescriptiveLimitation'),
     constructKey: row.constructKey,

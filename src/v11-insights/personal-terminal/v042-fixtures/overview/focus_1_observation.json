@@ -1,0 +1,131 @@
+{
+  "asOf": "2026-01-04T07:59:00+11:00",
+  "overview": {
+    "analyst": {
+      "causalClaimsAllowed": false,
+      "rows": [
+        {
+          "count": 1,
+          "kind": "forming_instruments"
+        },
+        {
+          "count": 1,
+          "kind": "coverage_unknown"
+        }
+      ],
+      "state": "structured_observation"
+    },
+    "asOf": "2026-01-04T07:59:00+11:00",
+    "breadth": {
+      "aboveReference": 0,
+      "basis": "categorical_instrument_count",
+      "belowReference": 0,
+      "forming": 1,
+      "nearReference": 0
+    },
+    "entitySummary": {
+      "goalCount": 0,
+      "skillCount": 0
+    },
+    "historyPeriod": {
+      "end": "2026-01-02T20:00:00+11:00",
+      "start": "2026-01-02T20:00:00+11:00"
+    },
+    "instrumentCount": 1,
+    "instruments": [
+      {
+        "adaptive": {
+          "analystKey": "first_observation",
+          "availableTimeframes": [
+            "RECENT",
+            "ALL"
+          ],
+          "availableViews": [
+            "point"
+          ],
+          "changeFromFirst": null,
+          "changeFromPrevious": null,
+          "current": 4.0,
+          "defaultView": "point",
+          "first": 4.0,
+          "firstObservedAt": "2026-01-02T20:00:00+11:00",
+          "lastObservedAt": "2026-01-02T20:00:00+11:00",
+          "limitations": [
+            "NO_COMPARISON_YET",
+            "NO_PERSONAL_REFERENCE_YET",
+            "NO_TREND_OR_PATTERN_LANGUAGE"
+          ],
+          "microCandleAvailable": false,
+          "microCandleBucketSize": null,
+          "microCandleBucketType": null,
+          "observationCount": 1,
+          "previous": null,
+          "rangeHigh": 4.0,
+          "rangeLow": 4.0,
+          "referenceAvailable": false,
+          "state": "first_observation"
+        },
+        "constructKey": "state.focus",
+        "coverageRatio": null,
+        "current": 4.0,
+        "currentAt": "2026-01-02T20:00:00+11:00",
+        "deviationAbsolute": null,
+        "deviationPercent": null,
+        "direction": "unavailable",
+        "domain": "active_questlife",
+        "evidenceStage": "S1",
+        "independentDayCount": 1,
+        "labelKey": "focus_state",
+        "limitationCodes": [
+          "ACTIVE_QUESTLIFE_ONLY",
+          "NO_CAUSAL_INTERPRETATION"
+        ],
+        "maturity": "first_observation",
+        "miniSeries": [
+          {
+            "timestamp": "2026-01-02T20:00:00+11:00",
+            "value": 4.0
+          }
+        ],
+        "observationCount": 1,
+        "position": "forming",
+        "provenanceFamily": "questlife_native",
+        "reference": null,
+        "referenceHigh": null,
+        "referenceKind": "active",
+        "referenceLow": null,
+        "referenceType": null,
+        "referenceWindow": null,
+        "semantic": "ordinal_state",
+        "seriesId": "market:state.focus",
+        "unit": "/5"
+      }
+    ],
+    "limitations": [
+      "NO_COMPOSITE_PERSONAL_INDEX",
+      "POSITION_IS_NOT_GOOD_OR_BAD",
+      "DIRECTION_IS_DESCRIPTIVE_NOT_CAUSAL",
+      "INDEPENDENT_INSTRUMENT_SCALES"
+    ],
+    "schemaVersion": "questlife-personal-market-overview-v0.4.2",
+    "signals": {
+      "activeCount": 0,
+      "items": [],
+      "newlyEligibleCount": 0
+    },
+    "state": "available",
+    "topMoves": []
+  },
+  "scenarioId": "focus_1_observation",
+  "schemaVersion": "questlife-personal-market-overview-v0.4.2",
+  "source": {
+    "canonicalArtifactHash": "6fe48438a9ef77c3ca6a7a847069b4cfc8ba9d3a5c445fe57c0a5ec37d3d211b",
+    "containsRealUserData": false,
+    "engineVersion": "questlife-cold-start-terminal-v0.4",
+    "materializedEngineVersion": "questlife-quant-v0.4.1-materialized",
+    "presentationParentVersion": "questlife-terminal-presentation-v0.4.1",
+    "quantCommit": "53c8654",
+    "sourceArtifact": "synthetic/stage3.12/focus_1_observation",
+    "syntheticOnly": true
+  }
+}

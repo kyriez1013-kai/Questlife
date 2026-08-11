@@ -1,0 +1,1107 @@
+{
+  "asOf": "2026-02-01T07:59:00+11:00",
+  "overview": {
+    "analyst": {
+      "causalClaimsAllowed": false,
+      "rows": [
+        {
+          "deviationPercent": -100.0,
+          "kind": "reference_relative_change",
+          "magnitude": 100.0,
+          "rankBasis": "absolute_valid_reference_relative_percentage",
+          "seriesId": "market:activity.exercise_minutes"
+        }
+      ],
+      "state": "structured_observation"
+    },
+    "asOf": "2026-02-01T07:59:00+11:00",
+    "breadth": {
+      "aboveReference": 0,
+      "basis": "categorical_instrument_count",
+      "belowReference": 0,
+      "forming": 0,
+      "nearReference": 8
+    },
+    "entitySummary": {
+      "goalCount": 1,
+      "skillCount": 1
+    },
+    "historyPeriod": {
+      "end": "2026-01-31T23:59:00+11:00",
+      "start": "2026-01-18T23:59:00+11:00"
+    },
+    "instrumentCount": 8,
+    "instruments": [
+      {
+        "adaptive": {
+          "analystKey": "current_vs_reference",
+          "availableTimeframes": [
+            "RECENT",
+            "7D",
+            "30D",
+            "90D",
+            "1Y",
+            "ALL"
+          ],
+          "availableViews": [
+            "line",
+            "candle",
+            "range"
+          ],
+          "changeFromFirst": -1082.0,
+          "changeFromPrevious": -748.0,
+          "current": 6432.0,
+          "defaultView": "line",
+          "first": 7514.0,
+          "firstObservedAt": "2025-01-01T23:59:00+11:00",
+          "lastObservedAt": "2026-01-31T23:59:00+11:00",
+          "limitations": [],
+          "microCandleAvailable": true,
+          "microCandleBucketSize": 5,
+          "microCandleBucketType": "OBSERVATION_COUNT",
+          "observationCount": 382,
+          "previous": 7180.0,
+          "rangeHigh": 15746.0,
+          "rangeLow": 650.0,
+          "referenceAvailable": true,
+          "state": "reference_available"
+        },
+        "constructKey": "activity.steps",
+        "coverageRatio": 0.9646464646464646,
+        "current": 6432.0,
+        "currentAt": "2026-01-31T23:59:00+11:00",
+        "deviationAbsolute": -829.5,
+        "deviationPercent": -11.423259657095642,
+        "direction": "lower",
+        "domain": "movement",
+        "evidenceStage": "S3",
+        "independentDayCount": 382,
+        "labelKey": "steps",
+        "limitationCodes": [
+          "DESCRIPTIVE_HISTORICAL_REFERENCE",
+          "NO_NORMATIVE_OR_CAUSAL_INTERPRETATION",
+          "SOURCE_REGIME_BOUNDARY_EXCLUDED_PRIOR",
+          "SYNTHETIC_HISTORICAL_SOURCE",
+          "COVERAGE_IS_NOT_MEASUREMENT_QUALITY",
+          "REFERENCE_RELATIVE_NOT_NORMATIVE",
+          "DESCRIPTIVE_LINEAR_COMPARATOR",
+          "NOT_A_FORECAST",
+          "MAD_BASED_DESCRIPTIVE_COMPARISON",
+          "NO_CAUSAL_OR_BETTER_WORSE_INTERPRETATION",
+          "DESCRIPTIVE_SEASONAL_REFERENCE_ONLY",
+          "HISTORICAL_PERSONAL_REFERENCE_NOT_POPULATION_DATA"
+        ],
+        "maturity": "reference_available",
+        "miniSeries": [
+          {
+            "timestamp": "2026-01-20T23:59:00+11:00",
+            "value": 7286.0
+          },
+          {
+            "timestamp": "2026-01-21T23:59:00+11:00",
+            "value": 7237.0
+          },
+          {
+            "timestamp": "2026-01-22T23:59:00+11:00",
+            "value": 6169.0
+          },
+          {
+            "timestamp": "2026-01-23T23:59:00+11:00",
+            "value": 8453.0
+          },
+          {
+            "timestamp": "2026-01-24T23:59:00+11:00",
+            "value": 5600.0
+          },
+          {
+            "timestamp": "2026-01-25T23:59:00+11:00",
+            "value": 3705.0
+          },
+          {
+            "timestamp": "2026-01-26T23:59:00+11:00",
+            "value": 6934.0
+          },
+          {
+            "timestamp": "2026-01-27T23:59:00+11:00",
+            "value": 7153.0
+          },
+          {
+            "timestamp": "2026-01-28T23:59:00+11:00",
+            "value": 4172.0
+          },
+          {
+            "timestamp": "2026-01-29T23:59:00+11:00",
+            "value": 5386.0
+          },
+          {
+            "timestamp": "2026-01-30T23:59:00+11:00",
+            "value": 7180.0
+          },
+          {
+            "timestamp": "2026-01-31T23:59:00+11:00",
+            "value": 6432.0
+          }
+        ],
+        "observationCount": 382,
+        "position": "near_reference",
+        "provenanceFamily": "passive_historical",
+        "reference": 7261.5,
+        "referenceHigh": 11139.9816,
+        "referenceKind": "historical",
+        "referenceLow": 3383.0184000000004,
+        "referenceType": "HISTORICAL_REFERENCE_BASELINE",
+        "referenceWindow": {
+          "end": "2026-01-31T23:59:00+11:00",
+          "independentDayCount": 72,
+          "observationCount": 72,
+          "start": "2025-11-20T23:59:00+11:00"
+        },
+        "semantic": "count",
+        "seriesId": "market:activity.steps",
+        "unit": "steps"
+      },
+      {
+        "adaptive": {
+          "analystKey": "current_vs_reference",
+          "availableTimeframes": [
+            "RECENT",
+            "7D",
+            "30D",
+            "90D",
+            "1Y",
+            "ALL"
+          ],
+          "availableViews": [
+            "line",
+            "candle",
+            "range"
+          ],
+          "changeFromFirst": -1.42,
+          "changeFromPrevious": -0.7969999999999997,
+          "current": 4.304,
+          "defaultView": "line",
+          "first": 5.724,
+          "firstObservedAt": "2025-01-01T23:59:00+11:00",
+          "lastObservedAt": "2026-01-31T23:59:00+11:00",
+          "limitations": [],
+          "microCandleAvailable": true,
+          "microCandleBucketSize": 5,
+          "microCandleBucketType": "OBSERVATION_COUNT",
+          "observationCount": 370,
+          "previous": 5.101,
+          "rangeHigh": 12.008,
+          "rangeLow": 0.3,
+          "referenceAvailable": true,
+          "state": "reference_available"
+        },
+        "constructKey": "activity.walking_running_distance",
+        "coverageRatio": 0.9343434343434344,
+        "current": 4.304,
+        "currentAt": "2026-01-31T23:59:00+11:00",
+        "deviationAbsolute": -0.7949999999999999,
+        "deviationPercent": -15.591292410276521,
+        "direction": "lower",
+        "domain": "movement",
+        "evidenceStage": "S3",
+        "independentDayCount": 370,
+        "labelKey": "distance",
+        "limitationCodes": [
+          "DESCRIPTIVE_HISTORICAL_REFERENCE",
+          "NO_NORMATIVE_OR_CAUSAL_INTERPRETATION",
+          "SOURCE_REGIME_BOUNDARY_EXCLUDED_PRIOR",
+          "SYNTHETIC_HISTORICAL_SOURCE",
+          "COVERAGE_IS_NOT_MEASUREMENT_QUALITY",
+          "REFERENCE_RELATIVE_NOT_NORMATIVE",
+          "DESCRIPTIVE_LINEAR_COMPARATOR",
+          "NOT_A_FORECAST",
+          "MAD_BASED_DESCRIPTIVE_COMPARISON",
+          "NO_CAUSAL_OR_BETTER_WORSE_INTERPRETATION",
+          "DESCRIPTIVE_SEASONAL_REFERENCE_ONLY",
+          "HISTORICAL_PERSONAL_REFERENCE_NOT_POPULATION_DATA"
+        ],
+        "maturity": "reference_available",
+        "miniSeries": [
+          {
+            "timestamp": "2026-01-19T23:59:00+11:00",
+            "value": 4.174
+          },
+          {
+            "timestamp": "2026-01-20T23:59:00+11:00",
+            "value": 4.498
+          },
+          {
+            "timestamp": "2026-01-21T23:59:00+11:00",
+            "value": 4.954
+          },
+          {
+            "timestamp": "2026-01-23T23:59:00+11:00",
+            "value": 6.577
+          },
+          {
+            "timestamp": "2026-01-24T23:59:00+11:00",
+            "value": 4.447
+          },
+          {
+            "timestamp": "2026-01-25T23:59:00+11:00",
+            "value": 3.144
+          },
+          {
+            "timestamp": "2026-01-26T23:59:00+11:00",
+            "value": 5.097
+          },
+          {
+            "timestamp": "2026-01-27T23:59:00+11:00",
+            "value": 5.012
+          },
+          {
+            "timestamp": "2026-01-28T23:59:00+11:00",
+            "value": 3.105
+          },
+          {
+            "timestamp": "2026-01-29T23:59:00+11:00",
+            "value": 3.986
+          },
+          {
+            "timestamp": "2026-01-30T23:59:00+11:00",
+            "value": 5.101
+          },
+          {
+            "timestamp": "2026-01-31T23:59:00+11:00",
+            "value": 4.304
+          }
+        ],
+        "observationCount": 370,
+        "position": "near_reference",
+        "provenanceFamily": "passive_historical",
+        "reference": 5.099,
+        "referenceHigh": 8.206529600000001,
+        "referenceKind": "historical",
+        "referenceLow": 1.991470399999999,
+        "referenceType": "HISTORICAL_REFERENCE_BASELINE",
+        "referenceWindow": {
+          "end": "2026-01-31T23:59:00+11:00",
+          "independentDayCount": 70,
+          "observationCount": 70,
+          "start": "2025-11-20T23:59:00+11:00"
+        },
+        "semantic": "performance",
+        "seriesId": "market:activity.walking_running_distance",
+        "unit": "kilometres"
+      },
+      {
+        "adaptive": {
+          "analystKey": "current_vs_reference",
+          "availableTimeframes": [
+            "RECENT",
+            "7D",
+            "30D",
+            "90D",
+            "1Y",
+            "ALL"
+          ],
+          "availableViews": [
+            "line",
+            "range"
+          ],
+          "changeFromFirst": 83.80000000000018,
+          "changeFromPrevious": 121.60000000000014,
+          "current": 1193.9,
+          "defaultView": "line",
+          "first": 1110.1,
+          "firstObservedAt": "2025-01-01T23:59:00+11:00",
+          "lastObservedAt": "2026-01-31T23:59:00+11:00",
+          "limitations": [],
+          "microCandleAvailable": false,
+          "microCandleBucketSize": null,
+          "microCandleBucketType": null,
+          "observationCount": 375,
+          "previous": 1072.3,
+          "rangeHigh": 1260.7,
+          "rangeLow": 952.2,
+          "referenceAvailable": true,
+          "state": "reference_available"
+        },
+        "constructKey": "sleep.end_time",
+        "coverageRatio": 0.946969696969697,
+        "current": 1193.9,
+        "currentAt": "2026-01-31T23:59:00+11:00",
+        "deviationAbsolute": 66.65000000000009,
+        "deviationPercent": null,
+        "direction": "higher",
+        "domain": "sleep",
+        "evidenceStage": "S3",
+        "independentDayCount": 375,
+        "labelKey": "wake_timing",
+        "limitationCodes": [
+          "DESCRIPTIVE_HISTORICAL_REFERENCE",
+          "NO_NORMATIVE_OR_CAUSAL_INTERPRETATION",
+          "SOURCE_REGIME_BOUNDARY_EXCLUDED_PRIOR",
+          "SYNTHETIC_HISTORICAL_SOURCE",
+          "COVERAGE_IS_NOT_MEASUREMENT_QUALITY",
+          "REFERENCE_RELATIVE_NOT_NORMATIVE",
+          "DESCRIPTIVE_LINEAR_COMPARATOR",
+          "NOT_A_FORECAST",
+          "MAD_BASED_DESCRIPTIVE_COMPARISON",
+          "NO_CAUSAL_OR_BETTER_WORSE_INTERPRETATION",
+          "DESCRIPTIVE_SEASONAL_REFERENCE_ONLY",
+          "HISTORICAL_PERSONAL_REFERENCE_NOT_POPULATION_DATA"
+        ],
+        "maturity": "reference_available",
+        "miniSeries": [
+          {
+            "timestamp": "2026-01-20T23:59:00+11:00",
+            "value": 1097.7
+          },
+          {
+            "timestamp": "2026-01-21T23:59:00+11:00",
+            "value": 1103.3
+          },
+          {
+            "timestamp": "2026-01-22T23:59:00+11:00",
+            "value": 1112.9
+          },
+          {
+            "timestamp": "2026-01-23T23:59:00+11:00",
+            "value": 1124.7
+          },
+          {
+            "timestamp": "2026-01-24T23:59:00+11:00",
+            "value": 1226.2
+          },
+          {
+            "timestamp": "2026-01-25T23:59:00+11:00",
+            "value": 1100.1
+          },
+          {
+            "timestamp": "2026-01-26T23:59:00+11:00",
+            "value": 1201.5
+          },
+          {
+            "timestamp": "2026-01-27T23:59:00+11:00",
+            "value": 1164.2
+          },
+          {
+            "timestamp": "2026-01-28T23:59:00+11:00",
+            "value": 1107.0
+          },
+          {
+            "timestamp": "2026-01-29T23:59:00+11:00",
+            "value": 1125.6
+          },
+          {
+            "timestamp": "2026-01-30T23:59:00+11:00",
+            "value": 1072.3
+          },
+          {
+            "timestamp": "2026-01-31T23:59:00+11:00",
+            "value": 1193.9
+          }
+        ],
+        "observationCount": 375,
+        "position": "near_reference",
+        "provenanceFamily": "passive_historical",
+        "reference": 1127.25,
+        "referenceHigh": 1232.2180799999999,
+        "referenceKind": "historical",
+        "referenceLow": 1022.2819200000001,
+        "referenceType": "HISTORICAL_REFERENCE_BASELINE",
+        "referenceWindow": {
+          "end": "2026-01-31T23:59:00+11:00",
+          "independentDayCount": 68,
+          "observationCount": 68,
+          "start": "2025-11-20T23:59:00+11:00"
+        },
+        "semantic": "timing",
+        "seriesId": "market:sleep.end_time",
+        "unit": "minutes_from_local_noon"
+      },
+      {
+        "adaptive": {
+          "analystKey": "current_vs_reference",
+          "availableTimeframes": [
+            "RECENT",
+            "7D",
+            "30D",
+            "90D",
+            "1Y",
+            "ALL"
+          ],
+          "availableViews": [
+            "line",
+            "candle",
+            "range"
+          ],
+          "changeFromFirst": 48.900000000000034,
+          "changeFromPrevious": 55.0,
+          "current": 451.6,
+          "defaultView": "line",
+          "first": 402.7,
+          "firstObservedAt": "2025-01-01T23:59:00+11:00",
+          "lastObservedAt": "2026-01-31T23:59:00+11:00",
+          "limitations": [],
+          "microCandleAvailable": true,
+          "microCandleBucketSize": 5,
+          "microCandleBucketType": "OBSERVATION_COUNT",
+          "observationCount": 374,
+          "previous": 396.6,
+          "rangeHigh": 506.2,
+          "rangeLow": 275.0,
+          "referenceAvailable": true,
+          "state": "reference_available"
+        },
+        "constructKey": "sleep.duration",
+        "coverageRatio": 0.9444444444444444,
+        "current": 451.6,
+        "currentAt": "2026-01-31T23:59:00+11:00",
+        "deviationAbsolute": 22.900000000000034,
+        "deviationPercent": 5.341730814089115,
+        "direction": "higher",
+        "domain": "sleep",
+        "evidenceStage": "S3",
+        "independentDayCount": 374,
+        "labelKey": "sleep_duration",
+        "limitationCodes": [
+          "DESCRIPTIVE_HISTORICAL_REFERENCE",
+          "NO_NORMATIVE_OR_CAUSAL_INTERPRETATION",
+          "SOURCE_REGIME_BOUNDARY_EXCLUDED_PRIOR",
+          "SYNTHETIC_HISTORICAL_SOURCE",
+          "COVERAGE_IS_NOT_MEASUREMENT_QUALITY",
+          "REFERENCE_RELATIVE_NOT_NORMATIVE",
+          "DESCRIPTIVE_LINEAR_COMPARATOR",
+          "NOT_A_FORECAST",
+          "MAD_BASED_DESCRIPTIVE_COMPARISON",
+          "NO_CAUSAL_OR_BETTER_WORSE_INTERPRETATION",
+          "DESCRIPTIVE_SEASONAL_REFERENCE_ONLY",
+          "HISTORICAL_PERSONAL_REFERENCE_NOT_POPULATION_DATA"
+        ],
+        "maturity": "reference_available",
+        "miniSeries": [
+          {
+            "timestamp": "2026-01-20T23:59:00+11:00",
+            "value": 397.7
+          },
+          {
+            "timestamp": "2026-01-21T23:59:00+11:00",
+            "value": 411.8
+          },
+          {
+            "timestamp": "2026-01-22T23:59:00+11:00",
+            "value": 397.9
+          },
+          {
+            "timestamp": "2026-01-23T23:59:00+11:00",
+            "value": 408.6
+          },
+          {
+            "timestamp": "2026-01-24T23:59:00+11:00",
+            "value": 466.7
+          },
+          {
+            "timestamp": "2026-01-25T23:59:00+11:00",
+            "value": 355.2
+          },
+          {
+            "timestamp": "2026-01-26T23:59:00+11:00",
+            "value": 500.0
+          },
+          {
+            "timestamp": "2026-01-27T23:59:00+11:00",
+            "value": 454.6
+          },
+          {
+            "timestamp": "2026-01-28T23:59:00+11:00",
+            "value": 406.5
+          },
+          {
+            "timestamp": "2026-01-29T23:59:00+11:00",
+            "value": 430.7
+          },
+          {
+            "timestamp": "2026-01-30T23:59:00+11:00",
+            "value": 396.6
+          },
+          {
+            "timestamp": "2026-01-31T23:59:00+11:00",
+            "value": 451.6
+          }
+        ],
+        "observationCount": 374,
+        "position": "near_reference",
+        "provenanceFamily": "passive_historical",
+        "reference": 428.7,
+        "referenceHigh": 494.52743999999996,
+        "referenceKind": "historical",
+        "referenceLow": 362.87256,
+        "referenceType": "HISTORICAL_REFERENCE_BASELINE",
+        "referenceWindow": {
+          "end": "2026-01-31T23:59:00+11:00",
+          "independentDayCount": 69,
+          "observationCount": 69,
+          "start": "2025-11-20T23:59:00+11:00"
+        },
+        "semantic": "duration",
+        "seriesId": "market:sleep.duration",
+        "unit": "minutes"
+      },
+      {
+        "adaptive": {
+          "analystKey": "current_vs_reference",
+          "availableTimeframes": [
+            "RECENT",
+            "7D",
+            "30D",
+            "90D",
+            "1Y",
+            "ALL"
+          ],
+          "availableViews": [
+            "line",
+            "range"
+          ],
+          "changeFromFirst": 34.89999999999998,
+          "changeFromPrevious": 66.59999999999991,
+          "current": 742.3,
+          "defaultView": "line",
+          "first": 707.4,
+          "firstObservedAt": "2025-01-01T23:59:00+11:00",
+          "lastObservedAt": "2026-01-31T23:59:00+11:00",
+          "limitations": [],
+          "microCandleAvailable": false,
+          "microCandleBucketSize": null,
+          "microCandleBucketType": null,
+          "observationCount": 371,
+          "previous": 675.7,
+          "rangeHigh": 835.6,
+          "rangeLow": 635.6,
+          "referenceAvailable": true,
+          "state": "reference_available"
+        },
+        "constructKey": "sleep.start_time",
+        "coverageRatio": 0.9368686868686869,
+        "current": 742.3,
+        "currentAt": "2026-01-31T23:59:00+11:00",
+        "deviationAbsolute": 40.39999999999998,
+        "deviationPercent": null,
+        "direction": "higher",
+        "domain": "sleep",
+        "evidenceStage": "S3",
+        "independentDayCount": 371,
+        "labelKey": "sleep_timing",
+        "limitationCodes": [
+          "DESCRIPTIVE_HISTORICAL_REFERENCE",
+          "NO_NORMATIVE_OR_CAUSAL_INTERPRETATION",
+          "SOURCE_REGIME_BOUNDARY_EXCLUDED_PRIOR",
+          "SYNTHETIC_HISTORICAL_SOURCE",
+          "COVERAGE_IS_NOT_MEASUREMENT_QUALITY",
+          "REFERENCE_RELATIVE_NOT_NORMATIVE",
+          "DESCRIPTIVE_LINEAR_COMPARATOR",
+          "NOT_A_FORECAST",
+          "MAD_BASED_DESCRIPTIVE_COMPARISON",
+          "NO_CAUSAL_OR_BETTER_WORSE_INTERPRETATION",
+          "DESCRIPTIVE_SEASONAL_REFERENCE_ONLY",
+          "HISTORICAL_PERSONAL_REFERENCE_NOT_POPULATION_DATA"
+        ],
+        "maturity": "reference_available",
+        "miniSeries": [
+          {
+            "timestamp": "2026-01-20T23:59:00+11:00",
+            "value": 700.0
+          },
+          {
+            "timestamp": "2026-01-21T23:59:00+11:00",
+            "value": 691.5
+          },
+          {
+            "timestamp": "2026-01-22T23:59:00+11:00",
+            "value": 715.0
+          },
+          {
+            "timestamp": "2026-01-23T23:59:00+11:00",
+            "value": 716.1
+          },
+          {
+            "timestamp": "2026-01-24T23:59:00+11:00",
+            "value": 759.5
+          },
+          {
+            "timestamp": "2026-01-25T23:59:00+11:00",
+            "value": 744.9
+          },
+          {
+            "timestamp": "2026-01-26T23:59:00+11:00",
+            "value": 701.5
+          },
+          {
+            "timestamp": "2026-01-27T23:59:00+11:00",
+            "value": 709.6
+          },
+          {
+            "timestamp": "2026-01-28T23:59:00+11:00",
+            "value": 700.5
+          },
+          {
+            "timestamp": "2026-01-29T23:59:00+11:00",
+            "value": 694.9
+          },
+          {
+            "timestamp": "2026-01-30T23:59:00+11:00",
+            "value": 675.7
+          },
+          {
+            "timestamp": "2026-01-31T23:59:00+11:00",
+            "value": 742.3
+          }
+        ],
+        "observationCount": 371,
+        "position": "near_reference",
+        "provenanceFamily": "passive_historical",
+        "reference": 701.9,
+        "referenceHigh": 763.2796399999997,
+        "referenceKind": "historical",
+        "referenceLow": 640.5203600000002,
+        "referenceType": "HISTORICAL_REFERENCE_BASELINE",
+        "referenceWindow": {
+          "end": "2026-01-31T23:59:00+11:00",
+          "independentDayCount": 69,
+          "observationCount": 69,
+          "start": "2025-11-20T23:59:00+11:00"
+        },
+        "semantic": "timing",
+        "seriesId": "market:sleep.start_time",
+        "unit": "minutes_from_local_noon"
+      },
+      {
+        "adaptive": {
+          "analystKey": "current_vs_reference",
+          "availableTimeframes": [
+            "RECENT",
+            "7D",
+            "30D",
+            "90D",
+            "1Y",
+            "ALL"
+          ],
+          "availableViews": [
+            "line",
+            "candle",
+            "range"
+          ],
+          "changeFromFirst": -39.6,
+          "changeFromPrevious": 0.0,
+          "current": 0.0,
+          "defaultView": "line",
+          "first": 39.6,
+          "firstObservedAt": "2025-01-01T23:59:00+11:00",
+          "lastObservedAt": "2026-01-31T23:59:00+11:00",
+          "limitations": [],
+          "microCandleAvailable": true,
+          "microCandleBucketSize": 5,
+          "microCandleBucketType": "OBSERVATION_COUNT",
+          "observationCount": 379,
+          "previous": 0.0,
+          "rangeHigh": 71.4,
+          "rangeLow": 0.0,
+          "referenceAvailable": true,
+          "state": "reference_available"
+        },
+        "constructKey": "activity.exercise_minutes",
+        "coverageRatio": 0.9570707070707071,
+        "current": 0.0,
+        "currentAt": "2026-01-31T23:59:00+11:00",
+        "deviationAbsolute": -16.8,
+        "deviationPercent": -100.0,
+        "direction": "lower",
+        "domain": "activity",
+        "evidenceStage": "S3",
+        "independentDayCount": 379,
+        "labelKey": "exercise_minutes",
+        "limitationCodes": [
+          "DESCRIPTIVE_HISTORICAL_REFERENCE",
+          "NO_NORMATIVE_OR_CAUSAL_INTERPRETATION",
+          "SOURCE_REGIME_BOUNDARY_EXCLUDED_PRIOR",
+          "SYNTHETIC_HISTORICAL_SOURCE",
+          "COVERAGE_IS_NOT_MEASUREMENT_QUALITY",
+          "REFERENCE_RELATIVE_NOT_NORMATIVE",
+          "DESCRIPTIVE_LINEAR_COMPARATOR",
+          "NOT_A_FORECAST",
+          "MAD_BASED_DESCRIPTIVE_COMPARISON",
+          "NO_CAUSAL_OR_BETTER_WORSE_INTERPRETATION",
+          "DESCRIPTIVE_SEASONAL_REFERENCE_ONLY",
+          "HISTORICAL_PERSONAL_REFERENCE_NOT_POPULATION_DATA"
+        ],
+        "maturity": "reference_available",
+        "miniSeries": [
+          {
+            "timestamp": "2026-01-20T23:59:00+11:00",
+            "value": 0.0
+          },
+          {
+            "timestamp": "2026-01-21T23:59:00+11:00",
+            "value": 29.0
+          },
+          {
+            "timestamp": "2026-01-22T23:59:00+11:00",
+            "value": 33.5
+          },
+          {
+            "timestamp": "2026-01-23T23:59:00+11:00",
+            "value": 20.5
+          },
+          {
+            "timestamp": "2026-01-24T23:59:00+11:00",
+            "value": 0.0
+          },
+          {
+            "timestamp": "2026-01-25T23:59:00+11:00",
+            "value": 5.0
+          },
+          {
+            "timestamp": "2026-01-26T23:59:00+11:00",
+            "value": 0.0
+          },
+          {
+            "timestamp": "2026-01-27T23:59:00+11:00",
+            "value": 18.9
+          },
+          {
+            "timestamp": "2026-01-28T23:59:00+11:00",
+            "value": 0.0
+          },
+          {
+            "timestamp": "2026-01-29T23:59:00+11:00",
+            "value": 0.0
+          },
+          {
+            "timestamp": "2026-01-30T23:59:00+11:00",
+            "value": 0.0
+          },
+          {
+            "timestamp": "2026-01-31T23:59:00+11:00",
+            "value": 0.0
+          }
+        ],
+        "observationCount": 379,
+        "position": "near_reference",
+        "provenanceFamily": "passive_historical",
+        "reference": 16.8,
+        "referenceHigh": 66.61536,
+        "referenceKind": "historical",
+        "referenceLow": -33.01536,
+        "referenceType": "HISTORICAL_REFERENCE_BASELINE",
+        "referenceWindow": {
+          "end": "2026-01-31T23:59:00+11:00",
+          "independentDayCount": 69,
+          "observationCount": 69,
+          "start": "2025-11-20T23:59:00+11:00"
+        },
+        "semantic": "duration",
+        "seriesId": "market:activity.exercise_minutes",
+        "unit": "minutes"
+      },
+      {
+        "adaptive": {
+          "analystKey": "current_vs_reference",
+          "availableTimeframes": [
+            "RECENT",
+            "7D",
+            "30D",
+            "90D",
+            "1Y",
+            "ALL"
+          ],
+          "availableViews": [
+            "line",
+            "candle",
+            "range"
+          ],
+          "changeFromFirst": -14.8,
+          "changeFromPrevious": -21.499999999999996,
+          "current": 29.3,
+          "defaultView": "line",
+          "first": 44.1,
+          "firstObservedAt": "2025-01-01T23:59:00+11:00",
+          "lastObservedAt": "2026-01-31T23:59:00+11:00",
+          "limitations": [],
+          "microCandleAvailable": true,
+          "microCandleBucketSize": 5,
+          "microCandleBucketType": "OBSERVATION_COUNT",
+          "observationCount": 375,
+          "previous": 50.8,
+          "rangeHigh": 71.7,
+          "rangeLow": 6.2,
+          "referenceAvailable": true,
+          "state": "reference_available"
+        },
+        "constructKey": "activity.active_minutes",
+        "coverageRatio": 0.946969696969697,
+        "current": 29.3,
+        "currentAt": "2026-01-31T23:59:00+11:00",
+        "deviationAbsolute": -11.2,
+        "deviationPercent": -27.65432098765432,
+        "direction": "lower",
+        "domain": "activity",
+        "evidenceStage": "S3",
+        "independentDayCount": 375,
+        "labelKey": "active_minutes",
+        "limitationCodes": [
+          "DESCRIPTIVE_HISTORICAL_REFERENCE",
+          "NO_NORMATIVE_OR_CAUSAL_INTERPRETATION",
+          "SOURCE_REGIME_BOUNDARY_EXCLUDED_PRIOR",
+          "SYNTHETIC_HISTORICAL_SOURCE",
+          "COVERAGE_IS_NOT_MEASUREMENT_QUALITY",
+          "REFERENCE_RELATIVE_NOT_NORMATIVE",
+          "DESCRIPTIVE_LINEAR_COMPARATOR",
+          "NOT_A_FORECAST",
+          "MAD_BASED_DESCRIPTIVE_COMPARISON",
+          "NO_CAUSAL_OR_BETTER_WORSE_INTERPRETATION",
+          "DESCRIPTIVE_SEASONAL_REFERENCE_ONLY",
+          "HISTORICAL_PERSONAL_REFERENCE_NOT_POPULATION_DATA"
+        ],
+        "maturity": "reference_available",
+        "miniSeries": [
+          {
+            "timestamp": "2026-01-18T23:59:00+11:00",
+            "value": 27.3
+          },
+          {
+            "timestamp": "2026-01-19T23:59:00+11:00",
+            "value": 40.1
+          },
+          {
+            "timestamp": "2026-01-20T23:59:00+11:00",
+            "value": 56.1
+          },
+          {
+            "timestamp": "2026-01-21T23:59:00+11:00",
+            "value": 57.2
+          },
+          {
+            "timestamp": "2026-01-22T23:59:00+11:00",
+            "value": 28.8
+          },
+          {
+            "timestamp": "2026-01-24T23:59:00+11:00",
+            "value": 27.3
+          },
+          {
+            "timestamp": "2026-01-26T23:59:00+11:00",
+            "value": 33.0
+          },
+          {
+            "timestamp": "2026-01-27T23:59:00+11:00",
+            "value": 46.5
+          },
+          {
+            "timestamp": "2026-01-28T23:59:00+11:00",
+            "value": 14.9
+          },
+          {
+            "timestamp": "2026-01-29T23:59:00+11:00",
+            "value": 40.9
+          },
+          {
+            "timestamp": "2026-01-30T23:59:00+11:00",
+            "value": 50.8
+          },
+          {
+            "timestamp": "2026-01-31T23:59:00+11:00",
+            "value": 29.3
+          }
+        ],
+        "observationCount": 375,
+        "position": "near_reference",
+        "provenanceFamily": "passive_historical",
+        "reference": 40.5,
+        "referenceHigh": 63.035520000000005,
+        "referenceKind": "historical",
+        "referenceLow": 17.96448,
+        "referenceType": "HISTORICAL_REFERENCE_BASELINE",
+        "referenceWindow": {
+          "end": "2026-01-31T23:59:00+11:00",
+          "independentDayCount": 68,
+          "observationCount": 68,
+          "start": "2025-11-20T23:59:00+11:00"
+        },
+        "semantic": "duration",
+        "seriesId": "market:activity.active_minutes",
+        "unit": "minutes"
+      },
+      {
+        "adaptive": {
+          "analystKey": "current_vs_reference",
+          "availableTimeframes": [
+            "RECENT",
+            "7D",
+            "30D",
+            "90D",
+            "1Y",
+            "ALL"
+          ],
+          "availableViews": [
+            "line",
+            "candle",
+            "range"
+          ],
+          "changeFromFirst": -1.2999999999999972,
+          "changeFromPrevious": -0.3999999999999986,
+          "current": 60.7,
+          "defaultView": "line",
+          "first": 62.0,
+          "firstObservedAt": "2025-01-01T23:59:00+11:00",
+          "lastObservedAt": "2026-01-31T23:59:00+11:00",
+          "limitations": [],
+          "microCandleAvailable": true,
+          "microCandleBucketSize": 5,
+          "microCandleBucketType": "OBSERVATION_COUNT",
+          "observationCount": 377,
+          "previous": 61.1,
+          "rangeHigh": 68.6,
+          "rangeLow": 58.5,
+          "referenceAvailable": true,
+          "state": "reference_available"
+        },
+        "constructKey": "body.resting_heart_rate",
+        "coverageRatio": 0.952020202020202,
+        "current": 60.7,
+        "currentAt": "2026-01-31T23:59:00+11:00",
+        "deviationAbsolute": -1.1999999999999957,
+        "deviationPercent": -1.9386106623586359,
+        "direction": "lower",
+        "domain": "cardiovascular",
+        "evidenceStage": "S3",
+        "independentDayCount": 377,
+        "labelKey": "resting_heart_rate",
+        "limitationCodes": [
+          "DESCRIPTIVE_HISTORICAL_REFERENCE",
+          "NO_NORMATIVE_OR_CAUSAL_INTERPRETATION",
+          "SOURCE_REGIME_BOUNDARY_EXCLUDED_PRIOR",
+          "SYNTHETIC_HISTORICAL_SOURCE",
+          "COVERAGE_IS_NOT_MEASUREMENT_QUALITY",
+          "REFERENCE_RELATIVE_NOT_NORMATIVE",
+          "DESCRIPTIVE_LINEAR_COMPARATOR",
+          "NOT_A_FORECAST",
+          "MAD_BASED_DESCRIPTIVE_COMPARISON",
+          "NO_CAUSAL_OR_BETTER_WORSE_INTERPRETATION",
+          "DESCRIPTIVE_SEASONAL_REFERENCE_ONLY",
+          "HISTORICAL_PERSONAL_REFERENCE_NOT_POPULATION_DATA"
+        ],
+        "maturity": "reference_available",
+        "miniSeries": [
+          {
+            "timestamp": "2026-01-20T23:59:00+11:00",
+            "value": 62.8
+          },
+          {
+            "timestamp": "2026-01-21T23:59:00+11:00",
+            "value": 62.3
+          },
+          {
+            "timestamp": "2026-01-22T23:59:00+11:00",
+            "value": 63.2
+          },
+          {
+            "timestamp": "2026-01-23T23:59:00+11:00",
+            "value": 62.1
+          },
+          {
+            "timestamp": "2026-01-24T23:59:00+11:00",
+            "value": 61.1
+          },
+          {
+            "timestamp": "2026-01-25T23:59:00+11:00",
+            "value": 63.4
+          },
+          {
+            "timestamp": "2026-01-26T23:59:00+11:00",
+            "value": 60.0
+          },
+          {
+            "timestamp": "2026-01-27T23:59:00+11:00",
+            "value": 60.5
+          },
+          {
+            "timestamp": "2026-01-28T23:59:00+11:00",
+            "value": 60.3
+          },
+          {
+            "timestamp": "2026-01-29T23:59:00+11:00",
+            "value": 60.5
+          },
+          {
+            "timestamp": "2026-01-30T23:59:00+11:00",
+            "value": 61.1
+          },
+          {
+            "timestamp": "2026-01-31T23:59:00+11:00",
+            "value": 60.7
+          }
+        ],
+        "observationCount": 377,
+        "position": "near_reference",
+        "provenanceFamily": "passive_historical",
+        "reference": 61.9,
+        "referenceHigh": 65.45823999999999,
+        "referenceKind": "historical",
+        "referenceLow": 58.34176,
+        "referenceType": "HISTORICAL_REFERENCE_BASELINE",
+        "referenceWindow": {
+          "end": "2026-01-31T23:59:00+11:00",
+          "independentDayCount": 70,
+          "observationCount": 70,
+          "start": "2025-11-20T23:59:00+11:00"
+        },
+        "semantic": "performance",
+        "seriesId": "market:body.resting_heart_rate",
+        "unit": "bpm"
+      }
+    ],
+    "limitations": [
+      "NO_COMPOSITE_PERSONAL_INDEX",
+      "POSITION_IS_NOT_GOOD_OR_BAD",
+      "DIRECTION_IS_DESCRIPTIVE_NOT_CAUSAL",
+      "INDEPENDENT_INSTRUMENT_SCALES"
+    ],
+    "schemaVersion": "questlife-personal-market-overview-v0.4.2",
+    "signals": {
+      "activeCount": 0,
+      "items": [],
+      "newlyEligibleCount": 0
+    },
+    "state": "available",
+    "topMoves": [
+      {
+        "deviationPercent": -100.0,
+        "kind": "reference_relative_change",
+        "magnitude": 100.0,
+        "rankBasis": "absolute_valid_reference_relative_percentage",
+        "seriesId": "market:activity.exercise_minutes"
+      },
+      {
+        "deviationPercent": -27.65432098765432,
+        "kind": "reference_relative_change",
+        "magnitude": 27.65432098765432,
+        "rankBasis": "absolute_valid_reference_relative_percentage",
+        "seriesId": "market:activity.active_minutes"
+      },
+      {
+        "capability": "observation_count_candle",
+        "kind": "new_capability",
+        "magnitude": null,
+        "rankBasis": "micro_candle_capability_available",
+        "seriesId": "market:activity.walking_running_distance"
+      }
+    ]
+  },
+  "scenarioId": "day30",
+  "schemaVersion": "questlife-personal-market-overview-v0.4.2",
+  "source": {
+    "canonicalArtifactHash": "e8a18eefe25743e53ed86eef0ae91876455122c79b56ebd6418133f194d805aa",
+    "containsRealUserData": false,
+    "engineVersion": "questlife-cold-start-terminal-v0.4",
+    "materializedEngineVersion": "questlife-quant-v0.4.1-materialized",
+    "presentationParentVersion": "questlife-terminal-presentation-v0.4.1",
+    "quantCommit": "53c8654",
+    "sourceArtifact": "artifacts/v0.4/day30_baseline_forming.json",
+    "syntheticOnly": true
+  }
+}

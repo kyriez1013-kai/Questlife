@@ -1,0 +1,162 @@
+{
+  "asOf": "2026-01-08T07:59:00+11:00",
+  "overview": {
+    "analyst": {
+      "causalClaimsAllowed": false,
+      "rows": [
+        {
+          "capability": "observation_count_candle",
+          "kind": "new_capability",
+          "magnitude": null,
+          "rankBasis": "micro_candle_capability_available",
+          "seriesId": "market:state.focus"
+        },
+        {
+          "count": 1,
+          "kind": "forming_instruments"
+        },
+        {
+          "count": 1,
+          "kind": "coverage_unknown"
+        }
+      ],
+      "state": "structured_observation"
+    },
+    "asOf": "2026-01-08T07:59:00+11:00",
+    "breadth": {
+      "aboveReference": 0,
+      "basis": "categorical_instrument_count",
+      "belowReference": 0,
+      "forming": 1,
+      "nearReference": 0
+    },
+    "entitySummary": {
+      "goalCount": 0,
+      "skillCount": 0
+    },
+    "historyPeriod": {
+      "end": "2026-01-06T20:00:00+11:00",
+      "start": "2026-01-02T20:00:00+11:00"
+    },
+    "instrumentCount": 1,
+    "instruments": [
+      {
+        "adaptive": {
+          "analystKey": "short_window_range",
+          "availableTimeframes": [
+            "RECENT",
+            "ALL"
+          ],
+          "availableViews": [
+            "line",
+            "candle"
+          ],
+          "changeFromFirst": 0.0,
+          "changeFromPrevious": 2.0,
+          "current": 4.0,
+          "defaultView": "line",
+          "first": 4.0,
+          "firstObservedAt": "2026-01-02T20:00:00+11:00",
+          "lastObservedAt": "2026-01-06T20:00:00+11:00",
+          "limitations": [
+            "NO_PERSONAL_REFERENCE_YET",
+            "NO_TREND_OR_PATTERN_LANGUAGE"
+          ],
+          "microCandleAvailable": true,
+          "microCandleBucketSize": 5,
+          "microCandleBucketType": "OBSERVATION_COUNT",
+          "observationCount": 5,
+          "previous": 2.0,
+          "rangeHigh": 5.0,
+          "rangeLow": 2.0,
+          "referenceAvailable": false,
+          "state": "short_window_forming"
+        },
+        "constructKey": "state.focus",
+        "coverageRatio": null,
+        "current": 4.0,
+        "currentAt": "2026-01-06T20:00:00+11:00",
+        "deviationAbsolute": null,
+        "deviationPercent": null,
+        "direction": "flat",
+        "domain": "active_questlife",
+        "evidenceStage": "S1",
+        "independentDayCount": 5,
+        "labelKey": "focus_state",
+        "limitationCodes": [
+          "ACTIVE_QUESTLIFE_ONLY",
+          "NO_CAUSAL_INTERPRETATION"
+        ],
+        "maturity": "short_window_forming",
+        "miniSeries": [
+          {
+            "timestamp": "2026-01-02T20:00:00+11:00",
+            "value": 4.0
+          },
+          {
+            "timestamp": "2026-01-03T20:00:00+11:00",
+            "value": 3.0
+          },
+          {
+            "timestamp": "2026-01-04T20:00:00+11:00",
+            "value": 5.0
+          },
+          {
+            "timestamp": "2026-01-05T20:00:00+11:00",
+            "value": 2.0
+          },
+          {
+            "timestamp": "2026-01-06T20:00:00+11:00",
+            "value": 4.0
+          }
+        ],
+        "observationCount": 5,
+        "position": "forming",
+        "provenanceFamily": "questlife_native",
+        "reference": null,
+        "referenceHigh": null,
+        "referenceKind": "active",
+        "referenceLow": null,
+        "referenceType": null,
+        "referenceWindow": null,
+        "semantic": "ordinal_state",
+        "seriesId": "market:state.focus",
+        "unit": "/5"
+      }
+    ],
+    "limitations": [
+      "NO_COMPOSITE_PERSONAL_INDEX",
+      "POSITION_IS_NOT_GOOD_OR_BAD",
+      "DIRECTION_IS_DESCRIPTIVE_NOT_CAUSAL",
+      "INDEPENDENT_INSTRUMENT_SCALES"
+    ],
+    "schemaVersion": "questlife-personal-market-overview-v0.4.2",
+    "signals": {
+      "activeCount": 0,
+      "items": [],
+      "newlyEligibleCount": 0
+    },
+    "state": "available",
+    "topMoves": [
+      {
+        "capability": "observation_count_candle",
+        "kind": "new_capability",
+        "magnitude": null,
+        "rankBasis": "micro_candle_capability_available",
+        "seriesId": "market:state.focus"
+      }
+    ]
+  },
+  "scenarioId": "focus_5_observations",
+  "schemaVersion": "questlife-personal-market-overview-v0.4.2",
+  "source": {
+    "canonicalArtifactHash": "d56fb7c4722f78a663601d4584a00b6a434d0e92dc589d05dcf9ab62ed270fa4",
+    "containsRealUserData": false,
+    "engineVersion": "questlife-cold-start-terminal-v0.4",
+    "materializedEngineVersion": "questlife-quant-v0.4.1-materialized",
+    "presentationParentVersion": "questlife-terminal-presentation-v0.4.1",
+    "quantCommit": "53c8654",
+    "sourceArtifact": "synthetic/stage3.12/focus_5_observations",
+    "syntheticOnly": true
+  }
+}

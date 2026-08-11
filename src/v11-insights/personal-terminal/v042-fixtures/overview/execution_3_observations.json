@@ -1,0 +1,154 @@
+{
+  "asOf": "2026-01-06T07:59:00+11:00",
+  "overview": {
+    "analyst": {
+      "causalClaimsAllowed": false,
+      "rows": [
+        {
+          "capability": "observation_count_candle",
+          "kind": "new_capability",
+          "magnitude": null,
+          "rankBasis": "micro_candle_capability_available",
+          "seriesId": "market:execution.duration"
+        },
+        {
+          "count": 1,
+          "kind": "forming_instruments"
+        },
+        {
+          "count": 1,
+          "kind": "coverage_unknown"
+        }
+      ],
+      "state": "structured_observation"
+    },
+    "asOf": "2026-01-06T07:59:00+11:00",
+    "breadth": {
+      "aboveReference": 0,
+      "basis": "categorical_instrument_count",
+      "belowReference": 0,
+      "forming": 1,
+      "nearReference": 0
+    },
+    "entitySummary": {
+      "goalCount": 0,
+      "skillCount": 0
+    },
+    "historyPeriod": {
+      "end": "2026-01-04T20:00:00+11:00",
+      "start": "2026-01-02T20:00:00+11:00"
+    },
+    "instrumentCount": 1,
+    "instruments": [
+      {
+        "adaptive": {
+          "analystKey": "short_window_range",
+          "availableTimeframes": [
+            "RECENT",
+            "ALL"
+          ],
+          "availableViews": [
+            "line",
+            "candle"
+          ],
+          "changeFromFirst": 7.0,
+          "changeFromPrevious": -7.0,
+          "current": 35.0,
+          "defaultView": "line",
+          "first": 28.0,
+          "firstObservedAt": "2026-01-02T20:00:00+11:00",
+          "lastObservedAt": "2026-01-04T20:00:00+11:00",
+          "limitations": [
+            "NO_PERSONAL_REFERENCE_YET",
+            "NO_TREND_OR_PATTERN_LANGUAGE"
+          ],
+          "microCandleAvailable": true,
+          "microCandleBucketSize": 3,
+          "microCandleBucketType": "OBSERVATION_COUNT",
+          "observationCount": 3,
+          "previous": 42.0,
+          "rangeHigh": 42.0,
+          "rangeLow": 28.0,
+          "referenceAvailable": false,
+          "state": "short_window_forming"
+        },
+        "constructKey": "execution.duration",
+        "coverageRatio": null,
+        "current": 35.0,
+        "currentAt": "2026-01-04T20:00:00+11:00",
+        "deviationAbsolute": null,
+        "deviationPercent": null,
+        "direction": "higher",
+        "domain": "active_questlife",
+        "evidenceStage": "S1",
+        "independentDayCount": 3,
+        "labelKey": "execution_duration",
+        "limitationCodes": [
+          "ACTIVE_QUESTLIFE_ONLY",
+          "NO_CAUSAL_INTERPRETATION"
+        ],
+        "maturity": "short_window_forming",
+        "miniSeries": [
+          {
+            "timestamp": "2026-01-02T20:00:00+11:00",
+            "value": 28.0
+          },
+          {
+            "timestamp": "2026-01-03T20:00:00+11:00",
+            "value": 42.0
+          },
+          {
+            "timestamp": "2026-01-04T20:00:00+11:00",
+            "value": 35.0
+          }
+        ],
+        "observationCount": 3,
+        "position": "forming",
+        "provenanceFamily": "questlife_native",
+        "reference": null,
+        "referenceHigh": null,
+        "referenceKind": "active",
+        "referenceLow": null,
+        "referenceType": null,
+        "referenceWindow": null,
+        "semantic": "duration",
+        "seriesId": "market:execution.duration",
+        "unit": "minutes"
+      }
+    ],
+    "limitations": [
+      "NO_COMPOSITE_PERSONAL_INDEX",
+      "POSITION_IS_NOT_GOOD_OR_BAD",
+      "DIRECTION_IS_DESCRIPTIVE_NOT_CAUSAL",
+      "INDEPENDENT_INSTRUMENT_SCALES"
+    ],
+    "schemaVersion": "questlife-personal-market-overview-v0.4.2",
+    "signals": {
+      "activeCount": 0,
+      "items": [],
+      "newlyEligibleCount": 0
+    },
+    "state": "available",
+    "topMoves": [
+      {
+        "capability": "observation_count_candle",
+        "kind": "new_capability",
+        "magnitude": null,
+        "rankBasis": "micro_candle_capability_available",
+        "seriesId": "market:execution.duration"
+      }
+    ]
+  },
+  "scenarioId": "execution_3_observations",
+  "schemaVersion": "questlife-personal-market-overview-v0.4.2",
+  "source": {
+    "canonicalArtifactHash": "b3de97b20ee1e10662e975a4c9bd70e534d44a18205e9607a119ed75b1e7197d",
+    "containsRealUserData": false,
+    "engineVersion": "questlife-cold-start-terminal-v0.4",
+    "materializedEngineVersion": "questlife-quant-v0.4.1-materialized",
+    "presentationParentVersion": "questlife-terminal-presentation-v0.4.1",
+    "quantCommit": "53c8654",
+    "sourceArtifact": "synthetic/stage3.12/execution_3_observations",
+    "syntheticOnly": true
+  }
+}

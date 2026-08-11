@@ -1,0 +1,206 @@
+{
+  "asOf": "2026-01-03T07:59:00+11:00",
+  "overview": {
+    "analyst": {
+      "causalClaimsAllowed": false,
+      "rows": [
+        {
+          "deviationPercent": 50.574560824197604,
+          "kind": "reference_relative_change",
+          "magnitude": 50.574560824197604,
+          "rankBasis": "absolute_valid_reference_relative_percentage",
+          "seriesId": "market:activity.steps"
+        }
+      ],
+      "state": "structured_observation"
+    },
+    "asOf": "2026-01-03T07:59:00+11:00",
+    "breadth": {
+      "aboveReference": 0,
+      "basis": "categorical_instrument_count",
+      "belowReference": 0,
+      "forming": 0,
+      "nearReference": 1
+    },
+    "entitySummary": {
+      "goalCount": 0,
+      "skillCount": 0
+    },
+    "historyPeriod": {
+      "end": "2026-01-02T23:59:00+11:00",
+      "start": "2025-12-21T23:59:00+11:00"
+    },
+    "instrumentCount": 1,
+    "instruments": [
+      {
+        "adaptive": {
+          "analystKey": "current_vs_reference",
+          "availableTimeframes": [
+            "RECENT",
+            "7D",
+            "30D",
+            "90D",
+            "1Y",
+            "ALL"
+          ],
+          "availableViews": [
+            "line",
+            "candle",
+            "range"
+          ],
+          "changeFromFirst": 3886.0,
+          "changeFromPrevious": 1199.0,
+          "current": 11400.0,
+          "defaultView": "line",
+          "first": 7514.0,
+          "firstObservedAt": "2025-01-01T23:59:00+11:00",
+          "lastObservedAt": "2026-01-02T23:59:00+11:00",
+          "limitations": [],
+          "microCandleAvailable": true,
+          "microCandleBucketSize": 5,
+          "microCandleBucketType": "OBSERVATION_COUNT",
+          "observationCount": 353,
+          "previous": 10201.0,
+          "rangeHigh": 15746.0,
+          "rangeLow": 650.0,
+          "referenceAvailable": true,
+          "state": "reference_available"
+        },
+        "constructKey": "activity.steps",
+        "coverageRatio": 0.9618528610354223,
+        "current": 11400.0,
+        "currentAt": "2026-01-02T23:59:00+11:00",
+        "deviationAbsolute": 3829.0,
+        "deviationPercent": 50.574560824197604,
+        "direction": "higher",
+        "domain": "movement",
+        "evidenceStage": "S3",
+        "independentDayCount": 353,
+        "labelKey": "steps",
+        "limitationCodes": [
+          "DESCRIPTIVE_HISTORICAL_REFERENCE",
+          "NO_NORMATIVE_OR_CAUSAL_INTERPRETATION",
+          "SOURCE_REGIME_BOUNDARY_EXCLUDED_PRIOR",
+          "SYNTHETIC_HISTORICAL_SOURCE",
+          "COVERAGE_IS_NOT_MEASUREMENT_QUALITY",
+          "REFERENCE_RELATIVE_NOT_NORMATIVE",
+          "DESCRIPTIVE_LINEAR_COMPARATOR",
+          "NOT_A_FORECAST",
+          "MAD_BASED_DESCRIPTIVE_COMPARISON",
+          "NO_CAUSAL_OR_BETTER_WORSE_INTERPRETATION",
+          "DESCRIPTIVE_SEASONAL_REFERENCE_ONLY",
+          "HISTORICAL_PERSONAL_REFERENCE_NOT_POPULATION_DATA"
+        ],
+        "maturity": "reference_available",
+        "miniSeries": [
+          {
+            "timestamp": "2025-12-21T23:59:00+11:00",
+            "value": 5320.0
+          },
+          {
+            "timestamp": "2025-12-22T23:59:00+11:00",
+            "value": 10228.0
+          },
+          {
+            "timestamp": "2025-12-23T23:59:00+11:00",
+            "value": 10968.0
+          },
+          {
+            "timestamp": "2025-12-24T23:59:00+11:00",
+            "value": 9482.0
+          },
+          {
+            "timestamp": "2025-12-25T23:59:00+11:00",
+            "value": 7639.0
+          },
+          {
+            "timestamp": "2025-12-26T23:59:00+11:00",
+            "value": 7134.0
+          },
+          {
+            "timestamp": "2025-12-27T23:59:00+11:00",
+            "value": 4366.0
+          },
+          {
+            "timestamp": "2025-12-28T23:59:00+11:00",
+            "value": 4715.0
+          },
+          {
+            "timestamp": "2025-12-29T23:59:00+11:00",
+            "value": 7567.0
+          },
+          {
+            "timestamp": "2025-12-30T23:59:00+11:00",
+            "value": 8898.0
+          },
+          {
+            "timestamp": "2026-01-01T23:59:00+11:00",
+            "value": 10201.0
+          },
+          {
+            "timestamp": "2026-01-02T23:59:00+11:00",
+            "value": 11400.0
+          }
+        ],
+        "observationCount": 353,
+        "position": "near_reference",
+        "provenanceFamily": "passive_historical",
+        "reference": 7571.0,
+        "referenceHigh": 11594.776399999999,
+        "referenceKind": "historical",
+        "referenceLow": 3547.2236000000003,
+        "referenceType": "HISTORICAL_REFERENCE_BASELINE",
+        "referenceWindow": {
+          "end": "2026-01-02T23:59:00+11:00",
+          "independentDayCount": 43,
+          "observationCount": 43,
+          "start": "2025-11-20T23:59:00+11:00"
+        },
+        "semantic": "count",
+        "seriesId": "market:activity.steps",
+        "unit": "steps"
+      }
+    ],
+    "limitations": [
+      "NO_COMPOSITE_PERSONAL_INDEX",
+      "POSITION_IS_NOT_GOOD_OR_BAD",
+      "DIRECTION_IS_DESCRIPTIVE_NOT_CAUSAL",
+      "INDEPENDENT_INSTRUMENT_SCALES"
+    ],
+    "schemaVersion": "questlife-personal-market-overview-v0.4.2",
+    "signals": {
+      "activeCount": 0,
+      "items": [],
+      "newlyEligibleCount": 0
+    },
+    "state": "available",
+    "topMoves": [
+      {
+        "deviationPercent": 50.574560824197604,
+        "kind": "reference_relative_change",
+        "magnitude": 50.574560824197604,
+        "rankBasis": "absolute_valid_reference_relative_percentage",
+        "seriesId": "market:activity.steps"
+      },
+      {
+        "capability": "observation_count_candle",
+        "kind": "new_capability",
+        "magnitude": null,
+        "rankBasis": "micro_candle_capability_available",
+        "seriesId": "market:activity.steps"
+      }
+    ]
+  },
+  "scenarioId": "market_steps_only",
+  "schemaVersion": "questlife-personal-market-overview-v0.4.2",
+  "source": {
+    "canonicalArtifactHash": "e3ddf99f3bbd3f375adf24cc29ca7ddfc5e601469d965cc649e5f003e030d515",
+    "containsRealUserData": false,
+    "engineVersion": "questlife-cold-start-terminal-v0.4",
+    "materializedEngineVersion": "questlife-quant-v0.4.1-materialized",
+    "presentationParentVersion": "questlife-terminal-presentation-v0.4.1",
+    "quantCommit": "53c8654",
+    "sourceArtifact": "artifacts/v0.4/day1_steps_only_product_review.json",
+    "syntheticOnly": true
+  }
+}

@@ -1,0 +1,265 @@
+{
+  "asOf": "2026-01-14T07:59:00+11:00",
+  "overview": {
+    "analyst": {
+      "causalClaimsAllowed": false,
+      "rows": [
+        {
+          "capability": "observation_count_candle",
+          "kind": "new_capability",
+          "magnitude": null,
+          "rankBasis": "micro_candle_capability_available",
+          "seriesId": "market:execution.duration"
+        },
+        {
+          "count": 2,
+          "kind": "coverage_unknown"
+        }
+      ],
+      "state": "structured_observation"
+    },
+    "asOf": "2026-01-14T07:59:00+11:00",
+    "breadth": {
+      "aboveReference": 0,
+      "basis": "categorical_instrument_count",
+      "belowReference": 0,
+      "forming": 0,
+      "nearReference": 2
+    },
+    "entitySummary": {
+      "goalCount": 0,
+      "skillCount": 0
+    },
+    "historyPeriod": {
+      "end": "2026-01-11T20:00:00+11:00",
+      "start": "2026-01-02T20:00:00+11:00"
+    },
+    "instrumentCount": 2,
+    "instruments": [
+      {
+        "adaptive": {
+          "analystKey": "current_vs_reference",
+          "availableTimeframes": [
+            "RECENT",
+            "7D",
+            "ALL"
+          ],
+          "availableViews": [
+            "line",
+            "candle"
+          ],
+          "changeFromFirst": 0.0,
+          "changeFromPrevious": 1.0,
+          "current": 4.0,
+          "defaultView": "line",
+          "first": 4.0,
+          "firstObservedAt": "2026-01-02T20:00:00+11:00",
+          "lastObservedAt": "2026-01-11T20:00:00+11:00",
+          "limitations": [],
+          "microCandleAvailable": true,
+          "microCandleBucketSize": 5,
+          "microCandleBucketType": "OBSERVATION_COUNT",
+          "observationCount": 10,
+          "previous": 3.0,
+          "rangeHigh": 5.0,
+          "rangeLow": 2.0,
+          "referenceAvailable": true,
+          "state": "reference_available"
+        },
+        "constructKey": "state.focus",
+        "coverageRatio": null,
+        "current": 4.0,
+        "currentAt": "2026-01-11T20:00:00+11:00",
+        "deviationAbsolute": 0.0,
+        "deviationPercent": null,
+        "direction": "flat",
+        "domain": "active_questlife",
+        "evidenceStage": "S2",
+        "independentDayCount": 10,
+        "labelKey": "focus_state",
+        "limitationCodes": [
+          "ACTIVE_QUESTLIFE_ONLY",
+          "NO_CAUSAL_INTERPRETATION"
+        ],
+        "maturity": "reference_available",
+        "miniSeries": [
+          {
+            "timestamp": "2026-01-02T20:00:00+11:00",
+            "value": 4.0
+          },
+          {
+            "timestamp": "2026-01-03T20:00:00+11:00",
+            "value": 3.0
+          },
+          {
+            "timestamp": "2026-01-04T20:00:00+11:00",
+            "value": 5.0
+          },
+          {
+            "timestamp": "2026-01-05T20:00:00+11:00",
+            "value": 2.0
+          },
+          {
+            "timestamp": "2026-01-06T20:00:00+11:00",
+            "value": 4.0
+          },
+          {
+            "timestamp": "2026-01-07T20:00:00+11:00",
+            "value": 3.0
+          },
+          {
+            "timestamp": "2026-01-08T20:00:00+11:00",
+            "value": 4.0
+          },
+          {
+            "timestamp": "2026-01-09T20:00:00+11:00",
+            "value": 5.0
+          },
+          {
+            "timestamp": "2026-01-10T20:00:00+11:00",
+            "value": 3.0
+          },
+          {
+            "timestamp": "2026-01-11T20:00:00+11:00",
+            "value": 4.0
+          }
+        ],
+        "observationCount": 10,
+        "position": "near_reference",
+        "provenanceFamily": "questlife_native",
+        "reference": 4.0,
+        "referenceHigh": 6.965199999999999,
+        "referenceKind": "active",
+        "referenceLow": 1.0348000000000002,
+        "referenceType": null,
+        "referenceWindow": null,
+        "semantic": "ordinal_state",
+        "seriesId": "market:state.focus",
+        "unit": "/5"
+      },
+      {
+        "adaptive": {
+          "analystKey": "current_vs_reference",
+          "availableTimeframes": [
+            "RECENT",
+            "7D",
+            "ALL"
+          ],
+          "availableViews": [
+            "line",
+            "candle"
+          ],
+          "changeFromFirst": 12.0,
+          "changeFromPrevious": -6.0,
+          "current": 40.0,
+          "defaultView": "line",
+          "first": 28.0,
+          "firstObservedAt": "2026-01-03T20:00:00+11:00",
+          "lastObservedAt": "2026-01-09T20:00:00+11:00",
+          "limitations": [],
+          "microCandleAvailable": true,
+          "microCandleBucketSize": 5,
+          "microCandleBucketType": "OBSERVATION_COUNT",
+          "observationCount": 7,
+          "previous": 46.0,
+          "rangeHigh": 51.0,
+          "rangeLow": 28.0,
+          "referenceAvailable": true,
+          "state": "reference_available"
+        },
+        "constructKey": "execution.duration",
+        "coverageRatio": null,
+        "current": 40.0,
+        "currentAt": "2026-01-09T20:00:00+11:00",
+        "deviationAbsolute": 0.0,
+        "deviationPercent": null,
+        "direction": "higher",
+        "domain": "active_questlife",
+        "evidenceStage": "S2",
+        "independentDayCount": 7,
+        "labelKey": "execution_duration",
+        "limitationCodes": [
+          "ACTIVE_QUESTLIFE_ONLY",
+          "NO_CAUSAL_INTERPRETATION"
+        ],
+        "maturity": "reference_available",
+        "miniSeries": [
+          {
+            "timestamp": "2026-01-03T20:00:00+11:00",
+            "value": 28.0
+          },
+          {
+            "timestamp": "2026-01-04T20:00:00+11:00",
+            "value": 42.0
+          },
+          {
+            "timestamp": "2026-01-05T20:00:00+11:00",
+            "value": 35.0
+          },
+          {
+            "timestamp": "2026-01-06T20:00:00+11:00",
+            "value": 51.0
+          },
+          {
+            "timestamp": "2026-01-07T20:00:00+11:00",
+            "value": 32.0
+          },
+          {
+            "timestamp": "2026-01-08T20:00:00+11:00",
+            "value": 46.0
+          },
+          {
+            "timestamp": "2026-01-09T20:00:00+11:00",
+            "value": 40.0
+          }
+        ],
+        "observationCount": 7,
+        "position": "near_reference",
+        "provenanceFamily": "questlife_native",
+        "reference": 40.0,
+        "referenceHigh": 57.7912,
+        "referenceKind": "active",
+        "referenceLow": 22.2088,
+        "referenceType": null,
+        "referenceWindow": null,
+        "semantic": "duration",
+        "seriesId": "market:execution.duration",
+        "unit": "minutes"
+      }
+    ],
+    "limitations": [
+      "NO_COMPOSITE_PERSONAL_INDEX",
+      "POSITION_IS_NOT_GOOD_OR_BAD",
+      "DIRECTION_IS_DESCRIPTIVE_NOT_CAUSAL",
+      "INDEPENDENT_INSTRUMENT_SCALES"
+    ],
+    "schemaVersion": "questlife-personal-market-overview-v0.4.2",
+    "signals": {
+      "activeCount": 0,
+      "items": [],
+      "newlyEligibleCount": 0
+    },
+    "state": "available",
+    "topMoves": [
+      {
+        "capability": "observation_count_candle",
+        "kind": "new_capability",
+        "magnitude": null,
+        "rankBasis": "micro_candle_capability_available",
+        "seriesId": "market:execution.duration"
+      }
+    ]
+  },
+  "scenarioId": "market_questlife_only",
+  "schemaVersion": "questlife-personal-market-overview-v0.4.2",
+  "source": {
+    "canonicalArtifactHash": "ff45cd0c1bf0e1a63fab9c707036f25d9a5d8c7fd10e0f10e9448830ba754ebb",
+    "containsRealUserData": false,
+    "engineVersion": "questlife-cold-start-terminal-v0.4",
+    "materializedEngineVersion": "questlife-quant-v0.4.1-materialized",
+    "presentationParentVersion": "questlife-terminal-presentation-v0.4.1",
+    "quantCommit": "53c8654",
+    "sourceArtifact": "synthetic/stage3.12/market_questlife_only",
+    "syntheticOnly": true
+  }
+}

@@ -1,0 +1,196 @@
+{
+  "containsRealUserData": false,
+  "quantCommit": "53c8654",
+  "releaseVersion": "questlife-terminal-presentation-release-v0.4.2",
+  "runtimeDependencyOnSiblingRepository": false,
+  "scenarios": [
+    {
+      "file": "day180.json",
+      "fullSizeBytes": 1627670,
+      "instrumentCount": 8,
+      "overviewFile": "overview/day180.json",
+      "overviewSizeBytes": 22765,
+      "overviewToFullRatio": 0.013986250284148507,
+      "presentationHash": "9ccff41cefeee36a0d7d8d850e419a57c37eb51236e29f22e449fbc1a059baa3",
+      "scenario": "day180",
+      "state": "available"
+    },
+    {
+      "file": "day30.json",
+      "fullSizeBytes": 1191925,
+      "instrumentCount": 8,
+      "overviewFile": "overview/day30.json",
+      "overviewSizeBytes": 22448,
+      "overviewToFullRatio": 0.018833399752501204,
+      "presentationHash": "01da6a3c9aa84307ccce94cd42994f5456395acc72ae74e0b0d10745cfe5bb27",
+      "scenario": "day30",
+      "state": "available"
+    },
+    {
+      "file": "day90.json",
+      "fullSizeBytes": 1381738,
+      "instrumentCount": 8,
+      "overviewFile": "overview/day90.json",
+      "overviewSizeBytes": 22664,
+      "overviewToFullRatio": 0.016402530725796064,
+      "presentationHash": "e533d48ec2e05c49a87ab3adf84b9cf17ad999ce9667f159a458e3acd79363e9",
+      "scenario": "day90",
+      "state": "available"
+    },
+    {
+      "file": "execution_3_observations.json",
+      "fullSizeBytes": 8117,
+      "instrumentCount": 1,
+      "overviewFile": "overview/execution_3_observations.json",
+      "overviewSizeBytes": 3173,
+      "overviewToFullRatio": 0.3909079709252187,
+      "presentationHash": "65c0964996dd4cb45bb2bc0373ad4034b069db2cfe32cedbddc03e3b8103e7e2",
+      "scenario": "execution_3_observations",
+      "state": "available"
+    },
+    {
+      "file": "execution_7_observations.json",
+      "fullSizeBytes": 9111,
+      "instrumentCount": 1,
+      "overviewFile": "overview/execution_7_observations.json",
+      "overviewSizeBytes": 3311,
+      "overviewToFullRatio": 0.3634068708154978,
+      "presentationHash": "67bd6c477fc876ab2db9567730084e6dd5c15cbd74e708eb5fcb567570f1d460",
+      "scenario": "execution_7_observations",
+      "state": "available"
+    },
+    {
+      "file": "focus_10_observations.json",
+      "fullSizeBytes": 11701,
+      "instrumentCount": 1,
+      "overviewFile": "overview/focus_10_observations.json",
+      "overviewSizeBytes": 3438,
+      "overviewToFullRatio": 0.2938210409366721,
+      "presentationHash": "35d63e89372f1a936ae8a759bc0d7b652225396c9dd049cc9a79c324976148b7",
+      "scenario": "focus_10_observations",
+      "state": "available"
+    },
+    {
+      "file": "focus_1_observation.json",
+      "fullSizeBytes": 6314,
+      "instrumentCount": 1,
+      "overviewFile": "overview/focus_1_observation.json",
+      "overviewSizeBytes": 2688,
+      "overviewToFullRatio": 0.42572062084257206,
+      "presentationHash": "edd3fda98094610294ad23c8c7bfaa85be003eb3c6131482bee8d81150a6fcce",
+      "scenario": "focus_1_observation",
+      "state": "available"
+    },
+    {
+      "file": "focus_2_observations.json",
+      "fullSizeBytes": 7269,
+      "instrumentCount": 1,
+      "overviewFile": "overview/focus_2_observations.json",
+      "overviewSizeBytes": 2723,
+      "overviewToFullRatio": 0.3746044847984592,
+      "presentationHash": "5fcb61c57989aff9d3110ae215478d32df1e27b64d909e6887904d83deca931e",
+      "scenario": "focus_2_observations",
+      "state": "available"
+    },
+    {
+      "file": "focus_3_observations.json",
+      "fullSizeBytes": 8772,
+      "instrumentCount": 1,
+      "overviewFile": "overview/focus_3_observations.json",
+      "overviewSizeBytes": 3120,
+      "overviewToFullRatio": 0.35567715458276333,
+      "presentationHash": "87c56f4a2217faf7018c266feae40546b98fea39a8db079d4504c7295f8fa82d",
+      "scenario": "focus_3_observations",
+      "state": "available"
+    },
+    {
+      "file": "focus_5_observations.json",
+      "fullSizeBytes": 9396,
+      "instrumentCount": 1,
+      "overviewFile": "overview/focus_5_observations.json",
+      "overviewSizeBytes": 3226,
+      "overviewToFullRatio": 0.34333759046402723,
+      "presentationHash": "5065c71303c16b2418895802c9129ae33a3e94230ded54ef28cfaf12c5ea5576",
+      "scenario": "focus_5_observations",
+      "state": "available"
+    },
+    {
+      "file": "goal.json",
+      "fullSizeBytes": 1627706,
+      "instrumentCount": 8,
+      "overviewFile": "overview/goal.json",
+      "overviewSizeBytes": 22763,
+      "overviewToFullRatio": 0.013984712226900927,
+      "presentationHash": "07c6f56b55f21e080d5a413f62dbf32319027643b6e80cb753ff1bded48a5b70",
+      "scenario": "goal",
+      "state": "available"
+    },
+    {
+      "file": "market_mixed_mature.json",
+      "fullSizeBytes": 1627683,
+      "instrumentCount": 8,
+      "overviewFile": "overview/market_mixed_mature.json",
+      "overviewSizeBytes": 22778,
+      "overviewToFullRatio": 0.013994125391737826,
+      "presentationHash": "a458cfb692d11a1a9ad200ca6f25297bca5f1ace185093c0b96914852edf1be0",
+      "scenario": "market_mixed_mature",
+      "state": "available"
+    },
+    {
+      "file": "market_questlife_only.json",
+      "fullSizeBytes": 17845,
+      "instrumentCount": 2,
+      "overviewFile": "overview/market_questlife_only.json",
+      "overviewSizeBytes": 5100,
+      "overviewToFullRatio": 0.2857943401513029,
+      "presentationHash": "fc30c327e89cb8b8d08b181792ccc1375e05d45f3de86ad0c3cdedbcc1770f6b",
+      "scenario": "market_questlife_only",
+      "state": "available"
+    },
+    {
+      "file": "market_rich_passive.json",
+      "fullSizeBytes": 1093177,
+      "instrumentCount": 8,
+      "overviewFile": "overview/market_rich_passive.json",
+      "overviewSizeBytes": 22481,
+      "overviewToFullRatio": 0.02056483076391106,
+      "presentationHash": "d73fd2154f5f63daa1df45317713d4093c561feabe3e2b2d1f467169cf01f888",
+      "scenario": "market_rich_passive",
+      "state": "available"
+    },
+    {
+      "file": "market_steps_only.json",
+      "fullSizeBytes": 171212,
+      "instrumentCount": 1,
+      "overviewFile": "overview/market_steps_only.json",
+      "overviewSizeBytes": 4403,
+      "overviewToFullRatio": 0.025716655374623275,
+      "presentationHash": "4d3f8607024731228700bc1c9ce46600660cf2aeabd173becdcda10734076c79",
+      "scenario": "market_steps_only",
+      "state": "available"
+    },
+    {
+      "file": "no_data.json",
+      "fullSizeBytes": 1769,
+      "instrumentCount": 0,
+      "overviewFile": "overview/no_data.json",
+      "overviewSizeBytes": 1200,
+      "overviewToFullRatio": 0.6783493499152063,
+      "presentationHash": "057a47b7aefeb46f9b1a2ff119342510bb77f6eb9c27114037f90ec32dc66f74",
+      "scenario": "no_data",
+      "state": "no_data"
+    },
+    {
+      "file": "skill.json",
+      "fullSizeBytes": 1627692,
+      "instrumentCount": 8,
+      "overviewFile": "overview/skill.json",
+      "overviewSizeBytes": 22764,
+      "overviewToFullRatio": 0.01398544687815631,
+      "presentationHash": "1628d1947e66590c2b7f13ae899f600c6762e0df9a2e0a006d3817b9ab89779e",
+      "scenario": "skill",
+      "state": "available"
+    }
+  ],
+  "syntheticOnly": true
+}
