@@ -177,7 +177,7 @@ function defaultWorkspaces(order: string[]): PersonalTerminalSavedWorkspace[] {
   const fallback = order[0] || '';
   const seriesAt = (index: number) => order[index] || fallback;
   return [
-    { id: 'daily', name: 'daily', layout: 'two', panes: [pane('daily-1', seriesAt(0)), pane('daily-2', seriesAt(1))], syncTime: true, syncCrosshair: true },
+    { id: 'daily', name: 'daily', layout: 'single', panes: [pane('daily-1', seriesAt(0))], syncTime: true, syncCrosshair: true },
     { id: 'study', name: 'study', layout: 'two', panes: [pane('study-1', seriesAt(2)), pane('study-2', seriesAt(3))], syncTime: true, syncCrosshair: true },
     { id: 'fitness', name: 'fitness', layout: 'two', panes: [pane('fitness-1', seriesAt(0)), pane('fitness-2', seriesAt(4))], syncTime: true, syncCrosshair: true },
     { id: 'recovery', name: 'recovery', layout: 'two', panes: [pane('recovery-1', seriesAt(1)), pane('recovery-2', seriesAt(0))], syncTime: true, syncCrosshair: true },
@@ -395,11 +395,16 @@ export function buildPersonalTerminalRangeViewData(
   const endAt = finalObservations[finalObservations.length - 1]?.timestamp;
   const withinFinal = (timestamp: string) => !startAt || !endAt || (timestamp >= startAt && timestamp <= endAt);
   const sourceCandles = candleSource ? series.precomputedCandles?.[candleSource] || [] : [];
+  const overlapsWindow = (start: string, end: string) => {
+    const startValue = new Date(start).getTime();
+    const endValue = new Date(end).getTime();
+    return endValue >= window.start && startValue <= window.end;
+  };
   return {
     ...base,
     observations: finalObservations,
     line: base.line.filter((row) => withinFinal(row.time) && inWindow(row.time)),
-    candles: sourceCandles.filter((row) => inWindow(row.time) || inWindow(row.endTime)),
+    candles: sourceCandles.filter((row) => overlapsWindow(row.time, row.endTime)),
     incompleteCandles: base.incompleteCandles.filter((row) => withinFinal(row.time) && inWindow(row.time)),
     load: base.load.filter((row) => withinFinal(row.time) && inWindow(row.time)),
     emaShort: base.emaShort.filter((row) => withinFinal(row.time) && inWindow(row.time)),

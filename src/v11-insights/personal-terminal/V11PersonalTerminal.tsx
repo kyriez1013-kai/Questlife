@@ -15,6 +15,7 @@ import PersonalTerminalChart, {
 } from './PersonalTerminalChart';
 import PersonalTerminalSheet from './PersonalTerminalSheet';
 import PersonalTerminalIcon, { type PersonalTerminalIconName } from './PersonalTerminalIcon';
+import PersonalTerminalWorkspaceSurface from './PersonalTerminalWorkspaceSurface';
 import type {
   PersonalTerminalChartKind,
   PersonalTerminalCandle,
@@ -661,7 +662,7 @@ function TerminalAnalystPanel({
   );
 }
 
-export default function V11PersonalTerminal({
+export function V11PersonalTerminalLegacy({
   language,
   model,
   onNextAction,
@@ -1650,4 +1651,9 @@ export default function V11PersonalTerminal({
       </PersonalTerminalSheet>
     </>
   );
+}
+
+export default function V11PersonalTerminal(props: React.ComponentProps<typeof V11PersonalTerminalLegacy>) {
+  if (query().get('personalTerminalLegacy') === '1') return <V11PersonalTerminalLegacy {...props} />;
+  return <PersonalTerminalWorkspaceSurface {...props} />;
 }

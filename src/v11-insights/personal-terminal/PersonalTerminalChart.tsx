@@ -37,6 +37,8 @@ export type PersonalTerminalChartHandle = {
   zoomIn: () => void;
   zoomOut: () => void;
   reset: () => void;
+  setCrosshair: (selection: PersonalTerminalChartSelection | null) => void;
+  setVisibleRange: (range: { from: string; to: string } | null) => void;
 };
 
 function chartTime(value: string) {
@@ -129,6 +131,7 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
   language: Lang;
   onCrosshair: (selection: PersonalTerminalChartSelection | null) => void;
   onInteraction?: () => void;
+  onVisibleRangeChange?: (range: { from: string; to: string } | null) => void;
   onSelectEvent: (event: PersonalTerminalEvent) => void;
   onSelectSelection: (selection: PersonalTerminalChartSelection) => void;
   questlifeStartedAt?: string | null;
@@ -146,6 +149,7 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
   language,
   onCrosshair,
   onInteraction,
+  onVisibleRangeChange,
   onSelectEvent,
   onSelectSelection,
   questlifeStartedAt = null,
@@ -160,8 +164,10 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
   const chartRef = useRef<any>(null);
   const visibleRangeRef = useRef<any>(null);
   const viewIdentityRef = useRef('');
+  const viewDataRef = useRef(viewData);
   const primarySeriesRef = useRef<any>(null);
   const [baselineBand, setBaselineBand] = useState<{ top: number; height: number } | null>(null);
+  viewDataRef.current = viewData;
 
   const transitionPosition = useMemo(() => {
     if (!questlifeStartedAt || viewData.line.length < 2) return null;
@@ -218,6 +224,30 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
       chartRef.current.timeScale().setVisibleLogicalRange({ from: center - span / 2, to: center + span / 2 });
     },
     reset: () => chartRef.current?.timeScale().fitContent(),
+    setCrosshair: (selection) => {
+      const chart = chartRef.current;
+      const primary = primarySeriesRef.current;
+      if (!chart || !primary) return;
+      if (!selection || selection.value == null) {
+        chart.clearCrosshairPosition?.();
+        return;
+      }
+      const point = nearestPoint(viewDataRef.current.line, selection.time);
+      if (!point) {
+        chart.clearCrosshairPosition?.();
+        return;
+      }
+      chart.setCrosshairPosition?.(point.value, chartTime(point.time), primary);
+    },
+    setVisibleRange: (range) => {
+      const scale = chartRef.current?.timeScale();
+      if (!scale) return;
+      if (!range) {
+        scale.fitContent();
+        return;
+      }
+      scale.setVisibleRange({ from: chartTime(range.from), to: chartTime(range.to) });
+    },
   }), []);
 
   const lookup = useMemo(() => {
@@ -311,6 +341,14 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
           const incomplete = chart.addSeries(library.LineSeries, { color: theme.text.secondary, lineVisible: false, pointMarkersVisible: true, pointMarkersRadius: 3, priceLineVisible: false, lastValueVisible: false });
           incomplete.setData(pointsToData(viewData.incompleteCandles) as any);
         }
+      } else if (chartKind === 'bar') {
+        primary = chart.addSeries(library.HistogramSeries, {
+          ...boundedOrdinalScale,
+          color: theme.glow.primary,
+          priceLineVisible: false,
+          lastValueVisible: true,
+        });
+        primary.setData(pointsToData(viewData.line).map((row) => ({ ...row, color: theme.glow.primary })) as any);
       } else {
         primary = chart.addSeries(library.LineSeries, {
           ...boundedOrdinalScale,
@@ -447,7 +485,12 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
         visibleRangeRef.current = range;
         updateBaselineBand();
       };
+      const visibleTimeRangeHandler = (range: any) => onVisibleRangeChange?.(range ? {
+        from: timeLabel(range.from),
+        to: timeLabel(range.to),
+      } : null);
       chart.timeScale().subscribeVisibleLogicalRangeChange(rangeHandler);
+      chart.timeScale().subscribeVisibleTimeRangeChange(visibleTimeRangeHandler);
       chart.timeScale().fitContent();
       if (visibleRangeRef.current) chart.timeScale().setVisibleLogicalRange(visibleRangeRef.current);
       window.requestAnimationFrame(updateBaselineBand);
@@ -469,7 +512,7 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
       chartRef.current = null;
       primarySeriesRef.current = null;
     };
-  }, [candleLookup, chartKind, comparisonSeries, comparisonViewData, indicators, language, lookup, onCrosshair, onInteraction, onSelectEvent, onSelectSelection, reducedMotion, series, theme, timeframe, viewData]);
+  }, [candleLookup, chartKind, comparisonSeries, comparisonViewData, indicators, language, lookup, onCrosshair, onInteraction, onSelectEvent, onSelectSelection, onVisibleRangeChange, reducedMotion, series, theme, timeframe, viewData]);
 
   return (
     <WebView dataSet={{ 'personal-terminal-empty': viewData.line.length ? 'false' : 'true', 'personal-terminal-role': 'chart-frame' }}>

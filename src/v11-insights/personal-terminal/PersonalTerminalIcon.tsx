@@ -2,9 +2,11 @@ import React from 'react';
 import Svg, { Circle, Line, Path, Polyline, Rect } from 'react-native-svg';
 
 export type PersonalTerminalIconName =
-  | 'analyst' | 'chart' | 'close' | 'compare' | 'evidence' | 'event' | 'goal'
-  | 'indicator' | 'market' | 'open' | 'range' | 'research' | 'reset' | 'signal'
-  | 'skill' | 'trend-down' | 'trend-flat' | 'trend-up' | 'zoom-in' | 'zoom-out';
+  | 'add' | 'analyst' | 'bar' | 'calendar' | 'candle' | 'chart' | 'check' | 'close' | 'compare'
+  | 'drag' | 'edit' | 'evidence' | 'event' | 'goal' | 'indicator' | 'layout'
+  | 'market' | 'open' | 'pin' | 'range' | 'remove' | 'research' | 'reset'
+  | 'signal' | 'skill' | 'trend-down' | 'trend-flat' | 'trend-up' | 'watchlist'
+  | 'zoom-in' | 'zoom-out';
 
 export default function PersonalTerminalIcon({ color, name, size = 18 }: { color: string; name: PersonalTerminalIconName; size?: number }) {
   const line = { fill: 'none', stroke: color, strokeLinecap: 'square' as const, strokeLinejoin: 'miter' as const, strokeWidth: 1.15 };
@@ -29,6 +31,17 @@ export default function PersonalTerminalIcon({ color, name, size = 18 }: { color
       {name === 'zoom-in' || name === 'zoom-out' ? <><Circle {...line} cx="8.5" cy="8.5" r="4.5" /><Line {...line} x1="11.8" x2="16.5" y1="11.8" y2="16.5" /><Line {...line} x1="6" x2="11" y1="8.5" y2="8.5" />{name === 'zoom-in' ? <Line {...line} x1="8.5" x2="8.5" y1="6" y2="11" /> : null}</> : null}
       {name === 'reset' ? <><Path {...line} d="M5 6.3A6 6 0 1 1 4.5 13" /><Polyline {...line} points="3.5,3.5 5,6.5 8.2,5" /></> : null}
       {name === 'close' ? <><Line {...line} x1="4" x2="16" y1="4" y2="16" /><Line {...line} x1="16" x2="4" y1="4" y2="16" /></> : null}
+      {name === 'add' ? <><Line {...line} x1="3.5" x2="16.5" y1="10" y2="10" /><Line {...line} x1="10" x2="10" y1="3.5" y2="16.5" /></> : null}
+      {name === 'remove' ? <Line {...line} x1="3.5" x2="16.5" y1="10" y2="10" /> : null}
+      {name === 'check' ? <Polyline {...line} points="3.5,10.5 8,15 16.5,5.5" /> : null}
+      {name === 'pin' ? <><Path {...line} d="M7 3.5h6l-1 4 2 2v1H6v-1l2-2-1-4Z" /><Line {...line} x1="10" x2="10" y1="10.5" y2="17" /></> : null}
+      {name === 'watchlist' ? <><Line {...line} x1="6" x2="16.5" y1="5" y2="5" /><Line {...line} x1="6" x2="16.5" y1="10" y2="10" /><Line {...line} x1="6" x2="16.5" y1="15" y2="15" /><Rect {...line} height="1" width="1" x="3.5" y="4.5" /><Rect {...line} height="1" width="1" x="3.5" y="9.5" /><Rect {...line} height="1" width="1" x="3.5" y="14.5" /></> : null}
+      {name === 'edit' ? <><Path {...line} d="M4 14.5 4.7 11 12.8 3l4 4-8.1 8.1-3.7.9Z" /><Line {...line} x1="11.5" x2="15.5" y1="4.5" y2="8.5" /></> : null}
+      {name === 'drag' ? <><Circle {...line} cx="7" cy="5" r=".7" /><Circle {...line} cx="13" cy="5" r=".7" /><Circle {...line} cx="7" cy="10" r=".7" /><Circle {...line} cx="13" cy="10" r=".7" /><Circle {...line} cx="7" cy="15" r=".7" /><Circle {...line} cx="13" cy="15" r=".7" /></> : null}
+      {name === 'calendar' ? <><Rect {...line} height="12" width="14" x="3" y="4.5" /><Line {...line} x1="3" x2="17" y1="8" y2="8" /><Line {...line} x1="7" x2="7" y1="2.5" y2="6" /><Line {...line} x1="13" x2="13" y1="2.5" y2="6" /></> : null}
+      {name === 'layout' ? <><Rect {...line} height="5" width="5" x="3" y="3" /><Rect {...line} height="5" width="7" x="10" y="3" /><Rect {...line} height="7" width="7" x="3" y="10" /><Rect {...line} height="7" width="5" x="12" y="10" /></> : null}
+      {name === 'bar' ? <><Rect {...line} height="5" width="2.5" x="3.5" y="11.5" /><Rect {...line} height="9" width="2.5" x="8.75" y="7.5" /><Rect {...line} height="13" width="2.5" x="14" y="3.5" /></> : null}
+      {name === 'candle' ? <><Line {...line} x1="6" x2="6" y1="2.5" y2="17.5" /><Rect {...line} height="6" width="4" x="4" y="6" /><Line {...line} x1="14" x2="14" y1="2.5" y2="17.5" /><Rect {...line} height="7" width="4" x="12" y="8" /></> : null}
     </Svg>
   );
 }

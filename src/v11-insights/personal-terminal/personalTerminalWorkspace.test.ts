@@ -83,7 +83,7 @@ assert.equal(catalog.find((item) => item.id === skillSeries.id)?.group, 'skill')
 
 const defaults = createDefaultPersonalTerminalPreferences(catalog);
 assert.deepEqual(defaults.watchlistOrder.slice(0, 4), [marketOne.id, marketTwo.id, goalSeries.id, skillSeries.id]);
-assert.equal(defaults.workspaces[0].panes.length, 2);
+assert.equal(defaults.workspaces[0].panes.length, 1);
 
 assert.deepEqual(addWatchlistItem(['a'], 'b'), ['a', 'b']);
 assert.deepEqual(addWatchlistItem(['a'], 'a'), ['a']);
@@ -150,6 +150,7 @@ const candleSeries: PersonalTerminalSeries = {
 assert.deepEqual(availableCandleSources(candleSeries), ['30D']);
 assert.equal(defaultCandleSource(candleSeries, { kind: 'last_n_days', days: 9 }), '30D');
 assert.equal(buildPersonalTerminalRangeViewData(candleSeries, { kind: 'preset', preset: '1M' }, now, '30D').candles[0], quantCandle);
+assert.equal(buildPersonalTerminalRangeViewData(candleSeries, { kind: 'calendar_range', start: '2026-08-03', end: '2026-08-05' }, now, '30D').candles[0], quantCandle);
 assert.equal(buildPersonalTerminalRangeViewData(marketOne, { kind: 'preset', preset: '1M' }, now, null).candles.length, 0);
 
 const widget = buildPersonalMarketWidgetPayload(catalog, defaults, now);
