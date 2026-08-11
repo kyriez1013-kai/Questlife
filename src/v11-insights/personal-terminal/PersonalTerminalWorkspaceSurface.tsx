@@ -344,7 +344,9 @@ export default function PersonalTerminalWorkspaceSurface({
   const activeViewData = useMemo(() => activeSeries && activePane
     ? buildPersonalTerminalRangeViewData(activeSeries, activePane.range, now, activePane.candleSource)
     : null, [activePane, activeSeries, now]);
-  const activeCurrent = activeViewData?.line[activeViewData.line.length - 1]?.value ?? null;
+  const activeCurrent = activeViewData?.line[activeViewData.line.length - 1]?.value
+    ?? activeViewData?.observations[activeViewData.observations.length - 1]?.value
+    ?? null;
   const activeSignals = activeSeries ? relevantSignals(model, activeSeries) : [];
   const comparisonRows = useMemo(() => activeEntity && activeSeries
     ? availableComparisonSeries(model, activeEntity.id, activeSeries.id).filter((series) => !series.qaDerivedIndex && series.observations.length > 0)

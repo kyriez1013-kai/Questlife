@@ -407,6 +407,21 @@ export function buildPersonalTerminalRangeViewData(
   const endAt = finalObservations[finalObservations.length - 1]?.timestamp;
   const withinFinal = (timestamp: string) => !startAt || !endAt || (timestamp >= startAt && timestamp <= endAt);
   const sourceCandles = candleSource ? series.precomputedCandles?.[candleSource] || [] : [];
+  const selectedSourceIds = new Set(finalObservations.flatMap((row) => row.sourceIds));
+  const filteredLine = base.line.filter((row) => (
+    row.sourceIds.length > 0 && row.sourceIds.every((id) => selectedSourceIds.has(id))
+  ));
+  const representedSourceIds = new Set(filteredLine.flatMap((row) => row.sourceIds));
+  const uncoveredObservations = finalObservations.filter((row) => (
+    row.sourceIds.length === 0 || row.sourceIds.some((id) => !representedSourceIds.has(id))
+  ));
+  const line = [...filteredLine, ...uncoveredObservations.map((row) => ({
+      time: row.timestamp,
+      value: row.value,
+      observationCount: 1,
+      sourceIds: row.sourceIds,
+      provenance: row.provenance,
+    }))].sort((left, right) => left.time.localeCompare(right.time));
   const overlapsWindow = (start: string, end: string) => {
     const startValue = new Date(start).getTime();
     const endValue = new Date(end).getTime();
@@ -415,7 +430,7 @@ export function buildPersonalTerminalRangeViewData(
   return {
     ...base,
     observations: finalObservations,
-    line: base.line.filter((row) => withinFinal(row.time) && inWindow(row.time)),
+    line,
     candles: sourceCandles.filter((row) => overlapsWindow(row.time, row.endTime)),
     incompleteCandles: base.incompleteCandles.filter((row) => withinFinal(row.time) && inWindow(row.time)),
     load: base.load.filter((row) => withinFinal(row.time) && inWindow(row.time)),
