@@ -28,6 +28,8 @@ import V11GlowOrb from '../v11/components/V11GlowOrb';
 import { V11GlassSheet, V11Pill } from '../v11/components/V11Material';
 import {
   getV11ThemeTokens,
+  v11Motion,
+  v11Radius,
   v11Spacing,
   v11Typography,
   type V11EvidenceStage,
@@ -496,6 +498,22 @@ export default function V11InsightsScreen() {
       '--pt-border': theme.questTheme.colors.border,
       '--pt-surface': theme.questTheme.colors.surfaceElevated,
       '--pt-text': theme.text.primary,
+      '--pt-text-secondary': theme.text.secondary,
+      '--pt-text-metadata': theme.text.metadata,
+      '--pt-space-xxs': `${v11Spacing.xxs}px`,
+      '--pt-space-xs': `${v11Spacing.xs}px`,
+      '--pt-space-sm': `${v11Spacing.sm}px`,
+      '--pt-space-md': `${v11Spacing.md}px`,
+      '--pt-space-lg': `${v11Spacing.lg}px`,
+      '--pt-space-xl': `${v11Spacing.xl}px`,
+      '--pt-radius-control': `${v11Radius.control}px`,
+      '--pt-radius-panel': `${v11Radius.panel}px`,
+      '--pt-font-label': `${v11Typography.label.fontSize}px`,
+      '--pt-font-body': `${v11Typography.body.fontSize}px`,
+      '--pt-font-title': `${v11Typography.title.fontSize}px`,
+      '--pt-motion-standard': `${v11Motion.duration.standard}ms`,
+      '--pt-ease-standard': v11Motion.easing.standard,
+      '--pt-bottom-inset': `${questLayout.contentBottomInset + v11Spacing.lg}px`,
     } as any;
     const performanceReadout = debugPerformance && performanceResult
       ? `P50 ${performanceResult.p50}ms · P95 ${performanceResult.p95}ms · >20ms ${performanceResult.over20}/${performanceResult.frames}`

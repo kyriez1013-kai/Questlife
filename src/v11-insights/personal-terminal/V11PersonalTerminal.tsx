@@ -13,7 +13,6 @@ import PersonalTerminalChart, {
   type PersonalTerminalChartHandle,
   type PersonalTerminalChartSelection,
 } from './PersonalTerminalChart';
-import V11PersonalMarketOverview from './V11PersonalMarketOverview';
 import PersonalTerminalSheet from './PersonalTerminalSheet';
 import PersonalTerminalIcon, { type PersonalTerminalIconName } from './PersonalTerminalIcon';
 import type {
@@ -56,6 +55,15 @@ type SheetState =
   | { kind: 'events' }
   | { kind: 'market-map' }
   | null;
+
+type PersonalTerminalDomain =
+  | 'overview'
+  | 'movement'
+  | 'recovery'
+  | 'sleep'
+  | 'focus'
+  | 'goals'
+  | 'skills';
 
 function query() {
   if (typeof window === 'undefined') return new URLSearchParams();
@@ -124,38 +132,6 @@ function baselineLabel(language: Lang, series: PersonalTerminalSeries) {
   return t(language, 'personalMarketPersonalReference');
 }
 
-function adaptiveSummaryRows(language: Lang, series: PersonalTerminalSeries): Array<[string, string]> | null {
-  const adaptive = series.adaptive;
-  if (!adaptive || adaptive.referenceAvailable) return null;
-  const unit = readingUnit(language, series);
-  const withUnit = (value: number | null) => `${reading(language, series, value)} ${unit}`.trim();
-  const observationCount = `${adaptive.observationCount} ${t(language, 'personalMarketObservationsShort')}`;
-  if (adaptive.state === 'first_observation') {
-    return [
-      [t(language, 'personalTerminalCurrentObservation'), withUnit(adaptive.current)],
-      [t(language, 'personalTerminalRecordedAt'), adaptive.lastObservedAt ? timestampLabel(language, adaptive.lastObservedAt) : '—'],
-      [t(language, 'quantEvidence'), observationCount],
-    ];
-  }
-  if (adaptive.state === 'comparison_available') {
-    return [
-      [t(language, 'personalTerminalCurrentObservation'), withUnit(adaptive.current)],
-      [t(language, 'personalTerminalPreviousObservation'), withUnit(adaptive.previous)],
-      [t(language, 'personalTerminalChangeFromPrevious'), changeReading(language, series, adaptive.current, adaptive.previous)],
-      [t(language, 'quantEvidence'), observationCount],
-    ];
-  }
-  if (adaptive.state === 'short_window_forming') {
-    return [
-      [t(language, 'personalTerminalCurrentObservation'), withUnit(adaptive.current)],
-      [t(language, 'personalTerminalObservedRange'), `${reading(language, series, adaptive.rangeLow)} — ${reading(language, series, adaptive.rangeHigh)} ${unit}`.trim()],
-      [t(language, 'personalTerminalFirstToLatest'), changeReading(language, series, adaptive.current, adaptive.first)],
-      [t(language, 'quantEvidence'), observationCount],
-    ];
-  }
-  return null;
-}
-
 function adaptiveAnalystBody(language: Lang, series: PersonalTerminalSeries) {
   const adaptive = series.adaptive;
   if (!adaptive || adaptive.referenceAvailable) return null;
@@ -208,11 +184,44 @@ function direction(value: number | null): 'up' | 'down' | 'flat' | 'unavailable'
   return value > 0 ? 'up' : 'down';
 }
 
-function directionIcon(value: number | null): PersonalTerminalIconName {
-  const valueDirection = direction(value);
-  if (valueDirection === 'up') return 'trend-up';
-  if (valueDirection === 'down') return 'trend-down';
-  return 'trend-flat';
+function seriesDomain(series: PersonalTerminalSeries): PersonalTerminalDomain {
+  const domain = (series.domain || '').toLowerCase();
+  const construct = (series.constructKey || '').toLowerCase();
+  if (domain === 'sleep' || construct.startsWith('sleep.')) return 'sleep';
+  if (
+    domain === 'cardiovascular'
+    || domain === 'recovery'
+    || construct.includes('resting_heart')
+    || construct.includes('recovery')
+  ) return 'recovery';
+  if (
+    domain === 'movement'
+    || domain === 'activity'
+    || construct.startsWith('activity.')
+    || construct.includes('steps')
+  ) return 'movement';
+  if (
+    domain === 'focus'
+    || domain === 'cognition'
+    || domain === 'active_questlife'
+    || construct.includes('focus')
+    || construct.startsWith('execution.')
+  ) return 'focus';
+  return 'overview';
+}
+
+function domainIcon(domain: PersonalTerminalDomain): PersonalTerminalIconName {
+  if (domain === 'movement') return 'chart';
+  if (domain === 'recovery') return 'research';
+  if (domain === 'sleep') return 'event';
+  if (domain === 'focus') return 'signal';
+  if (domain === 'goals') return 'goal';
+  if (domain === 'skills') return 'skill';
+  return 'market';
+}
+
+function domainLabel(language: Lang, domain: PersonalTerminalDomain) {
+  return t(language, `personalTerminalDomain_${domain}`);
 }
 
 function isHistoricalProvenance(value: PersonalTerminalSeries['observations'][number]['provenance']) {
@@ -288,7 +297,7 @@ function NoDataTerminal({
   const debugSource = query().get('debugQuantSource') === '1';
   return (
     <WebScrollView contentContainerStyle={{ paddingBottom: 116 }} dataSet={{ 'personal-terminal-role': 'scroll' }} showsVerticalScrollIndicator={false}>
-      <WebView dataSet={{ 'personal-terminal-availability': 'none', 'personal-terminal-role': 'terminal' }}>
+      <WebView dataSet={{ 'personal-terminal-availability': 'none', 'personal-terminal-ia': '3.13', 'personal-terminal-role': 'terminal' }}>
         <WebView dataSet={{ 'personal-terminal-role': 'topbar' }}>
           <WebView dataSet={{ 'personal-terminal-role': 'brand-context' }}>
             <PersonalTerminalIcon color={theme.text.primary} name="market" size={17} />
@@ -387,17 +396,15 @@ function initialTimeframe(model: PersonalTerminalModel, series?: PersonalTermina
   return available[0] || '1M';
 }
 
-function initialMarketOverview(model: PersonalTerminalModel) {
-  if (!model.marketOverview) return false;
-  const requested = query().get('quantView');
-  if (requested === 'instrument') return false;
-  if (requested === 'market') return true;
-  const lifecycle = model.lifecycleScenario || '';
-  return lifecycle === 'no_data'
-    || lifecycle.startsWith('market_')
-    || lifecycle === 'day30'
-    || lifecycle === 'day90'
-    || lifecycle === 'day180';
+function initialPersonalTerminalSeries(model: PersonalTerminalModel) {
+  if (model.defaultScope !== 'market') {
+    return model.series.find((row) => row.id === model.defaultSeriesId)
+      || model.series[0];
+  }
+  const overviewSeriesId = model.marketOverview?.instruments[0]?.seriesId;
+  return model.series.find((row) => row.id === overviewSeriesId)
+    || model.series.find((row) => row.id === model.defaultSeriesId)
+    || model.series[0];
 }
 
 type InteractionPerformanceRow = {
@@ -544,6 +551,116 @@ function SignalRow({ language, onPress, signal, theme }: { language: Lang; onPre
   );
 }
 
+function TerminalSummary({
+  current,
+  delta,
+  evidence,
+  language,
+  onOpenEvidence,
+  reference,
+  series,
+  theme,
+}: {
+  current: number | null;
+  delta: number | null;
+  evidence: { activeDays: number; missing: number | null; latest: string | null };
+  language: Lang;
+  onOpenEvidence: () => void;
+  reference: number | null;
+  series: PersonalTerminalSeries;
+  theme: V11ThemeTokens;
+}) {
+  const observationCount = series.adaptive?.observationCount ?? series.observations.length;
+  const observedDays = series.coverage?.observedDays ?? evidence.activeDays;
+  const expectedDays = series.coverage?.expectedDays ?? null;
+  const coverageRatio = series.coverage?.coverageRatio ?? null;
+  const filledSegments = coverageRatio == null ? 0 : Math.max(0, Math.min(10, Math.round(coverageRatio * 10)));
+  const coverageValue = expectedDays == null
+    ? `${observedDays} ${t(language, 'personalMarketIndependentDays')}`
+    : `${observedDays} / ${expectedDays}`;
+  const rows = [
+    [t(language, 'quantCurrent'), `${reading(language, series, current)} ${readingUnit(language, series)}`.trim()],
+    [t(language, 'personalTerminalTrend'), t(language, `personalTerminalTrajectory_${direction(delta)}`)],
+    [baselineLabel(language, series), `${reading(language, series, reference)} ${reference == null ? '' : readingUnit(language, series)}`.trim()],
+    [t(language, 'quantChange'), changeReading(language, series, current, reference)],
+    [t(language, 'quantEvidence'), `${observationCount} ${t(language, 'personalMarketObservationsShort')}`],
+    [t(language, 'personalMarketCoverage'), coverageValue],
+  ];
+  return (
+    <WebPressable
+      accessibilityLabel={t(language, 'personalTerminalEvidenceProvenance')}
+      accessibilityRole="button"
+      dataSet={{ 'personal-terminal-role': 'terminal-summary' }}
+      onPress={onOpenEvidence}
+    >
+      <WebView dataSet={{ 'personal-terminal-role': 'summary-grid' }}>
+        {rows.map(([label, value], index) => (
+          <WebView dataSet={{ 'personal-terminal-summary-primary': index === 0 ? 'true' : 'false' }} key={label}>
+            <Text style={{ color: theme.text.metadata }}>{label}</Text>
+            <Text numberOfLines={2} style={{ color: theme.text.primary }}>{value}</Text>
+          </WebView>
+        ))}
+      </WebView>
+      <WebView
+        accessibilityLabel={t(language, 'personalTerminalEvidenceCoverageOnly')}
+        dataSet={{ 'personal-terminal-coverage-known': coverageRatio == null ? 'false' : 'true', 'personal-terminal-role': 'evidence-meter' }}
+      >
+        {Array.from({ length: 10 }, (_, index) => (
+          <WebView dataSet={{ 'personal-terminal-filled': index < filledSegments ? 'true' : 'false' }} key={index} />
+        ))}
+      </WebView>
+      <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalEvidenceCoverageOnly')}</Text>
+    </WebPressable>
+  );
+}
+
+function TerminalAnalystPanel({
+  evidence,
+  interpretation,
+  language,
+  limitation,
+  observation,
+  onPress,
+  theme,
+}: {
+  evidence: string;
+  interpretation: string;
+  language: Lang;
+  limitation: string;
+  observation: string;
+  onPress: () => void;
+  theme: V11ThemeTokens;
+}) {
+  const rows = [
+    [t(language, 'personalTerminalAnalystObserved'), observation],
+    [t(language, 'quantEvidence'), evidence],
+    [t(language, 'personalTerminalAnalystInterpretation'), interpretation],
+    [t(language, 'personalTerminalAnalystLimitations'), limitation],
+  ];
+  return (
+    <WebPressable
+      accessibilityRole="button"
+      dataSet={{ 'personal-terminal-panel': 'analyst', 'personal-terminal-role': 'analyst-panel' }}
+      onPress={onPress}
+    >
+      <WebView dataSet={{ 'personal-terminal-role': 'analyst-heading' }}>
+        <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalAnalyst')}</Text>
+        <PersonalTerminalIcon color={theme.text.secondary} name="analyst" size={15} />
+      </WebView>
+      {rows.map(([label, value]) => (
+        <WebView dataSet={{ 'personal-terminal-role': 'analyst-row' }} key={label}>
+          <Text style={{ color: theme.text.metadata }}>{label}</Text>
+          <Text numberOfLines={4} style={{ color: theme.text.primary }}>{value}</Text>
+        </WebView>
+      ))}
+      <WebView dataSet={{ 'personal-terminal-role': 'analyst-open-row' }}>
+        <Text style={{ color: theme.text.primary }}>{t(language, 'personalTerminalInspectContext')}</Text>
+        <PersonalTerminalIcon color={theme.text.primary} name="open" size={14} />
+      </WebView>
+    </WebPressable>
+  );
+}
+
 export default function V11PersonalTerminal({
   language,
   model,
@@ -561,11 +678,15 @@ export default function V11PersonalTerminal({
   reducedMotion: boolean;
   theme: V11ThemeTokens;
 }) {
-  const defaultSeries = model.series.find((row) => row.id === model.defaultSeriesId) || model.series[0];
-  const [scope, setScope] = useState<PersonalTerminalScope>(model.defaultScope);
-  const [marketOverviewOpen, setMarketOverviewOpen] = useState(() => initialMarketOverview(model));
-  const [entityId, setEntityId] = useState(model.defaultEntityId);
-  const [seriesId, setSeriesId] = useState(model.defaultSeriesId);
+  const defaultSeries = initialPersonalTerminalSeries(model);
+  const defaultEntity = model.entities.find((row) => row.id === defaultSeries?.entityId)
+    || model.entities.find((row) => row.id === model.defaultEntityId)
+    || model.entities[0];
+  const [scope, setScope] = useState<PersonalTerminalScope>(defaultEntity?.scope || model.defaultScope);
+  const [entityId, setEntityId] = useState(defaultEntity?.id || model.defaultEntityId);
+  const [seriesId, setSeriesId] = useState(defaultSeries?.id || model.defaultSeriesId);
+  const [activeDomain, setActiveDomain] = useState<PersonalTerminalDomain>('overview');
+  const [detailsExpanded, setDetailsExpanded] = useState(false);
   const [comparisonSeriesId, setComparisonSeriesId] = useState<string | null>(null);
   const [chartKind, setChartKind] = useState<PersonalTerminalChartKind>(query().get('quantChart') === 'candle' ? 'candle' : 'line');
   const [timeframe, setTimeframe] = useState<PersonalTerminalTimeframe>(() => initialTimeframe(model, defaultSeries));
@@ -584,11 +705,16 @@ export default function V11PersonalTerminal({
 
   useEffect(() => onSheetStateChange?.(sheet != null), [onSheetStateChange, sheet]);
   useEffect(() => {
-    setScope(model.defaultScope);
-    setEntityId(model.defaultEntityId);
-    setSeriesId(model.defaultSeriesId);
+    const nextSeries = initialPersonalTerminalSeries(model);
+    const nextEntity = model.entities.find((row) => row.id === nextSeries?.entityId)
+      || model.entities.find((row) => row.id === model.defaultEntityId)
+      || model.entities[0];
+    setScope(nextEntity?.scope || model.defaultScope);
+    setEntityId(nextEntity?.id || model.defaultEntityId);
+    setSeriesId(nextSeries?.id || model.defaultSeriesId);
+    setActiveDomain('overview');
+    setDetailsExpanded(false);
     setComparisonSeriesId(null);
-    setMarketOverviewOpen(initialMarketOverview(model));
   }, [model]);
 
   const scopes = useMemo(() => (['market', 'goal', 'skill'] as const).filter((item) => model.entities.some((row) => row.scope === item)), [model.entities]);
@@ -597,6 +723,13 @@ export default function V11PersonalTerminal({
   const rawSeriesRows = entity ? entitySeries(model, entity) : [];
   const seriesRows = rawSeriesRows.filter((row) => !row.qaDerivedIndex || debugFixture);
   const series = model.series.find((row) => row.id === seriesId) || seriesRows[0] || model.series[0];
+  const marketDomainRows = useMemo(() => {
+    const rows = model.series.filter((row) => row.entityId === model.entities.find((item) => item.scope === 'market')?.id && (!row.qaDerivedIndex || debugFixture));
+    return (['movement', 'recovery', 'sleep', 'focus'] as const).filter((domain) => rows.some((row) => seriesDomain(row) === domain));
+  }, [debugFixture, model.entities, model.series]);
+  const visibleSeriesRows = scope === 'market' && activeDomain !== 'overview'
+    ? seriesRows.filter((row) => seriesDomain(row) === activeDomain)
+    : seriesRows;
   const now = useMemo(() => new Date(model.range.end ? `${model.range.end}T23:59:59.000` : Date.now()), [model.range.end]);
   const available = useMemo(() => series ? availableTimeframes(series, now) : [] as PersonalTerminalTimeframe[], [now, series]);
   const viewData = useMemo(() => series ? buildPersonalTerminalViewData(series, timeframe, now) : null, [now, series, timeframe]);
@@ -634,7 +767,6 @@ export default function V11PersonalTerminal({
     missing: series.coverage.expectedDays == null ? null : Math.max(0, series.coverage.expectedDays - series.coverage.observedDays),
     latest: series.coverage.lastAvailableAt || series.latestAt || null,
   } : viewData ? evidenceSummary(viewData.observations, timeframe) : { activeDays: 0, missing: null, latest: null };
-  const trend = direction(delta);
   const configuredIndicators = series?.availableIndicators || (['baseline', 'emaShort', 'emaLong', 'load', 'density', 'events'] as PersonalTerminalIndicator[]);
   const availableIndicators = series?.adaptive && !referenceAvailable
     ? configuredIndicators.filter((item) => item === 'load' || item === 'density' || item === 'events')
@@ -649,7 +781,6 @@ export default function V11PersonalTerminal({
     ['1Y', periodChange(series, now, 365)],
     ['ALL', periodChange(series, now, null)],
   ] as Array<[string, number | null]>).filter((row) => row[1] != null), [now, series]);
-  const adaptiveRows = series ? adaptiveSummaryRows(language, series) : null;
 
   useEffect(() => {
     if (!available.includes(timeframe)) setTimeframe(series?.defaultTimeframe || available[0] || '30D');
@@ -659,57 +790,70 @@ export default function V11PersonalTerminal({
   }, [candleAvailable, chartKind]);
 
   const selectScope = (next: PersonalTerminalScope) => measureInteraction('scope-switch', () => {
-    if (next === 'market' && model.marketOverview) {
-      setMarketOverviewOpen(true);
-      setScope('market');
-      setSheet(null);
-      return;
-    }
     const firstEntity = model.entities.find((row) => row.scope === next);
     if (!firstEntity) return;
+    const overviewSeriesId = next === 'market' ? model.marketOverview?.instruments[0]?.seriesId : null;
+    const overviewSeries = overviewSeriesId ? model.series.find((row) => row.id === overviewSeriesId) : null;
     setScope(next);
     setEntityId(firstEntity.id);
-    const nextSeries = entitySeries(model, firstEntity).find((row) => !row.qaDerivedIndex || debugFixture);
+    const nextSeries = overviewSeries || entitySeries(model, firstEntity).find((row) => !row.qaDerivedIndex || debugFixture);
     setSeriesId(nextSeries?.id || firstEntity.seriesIds[0]);
+    setActiveDomain(next === 'market' ? 'overview' : next === 'goal' ? 'goals' : 'skills');
+    setDetailsExpanded(false);
     setCrosshair(null);
     setRangeSelection({ start: null, end: null });
     setComparisonSeriesId(null);
-    setMarketOverviewOpen(false);
+    setSheet(null);
   });
   const selectEntity = (next: PersonalTerminalEntity) => measureInteraction('entity-switch', () => {
     setEntityId(next.id);
     const nextSeries = entitySeries(model, next).find((row) => !row.qaDerivedIndex || debugFixture);
     setSeriesId(nextSeries?.id || next.seriesIds[0]);
+    setActiveDomain(next.scope === 'goal' ? 'goals' : next.scope === 'skill' ? 'skills' : nextSeries ? seriesDomain(nextSeries) : 'overview');
+    setDetailsExpanded(false);
     setCrosshair(null);
     setRangeSelection({ start: null, end: null });
     setComparisonSeriesId(null);
     setSheet(null);
-    setMarketOverviewOpen(false);
   });
   const selectSeries = (next: PersonalTerminalSeries) => measureInteraction('metric-switch', () => {
     setSeriesId(next.id);
     setTimeframe(next.defaultTimeframe || availableTimeframes(next, now)[0] || '30D');
+    if (scope === 'market') setActiveDomain(seriesDomain(next));
+    setDetailsExpanded(false);
     setCrosshair(null);
     setRangeSelection({ start: null, end: null });
     setComparisonSeriesId(null);
-    setMarketOverviewOpen(false);
   });
 
-  const selectOverviewSeries = (nextSeriesId: string) => measureInteraction('market-instrument-drilldown', () => {
-    const nextSeries = model.series.find((row) => row.id === nextSeriesId);
-    if (!nextSeries) return;
-    const nextEntity = model.entities.find((row) => row.id === nextSeries.entityId);
-    if (nextEntity) {
-      setScope(nextEntity.scope);
-      setEntityId(nextEntity.id);
+  const selectDomain = (nextDomain: PersonalTerminalDomain) => measureInteraction('domain-switch', () => {
+    if (nextDomain === 'goals') {
+      selectScope('goal');
+      return;
     }
+    if (nextDomain === 'skills') {
+      selectScope('skill');
+      return;
+    }
+    const marketEntity = model.entities.find((row) => row.scope === 'market');
+    if (!marketEntity) return;
+    const candidateRows = entitySeries(model, marketEntity).filter((row) => !row.qaDerivedIndex || debugFixture);
+    const overviewSeriesId = model.marketOverview?.instruments[0]?.seriesId;
+    const nextSeries = nextDomain === 'overview'
+      ? candidateRows.find((row) => row.id === overviewSeriesId) || candidateRows[0]
+      : candidateRows.find((row) => seriesDomain(row) === nextDomain);
+    if (!nextSeries) return;
+    setScope('market');
+    setEntityId(marketEntity.id);
     setSeriesId(nextSeries.id);
     setTimeframe(nextSeries.defaultTimeframe || availableTimeframes(nextSeries, now)[0] || 'ALL');
     setChartKind(nextSeries.adaptive?.defaultView === 'point' ? 'line' : nextSeries.adaptive?.defaultView || 'line');
+    setActiveDomain(nextDomain);
+    setDetailsExpanded(false);
     setComparisonSeriesId(null);
     setCrosshair(null);
     setRangeSelection({ start: null, end: null });
-    setMarketOverviewOpen(false);
+    setSheet(null);
   });
   const selectComparison = (next: PersonalTerminalSeries | null) => measureInteraction('compare-toggle', () => {
     setComparisonSeriesId(next?.id || null);
@@ -759,28 +903,6 @@ export default function V11PersonalTerminal({
     });
   };
 
-  if (marketOverviewOpen && model.marketOverview) {
-    return (
-      <WebScrollView
-        contentContainerStyle={{ paddingBottom: 116 }}
-        dataSet={{ 'personal-terminal-role': 'scroll' }}
-        showsVerticalScrollIndicator={false}
-      >
-        <WebView dataSet={{ 'personal-terminal-role': 'terminal', 'personal-terminal-version': '3.12' }}>
-          <V11PersonalMarketOverview
-            language={language}
-            onNextAction={onNextAction}
-            onSelectScope={selectScope}
-            onSelectSeries={selectOverviewSeries}
-            overview={model.marketOverview}
-            performanceReadout={performanceReadout}
-            theme={theme}
-          />
-        </WebView>
-      </WebScrollView>
-    );
-  }
-
   if (!entity || !series || !viewData) {
     return <NoDataTerminal language={language} model={model} onNextAction={onNextAction} performanceReadout={performanceReadout} theme={theme} />;
   }
@@ -825,6 +947,20 @@ export default function V11PersonalTerminal({
         .replace('{missing}', evidence.missing == null ? '—' : String(evidence.missing)),
     },
   ];
+  const navigationDomains: PersonalTerminalDomain[] = [
+    'overview',
+    ...marketDomainRows,
+    ...(scopes.includes('goal') ? ['goals' as const] : []),
+    ...(scopes.includes('skill') ? ['skills' as const] : []),
+  ];
+  const analystObservation = analystPreviewRows[0]?.body || t(language, 'personalTerminalV041NoEligibleRelationship');
+  const analystEvidence = t(language, 'personalTerminalAnalystCoverageSummary')
+    .replace('{observed}', String(evidence.activeDays))
+    .replace('{missing}', evidence.missing == null ? '—' : String(evidence.missing));
+  const analystInterpretation = visibleSignals[0]
+    ? copy(language, visibleSignals[0].title)
+    : t(language, 'personalTerminalV041NoEligibleRelationship');
+  const analystLimitation = copy(language, series.limitation);
 
   const sheetMeta = (() => {
     if (!sheet) return { eyebrow: '', title: '', subtitle: undefined as string | undefined };
@@ -857,13 +993,13 @@ export default function V11PersonalTerminal({
         dataSet={{ 'personal-terminal-role': 'scroll' }}
         showsVerticalScrollIndicator={false}
       >
-        <WebView dataSet={{ 'personal-terminal-adaptive-version': '3.12', 'personal-terminal-role': 'terminal', 'personal-terminal-version': '3.11' }}>
+        <WebView dataSet={{ 'personal-terminal-adaptive-version': '3.12', 'personal-terminal-ia': '3.13', 'personal-terminal-role': 'terminal', 'personal-terminal-version': '3.11' }}>
           <WebView dataSet={{ 'personal-terminal-role': 'topbar' }}>
             <WebView dataSet={{ 'personal-terminal-role': 'brand-context' }}>
               <PersonalTerminalIcon color={theme.text.primary} name="market" size={17} />
               <WebView>
-                <Text numberOfLines={1} style={{ color: theme.text.primary }}>{copy(language, entity.label)}</Text>
-                <Text numberOfLines={1} style={{ color: theme.text.metadata }}>{copy(language, series.label)}</Text>
+                <Text numberOfLines={1} style={{ color: theme.text.primary }}>{scope === 'market' ? t(language, 'personalMarketTitle') : copy(language, entity.label)}</Text>
+                <Text numberOfLines={1} style={{ color: theme.text.metadata }}>{scope === 'market' ? `${domainLabel(language, activeDomain)} · ${copy(language, series.label)}` : copy(language, series.label)}</Text>
               </WebView>
             </WebView>
             <WebView accessibilityRole="navigation" dataSet={{ 'personal-terminal-role': 'scope-breadcrumb' }}>
@@ -894,16 +1030,29 @@ export default function V11PersonalTerminal({
 
           <WebView dataSet={{ 'personal-terminal-role': 'workstation' }}>
             <WebView dataSet={{ 'personal-terminal-role': 'entity-rail' }}>
-              <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalObjectBrowser')}</Text>
-              <WebView dataSet={{ 'personal-terminal-role': 'scope-rail' }}>
-                {scopes.map((item) => (
-                  <WebPressable accessibilityRole="button" accessibilityState={{ selected: scope === item }} key={item} onPress={() => selectScope(item)}>
-                    <PersonalTerminalIcon color={scope === item ? theme.text.primary : theme.text.metadata} name={item} size={15} />
-                    <Text style={{ color: scope === item ? theme.text.primary : theme.text.metadata }}>{t(language, `personalTerminalResolution_${item}`)}</Text>
-                  </WebPressable>
-                ))}
+              <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalNavigation')}</Text>
+              <WebView dataSet={{ 'personal-terminal-role': 'domain-rail' }}>
+                {navigationDomains.map((domain) => {
+                  const selected = domain === 'goals'
+                    ? scope === 'goal'
+                    : domain === 'skills'
+                      ? scope === 'skill'
+                      : scope === 'market' && activeDomain === domain;
+                  return (
+                    <WebPressable
+                      accessibilityRole="button"
+                      accessibilityState={{ selected }}
+                      dataSet={{ 'personal-terminal-selected': selected ? 'true' : 'false' }}
+                      key={domain}
+                      onPress={() => selectDomain(domain)}
+                    >
+                      <PersonalTerminalIcon color={selected ? theme.text.primary : theme.text.metadata} name={domainIcon(domain)} size={15} />
+                      <Text numberOfLines={1} style={{ color: selected ? theme.text.primary : theme.text.secondary }}>{domainLabel(language, domain)}</Text>
+                    </WebPressable>
+                  );
+                })}
               </WebView>
-              {entities.length > 1 ? entities.map((item) => (
+              {scope !== 'market' && entities.length > 1 ? entities.map((item) => (
                 <WebPressable
                   accessibilityRole="button"
                   accessibilityState={{ selected: item.id === entity.id }}
@@ -917,7 +1066,7 @@ export default function V11PersonalTerminal({
               )) : null}
               <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalAvailableInstruments')}</Text>
               <WebView dataSet={{ 'personal-terminal-role': 'instrument-rail' }}>
-                {seriesRows.map((item) => (
+                {visibleSeriesRows.map((item) => (
                   <WebPressable
                     accessibilityRole="button"
                     accessibilityState={{ selected: item.id === series.id }}
@@ -942,32 +1091,29 @@ export default function V11PersonalTerminal({
                   <PersonalTerminalIcon color={theme.text.secondary} name={scope} size={15} />
                 </WebPressable>
                 <WebPressable accessibilityRole="button" dataSet={{ 'personal-terminal-role': 'instrument-trigger' }} onPress={() => setSheet({ kind: 'instrument' })}>
-                  <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalInstrument')}</Text>
-                  <WebView dataSet={{ 'personal-terminal-role': 'reading' }}>
-                    <Text style={{ color: theme.text.primary }}>{reading(language, series, crosshair?.value ?? current)}</Text>
-                    <Text style={{ color: theme.text.secondary }}>{readingUnit(language, series)}</Text>
+                  <WebView>
+                    <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalInstrument')}</Text>
+                    <Text numberOfLines={1} style={{ color: theme.text.primary }}>{copy(language, series.label)}</Text>
                   </WebView>
-                  <Text numberOfLines={1} style={{ color: theme.text.secondary }}>{copy(language, series.label)}</Text>
+                  <PersonalTerminalIcon color={theme.text.secondary} name="chart" size={15} />
                 </WebPressable>
                 <WebView dataSet={{ 'personal-terminal-adaptive': series.adaptive?.state || 'legacy', 'personal-terminal-role': 'baseline-readout' }}>
-                  {adaptiveRows ? (
-                    <>
-                      <Text style={{ color: theme.text.metadata }}>{maturityLabel(language, series)}</Text>
-                      <Text style={{ color: theme.text.primary }}>{adaptiveRows[1]?.[1] || adaptiveRows[0]?.[1]}</Text>
-                      <Text style={{ color: theme.text.secondary }}>{adaptiveRows[2]?.[0]} · {adaptiveRows[2]?.[1]}</Text>
-                    </>
-                  ) : (
-                    <>
-                      <Text style={{ color: theme.text.metadata }}>{baselineLabel(language, series)}</Text>
-                      <Text style={{ color: theme.text.primary }}>{reading(language, series, series.baseline.value)}</Text>
-                      <WebView dataSet={{ 'personal-terminal-role': 'trajectory-readout' }}>
-                        <PersonalTerminalIcon color={theme.text.secondary} name={directionIcon(delta)} size={13} />
-                        <Text style={{ color: theme.text.secondary }}>{t(language, `personalTerminalTrajectory_${trend}`)} · {changeReading(language, series, current, series.baseline.value)}</Text>
-                      </WebView>
-                    </>
-                  )}
+                  <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalEvidenceState')}</Text>
+                  <Text style={{ color: theme.text.primary }}>{maturityLabel(language, series)}</Text>
+                  <Text style={{ color: theme.text.secondary }}>{timeframe} · {viewData.observations.length} {t(language, 'personalMarketObservationsShort')}</Text>
                 </WebView>
               </WebView>
+
+              <TerminalSummary
+                current={crosshair?.value ?? current}
+                delta={crosshair?.value == null || comparisonReference == null ? delta : crosshair.value - comparisonReference}
+                evidence={evidence}
+                language={language}
+                onOpenEvidence={() => setSheet({ kind: 'evidence' })}
+                reference={comparisonReference}
+                series={series}
+                theme={theme}
+              />
 
               <WebView dataSet={{ 'personal-terminal-role': 'chart-toolbar' }}>
                 <WebView dataSet={{ 'personal-terminal-role': 'timeframes' }}>
@@ -1049,161 +1195,107 @@ export default function V11PersonalTerminal({
                 </WebView> : null}
               </WebView> : null}
 
-              <WebPressable
-                accessibilityLabel={t(language, 'personalTerminalEvidenceProvenance')}
-                accessibilityRole="button"
-                dataSet={{ 'personal-terminal-role': 'mobile-snapshot' }}
-                onPress={() => setSheet({ kind: 'evidence' })}
-              >
-                {!viewData.observations.length ? (
-                  <WebView dataSet={{ 'personal-terminal-role': 'accumulation-state' }}>
-                    <Text style={{ color: theme.text.primary }}>{t(language, 'personalTerminalAccumulationTitle')}</Text>
-                    <Text style={{ color: theme.text.secondary }}>{t(language, 'personalTerminalAccumulationBody')}</Text>
-                  </WebView>
-                ) : (adaptiveRows || [
-                  [t(language, 'quantCurrent'), `${reading(language, series, current)} ${readingUnit(language, series)}`],
-                  [baselineLabel(language, series), `${reading(language, series, series.baseline.value)} ${readingUnit(language, series)}`],
-                  [t(language, 'quantChange'), changeReading(language, series, current, series.baseline.value)],
-                  [t(language, 'quantEvidence'), t(language, 'personalTerminalAnalystCoverageSummary').replace('{observed}', String(evidence.activeDays)).replace('{missing}', evidence.missing == null ? '—' : String(evidence.missing))],
-                ]).map(([label, value]) => <WebView key={label}><Text style={{ color: theme.text.metadata }}>{label}</Text><Text style={{ color: theme.text.primary }}>{value}</Text></WebView>)}
-              </WebPressable>
-
-              {longRange.length ? (
-                <WebView dataSet={{ 'personal-terminal-role': 'mobile-multiscale' }}>
-                  {longRange.slice(0, 3).map(([label, value]) => (
-                    <WebView key={label}>
-                      <Text style={{ color: theme.text.metadata }}>{label}</Text>
-                      <Text style={{ color: theme.text.primary }}>{change(value)}{series.valueChangeMode === 'percentage' ? '%' : ''}</Text>
-                    </WebView>
-                  ))}
-                </WebView>
-              ) : null}
-
-              {entity.composition?.length ? (
-                <WebPressable accessibilityRole="button" dataSet={{ 'personal-terminal-role': 'mobile-portfolio' }} onPress={() => setSheet({ kind: 'composition' })}>
-                  <WebView>
-                    <Text style={{ color: theme.text.metadata }}>{entity.compositionBasis ? copy(language, entity.compositionBasis) : t(language, 'personalTerminalComposition')}</Text>
-                    <Text numberOfLines={1} style={{ color: theme.text.primary }}>{entity.composition.slice(0, 4).map((row) => `${copy(language, row.label)} ${Math.round(row.value * 100)}%`).join(' · ')}</Text>
-                  </WebView>
-                  <PersonalTerminalIcon color={theme.text.secondary} name="goal" size={16} />
-                </WebPressable>
-              ) : null}
-
               {visibleSignals[0] ? (
-                <WebView dataSet={{ 'personal-terminal-role': 'mobile-signal' }}>
+                <WebView dataSet={{ 'personal-terminal-role': 'primary-signal' }}>
+                  <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalKeySignal')}</Text>
                   <SignalRow language={language} onPress={() => setSheet({ kind: 'signal', signal: visibleSignals[0] })} signal={visibleSignals[0]} theme={theme} />
                 </WebView>
               ) : null}
-              {viewData.observations.length ? <WebPressable accessibilityRole="button" dataSet={{ 'personal-terminal-role': 'mobile-analyst-entry' }} onPress={() => openAnalyst()}>
-                <WebView>
-                  <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalAnalyst')}</Text>
-                  <Text numberOfLines={2} style={{ color: theme.text.primary }}>{analystPreviewRows[0].body}</Text>
+
+              <WebPressable
+                accessibilityRole="button"
+                accessibilityState={{ expanded: detailsExpanded }}
+                dataSet={{ 'personal-terminal-role': 'details-toggle' }}
+                onPress={() => measureInteraction('details-toggle', () => setDetailsExpanded((value) => !value))}
+              >
+                <Text style={{ color: theme.text.primary }}>{t(language, detailsExpanded ? 'personalTerminalHideDetails' : 'personalTerminalShowDetails')}</Text>
+                <PersonalTerminalIcon color={theme.text.secondary} name={detailsExpanded ? 'trend-up' : 'trend-down'} size={14} />
+              </WebPressable>
+
+              {detailsExpanded ? (
+                <WebView dataSet={{ 'personal-terminal-role': 'details-stack' }}>
+                  {longRange.length ? (
+                    <WebView dataSet={{ 'personal-terminal-role': 'details-section' }}>
+                      <Text style={{ color: theme.text.metadata }}>{scope === 'goal' ? t(language, 'personalTerminalGoalDevelopment') : scope === 'skill' ? t(language, 'personalTerminalSkillDevelopment') : t(language, 'personalTerminalLongRange')}</Text>
+                      <WebView dataSet={{ 'personal-terminal-role': 'long-range-grid' }}>
+                        {longRange.map(([label, value]) => (
+                          <WebView key={label}>
+                            <Text style={{ color: theme.text.metadata }}>{label}</Text>
+                            <Text style={{ color: theme.text.primary }}>{change(value)}{series.valueChangeMode === 'percentage' ? '%' : ''}</Text>
+                          </WebView>
+                        ))}
+                      </WebView>
+                    </WebView>
+                  ) : null}
+                  {scope === 'market' && model.breadth ? (
+                    <WebPressable accessibilityRole="button" dataSet={{ 'personal-terminal-role': 'details-section' }} onPress={() => setSheet({ kind: 'market-map' })}>
+                      <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalBreadth')}</Text>
+                      <WebView dataSet={{ 'personal-terminal-role': 'breadth-bar' }}>
+                        <WebView style={{ flex: model.breadth.improving }} /><WebView style={{ flex: model.breadth.stable }} /><WebView style={{ flex: model.breadth.weakening }} />
+                      </WebView>
+                      <Text style={{ color: theme.text.secondary }}>{model.breadth.improving} {t(language, 'personalTerminalImproving')} · {model.breadth.stable} {t(language, 'personalTerminalStable')} · {model.breadth.weakening} {t(language, 'personalTerminalWeakening')}</Text>
+                    </WebPressable>
+                  ) : null}
+                  {entity.composition?.length ? (
+                    <WebPressable accessibilityRole="button" dataSet={{ 'personal-terminal-role': 'details-section' }} onPress={() => setSheet({ kind: 'composition' })}>
+                      <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalComposition')}</Text>
+                      <WebView dataSet={{ 'personal-terminal-role': 'composition-mini' }}>
+                        {entity.composition.slice(0, 4).map((row) => (
+                          <WebView key={row.id} style={{ flex: Math.max(0.15, row.value) }}>
+                            <Text numberOfLines={1} style={{ color: theme.text.primary }}>{copy(language, row.label)}</Text>
+                            <Text style={{ color: theme.text.secondary }}>{Math.round(row.value * 100)}%</Text>
+                          </WebView>
+                        ))}
+                      </WebView>
+                    </WebPressable>
+                  ) : null}
+                  {visibleSignals.length > 1 ? (
+                    <WebView dataSet={{ 'personal-terminal-role': 'details-section' }}>
+                      <Text style={{ color: theme.text.metadata }}>{t(language, 'quantSignals')}</Text>
+                      {visibleSignals.slice(1).map((signal) => <SignalRow key={signal.id} language={language} onPress={() => setSheet({ kind: 'signal', signal })} signal={signal} theme={theme} />)}
+                    </WebView>
+                  ) : null}
+                  <WebView dataSet={{ 'personal-terminal-role': 'details-section' }}>
+                    <WebView dataSet={{ 'personal-terminal-role': 'bottom-summary' }}>
+                      <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalActivityAndEvents')}</Text>
+                      <Text style={{ color: theme.text.secondary }}>{viewData.load.length} {t(language, 'personalTerminalLoadPeriods')} · {latestEvents.length} {t(language, 'personalTerminalEvents')}</Text>
+                    </WebView>
+                    <WebView dataSet={{ 'personal-terminal-role': 'event-tape' }}>
+                      {latestEvents.map((event) => (
+                        <WebPressable accessibilityRole="button" key={event.id} onPress={() => handleEvent(event)}>
+                          <Text style={{ color: theme.text.metadata }}>{event.timestamp.slice(5, 10)}</Text>
+                          <Text numberOfLines={1} style={{ color: theme.text.primary }}>{copy(language, event.title)}</Text>
+                        </WebPressable>
+                      ))}
+                      {!latestEvents.length ? <Text style={{ color: theme.text.secondary }}>{t(language, 'personalTerminalNoEvents')}</Text> : null}
+                    </WebView>
+                    <WebView dataSet={{ 'personal-terminal-role': 'provenance-row' }}>
+                      <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalHistoricalReference')} {historicalCount}</Text>
+                      <Text style={{ color: theme.text.primary }}>{t(language, 'personalTerminalQuestLifeConfirmed')} {confirmedCount}</Text>
+                      <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalMissingNeverZero')}</Text>
+                    </WebView>
+                  </WebView>
                 </WebView>
-                <PersonalTerminalIcon color={theme.text.primary} name="analyst" size={16} />
-              </WebPressable> : null}
+              ) : null}
             </WebView>
 
             <WebView dataSet={{ 'personal-terminal-role': 'side-panel' }}>
-              <WebPressable
-                accessibilityLabel={t(language, 'personalTerminalEvidenceProvenance')}
-                accessibilityRole="button"
-                dataSet={{ 'personal-terminal-role': 'panel-section' }}
-                onPress={() => setSheet({ kind: 'evidence' })}
-              >
-                <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalQuantSnapshot')}</Text>
-                {!viewData.observations.length ? (
-                  <WebView dataSet={{ 'personal-terminal-role': 'accumulation-state' }}>
-                    <Text style={{ color: theme.text.primary }}>{t(language, 'personalTerminalAccumulationTitle')}</Text>
-                    <Text style={{ color: theme.text.secondary }}>{t(language, 'personalTerminalAccumulationBody')}</Text>
-                  </WebView>
-                ) : <WebView dataSet={{ 'personal-terminal-role': 'snapshot-list' }}>
-                  {(adaptiveRows || [
-                    [t(language, 'quantCurrent'), `${reading(language, series, current)} ${readingUnit(language, series)}`],
-                    [baselineLabel(language, series), `${reading(language, series, series.baseline.value)} ${readingUnit(language, series)}`],
-                    [t(language, 'quantChange'), changeReading(language, series, current, series.baseline.value)],
-                    [t(language, 'quantEvidence'), t(language, 'personalTerminalAnalystCoverageSummary').replace('{observed}', String(evidence.activeDays)).replace('{missing}', evidence.missing == null ? '—' : String(evidence.missing))],
-                  ]).map(([label, value]) => <WebView key={label}><Text style={{ color: theme.text.metadata }}>{label}</Text><Text style={{ color: theme.text.primary }}>{value}</Text></WebView>)}
-                </WebView>}
-              </WebPressable>
-              {longRange.length ? (
-                <WebView dataSet={{ 'personal-terminal-role': 'panel-section' }}>
-                  <Text style={{ color: theme.text.metadata }}>{scope === 'goal' ? t(language, 'personalTerminalGoalDevelopment') : scope === 'skill' ? t(language, 'personalTerminalSkillDevelopment') : t(language, 'personalTerminalLongRange')}</Text>
-                  <WebView dataSet={{ 'personal-terminal-role': 'long-range-grid' }}>
-                    {longRange.map(([label, value]) => (
-                      <WebView key={label}>
-                        <Text style={{ color: theme.text.metadata }}>{label}</Text>
-                        <Text style={{ color: theme.text.primary }}>{change(value)}{series.valueChangeMode === 'percentage' ? '%' : ''}</Text>
-                      </WebView>
-                    ))}
-                  </WebView>
-                </WebView>
-              ) : null}
-              {scope === 'market' && model.breadth ? (
-                <WebPressable accessibilityRole="button" dataSet={{ 'personal-terminal-role': 'panel-section' }} onPress={() => setSheet({ kind: 'market-map' })}>
-                  <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalBreadth')}</Text>
-                  <WebView dataSet={{ 'personal-terminal-role': 'breadth-bar' }}>
-                    <WebView style={{ flex: model.breadth.improving }} /><WebView style={{ flex: model.breadth.stable }} /><WebView style={{ flex: model.breadth.weakening }} />
-                  </WebView>
-                  <Text style={{ color: theme.text.secondary }}>{model.breadth.improving} {t(language, 'personalTerminalImproving')} · {model.breadth.stable} {t(language, 'personalTerminalStable')} · {model.breadth.weakening} {t(language, 'personalTerminalWeakening')}</Text>
-                </WebPressable>
-              ) : null}
-              {entity.composition?.length ? (
-                <WebPressable accessibilityRole="button" dataSet={{ 'personal-terminal-role': 'panel-section' }} onPress={() => setSheet({ kind: 'composition' })}>
-                  <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalComposition')}</Text>
-                  <WebView dataSet={{ 'personal-terminal-role': 'composition-mini' }}>
-                    {entity.composition.slice(0, 4).map((row) => (
-                      <WebView key={row.id} style={{ flex: Math.max(0.15, row.value) }}>
-                        <Text numberOfLines={1} style={{ color: theme.text.primary }}>{copy(language, row.label)}</Text>
-                        <Text style={{ color: theme.text.secondary }}>{Math.round(row.value * 100)}%</Text>
-                      </WebView>
-                    ))}
-                  </WebView>
-                </WebPressable>
-              ) : null}
-              {visibleSignals.length ? (
-                <WebView dataSet={{ 'personal-terminal-role': 'panel-section' }}>
-                  <Text style={{ color: theme.text.metadata }}>{t(language, 'quantSignals')}</Text>
-                  {visibleSignals.map((signal) => <SignalRow key={signal.id} language={language} onPress={() => setSheet({ kind: 'signal', signal })} signal={signal} theme={theme} />)}
-                </WebView>
-              ) : null}
               {viewData.observations.length ? (
-                <WebPressable accessibilityRole="button" dataSet={{ 'personal-terminal-role': 'panel-section', 'personal-terminal-panel': 'analyst' }} onPress={() => openAnalyst()}>
-                  <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalAnalyst')}</Text>
-                  <WebView dataSet={{ 'personal-terminal-role': 'analyst-preview' }}>
-                    {analystPreviewRows.map((item) => (
-                      <WebView key={item.label}>
-                        <Text style={{ color: theme.text.metadata }}>{item.label}</Text>
-                        <Text numberOfLines={3} style={{ color: theme.text.primary }}>{item.body}</Text>
-                      </WebView>
-                    ))}
-                  </WebView>
-                  <WebView dataSet={{ 'personal-terminal-role': 'analyst-open-row' }}>
-                    <Text style={{ color: theme.text.primary }}>{t(language, 'personalTerminalInspectContext')}</Text>
-                    <PersonalTerminalIcon color={theme.text.primary} name="analyst" size={16} />
-                  </WebView>
-                </WebPressable>
-              ) : null}
-            </WebView>
-
-            <WebView dataSet={{ 'personal-terminal-role': 'bottom-panel' }}>
-              <WebView dataSet={{ 'personal-terminal-role': 'bottom-summary' }}>
-                <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalActivityAndEvents')}</Text>
-                <Text style={{ color: theme.text.secondary }}>{viewData.load.length} {t(language, 'personalTerminalLoadPeriods')} · {latestEvents.length} {t(language, 'personalTerminalEvents')}</Text>
-              </WebView>
-              <WebView dataSet={{ 'personal-terminal-role': 'event-tape' }}>
-                {latestEvents.map((event) => (
-                  <WebPressable accessibilityRole="button" key={event.id} onPress={() => handleEvent(event)}>
-                    <Text style={{ color: theme.text.metadata }}>{event.timestamp.slice(5, 10)}</Text>
-                    <Text numberOfLines={1} style={{ color: theme.text.primary }}>{copy(language, event.title)}</Text>
-                  </WebPressable>
-                ))}
-                {!latestEvents.length ? <Text style={{ color: theme.text.secondary }}>{t(language, 'personalTerminalNoEvents')}</Text> : null}
-              </WebView>
-              <WebView dataSet={{ 'personal-terminal-role': 'provenance-row' }}>
-                <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalHistoricalReference')} {historicalCount}</Text>
-                <Text style={{ color: theme.text.primary }}>{t(language, 'personalTerminalQuestLifeConfirmed')} {confirmedCount}</Text>
-                <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalMissingNeverZero')}</Text>
-              </WebView>
+                <TerminalAnalystPanel
+                  evidence={analystEvidence}
+                  interpretation={analystInterpretation}
+                  language={language}
+                  limitation={analystLimitation}
+                  observation={analystObservation}
+                  onPress={() => openAnalyst()}
+                  theme={theme}
+                />
+              ) : (
+                <WebView dataSet={{ 'personal-terminal-role': 'accumulation-state' }}>
+                  <Text style={{ color: theme.text.primary }}>{t(language, 'personalTerminalAccumulationTitle')}</Text>
+                  <Text style={{ color: theme.text.secondary }}>{t(language, 'personalTerminalAccumulationBody')}</Text>
+                </WebView>
+              )}
             </WebView>
           </WebView>
 
@@ -1410,7 +1502,7 @@ export default function V11PersonalTerminal({
                   <Text style={{ color: theme.text.primary }}>{analystItemBody(language, series, item)}</Text>
                 </WebView>
               )) : (
-                <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalAnalystObserved')}</Text><Text style={{ color: theme.text.primary }}>{copy(language, series.label)} · {t(language, `personalTerminalTrajectory_${trend}`)} · {changeReading(language, series, current, series.baseline.value)}</Text></WebView>
+                <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalAnalystObserved')}</Text><Text style={{ color: theme.text.primary }}>{copy(language, series.label)} · {t(language, `personalTerminalTrajectory_${direction(delta)}`)} · {changeReading(language, series, current, series.baseline.value)}</Text></WebView>
               )}
               <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalRelatedChanges')}</Text><Text style={{ color: theme.text.secondary }}>{comparisonSeries ? `${copy(language, comparisonSeries.label)} · ${readingUnit(language, comparisonSeries)} · ${t(language, 'personalTerminalIndependentScale')}` : t(language, 'personalTerminalNoComparison')}</Text></WebView>
               <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalKnownSignals')}</Text><Text style={{ color: theme.text.secondary }}>{visibleSignals.length ? copy(language, visibleSignals[0].title) : t(language, 'personalTerminalV041NoEligibleRelationship')}</Text></WebView>
