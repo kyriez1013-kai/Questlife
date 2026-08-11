@@ -71,9 +71,14 @@ assert.equal(
 assert.equal(mature.marketOverview!.limitations.includes('NO_COMPOSITE_PERSONAL_INDEX'), true);
 assert.equal(String(mature.marketOverview).includes('Life Score'), false);
 
-const ordinal = adapt('focus_10_observations').marketOverview!.instruments[0];
+const ordinalModel = adapt('focus_10_observations');
+const ordinal = ordinalModel.marketOverview!.instruments[0];
 assert.equal(ordinal.semantic, 'ordinal_state');
 assert.equal(ordinal.deviationPercent, null);
+assert.ok((ordinalModel.series[0].baseline.low ?? 0) >= 1);
+assert.ok((ordinalModel.series[0].baseline.high ?? 6) <= 5);
+assert.ok((ordinal.referenceLow ?? 0) >= 1);
+assert.ok((ordinal.referenceHigh ?? 6) <= 5);
 
 const tamperedCandle = load('focus_3_observations');
 tamperedCandle.series[0].candleViews.RECENT[0].high = 99;

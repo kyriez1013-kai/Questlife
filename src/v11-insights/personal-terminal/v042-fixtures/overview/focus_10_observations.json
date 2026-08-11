@@ -128,7 +128,7 @@
         "position": "near_reference",
         "provenanceFamily": "questlife_native",
         "reference": 4.0,
-        "referenceHigh": 6.965199999999999,
+        "referenceHigh": 5.0,
         "referenceKind": "active",
         "referenceLow": 1.0348000000000002,
         "referenceType": null,
@@ -169,7 +169,7 @@
     "engineVersion": "questlife-cold-start-terminal-v0.4",
     "materializedEngineVersion": "questlife-quant-v0.4.1-materialized",
     "presentationParentVersion": "questlife-terminal-presentation-v0.4.1",
-    "quantCommit": "53c8654",
+    "quantCommit": "e4743bf",
     "sourceArtifact": "synthetic/stage3.12/focus_10_observations",
     "syntheticOnly": true
   }

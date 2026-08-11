@@ -349,7 +349,7 @@
     "engineVersion": "questlife-cold-start-terminal-v0.4",
     "materializedEngineVersion": "questlife-quant-v0.4.1-materialized",
     "presentationParentVersion": "questlife-terminal-presentation-v0.4.1",
-    "quantCommit": "53c8654",
+    "quantCommit": "e4743bf",
     "sourceArtifact": "synthetic/stage3.12/focus_2_observations",
     "syntheticOnly": true
   },
