@@ -2898,3 +2898,53 @@ was not started.
 Documentation:
 - `QUESTLIFE_STAGE3_12_QA.md`
 - `artifacts/v11-stage3-12/`
+
+## Stage 3.13 - Personal Quant Terminal Presentation Redesign
+
+Status: isolated local presentation implementation and QA complete on
+`design/questlife-product-v2`; physical iPhone Safari, Preview, production,
+push, and deployment remain pending.
+
+Completed:
+- Replaced the indicator-list-first market surface with a professional
+  `summary -> chart -> tools -> evidence -> Analyst -> details` hierarchy.
+- Made the existing line/candle canvas the primary analytical object while
+  keeping timeframe and chart controls capability-driven by Quant artifacts.
+- Added Personal Market domain navigation for Overview, Movement, Recovery,
+  Sleep, Focus, Goals, and Skills without inventing a composite score.
+- Added a compact summary for current reading, personal reference, deviation,
+  evidence, and coverage. Coverage is explicitly measurement reach, not
+  probability or conclusion confidence.
+- Reframed Analyst content as Observation, Evidence, Interpretation, and
+  Limitation, preserving descriptive and non-causal language.
+- Collapsed secondary evidence, methodology, events, and advanced tools by
+  default while preserving their existing handlers and Sheets.
+- Preserved non-market artifact defaults so Goal and Skill lifecycle fixtures
+  open in their own scopes rather than being forced into Personal Market.
+- Kept legal attribution in Settings -> About and legal information; the
+  user-facing terminal exposes no chart-library or implementation copy.
+- No Quant Engine, Observation Ledger, artifact, calculation, candle, signal,
+  schema, Store, API, persistence, or production-pipeline change was made.
+
+Validation:
+- S0, steps-only, sleep-only, mixed passive, mixed mature, Goal, Skill, Day 1,
+  Day 7, Day 30, and Day 90 fixture states were checked locally.
+- 375/393/768/1280, zh/en, dark/light, reduced motion, details, Evidence Sheet,
+  domain navigation, and unflagged rollback were checked in exported web.
+- No horizontal overflow or runtime console error was found in the final local
+  pass.
+- Complete local composition measured P50 `16.7ms`, worst P95 `17.4ms`, and
+  `0/290` sampled frames over 20ms across mobile dark and desktop light probes.
+- `npx tsc --noEmit`, `npm run build`, and targeted Personal Terminal tests
+  passed. Local bundle: `index-237af9d66203914513da0ba2244807ef.js`.
+
+UNVERIFIED:
+- physical iPhone Safari;
+- Vercel Preview and production;
+- real Health/passive data and production API/schema integration;
+- real-user Day 1 -> Day 90 lifecycle behaviour.
+
+No push or deployment was performed. Stage 4 was not started.
+
+Documentation:
+- `QUESTLIFE_STAGE3_13_QA.md`
