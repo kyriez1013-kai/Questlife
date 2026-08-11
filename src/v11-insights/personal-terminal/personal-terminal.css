@@ -1437,14 +1437,23 @@
 }
 
 @media (max-width: 620px) {
+  [data-personal-terminal-adaptive-version="3.12"] [data-personal-terminal-role="baseline-readout"][data-personal-terminal-adaptive] {
+    min-width: 0;
+  }
+
   [data-personal-terminal-adaptive-version="3.12"] [data-personal-terminal-role="baseline-readout"][data-personal-terminal-adaptive] > span:nth-child(2) {
     max-width: none;
+    overflow: visible;
     font-size: 12px;
     line-height: 16px;
+    text-align: right;
+    text-overflow: clip;
+    white-space: normal;
   }
 
   [data-personal-terminal-adaptive-version="3.12"] [data-personal-terminal-role="baseline-readout"][data-personal-terminal-adaptive] > span:last-child {
     max-width: none;
+    text-align: right;
   }
 }
 

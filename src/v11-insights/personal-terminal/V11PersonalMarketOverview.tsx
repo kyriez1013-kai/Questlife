@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text, useWindowDimensions, View } from 'react-native';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
 import type { Lang } from '../../i18n';
 import { t } from '../../i18n';
@@ -27,7 +27,7 @@ function compactNumber(language: Lang, value: number | null) {
   if (value == null) return '—';
   return new Intl.NumberFormat(locale(language), {
     maximumFractionDigits: Math.abs(value) < 10 ? 1 : 0,
-    notation: Math.abs(value) >= 10000 ? 'compact' : 'standard',
+    notation: 'standard',
   }).format(value);
 }
 
@@ -185,6 +185,10 @@ function AnalystRow({
     body = t(language, 'personalMarketAnalystSignal');
   } else if (kind === 'coverage_unknown') {
     body = t(language, 'personalMarketAnalystCoverageUnknown').replace('{count}', String(primary?.count ?? 0));
+  } else if (kind === 'new_capability' && instrument) {
+    body = t(language, 'personalMarketAnalystCapabilityUnlocked')
+      .replace('{instrument}', copy(language, instrument.label))
+      .replace('{count}', String(instrument.observationCount));
   }
   return (
     <WebView dataSet={{ 'personal-market-role': 'analyst-answer' }}>
@@ -216,7 +220,10 @@ export default function V11PersonalMarketOverview({
   theme: V11ThemeTokens;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const rows = expanded ? overview.instruments : overview.instruments.slice(0, 5);
+  const { width } = useWindowDimensions();
+  const compactOverview = width <= 620;
+  const desktopOverview = width >= 900;
+  const rows = expanded || desktopOverview ? overview.instruments : overview.instruments.slice(0, 5);
   const historyLabel = overview.historyPeriod.start && overview.historyPeriod.end
     ? `${overview.historyPeriod.start.slice(0, 10)} — ${overview.historyPeriod.end.slice(0, 10)}`
     : t(language, 'personalMarketNoHistory');
@@ -259,7 +266,7 @@ export default function V11PersonalMarketOverview({
 
       <WebView dataSet={{ 'personal-market-role': 'workstation' }}>
         <WebView dataSet={{ 'personal-market-role': 'browser' }}>
-          <Text style={{ color: theme.text.metadata }}>{t(language, 'personalMarketResolution')}</Text>
+          {!compactOverview ? <Text style={{ color: theme.text.metadata }}>{t(language, 'personalMarketResolution')}</Text> : null}
           {(['market', 'goal', 'skill'] as const).map((scope) => {
             const count = scope === 'market'
               ? overview.instrumentCount
@@ -272,7 +279,7 @@ export default function V11PersonalMarketOverview({
               </WebPressable>
             );
           })}
-          <Text style={{ color: theme.text.metadata }}>{t(language, 'personalMarketIndependentScales')}</Text>
+          {!compactOverview ? <Text style={{ color: theme.text.metadata }}>{t(language, 'personalMarketIndependentScales')}</Text> : null}
         </WebView>
 
         <WebView dataSet={{ 'personal-market-role': 'canvas' }}>
@@ -294,7 +301,7 @@ export default function V11PersonalMarketOverview({
           <WebView dataSet={{ 'personal-market-role': 'timeline' }}>
             <WebView dataSet={{ 'personal-market-role': 'timeline-header' }}>
               <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalMarketTimeline')}</Text><Text style={{ color: theme.text.secondary }}>{t(language, 'personalMarketTimelineHint')}</Text></WebView>
-              <Text style={{ color: theme.text.metadata }}>{t(language, 'personalMarketCurrentReference')}</Text>
+              {!compactOverview ? <Text style={{ color: theme.text.metadata }}>{t(language, 'personalMarketCurrentReference')}</Text> : null}
             </WebView>
             {rows.map((instrument) => (
               <InstrumentRow
@@ -305,7 +312,7 @@ export default function V11PersonalMarketOverview({
                 theme={theme}
               />
             ))}
-            {overview.instruments.length > 5 ? (
+            {!desktopOverview && overview.instruments.length > 5 ? (
               <WebPressable accessibilityRole="button" dataSet={{ 'personal-market-role': 'expand' }} onPress={() => setExpanded((value) => !value)}>
                 <Text style={{ color: theme.text.secondary }}>{t(language, expanded ? 'personalMarketShowLess' : 'personalMarketShowAll').replace('{count}', String(overview.instruments.length))}</Text>
               </WebPressable>
@@ -320,7 +327,7 @@ export default function V11PersonalMarketOverview({
             {overview.topMoves.slice(0, 3).map((move, index) => {
               const instrument = move.seriesId ? overview.instruments.find((row) => row.seriesId === move.seriesId) : null;
               const label = move.kind === 'new_capability'
-                ? t(language, 'personalMarketCapabilityUnlocked')
+                ? `${instrument ? `${copy(language, instrument.label)} · ` : ''}${t(language, 'personalMarketCapabilityUnlocked')}`
                 : move.kind === 'eligible_signal'
                   ? t(language, 'personalMarketSignalEligible')
                   : instrument ? copy(language, instrument.label) : t(language, 'personalMarketChange');

@@ -766,7 +766,7 @@ export default function V11PersonalTerminal({
         dataSet={{ 'personal-terminal-role': 'scroll' }}
         showsVerticalScrollIndicator={false}
       >
-        <WebView dataSet={{ 'personal-terminal-adaptive-version': '3.12', 'personal-terminal-role': 'terminal', 'personal-terminal-version': '3.11' }}>
+        <WebView dataSet={{ 'personal-terminal-role': 'terminal', 'personal-terminal-version': '3.12' }}>
           <V11PersonalMarketOverview
             language={language}
             onNextAction={onNextAction}
@@ -857,7 +857,7 @@ export default function V11PersonalTerminal({
         dataSet={{ 'personal-terminal-role': 'scroll' }}
         showsVerticalScrollIndicator={false}
       >
-        <WebView dataSet={{ 'personal-terminal-role': 'terminal', 'personal-terminal-version': '3.12' }}>
+        <WebView dataSet={{ 'personal-terminal-adaptive-version': '3.12', 'personal-terminal-role': 'terminal', 'personal-terminal-version': '3.11' }}>
           <WebView dataSet={{ 'personal-terminal-role': 'topbar' }}>
             <WebView dataSet={{ 'personal-terminal-role': 'brand-context' }}>
               <PersonalTerminalIcon color={theme.text.primary} name="market" size={17} />
@@ -1208,7 +1208,7 @@ export default function V11PersonalTerminal({
           </WebView>
 
           <WebPressable accessibilityRole="button" dataSet={{ 'personal-terminal-role': 'implication' }} onPress={onNextAction}>
-            <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalNextWatch')}</Text><Text numberOfLines={2} style={{ color: theme.text.primary }}>{copy(language, model.implication)}</Text></WebView>
+            <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalNextWatch')}</Text><Text numberOfLines={2} style={{ color: theme.text.primary }}>{earlyAnalystBody ? t(language, 'personalTerminalContinueObservation') : copy(language, model.implication)}</Text></WebView>
             <PersonalTerminalIcon color={theme.text.primary} name="research" size={16} />
           </WebPressable>
           {debugSource && model.sourceMetadata ? (

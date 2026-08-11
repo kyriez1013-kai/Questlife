@@ -247,6 +247,9 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
     (async () => {
       const library = await import('lightweight-charts');
       if (disposed || !hostRef.current) return;
+      const priceScaleMargins = series.semantic === 'ordinal_state'
+        ? { top: 0, bottom: 0 }
+        : { top: 0.12, bottom: indicators.has('load') ? 0.24 : 0.1 };
       chart = library.createChart(hostRef.current, {
         autoSize: true,
         layout: {
@@ -273,8 +276,8 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
         handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false },
         handleScale: { axisDoubleClickReset: true, axisPressedMouseMove: true, mouseWheel: true, pinch: true },
         kineticScroll: { mouse: !reducedMotion, touch: !reducedMotion },
-        leftPriceScale: { visible: Boolean(comparisonSeries), borderVisible: false, scaleMargins: { top: 0.12, bottom: indicators.has('load') ? 0.24 : 0.1 } },
-        rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.12, bottom: indicators.has('load') ? 0.24 : 0.1 } },
+        leftPriceScale: { visible: Boolean(comparisonSeries), borderVisible: false, scaleMargins: priceScaleMargins },
+        rightPriceScale: { borderVisible: false, scaleMargins: priceScaleMargins },
         timeScale: {
           borderVisible: false,
           timeVisible: timeframe === '4H' || timeframe === '12H' || timeframe === '24H' || timeframe === '1D',
@@ -288,8 +291,12 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
       chartRef.current = chart;
 
       let primary: any;
+      const boundedOrdinalScale = series.semantic === 'ordinal_state'
+        ? { autoscaleInfoProvider: () => ({ priceRange: { minValue: 1, maxValue: 5 } }) }
+        : {};
       if (chartKind === 'candle' && series.supportsCandle && viewData.candles.length > 0) {
         primary = chart.addSeries(library.CandlestickSeries, {
+          ...boundedOrdinalScale,
           upColor: 'transparent',
           downColor: theme.glow.primary,
           borderUpColor: theme.glow.primary,
@@ -306,6 +313,7 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
         }
       } else {
         primary = chart.addSeries(library.LineSeries, {
+          ...boundedOrdinalScale,
           color: theme.glow.primary,
           lineWidth: 2,
           lineType: library.LineType.Simple,
