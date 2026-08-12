@@ -54,6 +54,7 @@ function series(id: string, constructKey: string): PersonalTerminalSeries {
 
 const steps = series('steps', 'activity.steps');
 const sleep = series('sleep', 'sleep.duration');
+const focus = series('focus', 'state.focus');
 const unrelated = series('quality', 'execution.quality');
 const signal: PersonalTerminalSignal = {
   id: 'steps-focus',
@@ -88,8 +89,8 @@ const model: PersonalTerminalModel = {
   defaultScope: 'market',
   defaultEntityId: 'market:personal',
   defaultSeriesId: steps.id,
-  entities: [{ id: 'market:personal', scope: 'market', label: text('market'), context: text('market'), seriesIds: [steps.id, sleep.id, unrelated.id] }],
-  series: [steps, sleep, unrelated],
+  entities: [{ id: 'market:personal', scope: 'market', label: text('market'), context: text('market'), seriesIds: [steps.id, sleep.id, focus.id, unrelated.id] }],
+  series: [steps, sleep, focus, unrelated],
   signals: [unrelatedSignal, signal],
   implication: text('observe'),
   range: { start: '2026-08-01T09:00:00.000Z', end: '2026-08-03T09:00:00.000Z' },
@@ -106,13 +107,13 @@ const viewData: PersonalTerminalViewData = {
 };
 
 const exploration = buildPersonalTerminalExplorationModel({
-  comparisonSeries: [steps, sleep],
+  comparisonSeries: [steps, sleep, focus],
   model,
   series: steps,
   viewData,
 });
 assert.equal(exploration.primarySignal?.id, signal.id);
-assert.equal(exploration.relatedSeries?.id, sleep.id);
+assert.equal(exploration.relatedSeries?.id, focus.id);
 assert.equal(exploration.events.length, 1);
 assert.equal(exploration.evidence.observationCount, 2);
 assert.equal(exploration.evidence.independentDayCount, 2);

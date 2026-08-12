@@ -83,6 +83,25 @@ function signalForSeries(signals: PersonalTerminalSignal[], series: PersonalTerm
   )) ?? null;
 }
 
+function relatedSeriesForSignal(
+  signal: PersonalTerminalSignal | null,
+  series: PersonalTerminalSeries,
+  comparisonSeries: PersonalTerminalSeries[],
+) {
+  if (!signal || !series.constructKey) return null;
+  const relatedConstruct = signal.sourceConstruct === series.constructKey
+    ? signal.targetConstruct
+    : signal.targetConstruct === series.constructKey
+      ? signal.sourceConstruct
+      : null;
+  if (!relatedConstruct) return null;
+  return comparisonSeries.find((candidate) => (
+    candidate.id !== series.id
+      && candidate.constructKey === relatedConstruct
+      && candidate.observations.length > 0
+  )) ?? null;
+}
+
 export function buildPersonalTerminalExplorationModel({
   comparisonSeries,
   model,
@@ -96,11 +115,16 @@ export function buildPersonalTerminalExplorationModel({
 }): PersonalTerminalExplorationModel {
   const events = eventsInWindow(series, viewData);
   const primarySignal = signalForSeries(model.signals, series);
-  const relatedSeries = comparisonSeries.find((candidate) => (
-    candidate.id !== series.id && candidate.observations.length > 0
-  )) ?? null;
+  const relatedSeries = relatedSeriesForSignal(primarySignal, series, comparisonSeries);
   const independentDayCount = new Set(viewData.observations.map((row) => row.timestamp.slice(0, 10))).size;
-  const expectedDayCount = series.coverage?.expectedDays ?? null;
+  const firstVisibleAt = viewData.observations[0]?.timestamp ?? null;
+  const lastVisibleAt = viewData.observations[viewData.observations.length - 1]?.timestamp ?? null;
+  const firstSeriesAt = series.observations[0]?.timestamp ?? null;
+  const lastSeriesAt = series.observations[series.observations.length - 1]?.timestamp ?? null;
+  const coversSeriesWindow = Boolean(
+    firstVisibleAt && lastVisibleAt && firstVisibleAt === firstSeriesAt && lastVisibleAt === lastSeriesAt,
+  );
+  const expectedDayCount = coversSeriesWindow ? series.coverage?.expectedDays ?? null : null;
   const missingDayCount = expectedDayCount == null
     ? null
     : Math.max(0, expectedDayCount - (series.coverage?.observedDays ?? independentDayCount));
