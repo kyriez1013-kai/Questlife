@@ -2316,7 +2316,7 @@
   cursor: pointer;
 }
 
-[data-personal-terminal-role="event-rail"] > [role="button"] > div {
+[data-personal-terminal-role="event-marker"] {
   width: 6px;
   height: 6px;
   margin-top: 8px;
@@ -2325,7 +2325,7 @@
   background: var(--pt-bg);
 }
 
-[data-personal-terminal-role="event-rail"] > [role="button"][data-personal-terminal-selected="true"] > div {
+[data-personal-terminal-role="event-rail"] > [role="button"][data-personal-terminal-selected="true"] > [data-personal-terminal-role="event-marker"] {
   background: var(--pt-primary);
   box-shadow: 0 0 9px color-mix(in srgb, var(--pt-primary) 64%, transparent);
 }
@@ -2474,6 +2474,10 @@
 
   [data-personal-terminal-role="event-rail"] {
     right: 48px;
+  }
+
+  [data-personal-terminal-role="event-rail"] span {
+    display: none;
   }
 
   [data-personal-terminal-role="analysis-tools"] [data-personal-terminal-role="tool-button"] {

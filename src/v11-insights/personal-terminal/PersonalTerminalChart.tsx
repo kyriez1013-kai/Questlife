@@ -280,6 +280,7 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
       const priceScaleMargins = series.semantic === 'ordinal_state'
         ? { top: 0, bottom: 0 }
         : { top: 0.12, bottom: indicators.has('load') ? 0.24 : 0.1 };
+      const coarseViewport = window.matchMedia('(pointer: coarse)').matches || window.matchMedia('(max-width: 700px)').matches;
       chart = library.createChart(hostRef.current, {
         autoSize: true,
         layout: {
@@ -303,8 +304,8 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
           vertLine: { color: theme.text.secondary, width: 1, style: library.LineStyle.Dashed, labelBackgroundColor: theme.questTheme.colors.surfaceElevated },
           horzLine: { color: theme.text.secondary, width: 1, style: library.LineStyle.Dashed, labelBackgroundColor: theme.questTheme.colors.surfaceElevated },
         },
-        handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false },
-        handleScale: { axisDoubleClickReset: true, axisPressedMouseMove: true, mouseWheel: true, pinch: true },
+        handleScroll: { mouseWheel: !coarseViewport, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false },
+        handleScale: { axisDoubleClickReset: true, axisPressedMouseMove: true, mouseWheel: !coarseViewport, pinch: true },
         kineticScroll: { mouse: !reducedMotion, touch: !reducedMotion },
         leftPriceScale: { visible: Boolean(comparisonSeries), borderVisible: false, scaleMargins: priceScaleMargins },
         rightPriceScale: { borderVisible: false, scaleMargins: priceScaleMargins },
@@ -549,7 +550,7 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
               onPress={() => onSelectEvent(event)}
               style={{ left: `${position}%` }}
             >
-              <WebView />
+              <WebView dataSet={{ 'personal-terminal-role': 'event-marker' }} />
               <Text style={{ color: theme.text.metadata }}>{event.timestamp.slice(5, 10)}</Text>
             </WebPressable>
             );
