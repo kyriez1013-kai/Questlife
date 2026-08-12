@@ -43,8 +43,8 @@ export type PersonalTerminalChartHandle = {
 };
 
 function chartTime(value: string) {
-  if (value.length <= 10) return value;
-  return Math.round(new Date(value).getTime() / 1000) as any;
+  const normalized = value.length <= 10 ? `${value}T00:00:00.000Z` : value;
+  return Math.round(new Date(normalized).getTime() / 1000) as any;
 }
 
 function timeLabel(value: unknown) {
