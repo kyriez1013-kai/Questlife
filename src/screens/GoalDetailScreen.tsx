@@ -893,7 +893,7 @@ const styles = StyleSheet.create({
   optionChipActive: { backgroundColor: theme.primary, borderColor: theme.primary },
   optionChipText: { color: theme.textDim, fontSize: 12, fontWeight: '800' },
   optionChipTextActive: { color: '#fff' },
-  threeCols: { flexDirection: 'row', gap: 8, alignItems: 'flex-end' },
+  threeCols: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'flex-end' },
   existingSkillRow: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: theme.card, padding: 12, borderRadius: 12, marginTop: 8, borderWidth: 1, borderColor: theme.border },
   saveBtn: { marginTop: 18, paddingVertical: 14, borderRadius: theme.radius.md, alignItems: 'center', backgroundColor: theme.primary },
   dangerBtn: { backgroundColor: '#E5484D' },

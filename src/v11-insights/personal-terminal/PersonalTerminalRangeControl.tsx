@@ -8,10 +8,18 @@ import type {
   PersonalTerminalDisplayRange,
   PersonalTerminalQuickRange,
 } from './personalTerminalWorkspace';
-import { rangeDebugLabel } from './personalTerminalWorkspace';
 
 const WebView = View as any;
 const WebPressable = Pressable as any;
+
+function customRangeLabel(language: Lang, range: Exclude<PersonalTerminalDisplayRange, { kind: 'preset' }>) {
+  if (range.kind === 'last_n_days') return t(language, 'personalTerminalLastNDays').replace('{count}', String(range.days));
+  if (range.kind === 'last_n_observations') return t(language, 'personalTerminalLastNObservations').replace('{count}', String(range.count));
+  if (range.kind === 'calendar_period') return t(language, 'personalTerminalCalendarPeriodValue')
+    .replace('{count}', String(range.count))
+    .replace('{unit}', t(language, `personalTerminalCalendarUnit_${range.unit}`));
+  return `${range.start} — ${range.end}`;
+}
 
 export default function PersonalTerminalRangeControl({
   available,
@@ -64,7 +72,7 @@ export default function PersonalTerminalRangeControl({
       >
         <PersonalTerminalIcon color={isCustom ? theme.text.primary : theme.text.metadata} name="calendar" size={14} />
         <Text numberOfLines={1} style={{ color: isCustom ? theme.text.primary : theme.text.metadata }}>
-          {isCustom ? rangeDebugLabel(range) : t(language, 'personalTerminalCustomRangeShort')}
+          {isCustom ? customRangeLabel(language, range) : t(language, 'personalTerminalCustomRangeShort')}
         </Text>
       </WebPressable>
       <WebView dataSet={{ 'personal-terminal-workspace-role': 'range-viewport-actions' }}>

@@ -15,6 +15,7 @@ import QuestPill from './ui/QuestPill';
 import { getGoalSemanticIcon } from '../design/entityIcons';
 import { getDefaultTemplateForGoalType } from '../domainTemplates';
 import { trackEvent } from '../utils/analytics';
+import { getV11ProductLanguage, getV11ProductThemeId } from '../v11/featureFlag';
 
 const EMOJIS = ['🎯','🏋️','💼','📚','🎨','🧘','💻','🎸','💰','❤️','🌱','🍳','📷','🧠','✍️','🏃','🎮','🔬','🐾','✈️'];
 const GOAL_TYPES: GoalType[] = ['fitness', 'career', 'study', 'exam', 'finance', 'health', 'project', 'custom'];
@@ -28,9 +29,9 @@ export interface GoalFormProps {
 
 export default function GoalForm({ visible, onClose, initial }: GoalFormProps) {
   const { data, addCategory, updateCategory, applyDomainTemplateToGoal } = useStore();
-  const questTheme = getQuestTheme(data.settings.selectedThemeId);
+  const questTheme = getQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
-  const lang = getLanguage(data.settings.language);
+  const lang = getV11ProductLanguage(getLanguage(data.settings.language));
   const [name, setName] = useState('');
   const [emoji, setEmoji] = useState('');
   const [desc, setDesc] = useState('');

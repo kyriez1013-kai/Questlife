@@ -27,6 +27,9 @@ import { theme } from '../theme';
 import { useStore } from '../store';
 import { getQuestTheme } from '../design/tokens';
 import { useQuestReducedMotion } from '../design/motion';
+import QuestIcon from './ui/QuestIcon';
+import { getLanguage, t } from '../i18n';
+import { getV11ProductLanguage, getV11ProductThemeId, isV11ProductEnabled } from '../v11/featureFlag';
 
 export interface BottomSheetFormProps {
   visible: boolean;
@@ -38,10 +41,14 @@ export interface BottomSheetFormProps {
 
 export default function BottomSheetForm({ visible, onClose, children, footer, closeAccessibilityLabel }: BottomSheetFormProps) {
   const { data } = useStore();
-  const questTheme = getQuestTheme(data.settings.selectedThemeId);
+  const questTheme = getQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
+  const language = getV11ProductLanguage(getLanguage(data.settings.language));
+  const v11ProductEnabled = isV11ProductEnabled();
   const reducedMotion = useQuestReducedMotion();
   const SheetView = View as any;
   const FooterView = View as any;
+  const ChromeView = View as any;
+  const BodyScrollView = ScrollView as any;
   return (
     <Modal visible={visible} transparent animationType={reducedMotion ? 'none' : 'slide'} onRequestClose={onClose}>
       <KeyboardAvoidingView
@@ -52,6 +59,7 @@ export default function BottomSheetForm({ visible, onClose, children, footer, cl
       >
         {/* 点击半透明遮罩 = 关闭弹窗 (RN 会自动收起键盘) */}
         <Pressable
+          nativeID={v11ProductEnabled ? 'v11-bottom-sheet-scrim' : undefined}
           style={styles.backdrop}
           onPress={onClose}
           accessibilityRole="button"
@@ -59,7 +67,7 @@ export default function BottomSheetForm({ visible, onClose, children, footer, cl
         />
         {/* sheet 本身: 底部对齐, 圆角, 最大 92% */}
         <SheetView
-          className="bottom-sheet-form"
+          className={`bottom-sheet-form${v11ProductEnabled ? ' v11-product-sheet' : ''}`}
           style={[
             styles.sheet,
             {
@@ -72,7 +80,24 @@ export default function BottomSheetForm({ visible, onClose, children, footer, cl
           accessibilityRole="dialog"
           accessibilityViewIsModal
         >
-          <ScrollView
+          <ChromeView className="bottom-sheet-chrome" style={styles.chrome}>
+            <View style={[styles.handle, { backgroundColor: questTheme.colors.borderStrong }]} />
+            <Pressable
+              accessibilityLabel={closeAccessibilityLabel ?? t(language, 'close')}
+              accessibilityRole="button"
+              onPress={onClose}
+              style={({ pressed }) => [
+                styles.closeButton,
+                { backgroundColor: pressed ? questTheme.colors.surfaceSoft : 'transparent' },
+              ]}
+            >
+              <View style={styles.closeIcon} pointerEvents="none">
+                <QuestIcon name="plus" size={18} color={questTheme.colors.textMuted} />
+              </View>
+            </Pressable>
+          </ChromeView>
+          <BodyScrollView
+            className="bottom-sheet-scroll"
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
             contentContainerStyle={[styles.content, footer ? styles.contentWithFooter : null]}
@@ -81,7 +106,7 @@ export default function BottomSheetForm({ visible, onClose, children, footer, cl
             nestedScrollEnabled
           >
             {children}
-          </ScrollView>
+          </BodyScrollView>
           {footer ? (
             <FooterView
               className="bottom-sheet-footer"
@@ -119,7 +144,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 8,
     paddingBottom: 120, // 给虚拟键盘留余地, 滚到最底也能看到"创建/保存"
   },
   contentWithFooter: {
@@ -130,5 +155,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: Platform.OS === 'ios' ? 34 : 18,
+  },
+  chrome: {
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+  },
+  handle: { width: 38, height: 4, borderRadius: 2 },
+  closeButton: {
+    position: 'absolute',
+    right: 8,
+    top: 2,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeIcon: {
+    transform: [{ rotate: '45deg' }],
   },
 });

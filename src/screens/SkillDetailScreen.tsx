@@ -766,7 +766,7 @@ const styles = StyleSheet.create({
 
   rangeRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
   rangePill: {
-    flex: 1, paddingVertical: 8, borderRadius: 18,
+    flex: 1, minHeight: 44, paddingVertical: 8, borderRadius: 18,
     borderWidth: 1, borderColor: theme.border, backgroundColor: theme.card,
     alignItems: 'center',
   },
@@ -806,8 +806,8 @@ const styles = StyleSheet.create({
   legendText: { color: theme.textDim, fontSize: 11 },
 
   // stats
-  statsRow: { flexDirection: 'row', gap: 8, marginTop: 14 },
-  statCard: { flex: 1, backgroundColor: theme.card, padding: 14, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: theme.border },
+  statsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
+  statCard: { flexGrow: 1, flexBasis: 84, minWidth: 84, backgroundColor: theme.card, padding: 14, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: theme.border },
   statValue: { fontSize: 18, fontWeight: '700' },
   statLabel: { color: theme.textDim, fontSize: 11, marginTop: 6 },
 

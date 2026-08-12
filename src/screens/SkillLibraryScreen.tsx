@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   icon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   name: { color: theme.text, fontSize: 16, fontWeight: '800' },
   meta: { color: theme.textDim, fontSize: 12, marginTop: 3 },
-  moreBtn: { width: 34, height: 34, borderRadius: 17, borderWidth: 1, borderColor: theme.border, alignItems: 'center', justifyContent: 'center' },
+  moreBtn: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: theme.border, alignItems: 'center', justifyContent: 'center' },
   moreText: { color: theme.textDim, fontSize: 16, fontWeight: '900', marginTop: -4 },
   chev: { color: theme.textDim, fontSize: 24 },
 });

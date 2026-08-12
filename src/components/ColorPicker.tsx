@@ -4,6 +4,7 @@ import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { theme } from '../theme';
 import { useStore } from '../store';
 import { getQuestTheme } from '../design/tokens';
+import { getV11ProductThemeId } from '../v11/featureFlag';
 
 export interface ColorPickerProps {
   colors: string[];
@@ -13,13 +14,16 @@ export interface ColorPickerProps {
 
 function ColorPickerInner({ colors, value, onChange }: ColorPickerProps) {
   const { data } = useStore();
-  const questTheme = getQuestTheme(data.settings.selectedThemeId);
+  const questTheme = getQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   return (
     <View style={styles.row}>
       {colors.map((c) => (
         <TouchableOpacity
           key={c}
           onPress={() => onChange(c)}
+          accessibilityRole="button"
+          accessibilityLabel={c}
+          accessibilityState={{ selected: value === c }}
           style={[
             styles.dot,
             {
@@ -40,5 +44,5 @@ export default ColorPicker;
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  dot: { width: 34, height: 34, borderRadius: 17, borderWidth: 3, borderColor: theme.card, ...theme.shadow },
+  dot: { width: 44, height: 44, borderRadius: 22, borderWidth: 3, borderColor: theme.card, ...theme.shadow },
 });

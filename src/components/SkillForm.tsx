@@ -21,6 +21,7 @@ import QuestEntityIcon from './ui/QuestEntityIcon';
 import QuestInput from './ui/QuestInput';
 import QuestPill from './ui/QuestPill';
 import { getSkillSemanticIcon } from '../design/entityIcons';
+import { getV11ProductLanguage, getV11ProductThemeId } from '../v11/featureFlag';
 
 const EMOJIS = ['🧩','💻','🎨','📚','🏃','🧘','🎸','🍳','📷','🧠','💪','🌱','✍️','🎯','🎮','🔬','🐍','📐','🎤','🏊'];
 
@@ -97,8 +98,8 @@ export interface SkillFormProps {
 
 export default function SkillForm({ visible, onClose, initial, presetCategoryId, presetModuleId, linkOnCreate }: SkillFormProps) {
   const { data, addSkill, updateSkill, createSkillAndAttachToModule } = useStore();
-  const lang = getLanguage(data.settings.language);
-  const questTheme = getQuestTheme(data.settings.selectedThemeId);
+  const lang = getV11ProductLanguage(getLanguage(data.settings.language));
+  const questTheme = getQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
   const themedInputStyle = { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, color: questTheme.colors.text };
   const placeholderColor = questTheme.colors.textSubtle;

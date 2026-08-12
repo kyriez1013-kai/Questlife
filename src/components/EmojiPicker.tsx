@@ -8,6 +8,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { theme } from '../theme';
 import { useStore } from '../store';
 import { getQuestTheme } from '../design/tokens';
+import { getV11ProductThemeId } from '../v11/featureFlag';
 
 export interface EmojiPickerProps {
   emojis: string[];
@@ -17,13 +18,16 @@ export interface EmojiPickerProps {
 
 function EmojiPickerInner({ emojis, value, onChange }: EmojiPickerProps) {
   const { data } = useStore();
-  const questTheme = getQuestTheme(data.settings.selectedThemeId);
+  const questTheme = getQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   return (
     <View style={styles.row}>
       {emojis.map((e) => (
         <TouchableOpacity
           key={e}
           onPress={() => onChange(e)}
+          accessibilityRole="button"
+          accessibilityLabel={e}
+          accessibilityState={{ selected: value === e }}
           style={[
             styles.box,
             { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border },
@@ -44,7 +48,7 @@ export default EmojiPicker;
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   box: {
-    width: 42, height: 42, borderRadius: 8, backgroundColor: theme.card,
+    width: 44, height: 44, borderRadius: 8, backgroundColor: theme.card,
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 1, borderColor: theme.border,
   },
