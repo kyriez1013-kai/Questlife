@@ -92,6 +92,66 @@
   box-shadow: var(--v11-focus-ring);
 }
 
+.questlife-v11-product #v11-settings-screen {
+  position: relative;
+  isolation: isolate;
+}
+
+.questlife-v11-product #v11-settings-screen::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 8% 4%, color-mix(in srgb, var(--ql-primary) 7%, transparent), transparent 29%),
+    linear-gradient(118deg, color-mix(in srgb, var(--ql-bg) 96%, #fff 4%), var(--ql-bg) 52%, color-mix(in srgb, var(--ql-bg) 95%, #000 5%));
+}
+
+.questlife-v11-product #v11-settings-screen > * {
+  position: relative;
+  z-index: 1;
+}
+
+.questlife-v11-product #v11-settings-screen .quest-section-header {
+  margin-top: 28px !important;
+  margin-bottom: 9px !important;
+}
+
+.questlife-v11-product #v11-settings-screen .v11-settings-group {
+  border-width: 1px 0 0 !important;
+  border-radius: 0 !important;
+  border-color: var(--v11-hairline) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.questlife-v11-product #v11-settings-screen .v11-settings-data-sources {
+  border-radius: 0 0 18px 18px !important;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ql-surface-elevated) 46%, transparent), transparent 72%) !important;
+}
+
+.questlife-v11-product #v11-settings-screen .v11-settings-legal {
+  margin-bottom: 8px;
+}
+
+.questlife-v11-product #v11-settings-screen .quest-compact-row {
+  padding-block: 11px !important;
+}
+
+.questlife-v11-product #v11-settings-screen [role='button']:focus-visible,
+.questlife-v11-product #v11-settings-screen input:focus-visible,
+.questlife-v11-product #v11-settings-screen textarea:focus-visible {
+  outline: none;
+  box-shadow: var(--v11-focus-ring);
+}
+
+@media (min-width: 960px) {
+  .questlife-v11-product #v11-settings-screen .v11-settings-group {
+    padding-inline: 6px;
+  }
+}
+
 @media (min-width: 960px) {
   .questlife-v11-product #v11-schedule-week-instrument,
   .questlife-v11-product #v11-schedule-month-instrument,

@@ -272,7 +272,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
+    <SafeAreaView nativeID="v11-settings-screen" edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
       <ScrollView
         style={[styles.container, { backgroundColor: questTheme.colors.background }]}
         contentContainerStyle={{
@@ -290,7 +290,7 @@ export default function SettingsScreen() {
           subtitle={t(lang, 'settingsSubtitle')}
           style={styles.firstSectionHeader}
         />
-        <QuestGroupedSurface questTheme={questTheme}>
+        <QuestGroupedSurface questTheme={questTheme} className="v11-settings-group v11-settings-preferences">
           <View style={styles.settingsGroupItem}>
             <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'language')}</Text>
             <QuestSegmentedControl
@@ -371,7 +371,7 @@ export default function SettingsScreen() {
           title={t(lang, 'dataSources')}
           subtitle={t(lang, 'dataSourcesDescription')}
         />
-        <QuestGroupedSurface questTheme={questTheme}>
+        <QuestGroupedSurface questTheme={questTheme} className="v11-settings-group v11-settings-data-sources">
           <View style={styles.settingsGroupItem}>
             <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'manualContextInput')}</Text>
             <QuestInput
@@ -433,9 +433,23 @@ export default function SettingsScreen() {
           <QuestCompactRow
             questTheme={questTheme}
             divider
-            title={t(lang, 'externalDataSources')}
-            body={t(lang, 'noExternalDataSourceConnected')}
-            trailing={<QuestPill questTheme={questTheme} variant="muted" label={t(lang, 'notConnected')} />}
+            title={t(lang, 'healthDataSource')}
+            body={t(lang, 'healthDataSourceUnavailable')}
+            trailing={<QuestPill questTheme={questTheme} variant="muted" label={t(lang, 'sourceUnavailable')} />}
+          />
+          <QuestCompactRow
+            questTheme={questTheme}
+            divider
+            title={t(lang, 'questFitDataSource')}
+            body={t(lang, 'questFitDataSourceUnavailable')}
+            trailing={<QuestPill questTheme={questTheme} variant="muted" label={t(lang, 'notConfigured')} />}
+          />
+          <QuestCompactRow
+            questTheme={questTheme}
+            divider
+            title={t(lang, 'calendarDataSource')}
+            body={t(lang, 'calendarDataSourceUnavailable')}
+            trailing={<QuestPill questTheme={questTheme} variant="muted" label={t(lang, 'notConfigured')} />}
           />
         </QuestGroupedSurface>
 
@@ -444,7 +458,7 @@ export default function SettingsScreen() {
           title={t(lang, 'aiAndDecisions')}
           subtitle={t(lang, 'aiAndDecisionsDescription')}
         />
-        <QuestGroupedSurface questTheme={questTheme}>
+        <QuestGroupedSurface questTheme={questTheme} className="v11-settings-group v11-settings-ai">
           <QuestCompactRow
             questTheme={questTheme}
             title={t(lang, 'decisionBriefStatus')}
@@ -467,7 +481,7 @@ export default function SettingsScreen() {
           title={t(lang, 'dataHealth')}
           subtitle={t(lang, 'dataHealthDescription')}
         />
-        <QuestGroupedSurface questTheme={questTheme}>
+        <QuestGroupedSurface questTheme={questTheme} className="v11-settings-group v11-settings-health">
           <QuestCompactRow
             questTheme={questTheme}
             title={t(lang, 'storedSignals')}
@@ -486,7 +500,7 @@ export default function SettingsScreen() {
               title={t(lang, 'aboutAndLegal')}
               subtitle={t(lang, 'aboutAndLegalDescription')}
             />
-            <QuestGroupedSurface questTheme={questTheme}>
+            <QuestGroupedSurface questTheme={questTheme} className="v11-settings-group v11-settings-legal">
               <QuestCompactRow
                 questTheme={questTheme}
                 title={t(lang, 'openSourceNotices')}
