@@ -2956,3 +2956,54 @@ Documentation:
 - `QUESTLIFE_STAGE3_13_COMPONENT_AUDIT.md`
 - `QUESTLIFE_STAGE3_13_QA.md`
 - `artifacts/v11-stage3-13-market-ux/`
+
+## Stage 3.14 - Exploratory Personal Quant Terminal
+
+Status: isolated local implementation and QA package complete on
+`design/questlife-product-v2`; physical iPhone Safari, Preview, production,
+push, and deployment remain pending.
+
+Completed:
+- Reframed the terminal from a single-instrument page into a layered personal
+  analytical workspace while keeping the chart as the primary object.
+- Added a bounded pinned market strip and a full user-controlled Watchlist with
+  add, remove, pin, pointer/long-press reorder, explicit move, Goal, and Skill.
+- Added compact View, Compare, Indicators, Analyze, More, range, and workspace
+  controls without restoring an indefinitely long mobile report.
+- Added Collapsed, Peek, and Expanded Analyst states whose deterministic actions
+  can compare an existing series or highlight existing Event and Signal windows.
+- Moved Evidence, Signal, Events, methodology, ranges, and workspace controls to
+  progressive inspectors that preserve chart context.
+- Preserved exact custom day, calendar, observation-count, quick-range,
+  Quant-supplied candle interval, one/two/four/six-pane, and Market Board paths.
+- Fixed mobile chart/page gesture ownership and mobile event-label overlap.
+- Kept all Quant truth boundaries: no new score, trend, relationship, forecast,
+  causal claim, artifact calculation, schema, Store, API, or persistence field.
+
+Validation:
+- `npx tsc --noEmit` passed.
+- `npm run build` passed; JS bundle
+  `index-3c7a9433d0c0d6deb6378f6113df9121.js`.
+- Exploration and workspace pure-function tests passed.
+- 375/393/768/1280, zh/en, dark/light, Watchlist, ranges, chart tools,
+  Analyst, Evidence, Signal, Events, multi-chart, Goal, and Skill fixture states
+  were checked locally with no document-level horizontal overflow.
+- Latest local interaction samples measured P50 `16.6-16.7ms`, worst P95
+  `17.7ms`, and `0 / 1,443` retained frames above 20ms.
+- The required 35 screenshots are stored in
+  `artifacts/v11-stage3-14-exploration/`.
+
+UNVERIFIED:
+- physical iPhone Safari, including pinch zoom and long-press drag feel;
+- Vercel Preview and production;
+- real Health/passive data and production API/schema integration;
+- real-user lifecycle behaviour outside deterministic fixtures;
+- initial Navigation Timing in the current browser-control harness.
+
+No push or deployment was performed. No Quant model expansion, real data, or
+production API/schema change was made. Stage 4 was not started.
+
+Documentation:
+- `QUESTLIFE_STAGE3_14_EXPLORATION_AUDIT.md`
+- `QUESTLIFE_STAGE3_14_QA.md`
+- `artifacts/v11-stage3-14-exploration/`
