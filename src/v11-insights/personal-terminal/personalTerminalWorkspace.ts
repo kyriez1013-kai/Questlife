@@ -37,9 +37,12 @@ export type PersonalTerminalQuickRange =
   | '1Y'
   | 'ALL';
 
+export type PersonalTerminalCalendarUnit = 'day' | 'week' | 'month' | 'quarter' | 'half_year' | 'year';
+
 export type PersonalTerminalDisplayRange =
   | { kind: 'preset'; preset: PersonalTerminalQuickRange }
   | { kind: 'last_n_days'; days: number }
+  | { kind: 'calendar_period'; count: number; unit: PersonalTerminalCalendarUnit }
   | { kind: 'calendar_range'; start: string; end: string }
   | { kind: 'last_n_observations'; count: number };
 
@@ -214,6 +217,15 @@ function validRange(value: unknown): PersonalTerminalDisplayRange {
   const row = value as Partial<PersonalTerminalDisplayRange> & Record<string, unknown>;
   if (row.kind === 'preset' && VALID_QUICK_RANGES.has(row.preset as PersonalTerminalQuickRange)) return { kind: 'preset', preset: row.preset as PersonalTerminalQuickRange };
   if (row.kind === 'last_n_days' && Number.isFinite(row.days)) return { kind: 'last_n_days', days: Math.max(1, Math.min(3650, Math.round(Number(row.days)))) };
+  if (
+    row.kind === 'calendar_period'
+    && Number.isFinite(row.count)
+    && ['day', 'week', 'month', 'quarter', 'half_year', 'year'].includes(String(row.unit))
+  ) return {
+    kind: 'calendar_period',
+    count: Math.max(1, Math.min(100, Math.round(Number(row.count)))),
+    unit: row.unit as PersonalTerminalCalendarUnit,
+  };
   if (row.kind === 'last_n_observations' && Number.isFinite(row.count)) return { kind: 'last_n_observations', count: Math.max(1, Math.min(1000, Math.round(Number(row.count)))) };
   if (row.kind === 'calendar_range' && typeof row.start === 'string' && typeof row.end === 'string' && row.start <= row.end) return { kind: 'calendar_range', start: row.start, end: row.end };
   return { kind: 'preset', preset: '1M' };
@@ -366,6 +378,28 @@ export function resolveDisplayRangeWindow(range: PersonalTerminalDisplayRange, n
       end: observations.length ? new Date(observations[observations.length - 1].timestamp).getTime() : Number.NEGATIVE_INFINITY,
     };
   }
+  if (range.kind === 'calendar_period') {
+    const start = new Date(now);
+    if (range.unit === 'day') {
+      start.setDate(start.getDate() - Math.max(0, range.count - 1));
+    } else if (range.unit === 'week') {
+      start.setDate(start.getDate() - ((start.getDay() + 6) % 7) - Math.max(0, range.count - 1) * 7);
+    } else if (range.unit === 'month') {
+      start.setDate(1);
+      start.setMonth(start.getMonth() - Math.max(0, range.count - 1));
+    } else if (range.unit === 'quarter') {
+      start.setDate(1);
+      start.setMonth(Math.floor(start.getMonth() / 3) * 3 - Math.max(0, range.count - 1) * 3);
+    } else if (range.unit === 'half_year') {
+      start.setDate(1);
+      start.setMonth((start.getMonth() < 6 ? 0 : 6) - Math.max(0, range.count - 1) * 6);
+    } else {
+      start.setMonth(0, 1);
+      start.setFullYear(start.getFullYear() - Math.max(0, range.count - 1));
+    }
+    start.setHours(0, 0, 0, 0);
+    return { start: start.getTime(), end: now.getTime() };
+  }
   const days = range.kind === 'last_n_days' ? range.days : quickRangeDays(range.preset);
   if (days == null) return { start: Number.NEGATIVE_INFINITY, end: now.getTime() };
   const start = new Date(now);
@@ -375,7 +409,10 @@ export function resolveDisplayRangeWindow(range: PersonalTerminalDisplayRange, n
 }
 
 export function effectiveViewTimeframe(range: PersonalTerminalDisplayRange): PersonalTerminalTimeframe {
-  const days = range.kind === 'preset' ? quickRangeDays(range.preset) : range.kind === 'last_n_days' ? range.days : null;
+  const calendarDays = range.kind === 'calendar_period'
+    ? range.count * (range.unit === 'day' ? 1 : range.unit === 'week' ? 7 : range.unit === 'month' ? 31 : range.unit === 'quarter' ? 92 : range.unit === 'half_year' ? 183 : 366)
+    : null;
+  const days = range.kind === 'preset' ? quickRangeDays(range.preset) : range.kind === 'last_n_days' ? range.days : calendarDays;
   if (range.kind === 'preset' && range.preset === 'ALL') return 'ALL';
   if (days != null && days <= 1) return '1D';
   if (days != null && days <= 7) return '7D';
@@ -478,6 +515,7 @@ export function rangeDebugLabel(range: PersonalTerminalDisplayRange) {
   if (range.kind === 'preset') return range.preset;
   if (range.kind === 'last_n_days') return `${range.days}D`;
   if (range.kind === 'last_n_observations') return `${range.count}O`;
+  if (range.kind === 'calendar_period') return `${range.count}${range.unit === 'day' ? 'CD' : range.unit === 'week' ? 'CW' : range.unit === 'month' ? 'CM' : range.unit === 'quarter' ? 'CQ' : range.unit === 'half_year' ? 'C6M' : 'CY'}`;
   return `${range.start}:${range.end}`;
 }
 

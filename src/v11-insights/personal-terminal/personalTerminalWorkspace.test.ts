@@ -130,6 +130,10 @@ assert.equal(oneMonth.line[oneMonth.line.length - 1].value, 10);
 assert.equal(resolveDisplayRangeWindow({ kind: 'last_n_observations', count: 3 }, now, marketOne).start, new Date(timestamps[7]).getTime());
 assert.equal(buildPersonalTerminalRangeViewData(marketOne, { kind: 'last_n_observations', count: 3 }, now, null).observations.length, 3);
 assert.equal(buildPersonalTerminalRangeViewData(marketOne, { kind: 'calendar_range', start: '2026-08-03', end: '2026-08-05' }, now, null).observations.length, 3);
+const calendarMonth = resolveDisplayRangeWindow({ kind: 'calendar_period', count: 1, unit: 'month' }, now, marketOne);
+assert.equal(new Date(calendarMonth.start).getDate(), 1);
+assert.equal(new Date(calendarMonth.start).getMonth(), 7);
+assert.equal(buildPersonalTerminalRangeViewData(marketOne, { kind: 'calendar_period', count: 1, unit: 'week' }, now, null).observations.length, 1);
 assert.deepEqual(availableQuickRanges(marketOne), ['1D', '2D', '3D', '5D', '7D', 'ALL']);
 
 const quantCandle: PersonalTerminalCandle = {

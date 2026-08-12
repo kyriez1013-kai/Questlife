@@ -49,6 +49,7 @@ import {
 } from './quantInterpretationPresentation';
 import type {
   PersonalTerminalCatalogGroup,
+  PersonalTerminalCalendarUnit,
   PersonalTerminalDisplayRange,
   PersonalTerminalPane,
   PersonalTerminalPreferences,
@@ -197,6 +198,9 @@ function visibleRangeLabel(language: Lang, range: PersonalTerminalDisplayRange) 
   if (range.kind === 'preset') return range.preset;
   if (range.kind === 'last_n_days') return t(language, 'personalTerminalLastNDays').replace('{count}', String(range.days));
   if (range.kind === 'last_n_observations') return t(language, 'personalTerminalLastNObservations').replace('{count}', String(range.count));
+  if (range.kind === 'calendar_period') return t(language, 'personalTerminalCalendarPeriodValue')
+    .replace('{count}', String(range.count))
+    .replace('{unit}', t(language, `personalTerminalCalendarUnit_${range.unit}`));
   return `${range.start} — ${range.end}`;
 }
 
@@ -372,6 +376,8 @@ export default function PersonalTerminalWorkspaceSurface({
   const [watchlistEditMode, setWatchlistEditMode] = useState(false);
   const [customDays, setCustomDays] = useState('9');
   const [customObservations, setCustomObservations] = useState('12');
+  const [calendarPeriodCount, setCalendarPeriodCount] = useState('1');
+  const [calendarPeriodUnit, setCalendarPeriodUnit] = useState<PersonalTerminalCalendarUnit>('month');
   const [calendarStart, setCalendarStart] = useState(model.range.start?.slice(0, 10) || '');
   const [calendarEnd, setCalendarEnd] = useState(model.range.end?.slice(0, 10) || '');
   const [instrumentSearch, setInstrumentSearch] = useState('');
@@ -522,6 +528,21 @@ export default function PersonalTerminalWorkspaceSurface({
       setChartHighlight(null);
     });
   }, [activePane, activeSeries, debugPerformance, patchPane]);
+
+  const fitVisibleRange = useCallback(() => {
+    if (!activePane) return;
+    measureInteraction(debugPerformance, 'chart-fit-visible-range', () => {
+      chartRefs.current.get(activePane.id)?.reset();
+      setChartHighlight(null);
+    });
+  }, [activePane, debugPerformance]);
+
+  const zoomOutVisibleRange = useCallback(() => {
+    if (!activePane) return;
+    measureInteraction(debugPerformance, 'chart-zoom-out', () => {
+      chartRefs.current.get(activePane.id)?.zoomOut();
+    });
+  }, [activePane, debugPerformance]);
 
   const setChartKind = useCallback((chartKind: PersonalTerminalChartKind) => {
     if (!activePane || !activeSeries) return;
@@ -850,7 +871,9 @@ export default function PersonalTerminalWorkspaceSurface({
                   available={availableRanges}
                   language={language}
                   onChange={setRange}
+                  onFit={fitVisibleRange}
                   onOpenCustom={() => showSheet({ kind: 'range' }, 'custom-range-open')}
+                  onZoomOut={zoomOutVisibleRange}
                   quickRanges={preferences.quickRanges}
                   range={activePane.range}
                   theme={theme}
@@ -1152,6 +1175,27 @@ export default function PersonalTerminalWorkspaceSurface({
               <WebTextInput accessibilityLabel={t(language, 'personalTerminalRangeEnd')} onChangeText={setCalendarEnd} placeholder="YYYY-MM-DD" placeholderTextColor={theme.text.metadata} style={{ color: theme.text.primary }} value={calendarEnd} />
             </WebView>
             <WebPressable accessibilityRole="button" disabled={!calendarStart || !calendarEnd || calendarStart > calendarEnd} onPress={() => { setRange({ kind: 'calendar_range', start: calendarStart, end: calendarEnd }); setSheet(null); }}><Text style={{ color: theme.text.primary }}>{t(language, 'personalTerminalUseCalendarRange')}</Text></WebPressable>
+            <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalCalendarPeriod')}</Text>
+            <WebView dataSet={{ 'personal-terminal-workspace-role': 'input-row' }}>
+              <WebTextInput accessibilityLabel={t(language, 'personalTerminalCalendarPeriodCount')} inputMode="numeric" onChangeText={setCalendarPeriodCount} style={{ color: theme.text.primary }} value={calendarPeriodCount} />
+              <WebPressable accessibilityRole="button" onPress={() => {
+                const count = Math.max(1, Math.min(100, Number.parseInt(calendarPeriodCount, 10) || 1));
+                setRange({ kind: 'calendar_period', count, unit: calendarPeriodUnit });
+                setSheet(null);
+              }}><Text style={{ color: theme.text.primary }}>{t(language, 'personalTerminalApplyRange')}</Text></WebPressable>
+            </WebView>
+            <WebView dataSet={{ 'personal-terminal-workspace-role': 'calendar-unit-options' }}>
+              {(['day', 'week', 'month', 'quarter', 'half_year', 'year'] as PersonalTerminalCalendarUnit[]).map((unit) => (
+                <IndicatorToggle
+                  checked={calendarPeriodUnit === unit}
+                  key={unit}
+                  label={t(language, `personalTerminalCalendarUnit_${unit}`)}
+                  onPress={() => setCalendarPeriodUnit(unit)}
+                  theme={theme}
+                />
+              ))}
+              <IndicatorToggle checked={activePane.range.kind === 'preset' && activePane.range.preset === 'ALL'} label={t(language, 'personalTerminalCalendarUnit_all')} onPress={() => { setRange({ kind: 'preset', preset: 'ALL' }); setSheet(null); }} theme={theme} />
+            </WebView>
             {activeSeries.observations.length > 1 ? (
               <>
                 <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalObservationRange')}</Text>

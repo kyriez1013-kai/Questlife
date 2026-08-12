@@ -320,7 +320,8 @@
 }
 
 [data-personal-terminal-workspace-role="range-presets"] > [role="button"],
-[data-personal-terminal-workspace-role="custom-range-trigger"] {
+[data-personal-terminal-workspace-role="custom-range-trigger"],
+[data-personal-terminal-workspace-role="range-viewport-actions"] > [role="button"] {
   display: flex;
   min-width: 44px;
   min-height: 44px;
@@ -334,6 +335,19 @@
   outline: none;
   background: transparent;
   cursor: pointer;
+}
+
+[data-personal-terminal-workspace-role="range-viewport-actions"] {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  flex-direction: row !important;
+  border-left: 1px solid var(--pt-border);
+}
+
+[data-personal-terminal-workspace-role="range-viewport-actions"] > [role="button"] {
+  width: 44px;
+  padding: 0;
 }
 
 [data-personal-terminal-workspace-role="range-presets"] span,
@@ -1103,6 +1117,23 @@
   min-width: 0;
   flex-flow: row wrap !important;
   gap: 8px;
+}
+
+[data-personal-terminal-workspace-role="calendar-unit-options"] {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+[data-personal-terminal-workspace-role="calendar-unit-options"] > [role="checkbox"] {
+  min-height: 44px;
+  border-bottom: 1px solid var(--pt-border);
+}
+
+@media (min-width: 768px) {
+  [data-personal-terminal-workspace-role="calendar-unit-options"] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 [data-personal-terminal-workspace-role="input-row"] input,

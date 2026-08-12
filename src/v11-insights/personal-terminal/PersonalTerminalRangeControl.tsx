@@ -17,7 +17,9 @@ export default function PersonalTerminalRangeControl({
   available,
   language,
   onChange,
+  onFit,
   onOpenCustom,
+  onZoomOut,
   quickRanges,
   range,
   theme,
@@ -25,7 +27,9 @@ export default function PersonalTerminalRangeControl({
   available: PersonalTerminalQuickRange[];
   language: Lang;
   onChange: (range: PersonalTerminalDisplayRange) => void;
+  onFit: () => void;
   onOpenCustom: () => void;
+  onZoomOut: () => void;
   quickRanges: PersonalTerminalQuickRange[];
   range: PersonalTerminalDisplayRange;
   theme: V11ThemeTokens;
@@ -63,6 +67,26 @@ export default function PersonalTerminalRangeControl({
           {isCustom ? rangeDebugLabel(range) : t(language, 'personalTerminalCustomRangeShort')}
         </Text>
       </WebPressable>
+      <WebView dataSet={{ 'personal-terminal-workspace-role': 'range-viewport-actions' }}>
+        <WebPressable
+          accessibilityLabel={t(language, 'personalTerminalFitVisibleRange')}
+          accessibilityRole="button"
+          dataSet={{ 'personal-terminal-workspace-action': 'fit-visible-range' }}
+          onPress={onFit}
+          title={t(language, 'personalTerminalFitVisibleRange')}
+        >
+          <PersonalTerminalIcon color={theme.text.secondary} name="reset" size={14} />
+        </WebPressable>
+        <WebPressable
+          accessibilityLabel={t(language, 'personalTerminalZoomOut')}
+          accessibilityRole="button"
+          dataSet={{ 'personal-terminal-workspace-action': 'zoom-out' }}
+          onPress={onZoomOut}
+          title={t(language, 'personalTerminalZoomOut')}
+        >
+          <PersonalTerminalIcon color={theme.text.secondary} name="zoom-out" size={14} />
+        </WebPressable>
+      </WebView>
     </WebView>
   );
 }
