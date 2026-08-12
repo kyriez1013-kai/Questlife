@@ -264,7 +264,7 @@ export default function ScheduleScreen() {
       status: 'planned',
       notes: notes.trim() || undefined,
       source: 'manual',
-    } satisfies Omit<ScheduleBlock, 'id'>;
+    } satisfies Omit<ScheduleBlock, 'id' | 'createdAt'>;
     if (editingBlockId) {
       updateScheduleBlock(editingBlockId, input);
     } else {
