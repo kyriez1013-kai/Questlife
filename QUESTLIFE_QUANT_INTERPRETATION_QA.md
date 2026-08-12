@@ -6,6 +6,10 @@ Status: local isolated implementation validated with deterministic synthetic
 fixtures. Physical iPhone Safari, Vercel Preview, production, real Health data,
 and real-user data remain unverified.
 
+Stage 3.15 extends this accepted contract into a chart-native interpretation
+and decision workspace. It remains presentation-only and isolated behind
+`questlife_v11_ui=stage3-personal-terminal`.
+
 ## Scope And Boundaries
 
 - App branch: `design/questlife-product-v2`
@@ -174,3 +178,87 @@ existing contract:
 
 Those models must enrich the current artifacts, not bypass their provenance,
 causality, uncertainty, or Today-authority boundaries.
+
+## Stage 3.15 Chart-Native Interpretation QA
+
+Stage 3.15 adds no new Quant model. The existing artifacts now drive these
+presentation objects:
+
+- synchronized `Day -7 -> Today` target/driver/event timeline;
+- chart comparison and selected-window overlays from Driver Analysis;
+- explainable Similar Period rows with mini-series, matching basis, material
+  differences, and observed follow-up;
+- reversible historical-period navigation with `Return to current` context
+  restoration;
+- historical analogue envelope and Recovery Map, both explicitly labeled as
+  analogue rather than forecast;
+- exactly three action branches: normal training, lower-intensity activity,
+  and recovery/rest, with unsupported branches left insufficient;
+- structured Decision Support with current state, leading candidate or
+  abstention, alternatives, evidence, uncertainty, next observation, scenario
+  comparison, and a navigation-only Today handoff;
+- eight Analyst operations that manipulate the existing chart workspace or
+  open the relevant evidence surface.
+
+Local Chromium interaction verification covered:
+
+- Driver selection changes the chart comparison and highlights the registered
+  analysis window;
+- Similar Periods opens a comparison list before navigation, then restores the
+  exact previous range, comparison, highlight, and analogue state;
+- the desktop Recovery tab enables the analogue envelope in the main chart;
+- historical action events use unique IDs and retain evidence lineage;
+- insufficient evidence produces an explicit abstention and no leading action;
+- `Send to Today` navigates to Today while `todayCommand` remains the sole
+  executable authority;
+- Chinese and English, dark and light, 375x667, 393x852, and 1280x900 render
+  without document-level horizontal overflow;
+- the desktop interpretation inspector scrolls independently when its evidence
+  exceeds the available 900px viewport;
+- no raw `quantInterpretation*`, action, status, or construct code was visible;
+- browser console contained no runtime error. The existing Expo Notifications
+  web-support warning remains unrelated.
+
+The local screenshot server served only the exported static files. Requests to
+`/api/track` and `/api/sync` therefore returned HTTP 501 in its server log.
+Neither endpoint is used to build the deterministic Interpretation fixture;
+API-backed integration remains explicitly unverified in this no-deploy stage.
+
+Current local 375px Chromium interaction samples:
+
+| Interaction | P50 | P95 | Frames >20ms |
+| --- | ---: | ---: | ---: |
+| Chart pan/zoom | 16.6-16.7ms | 17.4-17.7ms | 0/39-40 |
+| Analyst open | 16.7ms | 17.6ms | 0/39 |
+| Scenario open | 16.7ms | 17.4ms | 0/40 |
+| Decision open | 16.7ms | 17.5ms | 0/39 |
+| Sheet close | 16.6ms | 17.6ms | 0/39 |
+
+The synthetic Quant benchmark was rerun with 20 samples:
+
+| Operation | P50 | P95 |
+| --- | ---: | ---: |
+| Driver Analysis cold | 36.427ms | 49.344ms |
+| Similar Periods cold | 119.242ms | 147.349ms |
+| Recovery Trajectory cold | 28.813ms | 32.390ms |
+| Scenario Comparison cold | 29.900ms | 32.051ms |
+| Interpretation Brief cold | 29.868ms | 36.097ms |
+| Full artifact cold | 360.992ms | 378.874ms |
+| Materialized warm read | 0.000ms | 0.001ms |
+| Materialized serialization | 13.780ms | 16.175ms |
+
+Current validation:
+
+- App adapter tests: passed.
+- App Stage 3.15 presentation tests: passed.
+- App `npx tsc --noEmit`: passed.
+- App `npm run build`: passed.
+- App bundle: `index-37286fb552f7b47dbcc9d31dc9fc0202.js`.
+- Quant focused interpretation/release suite: 17 passed.
+- Quant repository: unchanged and clean.
+- Screenshot set: `artifacts/v11-stage3-15-interpretation/` (16 mobile,
+  8 desktop).
+
+Stage 3.15 remains unverified on physical iPhone Safari, Vercel Preview,
+production, real Health data, and real user longitudinal data. No push or
+deployment was performed.
