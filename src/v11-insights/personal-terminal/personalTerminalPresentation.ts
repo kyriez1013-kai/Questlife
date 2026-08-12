@@ -35,6 +35,14 @@ export type QuantV042LifecycleId =
   | 'skill'
   | 'no_data';
 
+export type QuantInterpretationScenarioId =
+  | 'accumulated_load'
+  | 'sleep_disruption'
+  | 'conflicting'
+  | 'exercise_branch'
+  | 'rest_branch'
+  | 'insufficient';
+
 export type PersonalTerminalObservation = {
   id: string;
   timestamp: string;
@@ -250,7 +258,7 @@ export type PersonalTerminalSimilarPeriod = {
 
 export type PersonalTerminalModel = {
   fixture: PersonalTerminalFixtureId | null;
-  dataMode: 'real' | 'qa_fixture' | 'quant_v041_fixture' | 'quant_v042_fixture';
+  dataMode: 'real' | 'qa_fixture' | 'quant_v041_fixture' | 'quant_v042_fixture' | 'quant_interpretation_fixture';
   availability?: 'available' | 'no_data';
   lifecycleScenario?: QuantV041LifecycleId | QuantV042LifecycleId;
   defaultScope: PersonalTerminalScope;
@@ -287,6 +295,8 @@ export type PersonalTerminalModel = {
   };
   nextAction?: V11InsightCopy;
   marketOverview?: PersonalMarketOverview;
+  interpretation?: import('./quantInterpretation').QuantInterpretationBundle;
+  interpretationScenario?: QuantInterpretationScenarioId;
 };
 
 export type PersonalMarketPosition = 'above_reference' | 'near_reference' | 'below_reference' | 'forming';

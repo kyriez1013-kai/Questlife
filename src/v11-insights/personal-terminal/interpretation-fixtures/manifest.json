@@ -1,0 +1,74 @@
+{
+  "containsRealUserData": false,
+  "releaseVersion": "questlife-quant-interpretation-release-v0.1",
+  "runtimeDependencyOnSiblingRepository": false,
+  "scenarios": [
+    {
+      "artifactHash": "ee5c669f3058c9bdc06996ac7979773f823fa5adeb81a259f54362f40a26c659",
+      "decisionStatus": "AVAILABLE",
+      "driverStatus": "AVAILABLE",
+      "file": "accumulated_load.json",
+      "recoveryStatus": "AVAILABLE",
+      "scenario": "accumulated_load",
+      "scenarioStatus": "AVAILABLE",
+      "similarPeriodsStatus": "AVAILABLE",
+      "sizeBytes": 318533
+    },
+    {
+      "artifactHash": "8cd15d30abd2e35e838a083e7df34b561f691395b525561f5f80e6b105be1479",
+      "decisionStatus": "AVAILABLE",
+      "driverStatus": "AVAILABLE",
+      "file": "conflicting.json",
+      "recoveryStatus": "AVAILABLE",
+      "scenario": "conflicting",
+      "scenarioStatus": "AVAILABLE",
+      "similarPeriodsStatus": "AVAILABLE",
+      "sizeBytes": 286641
+    },
+    {
+      "artifactHash": "fcc6807740bd60d04dbc54a7dd25b32e7f70e5a9cd1f1854126484ab2a278504",
+      "decisionStatus": "AVAILABLE",
+      "driverStatus": "AVAILABLE",
+      "file": "exercise_branch.json",
+      "recoveryStatus": "AVAILABLE",
+      "scenario": "exercise_branch",
+      "scenarioStatus": "AVAILABLE",
+      "similarPeriodsStatus": "AVAILABLE",
+      "sizeBytes": 312191
+    },
+    {
+      "artifactHash": "746697eacdc342063c94ee1f781b653b69be0b7644eb30f3f3e2e9959d6523c2",
+      "decisionStatus": "AVAILABLE",
+      "driverStatus": "INSUFFICIENT",
+      "file": "insufficient.json",
+      "recoveryStatus": "INSUFFICIENT",
+      "scenario": "insufficient",
+      "scenarioStatus": "INSUFFICIENT",
+      "similarPeriodsStatus": "INSUFFICIENT",
+      "sizeBytes": 254017
+    },
+    {
+      "artifactHash": "b67c13053fa157401f79fd6558d9a0f22847fba8b7f0d716fd46f4bfc7f0ff3f",
+      "decisionStatus": "AVAILABLE",
+      "driverStatus": "AVAILABLE",
+      "file": "rest_branch.json",
+      "recoveryStatus": "AVAILABLE",
+      "scenario": "rest_branch",
+      "scenarioStatus": "AVAILABLE",
+      "similarPeriodsStatus": "AVAILABLE",
+      "sizeBytes": 286671
+    },
+    {
+      "artifactHash": "10fdf4e6cd897845bf4980b0a56c0cae4ed03ced4d69e0ca2ac0ba2ed9b537aa",
+      "decisionStatus": "AVAILABLE",
+      "driverStatus": "AVAILABLE",
+      "file": "sleep_disruption.json",
+      "recoveryStatus": "AVAILABLE",
+      "scenario": "sleep_disruption",
+      "scenarioStatus": "AVAILABLE",
+      "similarPeriodsStatus": "AVAILABLE",
+      "sizeBytes": 318412
+    }
+  ],
+  "syntheticOnly": true
+}
