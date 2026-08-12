@@ -3062,3 +3062,48 @@ started.
 Documentation:
 - `QUESTLIFE_QUANT_INTERPRETATION_QA.md`
 - `artifacts/quant-interpretation-v0.1/`
+
+## V11 UI Marathon - Complete Product Surface Local Acceptance
+
+Status: local implementation and mechanical QA complete on
+`design/questlife-product-v2`. No push or deployment was performed.
+
+Completed:
+- Added one isolated `questlife_v11_ui=v11-marathon` route covering the full
+  V11 product while preserving the no-flag legacy rollback.
+- Finished V11 onboarding/cold-start presentation, Goal/Module/Skill hierarchy,
+  Schedule day/week/month/year instruments, Settings/Data Sources/Data Health/
+  Legal, shared sheets, responsive controls, and user-facing copy cleanup.
+- Preserved the approved Today execution hierarchy, existing handlers,
+  `todayCommand` authority, Store, schemas, APIs, persistence, and Decision AI.
+- Completed Personal Quant Custom Range, Last N days, calendar range, Last N
+  observations, quick presets, direct Fit, direct Zoom Out, and viewport state.
+- Kept Quant-provided candle semantics and normalized chart times for
+  Lightweight Charts without adding frontend OHLC calculation.
+
+Validation:
+- `npx tsc --noEmit` passed.
+- `npm run build` passed; exported bundle
+  `index-3fcb3ae4bbc9d0dd8cb1dcf07eaa35a1.js` in `dist`.
+- Personal Quant presentation tests passed: 8/8.
+- 320/375/393/768/1280, zh/en, dark/light, representative sheets, all five
+  routes, empty/mature Quant, and Schedule scales were checked locally.
+- Mature Quant 393px local probe: P50 `16.7ms`, P95 `18.2ms`, zero of 145
+  sampled frames above 20ms.
+- Known console output is limited to the Expo Notifications web warning.
+
+UNVERIFIED / manual pending:
+- physical iPhone Safari, Vercel Preview, production, real Health/passive data,
+  real-user lifecycle data, and live `/api/parse` on a deployed environment;
+- natural Rescue and safe Schedule Proposal apply/undo states;
+- local temporary Schedule deletion confirmation in the browser QA profile;
+- a fresh-storage first launch, because existing local user data was preserved.
+
+Known product/technical limits:
+- detailed state dimensions still inherit the existing neutral defaults;
+- the exported main JavaScript bundle is 20.9 MB;
+- no existing Record Detail edit handler was invented.
+
+Documentation:
+- `QUESTLIFE_V11_MARATHON_AUDIT.md`
+- `QUESTLIFE_V11_MARATHON_QA.md`
