@@ -2476,7 +2476,7 @@
     right: 48px;
   }
 
-  [data-personal-terminal-role="event-rail"] span {
+  [data-personal-terminal-role="event-rail"] [dir="auto"] {
     display: none;
   }
 
