@@ -15,6 +15,7 @@ import QuestCard from '../components/ui/QuestCard';
 import QuestEntityIcon from '../components/ui/QuestEntityIcon';
 import QuestIcon from '../components/ui/QuestIcon';
 import { confirmAction } from '../utils/confirm';
+import { getV11ProductLanguage, getV11ProductThemeId } from '../v11/featureFlag';
 import { QuestContextBar } from '../components/ui/QuestPrimitives';
 
 function fill(template: string, values: Record<string, string | number>) {
@@ -24,8 +25,8 @@ function fill(template: string, values: Record<string, string | number>) {
 export default function SkillLibraryScreen() {
   const { data, deleteSkillFromLibrary } = useStore();
   const nav = useNavigation<any>();
-  const lang = getLanguage(data.settings.language);
-  const questTheme = getQuestTheme(data.settings.selectedThemeId);
+  const lang = getV11ProductLanguage(getLanguage(data.settings.language));
+  const questTheme = getQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const [creating, setCreating] = useState(false);
   const [editingSkill, setEditingSkill] = useState<Skill | undefined>();
   const confirmDeleteSkill = (skillId: string, linkedCount: number) => {

@@ -31,6 +31,7 @@ import QuestPill from '../components/ui/QuestPill';
 import QuestProgressBar from '../components/ui/QuestProgressBar';
 import { compareEffortToPrevious, formatEffortUnitSummary, getComparableHistory } from '../utils/effort';
 import { confirmAction } from '../utils/confirm';
+import { getV11ProductLanguage, getV11ProductThemeId } from '../v11/featureFlag';
 
 type Range = 'day' | 'week' | 'month' | 'all';
 const WEEKDAY_KEYS = ['weekdaySun', 'weekdayMon', 'weekdayTue', 'weekdayWed', 'weekdayThu', 'weekdayFri', 'weekdaySat'];
@@ -80,8 +81,8 @@ export default function SkillDetailScreen() {
   const route = useRoute<RouteProp<ParamList, 'SkillDetail'>>();
   const nav = useNavigation<any>();
   const { data, deleteSkillFromLibrary } = useStore();
-  const lang = getLanguage(data.settings.language);
-  const questTheme = getQuestTheme(data.settings.selectedThemeId);
+  const lang = getV11ProductLanguage(getLanguage(data.settings.language));
+  const questTheme = getQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const skillId = route.params.skillId;
   const skill = data.skills.find((s) => s.id === skillId);
 

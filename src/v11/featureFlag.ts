@@ -11,17 +11,39 @@ function query() {
   return new URLSearchParams(window.location.search);
 }
 
+function route() {
+  return query()?.get('questlife_v11_ui') ?? null;
+}
+
+export function isV11ProductEnabled() {
+  const value = route();
+  return value === 'stage2'
+    || value === 'stage3-insights'
+    || value === 'stage3-quant-terminal'
+    || value === 'stage3-personal-terminal'
+    || value === 'v11-marathon';
+}
+
+export function isV11MarathonEnabled() {
+  return route() === 'v11-marathon';
+}
+
 export function isV11TodayEnabled() {
-  return query()?.get('questlife_v11_ui') === 'stage2';
+  const value = route();
+  return value === 'stage2' || value === 'stage3-personal-terminal' || value === 'v11-marathon';
 }
 
 export function isV11InsightsEnabled() {
-  const route = query()?.get('questlife_v11_ui');
-  return route === 'stage3-insights' || route === 'stage3-quant-terminal' || route === 'stage3-personal-terminal';
+  const value = route();
+  return value === 'stage3-insights'
+    || value === 'stage3-quant-terminal'
+    || value === 'stage3-personal-terminal'
+    || value === 'v11-marathon';
 }
 
 export function isV11PersonalTerminalEnabled() {
-  return query()?.get('questlife_v11_ui') === 'stage3-personal-terminal';
+  const value = route();
+  return value === 'stage3-personal-terminal' || value === 'v11-marathon';
 }
 
 export function getV11PersonalTerminalFixture(): 'forming' | 'mature' | 'portfolio' | 'skill' | 'volatile' | 'historical' | null {
@@ -99,15 +121,29 @@ export function getV11QuantTerminalFixture(): 'empty' | 'forming' | 'signal' | '
 }
 
 export function getV11InsightsDebugLanguage(): 'zh' | 'en' | null {
-  if (!isV11InsightsEnabled()) return null;
+  if (!isV11ProductEnabled()) return null;
   const value = query()?.get('debugLanguage');
   return value === 'zh' || value === 'en' ? value : null;
 }
 
 export function getV11InsightsDebugTheme(): 'dark' | 'light' | null {
-  if (!isV11InsightsEnabled()) return null;
+  if (!isV11ProductEnabled()) return null;
   const value = query()?.get('debugTheme');
   return value === 'dark' || value === 'light' ? value : null;
+}
+
+export const getV11ProductDebugLanguage = getV11InsightsDebugLanguage;
+export const getV11ProductDebugTheme = getV11InsightsDebugTheme;
+
+export function getV11ProductLanguage(fallback: 'zh' | 'en'): 'zh' | 'en' {
+  return getV11ProductDebugLanguage() ?? fallback;
+}
+
+export function getV11ProductThemeId<T extends string | undefined>(fallback: T): T | 'cleanFocus' | 'deepWork' {
+  const debugTheme = getV11ProductDebugTheme();
+  if (debugTheme === 'light') return 'cleanFocus';
+  if (debugTheme === 'dark') return 'deepWork';
+  return fallback;
 }
 
 export function getV11DebugEvidenceStage(

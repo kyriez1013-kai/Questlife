@@ -73,6 +73,8 @@ import {
   getV11DebugReducedMotion,
   getV11DebugStateValue,
   isV11TodayEnabled,
+  getV11ProductLanguage,
+  getV11ProductThemeId,
 } from '../v11/featureFlag';
 import useV11ReducedMotion from '../v11/useV11ReducedMotion';
 import V11IntegratedTodaySurface from '../v11-stage2-rebaseline/V11IntegratedTodaySurface';
@@ -493,9 +495,9 @@ export default function HomeScreen() {
     updateDecisionResultFeedback,
   } = useStore();
   const navigation = useNavigation<any>();
-  const questTheme = getQuestTheme(data.settings.selectedThemeId);
+  const questTheme = getQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
-  const lang = getLanguage(data.settings.language);
+  const lang = getV11ProductLanguage(getLanguage(data.settings.language));
   const themedCard = {
     ...getSurfaceStyle(questTheme, 'elevated'),
     shadowColor: questTheme.colors.cardShadow,

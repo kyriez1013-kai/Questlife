@@ -32,6 +32,7 @@ import QuestInput from '../components/ui/QuestInput';
 import QuestPill from '../components/ui/QuestPill';
 import QuestProgressBar from '../components/ui/QuestProgressBar';
 import { confirmAction } from '../utils/confirm';
+import { getV11ProductLanguage, getV11ProductThemeId } from '../v11/featureFlag';
 import { formatEffortUnitSummary } from '../utils/effort';
 import { QuestGroupedSurface } from '../components/ui/QuestPrimitives';
 
@@ -68,8 +69,8 @@ export default function GoalDetailScreen() {
   const nav = useNavigation<any>();
   const route = useRoute<RouteProp<ParamList, 'GoalDetail'>>();
   const { data, updateCategory, addModule, updateModule, deleteModule, addExistingSkillToModule, removeSkillFromModule } = useStore();
-  const lang = getLanguage(data.settings.language);
-  const questTheme = getQuestTheme(data.settings.selectedThemeId);
+  const lang = getV11ProductLanguage(getLanguage(data.settings.language));
+  const questTheme = getQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const categoryId = route.params.categoryId;
   const cat = data.categories.find((c) => c.id === categoryId);
 

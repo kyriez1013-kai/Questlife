@@ -34,6 +34,8 @@ import {
   getV11InsightsDebugLanguage,
   getV11InsightsDebugTheme,
   isV11InsightsEnabled,
+  isV11MarathonEnabled,
+  isV11ProductEnabled,
 } from './src/v11/featureFlag';
 import PersistenceDebugPanel from './src/components/debug/PersistenceDebugPanel';
 
@@ -110,6 +112,7 @@ function GoalsTabStack() {
 function AppContent() {
   const { data, loading } = useStore();
   const v11InsightsEnabled = isV11InsightsEnabled();
+  const v11ProductEnabled = isV11ProductEnabled();
   const v11InsightsDebugTheme = getV11InsightsDebugTheme();
   const questTheme = getQuestTheme(
     v11InsightsDebugTheme === 'light'
@@ -120,10 +123,11 @@ function AppContent() {
   );
   const darkTheme = isDarkTheme(questTheme);
   const RootView = View as any;
-  const rootClassName = `questlife-root ${darkTheme ? 'questlife-theme-dark' : 'questlife-theme-light'}`;
+  const rootClassName = `questlife-root ${darkTheme ? 'questlife-theme-dark' : 'questlife-theme-light'}${v11ProductEnabled ? ' questlife-v11-product' : ''}`;
   const rootProps = {
     className: rootClassName,
     'data-theme': darkTheme ? 'dark' : questTheme.id,
+    'data-v11-product': v11ProductEnabled ? 'true' : undefined,
   };
   const rootStyle = {
     flex: 1,
@@ -216,7 +220,7 @@ function AppContent() {
       <NavigationContainer theme={navTheme}>
         <Tab.Navigator
           detachInactiveScreens={Platform.OS !== 'web'}
-          initialRouteName={v11InsightsEnabled ? 'Insights' : 'Today'}
+          initialRouteName={v11InsightsEnabled && !isV11MarathonEnabled() ? 'Insights' : 'Today'}
           screenOptions={{
             headerShown: false,
             lazy: true,

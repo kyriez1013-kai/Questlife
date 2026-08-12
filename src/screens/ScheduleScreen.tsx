@@ -31,6 +31,7 @@ import {
   ScheduleProposalStatus,
 } from '../utils/scheduleProposal';
 import { isDecisionDebugEnabled } from '../services/decisionService';
+import { getV11ProductLanguage, getV11ProductThemeId } from '../v11/featureFlag';
 
 const TASK_TYPES: TaskType[] = [
   'deep_study',
@@ -104,8 +105,8 @@ function dateWithWeekday(date: string, lang: 'zh' | 'en') {
 export default function ScheduleScreen() {
   const { data, addScheduleBlock, createExecutionLog, updateScheduleBlock } = useStore();
   const route = useRoute<any>();
-  const lang = getLanguage(data.settings.language);
-  const questTheme = getQuestTheme(data.settings.selectedThemeId);
+  const lang = getV11ProductLanguage(getLanguage(data.settings.language));
+  const questTheme = getQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
   const [view, setView] = useState<'day' | 'week' | 'month' | 'year'>('day');
   const [selectedDate, setSelectedDate] = useState(today());

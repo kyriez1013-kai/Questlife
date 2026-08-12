@@ -22,6 +22,7 @@ import {
 import { DomainTemplate, DomainTemplateDomain, GoalType } from '../types';
 import { getLanguage, t } from '../i18n';
 import { trackEvent } from '../utils/analytics';
+import { getV11ProductLanguage, getV11ProductThemeId } from '../v11/featureFlag';
 
 type Step = 'language' | 'positioning' | 'mode' | 'goal' | 'preview';
 
@@ -71,9 +72,9 @@ export default function OnboardingScreen() {
     applyDomainTemplateToGoal,
     setSettings,
   } = useStore();
-  const questTheme = getQuestTheme(data.settings.selectedThemeId);
+  const questTheme = getQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
-  const lang = getLanguage(data.settings.language ?? data.settings.preferredLanguage);
+  const lang = getV11ProductLanguage(getLanguage(data.settings.language ?? data.settings.preferredLanguage));
   const hasExistingCoreData = data.categories.length > 0 || data.skills.length > 0 || (data.executionLogs || []).length > 0;
   const [step, setStep] = useState<Step>(data.settings.language ? 'positioning' : 'language');
   const [selectedMode, setSelectedMode] = useState<StartMode>(START_MODES[0]);

@@ -24,16 +24,16 @@ import QuestButton from '../components/ui/QuestButton';
 import QuestPill from '../components/ui/QuestPill';
 import { QuestCompactRow, QuestGroupedSurface, QuestSectionHeader } from '../components/ui/QuestPrimitives';
 import QuestSegmentedControl from '../components/ui/QuestSegmentedControl';
-import { isV11PersonalTerminalEnabled } from '../v11/featureFlag';
+import { getV11ProductLanguage, getV11ProductThemeId, isV11PersonalTerminalEnabled } from '../v11/featureFlag';
 
 const TRADINGVIEW_URL = 'https://www.tradingview.com/';
 const LIGHTWEIGHT_CHARTS_LICENSE_URL = 'https://github.com/tradingview/lightweight-charts/blob/v5.2.0/LICENSE';
 
 export default function SettingsScreen() {
   const { data, setSettings, addContextLogs, runIntegrityCheck, repairSafeIntegrityIssues, rebuildDerivedData, mergePatternMemoryCandidates, updatePatternMemoryStatus } = useStore();
-  const questTheme = getQuestTheme(data.settings.selectedThemeId);
+  const questTheme = getQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
-  const lang = getLanguage(data.settings.language);
+  const lang = getV11ProductLanguage(getLanguage(data.settings.language));
   const [integrityIssueCount, setIntegrityIssueCount] = useState<number | null>(null);
   const [decisionLabOutput, setDecisionLabOutput] = useState('');
   const [decisionLabError, setDecisionLabError] = useState('');

@@ -17,6 +17,7 @@ import { getQuestTheme, questLayout } from '../design/tokens';
 import { getGoalSemanticIcon } from '../design/entityIcons';
 import QuestButton from '../components/ui/QuestButton';
 import QuestCard from '../components/ui/QuestCard';
+import { getV11ProductLanguage, getV11ProductThemeId } from '../v11/featureFlag';
 import QuestEmptyState from '../components/ui/QuestEmptyState';
 import QuestEntityIcon from '../components/ui/QuestEntityIcon';
 import { confirmAction } from '../utils/confirm';
@@ -25,9 +26,9 @@ import { QuestContextBar } from '../components/ui/QuestPrimitives';
 export default function GoalTreeScreen() {
   const { data, deleteCategory } = useStore();
   const nav = useNavigation<any>();
-  const questTheme = getQuestTheme(data.settings.selectedThemeId);
+  const questTheme = getQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
-  const lang = getLanguage(data.settings.language);
+  const lang = getV11ProductLanguage(getLanguage(data.settings.language));
 
   const [creating, setCreating] = useState(false);
 
