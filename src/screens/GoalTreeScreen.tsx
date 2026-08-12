@@ -58,7 +58,7 @@ export default function GoalTreeScreen() {
   };
 
   return (
-    <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
+    <SafeAreaView nativeID="v11-goals-screen" edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
       <ScrollView
         style={[styles.container, { backgroundColor: questTheme.colors.background }]}
         contentContainerStyle={{
@@ -103,7 +103,7 @@ export default function GoalTreeScreen() {
                   borderLeftWidth: 3,
                   borderLeftColor: c.color ?? accent,
                 }]}
-                className="goal-card goal-row"
+                className="goal-card goal-row v11-goal-row"
               >
                 <QuestEntityIcon icon={c.emoji} systemIcon={getGoalSemanticIcon(c)} color={c.color ?? accent} questTheme={questTheme} size="lg" />
                 <View style={{ flex: 1, minWidth: 0 }}>

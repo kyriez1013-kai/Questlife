@@ -191,7 +191,7 @@ export default function SkillDetailScreen() {
 
   if (!skill) {
     return (
-      <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
+      <SafeAreaView nativeID="v11-skill-detail-screen" edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
         <View style={[styles.header, { borderBottomColor: questTheme.colors.border }]}>
           <QuestButton questTheme={questTheme} variant="ghost" icon="target" label={t(lang, 'back')} onPress={() => nav.goBack()} />
         </View>
@@ -243,7 +243,7 @@ export default function SkillDetailScreen() {
   };
 
   return (
-    <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
+    <SafeAreaView nativeID="v11-skill-detail-screen" edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
       {/* 顶部 header */}
       <View style={[styles.header, { borderBottomColor: questTheme.colors.border }]}>
         <QuestButton questTheme={questTheme} variant="ghost" icon="target" label={t(lang, 'back')} onPress={() => nav.goBack()} />
@@ -273,7 +273,7 @@ export default function SkillDetailScreen() {
         </View>
 
         {compound.points.length >= 2 ? (
-        <QuestCard questTheme={questTheme} variant="data" style={styles.compoundCard}>
+        <QuestCard questTheme={questTheme} variant="data" style={styles.compoundCard} className="v11-skill-signal">
           <View style={styles.cardTitleRow}>
             <QuestIcon name="barChart" size={18} color={questTheme.colors.primary} />
             <Text style={[styles.sectionTitle, { color: questTheme.colors.text, marginTop: 0, marginBottom: 0 }]}>{t(lang, 'compoundCurve')}</Text>
@@ -301,7 +301,7 @@ export default function SkillDetailScreen() {
         </View>
 
         {/* 图表 */}
-        <QuestCard questTheme={questTheme} variant="flat" style={styles.chartCard}>
+        <QuestCard questTheme={questTheme} variant="flat" style={styles.chartCard} className="v11-skill-chart">
           {range === 'day' && <DayView skill={skill} actions={skillActions} lang={lang} />}
           {range === 'week' && <WeekView skill={skill} actions={skillActions} lang={lang} />}
           {range === 'month' && <MonthView skill={skill} actions={skillActions} lang={lang} />}
@@ -309,7 +309,7 @@ export default function SkillDetailScreen() {
         </QuestCard>
 
         <Text style={[styles.sectionTitle, { color: questTheme.colors.text }]}>{t(lang, 'executionRules')}</Text>
-        <QuestCard questTheme={questTheme} variant="flat" style={styles.ruleCard}>
+        <QuestCard questTheme={questTheme} variant="flat" style={styles.ruleCard} className="v11-skill-detail-group">
           <Text style={[styles.ruleLine, { color: questTheme.colors.text }]}>{t(lang, 'linkedGoals')}: {linkedCats.length > 0 ? linkedCats.map((c) => c.name).join(lang === 'zh' ? '、' : ', ') : t(lang, 'notSet')}</Text>
           <Text style={[styles.ruleLine, { color: questTheme.colors.text }]}>{t(lang, 'taskType')}: {taskTypeLabel(lang, taskType)}</Text>
           <Text style={[styles.ruleLine, { color: questTheme.colors.text }]}>
@@ -333,7 +333,7 @@ export default function SkillDetailScreen() {
         </QuestCard>
 
         <Text style={[styles.sectionTitle, { color: questTheme.colors.text }]}>{t(lang, 'linkedLocations')}</Text>
-        <QuestCard questTheme={questTheme} variant="flat" style={styles.ruleCard}>
+        <QuestCard questTheme={questTheme} variant="flat" style={styles.ruleCard} className="v11-skill-detail-group">
           {linkedLocations.length === 0 ? (
             <Text style={[styles.ruleMuted, { color: questTheme.colors.textMuted }]}>{t(lang, 'notLinkedToAnyGoal')}</Text>
           ) : (
@@ -347,7 +347,7 @@ export default function SkillDetailScreen() {
         </QuestCard>
 
         <Text style={[styles.sectionTitle, { color: questTheme.colors.text }]}>{t(lang, 'whereSkillFits')}</Text>
-        <QuestCard questTheme={questTheme} variant="flat" style={styles.ruleCard}>
+        <QuestCard questTheme={questTheme} variant="flat" style={styles.ruleCard} className="v11-skill-detail-group">
           <Text style={[styles.ruleLine, { color: questTheme.colors.text }]}>
             {t(lang, 'linkedTo')}: {linkedLocations.length > 0
               ? linkedLocations.map(({ goal, module }) => `${goal.name} > ${module.id.includes('-default') ? t(lang, 'defaultModule') : module.name}`).join(lang === 'zh' ? '、' : ', ')
@@ -362,7 +362,7 @@ export default function SkillDetailScreen() {
         </QuestCard>
 
         <Text style={[styles.sectionTitle, { color: questTheme.colors.text }]}>{t(lang, 'comparableProgress')}</Text>
-        <QuestCard questTheme={questTheme} variant="flat" style={styles.ruleCard}>
+        <QuestCard questTheme={questTheme} variant="flat" style={styles.ruleCard} className="v11-skill-detail-group">
           {!comparableEffort ? (
             <Text style={[styles.ruleMuted, { color: questTheme.colors.textMuted }]}>{t(lang, 'notEnoughHistory')}</Text>
           ) : (
@@ -387,7 +387,7 @@ export default function SkillDetailScreen() {
         </QuestCard>
 
         <Text style={[styles.sectionTitle, { color: questTheme.colors.text }]}>{t(lang, 'executionLogs')}</Text>
-        <QuestCard questTheme={questTheme} variant="flat" style={styles.ruleCard}>
+        <QuestCard questTheme={questTheme} variant="flat" style={styles.ruleCard} className="v11-skill-detail-group">
           {skillLogs.length === 0 ? (
             <Text style={[styles.ruleMuted, { color: questTheme.colors.textMuted }]}>{t(lang, 'noSkillLogs')}</Text>
           ) : (
@@ -431,7 +431,7 @@ export default function SkillDetailScreen() {
           <QuestIcon name="target" size={18} color={questTheme.colors.primary} />
           <Text style={[styles.sectionTitle, { color: questTheme.colors.text }]}>{t(lang, 'achievements')}</Text>
         </View>
-        <QuestCard questTheme={questTheme} variant="flat" style={styles.milestonesCard}>
+        <QuestCard questTheme={questTheme} variant="flat" style={styles.milestonesCard} className="v11-skill-detail-group">
           {milestones.map((m, idx) => (
             <View
               key={m.hours}

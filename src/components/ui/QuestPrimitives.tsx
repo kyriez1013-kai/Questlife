@@ -147,14 +147,20 @@ export function QuestSectionHeader({ title, subtitle, trailing, questTheme, styl
 type GroupedSurfaceProps = ThemeProps & {
   children: React.ReactNode;
   elevated?: boolean;
+  className?: string;
   style?: ViewStyle | ViewStyle[];
 };
 
-export function QuestGroupedSurface({ children, elevated, questTheme, style }: GroupedSurfaceProps) {
+export function QuestGroupedSurface({ children, elevated, className, questTheme, style }: GroupedSurfaceProps) {
   const q = questTheme ?? getQuestTheme();
   const Surface = View as any;
+  const webClassName = [
+    'quest-grouped-surface',
+    elevated ? 'surface-elevated' : 'surface',
+    className,
+  ].filter(Boolean).join(' ');
   return (
-    <Surface className={elevated ? 'quest-grouped-surface surface-elevated' : 'quest-grouped-surface surface'} style={[{
+    <Surface className={webClassName} style={[{
       backgroundColor: elevated ? q.colors.surfaceElevated : q.colors.surface,
       borderRadius: q.radius.lg,
       borderWidth: 1,

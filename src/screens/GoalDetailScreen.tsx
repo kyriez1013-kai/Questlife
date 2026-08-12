@@ -277,7 +277,7 @@ export default function GoalDetailScreen() {
     .find(Boolean);
 
   return (
-    <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
+    <SafeAreaView nativeID="v11-goal-detail-screen" edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
       <View style={[styles.header, { borderBottomColor: questTheme.colors.border }]}>
         <QuestButton questTheme={questTheme} variant="ghost" icon="target" label={t(lang, 'back')} onPress={() => nav.goBack()} />
         <QuestButton questTheme={questTheme} variant="secondary" icon="plus" label={t(lang, 'edit')} onPress={() => setEditing(true)} />
@@ -294,6 +294,7 @@ export default function GoalDetailScreen() {
         <QuestGroupedSurface
           questTheme={questTheme}
           elevated
+          className="v11-goal-summary"
           style={{
             padding: questTheme.spacing.md,
             marginBottom: questTheme.spacing.md,
@@ -354,6 +355,7 @@ export default function GoalDetailScreen() {
           <QuestGroupedSurface
             questTheme={questTheme}
             elevated
+            className="v11-goal-empty-structure"
             style={[styles.lowDataSurface, { borderColor: questTheme.colors.borderStrong }]}
           >
             <View style={styles.lowDataHeading}>
@@ -412,6 +414,7 @@ export default function GoalDetailScreen() {
             {goalExecutionLogs.length < 2 ? (
               <QuestGroupedSurface
                 questTheme={questTheme}
+                className="v11-goal-low-data"
                 style={[styles.lowDataSurface, { borderColor: questTheme.colors.border }]}
               >
                 <Text style={[styles.lowDataTitle, { color: questTheme.colors.text }]}>
@@ -461,7 +464,7 @@ export default function GoalDetailScreen() {
                   </View>
                   <QuestButton questTheme={questTheme} variant="ghost" icon="plus" label={t(lang, 'addCriterion')} onPress={() => openCriterion()} />
                 </View>
-                <QuestGroupedSurface questTheme={questTheme}>
+                <QuestGroupedSurface questTheme={questTheme} className="v11-goal-evidence-list">
                   {criteria.map((criterion, index) => {
                     const progress = calculateOutcomeCriterionProgress(criterion, skills);
                     const linkedSkill = criterion.linkedSkillId ? skills.find((skill) => skill.id === criterion.linkedSkillId) : undefined;
@@ -497,7 +500,7 @@ export default function GoalDetailScreen() {
             {recentExecutionLogs.length > 0 ? (
               <View style={styles.evidenceSection}>
                 <Text style={[styles.evidenceTitle, { color: questTheme.colors.text }]}>{t(lang, 'recentExecution')}</Text>
-                <QuestGroupedSurface questTheme={questTheme}>
+                <QuestGroupedSurface questTheme={questTheme} className="v11-goal-evidence-list">
                   {recentExecutionLogs.map((log, index) => {
                     const skill = log.linkedSkillId ? skills.find((item) => item.id === log.linkedSkillId) : undefined;
                     return (
@@ -531,7 +534,7 @@ export default function GoalDetailScreen() {
                 <Text style={[styles.skillMeta, { color: questTheme.colors.textMuted, marginBottom: 8 }]}>
                   {t(lang, 'thisWeek')}: {goalEffortSummary.weeklyCount} · {t(lang, 'directContribution')} {goalEffortSummary.directCount} · {t(lang, 'indirectContribution')} {goalEffortSummary.indirectCount}
                 </Text>
-                <QuestGroupedSurface questTheme={questTheme}>
+                <QuestGroupedSurface questTheme={questTheme} className="v11-goal-evidence-list">
                   {goalEffortSummary.recent.map(({ link, effort }, index) => (
                     <View
                       key={link.id}
@@ -699,6 +702,7 @@ function ModuleGroup({
     <QuestGroupedSurface
       questTheme={questTheme}
       elevated
+      className="v11-module-group"
       style={[
         styles.moduleGroup,
         {

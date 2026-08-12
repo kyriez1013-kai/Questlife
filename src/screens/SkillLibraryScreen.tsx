@@ -45,7 +45,7 @@ export default function SkillLibraryScreen() {
   };
 
   return (
-    <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
+    <SafeAreaView nativeID="v11-skill-library-screen" edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
       <View style={[styles.header, { borderBottomColor: questTheme.colors.border }]}>
         <TouchableOpacity onPress={() => nav.goBack()} style={styles.backBtn}>
           <Text style={[styles.backText, { color: questTheme.colors.primary }]}>{t(lang, 'back')}</Text>
@@ -73,7 +73,7 @@ export default function SkillLibraryScreen() {
               onPress={() => nav.navigate('SkillDetail', { skillId: skill.id })}
               activeOpacity={0.75}
             >
-              <QuestCard questTheme={questTheme} variant="action" style={styles.card} className="skill-card skill-row">
+              <QuestCard questTheme={questTheme} variant="action" style={styles.card} className="skill-card skill-row v11-skill-library-row">
                 <QuestEntityIcon icon={skill.icon} systemIcon={getSkillSemanticIcon(skill)} color={skill.color} questTheme={questTheme} />
                 <View style={{ flex: 1 }}>
                 <Text style={[styles.name, { color: questTheme.colors.text }]}>{skill.name}</Text>

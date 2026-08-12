@@ -3,6 +3,175 @@
   --v11-page-max: 1180px;
   --v11-group-gap: clamp(24px, 5vw, 40px);
   --v11-row-gap: 10px;
+  --v11-soft-surface: linear-gradient(180deg,
+    color-mix(in srgb, var(--ql-surface-elevated) 72%, transparent),
+    color-mix(in srgb, var(--ql-surface) 54%, transparent));
+  --v11-hairline: color-mix(in srgb, var(--ql-border) 62%, transparent);
+  --v11-focus-ring: 0 0 0 2px color-mix(in srgb, var(--ql-primary) 82%, transparent);
+}
+
+.questlife-v11-product #v11-goals-screen,
+.questlife-v11-product #v11-goal-detail-screen,
+.questlife-v11-product #v11-skill-library-screen,
+.questlife-v11-product #v11-skill-detail-screen {
+  position: relative;
+  isolation: isolate;
+}
+
+.questlife-v11-product #v11-goals-screen::before,
+.questlife-v11-product #v11-goal-detail-screen::before,
+.questlife-v11-product #v11-skill-library-screen::before,
+.questlife-v11-product #v11-skill-detail-screen::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 78% 4%, color-mix(in srgb, var(--ql-primary) 10%, transparent), transparent 34%),
+    radial-gradient(circle, color-mix(in srgb, var(--ql-text) 7%, transparent) .7px, transparent .8px);
+  background-size: auto, 24px 24px;
+  mask-image: linear-gradient(to bottom, #000 0, transparent 72%);
+  opacity: .72;
+}
+
+.questlife-v11-product #v11-goals-screen > *,
+.questlife-v11-product #v11-goal-detail-screen > *,
+.questlife-v11-product #v11-skill-library-screen > *,
+.questlife-v11-product #v11-skill-detail-screen > * {
+  position: relative;
+  z-index: 1;
+}
+
+.questlife-v11-product #v11-goals-screen .quest-context-bar,
+.questlife-v11-product #v11-skill-library-screen .quest-context-bar {
+  margin-block: 4px 18px !important;
+}
+
+.questlife-v11-product .v11-goal-row,
+.questlife-v11-product .v11-skill-library-row {
+  min-height: 72px !important;
+  margin-bottom: 0 !important;
+  border-radius: 0 !important;
+  border-bottom: 1px solid var(--v11-hairline) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transition: background-color 120ms cubic-bezier(.32,.72,0,1), transform 120ms cubic-bezier(.32,.72,0,1);
+}
+
+.questlife-v11-product .v11-goal-row {
+  border-left-width: 2px !important;
+}
+
+.questlife-v11-product .v11-goal-row:hover,
+.questlife-v11-product .v11-skill-library-row:hover {
+  background: color-mix(in srgb, var(--ql-surface-elevated) 46%, transparent) !important;
+}
+
+.questlife-v11-product .v11-goal-row:active,
+.questlife-v11-product .v11-skill-library-row:active {
+  transform: scale(.995);
+}
+
+.questlife-v11-product #v11-goal-detail-screen .v11-goal-summary {
+  position: relative;
+  overflow: hidden !important;
+  border-color: color-mix(in srgb, var(--ql-border) 66%, transparent) !important;
+  background: linear-gradient(145deg,
+    color-mix(in srgb, var(--ql-surface-elevated) 88%, transparent),
+    color-mix(in srgb, var(--ql-surface) 68%, transparent)) !important;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 15%, transparent), 0 24px 54px color-mix(in srgb, #000 18%, transparent) !important;
+  backdrop-filter: blur(24px) saturate(145%);
+  -webkit-backdrop-filter: blur(24px) saturate(145%);
+}
+
+.questlife-v11-product #v11-goal-detail-screen .v11-goal-summary::after {
+  content: '';
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  top: -96px;
+  right: -42px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--ql-primary) 24%, transparent);
+  filter: blur(72px);
+}
+
+.questlife-v11-product #v11-goal-detail-screen .v11-goal-summary > * {
+  position: relative;
+  z-index: 1;
+}
+
+.questlife-v11-product #v11-goal-detail-screen .v11-module-group {
+  margin-bottom: 2px !important;
+  border-width: 0 0 1px 0 !important;
+  border-left-width: 2px !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.questlife-v11-product #v11-goal-detail-screen .v11-goal-evidence-list,
+.questlife-v11-product #v11-goal-detail-screen .v11-goal-low-data {
+  border-width: 1px 0 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.questlife-v11-product #v11-goal-detail-screen .v11-goal-empty-structure {
+  background: var(--v11-soft-surface) !important;
+  box-shadow: none !important;
+}
+
+.questlife-v11-product #v11-skill-detail-screen .v11-skill-signal {
+  background: var(--v11-soft-surface) !important;
+  border-color: color-mix(in srgb, var(--ql-primary) 24%, var(--ql-border)) !important;
+  box-shadow: 0 20px 46px color-mix(in srgb, #000 16%, transparent) !important;
+}
+
+.questlife-v11-product #v11-skill-detail-screen .v11-skill-chart {
+  border-width: 0 !important;
+  border-radius: 18px !important;
+  background: color-mix(in srgb, var(--ql-surface) 58%, transparent) !important;
+}
+
+.questlife-v11-product #v11-skill-detail-screen .v11-skill-detail-group {
+  border-width: 0 0 1px !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.questlife-v11-product #v11-goals-screen [role='button']:focus-visible,
+.questlife-v11-product #v11-goal-detail-screen [role='button']:focus-visible,
+.questlife-v11-product #v11-skill-library-screen [role='button']:focus-visible,
+.questlife-v11-product #v11-skill-detail-screen [role='button']:focus-visible {
+  outline: none;
+  box-shadow: var(--v11-focus-ring);
+}
+
+@media (min-width: 768px) {
+  .questlife-v11-product #v11-goals-screen .v11-goal-row,
+  .questlife-v11-product #v11-skill-library-screen .v11-skill-library-row {
+    padding-inline: 16px !important;
+  }
+
+  .questlife-v11-product #v11-goal-detail-screen .v11-goal-summary {
+    padding: 22px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .questlife-v11-product .v11-goal-row,
+  .questlife-v11-product .v11-skill-library-row {
+    padding-inline: 8px !important;
+  }
+
+  .questlife-v11-product #v11-goal-detail-screen .v11-module-group {
+    padding-inline: 8px !important;
+  }
 }
 
 .questlife-v11-product .v11-onboarding {
