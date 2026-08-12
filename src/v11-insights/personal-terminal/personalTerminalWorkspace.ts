@@ -13,10 +13,10 @@ import {
 export const PERSONAL_TERMINAL_PREFERENCES_KEY = 'questlife_v11_personal_terminal_preferences_v1';
 
 export function personalTerminalPreferenceNamespace(
-  model: Pick<PersonalTerminalModel, 'dataMode' | 'fixture' | 'lifecycleScenario'>,
+  model: Pick<PersonalTerminalModel, 'dataMode' | 'fixture' | 'lifecycleScenario' | 'interpretationScenario'>,
 ) {
   if (model.dataMode === 'real') return 'real';
-  return `fixture:${model.lifecycleScenario ?? model.fixture ?? model.dataMode}`;
+  return `fixture:${model.interpretationScenario ?? model.lifecycleScenario ?? model.fixture ?? model.dataMode}`;
 }
 
 export function personalTerminalPreferencesStorageKey(namespace = 'real') {

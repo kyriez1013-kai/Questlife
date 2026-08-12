@@ -3,6 +3,7 @@ import type { V11EvidenceStage } from './tokens';
 import type {
   QuantV041LifecycleId,
   QuantV042LifecycleId,
+  QuantInterpretationScenarioId,
 } from '../v11-insights/personal-terminal/personalTerminalPresentation';
 
 function query() {
@@ -70,6 +71,19 @@ export function getV11QuantV042Lifecycle(): QuantV042LifecycleId | null {
     || value === 'goal'
     || value === 'skill'
     || value === 'no_data'
+    ? value
+    : null;
+}
+
+export function getV11QuantInterpretationScenario(): QuantInterpretationScenarioId | null {
+  if (!isV11PersonalTerminalEnabled()) return null;
+  const value = query()?.get('quantInterpretation');
+  return value === 'accumulated_load'
+    || value === 'sleep_disruption'
+    || value === 'conflicting'
+    || value === 'exercise_branch'
+    || value === 'rest_branch'
+    || value === 'insufficient'
     ? value
     : null;
 }

@@ -14,6 +14,12 @@ import PersonalTerminalChart, {
   type PersonalTerminalChartSelection,
 } from './PersonalTerminalChart';
 import PersonalTerminalIcon, { type PersonalTerminalIconName } from './PersonalTerminalIcon';
+import {
+  PersonalTerminalInterpretationDesktop,
+  PersonalTerminalInterpretationInspector,
+  PersonalTerminalInterpretationStrip,
+  type QuantInterpretationView,
+} from './PersonalTerminalInterpretation';
 import PersonalTerminalRangeControl from './PersonalTerminalRangeControl';
 import PersonalTerminalSheet from './PersonalTerminalSheet';
 import PersonalTerminalWatchlist, { PersonalTerminalWatchlistStrip } from './PersonalTerminalWatchlist';
@@ -35,6 +41,7 @@ import type {
   PersonalTerminalSignal,
 } from './personalTerminalPresentation';
 import { availableComparisonSeries } from './personalTerminalPresentation';
+import type { QuantDriverCandidate, QuantSimilarPeriod } from './quantInterpretation';
 import type {
   PersonalTerminalCatalogGroup,
   PersonalTerminalDisplayRange,
@@ -82,6 +89,7 @@ type WorkspaceSheet =
   | { kind: 'signal'; signal: PersonalTerminalSignal }
   | { kind: 'event'; event: PersonalTerminalEvent }
   | { kind: 'observation'; selection: PersonalTerminalChartSelection }
+  | { kind: 'interpretation'; view: QuantInterpretationView; driverId?: string }
   | null;
 
 type InteractionMeasurement = {
@@ -102,6 +110,10 @@ const LAYOUT_COUNT: Record<PersonalTerminalWorkspaceLayout, number> = {
 
 const QUICK_RANGE_OPTIONS: PersonalTerminalQuickRange[] = [
   '1D', '2D', '3D', '5D', '7D', '14D', '1M', '3M', '6M', '1Y', 'ALL',
+];
+
+const INTERPRETATION_VIEWS: QuantInterpretationView[] = [
+  'drivers', 'driver', 'similar', 'recovery', 'scenario', 'decision', 'analyst', 'next',
 ];
 
 function query() {
@@ -332,7 +344,18 @@ export default function PersonalTerminalWorkspaceSurface({
   const [comparisonSeriesId, setComparisonSeriesId] = useState<string | null>(null);
   const [analystPeekOpen, setAnalystPeekOpen] = useState(false);
   const [chartHighlight, setChartHighlight] = useState<PersonalTerminalHighlightWindow | null>(null);
-  const [sheet, setSheet] = useState<WorkspaceSheet>(null);
+  const [sheet, setSheet] = useState<WorkspaceSheet>(() => {
+    const requested = query().get('interpretationInspector') as QuantInterpretationView | null;
+    if (!model.interpretation || !requested || !INTERPRETATION_VIEWS.includes(requested)) return null;
+    return {
+      kind: 'interpretation',
+      view: requested,
+      driverId: query().get('interpretationDriver') || undefined,
+    };
+  });
+  const [analogueEnvelopeVisible, setAnalogueEnvelopeVisible] = useState(
+    () => Boolean(model.interpretation && query().get('interpretationEnvelope') === '1'),
+  );
   const [watchlistEditMode, setWatchlistEditMode] = useState(false);
   const [customDays, setCustomDays] = useState('9');
   const [customObservations, setCustomObservations] = useState('12');
@@ -536,6 +559,41 @@ export default function PersonalTerminalWorkspaceSurface({
     if (module.action === 'open_evidence') setSheet({ kind: 'evidence' });
   }, [ensureEventsVisible, exploration, openSignalInspector]);
 
+  const openInterpretation = useCallback((view: QuantInterpretationView) => {
+    if (!model.interpretation) return;
+    if (view === 'recovery') setAnalogueEnvelopeVisible(true);
+    showSheet({ kind: 'interpretation', view }, `interpretation-${view}-open`);
+  }, [model.interpretation, showSheet]);
+
+  const selectInterpretationDriver = useCallback((candidate: QuantDriverCandidate) => {
+    if (!model.interpretation) return;
+    const driverSeries = model.series.find((series) => series.constructKey === candidate.driver_construct);
+    if (driverSeries && driverSeries.id !== activeSeries.id) setComparisonSeriesId(driverSeries.id);
+    setChartHighlight({
+      kind: 'period',
+      start: model.interpretation.driver_analysis.context.window_start,
+      end: model.interpretation.driver_analysis.context.window_end,
+      sourceIds: candidate.evidence_ids,
+    });
+    setSheet({ kind: 'interpretation', view: 'driver', driverId: candidate.candidate_id });
+  }, [activeSeries?.id, model.interpretation, model.series]);
+
+  const selectInterpretationPeriod = useCallback((period: QuantSimilarPeriod) => {
+    setAnalogueEnvelopeVisible(false);
+    setRange({
+      kind: 'calendar_range',
+      start: period.start_at.slice(0, 10),
+      end: period.end_at.slice(0, 10),
+    });
+    setChartHighlight({
+      kind: 'period',
+      start: period.start_at,
+      end: period.end_at,
+      sourceIds: period.evidence_ids,
+    });
+    setSheet(null);
+  }, [setRange]);
+
   const syncCrosshair = useCallback((sourcePaneId: string, selection: PersonalTerminalChartSelection | null) => {
     if (!activeWorkspace?.syncCrosshair || synchronizingRef.current) return;
     synchronizingRef.current = true;
@@ -634,6 +692,10 @@ export default function PersonalTerminalWorkspaceSurface({
     if (sheet.kind === 'more') return { eyebrow: copy(language, activeSeries.label), title: t(language, 'personalTerminalMoreTools') };
     if (sheet.kind === 'signal') return { eyebrow: t(language, 'personalTerminalKeySignal'), title: copy(language, sheet.signal.title) };
     if (sheet.kind === 'event') return { eyebrow: t(language, 'personalTerminalEventTool'), title: copy(language, sheet.event.title) };
+    if (sheet.kind === 'interpretation') return {
+      eyebrow: t(language, 'quantInterpretationAnalyst'),
+      title: t(language, `quantInterpretationView_${sheet.view}`),
+    };
     return { eyebrow: t(language, 'personalTerminalCurrentObservation'), title: dateLabel(language, sheet.selection.time) };
   })();
 
@@ -744,7 +806,7 @@ export default function PersonalTerminalWorkspaceSurface({
                   <PersonalTerminalIcon color={theme.text.secondary} name="indicator" size={15} />
                   <Text style={{ color: theme.text.secondary }}>{t(language, 'personalTerminalIndicators')}</Text>
                 </WebPressable>
-                <WebPressable accessibilityRole="button" accessibilityState={{ expanded: analystPeekOpen }} dataSet={{ 'personal-terminal-selected': analystPeekOpen ? 'true' : 'false' }} onPress={() => measureInteraction(debugPerformance, 'analyst-peek-toggle', () => setAnalystPeekOpen((current) => !current))}>
+                <WebPressable accessibilityRole="button" accessibilityState={{ expanded: model.interpretation ? undefined : analystPeekOpen }} dataSet={{ 'personal-terminal-selected': analystPeekOpen ? 'true' : 'false' }} onPress={() => model.interpretation ? openInterpretation('analyst') : measureInteraction(debugPerformance, 'analyst-peek-toggle', () => setAnalystPeekOpen((current) => !current))}>
                   <PersonalTerminalIcon color={theme.text.secondary} name="analyst" size={15} />
                   <Text style={{ color: theme.text.secondary }}>{t(language, 'personalTerminalAnalystShort')}</Text>
                 </WebPressable>
@@ -800,6 +862,13 @@ export default function PersonalTerminalWorkspaceSurface({
                         </WebView>
                       ) : null}
                       <PersonalTerminalChart
+                        analogueOverlay={
+                          pane.id === activePane.id
+                          && analogueEnvelopeVisible
+                          && paneSeries.constructKey === model.interpretation?.recovery_trajectory.context.target_construct
+                            ? model.interpretation?.recovery_trajectory
+                            : undefined
+                        }
                         chartKind={pane.chartKind}
                         comparisonSeries={paneComparison}
                         comparisonViewData={paneComparisonView}
@@ -838,7 +907,14 @@ export default function PersonalTerminalWorkspaceSurface({
                 </WebView>
               ) : null}
 
-              <WebView dataSet={{ 'personal-terminal-workspace-role': 'analyst-dock' }}>
+              {model.interpretation ? (
+                <PersonalTerminalInterpretationStrip
+                  bundle={model.interpretation}
+                  language={language}
+                  onOpen={openInterpretation}
+                  theme={theme}
+                />
+              ) : <WebView dataSet={{ 'personal-terminal-workspace-role': 'analyst-dock' }}>
                 <WebPressable accessibilityRole="button" accessibilityState={{ expanded: analystPeekOpen }} dataSet={{ 'personal-terminal-workspace-role': 'analyst-summary' }} onPress={() => measureInteraction(debugPerformance, 'analyst-peek-toggle', () => setAnalystPeekOpen((current) => !current))}>
                   <PersonalTerminalIcon color={theme.text.secondary} name="analyst" size={16} />
                   <WebView>
@@ -858,9 +934,9 @@ export default function PersonalTerminalWorkspaceSurface({
                     <Text style={{ color: theme.text.secondary }}>{primarySignal.observationCount} / {primarySignal.counterexampleCount ?? '—'}</Text>
                   </WebPressable>
                 ) : null}
-              </WebView>
+              </WebView>}
 
-              {analystPeekOpen ? (
+              {!model.interpretation && analystPeekOpen ? (
                 <WebView dataSet={{ 'personal-terminal-workspace-role': 'analyst-peek' }}>
                   {analystPeekModules.map((module) => (
                     <AnalystModuleRow
@@ -880,7 +956,15 @@ export default function PersonalTerminalWorkspaceSurface({
               ) : null}
             </WebView>
 
-            <WebView dataSet={{ 'personal-terminal-workspace-role': 'desktop-inspector' }}>
+            {model.interpretation ? (
+              <PersonalTerminalInterpretationDesktop
+                bundle={model.interpretation}
+                language={language}
+                onOpen={openInterpretation}
+                onSelectDriver={selectInterpretationDriver}
+                theme={theme}
+              />
+            ) : <WebView dataSet={{ 'personal-terminal-workspace-role': 'desktop-inspector' }}>
               <WebView dataSet={{ 'personal-terminal-workspace-role': 'inspector-heading' }}>
                 <Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalAnalyst')}</Text>
                 <Text numberOfLines={2} style={{ color: theme.text.primary }}>{analystObservation}</Text>
@@ -899,7 +983,7 @@ export default function PersonalTerminalWorkspaceSurface({
                 <Text style={{ color: theme.text.primary }}>{t(language, 'personalTerminalOpenAnalyst')}</Text>
                 <PersonalTerminalIcon color={theme.text.primary} name="open" size={14} />
               </WebPressable>
-            </WebView>
+            </WebView>}
           </WebView>
 
           {performanceReadout ? <Text style={{ color: theme.text.metadata }}>{performanceReadout}</Text> : null}
@@ -1214,6 +1298,20 @@ export default function PersonalTerminalWorkspaceSurface({
             <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'personalTerminalObservations')}</Text><Text style={{ color: theme.text.primary }}>{sheet.selection.observationCount}</Text></WebView>
             {sheet.selection.candle ? <Text style={{ color: theme.text.secondary }}>{t(language, 'personalTerminalObservationalCandleMeaning')}</Text> : null}
           </WebView>
+        ) : null}
+
+        {sheet?.kind === 'interpretation' && model.interpretation ? (
+          <PersonalTerminalInterpretationInspector
+            bundle={model.interpretation}
+            language={language}
+            onOpen={openInterpretation}
+            onOpenToday={onNextAction}
+            onSelectDriver={selectInterpretationDriver}
+            onSelectPeriod={selectInterpretationPeriod}
+            selectedDriverId={sheet.driverId}
+            theme={theme}
+            view={sheet.view}
+          />
         ) : null}
       </PersonalTerminalSheet>
     </>

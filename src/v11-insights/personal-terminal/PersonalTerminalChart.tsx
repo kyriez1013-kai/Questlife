@@ -20,6 +20,7 @@ import type {
   PersonalTerminalTimeframe,
   PersonalTerminalViewData,
 } from './personalTerminalPresentation';
+import type { QuantRecoveryTrajectory } from './quantInterpretation';
 
 const WebView = View as any;
 const WebPressable = Pressable as any;
@@ -124,6 +125,7 @@ function nearestPoint(rows: PersonalTerminalPoint[], selected: string) {
 }
 
 const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
+  analogueOverlay?: QuantRecoveryTrajectory;
   chartKind: PersonalTerminalChartKind;
   comparisonSeries?: PersonalTerminalSeries | null;
   comparisonViewData?: PersonalTerminalViewData | null;
@@ -142,6 +144,7 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
   timeframe: PersonalTerminalTimeframe;
   viewData: PersonalTerminalViewData;
 }>(({
+  analogueOverlay,
   chartKind,
   comparisonSeries = null,
   comparisonViewData = null,
@@ -207,6 +210,21 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
     });
     return cells.slice(-48);
   }, [viewData.line]);
+
+  const rangeBand = useMemo(() => {
+    if (!rangeSelection.start || viewData.line.length < 2) return null;
+    const first = new Date(viewData.line[0].time).getTime();
+    const last = new Date(viewData.line[viewData.line.length - 1].time).getTime();
+    const start = new Date(rangeSelection.start).getTime();
+    const end = new Date(rangeSelection.end || rangeSelection.start).getTime();
+    if (![first, last, start, end].every(Number.isFinite) || last <= first || end < first || start > last) return null;
+    const boundedStart = Math.max(first, Math.min(last, start));
+    const boundedEnd = Math.max(boundedStart, Math.min(last, end));
+    return {
+      left: ((boundedStart - first) / (last - first)) * 100,
+      width: Math.max(0.8, ((boundedEnd - boundedStart) / (last - first)) * 100),
+    };
+  }, [rangeSelection.end, rangeSelection.start, viewData.line]);
 
   useImperativeHandle(ref, () => ({
     zoomIn: () => {
@@ -416,6 +434,56 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
           high.setData([{ time: chartTime(first), value: series.baseline.high }, { time: chartTime(last), value: series.baseline.high }] as any);
         }
       }
+      if (
+        analogueOverlay
+        && analogueOverlay.projection_semantics === 'HISTORICAL_ANALOGUE'
+        && analogueOverlay.forecast_allowed === false
+        && analogueOverlay.context.target_construct === series.constructKey
+        && analogueOverlay.reference_path.length > 1
+        && series.baseline.value != null
+        && last
+      ) {
+        const origin = new Date(last).getTime();
+        if (Number.isFinite(origin)) {
+          const projectedTime = (offsetDays: number) => chartTime(new Date(origin + offsetDays * 86_400_000).toISOString());
+          const analogueMedian = chart.addSeries(library.LineSeries, {
+            color: theme.glow.primary,
+            lineWidth: 2,
+            lineStyle: library.LineStyle.Dashed,
+            lastValueVisible: false,
+            priceLineVisible: false,
+            crosshairMarkerVisible: false,
+          });
+          const analogueLow = chart.addSeries(library.LineSeries, {
+            color: theme.glow.supporting,
+            lineWidth: 1,
+            lineStyle: library.LineStyle.Dotted,
+            lastValueVisible: false,
+            priceLineVisible: false,
+            crosshairMarkerVisible: false,
+          });
+          const analogueHigh = chart.addSeries(library.LineSeries, {
+            color: theme.glow.supporting,
+            lineWidth: 1,
+            lineStyle: library.LineStyle.Dotted,
+            lastValueVisible: false,
+            priceLineVisible: false,
+            crosshairMarkerVisible: false,
+          });
+          analogueMedian.setData(analogueOverlay.reference_path.map((point) => ({
+            time: projectedTime(point.offset_days),
+            value: series.baseline.value! + point.median_deviation,
+          })) as any);
+          analogueLow.setData(analogueOverlay.reference_path.map((point) => ({
+            time: projectedTime(point.offset_days),
+            value: series.baseline.value! + point.low_deviation,
+          })) as any);
+          analogueHigh.setData(analogueOverlay.reference_path.map((point) => ({
+            time: projectedTime(point.offset_days),
+            value: series.baseline.value! + point.high_deviation,
+          })) as any);
+        }
+      }
       if (indicators.has('emaShort') && viewData.emaShort.length > 1) {
         const emaShort = chart.addSeries(library.LineSeries, { color: theme.glow.supporting, lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
         emaShort.setData(pointsToData(viewData.emaShort) as any);
@@ -513,7 +581,7 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
       chartRef.current = null;
       primarySeriesRef.current = null;
     };
-  }, [candleLookup, chartKind, comparisonSeries, comparisonViewData, indicators, language, lookup, onCrosshair, onInteraction, onSelectEvent, onSelectSelection, onVisibleRangeChange, reducedMotion, series, theme, timeframe, viewData]);
+  }, [analogueOverlay, candleLookup, chartKind, comparisonSeries, comparisonViewData, indicators, language, lookup, onCrosshair, onInteraction, onSelectEvent, onSelectSelection, onVisibleRangeChange, reducedMotion, series, theme, timeframe, viewData]);
 
   return (
     <WebView dataSet={{ 'personal-terminal-empty': viewData.line.length ? 'false' : 'true', 'personal-terminal-role': 'chart-frame' }}>
@@ -530,6 +598,12 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
         </WebView>
       ) : null}
       {baselineBand ? <WebView dataSet={{ 'personal-terminal-role': 'baseline-band' }} style={{ top: baselineBand.top, height: baselineBand.height }} /> : null}
+      {rangeBand ? <WebView dataSet={{ 'personal-terminal-role': 'range-highlight' }} pointerEvents="none" style={{ left: `${rangeBand.left}%`, width: `${rangeBand.width}%` }} /> : null}
+      {analogueOverlay ? (
+        <WebView dataSet={{ 'personal-terminal-role': 'analogue-label' }} pointerEvents="none">
+          <Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationAnalogueNotForecast')}</Text>
+        </WebView>
+      ) : null}
       <WebView dataSet={{ 'personal-terminal-role': 'time-calibration' }} pointerEvents="none" />
       {transitionPosition != null ? (
         <WebView dataSet={{ 'personal-terminal-role': 'questlife-transition' }} pointerEvents="none" style={{ left: `${transitionPosition}%` }}>

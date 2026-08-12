@@ -45,6 +45,7 @@ import {
   getV11InsightsDebugLanguage,
   getV11InsightsDebugTheme,
   getV11PersonalTerminalFixture,
+  getV11QuantInterpretationScenario,
   getV11QuantV041Lifecycle,
   getV11QuantV042Lifecycle,
   getV11QuantTerminalFixture,
@@ -58,6 +59,8 @@ import { adaptQuantV041TerminalPayload } from './personal-terminal/quantV041Adap
 import { getQuantV041Fixture } from './personal-terminal/quantV041Fixtures';
 import { adaptQuantV042TerminalPayload } from './personal-terminal/quantV042Adapter';
 import { getQuantV042Fixture } from './personal-terminal/quantV042Fixtures';
+import { adaptQuantInterpretationPayload } from './personal-terminal/quantInterpretationAdapter';
+import { getQuantInterpretationFixture } from './personal-terminal/quantInterpretationFixtures';
 import V11QuantTerminal from './quant-terminal/V11QuantTerminal';
 import { getQuantTerminalFixture } from './quant-terminal/quantTerminalFixtures';
 import { buildQuantTerminalPresentation } from './quant-terminal/quantTerminalPresentation';
@@ -400,9 +403,13 @@ export default function V11InsightsScreen() {
     });
   }, [data.patternMemory, data.stateCheckIns, liveLogs, objectiveContext, presentation, quantTerminalFixtureId]);
   const personalTerminalFixtureId = getV11PersonalTerminalFixture();
+  const quantInterpretationScenario = getV11QuantInterpretationScenario();
   const quantV042LifecycleId = getV11QuantV042Lifecycle();
   const quantV041LifecycleId = getV11QuantV041Lifecycle();
   const personalTerminalPresentation = useMemo(() => {
+    if (quantInterpretationScenario) {
+      return adaptQuantInterpretationPayload(getQuantInterpretationFixture(quantInterpretationScenario));
+    }
     if (quantV042LifecycleId) {
       const fixture = getQuantV042Fixture(quantV042LifecycleId);
       return adaptQuantV042TerminalPayload(fixture.terminal, fixture.overview);
@@ -418,7 +425,7 @@ export default function V11InsightsScreen() {
       goals: data.categories || [],
       skills: data.skills || [],
     });
-  }, [data.categories, data.patternMemory, data.skills, data.stateCheckIns, liveLogs, personalTerminalFixtureId, presentation, quantV041LifecycleId, quantV042LifecycleId]);
+  }, [data.categories, data.patternMemory, data.skills, data.stateCheckIns, liveLogs, personalTerminalFixtureId, presentation, quantInterpretationScenario, quantV041LifecycleId, quantV042LifecycleId]);
   const selectedAdvancedMode = presentation.advanced.modes.find((mode) => mode.id === advancedModeId)
     ?? presentation.advanced.modes[0];
   const selectedStage = viewStage(
@@ -438,7 +445,7 @@ export default function V11InsightsScreen() {
       : isV11QuantTerminalEnabled() ? terminalInspectorOpen : detail != null,
     themeMode: theme.mode,
     surface: isV11PersonalTerminalEnabled()
-      ? `personal-terminal-${quantV042LifecycleId ?? quantV041LifecycleId ?? personalTerminalFixtureId ?? 'real'}`
+      ? `personal-terminal-${quantInterpretationScenario ?? quantV042LifecycleId ?? quantV041LifecycleId ?? personalTerminalFixtureId ?? 'real'}`
       : isV11QuantTerminalEnabled()
         ? `quant-terminal-${quantTerminalFixtureId ?? 'real'}`
         : analysisLabOpen ? 'quant-lab-open' : 'quant-overview',
@@ -523,7 +530,7 @@ export default function V11InsightsScreen() {
         <WebView
           dataSet={{
             'personal-terminal-root': 'true',
-            'personal-terminal-fixture': quantV042LifecycleId ?? quantV041LifecycleId ?? personalTerminalFixtureId ?? 'real',
+            'personal-terminal-fixture': quantInterpretationScenario ?? quantV042LifecycleId ?? quantV041LifecycleId ?? personalTerminalFixtureId ?? 'real',
             'v11-motion': reducedMotion ? 'reduced' : 'normal',
             'v11-theme': theme.mode,
           }}
