@@ -17,7 +17,6 @@ import { systemIcons } from '../design/systemIcons';
 import { getSkillSemanticIcon } from '../design/entityIcons';
 import { isStrengthPredictionSkill, strengthVolume } from '../utils/prediction';
 import QuestButton from '../components/ui/QuestButton';
-import QuestCard from '../components/ui/QuestCard';
 import { QuestCompactRow, QuestContextBar, QuestGroupedSurface, QuestSectionHeader } from '../components/ui/QuestPrimitives';
 import QuestEntityIcon from '../components/ui/QuestEntityIcon';
 import QuestIcon from '../components/ui/QuestIcon';
@@ -25,6 +24,7 @@ import QuestInput from '../components/ui/QuestInput';
 import QuestPill from '../components/ui/QuestPill';
 import QuestSegmentedControl from '../components/ui/QuestSegmentedControl';
 import ScheduleProposalReview from '../components/schedule/ScheduleProposalReview';
+import { confirmAction } from '../utils/confirm';
 import {
   buildScheduleProposalPatch,
   ScheduleProposal,
@@ -64,7 +64,7 @@ function weekDates(base: string) {
   });
 }
 
-const HOURS = Array.from({ length: 10 }, (_, i) => i * 2 + 6);
+const HOURS = Array.from({ length: 19 }, (_, i) => i + 6);
 const WEEKDAY_FULL_KEYS = ['weekdayFullSun', 'weekdayFullMon', 'weekdayFullTue', 'weekdayFullWed', 'weekdayFullThu', 'weekdayFullFri', 'weekdayFullSat'];
 
 function hourOf(time: string) {
@@ -84,12 +84,12 @@ function optionalNumber(value: string) {
 
 function closestSectionHour(time: string) {
   const hour = Math.max(6, Math.min(24, hourOf(time)));
-  return Math.max(6, Math.min(24, Math.floor(hour / 2) * 2));
+  return Math.max(6, Math.min(24, hour));
 }
 
 function currentSectionHour() {
   const h = new Date().getHours();
-  return Math.max(6, Math.min(24, Math.floor(h / 2) * 2));
+  return Math.max(6, Math.min(24, h));
 }
 
 function currentTimeTop() {
@@ -102,8 +102,34 @@ function dateWithWeekday(date: string, lang: 'zh' | 'en') {
   return `${date} · ${t(lang, WEEKDAY_FULL_KEYS[d.getDay()])}`;
 }
 
+function monthCells(base: string) {
+  const source = new Date(`${base}T00:00:00`);
+  const first = new Date(source.getFullYear(), source.getMonth(), 1);
+  const mondayOffset = (first.getDay() + 6) % 7;
+  const start = new Date(first);
+  start.setDate(first.getDate() - mondayOffset);
+  return Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(start);
+    date.setDate(start.getDate() + index);
+    return {
+      date: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
+      inMonth: date.getMonth() === source.getMonth(),
+    };
+  });
+}
+
+function blocksOverlap(block: ScheduleBlock, all: ScheduleBlock[]) {
+  const start = minuteOfDay(block.startTime);
+  const end = minuteOfDay(block.endTime);
+  return all.some((candidate) => (
+    candidate.id !== block.id
+    && minuteOfDay(candidate.startTime) < end
+    && minuteOfDay(candidate.endTime) > start
+  ));
+}
+
 export default function ScheduleScreen() {
-  const { data, addScheduleBlock, createExecutionLog, updateScheduleBlock } = useStore();
+  const { data, addScheduleBlock, createExecutionLog, updateScheduleBlock, deleteScheduleBlock } = useStore();
   const route = useRoute<any>();
   const lang = getV11ProductLanguage(getLanguage(data.settings.language));
   const questTheme = getQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
@@ -113,6 +139,7 @@ export default function ScheduleScreen() {
   const [highlightHour, setHighlightHour] = useState<number | null>(null);
   const scrollRef = useRef<ScrollView | null>(null);
   const [open, setOpen] = useState(false);
+  const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
 
   const [title, setTitle] = useState('');
   const [date, setDate] = useState(today());
@@ -185,7 +212,37 @@ export default function ScheduleScreen() {
   const jumpToNow = () => {
     const hour = currentSectionHour();
     setHighlightHour(hour);
-    scrollRef.current?.scrollTo({ y: 190 + HOURS.indexOf(hour) * 48, animated: true });
+    scrollRef.current?.scrollTo({ y: 190 + HOURS.indexOf(hour) * 56, animated: true });
+  };
+
+  const openCreateBlock = () => {
+    setEditingBlockId(null);
+    setTitle('');
+    setDate(selectedDate);
+    setStartTime('09:00');
+    setEndTime('10:00');
+    setTaskType('deep_study');
+    setFlexibility('flexible');
+    setRigidity('medium');
+    setLinkedGoalId(undefined);
+    setLinkedSkillId(undefined);
+    setNotes('');
+    setOpen(true);
+  };
+
+  const openEditBlock = (block: ScheduleBlock) => {
+    setEditingBlockId(block.id);
+    setTitle(block.title);
+    setDate(block.date);
+    setStartTime(block.startTime);
+    setEndTime(block.endTime);
+    setTaskType(block.taskType);
+    setFlexibility(block.flexibility);
+    setRigidity(block.rigidity);
+    setLinkedGoalId(block.linkedGoalId);
+    setLinkedSkillId(block.linkedSkillId);
+    setNotes(block.notes ?? '');
+    setOpen(true);
   };
 
   const submit = () => {
@@ -193,7 +250,7 @@ export default function ScheduleScreen() {
     if (!title.trim()) { Alert.alert(t(lang, 'enterTitle')); return; }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { Alert.alert(t(lang, 'invalidDate')); return; }
     if (plannedMinutes <= 0) { Alert.alert(t(lang, 'invalidTimeRange')); return; }
-    addScheduleBlock({
+    const input = {
       title: title.trim(),
       date,
       startTime,
@@ -207,11 +264,28 @@ export default function ScheduleScreen() {
       status: 'planned',
       notes: notes.trim() || undefined,
       source: 'manual',
-    });
+    } satisfies Omit<ScheduleBlock, 'id'>;
+    if (editingBlockId) {
+      updateScheduleBlock(editingBlockId, input);
+    } else {
+      addScheduleBlock(input);
+    }
     setOpen(false);
+    setEditingBlockId(null);
     setSelectedDate(date);
     setTitle('');
     setNotes('');
+  };
+
+  const requestDeleteBlock = (block: ScheduleBlock) => {
+    confirmAction({
+      title: `${t(lang, 'delete')} ${block.title}`,
+      message: `${block.date} · ${block.startTime}-${block.endTime}`,
+      cancelText: t(lang, 'cancel'),
+      confirmText: t(lang, 'delete'),
+      destructive: true,
+      onConfirm: () => deleteScheduleBlock(block.id),
+    });
   };
 
   const openLogBlock = (block: ScheduleBlock) => {
@@ -380,7 +454,7 @@ export default function ScheduleScreen() {
   };
 
   return (
-    <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
+    <SafeAreaView nativeID="v11-schedule-screen" edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
       <ScrollView
         ref={scrollRef}
         style={[styles.container, { backgroundColor: questTheme.colors.background }]}
@@ -397,7 +471,7 @@ export default function ScheduleScreen() {
           questTheme={questTheme}
           primary={dateWithWeekday(selectedDate, lang)}
           secondary={t(lang, 'scheduleSubtitle')}
-          trailing={<QuestButton questTheme={questTheme} variant="primary" icon="plus" label={t(lang, 'addBlock')} onPress={() => setOpen(true)} />}
+          trailing={<QuestButton questTheme={questTheme} variant="primary" icon="plus" label={t(lang, 'addBlock')} onPress={openCreateBlock} />}
         />
 
         <QuestSegmentedControl
@@ -422,7 +496,7 @@ export default function ScheduleScreen() {
               ) : undefined}
               style={styles.firstSectionHeader}
             />
-            <QuestGroupedSurface questTheme={questTheme} elevated style={styles.nowNextGroup}>
+            <QuestGroupedSurface questTheme={questTheme} elevated className="v11-schedule-now-next" style={styles.nowNextGroup}>
               <QuestCompactRow
                 questTheme={questTheme}
                 title={`${t(lang, 'currentBlock')}: ${nowInfo.active?.title ?? t(lang, 'noCurrentBlock')}`}
@@ -470,7 +544,7 @@ export default function ScheduleScreen() {
               subtitle={dayBlocks.length === 0 ? t(lang, 'noBlocksToday') : `${dayBlocks.length} ${t(lang, 'blocks')}`}
               style={styles.scheduleSectionHeader}
             />
-            <View style={[styles.timelineSurface, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>
+            <View nativeID="v11-schedule-day-instrument" style={[styles.timelineSurface, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>
               {selectedDate === today() && currentTimeTop() >= 0 && currentTimeTop() <= 1 ? (
                 <View style={[styles.nowLine, { top: `${currentTimeTop() * 100}%` }]}>
                   <View style={[styles.nowDot, { backgroundColor: questTheme.colors.primary }]} />
@@ -497,8 +571,21 @@ export default function ScheduleScreen() {
                           module ? (module.id.includes('-default') ? t(lang, 'defaultModule') : module.name) : undefined,
                           skill?.name,
                         ].filter(Boolean).join(' › ');
+                        const persisted = data.scheduleBlocks.some((item) => item.id === b.id);
+                        const overlaps = blocksOverlap(b, dayBlocks);
                         return (
-                          <View key={b.id} style={[styles.timelineBlock, { backgroundColor: questTheme.colors.surfaceSoft, borderLeftColor: b.status === 'completed' ? questTheme.colors.success : questTheme.colors.primary }]}>
+                          <View
+                            key={b.id}
+                            style={[
+                              styles.timelineBlock,
+                              {
+                                minHeight: Math.max(48, Math.min(150, (b.plannedMinutes / 60) * 56)),
+                                backgroundColor: questTheme.colors.surfaceSoft,
+                                borderLeftColor: b.status === 'completed' ? questTheme.colors.success : questTheme.colors.primary,
+                              },
+                              overlaps ? { borderRightWidth: 2, borderRightColor: questTheme.colors.warning } : null,
+                            ]}
+                          >
                             <View style={styles.blockTitleRow}>
                               <QuestEntityIcon icon={skill?.icon} systemIcon={skill ? getSkillSemanticIcon(skill) : systemIcons.schedule} color={skill?.color} questTheme={questTheme} size="sm" />
                               <Text style={[styles.blockTitle, { color: questTheme.colors.text }]} numberOfLines={2}>{b.title}</Text>
@@ -507,6 +594,7 @@ export default function ScheduleScreen() {
                                 variant={b.status === 'completed' ? 'success' : 'muted'}
                                 label={statusLabel(lang, b.status)}
                               />
+                              {overlaps ? <QuestPill questTheme={questTheme} variant="warning" label={t(lang, 'scheduleOverlap')} /> : null}
                             </View>
                             <Text style={[styles.blockMeta, { color: questTheme.colors.textMuted }]}>
                               {b.startTime}-{b.endTime} · {b.plannedMinutes}m
@@ -514,7 +602,15 @@ export default function ScheduleScreen() {
                             <Text style={[styles.blockMeta, { color: questTheme.colors.textMuted }]} numberOfLines={2}>
                               {contextLabel || t(lang, 'manualBlock')}
                             </Text>
-                            <QuestButton questTheme={questTheme} variant="ghost" icon="play" label={t(lang, 'logProgress')} onPress={() => openLogBlock(b)} style={styles.blockAction} />
+                            <View style={styles.blockActionsRow}>
+                              <QuestButton questTheme={questTheme} variant="ghost" icon="play" label={t(lang, 'logProgress')} onPress={() => openLogBlock(b)} style={styles.blockAction} />
+                              {persisted ? (
+                                <>
+                                  <QuestButton questTheme={questTheme} variant="ghost" label={t(lang, 'edit')} onPress={() => openEditBlock(b)} style={styles.blockAction} />
+                                  <QuestButton questTheme={questTheme} variant="ghost" label={t(lang, 'delete')} onPress={() => requestDeleteBlock(b)} style={styles.blockAction} />
+                                </>
+                              ) : null}
+                            </View>
                           </View>
                         );
                       })}
@@ -525,36 +621,35 @@ export default function ScheduleScreen() {
             </View>
           </>
         ) : view === 'week' ? (
-          <View style={styles.weekGrid}>
-            {week.map((d) => {
-              const blocks = allBlocks.filter((b) => b.date === d);
-              const mins = blocks.reduce((s, b) => s + b.plannedMinutes, 0);
-              return (
-                <TouchableOpacity
-                  key={d}
-                  style={[styles.weekDay, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}
-                  onPress={() => { setSelectedDate(d); setView('day'); }}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${d} · ${blocks.length} ${t(lang, 'blocks')} · ${t(lang, 'totalPlanned')} ${mins}m`}
-                >
-                  <Text style={[styles.weekDate, { color: questTheme.colors.text }]}>{d.slice(5)}</Text>
-                  <Text style={[styles.weekTotal, { color: questTheme.colors.textMuted }]}>{t(lang, 'totalPlanned')} {mins}m</Text>
-                  <Text style={[styles.weekTotal, { color: questTheme.colors.textMuted }]}>{blocks.length} {t(lang, 'blocks')}</Text>
-                  {blocks.slice(0, 2).map((b) => <Text key={b.id} style={[styles.weekBlock, { color: questTheme.colors.text }]} numberOfLines={1}>{b.title}</Text>)}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          <WeekInstrument
+            dates={week}
+            blocks={allBlocks}
+            selectedDate={selectedDate}
+            lang={lang}
+            questTheme={questTheme}
+            onSelect={(nextDate) => { setSelectedDate(nextDate); setView('day'); }}
+          />
+        ) : view === 'month' ? (
+          <MonthInstrument
+            baseDate={selectedDate}
+            blocks={allBlocks}
+            lang={lang}
+            questTheme={questTheme}
+            onSelect={(nextDate) => { setSelectedDate(nextDate); setView('day'); }}
+          />
         ) : (
-          <QuestCard questTheme={questTheme} variant="data" style={[styles.placeholderCard, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]} className="schedule-card empty-state">
-            <Text style={[styles.placeholderTitle, { color: questTheme.colors.text }]}>{view === 'month' ? t(lang, 'month') : t(lang, 'year')}</Text>
-            <Text style={[styles.placeholderText, { color: questTheme.colors.textMuted }]}>{view === 'month' ? t(lang, 'monthPlaceholder') : t(lang, 'yearPlaceholder')}</Text>
-          </QuestCard>
+          <YearInstrument
+            baseDate={selectedDate}
+            blocks={allBlocks}
+            lang={lang}
+            questTheme={questTheme}
+            onSelect={(nextDate) => { setSelectedDate(nextDate); setView('month'); }}
+          />
         )}
       </ScrollView>
 
-      <BottomSheetForm visible={open} onClose={() => setOpen(false)}>
-        <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'addBlock')}</Text>
+      <BottomSheetForm visible={open} onClose={() => { setOpen(false); setEditingBlockId(null); }}>
+        <Text style={[styles.h2, { color: questTheme.colors.text }]}>{editingBlockId ? `${t(lang, 'edit')} ${t(lang, 'schedulePlan')}` : t(lang, 'addBlock')}</Text>
         <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'title')}</Text>
         <QuestInput questTheme={questTheme} value={title} onChangeText={setTitle} placeholder={t(lang, 'scheduleTitlePlaceholder')} />
         <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'date')}</Text>
@@ -582,7 +677,7 @@ export default function ScheduleScreen() {
 
         <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'notes')}</Text>
         <QuestInput questTheme={questTheme} value={notes} onChangeText={setNotes} style={{ height: 70, textAlignVertical: 'top' }} multiline />
-        <QuestButton questTheme={questTheme} variant="primary" icon="plus" label={t(lang, 'createBlock')} onPress={submit} style={{ marginTop: 18 }} />
+        <QuestButton questTheme={questTheme} variant="primary" icon={editingBlockId ? undefined : 'plus'} label={editingBlockId ? t(lang, 'save') : t(lang, 'createBlock')} onPress={submit} style={{ marginTop: 18 }} />
       </BottomSheetForm>
 
       <BottomSheetForm visible={!!logBlock} onClose={() => setLogBlock(null)}>
@@ -752,6 +847,178 @@ export default function ScheduleScreen() {
   );
 }
 
+function WeekInstrument({ dates, blocks, selectedDate, lang, questTheme, onSelect }: {
+  dates: string[];
+  blocks: ScheduleBlock[];
+  selectedDate: string;
+  lang: 'zh' | 'en';
+  questTheme: QuestTheme;
+  onSelect: (date: string) => void;
+}) {
+  const rows = dates.map((date) => {
+    const dayBlocks = blocks.filter((block) => block.date === date);
+    return {
+      date,
+      blocks: dayBlocks,
+      minutes: dayBlocks.reduce((sum, block) => sum + block.plannedMinutes, 0),
+    };
+  });
+  const maxMinutes = Math.max(60, ...rows.map((row) => row.minutes));
+  return (
+    <View nativeID="v11-schedule-week-instrument" style={[styles.weekInstrument, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}>
+      <View style={styles.weekAxis}>
+        <Text style={[styles.weekAxisLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'totalPlanned')}</Text>
+        <Text style={[styles.weekAxisLabel, { color: questTheme.colors.textMuted }]}>{Math.round(maxMinutes / 60)}h</Text>
+      </View>
+      <View style={styles.weekColumns}>
+        {rows.map((row) => {
+          const day = new Date(`${row.date}T00:00:00`);
+          const selected = row.date === selectedDate;
+          const height = row.minutes > 0 ? Math.max(6, (row.minutes / maxMinutes) * 112) : 2;
+          return (
+            <TouchableOpacity
+              key={row.date}
+              style={styles.weekColumn}
+              onPress={() => onSelect(row.date)}
+              accessibilityRole="button"
+              accessibilityState={{ selected }}
+              accessibilityLabel={`${row.date} · ${row.blocks.length} ${t(lang, 'blocks')} · ${t(lang, 'totalPlanned')} ${row.minutes}m`}
+            >
+              <View style={styles.weekColumnPlot}>
+                <View style={[styles.weekDensityBar, {
+                  height,
+                  backgroundColor: selected ? questTheme.colors.primary : questTheme.colors.textSubtle,
+                  opacity: row.minutes > 0 ? 0.88 : 0.28,
+                }]} />
+                {row.blocks.slice(0, 4).map((block, index) => (
+                  <View
+                    key={block.id}
+                    style={[styles.weekEventTick, {
+                      bottom: Math.min(108, (minuteOfDay(block.startTime) - 6 * 60) / (18 * 60) * 108),
+                      backgroundColor: block.status === 'completed' ? questTheme.colors.success : questTheme.colors.primary,
+                      opacity: 1 - index * 0.16,
+                    }]}
+                  />
+                ))}
+              </View>
+              <Text style={[styles.weekDayLabel, { color: selected ? questTheme.colors.primary : questTheme.colors.text }]}>
+                {t(lang, WEEKDAY_FULL_KEYS[day.getDay()]).slice(0, lang === 'zh' ? 1 : 3)}
+              </Text>
+              <Text style={[styles.weekDayDate, { color: questTheme.colors.textMuted }]}>{row.date.slice(8)}</Text>
+              <Text style={[styles.weekDayMinutes, { color: questTheme.colors.textMuted }]}>{row.minutes ? `${row.minutes}m` : '—'}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+function MonthInstrument({ baseDate, blocks, lang, questTheme, onSelect }: {
+  baseDate: string;
+  blocks: ScheduleBlock[];
+  lang: 'zh' | 'en';
+  questTheme: QuestTheme;
+  onSelect: (date: string) => void;
+}) {
+  const cells = monthCells(baseDate);
+  const source = new Date(`${baseDate}T00:00:00`);
+  const monthLabel = source.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', { year: 'numeric', month: 'long' });
+  const maxMinutes = Math.max(60, ...cells.map((cell) => blocks.filter((block) => block.date === cell.date).reduce((sum, block) => sum + block.plannedMinutes, 0)));
+  const mondayFirstKeys = ['weekdayFullMon', 'weekdayFullTue', 'weekdayFullWed', 'weekdayFullThu', 'weekdayFullFri', 'weekdayFullSat', 'weekdayFullSun'];
+  return (
+    <View nativeID="v11-schedule-month-instrument" style={[styles.monthInstrument, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}>
+      <View style={styles.instrumentHeader}>
+        <Text style={[styles.instrumentTitle, { color: questTheme.colors.text }]}>{monthLabel}</Text>
+        <Text style={[styles.instrumentMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'schedulePlan')}</Text>
+      </View>
+      <View style={styles.monthWeekdays}>
+        {mondayFirstKeys.map((key) => (
+          <Text key={key} style={[styles.monthWeekday, { color: questTheme.colors.textMuted }]}>{t(lang, key).slice(0, lang === 'zh' ? 1 : 2)}</Text>
+        ))}
+      </View>
+      <View style={styles.monthGrid}>
+        {cells.map((cell) => {
+          const dayBlocks = blocks.filter((block) => block.date === cell.date);
+          const minutes = dayBlocks.reduce((sum, block) => sum + block.plannedMinutes, 0);
+          const density = minutes / maxMinutes;
+          const isToday = cell.date === today();
+          return (
+            <TouchableOpacity
+              key={cell.date}
+              style={[styles.monthCell, {
+                borderColor: isToday ? questTheme.colors.primary : questTheme.colors.border,
+                opacity: cell.inMonth ? 1 : 0.38,
+              }]}
+              onPress={() => onSelect(cell.date)}
+              accessibilityRole="button"
+              accessibilityLabel={`${cell.date} · ${dayBlocks.length} ${t(lang, 'blocks')} · ${minutes}m`}
+            >
+              <Text style={[styles.monthDate, { color: isToday ? questTheme.colors.primary : questTheme.colors.text }]}>{Number(cell.date.slice(8))}</Text>
+              <View style={[styles.monthDensityTrack, { backgroundColor: questTheme.colors.surfaceSoft }]}>
+                <View style={[styles.monthDensityFill, { width: `${Math.max(0, density * 100)}%`, backgroundColor: questTheme.colors.primary }]} />
+              </View>
+              {dayBlocks.length > 0 ? <Text style={[styles.monthCount, { color: questTheme.colors.textMuted }]}>{dayBlocks.length}</Text> : null}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+function YearInstrument({ baseDate, blocks, lang, questTheme, onSelect }: {
+  baseDate: string;
+  blocks: ScheduleBlock[];
+  lang: 'zh' | 'en';
+  questTheme: QuestTheme;
+  onSelect: (date: string) => void;
+}) {
+  const year = Number(baseDate.slice(0, 4));
+  const rows = Array.from({ length: 12 }, (_, month) => {
+    const prefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+    const monthBlocks = blocks.filter((block) => block.date.startsWith(prefix));
+    return {
+      month,
+      blocks: monthBlocks,
+      minutes: monthBlocks.reduce((sum, block) => sum + block.plannedMinutes, 0),
+    };
+  });
+  const maxMinutes = Math.max(60, ...rows.map((row) => row.minutes));
+  return (
+    <View nativeID="v11-schedule-year-instrument" style={[styles.yearInstrument, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}>
+      <View style={styles.instrumentHeader}>
+        <Text style={[styles.instrumentTitle, { color: questTheme.colors.text }]}>{year}</Text>
+        <Text style={[styles.instrumentMeta, { color: questTheme.colors.textMuted }]}>{t(lang, 'totalPlanned')}</Text>
+      </View>
+      <View style={styles.yearGrid}>
+        {rows.map((row) => {
+          const density = row.minutes / maxMinutes;
+          const label = new Date(year, row.month, 1).toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', { month: 'short' });
+          return (
+            <TouchableOpacity
+              key={row.month}
+              style={[styles.yearMonth, { borderColor: questTheme.colors.border }]}
+              onPress={() => onSelect(`${year}-${String(row.month + 1).padStart(2, '0')}-01`)}
+              accessibilityRole="button"
+              accessibilityLabel={`${label} · ${row.blocks.length} ${t(lang, 'blocks')} · ${row.minutes}m`}
+            >
+              <View style={styles.yearMonthTop}>
+                <Text style={[styles.yearMonthLabel, { color: questTheme.colors.text }]}>{label}</Text>
+                <Text style={[styles.yearMonthMeta, { color: questTheme.colors.textMuted }]}>{row.blocks.length}</Text>
+              </View>
+              <View style={[styles.yearDensityTrack, { backgroundColor: questTheme.colors.surfaceSoft }]}>
+                <View style={[styles.yearDensityFill, { width: `${Math.max(0, density * 100)}%`, backgroundColor: questTheme.colors.primary }]} />
+              </View>
+              <Text style={[styles.yearMonthMeta, { color: questTheme.colors.textMuted }]}>{row.minutes ? `${Math.round(row.minutes / 60 * 10) / 10}h` : '—'}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
 function ChipGroup<T extends string>({ title, values, labels, value, onChange, accent, questTheme, allowNone, noneLabel = 'None' }: {
   title?: string; values: readonly T[]; labels?: Record<string, string>; value?: T; onChange: (v: T | undefined) => void; accent: string; questTheme: QuestTheme; allowNone?: boolean; noneLabel?: string;
 }) {
@@ -816,14 +1083,15 @@ const styles = StyleSheet.create({
   jumpText: { fontSize: 12, fontWeight: '900' },
   empty: { color: theme.textDim, backgroundColor: theme.card, borderRadius: theme.radius.lg, padding: 14, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
   emptyInline: { color: theme.textDim, fontSize: 13, marginBottom: 10 },
-  timelineSurface: { position: 'relative', backgroundColor: theme.card, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.border, overflow: 'hidden', ...theme.shadow },
+  timelineSurface: { position: 'relative', backgroundColor: theme.card, borderRadius: 18, borderWidth: 1, borderColor: theme.border, overflow: 'hidden' },
   // minHeight 是空档位的下限;有日程块时内容会自然撑高,这里只收紧空档位的高度
-  hourRow: { flexDirection: 'row', minHeight: 32, borderBottomWidth: 1, borderBottomColor: theme.border },
-  hourLabel: { width: 58, color: theme.textDim, fontSize: 12, fontWeight: '800', paddingTop: 6, textAlign: 'center' },
-  hourContent: { flex: 1, paddingVertical: 5, paddingRight: 10, gap: 5 },
-  timelineBlock: { backgroundColor: theme.cardAlt, borderRadius: theme.radius.md, padding: 8, borderLeftWidth: 3, borderLeftColor: theme.primary },
+  hourRow: { flexDirection: 'row', minHeight: 56, borderBottomWidth: 1, borderBottomColor: theme.border },
+  hourLabel: { width: 58, color: theme.textDim, fontSize: 11, fontWeight: '700', paddingTop: 7, textAlign: 'center' },
+  hourContent: { flex: 1, paddingVertical: 4, paddingRight: 8, gap: 4 },
+  timelineBlock: { backgroundColor: theme.cardAlt, borderRadius: 4, padding: 8, borderLeftWidth: 2, borderLeftColor: theme.primary },
   blockTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   blockAction: { alignSelf: 'flex-start', marginTop: 4 },
+  blockActionsRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 4 },
   logBlockBtn: { alignSelf: 'flex-start', borderWidth: 1, borderRadius: 14, paddingHorizontal: 10, paddingVertical: 6, marginTop: 8 },
   logBlockText: { fontSize: 11, fontWeight: '900' },
   nowLine: { position: 'absolute', left: 50, right: 8, flexDirection: 'row', alignItems: 'center', zIndex: 10 },
@@ -841,6 +1109,37 @@ const styles = StyleSheet.create({
   weekDate: { color: theme.text, fontWeight: '800' },
   weekTotal: { color: theme.textDim, marginTop: 8, fontSize: 12 },
   weekBlock: { color: theme.text, marginTop: 6, fontSize: 11, fontWeight: '700' },
+  weekInstrument: { marginTop: 18, borderWidth: 1, borderRadius: 18, paddingHorizontal: 10, paddingVertical: 14, overflow: 'hidden' },
+  weekAxis: { minHeight: 22, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: 'rgba(127,127,127,0.18)' },
+  weekAxisLabel: { fontSize: 10, lineHeight: 14 },
+  weekColumns: { height: 176, flexDirection: 'row', alignItems: 'flex-end', gap: 2 },
+  weekColumn: { flex: 1, minWidth: 0, minHeight: 154, alignItems: 'center', justifyContent: 'flex-end', paddingHorizontal: 1 },
+  weekColumnPlot: { height: 116, width: '100%', alignItems: 'center', justifyContent: 'flex-end', position: 'relative' },
+  weekDensityBar: { width: '46%', minWidth: 3, borderRadius: 2 },
+  weekEventTick: { position: 'absolute', left: 1, right: 1, height: 1 },
+  weekDayLabel: { marginTop: 7, fontSize: 10, lineHeight: 13, fontWeight: '700' },
+  weekDayDate: { fontSize: 10, lineHeight: 13 },
+  weekDayMinutes: { fontSize: 9, lineHeight: 12, marginTop: 1 },
+  instrumentHeader: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingHorizontal: 4 },
+  instrumentTitle: { fontSize: 17, lineHeight: 22, fontWeight: '700' },
+  instrumentMeta: { fontSize: 10, lineHeight: 14 },
+  monthInstrument: { marginTop: 18, borderWidth: 1, borderRadius: 18, padding: 10, overflow: 'hidden' },
+  monthWeekdays: { flexDirection: 'row', paddingVertical: 6 },
+  monthWeekday: { width: '14.2857%', textAlign: 'center', fontSize: 10, lineHeight: 14 },
+  monthGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+  monthCell: { width: '14.2857%', minHeight: 54, borderTopWidth: 1, paddingHorizontal: 4, paddingVertical: 5 },
+  monthDate: { fontSize: 11, lineHeight: 15, fontWeight: '700' },
+  monthDensityTrack: { height: 3, marginTop: 7, overflow: 'hidden' },
+  monthDensityFill: { height: '100%' },
+  monthCount: { fontSize: 9, lineHeight: 12, marginTop: 4 },
+  yearInstrument: { marginTop: 18, borderWidth: 1, borderRadius: 18, padding: 12, overflow: 'hidden' },
+  yearGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  yearMonth: { flexGrow: 1, flexBasis: '30%', minWidth: 88, minHeight: 78, borderTopWidth: 1, paddingHorizontal: 7, paddingVertical: 9 },
+  yearMonthTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 6 },
+  yearMonthLabel: { fontSize: 12, lineHeight: 16, fontWeight: '700' },
+  yearMonthMeta: { fontSize: 9, lineHeight: 13 },
+  yearDensityTrack: { height: 4, marginVertical: 12, overflow: 'hidden' },
+  yearDensityFill: { height: '100%' },
   placeholderCard: { marginTop: 10, backgroundColor: theme.card, borderRadius: theme.radius.lg, padding: 14, borderWidth: 1, borderColor: theme.border, ...theme.shadow },
   placeholderTitle: { color: theme.text, fontSize: 18, fontWeight: '800' },
   placeholderText: { color: theme.textDim, marginTop: 8, lineHeight: 20 },

@@ -18,6 +18,88 @@
   isolation: isolate;
 }
 
+.questlife-v11-product #v11-schedule-screen {
+  position: relative;
+  isolation: isolate;
+}
+
+.questlife-v11-product #v11-schedule-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 88% 8%, color-mix(in srgb, var(--ql-primary) 12%, transparent), transparent 31%),
+    linear-gradient(118deg, color-mix(in srgb, var(--ql-bg) 94%, #fff 6%), var(--ql-bg) 48%, color-mix(in srgb, var(--ql-bg) 92%, #000 8%));
+}
+
+.questlife-v11-product #v11-schedule-screen > * {
+  position: relative;
+  z-index: 1;
+}
+
+.questlife-v11-product #v11-schedule-screen .v11-schedule-now-next {
+  border-color: color-mix(in srgb, var(--ql-border) 64%, transparent) !important;
+  background: var(--v11-soft-surface) !important;
+  box-shadow: none !important;
+}
+
+.questlife-v11-product #v11-schedule-day-instrument,
+.questlife-v11-product #v11-schedule-week-instrument,
+.questlife-v11-product #v11-schedule-month-instrument,
+.questlife-v11-product #v11-schedule-year-instrument {
+  position: relative;
+  background-color: color-mix(in srgb, var(--ql-surface) 78%, transparent) !important;
+  border-color: color-mix(in srgb, var(--ql-border) 66%, transparent) !important;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 9%, transparent), 0 24px 58px color-mix(in srgb, #000 16%, transparent);
+  backdrop-filter: blur(20px) saturate(132%);
+  -webkit-backdrop-filter: blur(20px) saturate(132%);
+}
+
+.questlife-v11-product #v11-schedule-day-instrument::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 0 58px;
+  pointer-events: none;
+  z-index: 0;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--ql-text) 11%, transparent) 0,
+    color-mix(in srgb, var(--ql-text) 11%, transparent) .5px,
+    transparent .5px,
+    transparent 14px
+  );
+}
+
+.questlife-v11-product #v11-schedule-day-instrument > * {
+  position: relative;
+  z-index: 1;
+}
+
+.questlife-v11-product #v11-schedule-day-instrument [style*='border-left-width: 2px'] {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--ql-text) 7%, transparent) 0,
+    color-mix(in srgb, var(--ql-text) 7%, transparent) 1px,
+    transparent 1px,
+    transparent 12px
+  );
+}
+
+.questlife-v11-product #v11-schedule-screen [role='button']:focus-visible {
+  outline: none;
+  box-shadow: var(--v11-focus-ring);
+}
+
+@media (min-width: 960px) {
+  .questlife-v11-product #v11-schedule-week-instrument,
+  .questlife-v11-product #v11-schedule-month-instrument,
+  .questlife-v11-product #v11-schedule-year-instrument {
+    padding: 20px !important;
+  }
+}
+
 .questlife-v11-product #v11-goals-screen::before,
 .questlife-v11-product #v11-goal-detail-screen::before,
 .questlife-v11-product #v11-skill-library-screen::before,

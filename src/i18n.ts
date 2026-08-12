@@ -543,6 +543,7 @@ const zh: Record<string, string> = {
   skipped: '跳过',
   totalPlanned: '计划合计',
   blocks: '个日程',
+  scheduleOverlap: '时间重叠',
 
   title: '标题',
   date: '日期',
@@ -3270,6 +3271,7 @@ const en: Record<string, string> = {
   skipped: 'Skipped',
   totalPlanned: 'Total Planned',
   blocks: 'blocks',
+  scheduleOverlap: 'Time overlap',
 
   title: 'Title',
   date: 'Date',
