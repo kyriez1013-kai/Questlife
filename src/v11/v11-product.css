@@ -1,0 +1,85 @@
+.questlife-v11-product {
+  --v11-page-inline: clamp(16px, 4vw, 32px);
+  --v11-page-max: 1180px;
+  --v11-group-gap: clamp(24px, 5vw, 40px);
+  --v11-row-gap: 10px;
+}
+
+.questlife-v11-product .v11-onboarding {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.questlife-v11-product .v11-onboarding::before,
+.questlife-v11-product .v11-onboarding::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  width: min(72vw, 540px);
+  aspect-ratio: 1;
+  border-radius: 999px;
+  filter: blur(110px);
+  opacity: .24;
+}
+
+.questlife-v11-product .v11-onboarding::before {
+  top: -28%;
+  right: -22%;
+  background: color-mix(in srgb, var(--ql-primary) 64%, transparent);
+}
+
+.questlife-v11-product .v11-onboarding::after {
+  bottom: -34%;
+  left: -26%;
+  background: color-mix(in srgb, #6f85ff 32%, transparent);
+}
+
+.questlife-v11-product .v11-onboarding-scroll {
+  position: relative;
+  z-index: 1;
+}
+
+.questlife-v11-product .v11-onboarding-panel {
+  width: 100%;
+}
+
+.questlife-v11-product .v11-onboarding-evidence {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ql-surface-elevated) 88%, transparent), color-mix(in srgb, var(--ql-surface) 72%, transparent)) !important;
+  border-color: color-mix(in srgb, var(--ql-border) 68%, transparent) !important;
+  box-shadow: 0 22px 60px color-mix(in srgb, #000 22%, transparent);
+  backdrop-filter: blur(24px) saturate(145%);
+  -webkit-backdrop-filter: blur(24px) saturate(145%);
+}
+
+.questlife-v11-product .v11-onboarding-mode {
+  transition: background-color 120ms cubic-bezier(.32,.72,0,1), transform 120ms cubic-bezier(.32,.72,0,1);
+}
+
+.questlife-v11-product .v11-onboarding-mode:active {
+  transform: scale(.985);
+}
+
+.questlife-v11-product .v11-onboarding-mode:focus-visible,
+.questlife-v11-product .v11-onboarding-input:focus-visible {
+  outline: 2px solid var(--ql-primary);
+  outline-offset: 3px;
+}
+
+@media (min-width: 768px) {
+  .questlife-v11-product .v11-onboarding-panel {
+    max-width: 680px;
+    margin-inline: auto;
+  }
+
+  .questlife-v11-product .v11-onboarding-language {
+    max-width: 520px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .questlife-v11-product .v11-onboarding-mode {
+    transition: none;
+  }
+}

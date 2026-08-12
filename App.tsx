@@ -1,5 +1,6 @@
 import 'react-native-gesture-handler';
 import './src/styles/theme-overrides.css';
+import './src/v11/v11-product.css';
 import React, { useEffect, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, DefaultTheme, useIsFocused } from '@react-navigation/native';

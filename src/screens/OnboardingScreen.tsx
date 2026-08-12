@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
   Keyboard,
   ScrollView,
   StyleSheet,
@@ -22,7 +21,7 @@ import {
 import { DomainTemplate, DomainTemplateDomain, GoalType } from '../types';
 import { getLanguage, t } from '../i18n';
 import { trackEvent } from '../utils/analytics';
-import { getV11ProductLanguage, getV11ProductThemeId } from '../v11/featureFlag';
+import { getV11ProductLanguage, getV11ProductThemeId, isV11ProductEnabled } from '../v11/featureFlag';
 
 type Step = 'language' | 'positioning' | 'mode' | 'goal' | 'preview';
 
@@ -73,6 +72,7 @@ export default function OnboardingScreen() {
     setSettings,
   } = useStore();
   const questTheme = getQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
+  const v11ProductEnabled = isV11ProductEnabled();
   const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
   const lang = getV11ProductLanguage(getLanguage(data.settings.language ?? data.settings.preferredLanguage));
   const hasExistingCoreData = data.categories.length > 0 || data.skills.length > 0 || (data.executionLogs || []).length > 0;
@@ -89,7 +89,7 @@ export default function OnboardingScreen() {
     selectedMode.domain === 'custom' ? undefined : getDomainTemplateByDomain(selectedMode.domain)
   ), [selectedMode.domain]);
   const placeholder = lang === 'en' ? selectedMode.placeholderEn : selectedMode.placeholderZh;
-  const canExit = hasExistingCoreData || !!data.settings.onboardingRestartRequested;
+  const canExit = step !== 'language' || hasExistingCoreData || !!data.settings.onboardingRestartRequested;
 
   useEffect(() => {
     trackEvent('onboarding_started', { detectedLanguage: detectInitialLanguage() }, { page: 'onboarding' });
@@ -196,7 +196,8 @@ export default function OnboardingScreen() {
       });
     } catch (err) {
       console.warn('[onboarding] failed to create first system', err);
-      Alert.alert('QuestLife', lang === 'en' ? 'Could not create the system. Please try again.' : '创建系统失败，请重试。');
+      setError(t(lang, 'onboardingCreateFailed'));
+      setStep('goal');
     }
   };
 
@@ -214,10 +215,15 @@ export default function OnboardingScreen() {
   };
 
   const shell = (children: React.ReactNode) => (
-    <SafeAreaView edges={['top', 'bottom']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
-      <ScrollView
+    <OnboardingSafeArea
+      className={v11ProductEnabled ? 'v11-onboarding' : undefined}
+      edges={['top', 'bottom']}
+      style={[styles.safe, { backgroundColor: questTheme.colors.background }]}
+    >
+      <OnboardingScrollView
+        className={v11ProductEnabled ? 'v11-onboarding-scroll' : undefined}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, v11ProductEnabled ? styles.v11Content : null]}
         style={{ backgroundColor: questTheme.colors.background }}
       >
         <View style={styles.topRow}>
@@ -234,39 +240,36 @@ export default function OnboardingScreen() {
         </View>
         <Dots />
         {children}
-      </ScrollView>
-    </SafeAreaView>
+      </OnboardingScrollView>
+    </OnboardingSafeArea>
   );
 
   if (step === 'language') {
     return shell(
-      <View style={styles.centerBlock}>
-        <View style={[styles.logoMark, { backgroundColor: questTheme.colors.primarySoft, borderColor: questTheme.colors.border }]}>
+        <OnboardingPanel className={v11ProductEnabled ? 'v11-onboarding-panel v11-onboarding-language' : undefined} style={styles.centerBlock}>
+        <View style={[styles.logoMark, { backgroundColor: questTheme.colors.primarySoft, borderColor: questTheme.colors.border }]}> 
           <QuestIcon name="target" color={accent} size={34} strokeWidth={2.4} />
         </View>
         <Text style={[styles.brand, { color: questTheme.colors.text }]}>QuestLife</Text>
         <Text style={[styles.title, { color: questTheme.colors.text }]}>{t(detectInitialLanguage(), 'chooseLanguage')}</Text>
-        <Text style={[styles.subtitle, { color: questTheme.colors.textMuted }]}>
-          选择你的语言 · Choose your language{'\n'}
-          你可以之后在设置里更改。 / You can change this later in Settings.
-        </Text>
+        <Text style={[styles.subtitle, { color: questTheme.colors.textMuted }]}>{t(detectInitialLanguage(), 'changeLaterInSettings')}</Text>
         <View style={styles.languageGrid}>
           <QuestButton questTheme={questTheme} label={t('zh', 'languageChinese')} onPress={() => selectLanguage('zh')} />
           <QuestButton questTheme={questTheme} label={t('en', 'languageEnglish')} variant="secondary" onPress={() => selectLanguage('en')} />
         </View>
-      </View>
+      </OnboardingPanel>
     );
   }
 
   if (step === 'positioning') {
     return shell(
-      <View>
+      <OnboardingPanel className={v11ProductEnabled ? 'v11-onboarding-panel' : undefined}>
         <View style={[styles.logoMark, { backgroundColor: questTheme.colors.primarySoft, borderColor: questTheme.colors.border }]}>
           <QuestIcon name="tree" color={accent} size={32} strokeWidth={2.4} />
         </View>
         <Text style={[styles.title, { color: questTheme.colors.text }]}>{t(lang, 'turnGoalsIntoSystems')}</Text>
         <Text style={[styles.subtitle, { color: questTheme.colors.textMuted }]}>{t(lang, 'questLifePositioningSubtitle')}</Text>
-        <View style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>
+        <OnboardingPanel className={v11ProductEnabled ? 'v11-onboarding-evidence' : undefined} style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}> 
           {[
             ['target', 'createGoalPoint'],
             ['folder', 'executableSkillsPoint'],
@@ -279,22 +282,26 @@ export default function OnboardingScreen() {
               <Text style={[styles.pointText, { color: questTheme.colors.text }]}>{index + 1}. {t(lang, key)}</Text>
             </View>
           ))}
-        </View>
+        </OnboardingPanel>
         <QuestButton questTheme={questTheme} label={t(lang, 'buildMyFirstSystem')} onPress={() => setStep('mode')} />
-      </View>
+      </OnboardingPanel>
     );
   }
 
   if (step === 'mode') {
     return shell(
-      <View>
+      <OnboardingPanel className={v11ProductEnabled ? 'v11-onboarding-panel' : undefined}>
         <Text style={[styles.title, { color: questTheme.colors.text }]}>{t(lang, 'chooseStartingMode')}</Text>
         <Text style={[styles.subtitle, { color: questTheme.colors.textMuted }]}>{t(lang, 'changeLaterInSettings')}</Text>
         <View style={styles.modeGrid}>
           {START_MODES.map((mode) => {
             const selected = selectedMode.domain === mode.domain;
             return (
-              <TouchableOpacity
+              <OnboardingTouchable
+                accessibilityRole="button"
+                accessibilityLabel={t(lang, mode.labelKey)}
+                accessibilityState={{ selected }}
+                className={v11ProductEnabled ? 'v11-onboarding-mode' : undefined}
                 key={mode.domain}
                 onPress={() => selectMode(mode)}
                 style={[
@@ -305,24 +312,25 @@ export default function OnboardingScreen() {
               >
                 <QuestIcon name={mode.icon} color={selected ? accent : questTheme.colors.textMuted} size={23} />
                 <Text style={[styles.modeText, { color: questTheme.colors.text }]}>{t(lang, mode.labelKey)}</Text>
-              </TouchableOpacity>
+              </OnboardingTouchable>
             );
           })}
         </View>
-      </View>
+      </OnboardingPanel>
     );
   }
 
   if (step === 'goal') {
     return shell(
-      <View>
+      <OnboardingPanel className={v11ProductEnabled ? 'v11-onboarding-panel' : undefined}>
         <Text style={[styles.title, { color: questTheme.colors.text }]}>{t(lang, 'firstGoalQuestion')}</Text>
         <Text style={[styles.subtitle, { color: questTheme.colors.textMuted }]}>{t(lang, 'firstGoalExamples')}</Text>
         <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'name')}</Text>
-        <TextInput
+        <OnboardingTextInput
+          className={v11ProductEnabled ? 'v11-onboarding-input' : undefined}
           style={[styles.input, { backgroundColor: questTheme.colors.surface, borderColor: error ? questTheme.colors.danger : questTheme.colors.border, color: questTheme.colors.text }]}
           value={goalName}
-          onChangeText={(value) => { setGoalName(value); setError(''); }}
+          onChangeText={(value: string) => { setGoalName(value); setError(''); }}
           placeholder={placeholder}
           placeholderTextColor={questTheme.colors.textSubtle}
           returnKeyType="done"
@@ -330,19 +338,21 @@ export default function OnboardingScreen() {
         />
         {error ? <Text style={[styles.error, { color: questTheme.colors.danger }]}>{error}</Text> : null}
         <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'currentLevel')}</Text>
-        <TextInput
+        <OnboardingTextInput
+          className={v11ProductEnabled ? 'v11-onboarding-input' : undefined}
           style={[styles.input, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, color: questTheme.colors.text }]}
           value={currentLevel}
           onChangeText={setCurrentLevel}
-          placeholder={lang === 'en' ? 'Optional current state' : '可选：当前状态'}
+          placeholder={t(lang, 'onboardingOptionalStatePlaceholder')}
           placeholderTextColor={questTheme.colors.textSubtle}
         />
         <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'target')}</Text>
-        <TextInput
+        <OnboardingTextInput
+          className={v11ProductEnabled ? 'v11-onboarding-input' : undefined}
           style={[styles.input, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, color: questTheme.colors.text }]}
           value={target}
           onChangeText={setTarget}
-          placeholder={lang === 'en' ? 'Optional target or deadline' : '可选：目标或截止时间'}
+          placeholder={t(lang, 'onboardingOptionalTargetPlaceholder')}
           placeholderTextColor={questTheme.colors.textSubtle}
         />
         <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'weeklyFrequency')}</Text>
@@ -361,7 +371,7 @@ export default function OnboardingScreen() {
           <QuestButton questTheme={questTheme} label={t(lang, 'generateMySystem')} onPress={selectedMode.domain === 'custom' ? () => createGoal(false) : previewTemplate} />
           <QuestButton questTheme={questTheme} label={t(lang, 'createEmptyGoal')} variant="secondary" onPress={() => createGoal(false)} />
         </View>
-      </View>
+      </OnboardingPanel>
     );
   }
 
@@ -369,10 +379,10 @@ export default function OnboardingScreen() {
   const previewSkills = selectedTemplate?.defaultSkills.slice(0, 6).map((item) => (lang === 'en' ? item.name : item.nameZh)) ?? [];
   const loggingFields = domainLoggingFields(selectedTemplate, lang);
   return shell(
-    <View>
+    <OnboardingPanel className={v11ProductEnabled ? 'v11-onboarding-panel' : undefined}>
       <Text style={[styles.title, { color: questTheme.colors.text }]}>{t(lang, 'systemPreview')}</Text>
       <Text style={[styles.subtitle, { color: questTheme.colors.textMuted }]}>{t(lang, 'questLifeWillCreate')}</Text>
-      <View style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>
+      <OnboardingPanel className={v11ProductEnabled ? 'v11-onboarding-evidence' : undefined} style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}> 
         <Text style={[styles.previewTitle, { color: questTheme.colors.text }]}>{t(lang, 'oneGoal')}: {goalName.trim() || placeholder}</Text>
         <Text style={[styles.previewLine, { color: questTheme.colors.textMuted }]}>
           {t(lang, 'modules')}: {previewModules.join(' / ') || t(lang, 'none')}
@@ -386,12 +396,12 @@ export default function OnboardingScreen() {
         <Text style={[styles.previewLine, { color: questTheme.colors.textMuted }]}>
           {t(lang, 'todayFirstAction')}: {sessionLength} {t(lang, 'minutes')} · {weeklyFrequency === 5 ? '5+' : weeklyFrequency} / {t(lang, 'week')}
         </Text>
-      </View>
+      </OnboardingPanel>
       <View style={styles.actionStack}>
         <QuestButton questTheme={questTheme} label={t(lang, 'createSystem')} onPress={() => createGoal(true)} />
         <QuestButton questTheme={questTheme} label={t(lang, 'backToEdit')} variant="secondary" onPress={() => setStep('goal')} />
       </View>
-    </View>
+    </OnboardingPanel>
   );
 }
 
@@ -407,6 +417,7 @@ const styles = StyleSheet.create({
     paddingBottom: 36,
     justifyContent: 'center',
   },
+  v11Content: { maxWidth: 760, paddingHorizontal: 20, paddingBottom: 48 },
   topRow: { minHeight: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   smallBtn: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 },
   smallBtnText: { fontSize: 12, fontWeight: '800' },
@@ -433,3 +444,9 @@ const styles = StyleSheet.create({
   previewTitle: { fontSize: 17, fontWeight: '900', marginBottom: 12 },
   previewLine: { fontSize: 14, lineHeight: 22, fontWeight: '700', marginBottom: 8 },
 });
+
+const OnboardingSafeArea = SafeAreaView as any;
+const OnboardingScrollView = ScrollView as any;
+const OnboardingPanel = View as any;
+const OnboardingTouchable = TouchableOpacity as any;
+const OnboardingTextInput = TextInput as any;
