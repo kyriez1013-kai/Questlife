@@ -6,6 +6,9 @@ import type {
   QuantInterpretationScenarioId,
 } from './personalTerminalPresentation';
 import type { QuantInterpretationBundle } from './quantInterpretation';
+// Node's built-in TypeScript test runner requires the extension; Metro resolves it normally.
+// @ts-expect-error Test-compatible TypeScript module specifier.
+import { buildHistoricalActionEvents } from './quantInterpretationPresentation.ts';
 
 const NullableNumber = z.number().finite().nullable();
 const Status = z.enum(['AVAILABLE', 'INSUFFICIENT']);
@@ -265,6 +268,8 @@ function stage(status: 'AVAILABLE' | 'INSUFFICIENT', count: number) {
 
 export function adaptQuantInterpretationPayload(input: unknown): PersonalTerminalModel {
   const payload = Payload.parse(input);
+  const interpretation = payload.interpretation as QuantInterpretationBundle;
+  const historicalActionEvents = buildHistoricalActionEvents(interpretation);
   const load = payload.series.find((row) => row.constructKey === 'execution.load')?.observations.map((row) => ({
     timestamp: row.timestamp,
     value: row.value,
@@ -284,7 +289,7 @@ export function adaptQuantInterpretationPayload(input: unknown): PersonalTermina
       provenance: 'derived_fixture',
     })),
     load,
-    events: [],
+    events: historicalActionEvents,
     baseline: row.baseline,
     limitation: i18n('quantInterpretationSeriesLimitation'),
     constructKey: row.constructKey,
@@ -339,7 +344,7 @@ export function adaptQuantInterpretationPayload(input: unknown): PersonalTermina
       containsRealUserData: false,
     },
     nextAction: i18n('quantInterpretationOpenDecisionSupport'),
-    interpretation: payload.interpretation as QuantInterpretationBundle,
+    interpretation,
     interpretationScenario: scenarioId,
   };
 }

@@ -29,6 +29,7 @@ scenarios.forEach((scenario) => {
   assert.equal(model.interpretation?.decision_support.handoff_authority, 'today_decision');
   assert.equal(model.interpretation?.decision_support.automatic_execution, false);
   assert.equal(model.series.some((row) => row.constructKey === 'state.focus'), true);
+  assert.equal(model.series.every((row) => row.events.every((event) => event.sourceIds.length > 0)), true);
 });
 
 const conflict = adaptQuantInterpretationPayload(load('conflicting'));
@@ -40,6 +41,8 @@ const insufficient = adaptQuantInterpretationPayload(load('insufficient'));
 assert.equal(insufficient.interpretation?.driver_analysis.status, 'INSUFFICIENT');
 assert.equal(insufficient.interpretation?.decision_support.leading_candidate_id, 'decision:gather-information');
 assert.equal(insufficient.interpretation?.decision_support.next_useful_observation, 'observe:sleep.duration');
+const exercise = adaptQuantInterpretationPayload(load('exercise_branch'));
+assert.equal(exercise.series[0].events.length > 0, true);
 
 const realData = load('conflicting');
 realData.containsRealUserData = true;
