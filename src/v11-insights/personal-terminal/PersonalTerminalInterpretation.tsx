@@ -1,10 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import Svg, { Circle, Line, Path, Polygon } from 'react-native-svg';
 import type { Lang } from '../../i18n';
 import { t } from '../../i18n';
 import type { V11ThemeTokens } from '../../v11/tokens';
 import PersonalTerminalIcon from './PersonalTerminalIcon';
+import type {
+  PersonalTerminalSeries,
+} from './personalTerminalPresentation';
+import {
+  buildDecisionPresentation,
+  buildDriverTimeline,
+  buildInterpretationOperatorOptions,
+  buildScenarioComparisonPresentation,
+  similarPeriodOutcome,
+  type QuantInterpretationOperatorAction,
+} from './quantInterpretationPresentation';
+import {
+  DriverTimeline,
+  ScenarioBranchVisual,
+} from './PersonalTerminalInterpretationVisuals';
 import type {
   QuantDecisionCandidate,
   QuantDriverCandidate,
@@ -60,6 +75,7 @@ function evidenceStatus(language: Lang, value: QuantDriverCandidate['evidence_st
 }
 
 function actionLabel(language: Lang, value: string) {
+  if (value === 'gather_information') return t(language, 'quantInterpretationAction_gather_more_information');
   return t(language, `quantInterpretationAction_${value.replace(/[^a-zA-Z0-9]+/g, '_')}`);
 }
 
@@ -73,14 +89,52 @@ function unitLabel(language: Lang, value: string) {
   return value;
 }
 
-function dominantDriver(bundle: QuantInterpretationBundle) {
-  return bundle.driver_analysis.candidates[0] ?? null;
+function codeKey(prefix: string, value: string) {
+  return `${prefix}_${value.replace(/[^a-zA-Z0-9]+/g, '_')}`;
 }
 
-function leadingDecision(bundle: QuantInterpretationBundle) {
-  return bundle.decision_support.candidates.find(
-    (candidate) => candidate.candidate_id === bundle.decision_support.leading_candidate_id,
-  ) ?? null;
+function temporalRelationship(language: Lang, value: string) {
+  const days = value.match(/-> P(\d+)D ->/)?.[1];
+  if (days) return template(language, 'quantInterpretationPrecedesTargetDays', { days });
+  return t(language, 'quantInterpretationTemporalRelationshipUnavailable');
+}
+
+function rankingReason(language: Lang, candidate: QuantDriverCandidate) {
+  if (candidate.ranking_reason.startsWith('registered_signal:')) {
+    return template(language, 'quantInterpretationRankingReasonRegistered', {
+      rank: candidate.rank,
+      status: evidenceStatus(language, candidate.evidence_status),
+    });
+  }
+  return t(language, 'quantInterpretationRankingReasonConservative');
+}
+
+function totalMissing(candidate: QuantDriverCandidate) {
+  return Object.values(candidate.missingness).reduce((sum, value) => sum + value, 0);
+}
+
+function driverDirection(language: Lang, value: number | null) {
+  if (value == null) return t(language, 'quantInterpretationDirectionUnknown');
+  if (value > 0) return t(language, 'quantInterpretationDirectionHigher');
+  if (value < 0) return t(language, 'quantInterpretationDirectionLower');
+  return t(language, 'quantInterpretationDirectionStable');
+}
+
+function interpretationCode(language: Lang, value: string) {
+  return t(language, codeKey('quantInterpretationCode', value));
+}
+
+function alternativeExplanation(language: Lang, value: string) {
+  return t(language, codeKey('quantInterpretationAlternative', value));
+}
+
+function uncertaintyLabel(language: Lang, value: string) {
+  if (value.startsWith('observe:')) return observationLabel(language, value);
+  return interpretationCode(language, value);
+}
+
+function dominantDriver(bundle: QuantInterpretationBundle) {
+  return bundle.driver_analysis.candidates[0] ?? null;
 }
 
 function DriverEvidenceBar({ candidate }: { candidate: QuantDriverCandidate }) {
@@ -149,6 +203,7 @@ function SimilarPeriodRow({
   period: QuantSimilarPeriod;
   theme: V11ThemeTokens;
 }) {
+  const outcome = similarPeriodOutcome(period);
   const values = period.subsequent_trajectory.map((point) => point.baseline_deviation).filter((value): value is number => value != null);
   const path = values.length > 1
     ? values.map((value, index) => {
@@ -168,8 +223,18 @@ function SimilarPeriodRow({
         <Text numberOfLines={1} style={{ color: theme.text.secondary }}>
           {template(language, 'quantInterpretationSimilarityDistance', { distance: number(period.distance, 2) })}
         </Text>
-        <Text numberOfLines={1} style={{ color: theme.text.metadata }}>
-          {period.matching_feature_keys.slice(0, 3).map((key) => interpretationConstruct(language, key)).join(' · ')}
+        <Text style={{ color: theme.text.metadata }}>
+          {t(language, 'quantInterpretationSimilarityBasis')}: {period.matching_feature_keys.slice(0, 3).map((key) => interpretationConstruct(language, key)).join(' · ')}
+        </Text>
+        <Text style={{ color: theme.text.metadata }}>
+          {t(language, 'quantInterpretationMajorDifferences')}: {period.different_feature_keys.length
+            ? period.different_feature_keys.slice(0, 2).map((key) => interpretationConstruct(language, key)).join(' · ')
+            : t(language, 'quantInterpretationNoMajorRecordedDifference')}
+        </Text>
+        <Text style={{ color: theme.text.secondary }}>
+          {t(language, 'quantInterpretationWhatFollowed')}: {outcome.change == null
+            ? t(language, 'quantInterpretationFollowupUnavailable')
+            : template(language, 'quantInterpretationFollowupChange', { change: signed(outcome.change) })}
         </Text>
       </WebView>
       <PersonalTerminalIcon color={theme.text.secondary} name="open" size={14} />
@@ -271,9 +336,10 @@ function ClaimText({ claim, language, theme }: { claim: QuantInterpretationClaim
   } else if (claim.statement_key === 'historical_analogue_trajectory') {
     body = template(language, 'quantInterpretationClaimFollowed', { count: Number(values.episode_count || 0) });
   } else if (claim.statement_key === 'current_evidence_risk_tradeoff') {
-    body = template(language, 'quantInterpretationClaimDecision', {
-      action: actionLabel(language, String(values.candidate_id || '').replace(/^decision:/, '').replace(/-/g, '_')),
-    });
+    const action = String(values.candidate_id || '').replace(/^decision:/, '').replace(/-/g, '_');
+    body = action === 'gather_information' || action === 'gather_more_information'
+      ? t(language, 'quantInterpretationClaimGatherInformation')
+      : template(language, 'quantInterpretationClaimDecision', { action: actionLabel(language, action) });
   }
   return (
     <WebView dataSet={{ 'quant-interpretation-role': 'claim-row' }}>
@@ -311,6 +377,15 @@ function DecisionRow({
           analogues: candidate.analogue_period_ids.length,
         })}
       </Text>
+      <Text style={{ color: theme.text.secondary }}>
+        {t(language, 'quantInterpretationOutcomeToObserve')}: {observationLabel(language, candidate.outcome_to_observe)}
+      </Text>
+      <Text style={{ color: theme.text.metadata }}>
+        {t(language, 'quantInterpretationDownside')}: {t(language, codeKey('quantInterpretationCode', candidate.downside_risk))}
+      </Text>
+      <Text style={{ color: theme.text.metadata }}>
+        {t(language, 'quantInterpretationReversibility')}: {t(language, codeKey('quantInterpretationCode', candidate.reversibility))}
+      </Text>
       <Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationActionNotOptimal')}</Text>
     </WebView>
   );
@@ -320,21 +395,16 @@ export function PersonalTerminalInterpretationStrip({
   bundle,
   language,
   onOpen,
+  onSelectDriver,
   theme,
 }: {
   bundle: QuantInterpretationBundle;
   language: Lang;
   onOpen: (view: QuantInterpretationView) => void;
+  onSelectDriver: (candidate: QuantDriverCandidate) => void;
   theme: V11ThemeTokens;
 }) {
   const driver = dominantDriver(bundle);
-  const decision = leadingDecision(bundle);
-  const tools: Array<{ id: QuantInterpretationView; icon: 'signal' | 'range' | 'chart' | 'decision'; value: string }> = [
-    { id: 'drivers', icon: 'signal', value: driver ? interpretationConstruct(language, driver.driver_construct) : t(language, 'quantInterpretationInsufficientShort') },
-    { id: 'similar', icon: 'range', value: String(bundle.similar_periods.periods.length) },
-    { id: 'recovery', icon: 'chart', value: String(bundle.recovery_trajectory.episodes.length) },
-    { id: 'decision', icon: 'decision', value: decision ? actionLabel(language, decision.action_key) : t(language, 'quantInterpretationInsufficientShort') },
-  ];
   return (
     <WebView dataSet={{ 'quant-interpretation-role': 'strip' }}>
       <WebPressable accessibilityRole="button" dataSet={{ 'quant-interpretation-role': 'strip-heading' }} onPress={() => onOpen('analyst')}>
@@ -351,15 +421,23 @@ export function PersonalTerminalInterpretationStrip({
         </WebView>
         <PersonalTerminalIcon color={theme.text.secondary} name="open" size={14} />
       </WebPressable>
-      <WebView dataSet={{ 'quant-interpretation-role': 'tool-grid' }}>
-        {tools.map((tool) => (
-          <WebPressable accessibilityRole="button" key={tool.id} onPress={() => onOpen(tool.id)}>
-            <PersonalTerminalIcon color={theme.text.secondary} name={tool.icon} size={15} />
-            <Text style={{ color: theme.text.metadata }}>{t(language, `quantInterpretationTool_${tool.id}`)}</Text>
-            <Text numberOfLines={1} style={{ color: theme.text.primary }}>{tool.value}</Text>
-          </WebPressable>
-        ))}
-      </WebView>
+      {driver ? (
+        <WebPressable accessibilityRole="button" dataSet={{ 'quant-interpretation-role': 'driver-cue' }} onPress={() => onSelectDriver(driver)}>
+          <PersonalTerminalIcon color={theme.text.secondary} name="signal" size={15} />
+          <WebView>
+            <Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationStrongestCurrentFit')}</Text>
+            <Text numberOfLines={1} style={{ color: theme.text.primary }}>{interpretationConstruct(language, driver.driver_construct)}</Text>
+            <Text numberOfLines={1} style={{ color: theme.text.secondary }}>{evidenceStatus(language, driver.evidence_status)}</Text>
+          </WebView>
+          <PersonalTerminalIcon color={theme.text.secondary} name="open" size={14} />
+        </WebPressable>
+      ) : (
+        <WebPressable accessibilityRole="button" dataSet={{ 'quant-interpretation-role': 'driver-cue' }} onPress={() => onOpen('next')}>
+          <PersonalTerminalIcon color={theme.text.secondary} name="research" size={15} />
+          <Text style={{ color: theme.text.primary }}>{t(language, 'quantInterpretationInsufficientSummary')}</Text>
+          <PersonalTerminalIcon color={theme.text.secondary} name="open" size={14} />
+        </WebPressable>
+      )}
     </WebView>
   );
 }
@@ -368,16 +446,32 @@ export function PersonalTerminalInterpretationDesktop({
   bundle,
   language,
   onOpen,
+  onOpenToday,
+  onOperate,
+  onSetAnalogueEnvelope,
   onSelectDriver,
+  onSelectPeriod,
+  onReturnToCurrent,
+  returnToCurrentAvailable,
+  series,
   theme,
 }: {
   bundle: QuantInterpretationBundle;
   language: Lang;
   onOpen: (view: QuantInterpretationView) => void;
   onSelectDriver: (candidate: QuantDriverCandidate) => void;
+  onSelectPeriod: (period: QuantSimilarPeriod) => void;
+  onOpenToday: () => void;
+  onOperate: (action: QuantInterpretationOperatorAction) => void;
+  onSetAnalogueEnvelope: (visible: boolean) => void;
+  onReturnToCurrent: () => void;
+  returnToCurrentAvailable: boolean;
+  series: PersonalTerminalSeries[];
   theme: V11ThemeTokens;
 }) {
-  const decision = leadingDecision(bundle);
+  const [activeView, setActiveView] = useState<'drivers' | 'driver' | 'similar' | 'recovery' | 'decision'>('drivers');
+  const [selectedDriverId, setSelectedDriverId] = useState<string | undefined>();
+  const tabs: Array<'drivers' | 'similar' | 'recovery' | 'decision'> = ['drivers', 'similar', 'recovery', 'decision'];
   return (
     <WebView dataSet={{ 'quant-interpretation-role': 'desktop-panel' }}>
       <WebPressable accessibilityRole="button" dataSet={{ 'quant-interpretation-role': 'desktop-heading' }} onPress={() => onOpen('analyst')}>
@@ -387,18 +481,43 @@ export function PersonalTerminalInterpretationDesktop({
         </WebView>
         <PersonalTerminalIcon color={theme.text.secondary} name="open" size={14} />
       </WebPressable>
-      <Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationCandidateDrivers')}</Text>
-      {bundle.driver_analysis.candidates.slice(0, 3).map((candidate) => (
-        <DriverRow candidate={candidate} key={candidate.candidate_id} language={language} onPress={() => onSelectDriver(candidate)} theme={theme} />
-      ))}
-      <WebPressable accessibilityRole="button" dataSet={{ 'quant-interpretation-role': 'desktop-summary-row' }} onPress={() => onOpen('similar')}>
-        <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationSimilarPeriods')}</Text><Text style={{ color: theme.text.primary }}>{bundle.similar_periods.periods.length}</Text></WebView>
-        <PersonalTerminalIcon color={theme.text.secondary} name="open" size={14} />
-      </WebPressable>
-      <WebPressable accessibilityRole="button" dataSet={{ 'quant-interpretation-role': 'desktop-summary-row' }} onPress={() => onOpen('decision')}>
-        <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationDecisionSupport')}</Text><Text numberOfLines={2} style={{ color: theme.text.primary }}>{decision ? actionLabel(language, decision.action_key) : t(language, 'quantInterpretationInsufficientShort')}</Text></WebView>
-        <PersonalTerminalIcon color={theme.text.secondary} name="open" size={14} />
-      </WebPressable>
+      <WebView dataSet={{ 'quant-interpretation-role': 'desktop-tabs' }}>
+        {tabs.map((tab) => (
+          <WebPressable
+            accessibilityRole="tab"
+            accessibilityState={{ selected: activeView === tab || (tab === 'drivers' && activeView === 'driver') }}
+            dataSet={{ 'quant-interpretation-selected': activeView === tab || (tab === 'drivers' && activeView === 'driver') ? 'true' : 'false' }}
+            key={tab}
+            onPress={() => {
+              setActiveView(tab);
+              onSetAnalogueEnvelope(tab === 'recovery');
+            }}
+          >
+            <Text style={{ color: activeView === tab || (tab === 'drivers' && activeView === 'driver') ? theme.text.primary : theme.text.metadata }}>
+              {t(language, `quantInterpretationDesktopTab_${tab}`)}
+            </Text>
+          </WebPressable>
+        ))}
+      </WebView>
+      <PersonalTerminalInterpretationInspector
+        bundle={bundle}
+        language={language}
+        onOpen={onOpen}
+        onOpenToday={onOpenToday}
+        onOperate={onOperate}
+        onReturnToCurrent={onReturnToCurrent}
+        onSelectDriver={(candidate) => {
+          setSelectedDriverId(candidate.candidate_id);
+          setActiveView('driver');
+          onSelectDriver(candidate);
+        }}
+        onSelectPeriod={onSelectPeriod}
+        returnToCurrentAvailable={returnToCurrentAvailable}
+        selectedDriverId={selectedDriverId}
+        series={series}
+        theme={theme}
+        view={activeView}
+      />
     </WebView>
   );
 }
@@ -408,9 +527,13 @@ export function PersonalTerminalInterpretationInspector({
   language,
   onOpen,
   onOpenToday,
+  onOperate,
+  onReturnToCurrent,
   onSelectDriver,
   onSelectPeriod,
+  returnToCurrentAvailable,
   selectedDriverId,
+  series,
   theme,
   view,
 }: {
@@ -418,14 +541,19 @@ export function PersonalTerminalInterpretationInspector({
   language: Lang;
   onOpen: (view: QuantInterpretationView) => void;
   onOpenToday: () => void;
+  onOperate: (action: QuantInterpretationOperatorAction) => void;
+  onReturnToCurrent: () => void;
   onSelectDriver: (candidate: QuantDriverCandidate) => void;
   onSelectPeriod: (period: QuantSimilarPeriod) => void;
+  returnToCurrentAvailable: boolean;
   selectedDriverId?: string;
+  series: PersonalTerminalSeries[];
   theme: V11ThemeTokens;
   view: QuantInterpretationView;
 }) {
   const selectedDriver = bundle.driver_analysis.candidates.find((candidate) => candidate.candidate_id === selectedDriverId)
     ?? dominantDriver(bundle);
+  const timeline = buildDriverTimeline(bundle, series, selectedDriver?.candidate_id);
   if (view === 'driver' && selectedDriver) {
     return (
       <WebView dataSet={{ 'quant-interpretation-role': 'inspector' }}>
@@ -438,13 +566,27 @@ export function PersonalTerminalInterpretationInspector({
         <WebView dataSet={{ 'quant-interpretation-role': 'fact-grid' }}>
           <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationRecent')}</Text><Text style={{ color: theme.text.primary }}>{number(selectedDriver.observed_recent_value)} {unitLabel(language, selectedDriver.unit)}</Text></WebView>
           <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationReference')}</Text><Text style={{ color: theme.text.primary }}>{number(selectedDriver.observed_reference_value)} {unitLabel(language, selectedDriver.unit)}</Text></WebView>
+          <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationDirection')}</Text><Text style={{ color: theme.text.primary }}>{driverDirection(language, selectedDriver.observed_recent_change)}</Text></WebView>
+          <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationTiming')}</Text><Text style={{ color: theme.text.primary }}>{temporalRelationship(language, selectedDriver.temporal_relationship)}</Text></WebView>
           <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationSupport')}</Text><Text style={{ color: theme.text.primary }}>{selectedDriver.support_count}</Text></WebView>
           <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationCounterexamples')}</Text><Text style={{ color: theme.text.primary }}>{selectedDriver.counterexample_count}</Text></WebView>
+          <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationIndependentPeriods')}</Text><Text style={{ color: theme.text.primary }}>{selectedDriver.independent_period_count}</Text></WebView>
+          <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationMissingness')}</Text><Text style={{ color: theme.text.primary }}>{totalMissing(selectedDriver)}</Text></WebView>
+        </WebView>
+        <DriverTimeline language={language} theme={theme} timeline={timeline} />
+        <WebView dataSet={{ 'quant-interpretation-role': 'ranking-reason' }}>
+          <Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationWhyRanked')}</Text>
+          <Text style={{ color: theme.text.secondary }}>{rankingReason(language, selectedDriver)}</Text>
         </WebView>
         <Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationAssociationNotCause')}</Text>
         <WebView dataSet={{ 'quant-interpretation-role': 'limitation-list' }}>
           <Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationAlternativeExplanations')}</Text>
-          <Text style={{ color: theme.text.secondary }}>{t(language, 'quantInterpretationAlternativeExplanationsBody')}</Text>
+          <Text style={{ color: theme.text.secondary }}>
+            {selectedDriver.alternative_explanations.length
+              ? selectedDriver.alternative_explanations.map((value) => alternativeExplanation(language, value)).join(' · ')
+              : t(language, 'quantInterpretationAlternativeExplanationsBody')}
+          </Text>
+          {selectedDriver.limitations.length ? <Text style={{ color: theme.text.metadata }}>{selectedDriver.limitations.map((value) => interpretationCode(language, value)).join(' · ')}</Text> : null}
         </WebView>
       </WebView>
     );
@@ -457,6 +599,7 @@ export function PersonalTerminalInterpretationInspector({
           <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationReference')}</Text><Text style={{ color: theme.text.primary }}>{number(bundle.driver_analysis.target_movement.baseline_value)}</Text></WebView>
           <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationDeviation')}</Text><Text style={{ color: theme.text.primary }}>{signed(bundle.driver_analysis.target_movement.deviation)}</Text></WebView>
         </WebView>
+        <DriverTimeline language={language} theme={theme} timeline={timeline} />
         {bundle.driver_analysis.candidates.map((candidate) => <DriverRow candidate={candidate} key={candidate.candidate_id} language={language} onPress={() => onSelectDriver(candidate)} theme={theme} />)}
         <Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationUnknownFactorRetained')}</Text>
       </WebView>
@@ -466,6 +609,12 @@ export function PersonalTerminalInterpretationInspector({
     return (
       <WebView dataSet={{ 'quant-interpretation-role': 'inspector' }}>
         <Text style={{ color: theme.text.secondary }}>{t(language, 'quantInterpretationSimilarMethod')}</Text>
+        {returnToCurrentAvailable ? (
+          <WebPressable accessibilityRole="button" dataSet={{ 'quant-interpretation-role': 'return-current' }} onPress={onReturnToCurrent}>
+            <PersonalTerminalIcon color={theme.text.primary} name="reset" size={14} />
+            <Text style={{ color: theme.text.primary }}>{t(language, 'quantInterpretationReturnToCurrent')}</Text>
+          </WebPressable>
+        ) : null}
         {bundle.similar_periods.periods.length
           ? bundle.similar_periods.periods.map((period) => <SimilarPeriodRow key={period.period_id} language={language} onPress={() => onSelectPeriod(period)} period={period} theme={theme} />)
           : <WebView dataSet={{ 'quant-interpretation-role': 'empty-state' }}><Text style={{ color: theme.text.primary }}>{t(language, 'quantInterpretationNoSimilarPeriods')}</Text><Text style={{ color: theme.text.secondary }}>{t(language, 'quantInterpretationNoSimilarPeriodsBody')}</Text></WebView>}
@@ -483,30 +632,72 @@ export function PersonalTerminalInterpretationInspector({
     <WebView dataSet={{ 'quant-interpretation-role': 'inspector' }}>
       <Text style={{ color: theme.text.secondary }}>{t(language, 'quantInterpretationScenarioDescription')}</Text>
       <WebView dataSet={{ 'quant-interpretation-role': 'scenario-grid' }}>
-        {bundle.scenario_comparison.branches.map((branch) => (
-          <WebView key={branch.branch_id}>
-            <Text style={{ color: theme.text.metadata }}>{actionLabel(language, branch.action_value)}</Text>
-            <Text style={{ color: theme.text.primary }}>{signed(branch.median_outcome_change)}</Text>
-            <Text style={{ color: theme.text.secondary }}>{template(language, 'quantInterpretationEpisodeCount', { count: branch.comparable_episode_count })}</Text>
-            <Text style={{ color: theme.text.metadata }}>{template(language, 'quantInterpretationNearReferenceDays', { days: number(branch.median_days_to_near_reference) })}</Text>
-          </WebView>
+        {buildScenarioComparisonPresentation(bundle).map((branch) => (
+          <ScenarioBranchVisual branch={branch} key={branch.actionKey} language={language} theme={theme} />
         ))}
+      </WebView>
+      <WebView dataSet={{ 'quant-interpretation-role': 'scenario-legend' }}>
+        <Text style={{ color: theme.text.secondary }}>{t(language, 'quantInterpretationScenarioOutcomeAxis')}</Text>
+        <Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationScenarioLegend')}</Text>
       </WebView>
       <Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationScenarioNonCausal')}</Text>
       <Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationSelectionBias')}</Text>
+      <WebPressable accessibilityRole="button" dataSet={{ 'quant-interpretation-role': 'primary-sheet-action' }} onPress={() => onOpen('decision')}><Text style={{ color: theme.text.primary }}>{t(language, 'quantInterpretationReviewDecisionSupport')}</Text></WebPressable>
     </WebView>
   );
-  if (view === 'decision') return (
-    <WebView dataSet={{ 'quant-interpretation-role': 'inspector' }}>
-      {bundle.decision_support.candidates.map((candidate) => <DecisionRow candidate={candidate} key={candidate.candidate_id} language={language} leading={candidate.candidate_id === bundle.decision_support.leading_candidate_id} theme={theme} />)}
-      <WebPressable accessibilityRole="button" dataSet={{ 'quant-interpretation-role': 'next-observation' }} onPress={() => onOpen('next')}>
-        <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationNextUsefulObservation')}</Text><Text style={{ color: theme.text.primary }}>{observationLabel(language, bundle.decision_support.next_useful_observation)}</Text></WebView>
-        <PersonalTerminalIcon color={theme.text.secondary} name="open" size={14} />
-      </WebPressable>
-      <WebPressable accessibilityRole="button" dataSet={{ 'quant-interpretation-role': 'primary-sheet-action' }} onPress={onOpenToday}><Text style={{ color: theme.text.primary }}>{t(language, 'quantInterpretationOpenTodayDecision')}</Text></WebPressable>
-      <Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationTodayRetainsAuthority')}</Text>
-    </WebView>
-  );
+  if (view === 'decision') {
+    const decision = buildDecisionPresentation(bundle);
+    const movement = bundle.driver_analysis.target_movement;
+    return (
+      <WebView dataSet={{ 'quant-interpretation-role': 'decision-support' }}>
+        <WebView dataSet={{ 'quant-interpretation-role': 'decision-section' }}>
+          <Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationCurrentState')}</Text>
+          <Text style={{ color: theme.text.primary }}>{template(language, 'quantInterpretationClaimMovement', {
+            current: number(movement.current_value),
+            baseline: number(movement.baseline_value),
+            deviation: signed(movement.deviation),
+          })}</Text>
+        </WebView>
+        <WebView dataSet={{ 'quant-interpretation-role': 'decision-section' }}>
+          <Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationBestSupportedOption')}</Text>
+          {decision.abstains || !decision.leading ? (
+            <>
+              <Text style={{ color: theme.text.primary }}>{t(language, 'quantInterpretationCannotDistinguishYet')}</Text>
+              <Text style={{ color: theme.text.secondary }}>{t(language, 'quantInterpretationAbstentionBody')}</Text>
+            </>
+          ) : <DecisionRow candidate={decision.leading} language={language} leading theme={theme} />}
+        </WebView>
+        {decision.alternatives.length ? (
+          <WebView dataSet={{ 'quant-interpretation-role': 'decision-section' }}>
+            <Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationAlternatives')}</Text>
+            {decision.alternatives.map((candidate) => <DecisionRow candidate={candidate} key={candidate.candidate_id} language={language} leading={false} theme={theme} />)}
+          </WebView>
+        ) : null}
+        <WebView dataSet={{ 'quant-interpretation-role': 'decision-section' }}>
+          <Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationWhy')}</Text>
+          <Text style={{ color: theme.text.secondary }}>{decision.leading
+            ? template(language, 'quantInterpretationDecisionEvidence', {
+              evidence: decision.leading.evidence_ids.length,
+              analogues: decision.leading.analogue_period_ids.length,
+            })
+            : t(language, 'quantInterpretationWhyAbstain')}</Text>
+        </WebView>
+        <WebView dataSet={{ 'quant-interpretation-role': 'decision-section' }}>
+          <Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationUncertainty')}</Text>
+          {[...decision.uncertaintyCodes, ...decision.missingInformation].slice(0, 5).map((value) => (
+            <Text key={value} style={{ color: theme.text.secondary }}>· {uncertaintyLabel(language, value)}</Text>
+          ))}
+        </WebView>
+        <WebPressable accessibilityRole="button" dataSet={{ 'quant-interpretation-role': 'next-observation' }} onPress={() => onOpen('next')}>
+          <WebView><Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationNextUsefulObservation')}</Text><Text style={{ color: theme.text.primary }}>{observationLabel(language, bundle.decision_support.next_useful_observation)}</Text></WebView>
+          <PersonalTerminalIcon color={theme.text.secondary} name="open" size={14} />
+        </WebPressable>
+        <WebPressable accessibilityRole="button" dataSet={{ 'quant-interpretation-role': 'secondary-sheet-action' }} onPress={() => onOpen('scenario')}><Text style={{ color: theme.text.primary }}>{t(language, 'quantInterpretationCompareObservedActions')}</Text></WebPressable>
+        <WebPressable accessibilityRole="button" dataSet={{ 'quant-interpretation-role': 'primary-sheet-action' }} onPress={onOpenToday}><Text style={{ color: theme.text.primary }}>{t(language, 'quantInterpretationSendToToday')}</Text></WebPressable>
+        <Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationTodayRetainsAuthority')}</Text>
+      </WebView>
+    );
+  }
   if (view === 'next') return (
     <WebView dataSet={{ 'quant-interpretation-role': 'next-observation-detail' }}>
       <PersonalTerminalIcon color={theme.glow.primary} name="research" size={24} />
@@ -518,6 +709,29 @@ export function PersonalTerminalInterpretationInspector({
   );
   return (
     <WebView dataSet={{ 'quant-interpretation-role': 'inspector' }}>
+      <WebView dataSet={{ 'quant-interpretation-role': 'operator' }}>
+        <WebView dataSet={{ 'quant-interpretation-role': 'section-heading' }}>
+          <WebView>
+            <Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationChartOperator')}</Text>
+            <Text style={{ color: theme.text.primary }}>{t(language, 'quantInterpretationOperateWorkspace')}</Text>
+          </WebView>
+        </WebView>
+        <WebView dataSet={{ 'quant-interpretation-role': 'operator-grid' }}>
+          {buildInterpretationOperatorOptions(bundle).map((option) => (
+            <WebPressable
+              accessibilityRole="button"
+              accessibilityState={{ disabled: !option.enabled }}
+              dataSet={{ 'quant-interpretation-enabled': option.enabled ? 'true' : 'false' }}
+              disabled={!option.enabled}
+              key={option.id}
+              onPress={() => onOperate(option.id)}
+            >
+              <PersonalTerminalIcon color={option.enabled ? theme.text.secondary : theme.text.metadata} name={option.id === 'show_recovery' ? 'chart' : option.id === 'compare_actions' ? 'decision' : option.id === 'next_observation' ? 'research' : option.id === 'find_similar' || option.id === 'compare_previous' ? 'range' : 'signal'} size={15} />
+              <Text style={{ color: option.enabled ? theme.text.primary : theme.text.metadata }}>{t(language, `quantInterpretationOperator_${option.id}`)}</Text>
+            </WebPressable>
+          ))}
+        </WebView>
+      </WebView>
       {bundle.brief.claims.map((claim) => <ClaimText claim={claim} key={claim.claim_id} language={language} theme={theme} />)}
       <WebPressable accessibilityRole="button" dataSet={{ 'quant-interpretation-role': 'primary-sheet-action' }} onPress={() => onOpen('decision')}><Text style={{ color: theme.text.primary }}>{t(language, 'quantInterpretationReviewDecisionSupport')}</Text></WebPressable>
       <Text style={{ color: theme.text.metadata }}>{t(language, 'quantInterpretationNoLlmNoCausalIdentification')}</Text>

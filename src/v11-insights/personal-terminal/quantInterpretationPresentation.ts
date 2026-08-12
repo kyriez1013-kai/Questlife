@@ -80,6 +80,11 @@ export type QuantInterpretationOperatorOption = {
   enabled: boolean;
 };
 
+export type QuantInterpretationOperatorIntent =
+  | { kind: 'driver'; driverId: string }
+  | { kind: 'previous_period' }
+  | { kind: 'sheet'; view: 'drivers' | 'similar' | 'recovery' | 'scenario' | 'decision' | 'next'; showAnalogueEnvelope: boolean };
+
 function day(value: string) {
   return value.slice(0, 10);
 }
@@ -209,7 +214,9 @@ export function buildDecisionPresentation(bundle: QuantInterpretationBundle): Qu
   const abstains = !leading
     || leading.status === 'INSUFFICIENT_EVIDENCE'
     || leading.action_key === 'gather_more_information';
-  const alternatives = bundle.decision_support.candidates.filter((candidate) => candidate.candidate_id !== leading?.candidate_id);
+  const alternatives = bundle.decision_support.candidates.filter((candidate) => (
+    candidate.candidate_id !== leading?.candidate_id && candidate.action_key !== 'gather_more_information'
+  ));
   return {
     abstains,
     leading: abstains ? null : leading,
@@ -248,6 +255,40 @@ export function buildInterpretationOperatorOptions(bundle: QuantInterpretationBu
     { id: 'show_unknowns', enabled: true },
     { id: 'next_observation', enabled: true },
   ];
+}
+
+export function resolveInterpretationOperatorIntent(
+  bundle: QuantInterpretationBundle,
+  action: QuantInterpretationOperatorAction,
+): QuantInterpretationOperatorIntent {
+  const primaryDriver = bundle.driver_analysis.candidates[0] ?? null;
+  if (action === 'why_move' || action === 'show_drivers') {
+    return primaryDriver
+      ? { kind: 'driver', driverId: primaryDriver.candidate_id }
+      : { kind: 'sheet', view: 'drivers', showAnalogueEnvelope: false };
+  }
+  if (action === 'compare_previous') return { kind: 'previous_period' };
+  if (action === 'find_similar') return { kind: 'sheet', view: 'similar', showAnalogueEnvelope: false };
+  if (action === 'show_recovery') return { kind: 'sheet', view: 'recovery', showAnalogueEnvelope: true };
+  if (action === 'compare_actions') return { kind: 'sheet', view: 'scenario', showAnalogueEnvelope: false };
+  return {
+    kind: 'sheet',
+    view: action === 'next_observation' ? 'next' : 'decision',
+    showAnalogueEnvelope: false,
+  };
+}
+
+export function buildPreviousInterpretationRange(windowStart: string, windowEnd: string) {
+  const currentStart = new Date(windowStart);
+  const currentEnd = new Date(windowEnd);
+  const span = Math.max(DAY_MS, currentEnd.getTime() - currentStart.getTime());
+  const previousEnd = new Date(currentStart.getTime() - DAY_MS);
+  const previousStart = new Date(previousEnd.getTime() - span);
+  return {
+    kind: 'calendar_range' as const,
+    start: previousStart.toISOString().slice(0, 10),
+    end: previousEnd.toISOString().slice(0, 10),
+  };
 }
 
 export function buildHistoricalActionEvents(bundle: QuantInterpretationBundle): PersonalTerminalEvent[] {

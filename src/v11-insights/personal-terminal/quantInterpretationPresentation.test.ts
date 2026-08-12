@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 // @ts-expect-error Test-only Node TypeScript entry.
 import { adaptQuantInterpretationPayload } from './quantInterpretationAdapter.ts';
 // @ts-expect-error Test-only Node TypeScript entry.
-import { buildDecisionPresentation, buildDriverTimeline, buildHistoricalActionEvents, buildInterpretationOperatorOptions, buildScenarioComparisonPresentation, similarPeriodOutcome } from './quantInterpretationPresentation.ts';
+import { buildDecisionPresentation, buildDriverTimeline, buildHistoricalActionEvents, buildInterpretationOperatorOptions, buildPreviousInterpretationRange, buildScenarioComparisonPresentation, resolveInterpretationOperatorIntent, similarPeriodOutcome } from './quantInterpretationPresentation.ts';
 
 const fixtureDir = resolve(dirname(fileURLToPath(import.meta.url)), 'interpretation-fixtures');
 const load = (name: string) => JSON.parse(readFileSync(resolve(fixtureDir, `${name}.json`), 'utf8'));
@@ -45,6 +45,25 @@ assert.equal(buildDecisionPresentation(insufficient).leading, null);
 const actions = buildInterpretationOperatorOptions(bundle);
 assert.equal(actions.find((row) => row.id === 'show_recovery')?.enabled, true);
 assert.equal(actions.find((row) => row.id === 'find_similar')?.enabled, true);
+assert.deepEqual(resolveInterpretationOperatorIntent(bundle, 'show_drivers'), {
+  kind: 'driver',
+  driverId: bundle.driver_analysis.candidates[0]?.candidate_id,
+});
+assert.deepEqual(resolveInterpretationOperatorIntent(bundle, 'find_similar'), {
+  kind: 'sheet',
+  view: 'similar',
+  showAnalogueEnvelope: false,
+});
+assert.deepEqual(resolveInterpretationOperatorIntent(bundle, 'show_recovery'), {
+  kind: 'sheet',
+  view: 'recovery',
+  showAnalogueEnvelope: true,
+});
+assert.deepEqual(buildPreviousInterpretationRange('2025-04-28T00:00:00.000Z', '2025-05-01T00:00:00.000Z'), {
+  kind: 'calendar_range',
+  start: '2025-04-24',
+  end: '2025-04-27',
+});
 
 const events = buildHistoricalActionEvents(bundle);
 assert.equal(events.length > 0, true);

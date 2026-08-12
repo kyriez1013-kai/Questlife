@@ -42,6 +42,11 @@ import type {
 } from './personalTerminalPresentation';
 import { availableComparisonSeries } from './personalTerminalPresentation';
 import type { QuantDriverCandidate, QuantSimilarPeriod } from './quantInterpretation';
+import {
+  buildPreviousInterpretationRange,
+  resolveInterpretationOperatorIntent,
+  type QuantInterpretationOperatorAction,
+} from './quantInterpretationPresentation';
 import type {
   PersonalTerminalCatalogGroup,
   PersonalTerminalDisplayRange,
@@ -99,6 +104,13 @@ type InteractionMeasurement = {
   p95: number;
   frames: number;
   over20: number;
+};
+
+type InterpretationReturnContext = {
+  range: PersonalTerminalDisplayRange;
+  comparisonSeriesId: string | null;
+  chartHighlight: PersonalTerminalHighlightWindow | null;
+  analogueEnvelopeVisible: boolean;
 };
 
 const LAYOUT_COUNT: Record<PersonalTerminalWorkspaceLayout, number> = {
@@ -356,6 +368,7 @@ export default function PersonalTerminalWorkspaceSurface({
   const [analogueEnvelopeVisible, setAnalogueEnvelopeVisible] = useState(
     () => Boolean(model.interpretation && query().get('interpretationEnvelope') === '1'),
   );
+  const [interpretationReturnContext, setInterpretationReturnContext] = useState<InterpretationReturnContext | null>(null);
   const [watchlistEditMode, setWatchlistEditMode] = useState(false);
   const [customDays, setCustomDays] = useState('9');
   const [customObservations, setCustomObservations] = useState('12');
@@ -565,7 +578,7 @@ export default function PersonalTerminalWorkspaceSurface({
     showSheet({ kind: 'interpretation', view }, `interpretation-${view}-open`);
   }, [model.interpretation, showSheet]);
 
-  const selectInterpretationDriver = useCallback((candidate: QuantDriverCandidate) => {
+  const applyInterpretationDriver = useCallback((candidate: QuantDriverCandidate) => {
     if (!model.interpretation) return;
     const driverSeries = model.series.find((series) => series.constructKey === candidate.driver_construct);
     if (driverSeries && driverSeries.id !== activeSeries.id) setComparisonSeriesId(driverSeries.id);
@@ -575,10 +588,22 @@ export default function PersonalTerminalWorkspaceSurface({
       end: model.interpretation.driver_analysis.context.window_end,
       sourceIds: candidate.evidence_ids,
     });
-    setSheet({ kind: 'interpretation', view: 'driver', driverId: candidate.candidate_id });
   }, [activeSeries?.id, model.interpretation, model.series]);
 
+  const selectInterpretationDriver = useCallback((candidate: QuantDriverCandidate) => {
+    applyInterpretationDriver(candidate);
+    setSheet({ kind: 'interpretation', view: 'driver', driverId: candidate.candidate_id });
+  }, [applyInterpretationDriver]);
+
   const selectInterpretationPeriod = useCallback((period: QuantSimilarPeriod) => {
+    if (activePane && !interpretationReturnContext) {
+      setInterpretationReturnContext({
+        range: activePane.range,
+        comparisonSeriesId,
+        chartHighlight,
+        analogueEnvelopeVisible,
+      });
+    }
     setAnalogueEnvelopeVisible(false);
     setRange({
       kind: 'calendar_range',
@@ -592,7 +617,48 @@ export default function PersonalTerminalWorkspaceSurface({
       sourceIds: period.evidence_ids,
     });
     setSheet(null);
-  }, [setRange]);
+  }, [activePane, analogueEnvelopeVisible, chartHighlight, comparisonSeriesId, interpretationReturnContext, setRange]);
+
+  const returnToInterpretationCurrent = useCallback(() => {
+    if (!interpretationReturnContext) return;
+    setRange(interpretationReturnContext.range);
+    setComparisonSeriesId(interpretationReturnContext.comparisonSeriesId);
+    setChartHighlight(interpretationReturnContext.chartHighlight);
+    setAnalogueEnvelopeVisible(interpretationReturnContext.analogueEnvelopeVisible);
+    setInterpretationReturnContext(null);
+  }, [interpretationReturnContext, setRange]);
+
+  const operateInterpretation = useCallback((action: QuantInterpretationOperatorAction) => {
+    const interpretation = model.interpretation;
+    if (!interpretation) return;
+    const intent = resolveInterpretationOperatorIntent(interpretation, action);
+    if (intent.kind === 'driver') {
+      const candidate = interpretation.driver_analysis.candidates.find((row) => row.candidate_id === intent.driverId);
+      if (candidate) selectInterpretationDriver(candidate);
+      return;
+    }
+    if (intent.kind === 'previous_period') {
+      if (!activePane) return;
+      if (!interpretationReturnContext) {
+        setInterpretationReturnContext({
+          range: activePane.range,
+          comparisonSeriesId,
+          chartHighlight,
+          analogueEnvelopeVisible,
+        });
+      }
+      const range = buildPreviousInterpretationRange(
+        interpretation.driver_analysis.context.window_start,
+        interpretation.driver_analysis.context.window_end,
+      );
+      setRange(range);
+      setChartHighlight({ kind: 'period', start: range.start, end: range.end, sourceIds: [] });
+      setSheet(null);
+      return;
+    }
+    if (intent.showAnalogueEnvelope) setAnalogueEnvelopeVisible(true);
+    setSheet({ kind: 'interpretation', view: intent.view });
+  }, [activePane, analogueEnvelopeVisible, chartHighlight, comparisonSeriesId, interpretationReturnContext, model.interpretation, selectInterpretationDriver, setRange]);
 
   const syncCrosshair = useCallback((sourcePaneId: string, selection: PersonalTerminalChartSelection | null) => {
     if (!activeWorkspace?.syncCrosshair || synchronizingRef.current) return;
@@ -904,6 +970,11 @@ export default function PersonalTerminalWorkspaceSurface({
                   <WebPressable accessibilityLabel={t(language, 'personalTerminalClearHighlight')} accessibilityRole="button" onPress={() => setChartHighlight(null)}>
                     <PersonalTerminalIcon color={theme.text.primary} name="close" size={13} />
                   </WebPressable>
+                  {interpretationReturnContext ? (
+                    <WebPressable accessibilityRole="button" dataSet={{ 'quant-interpretation-role': 'return-current-inline' }} onPress={returnToInterpretationCurrent}>
+                      <Text style={{ color: theme.text.primary }}>{t(language, 'quantInterpretationReturnToCurrent')}</Text>
+                    </WebPressable>
+                  ) : null}
                 </WebView>
               ) : null}
 
@@ -912,6 +983,7 @@ export default function PersonalTerminalWorkspaceSurface({
                   bundle={model.interpretation}
                   language={language}
                   onOpen={openInterpretation}
+                  onSelectDriver={selectInterpretationDriver}
                   theme={theme}
                 />
               ) : <WebView dataSet={{ 'personal-terminal-workspace-role': 'analyst-dock' }}>
@@ -961,7 +1033,14 @@ export default function PersonalTerminalWorkspaceSurface({
                 bundle={model.interpretation}
                 language={language}
                 onOpen={openInterpretation}
-                onSelectDriver={selectInterpretationDriver}
+                onOpenToday={onNextAction}
+                onOperate={operateInterpretation}
+                onReturnToCurrent={returnToInterpretationCurrent}
+                onSetAnalogueEnvelope={setAnalogueEnvelopeVisible}
+                onSelectDriver={applyInterpretationDriver}
+                onSelectPeriod={selectInterpretationPeriod}
+                returnToCurrentAvailable={interpretationReturnContext != null}
+                series={model.series}
                 theme={theme}
               />
             ) : <WebView dataSet={{ 'personal-terminal-workspace-role': 'desktop-inspector' }}>
@@ -1306,9 +1385,13 @@ export default function PersonalTerminalWorkspaceSurface({
             language={language}
             onOpen={openInterpretation}
             onOpenToday={onNextAction}
+            onOperate={operateInterpretation}
+            onReturnToCurrent={returnToInterpretationCurrent}
             onSelectDriver={selectInterpretationDriver}
             onSelectPeriod={selectInterpretationPeriod}
+            returnToCurrentAvailable={interpretationReturnContext != null}
             selectedDriverId={sheet.driverId}
+            series={model.series}
             theme={theme}
             view={sheet.view}
           />

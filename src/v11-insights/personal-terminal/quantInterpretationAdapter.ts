@@ -298,7 +298,7 @@ export function adaptQuantInterpretationPayload(input: unknown): PersonalTermina
     latestAt: row.latestAt,
     availableTimeframes: ['7D', '30D', '90D', 'ALL'],
     defaultTimeframe: '30D',
-    availableIndicators: ['baseline', 'load'],
+    availableIndicators: historicalActionEvents.length ? ['baseline', 'load', 'events'] : ['baseline', 'load'],
     chartCapabilities: {
       line: true,
       bar: true,
