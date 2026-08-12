@@ -17,7 +17,7 @@ assert.ok(mature.series.find((row) => row.id === 'market:index')?.qaDerivedIndex
 const state = mature.series.find((row) => row.id === 'market:state')!;
 const all = buildPersonalTerminalViewData(state, 'ALL', new Date('2026-08-08T20:00:00.000Z'));
 assert.ok(all.line.length >= 11, 'same daily observations aggregate into a monthly ALL view');
-assert.ok(all.candles.length > 0, 'multi-observation periods produce legitimate OHLC candles');
+assert.equal(all.candles.length, 0, 'the presentation layer does not fabricate OHLC without a Quant candle artifact');
 assert.ok(all.observations.some((row) => row.provenance === 'historical_reference'));
 assert.ok(all.observations.some((row) => row.provenance === 'questlife_confirmed'));
 const marketComparisons = availableComparisonSeries(mature, 'market:personal', 'market:state');
@@ -35,7 +35,8 @@ const onePointSeries: PersonalTerminalSeries = {
 };
 const onePoint = buildPersonalTerminalViewData(onePointSeries, '1D', new Date('2026-08-08T20:00:00.000Z'));
 assert.equal(onePoint.candles.length, 0, 'one observation never fabricates OHLC');
-assert.equal(onePoint.incompleteCandles.length, 1, 'one observation remains an explicit point');
+assert.equal(onePoint.line.length, 1, 'one observation remains an explicit line point');
+assert.equal(onePoint.incompleteCandles.length, 0, 'the presentation layer does not manufacture incomplete candle artifacts');
 
 const forming = getPersonalTerminalFixture('forming');
 const formingSeries = forming.series[0];
