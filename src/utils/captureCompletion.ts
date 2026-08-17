@@ -142,8 +142,13 @@ function routeCandidates(domain: CompletionDomain, context: CompletionContext) {
   return { goals, modules };
 }
 
-export function assessCaptureCompletion(rawText: string, entry: ParsedEntry, context: CompletionContext): CompletionAssessment {
-  const domain = inferDomain(rawText, entry);
+export function assessCaptureCompletion(
+  rawText: string,
+  entry: ParsedEntry,
+  context: CompletionContext,
+  domainOverride?: CompletionDomain,
+): CompletionAssessment {
+  const domain = domainOverride ?? inferDomain(rawText, entry);
   const fields = entry.fields || {};
   const missing = new Set<CompletionMissingField>();
   const routes = routeCandidates(domain, context);

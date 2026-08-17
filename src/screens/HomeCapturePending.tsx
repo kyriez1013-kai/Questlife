@@ -16,7 +16,7 @@ import { getQuestTheme } from '../design/tokens';
 import { getLanguage, t } from '../i18n';
 import { Category, CompletionSchema, ExecutionLog, GoalType, ParsedEntry, ProgressType, QuestModule, TaskType } from '../types';
 import QuestCard from '../components/ui/QuestCard';
-import { assessCaptureCompletion } from '../utils/captureCompletion';
+import { assessCaptureCompletion, type CompletionDomain } from '../utils/captureCompletion';
 import { getSmartRouteResult, SmartRouteResult } from '../utils/smartRouting';
 import { buildPostSaveFeedback, PostSaveFeedback } from '../utils/progressFeedback';
 import { getV11ProductLanguage, getV11ProductThemeId, isV11TodayEnabled } from '../v11/featureFlag';
@@ -43,6 +43,14 @@ const WebView = View as any;
 
 function pendingV11Theme(questTheme: ReturnType<typeof getQuestTheme>) {
   return getV11ThemeTokens(questTheme.id === 'cleanFocus' ? 'light' : 'dark');
+}
+
+function completionAssessmentDomain(schema?: CompletionSchema): CompletionDomain | undefined {
+  if (schema?.domain === 'fitness') return 'fitness';
+  if (schema?.domain === 'learning') return 'learning';
+  if (schema?.domain === 'state') return 'state';
+  if (schema?.domain === 'food') return 'food';
+  return undefined;
 }
 
 function PendingChip({
@@ -707,6 +715,9 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
   const capture = (data.rawCaptures || []).find((item) => item.id === captureId);
   const captureText = capture?.text ?? '';
   const completionSchema = capture?.parsed?.completionSchema;
+  const assessmentDomainOverride = v11TodayEnabled
+    ? completionAssessmentDomain(completionSchema)
+    : undefined;
   const effectiveEntries = entries.length > 0 ? entries : entryFromTopLevelCompletion(completionSchema, captureText);
 
   const [entryStates, setEntryStates] = useState<EntryUI[]>(() =>
@@ -1123,7 +1134,12 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
     effectiveEntries.forEach((entry, i) => {
       if (completionSchema && (completionSchema.domain === 'state' || completionSchema.domain === 'food')) return;
       const ui = entryStates[i];
-      const assessment = assessCaptureCompletion(captureText, entry, { goals: data.categories, modules: data.modules || [], skills: data.skills, lang });
+      const assessment = assessCaptureCompletion(
+        captureText,
+        entry,
+        { goals: data.categories, modules: data.modules || [], skills: data.skills, lang },
+        assessmentDomainOverride,
+      );
       if (assessment.status === 'not_recordable') return;
       const completedEntry = entryWithCompletion(entry, ui);
       const smartRoute = getSmartRouteResult({ rawText: captureText, entry: completedEntry, goals: data.categories, modules: data.modules || [], skills: data.skills, lang });
@@ -1393,7 +1409,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
     }
     setLogged(true);
   }, [confirming, logged, captureText, effectiveEntries, entryStates, captureId, data, data.categories, data.modules, data.skills, data.executionLogs, lang, questTheme.colors.primary,
-      completionSchema?.domain, resolveSkill, resolveGoalForSave, resolveModuleForSave, resolveRouting, addSkill, addExistingSkillToModule, createExecutionLog, updateExecutionLog, onDismiss]);
+      assessmentDomainOverride, completionSchema?.domain, resolveSkill, resolveGoalForSave, resolveModuleForSave, resolveRouting, addSkill, addExistingSkillToModule, createExecutionLog, updateExecutionLog, onDismiss]);
 
   if (logged) {
     if (postSaveFeedback?.items.length) {
@@ -1535,7 +1551,12 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
 
   const entryAssessments = effectiveEntries.map((entry, index) => {
     const completedEntry = entryWithCompletion(entry, entryStates[index]);
-    return assessCaptureCompletion(captureText, completedEntry, { goals: data.categories, modules: data.modules || [], skills: data.skills, lang });
+    return assessCaptureCompletion(
+      captureText,
+      completedEntry,
+      { goals: data.categories, modules: data.modules || [], skills: data.skills, lang },
+      assessmentDomainOverride,
+    );
   });
   const recordableCount = entryAssessments.filter((assessment) => assessment.status !== 'not_recordable').length;
 
