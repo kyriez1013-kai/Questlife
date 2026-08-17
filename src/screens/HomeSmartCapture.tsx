@@ -657,19 +657,21 @@ export default function HomeSmartCapture() {
                     <V11SheetButton
                       label={t(lang, recentExpanded ? 'collapseRecentRecord' : 'expandRecentRecord')}
                       onPress={() => setRecentExpanded((value) => !value)}
+                      style={styles.v11RecentAction}
                       theme={v11Theme}
                       tone="neutral"
                       variant="secondary"
                     />
-                    <V11SheetButton label={t(lang, 'hideRecentRecord')} onPress={() => setRecentVisible(false)} theme={v11Theme} tone="neutral" variant="secondary" />
+                    <V11SheetButton label={t(lang, 'hideRecentRecord')} onPress={() => setRecentVisible(false)} style={styles.v11RecentAction} theme={v11Theme} tone="neutral" variant="secondary" />
                   </>
                 ) : (
-                  <V11SheetButton label={t(lang, 'showRecentRecord')} onPress={() => setRecentVisible(true)} theme={v11Theme} tone="neutral" variant="secondary" />
+                  <V11SheetButton label={t(lang, 'showRecentRecord')} onPress={() => setRecentVisible(true)} style={styles.v11RecentAction} theme={v11Theme} tone="neutral" variant="secondary" />
                 )}
                 {hasHistory ? (
                   <V11SheetButton
                     label={t(lang, 'openActivityHistory').replace('{n}', String(allCaptures.length))}
                     onPress={() => setHistoryVisible(true)}
+                    style={styles.v11RecentAction}
                     theme={v11Theme}
                     tone="neutral"
                     variant="secondary"
@@ -821,5 +823,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
+  },
+  v11RecentAction: {
+    width: 'auto',
+    minHeight: 44,
+    paddingHorizontal: 12,
+    flexGrow: 0,
   },
 });
