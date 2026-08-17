@@ -412,6 +412,7 @@ export function V11TextField({
 }
 
 export function V11SheetButton({
+  accessibilityLabel,
   disabled = false,
   label,
   loading = false,
@@ -423,6 +424,7 @@ export function V11SheetButton({
   variant,
   visualState = 'default',
 }: {
+  accessibilityLabel?: string;
   disabled?: boolean;
   label: string;
   loading?: boolean;
@@ -446,7 +448,7 @@ export function V11SheetButton({
 
   return (
     <WebPressable
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel ?? label}
       accessibilityRole="button"
       accessibilityState={{ busy: loading, disabled: inactive }}
       dataSet={{

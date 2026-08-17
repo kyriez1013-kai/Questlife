@@ -1608,11 +1608,6 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
         : typeof completedEntry.fields.durationMinutes === 'number'
           ? completedEntry.fields.durationMinutes
           : undefined;
-      const durationCandidates = Array.from(new Set([
-        ...(typeof durationValue === 'number' ? [durationValue] : []),
-        ...(cs?.durationOptions?.length ? cs.durationOptions : [10, 20, 30, 45, 60]),
-      ])).slice(0, 4);
-
       return {
         index: i,
         active,
@@ -1631,10 +1626,6 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
           ? selectedExercises
           : ui.scope ? [ui.scope] : [],
         customActionValue: ui.customExerciseName ?? '',
-        durationOptions: durationCandidates.map((value) => ({
-          value,
-          label: lang === 'zh' ? `${value}分` : `${value} min`,
-        })),
         durationValue,
         qualityValue: ui.qualityRating ?? completedEntry.qualityRating,
         showDuration: domain === 'learning'
@@ -1685,11 +1676,15 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
             createGoal: t(lang, 'createNewGoal'),
             createModule: t(lang, 'createModule'),
             customAction: t(lang, 'universalCaptureCustomAction'),
+            decreaseDuration: t(lang, 'universalCaptureDecreaseDuration'),
             duration: t(lang, 'universalCaptureDuration'),
+            durationPlaceholder: t(lang, 'universalCaptureDurationPlaceholder'),
             existing: t(lang, 'scEntryExisting'),
             goal: t(lang, 'goal'),
             interpreted: t(lang, 'universalCaptureInterpreted'),
+            increaseDuration: t(lang, 'universalCaptureIncreaseDuration'),
             less: t(lang, 'universalCaptureLess'),
+            minutesUnit: t(lang, 'minutesShort'),
             module: t(lang, 'module'),
             more: t(lang, 'universalCaptureMore'),
             newEntry: t(lang, 'scEntryNew'),

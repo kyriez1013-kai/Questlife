@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
 import type { V11ThemeTokens } from '../../v11/tokens';
-import { v11Typography } from '../../v11/tokens';
+import { v11Spacing, v11Typography } from '../../v11/tokens';
 import {
   V11CategoricalChip,
   V11CheckboxControl,
@@ -46,7 +46,6 @@ export type UniversalCaptureEntryView = {
   actionOptions: UniversalCaptureOption[];
   selectedActions: string[];
   customActionValue: string;
-  durationOptions: Array<{ label: string; value: number | null }>;
   durationValue?: number | null;
   qualityValue?: number;
   showDuration: boolean;
@@ -74,10 +73,14 @@ export type UniversalCaptureLabels = {
   createModule: string;
   customAction: string;
   duration: string;
+  durationPlaceholder: string;
+  decreaseDuration: string;
   existing: string;
   goal: string;
   interpreted: string;
+  increaseDuration: string;
   less: string;
+  minutesUnit: string;
   module: string;
   more: string;
   newEntry: string;
@@ -122,6 +125,69 @@ type Props = {
   onToggleEntry: (entryIndex: number) => void;
   theme: V11ThemeTokens;
 };
+
+function durationFromInput(value: string): number | null {
+  const digits = value.replace(/[^0-9]/g, '');
+  if (!digits) return null;
+  const minutes = Number(digits);
+  return Number.isFinite(minutes) && minutes > 0 ? minutes : null;
+}
+
+function DurationControl({
+  entry,
+  labels,
+  onDurationChange,
+  theme,
+}: {
+  entry: UniversalCaptureEntryView;
+  labels: UniversalCaptureLabels;
+  onDurationChange: Props['onDurationChange'];
+  theme: V11ThemeTokens;
+}) {
+  const currentMinutes = typeof entry.durationValue === 'number' && entry.durationValue > 0
+    ? Math.round(entry.durationValue)
+    : null;
+
+  return (
+    <WebView
+      dataSet={{ 'universal-capture-role': 'duration-control' }}
+      style={{ alignItems: 'center', flexDirection: 'row', gap: v11Spacing.xs, minWidth: 0 }}
+    >
+      <V11SheetButton
+        accessibilityLabel={labels.decreaseDuration}
+        disabled={currentMinutes == null}
+        label="−"
+        onPress={() => onDurationChange(entry.index, currentMinutes && currentMinutes > 1 ? currentMinutes - 1 : null)}
+        style={{ flexGrow: 0, minWidth: v11Spacing.readingGap, width: v11Spacing.readingGap }}
+        theme={theme}
+        tone="neutral"
+        variant="secondary"
+      />
+      <WebView dataSet={{ 'universal-capture-role': 'numeric-control' }} style={{ flex: 1, minWidth: 0 }}>
+        <V11TextField
+          accessibilityLabel={labels.durationPlaceholder}
+          inputMode="numeric"
+          keyboardType="number-pad"
+          onChangeText={(value) => onDurationChange(entry.index, durationFromInput(value))}
+          placeholder={labels.durationPlaceholder}
+          theme={theme}
+          tone="neutral"
+          value={currentMinutes == null ? '' : String(currentMinutes)}
+        />
+        <Text style={{ color: theme.text.secondary, ...v11Typography.metadata }}>{labels.minutesUnit}</Text>
+      </WebView>
+      <V11SheetButton
+        accessibilityLabel={labels.increaseDuration}
+        label="+"
+        onPress={() => onDurationChange(entry.index, (currentMinutes ?? 0) + 1)}
+        style={{ flexGrow: 0, minWidth: v11Spacing.readingGap, width: v11Spacing.readingGap }}
+        theme={theme}
+        tone="neutral"
+        variant="secondary"
+      />
+    </WebView>
+  );
+}
 
 function EntryActions({
   entry,
@@ -433,12 +499,11 @@ function UniversalEntry({
               {entry.showDuration ? (
                 <WebView dataSet={{ 'universal-capture-role': 'correction-field' }}>
                   <Text style={{ color: theme.text.secondary, ...v11Typography.metadata }}>{labels.duration}</Text>
-                  <V11CompactValueSelector<number | null>
-                    columns={Math.min(4, Math.max(1, entry.durationOptions.length))}
-                    onChange={(value) => onDurationChange(entry.index, value)}
-                    options={entry.durationOptions.map((option) => ({ value: option.value, label: option.label }))}
+                  <DurationControl
+                    entry={entry}
+                    labels={labels}
+                    onDurationChange={onDurationChange}
                     theme={theme}
-                    value={entry.durationValue}
                   />
                 </WebView>
               ) : null}
