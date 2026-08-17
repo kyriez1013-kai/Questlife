@@ -649,7 +649,10 @@ export default function HomeSmartCapture() {
         <View style={{ marginTop: questTheme.spacing.xxs }}>
           {todayCaptures.map((capture) => renderCapture(capture, recentExpanded))}
 
-          <View style={[styles.recentActions, { gap: questTheme.spacing.tight, marginTop: questTheme.spacing.tight }]}>
+          <WebView
+            dataSet={v11TodayEnabled ? { 'v11-rebaseline-role': 'capture-utility-actions' } : undefined}
+            style={[styles.recentActions, { gap: questTheme.spacing.tight, marginTop: questTheme.spacing.tight }]}
+          >
             {v11TodayEnabled ? (
               <>
                 {recentVisible ? (
@@ -713,7 +716,7 @@ export default function HomeSmartCapture() {
             ) : null}
               </>
             )}
-          </View>
+          </WebView>
         </View>
       )}
 
