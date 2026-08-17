@@ -305,12 +305,14 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
   const latestCaptureNeedsAttention = useMemo(() => {
     const latest = todayCaptures[0];
     if (!latest || latest.parsed?.entriesDismissed) return false;
+    const alreadyLogged = (data.executionLogs || []).some((log) => log.structuredData?.sourceCaptureId === latest.id);
+    if (alreadyLogged) return false;
     if (latest.parseStatus === 'pending') return true;
     const fallbackEntries = buildFallbackEntriesFromRawText(latest.text);
     return (latest.parsed?.entries?.length ?? 0) > 0
       || fallbackEntries.length > 0
       || latest.parsed?.completionSchema?.needsCompletion === true;
-  }, [todayCaptures]);
+  }, [data.executionLogs, todayCaptures]);
 
   // ── Async parse helper ────────────────────────────────────────────────────
 
@@ -541,9 +543,11 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
     const fallbackEntries = buildFallbackEntriesFromRawText(capture.text);
     const entriesForConfirmation = parsedEntries.length > 0 ? parsedEntries : fallbackEntries;
     const hasTopLevelCompletion = capture.parsed?.completionSchema?.needsCompletion === true;
+    const alreadyLogged = (data.executionLogs || []).some((log) => log.structuredData?.sourceCaptureId === capture.id);
     const canShowConfirmation =
       (capture.parseStatus === 'done' || capture.parseStatus === 'failed') &&
       (entriesForConfirmation.length > 0 || hasTopLevelCompletion) &&
+      !alreadyLogged &&
       !capture.parsed?.entriesDismissed;
 
     return (
