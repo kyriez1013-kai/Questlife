@@ -1684,7 +1684,6 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
             interpreted: t(lang, 'universalCaptureInterpreted'),
             increaseDuration: t(lang, 'universalCaptureIncreaseDuration'),
             less: t(lang, 'universalCaptureLess'),
-            minutesUnit: t(lang, 'minutesShort'),
             module: t(lang, 'module'),
             more: t(lang, 'universalCaptureMore'),
             newEntry: t(lang, 'scEntryNew'),

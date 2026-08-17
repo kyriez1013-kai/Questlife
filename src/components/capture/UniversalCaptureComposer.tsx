@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
 import type { V11ThemeTokens } from '../../v11/tokens';
-import { v11Spacing, v11Typography } from '../../v11/tokens';
+import { v11SheetLayout, v11Spacing, v11Typography } from '../../v11/tokens';
 import {
   V11CategoricalChip,
   V11CheckboxControl,
@@ -80,7 +80,6 @@ export type UniversalCaptureLabels = {
   interpreted: string;
   increaseDuration: string;
   less: string;
-  minutesUnit: string;
   module: string;
   more: string;
   newEntry: string;
@@ -151,36 +150,36 @@ function DurationControl({
   return (
     <WebView
       dataSet={{ 'universal-capture-role': 'duration-control' }}
-      style={{ alignItems: 'center', flexDirection: 'row', gap: v11Spacing.xs, minWidth: 0 }}
+      style={{ alignItems: 'center', flexDirection: 'row', gap: v11Spacing.xxs, minWidth: 0 }}
     >
       <V11SheetButton
         accessibilityLabel={labels.decreaseDuration}
         disabled={currentMinutes == null}
         label="−"
         onPress={() => onDurationChange(entry.index, currentMinutes && currentMinutes > 1 ? currentMinutes - 1 : null)}
-        style={{ flexGrow: 0, minWidth: v11Spacing.readingGap, width: v11Spacing.readingGap }}
+        style={{ flexGrow: 0, minWidth: v11SheetLayout.headerActionSlot, width: v11SheetLayout.headerActionSlot }}
         theme={theme}
         tone="neutral"
         variant="secondary"
       />
-      <WebView dataSet={{ 'universal-capture-role': 'numeric-control' }} style={{ flex: 1, minWidth: 0 }}>
+      <WebView dataSet={{ 'universal-capture-role': 'duration-input' }} style={{ flex: 1, minWidth: 0 }}>
         <V11TextField
           accessibilityLabel={labels.durationPlaceholder}
           inputMode="numeric"
           keyboardType="number-pad"
           onChangeText={(value) => onDurationChange(entry.index, durationFromInput(value))}
           placeholder={labels.durationPlaceholder}
+          style={{ paddingHorizontal: v11Spacing.xxs, textAlign: 'center' }}
           theme={theme}
           tone="neutral"
           value={currentMinutes == null ? '' : String(currentMinutes)}
         />
-        <Text style={{ color: theme.text.secondary, ...v11Typography.metadata }}>{labels.minutesUnit}</Text>
       </WebView>
       <V11SheetButton
         accessibilityLabel={labels.increaseDuration}
         label="+"
         onPress={() => onDurationChange(entry.index, (currentMinutes ?? 0) + 1)}
-        style={{ flexGrow: 0, minWidth: v11Spacing.readingGap, width: v11Spacing.readingGap }}
+        style={{ flexGrow: 0, minWidth: v11SheetLayout.headerActionSlot, width: v11SheetLayout.headerActionSlot }}
         theme={theme}
         tone="neutral"
         variant="secondary"
