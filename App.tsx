@@ -30,6 +30,7 @@ import V11Stage0Screen from './src/v11-stage0/V11Stage0Screen';
 import V11Stage1Screen from './src/v11-stage1/V11Stage1Screen';
 import V11Stage2RebaselineScreen from './src/v11-stage2-rebaseline/V11Stage2RebaselineScreen';
 import V11SheetControlFixtureScreen from './src/v11-stage2-rebaseline/V11SheetControlFixtureScreen';
+import UniversalCaptureFixtureScreen from './src/components/capture/UniversalCaptureFixtureScreen';
 import V11InsightsScreen from './src/v11-insights/V11InsightsScreen';
 import {
   getV11InsightsDebugLanguage,
@@ -44,10 +45,10 @@ const Tab = createBottomTabNavigator();
 const SkillsStack = createNativeStackNavigator();
 const GoalsStack = createNativeStackNavigator();
 
-function getV11FixtureRoute(): 'stage0' | 'stage1' | 'stage2-rebaseline' | 'stage2-controls' | null {
+function getV11FixtureRoute(): 'stage0' | 'stage1' | 'stage2-rebaseline' | 'stage2-controls' | 'universal-capture' | null {
   if (Platform.OS !== 'web' || typeof window === 'undefined') return null;
   const route = new URLSearchParams(window.location.search).get('questlife_v11_ui');
-  return route === 'stage0' || route === 'stage1' || route === 'stage2-rebaseline' || route === 'stage2-controls'
+  return route === 'stage0' || route === 'stage1' || route === 'stage2-rebaseline' || route === 'stage2-controls' || route === 'universal-capture'
     ? route
     : null;
 }
@@ -305,7 +306,9 @@ export default function App() {
     return (
       <SafeAreaProvider>
         <StatusBar style="auto" />
-        {v11FixtureRoute === 'stage0'
+        {v11FixtureRoute === 'universal-capture'
+          ? <UniversalCaptureFixtureScreen />
+          : v11FixtureRoute === 'stage0'
           ? <V11Stage0Screen />
           : v11FixtureRoute === 'stage1'
             ? <V11Stage1Screen />

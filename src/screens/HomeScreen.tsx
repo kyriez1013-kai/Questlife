@@ -2103,6 +2103,11 @@ export default function HomeScreen() {
     openStateModal();
   }, [openStateModal, rememberV11TodayScroll]);
 
+  const openV11StateFromCapture = useCallback(() => {
+    setV11CaptureOpen(false);
+    openV11State();
+  }, [openV11State]);
+
   const openV11DirectLog = useCallback(() => {
     rememberV11TodayScroll();
     v11TransientSheetRef.current = 'log';
@@ -3035,7 +3040,7 @@ export default function HomeScreen() {
           title={t(lang, 'v11Capture')}
           visible={v11CaptureOpen}
         >
-          <HomeSmartCapture />
+          <HomeSmartCapture onOpenState={openV11StateFromCapture} />
         </V11Stage2ProductionSheet>
 
         <V11ActivityHistorySheet

@@ -30,10 +30,11 @@ import ActivityHistorySheet from '../components/today/ActivityHistorySheet';
 import HomeCapturePending from './HomeCapturePending';
 import { confirmAction } from '../utils/confirm';
 import { buildFallbackEntriesFromRawText } from '../utils/captureCompletion';
-import { isV11TodayEnabled } from '../v11/featureFlag';
+import { getV11ProductLanguage, getV11ProductThemeId, isV11TodayEnabled } from '../v11/featureFlag';
 import { getV11ThemeTokens } from '../v11/tokens';
 import {
   V11ComposerAction,
+  V11CategoricalChip,
   V11InlineButton,
   V11SheetButton,
   V11TextField,
@@ -244,11 +245,15 @@ function captureHasLiveContext(capture: RawCapture, executionLogs: { structuredD
   return capture.parseStatus !== 'done' || (capture.parsed?.entries?.length ?? 0) === 0;
 }
 
-export default function HomeSmartCapture() {
+export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => void }) {
   const { data, addRawCapture, updateRawCapture, deleteRawCapture } = useStore();
-  const lang = getLanguage(data.settings.language ?? data.settings.preferredLanguage);
-  const questTheme = getQuestTheme(data.settings.selectedThemeId);
   const v11TodayEnabled = isV11TodayEnabled();
+  const lang = v11TodayEnabled
+    ? getV11ProductLanguage(getLanguage(data.settings.language ?? data.settings.preferredLanguage))
+    : getLanguage(data.settings.language ?? data.settings.preferredLanguage);
+  const questTheme = getQuestTheme(v11TodayEnabled
+    ? getV11ProductThemeId(data.settings.selectedThemeId)
+    : data.settings.selectedThemeId);
   const v11Theme = getV11ThemeTokens(questTheme.id === 'cleanFocus' ? 'light' : 'dark');
 
   const [inputText, setInputText]         = useState('');
@@ -272,6 +277,40 @@ export default function HomeSmartCapture() {
 
   const todayCaptures = recentVisible ? allCaptures.slice(0, DEFAULT_VISIBLE) : [];
   const hasHistory    = allCaptures.length > 0;
+  const recentActivities = useMemo(() => {
+    const seen = new Set<string>();
+    const names: string[] = [];
+    const skillsById = new Map((data.skills || []).map((skill) => [skill.id, skill]));
+    (data.executionLogs || [])
+      .slice()
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .forEach((log) => {
+        const label = log.linkedSkillId ? skillsById.get(log.linkedSkillId)?.name : log.title;
+        const key = label?.trim().toLowerCase();
+        if (!label || !key || seen.has(key) || names.length >= 5) return;
+        seen.add(key);
+        names.push(label);
+      });
+    if (names.length < 5) {
+      allCaptures.forEach((capture) => {
+        const label = capture.parsed?.entries?.[0]?.skillName;
+        const key = label?.trim().toLowerCase();
+        if (!label || !key || seen.has(key) || names.length >= 5) return;
+        seen.add(key);
+        names.push(label);
+      });
+    }
+    return names;
+  }, [allCaptures, data.executionLogs, data.skills]);
+  const latestCaptureNeedsAttention = useMemo(() => {
+    const latest = todayCaptures[0];
+    if (!latest || latest.parsed?.entriesDismissed) return false;
+    if (latest.parseStatus === 'pending') return true;
+    const fallbackEntries = buildFallbackEntriesFromRawText(latest.text);
+    return (latest.parsed?.entries?.length ?? 0) > 0
+      || fallbackEntries.length > 0
+      || latest.parsed?.completionSchema?.needsCompletion === true;
+  }, [todayCaptures]);
 
   // ── Async parse helper ────────────────────────────────────────────────────
 
@@ -449,6 +488,13 @@ export default function HomeSmartCapture() {
     triggerParse(capture.id, text);
   }, [inputText, isPosting, addRawCapture, triggerParse]);
 
+  const handleQuickCapture = useCallback((label: string) => {
+    const text = label.trim();
+    if (!text || isPosting) return;
+    const capture = addRawCapture(text);
+    triggerParse(capture.id, text);
+  }, [addRawCapture, isPosting, triggerParse]);
+
   // ── Retry handler ─────────────────────────────────────────────────────────
 
   const handleRetry = useCallback((captureId: string) => {
@@ -514,6 +560,7 @@ export default function HomeSmartCapture() {
           <HomeCapturePending
             captureId={capture.id}
             entries={entriesForConfirmation}
+            onOpenState={onOpenState}
             onDismiss={() => updateRawCapture(capture.id, {
               parsed: {
                 type: capture.parsed?.type ?? 'misc',
@@ -588,6 +635,26 @@ export default function HomeSmartCapture() {
           </V11ComposerAction>
         </WebView>
       </WebView>
+      {recentActivities.length > 0 && !latestCaptureNeedsAttention ? (
+        <WebView dataSet={{ 'universal-capture-role': 'recent-path' }}>
+          <Text style={{ color: v11Theme.text.secondary, fontSize: 12 }}>
+            {t(lang, 'universalCaptureRecent')}
+          </Text>
+          <WebView dataSet={{ 'universal-capture-role': 'compact-choice-row' }}>
+            {recentActivities.map((activity) => (
+              <V11CategoricalChip
+                key={activity}
+                density="compact"
+                label={activity}
+                onPress={() => handleQuickCapture(activity)}
+                selected={false}
+                theme={v11Theme}
+                tone="neutral"
+              />
+            ))}
+          </WebView>
+        </WebView>
+      ) : null}
     </WebView>
   ) : (
     <View style={styles.inputRow}>

@@ -19,7 +19,7 @@ import QuestCard from '../components/ui/QuestCard';
 import { assessCaptureCompletion } from '../utils/captureCompletion';
 import { getSmartRouteResult, SmartRouteResult } from '../utils/smartRouting';
 import { buildPostSaveFeedback, PostSaveFeedback } from '../utils/progressFeedback';
-import { isV11TodayEnabled } from '../v11/featureFlag';
+import { getV11ProductLanguage, getV11ProductThemeId, isV11TodayEnabled } from '../v11/featureFlag';
 import { getV11ThemeTokens, v11Typography } from '../v11/tokens';
 import {
   V11CategoricalChip,
@@ -29,6 +29,15 @@ import {
   V11TextField,
 } from '../v11/components/V11SheetControls';
 import V11RebaselineIcon from '../v11-stage2-rebaseline/V11RebaselineIcon';
+import UniversalCaptureComposer, {
+  UniversalCaptureEntryView,
+} from '../components/capture/UniversalCaptureComposer';
+import {
+  compactStrengthValues,
+  deriveUniversalCaptureDomain,
+  isConcreteExercise,
+  uniqueLocalizedActions,
+} from '../utils/universalCapture';
 
 const WebView = View as any;
 
@@ -676,6 +685,7 @@ type Props = {
   captureId: string;
   entries: ParsedEntry[];
   onDismiss: () => void;  // called after confirm or ignore (marks entriesDismissed)
+  onOpenState?: () => void;
 };
 
 type StateDeltaValue = 'down' | 'same' | 'up' | 'unknown';
@@ -685,22 +695,40 @@ type AfterStateDeltaDraft = {
   mood?: StateDeltaValue;
 };
 
-export default function HomeCapturePending({ captureId, entries, onDismiss }: Props) {
+export default function HomeCapturePending({ captureId, entries, onDismiss, onOpenState }: Props) {
   const { data, addCategory, addModule, addSkill, createExecutionLog, updateExecutionLog, addExistingSkillToModule } = useStore();
-  const lang = getLanguage(data.settings.language ?? data.settings.preferredLanguage);
-  const questTheme = getQuestTheme(data.settings.selectedThemeId);
   const v11TodayEnabled = isV11TodayEnabled();
+  const lang = v11TodayEnabled
+    ? getV11ProductLanguage(getLanguage(data.settings.language ?? data.settings.preferredLanguage))
+    : getLanguage(data.settings.language ?? data.settings.preferredLanguage);
+  const questTheme = getQuestTheme(v11TodayEnabled
+    ? getV11ProductThemeId(data.settings.selectedThemeId)
+    : data.settings.selectedThemeId);
   const capture = (data.rawCaptures || []).find((item) => item.id === captureId);
   const captureText = capture?.text ?? '';
   const completionSchema = capture?.parsed?.completionSchema;
   const effectiveEntries = entries.length > 0 ? entries : entryFromTopLevelCompletion(completionSchema, captureText);
 
   const [entryStates, setEntryStates] = useState<EntryUI[]>(() =>
-    effectiveEntries.map((e) => ({
-      include:   true,                         // confirmation card means user can opt out before writing
-      createNew: e.matchedSkillId == null,     // unmatched concrete entries should be written after confirm
-      moduleId:  null,
-    })),
+    effectiveEntries.map((entry) => {
+      const domain = deriveUniversalCaptureDomain({ captureText, completionSchema, entry });
+      const strength = compactStrengthValues(entry);
+      const useConcreteExercise = domain === 'exercise' && isConcreteExercise(entry, captureText);
+      return {
+        include: true,
+        createNew: entry.matchedSkillId == null,
+        moduleId: null,
+        selectedExerciseNames: useConcreteExercise ? [entry.skillName] : [],
+        exerciseDetails: useConcreteExercise ? {
+          [entry.skillName]: {
+            weight: strength.weight == null ? '' : String(strength.weight),
+            sets: strength.sets == null ? '' : String(strength.sets),
+            reps: strength.reps == null ? '' : String(strength.reps),
+            rpe: strength.rpe,
+          },
+        } : {},
+      };
+    }),
   );
   const [logged, setLogged] = useState(false);
   const [postSaveFeedback, setPostSaveFeedback] = useState<PostSaveFeedback | null>(null);
@@ -1130,9 +1158,12 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
           const actionKey = `${captureId}:${i}:${normalizeName(exerciseName)}`;
           const actionAlreadyLogged = (data.executionLogs || []).some((log) => log.structuredData?.sourceCaptureEntryKey === actionKey);
           if (actionAlreadyLogged) return;
-          const existingSkill = data.skills.find((skill) => normalizeName(skill.name) === normalizeName(exerciseName));
+          const existingSkill = data.skills.find((skill) => normalizeName(skill.name) === normalizeName(exerciseName))
+            ?? (normalizeName(exerciseName) === normalizeName(completedEntry.skillName) ? matchedSkill : undefined);
           let actionSkillId = existingSkill?.id;
-          if (!actionSkillId && ui.createNew) {
+          const shouldCreateActionSkill = ui.createNew
+            || (matchedSkill != null && normalizeName(exerciseName) !== normalizeName(matchedSkill.name));
+          if (!actionSkillId && shouldCreateActionSkill) {
             const created = addSkill({
               name: exerciseName,
               color: questTheme.colors.primary,
@@ -1507,6 +1538,200 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
     return assessCaptureCompletion(captureText, completedEntry, { goals: data.categories, modules: data.modules || [], skills: data.skills, lang });
   });
   const recordableCount = entryAssessments.filter((assessment) => assessment.status !== 'not_recordable').length;
+
+  if (v11TodayEnabled) {
+    const universalEntries: UniversalCaptureEntryView[] = effectiveEntries.map((entry, i) => {
+      const ui = entryStates[i];
+      const completedEntry = entryWithCompletion(entry, ui);
+      const assessment = entryAssessments[i];
+      const smartRoute = getSmartRouteResult({
+        rawText: captureText,
+        entry: completedEntry,
+        goals: data.categories,
+        modules: data.modules || [],
+        skills: data.skills,
+        lang,
+      });
+      const routing = resolveRouting(completedEntry);
+      const cs = capture?.parsed?.completionSchema;
+      const domain = deriveUniversalCaptureDomain({ captureText, completionSchema: cs, entry: completedEntry });
+      const activeGoalId = ui.createNewGoal || ui.selectedGoalId === null
+        ? undefined
+        : ui.selectedGoalId ?? cs?.matchedGoalId ?? smartRoute.selectedGoalId ?? routing.linkedGoalId;
+      const selectedGoal = activeGoalId ? data.categories.find((goal) => goal.id === activeGoalId) : undefined;
+      const activeModuleId = ui.createNewModule || ui.selectedModuleId === null
+        ? undefined
+        : ui.selectedModuleId ?? cs?.matchedModuleId ?? smartRoute.selectedModuleId ?? routing.linkedModuleId;
+      const selectedModule = activeModuleId && selectedGoal
+        ? (data.modules || []).find((module) => module.id === activeModuleId && module.goalId === selectedGoal.id)
+        : undefined;
+      const selectedExercises = selectedExercisesFor(ui);
+      const isExisting = !!resolveSkill(completedEntry);
+      const recordable = assessment.status !== 'not_recordable';
+      const active = recordable && (domain === 'exercise'
+        ? selectedExercises.length > 0 && (isExisting ? ui.include : ui.createNew)
+        : isExisting ? ui.include : ui.createNew);
+      const rawActions = cs?.suggestedActions?.length
+        ? cs.suggestedActions
+        : assessment.suggestedActions
+          .filter((suggestion) => suggestion.kind === 'exercise' || suggestion.kind === 'scope')
+          .map((suggestion) => String(suggestion.value ?? suggestion.label));
+      const actionOptions = uniqueLocalizedActions(
+        domain === 'exercise' && isConcreteExercise(completedEntry, captureText)
+          ? [completedEntry.skillName, ...rawActions]
+          : rawActions,
+        lang,
+      );
+      const durationValue = ui.durationMinutes !== undefined
+        ? ui.durationMinutes
+        : typeof completedEntry.fields.durationMinutes === 'number'
+          ? completedEntry.fields.durationMinutes
+          : undefined;
+      const durationCandidates = Array.from(new Set([
+        ...(typeof durationValue === 'number' ? [durationValue] : []),
+        ...(cs?.durationOptions?.length ? cs.durationOptions : [10, 20, 30, 45, 60]),
+      ])).slice(0, 4);
+
+      return {
+        index: i,
+        active,
+        domain,
+        domainLabel: t(lang, `universalCaptureDomain_${domain}`),
+        existing: isExisting,
+        recordable,
+        title: completedEntry.skillName,
+        summary: entrySummary(completedEntry, lang),
+        routeLabel: recordable
+          ? `${t(lang, 'recordToPath')}: ${selectedGoal?.name ?? t(lang, 'scEntryUnassigned')}${selectedModule ? ` → ${selectedModule.name}` : ''}`
+          : undefined,
+        routeUncertain: recordable && (!selectedGoal || routing.needsUserChoice),
+        actionOptions,
+        selectedActions: domain === 'exercise'
+          ? selectedExercises
+          : ui.scope ? [ui.scope] : [],
+        customActionValue: ui.customExerciseName ?? '',
+        durationOptions: durationCandidates.map((value) => ({
+          value,
+          label: lang === 'zh' ? `${value}分` : `${value} min`,
+        })),
+        durationValue,
+        qualityValue: ui.qualityRating ?? completedEntry.qualityRating,
+        showDuration: domain === 'learning'
+          || domain === 'work'
+          || (domain === 'exercise' && typeof durationValue === 'number')
+          || (domain === 'generic' && completedEntry.progressType === 'time_based'),
+        showQuality: recordable,
+        exercises: domain === 'exercise'
+          ? selectedExercises.map((name) => ({
+              name,
+              weight: ui.exerciseDetails?.[name]?.weight,
+              sets: ui.exerciseDetails?.[name]?.sets,
+              reps: ui.exerciseDetails?.[name]?.reps,
+            }))
+          : [],
+        goalOptions: orderedGoals(data.categories || [], [activeGoalId, cs?.matchedGoalId, smartRoute.selectedGoalId, routing.linkedGoalId])
+          .slice(0, 5)
+          .map((goal) => ({ id: goal.id, label: goal.name })),
+        moduleOptions: orderedModules(data.modules || [], selectedGoal?.id, activeModuleId)
+          .slice(0, 5)
+          .map((module) => ({ id: module.id, label: module.name })),
+        selectedGoalId: ui.selectedGoalId === null ? null : activeGoalId,
+        selectedModuleId: ui.selectedModuleId === null ? null : activeModuleId,
+        createNewGoal: !!ui.createNewGoal,
+        createNewModule: !!ui.createNewModule,
+        newGoalName: ui.newGoalName ?? suggestedGoalName(cs?.domain ?? smartRoute.domain, captureText, lang),
+        newModuleName: ui.newModuleName ?? suggestedModuleName(cs?.domain ?? smartRoute.domain, captureText, completedEntry.skillName, lang),
+        nonRecordableHint: assessment.domain === 'state'
+          ? t(lang, 'universalCaptureStateHandoff')
+          : t(lang, 'universalCaptureContextOnly'),
+      };
+    });
+    const confirmDisabled = !universalEntries.some((entry) => entry.recordable && entry.active);
+
+    return (
+      <CapturePendingSurface questTheme={questTheme} status="pending">
+        <UniversalCaptureComposer
+          confirming={confirming}
+          confirmDisabled={confirmDisabled}
+          entries={universalEntries}
+          labels={{
+            add: t(lang, 'addCustomAction'),
+            advanced: t(lang, 'universalCaptureMoreFields'),
+            cancel: t(lang, 'scEntryIgnore'),
+            changeRoute: t(lang, 'change'),
+            confirm: t(lang, 'scEntryConfirm'),
+            confirmAs: t(lang, 'universalCaptureConfirmAs'),
+            createGoal: t(lang, 'createNewGoal'),
+            createModule: t(lang, 'createModule'),
+            customAction: t(lang, 'universalCaptureCustomAction'),
+            duration: t(lang, 'universalCaptureDuration'),
+            existing: t(lang, 'scEntryExisting'),
+            goal: t(lang, 'goal'),
+            interpreted: t(lang, 'universalCaptureInterpreted'),
+            less: t(lang, 'universalCaptureLess'),
+            module: t(lang, 'module'),
+            more: t(lang, 'universalCaptureMore'),
+            newEntry: t(lang, 'scEntryNew'),
+            noGoal: t(lang, 'noGoal'),
+            noModule: t(lang, 'noModule'),
+            quality: t(lang, 'quality'),
+            reps: t(lang, 'reps'),
+            route: t(lang, 'routing'),
+            saving: t(lang, 'savingRecord'),
+            stateAction: t(lang, 'universalCaptureOpenState'),
+            stateHint: t(lang, 'universalCaptureStateHandoff'),
+            sets: t(lang, 'sets'),
+            weight: t(lang, 'captureWeight'),
+            weightUnit: t(lang, 'captureWeightUnit'),
+          }}
+          onAddCustomAction={(index) => {
+            const entry = effectiveEntries[index];
+            const domain = deriveUniversalCaptureDomain({ captureText, completionSchema, entry });
+            addCustomAction(index, domain === 'exercise' ? 'fitness' : domain === 'learning' || domain === 'work' ? 'learning' : 'other');
+          }}
+          onCancel={onDismiss}
+          onConfirm={handleConfirm}
+          onCreateGoal={(index) => {
+            const entry = effectiveEntries[index];
+            const domain = capture?.parsed?.completionSchema?.domain ?? deriveUniversalCaptureDomain({ captureText, completionSchema, entry });
+            setCreateGoal(index, suggestedGoalName(domain, captureText, lang));
+          }}
+          onCreateModule={(index) => {
+            const entry = effectiveEntries[index];
+            const domain = capture?.parsed?.completionSchema?.domain ?? deriveUniversalCaptureDomain({ captureText, completionSchema, entry });
+            setCreateModule(index, suggestedModuleName(domain, captureText, entry.skillName, lang));
+          }}
+          onCustomActionChange={setCustomExercise}
+          onDurationChange={setDuration}
+          onExerciseValueChange={(index, exerciseName, field, value) => setExerciseDetail(index, exerciseName, field, value)}
+          onNewGoalNameChange={setNewGoalName}
+          onNewModuleNameChange={setNewModuleName}
+          onOpenState={onOpenState ? () => {
+            onDismiss();
+            onOpenState();
+          } : undefined}
+          onQualityChange={setQuality}
+          onSelectGoal={(index, value) => value == null ? setNoGoal(index) : setSelectedGoal(index, value)}
+          onSelectModule={(index, value) => value == null ? setNoModule(index) : setSelectedModule(index, value)}
+          onToggleAction={(index, value) => {
+            const entry = effectiveEntries[index];
+            const domain = deriveUniversalCaptureDomain({ captureText, completionSchema, entry });
+            if (domain === 'exercise') {
+              toggleExercise(index, value);
+              return;
+            }
+            if (domain === 'learning' || domain === 'work') {
+              setScope(index, entryStates[index]?.scope === value ? '' : value);
+              return;
+            }
+            setSelectedSkill(index, value);
+          }}
+          onToggleEntry={(index) => resolveSkill(effectiveEntries[index]) ? toggleInclude(index) : toggleCreateNew(index)}
+          theme={pendingV11Theme(questTheme)}
+        />
+      </CapturePendingSurface>
+    );
+  }
 
   return (
     <CapturePendingSurface questTheme={questTheme} status="pending">
