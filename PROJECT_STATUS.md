@@ -3107,3 +3107,43 @@ Known product/technical limits:
 Documentation:
 - `QUESTLIFE_V11_MARATHON_AUDIT.md`
 - `QUESTLIFE_V11_MARATHON_QA.md`
+
+## QuestLife Owner Beta - Real Daily Data Collection Begins
+
+Production milestone date: 2026-08-17.
+
+Production deployment:
+- deployed Git SHA: `415d3a94f42473e6b34f440d7c1fd6faec7ec71d`;
+- Vercel deployment: `dpl_HbMYv9PkPUYtvrD3MCZKdzVDeECD`;
+- owner-beta URL: `https://questlife-alpha-orpin.vercel.app/?questlife_v11_ui=v11-marathon`;
+- production aliases also include `https://ky11ai.com`;
+- canonical Today source: tag `v11-today-approved`, commit `06243c9`, with
+  subsequent reviewed Capture and Today polish through `415d3a9`.
+
+Production verification:
+- Today and Smart Capture opened in the deployed web UI at a 393px viewport;
+- all five navigation destinations loaded;
+- existing goals, skills, observations, and Activity History remained readable;
+- the no-flag URL still rendered the legacy Today rollback;
+- the deployed browser bundle was
+  `index-8aa9bd7164f5d918836e9de520c34836.js`;
+- no runtime console errors were observed in the core flow. The known Expo
+  Notifications web-support warning remains.
+
+Readiness evidence was completed on the exact promoted commit's isolated
+Preview origin before promotion. A real `/api/parse` capture was confirmed,
+saved, reloaded, and reopened from Activity History; state persistence survived
+reload; an older observation remained readable; and the debug persistence
+snapshot download completed. No destructive Production mutation was performed.
+
+Known remaining UI/product debt:
+- V11 remains owner-beta feature-flagged rather than the no-flag default;
+- backup/export remains a debug recovery path rather than a normal Settings
+  workflow;
+- the exported JavaScript bundle remains approximately 20.9 MB;
+- Goal V3 still requires a fresh Figma direction lock before implementation;
+- Schedule and Insights retain their current reviewed implementations and are
+  not blocked from owner-beta use by pending future visual work.
+
+This milestone is an owner beta for daily longitudinal data collection. It is
+not a public release or an App Store readiness claim.
