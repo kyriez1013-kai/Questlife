@@ -20,13 +20,15 @@ import { assessCaptureCompletion } from '../utils/captureCompletion';
 import { getSmartRouteResult, SmartRouteResult } from '../utils/smartRouting';
 import { buildPostSaveFeedback, PostSaveFeedback } from '../utils/progressFeedback';
 import { isV11TodayEnabled } from '../v11/featureFlag';
-import { getV11ThemeTokens } from '../v11/tokens';
+import { getV11ThemeTokens, v11Typography } from '../v11/tokens';
 import {
   V11CategoricalChip,
   V11CheckboxControl,
+  V11CompactValueSelector,
   V11SheetButton,
   V11TextField,
 } from '../v11/components/V11SheetControls';
+import V11RebaselineIcon from '../v11-stage2-rebaseline/V11RebaselineIcon';
 
 const WebView = View as any;
 
@@ -53,10 +55,12 @@ function PendingChip({
     return (
       <V11CategoricalChip
         accessibilityRole="checkbox"
+        density="compact"
         label={label}
         onPress={onPress}
         selected={selected}
         theme={pendingV11Theme(questTheme)}
+        tone="neutral"
       />
     );
   }
@@ -85,6 +89,7 @@ function PendingTextField({
           width: flat.width,
         }}
         theme={pendingV11Theme(questTheme)}
+        tone="neutral"
       />
     );
   }
@@ -126,6 +131,7 @@ function PendingAction({
           width: 'auto',
         }}
         theme={pendingV11Theme(questTheme)}
+        tone="neutral"
         variant={variant}
       />
     );
@@ -159,6 +165,7 @@ function PendingCheckbox({
         checked={checked}
         onPress={onPress}
         theme={pendingV11Theme(questTheme)}
+        tone="neutral"
       />
     );
   }
@@ -205,6 +212,32 @@ function CapturePendingSurface({
     >
       {children}
     </QuestCard>
+  );
+}
+
+function CaptureAttribution({
+  color,
+  label,
+  state,
+}: {
+  color: string;
+  label: string;
+  state: 'matched' | 'uncertain';
+}) {
+  if (!isV11TodayEnabled()) {
+    return <Text style={[pendStyles.routeLine, { color }]}>{label}</Text>;
+  }
+
+  return (
+    <WebView
+      dataSet={{
+        'v11-attribution-state': state,
+        'v11-rebaseline-role': 'capture-attribution',
+      }}
+    >
+      <V11RebaselineIcon name="target" size={15} color={color} />
+      <Text style={[pendStyles.routeLine, { color }]}>{label}</Text>
+    </WebView>
   );
 }
 
@@ -711,7 +744,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
   const setQuality = (i: number, qualityRating: number) =>
     setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, qualityRating } : e));
 
-  const setRpe = (i: number, rpe: number) =>
+  const setRpe = (i: number, rpe: number | undefined) =>
     setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, rpe } : e));
 
   const setAfterStateValue = (key: keyof AfterStateDeltaDraft, value: StateDeltaValue) => {
@@ -1558,7 +1591,11 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
         const goalConfidenceKey = llmConfidence === 'high' ? 'routeConfidenceHigh' : displayRouteConfidenceKey(llmConfidence as any);
 
         return (
-          <View key={i} style={[pendStyles.entryRow, v11TodayEnabled ? pendStyles.v11EntryRow : null, { borderColor: questTheme.colors.border }]}>
+          <WebView
+            dataSet={v11TodayEnabled ? { 'v11-rebaseline-role': 'capture-recognized-action' } : undefined}
+            key={i}
+            style={[pendStyles.entryRow, v11TodayEnabled ? pendStyles.v11EntryRow : null, { borderColor: questTheme.colors.border }]}
+          >
             {/* Toggle / checkbox */}
             <PendingCheckbox
               checked={active}
@@ -1577,7 +1614,10 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
 
             {/* Content */}
             <View style={{ flex: 1, gap: 3 }}>
-              <View style={pendStyles.nameRow}>
+              <WebView
+                dataSet={v11TodayEnabled ? { 'v11-rebaseline-role': 'capture-recognized-heading' } : undefined}
+                style={pendStyles.nameRow}
+              >
                 <Text style={[pendStyles.skillName, { color: questTheme.colors.text }]}>
                   {assessment.status === 'not_recordable'
                     ? assessment.domain === 'state'
@@ -1590,35 +1630,38 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                     {isExisting ? t(lang, 'scEntryExisting') : t(lang, 'scEntryNew')}
                   </Text>
                 </View>
-              </View>
+              </WebView>
               {summary ? (
                 <Text style={[pendStyles.summary, { color: questTheme.colors.textMuted }]}>
                   {summary}
                 </Text>
               ) : null}
               {isRecordable ? (
-                <Text style={[pendStyles.routeLine, {
-                  // high-confidence LLM match: show in muted (no warning); otherwise warn if routing is ambiguous
-                  color: llmConfidence === 'high'
+                <CaptureAttribution
+                  color={llmConfidence === 'high'
                     ? questTheme.colors.textMuted
-                    : (routing.needsUserChoice ? questTheme.colors.warning : questTheme.colors.textMuted),
-                }]}>
-                  {t(lang, selectedGoal && selectedModule ? 'recordToPath' : 'confirmRoute')}: {selectedGoal?.name ?? t(lang, llmDomain === 'learning' ? 'unassignedLearning' : 'scEntryUnassigned')}
-                  {selectedModule ? ` → ${selectedModule.name}` : ''}
-                  {llmConfidence !== 'high' ? ` · ${t(lang, goalConfidenceKey)}` : ''}
-                </Text>
+                    : (routing.needsUserChoice ? questTheme.colors.warning : questTheme.colors.textMuted)}
+                  label={`${t(lang, selectedGoal && selectedModule ? 'recordToPath' : 'confirmRoute')}: ${selectedGoal?.name ?? t(lang, llmDomain === 'learning' ? 'unassignedLearning' : 'scEntryUnassigned')}${selectedModule ? ` → ${selectedModule.name}` : ''}${llmConfidence !== 'high' ? ` · ${t(lang, goalConfidenceKey)}` : ''}`}
+                  state={llmConfidence === 'high' && !routing.needsUserChoice ? 'matched' : 'uncertain'}
+                />
               ) : null}
               {assessment.status === 'not_recordable' ? (
-                <View style={[pendStyles.completionBox, v11TodayEnabled ? pendStyles.v11SectionSurface : null, { backgroundColor: v11TodayEnabled ? 'transparent' : questTheme.colors.surfaceMuted, borderColor: questTheme.colors.borderStrong }]}>
+                <WebView
+                  dataSet={v11TodayEnabled ? { 'v11-rebaseline-role': 'capture-structured-details' } : undefined}
+                  style={[pendStyles.completionBox, v11TodayEnabled ? pendStyles.v11SectionSurface : null, { backgroundColor: v11TodayEnabled ? 'transparent' : questTheme.colors.surfaceMuted, borderColor: questTheme.colors.borderStrong }]}
+                >
                   <Text style={[pendStyles.completionTitle, { color: questTheme.colors.text }]}>
                     {assessment.domain === 'state' ? t(lang, 'scStateCandidate') : t(lang, 'scFoodCandidate')}
                   </Text>
                   <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>
                     {assessment.domain === 'state' ? t(lang, 'scStateCandidateHint') : t(lang, 'scFoodCandidateHint')}
                   </Text>
-                </View>
+                </WebView>
               ) : assessment.status === 'needs_completion' ? (
-                <View style={[pendStyles.completionBox, v11TodayEnabled ? pendStyles.v11SectionSurface : null, { backgroundColor: v11TodayEnabled ? 'transparent' : questTheme.colors.surfaceMuted, borderColor: questTheme.colors.borderStrong }]}>
+                <WebView
+                  dataSet={v11TodayEnabled ? { 'v11-rebaseline-role': 'capture-structured-details' } : undefined}
+                  style={[pendStyles.completionBox, v11TodayEnabled ? pendStyles.v11SectionSurface : null, { backgroundColor: v11TodayEnabled ? 'transparent' : questTheme.colors.surfaceMuted, borderColor: questTheme.colors.borderStrong }]}
+                >
                   <Text style={[pendStyles.completionTitle, { color: questTheme.colors.text }]}>
                     {t(lang, 'scCompleteRecord')}
                   </Text>
@@ -1629,6 +1672,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                         current.includes(i) ? current.filter((index) => index !== i) : [...current, i]
                       ))}
                       theme={pendingV11Theme(questTheme)}
+                      tone="neutral"
                       variant="secondary"
                     />
                   ) : null}
@@ -1769,7 +1813,10 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                           ))}
                       </View>
                       <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>{t(lang, 'customExercise')}</Text>
-                      <View style={pendStyles.customActionRow}>
+                      <WebView
+                        dataSet={v11TodayEnabled ? { 'v11-rebaseline-role': 'capture-inline-add' } : undefined}
+                        style={pendStyles.customActionRow}
+                      >
                         <PendingTextField
                           questTheme={questTheme}
                           value={ui.customExerciseName ?? ''}
@@ -1787,7 +1834,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                           questTheme={questTheme}
                           variant="secondary"
                         />
-                      </View>
+                      </WebView>
                       {selectedExerciseNames.length > 0 ? (
                         <View style={pendStyles.exerciseDetailsWrap}>
                           <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>{t(lang, 'exerciseDetails')}</Text>
@@ -1796,52 +1843,123 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                             return (
                               <View key={exerciseName} style={[pendStyles.exerciseDetailCard, v11TodayEnabled ? pendStyles.v11ExerciseDetail : null, { borderColor: questTheme.colors.borderStrong, backgroundColor: v11TodayEnabled ? 'transparent' : questTheme.colors.surfaceSubtle }]}>
                                 <Text style={[pendStyles.completionTitle, { color: questTheme.colors.text }]}>{exerciseName}</Text>
-                                <View style={pendStyles.detailInputRow}>
-                                  <PendingTextField
-                                    questTheme={questTheme}
-                                    value={details.weight ?? ''}
-                                    onChangeText={(value) => setExerciseDetail(i, exerciseName, 'weight', value)}
-                                    placeholder={t(lang, 'weight')}
-                                    placeholderTextColor={questTheme.colors.textSubtle}
-                                    keyboardType="numeric"
-                                    style={miniInputStyle}
-                                  />
-                                  <PendingTextField
-                                    questTheme={questTheme}
-                                    value={details.sets ?? ''}
-                                    onChangeText={(value) => setExerciseDetail(i, exerciseName, 'sets', value)}
-                                    placeholder={t(lang, 'sets')}
-                                    placeholderTextColor={questTheme.colors.textSubtle}
-                                    keyboardType="numeric"
-                                    style={miniInputStyle}
-                                  />
-                                  <PendingTextField
-                                    questTheme={questTheme}
-                                    value={details.reps ?? ''}
-                                    onChangeText={(value) => setExerciseDetail(i, exerciseName, 'reps', value)}
-                                    placeholder={t(lang, 'reps')}
-                                    placeholderTextColor={questTheme.colors.textSubtle}
-                                    keyboardType="numeric"
-                                    style={miniInputStyle}
-                                  />
-                                </View>
-                                <View style={pendStyles.chipRow}>
-                                  {[6, 7, 8, 9, 10].map((rpeValue) => {
-                                    const selected = details.rpe === rpeValue;
-                                    return (
-                                      <PendingChip
-                                        key={rpeValue}
-                                        label={`${t(lang, 'rpe')} ${rpeValue}`}
-                                        legacyStyle={chipStyle(selected)}
-                                        legacyTextStyle={chipTextStyle(selected)}
-                                        onPress={() => setExerciseDetail(i, exerciseName, 'rpe', rpeValue)}
-                                        questTheme={questTheme}
-                                        selected={selected}
+                                {v11TodayEnabled ? (
+                                  <>
+                                    <WebView dataSet={{ 'v11-rebaseline-role': 'capture-metric-grid' }}>
+                                      <WebView dataSet={{ 'v11-rebaseline-role': 'capture-metric-field' }}>
+                                        <Text style={{ color: questTheme.colors.textMuted, ...v11Typography.metadata }}>
+                                          {t(lang, 'captureWeight')}
+                                        </Text>
+                                        <WebView dataSet={{ 'v11-rebaseline-role': 'capture-metric-control' }}>
+                                          <PendingTextField
+                                            keyboardType="numeric"
+                                            onChangeText={(value) => setExerciseDetail(i, exerciseName, 'weight', value)}
+                                            placeholder="0"
+                                            placeholderTextColor={questTheme.colors.textSubtle}
+                                            questTheme={questTheme}
+                                            style={{ minWidth: 0, width: '100%' }}
+                                            value={details.weight ?? ''}
+                                          />
+                                          <Text style={{ color: questTheme.colors.textMuted, ...v11Typography.metadata }}>
+                                            {t(lang, 'captureWeightUnit')}
+                                          </Text>
+                                        </WebView>
+                                      </WebView>
+                                      <WebView dataSet={{ 'v11-rebaseline-role': 'capture-metric-field' }}>
+                                        <Text style={{ color: questTheme.colors.textMuted, ...v11Typography.metadata }}>
+                                          {t(lang, 'sets')}
+                                        </Text>
+                                        <PendingTextField
+                                          keyboardType="numeric"
+                                          onChangeText={(value) => setExerciseDetail(i, exerciseName, 'sets', value)}
+                                          placeholder="0"
+                                          placeholderTextColor={questTheme.colors.textSubtle}
+                                          questTheme={questTheme}
+                                          style={{ minWidth: 0, width: '100%' }}
+                                          value={details.sets ?? ''}
+                                        />
+                                      </WebView>
+                                      <WebView dataSet={{ 'v11-rebaseline-role': 'capture-metric-field' }}>
+                                        <Text style={{ color: questTheme.colors.textMuted, ...v11Typography.metadata }}>
+                                          {t(lang, 'reps')}
+                                        </Text>
+                                        <PendingTextField
+                                          keyboardType="numeric"
+                                          onChangeText={(value) => setExerciseDetail(i, exerciseName, 'reps', value)}
+                                          placeholder="0"
+                                          placeholderTextColor={questTheme.colors.textSubtle}
+                                          questTheme={questTheme}
+                                          style={{ minWidth: 0, width: '100%' }}
+                                          value={details.reps ?? ''}
+                                        />
+                                      </WebView>
+                                    </WebView>
+                                    <WebView dataSet={{ 'v11-rebaseline-role': 'capture-calibration-row' }}>
+                                      <Text style={{ color: questTheme.colors.textMuted, ...v11Typography.metadata }}>
+                                        {t(lang, 'scRpe')}
+                                      </Text>
+                                      <V11CompactValueSelector<number | null>
+                                        columns={3}
+                                        onChange={(value) => setExerciseDetail(i, exerciseName, 'rpe', value)}
+                                        options={[
+                                          ...[6, 7, 8, 9, 10].map((value) => ({ value, label: String(value) })),
+                                          { value: null, label: t(lang, 'scSkip') },
+                                        ]}
+                                        theme={pendingV11Theme(questTheme)}
+                                        value={details.rpe}
                                       />
-                                    );
-                                  })}
-                                  <PendingChip label={t(lang, 'scSkip')} legacyStyle={chipStyle(false)} legacyTextStyle={chipTextStyle(false)} onPress={() => setExerciseDetail(i, exerciseName, 'rpe', null)} questTheme={questTheme} selected={false} />
-                                </View>
+                                    </WebView>
+                                  </>
+                                ) : (
+                                  <>
+                                    <View style={pendStyles.detailInputRow}>
+                                      <PendingTextField
+                                        questTheme={questTheme}
+                                        value={details.weight ?? ''}
+                                        onChangeText={(value) => setExerciseDetail(i, exerciseName, 'weight', value)}
+                                        placeholder={t(lang, 'weight')}
+                                        placeholderTextColor={questTheme.colors.textSubtle}
+                                        keyboardType="numeric"
+                                        style={miniInputStyle}
+                                      />
+                                      <PendingTextField
+                                        questTheme={questTheme}
+                                        value={details.sets ?? ''}
+                                        onChangeText={(value) => setExerciseDetail(i, exerciseName, 'sets', value)}
+                                        placeholder={t(lang, 'sets')}
+                                        placeholderTextColor={questTheme.colors.textSubtle}
+                                        keyboardType="numeric"
+                                        style={miniInputStyle}
+                                      />
+                                      <PendingTextField
+                                        questTheme={questTheme}
+                                        value={details.reps ?? ''}
+                                        onChangeText={(value) => setExerciseDetail(i, exerciseName, 'reps', value)}
+                                        placeholder={t(lang, 'reps')}
+                                        placeholderTextColor={questTheme.colors.textSubtle}
+                                        keyboardType="numeric"
+                                        style={miniInputStyle}
+                                      />
+                                    </View>
+                                    <View style={pendStyles.chipRow}>
+                                      {[6, 7, 8, 9, 10].map((rpeValue) => {
+                                        const selected = details.rpe === rpeValue;
+                                        return (
+                                          <PendingChip
+                                            key={rpeValue}
+                                            label={`${t(lang, 'rpe')} ${rpeValue}`}
+                                            legacyStyle={chipStyle(selected)}
+                                            legacyTextStyle={chipTextStyle(selected)}
+                                            onPress={() => setExerciseDetail(i, exerciseName, 'rpe', rpeValue)}
+                                            questTheme={questTheme}
+                                            selected={selected}
+                                          />
+                                        );
+                                      })}
+                                      <PendingChip label={t(lang, 'scSkip')} legacyStyle={chipStyle(false)} legacyTextStyle={chipTextStyle(false)} onPress={() => setExerciseDetail(i, exerciseName, 'rpe', null)} questTheme={questTheme} selected={false} />
+                                    </View>
+                                  </>
+                                )}
                               </View>
                             );
                           })}
@@ -1873,7 +1991,10 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                           <PendingChip label={ui.scope} legacyStyle={chipStyle(true)} legacyTextStyle={chipTextStyle(true)} onPress={() => setScope(i, '')} questTheme={questTheme} selected />
                         </View>
                       ) : null}
-                      <View style={pendStyles.customActionRow}>
+                      <WebView
+                        dataSet={v11TodayEnabled ? { 'v11-rebaseline-role': 'capture-inline-add' } : undefined}
+                        style={pendStyles.customActionRow}
+                      >
                         <PendingTextField
                           questTheme={questTheme}
                           value={ui.customExerciseName ?? ''}
@@ -1891,66 +2012,124 @@ export default function HomeCapturePending({ captureId, entries, onDismiss }: Pr
                           questTheme={questTheme}
                           variant="secondary"
                         />
-                      </View>
+                      </WebView>
                     </>
                   ) : null}
-                  {durationSuggestions.length > 0 ? (
+                  {v11TodayEnabled && (durationSuggestions.length > 0 || qualitySuggestions.length > 0 || rpeSuggestions.length > 0) ? (
+                    <WebView dataSet={{ 'v11-rebaseline-role': 'capture-optional-calibration' }}>
+                      <Text style={{ color: questTheme.colors.text, ...v11Typography.label }}>
+                        {t(lang, 'captureOptionalCalibration')}
+                      </Text>
+                      {durationSuggestions.length > 0 ? (
+                        <WebView dataSet={{ 'v11-rebaseline-role': 'capture-calibration-row' }}>
+                          <Text style={{ color: questTheme.colors.textMuted, ...v11Typography.metadata }}>
+                            {t(lang, 'scTrainingDuration')}
+                          </Text>
+                          <V11CompactValueSelector<number | null>
+                            columns={Math.min(4, durationSuggestions.length)}
+                            onChange={(value) => setDuration(i, value)}
+                            options={durationSuggestions.map((item) => {
+                              const value = typeof item.value === 'number' ? item.value : null;
+                              return { value, label: value == null ? t(lang, 'scSkip') : String(value) };
+                            })}
+                            theme={pendingV11Theme(questTheme)}
+                            value={ui.durationMinutes}
+                          />
+                        </WebView>
+                      ) : null}
+                      {qualitySuggestions.length > 0 ? (
+                        <WebView dataSet={{ 'v11-rebaseline-role': 'capture-calibration-row' }}>
+                          <Text style={{ color: questTheme.colors.textMuted, ...v11Typography.metadata }}>
+                            {t(lang, 'scCompletionQuality')}
+                          </Text>
+                          <V11CompactValueSelector<number>
+                            columns={qualitySuggestions.length}
+                            onChange={(value) => setQuality(i, value)}
+                            options={qualitySuggestions.map((item) => ({ value: Number(item.value), label: String(Number(item.value)) }))}
+                            theme={pendingV11Theme(questTheme)}
+                            value={ui.qualityRating}
+                          />
+                        </WebView>
+                      ) : null}
+                      {rpeSuggestions.length > 0 ? (
+                        <WebView dataSet={{ 'v11-rebaseline-role': 'capture-calibration-row' }}>
+                          <Text style={{ color: questTheme.colors.textMuted, ...v11Typography.metadata }}>
+                            {t(lang, 'scRpe')}
+                          </Text>
+                          <V11CompactValueSelector<number | null>
+                            columns={3}
+                            onChange={(value) => setRpe(i, value ?? undefined)}
+                            options={[
+                              ...rpeSuggestions.map((item) => ({ value: Number(item.value), label: String(Number(item.value)) })),
+                              { value: null, label: t(lang, 'scSkip') },
+                            ]}
+                            theme={pendingV11Theme(questTheme)}
+                            value={ui.rpe}
+                          />
+                        </WebView>
+                      ) : null}
+                    </WebView>
+                  ) : (
                     <>
-                      <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>{t(lang, 'scTrainingDuration')}</Text>
-                      <View style={pendStyles.chipRow}>
-                        {durationSuggestions.map((item) => {
-                          const value = typeof item.value === 'number' ? item.value : null;
-                          const selected = ui.durationMinutes === value;
-                          return (
-                            <PendingChip
-                              key={item.id}
-                              label={value == null ? t(lang, 'scSkip') : `${value}`}
-                              legacyStyle={chipStyle(selected)}
-                              legacyTextStyle={chipTextStyle(selected)}
-                              onPress={() => setDuration(i, value)}
-                              questTheme={questTheme}
-                              selected={selected}
-                            />
-                          );
-                        })}
-                      </View>
+                      {durationSuggestions.length > 0 ? (
+                        <>
+                          <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>{t(lang, 'scTrainingDuration')}</Text>
+                          <View style={pendStyles.chipRow}>
+                            {durationSuggestions.map((item) => {
+                              const value = typeof item.value === 'number' ? item.value : null;
+                              const selected = ui.durationMinutes === value;
+                              return (
+                                <PendingChip
+                                  key={item.id}
+                                  label={value == null ? t(lang, 'scSkip') : `${value}`}
+                                  legacyStyle={chipStyle(selected)}
+                                  legacyTextStyle={chipTextStyle(selected)}
+                                  onPress={() => setDuration(i, value)}
+                                  questTheme={questTheme}
+                                  selected={selected}
+                                />
+                              );
+                            })}
+                          </View>
+                        </>
+                      ) : null}
+                      {qualitySuggestions.length > 0 ? (
+                        <>
+                          <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>{t(lang, 'scCompletionQuality')}</Text>
+                          <View style={pendStyles.chipRow}>
+                            {qualitySuggestions.map((item) => {
+                              const value = Number(item.value);
+                              const selected = ui.qualityRating === value;
+                              return (
+                                <PendingChip key={item.id} label={String(value)} legacyStyle={chipStyle(selected)} legacyTextStyle={chipTextStyle(selected)} onPress={() => setQuality(i, value)} questTheme={questTheme} selected={selected} />
+                              );
+                            })}
+                          </View>
+                        </>
+                      ) : null}
+                      {rpeSuggestions.length > 0 ? (
+                        <>
+                          <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>{t(lang, 'scRpe')}</Text>
+                          <View style={pendStyles.chipRow}>
+                            {rpeSuggestions.map((item) => {
+                              const value = Number(item.value);
+                              const selected = ui.rpe === value;
+                              return (
+                                <PendingChip key={item.id} label={String(value)} legacyStyle={chipStyle(selected)} legacyTextStyle={chipTextStyle(selected)} onPress={() => setRpe(i, value)} questTheme={questTheme} selected={selected} />
+                              );
+                            })}
+                          </View>
+                        </>
+                      ) : null}
                     </>
-                  ) : null}
-                  {qualitySuggestions.length > 0 ? (
-                    <>
-                      <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>{t(lang, 'scCompletionQuality')}</Text>
-                      <View style={pendStyles.chipRow}>
-                        {qualitySuggestions.map((item) => {
-                          const value = Number(item.value);
-                          const selected = ui.qualityRating === value;
-                          return (
-                            <PendingChip key={item.id} label={String(value)} legacyStyle={chipStyle(selected)} legacyTextStyle={chipTextStyle(selected)} onPress={() => setQuality(i, value)} questTheme={questTheme} selected={selected} />
-                          );
-                        })}
-                      </View>
-                    </>
-                  ) : null}
-                  {rpeSuggestions.length > 0 ? (
-                    <>
-                      <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>{t(lang, 'scRpe')}</Text>
-                      <View style={pendStyles.chipRow}>
-                        {rpeSuggestions.map((item) => {
-                          const value = Number(item.value);
-                          const selected = ui.rpe === value;
-                          return (
-                            <PendingChip key={item.id} label={String(value)} legacyStyle={chipStyle(selected)} legacyTextStyle={chipTextStyle(selected)} onPress={() => setRpe(i, value)} questTheme={questTheme} selected={selected} />
-                          );
-                        })}
-                      </View>
-                    </>
-                  ) : null}
+                  )}
                   <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>
                     {routing.needsUserChoice ? t(lang, 'scNeedsRouteConfirm') : t(lang, 'scAutoMatched')}
                   </Text>
-                </View>
+                </WebView>
               ) : null}
             </View>
-          </View>
+          </WebView>
         );
       })}
 

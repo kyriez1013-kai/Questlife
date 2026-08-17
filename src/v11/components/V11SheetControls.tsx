@@ -18,25 +18,27 @@ const WebTextInput = TextInput as any;
 const WebView = View as any;
 
 type ControlStatus = 'default' | 'success' | 'error';
+type ControlTone = 'default' | 'neutral';
 
-function controlVariables(theme: V11ThemeTokens) {
+function controlVariables(theme: V11ThemeTokens, tone: ControlTone = 'default') {
+  const neutral = tone === 'neutral';
   return {
-    '--v11-control-surface': theme.control.surface,
-    '--v11-control-elevated': theme.control.elevatedSurface,
+    '--v11-control-surface': neutral ? theme.control.neutralSurface : theme.control.surface,
+    '--v11-control-elevated': neutral ? theme.control.neutralElevatedSurface : theme.control.elevatedSurface,
     '--v11-control-selected': theme.control.selectedSurface,
-    '--v11-control-pressed': theme.control.pressedSurface,
+    '--v11-control-pressed': neutral ? theme.control.neutralPressedSurface : theme.control.pressedSurface,
     '--v11-control-text': theme.control.primaryText,
     '--v11-control-text-secondary': theme.control.secondaryText,
     '--v11-control-selected-text': theme.control.selectedText,
-    '--v11-control-border': theme.control.borderSubtle,
+    '--v11-control-border': neutral ? theme.control.neutralBorder : theme.control.borderSubtle,
     '--v11-control-border-selected': theme.control.borderSelected,
     '--v11-control-focus': theme.control.focus,
     '--v11-control-disabled': theme.control.disabledSurface,
     '--v11-control-disabled-text': theme.control.disabledText,
     '--v11-control-error': theme.control.error,
-    '--v11-control-primary-action': theme.control.primaryAction,
-    '--v11-control-primary-action-text': theme.control.primaryActionText,
-    '--v11-control-secondary-action': theme.control.secondaryAction,
+    '--v11-control-primary-action': neutral ? theme.control.neutralAction : theme.control.primaryAction,
+    '--v11-control-primary-action-text': neutral ? theme.control.neutralActionText : theme.control.primaryActionText,
+    '--v11-control-secondary-action': neutral ? theme.control.neutralSurface : theme.control.secondaryAction,
     '--v11-control-secondary-action-text': theme.control.secondaryActionText,
   } as any;
 }
@@ -119,19 +121,23 @@ export function V11DiscreteNumericRail<T extends number>({
 
 export function V11CategoricalChip({
   accessibilityRole = 'checkbox',
+  density = 'default',
   disabled = false,
   label,
   onPress,
   selected,
   theme,
+  tone = 'default',
   visualState = 'default',
 }: {
   accessibilityRole?: 'checkbox' | 'radio' | 'button';
+  density?: 'default' | 'compact';
   disabled?: boolean;
   label: string;
   onPress: () => void;
   selected: boolean;
   theme: V11ThemeTokens;
+  tone?: ControlTone;
   visualState?: 'default' | 'pressed';
 }) {
   const checkedState = accessibilityRole === 'button'
@@ -148,13 +154,14 @@ export function V11CategoricalChip({
       dataSet={{
         'v11-control': 'categorical-chip',
         'v11-control-file': 'src/v11/components/V11SheetControls.tsx',
+        'v11-density': density,
         'v11-disabled': disabled ? 'true' : 'false',
         'v11-preview-state': visualState,
         'v11-selected': selected ? 'true' : 'false',
       }}
       disabled={disabled}
       onPress={onPress}
-      style={controlVariables(theme)}
+      style={controlVariables(theme, tone)}
     >
       <WebText
         dataSet={{ 'v11-control-role': 'chip-indicator' }}
@@ -172,18 +179,76 @@ export function V11CategoricalChip({
   );
 }
 
+export function V11CompactValueSelector<T extends string | number | null>({
+  columns,
+  disabled = false,
+  onChange,
+  options,
+  theme,
+  value,
+}: {
+  columns?: number;
+  disabled?: boolean;
+  onChange: (value: T) => void;
+  options: { value: T; label: string }[];
+  theme: V11ThemeTokens;
+  value: T | undefined;
+}) {
+  const columnCount = Math.max(1, Math.min(columns ?? options.length, options.length));
+
+  return (
+    <WebView
+      accessibilityRole="radiogroup"
+      dataSet={{
+        'v11-control': 'compact-value-selector',
+        'v11-control-file': 'src/v11/components/V11SheetControls.tsx',
+      }}
+      style={[
+        controlVariables(theme, 'neutral'),
+        { gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))` } as any,
+      ]}
+    >
+      {options.map((option, index) => {
+        const selected = Object.is(option.value, value);
+        return (
+          <WebPressable
+            accessibilityLabel={option.label}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: selected, disabled }}
+            dataSet={{
+              'v11-control': 'compact-value-option',
+              'v11-control-file': 'src/v11/components/V11SheetControls.tsx',
+              'v11-disabled': disabled ? 'true' : 'false',
+              'v11-selected': selected ? 'true' : 'false',
+            }}
+            disabled={disabled}
+            key={`${String(option.value)}:${index}`}
+            onPress={() => onChange(option.value)}
+          >
+            <Text style={{ color: selected ? theme.control.selectedText : theme.control.secondaryText }}>
+              {option.label}
+            </Text>
+          </WebPressable>
+        );
+      })}
+    </WebView>
+  );
+}
+
 export function V11CheckboxControl({
   accessibilityLabel,
   checked,
   disabled = false,
   onPress,
   theme,
+  tone = 'default',
 }: {
   accessibilityLabel: string;
   checked: boolean;
   disabled?: boolean;
   onPress: () => void;
   theme: V11ThemeTokens;
+  tone?: ControlTone;
 }) {
   return (
     <WebPressable
@@ -198,7 +263,7 @@ export function V11CheckboxControl({
       }}
       disabled={disabled}
       onPress={onPress}
-      style={controlVariables(theme)}
+      style={controlVariables(theme, tone)}
     >
       <WebText style={{ color: disabled ? theme.control.disabledText : checked ? theme.control.selectedText : theme.control.secondaryText }}>
         {checked ? '✓' : ''}
@@ -283,6 +348,7 @@ export function V11TextField({
   status = 'default',
   style,
   theme,
+  tone = 'default',
   visualState = 'default',
   onBlur,
   onFocus,
@@ -292,6 +358,7 @@ export function V11TextField({
   status?: ControlStatus;
   style?: TextInputProps['style'];
   theme: V11ThemeTokens;
+  tone?: ControlTone;
   visualState?: 'default' | 'focused';
 }) {
   const [focused, setFocused] = useState(false);
@@ -319,7 +386,7 @@ export function V11TextField({
       }}
       placeholderTextColor={props.placeholderTextColor ?? theme.control.placeholder}
       style={[
-        controlVariables(theme),
+        controlVariables(theme, tone),
         {
           minHeight: props.multiline ? 88 : 48,
           width: '100%',
@@ -352,6 +419,7 @@ export function V11SheetButton({
   status = 'default',
   style,
   theme,
+  tone = 'default',
   variant,
   visualState = 'default',
 }: {
@@ -362,14 +430,18 @@ export function V11SheetButton({
   status?: ControlStatus;
   style?: ViewStyle | ViewStyle[];
   theme: V11ThemeTokens;
+  tone?: ControlTone;
   variant: 'primary' | 'secondary';
   visualState?: 'default' | 'pressed';
 }) {
   const inactive = disabled || loading;
+  const primaryForeground = tone === 'neutral'
+    ? theme.control.neutralActionText
+    : theme.control.primaryActionText;
   const foreground = inactive
     ? theme.control.disabledText
     : variant === 'primary'
-      ? theme.control.primaryActionText
+      ? primaryForeground
       : theme.control.secondaryActionText;
 
   return (
@@ -387,7 +459,7 @@ export function V11SheetButton({
       }}
       disabled={inactive}
       onPress={onPress}
-      style={[controlVariables(theme), style]}
+      style={[controlVariables(theme, tone), style]}
     >
       {loading ? <ActivityIndicator color={foreground} size="small" /> : null}
       <Text style={{ color: foreground }}>{label}</Text>
@@ -402,6 +474,7 @@ export function V11ComposerAction({
   loading = false,
   onPress,
   theme,
+  tone = 'default',
 }: {
   children: React.ReactNode;
   disabled?: boolean;
@@ -409,6 +482,7 @@ export function V11ComposerAction({
   loading?: boolean;
   onPress: () => void;
   theme: V11ThemeTokens;
+  tone?: ControlTone;
 }) {
   const inactive = disabled || loading;
 
@@ -424,10 +498,10 @@ export function V11ComposerAction({
       }}
       disabled={inactive}
       onPress={onPress}
-      style={controlVariables(theme)}
+      style={controlVariables(theme, tone)}
     >
       {loading
-        ? <ActivityIndicator color={theme.control.primaryActionText} size="small" />
+        ? <ActivityIndicator color={tone === 'neutral' ? theme.control.neutralActionText : theme.control.primaryActionText} size="small" />
         : children}
     </WebPressable>
   );

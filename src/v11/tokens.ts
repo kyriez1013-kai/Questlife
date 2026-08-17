@@ -18,6 +18,12 @@ export const v11Motion = {
 } as const;
 
 export const v11Typography = {
+  context: {
+    fontSize: 15,
+    lineHeight: 21,
+    fontWeight: '500' as const,
+    letterSpacing: 0,
+  },
   reading: {
     fontSize: 94,
     lineHeight: 102,
@@ -184,6 +190,12 @@ export type V11ThemeTokens = {
     secondaryAction: string;
     secondaryActionText: string;
     placeholder: string;
+    neutralSurface: string;
+    neutralElevatedSurface: string;
+    neutralPressedSurface: string;
+    neutralBorder: string;
+    neutralAction: string;
+    neutralActionText: string;
   };
 };
 
@@ -252,6 +264,12 @@ function buildThemeTokens(mode: V11ThemeMode): V11ThemeTokens {
       secondaryAction: questTheme.colors.surfaceSoft,
       secondaryActionText: questTheme.colors.text,
       placeholder: questTheme.colors.textSubtle,
+      neutralSurface: questTheme.colors.cardSurface,
+      neutralElevatedSurface: questTheme.colors.surfaceMuted,
+      neutralPressedSurface: questTheme.colors.cardSurfaceHover,
+      neutralBorder: questTheme.colors.cardBorder,
+      neutralAction: questTheme.colors.text,
+      neutralActionText: questTheme.colors.background,
     },
   };
 }

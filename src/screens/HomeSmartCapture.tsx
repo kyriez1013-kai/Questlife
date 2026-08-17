@@ -571,6 +571,7 @@ export default function HomeSmartCapture() {
             scrollEnabled
             style={{ height: inputText.trim() ? captureInputHeight : 68, minHeight: 68, maxHeight: 156, textAlignVertical: 'top' }}
             theme={v11Theme}
+            tone="neutral"
             value={inputText}
           />
         </WebView>
@@ -581,6 +582,7 @@ export default function HomeSmartCapture() {
             loading={isPosting}
             onPress={handleSend}
             theme={v11Theme}
+            tone="neutral"
           >
             <V11RebaselineIcon name="arrow" size={18} color={v11Theme.control.primaryActionText} />
           </V11ComposerAction>
@@ -656,18 +658,20 @@ export default function HomeSmartCapture() {
                       label={t(lang, recentExpanded ? 'collapseRecentRecord' : 'expandRecentRecord')}
                       onPress={() => setRecentExpanded((value) => !value)}
                       theme={v11Theme}
+                      tone="neutral"
                       variant="secondary"
                     />
-                    <V11SheetButton label={t(lang, 'hideRecentRecord')} onPress={() => setRecentVisible(false)} theme={v11Theme} variant="secondary" />
+                    <V11SheetButton label={t(lang, 'hideRecentRecord')} onPress={() => setRecentVisible(false)} theme={v11Theme} tone="neutral" variant="secondary" />
                   </>
                 ) : (
-                  <V11SheetButton label={t(lang, 'showRecentRecord')} onPress={() => setRecentVisible(true)} theme={v11Theme} variant="secondary" />
+                  <V11SheetButton label={t(lang, 'showRecentRecord')} onPress={() => setRecentVisible(true)} theme={v11Theme} tone="neutral" variant="secondary" />
                 )}
                 {hasHistory ? (
                   <V11SheetButton
                     label={t(lang, 'openActivityHistory').replace('{n}', String(allCaptures.length))}
                     onPress={() => setHistoryVisible(true)}
                     theme={v11Theme}
+                    tone="neutral"
                     variant="secondary"
                   />
                 ) : null}

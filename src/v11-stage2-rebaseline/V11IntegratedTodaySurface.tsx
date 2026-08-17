@@ -8,6 +8,8 @@ import {
 import type { V11TodayPresentation } from '../v11/todayPresentation';
 import {
   getV11ThemeTokens,
+  v11Spacing,
+  v11Typography,
   type V11ThemeMode,
 } from '../v11/tokens';
 import V11GlowOrb from '../v11/components/V11GlowOrb';
@@ -17,6 +19,7 @@ import './v11-stage2-rebaseline.css';
 
 const WebView = View as any;
 const WebPressable = Pressable as any;
+const WebText = Text as any;
 
 export type V11IntegratedPlanRow = {
   id: string;
@@ -262,6 +265,14 @@ export default function V11IntegratedTodaySurface({
     '--v11-rebaseline-primary': theme.glow.primary,
     '--v11-rebaseline-soft': theme.questTheme.colors.cardSurface,
     '--v11-rebaseline-text': theme.text.primary,
+    '--v11-rebaseline-neutral-border': theme.control.neutralBorder,
+    '--v11-rebaseline-neutral-elevated': theme.control.neutralElevatedSurface,
+    '--v11-rebaseline-neutral-pressed': theme.control.neutralPressedSurface,
+    '--v11-rebaseline-neutral-surface': theme.control.neutralSurface,
+    '--v11-today-context-gap': `${v11Spacing.sm}px`,
+    '--v11-today-context-padding': `${v11Spacing.xs}px`,
+    '--v11-today-hairline': `${v11Spacing.hairline}px`,
+    '--v11-today-top-padding': `${v11Spacing.xl}px`,
   } as any;
 
   useIntegratedPerformanceMeasurement({
@@ -300,12 +311,18 @@ export default function V11IntegratedTodaySurface({
 
       <WebView dataSet={{ 'v11-rebaseline-role': 'content' }}>
         <WebView dataSet={{ 'v11-rebaseline-role': 'context-line' }}>
-          <Text style={{ color: theme.text.primary, fontSize: 14, lineHeight: 20, fontWeight: '500' }}>
+          <WebText
+            dataSet={{ 'v11-rebaseline-role': 'context-primary' }}
+            style={{ color: theme.text.primary, ...v11Typography.context }}
+          >
             {contextLine}
-          </Text>
-          <Text style={{ color: theme.text.metadata, fontSize: 10, lineHeight: 15, letterSpacing: 0.8 }}>
+          </WebText>
+          <WebText
+            dataSet={{ 'v11-rebaseline-role': 'context-stage' }}
+            style={{ color: theme.text.metadata, ...v11Typography.metadata }}
+          >
             {labels.evidenceStage} · {decision.evidenceStage}
-          </Text>
+          </WebText>
         </WebView>
 
         <WebView dataSet={{ 'v11-rebaseline-role': 'capture-group' }}>
@@ -315,7 +332,7 @@ export default function V11IntegratedTodaySurface({
             dataSet={{ 'v11-rebaseline-role': 'capture-entry' }}
             onPress={onCapture}
           >
-            <V11RebaselineIcon name="capture" size={18} color={theme.glow.primary} />
+            <V11RebaselineIcon name="capture" size={18} color={theme.text.secondary} />
             <Text
               numberOfLines={1}
               style={{ flex: 1, flexShrink: 1, minWidth: 0, color: theme.text.secondary, fontSize: 14, lineHeight: 20 }}
@@ -323,7 +340,7 @@ export default function V11IntegratedTodaySurface({
               {capturePlaceholder}
             </Text>
             <WebView dataSet={{ 'v11-rebaseline-role': 'capture-send' }}>
-              <V11RebaselineIcon name="arrow" size={16} color={theme.text.primary} />
+              <V11RebaselineIcon name="arrow" size={16} color={theme.text.secondary} />
             </WebView>
           </WebPressable>
           <LatestRecord
