@@ -437,11 +437,6 @@ export default function V11Stage2RebaselineScreen() {
         showsVerticalScrollIndicator={false}
       >
         <WebView dataSet={{ 'v11-rebaseline-role': 'content' }}>
-          <WebView dataSet={{ 'v11-rebaseline-role': 'fixture-indicator' }}>
-            <Text style={{ color: theme.text.metadata, fontSize: 10, lineHeight: 15, letterSpacing: 0.7 }}>
-              {t(language, 'rebaselineFixtureIndicator')}
-            </Text>
-          </WebView>
           <WebView dataSet={{ 'v11-rebaseline-role': 'context-line' }}>
             <Text style={{ color: theme.text.primary, fontSize: 14, lineHeight: 20, fontWeight: '500' }}>
               {t(language, 'rebaselineDateContext')}
