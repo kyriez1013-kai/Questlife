@@ -8,6 +8,7 @@ import { scheduleSkillReminder, cancelSkillReminder, rescheduleAllReminders } fr
 import { calculateModuleProgress, calculatePredictionDelta, progressTypeForSkill, skillsForModule } from './progress';
 import { trackEvent } from './utils/analytics';
 import { scheduleServerSync } from './services/syncService';
+import { enqueueServerDeletions } from './services/syncDeletionOutbox';
 import { createEffortUnitsFromExecutionLog, generateContributionLinks } from './utils/effort';
 import { DOMAIN_TEMPLATES, createGoalStructureFromTemplate, templateProgressModel } from './domainTemplates';
 import { rebuildDerivedDataFromLogs, repairAppDataIntegrity, validateAppDataIntegrity, CoreFlowIntegrityResult } from './utils/coreFlow';
@@ -28,6 +29,15 @@ function metricTypeForAnalytics(skill?: Skill) {
 
 function safeNumber(value?: number) {
   return Number.isFinite(value) ? value : undefined;
+}
+
+function queueExplicitServerDeletions(
+  entries: Parameters<typeof enqueueServerDeletions>[0],
+) {
+  if (entries.length === 0) return;
+  void enqueueServerDeletions(entries).catch((error) => {
+    console.warn('[sync] failed to persist deletion outbox', error);
+  });
 }
 
 interface Ctx {
@@ -968,6 +978,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [mutate]);
 
   const deleteExecutionLog: Ctx['deleteExecutionLog'] = useCallback((id) => {
+    if (!(dataRef.current.executionLogs || []).some((log) => log.id === id)) return;
+    queueExplicitServerDeletions([{ collection: 'executionLogs', id }]);
     mutate((d) => {
       const removedLog = (d.executionLogs || []).find((log) => log.id === id);
       const logIdsToRemove = new Set([id]);
@@ -1092,6 +1104,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [mutate]);
 
   const deleteStateCheckIn: Ctx['deleteStateCheckIn'] = useCallback((id) => {
+    if (!(dataRef.current.stateCheckIns || []).some((row) => row.id === id)) return;
+    queueExplicitServerDeletions([{ collection: 'stateCheckIns', id }]);
     mutate((d) => ({ ...d, stateCheckIns: (d.stateCheckIns || []).filter((row) => row.id !== id) }));
   }, [mutate]);
 
@@ -1147,6 +1161,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   ), [addContextLogs]);
 
   const deleteContextLog: Ctx['deleteContextLog'] = useCallback((id) => {
+    if (!(dataRef.current.contextLogs || []).some((log) => log.id === id)) return;
+    queueExplicitServerDeletions([{ collection: 'contextLogs', id }]);
     mutate((d) => ({ ...d, contextLogs: (d.contextLogs || []).filter((log) => log.id !== id) }));
   }, [mutate]);
 
@@ -1330,6 +1346,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [mutate]);
 
   const deleteRawCapture: Ctx['deleteRawCapture'] = useCallback((id: string, options) => {
+    const current = dataRef.current;
+    if (!(current.rawCaptures || []).some((capture) => capture.id === id)) return;
+    if (options?.deleteLinkedExecutionLogs) {
+      const linkedLogIds = getLinkedExecutionLogIdsForCapture(current.executionLogs || [], id);
+      queueExplicitServerDeletions(Array.from(linkedLogIds).map((logId) => ({
+        collection: 'executionLogs' as const,
+        id: logId,
+      })));
+    }
     mutate((d) => {
       const linkedLogIds = getLinkedExecutionLogIdsForCapture(d.executionLogs || [], id);
       if (!options?.deleteLinkedExecutionLogs || linkedLogIds.size === 0) {
@@ -1413,6 +1438,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [mutate]);
 
   const deleteDecisionResult: Ctx['deleteDecisionResult'] = useCallback((id) => {
+    if (!(dataRef.current.decisionResults || []).some((result) => result.id === id)) return;
+    queueExplicitServerDeletions([{ collection: 'decisionResults', id }]);
     mutate((d) => ({
       ...d,
       decisionResults: (d.decisionResults || []).filter((result) => result.id !== id),

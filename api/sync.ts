@@ -7,6 +7,7 @@
  * so the client can safely re-send the same records on every sync.
  */
 import { z } from 'zod';
+import type { ServerDeletionResult } from '../src/services/syncDeletionOutboxCore';
 
 declare const process: any;
 
@@ -18,6 +19,15 @@ const RecordSchema = z
   .passthrough();
 
 const RecordListSchema = z.array(RecordSchema).max(MAX_RECORDS_PER_COLLECTION);
+const DeletionIdListSchema = z.array(z.string().min(1).max(200)).max(MAX_RECORDS_PER_COLLECTION);
+
+const DeletionsSchema = z.object({
+  executionLogs: DeletionIdListSchema.optional(),
+  contextLogs: DeletionIdListSchema.optional(),
+  stateCheckIns: DeletionIdListSchema.optional(),
+  decisionResults: DeletionIdListSchema.optional(),
+  patternMemory: DeletionIdListSchema.optional(),
+}).strict();
 
 const SyncBodySchema = z.object({
   anonymousUserId: z.string().min(1).max(200),
@@ -27,8 +37,9 @@ const SyncBodySchema = z.object({
     stateCheckIns: RecordListSchema.optional(),
     decisionResults: RecordListSchema.optional(),
     patternMemory: RecordListSchema.optional(),
-  }),
-});
+  }).strict(),
+  deletions: DeletionsSchema.optional(),
+}).strict();
 
 type SyncRecord = z.infer<typeof RecordSchema>;
 
@@ -126,6 +137,36 @@ async function upsertRows(supabaseUrl: string, serviceRoleKey: string, table: st
   }
 }
 
+async function deleteExactRow(
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  table: string,
+  anonymousUserId: string,
+  id: string,
+) {
+  const url = new URL(`${supabaseUrl.replace(/\/$/, '')}/rest/v1/${table}`);
+  url.searchParams.set('anonymous_user_id', `eq.${anonymousUserId}`);
+  url.searchParams.set('id', `eq.${id}`);
+  url.searchParams.set('select', 'id');
+  const response = await fetch(url.toString(), {
+    method: 'DELETE',
+    headers: {
+      apikey: serviceRoleKey,
+      Authorization: `Bearer ${serviceRoleKey}`,
+      Prefer: 'return=representation',
+    },
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`delete ${table} failed: HTTP ${response.status} ${text.slice(0, 300)}`);
+  }
+  const text = await response.text();
+  if (!text) return 0;
+  const rows = JSON.parse(text);
+  if (!Array.isArray(rows)) throw new Error(`delete ${table} returned an invalid response`);
+  return rows.length;
+}
+
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
@@ -156,7 +197,7 @@ export default async function handler(req: any, res: any) {
       return send(res, 503, { ok: false, error: 'sync_not_configured' });
     }
 
-    const { anonymousUserId, collections } = parsed.data;
+    const { anonymousUserId, collections, deletions } = parsed.data;
     const counts: Record<string, number> = {};
     for (const [key, mapping] of Object.entries(MAPPINGS)) {
       const records = (collections as Record<string, SyncRecord[] | undefined>)[key];
@@ -166,7 +207,40 @@ export default async function handler(req: any, res: any) {
       counts[key] = rows.length;
     }
 
-    return send(res, 200, { ok: true, upserted: counts });
+    const deletionResults: ServerDeletionResult = {};
+    for (const [key, mapping] of Object.entries(MAPPINGS)) {
+      const requestedIds = deletions?.[key as keyof typeof deletions];
+      if (!requestedIds || requestedIds.length === 0) continue;
+      const ids = Array.from(new Set(requestedIds));
+      let deleted = 0;
+      for (const id of ids) {
+        deleted += await deleteExactRow(
+          supabaseUrl,
+          serviceRoleKey,
+          mapping.table,
+          anonymousUserId,
+          id,
+        );
+      }
+      deletionResults[key as keyof ServerDeletionResult] = {
+        requested: ids.length,
+        deleted,
+        alreadyAbsent: Math.max(0, ids.length - deleted),
+        acknowledgedIds: ids,
+      };
+    }
+
+    if (Object.keys(deletionResults).length > 0) {
+      console.info('[sync] deletion completed', Object.fromEntries(
+        Object.entries(deletionResults).map(([key, result]) => [key, {
+          requested: result?.requested ?? 0,
+          deleted: result?.deleted ?? 0,
+          alreadyAbsent: result?.alreadyAbsent ?? 0,
+        }]),
+      ));
+    }
+
+    return send(res, 200, { ok: true, upserted: counts, deletions: deletionResults });
   } catch (error: any) {
     console.error('[sync] failed', error?.message || error);
     return send(res, 500, { ok: false, error: 'sync_failed' });
