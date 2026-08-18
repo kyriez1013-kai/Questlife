@@ -5,6 +5,13 @@ import type {
   QuantV042LifecycleId,
   QuantInterpretationScenarioId,
 } from '../v11-insights/personal-terminal/personalTerminalPresentation';
+import {
+  isV11InsightsMode,
+  isV11PersonalTerminalMode,
+  isV11ProductMode,
+  isV11TodayMode,
+  resolveV11ProductMode,
+} from './featureSelection';
 
 function query() {
   if (Platform.OS !== 'web' || typeof window === 'undefined') return undefined;
@@ -16,34 +23,23 @@ function route() {
 }
 
 export function isV11ProductEnabled() {
-  const value = route();
-  return value === 'stage2'
-    || value === 'stage3-insights'
-    || value === 'stage3-quant-terminal'
-    || value === 'stage3-personal-terminal'
-    || value === 'v11-marathon';
+  return isV11ProductMode(resolveV11ProductMode(route()));
 }
 
 export function isV11MarathonEnabled() {
-  return route() === 'v11-marathon';
+  return resolveV11ProductMode(route()) === 'owner_beta';
 }
 
 export function isV11TodayEnabled() {
-  const value = route();
-  return value === 'stage2' || value === 'stage3-personal-terminal' || value === 'v11-marathon';
+  return isV11TodayMode(resolveV11ProductMode(route()));
 }
 
 export function isV11InsightsEnabled() {
-  const value = route();
-  return value === 'stage3-insights'
-    || value === 'stage3-quant-terminal'
-    || value === 'stage3-personal-terminal'
-    || value === 'v11-marathon';
+  return isV11InsightsMode(resolveV11ProductMode(route()));
 }
 
 export function isV11PersonalTerminalEnabled() {
-  const value = route();
-  return value === 'stage3-personal-terminal' || value === 'v11-marathon';
+  return isV11PersonalTerminalMode(resolveV11ProductMode(route()));
 }
 
 export function getV11PersonalTerminalFixture(): 'forming' | 'mature' | 'portfolio' | 'skill' | 'volatile' | 'historical' | null {
