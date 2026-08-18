@@ -1,7 +1,7 @@
 declare const process: any;
 
 // @ts-expect-error Test-only Node TypeScript entry.
-import handler from './sync.ts';
+import handler from '../../api/sync.ts';
 
 let assertions = 0;
 
