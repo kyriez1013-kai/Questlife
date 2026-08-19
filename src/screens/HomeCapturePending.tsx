@@ -14,7 +14,7 @@ import { View, Text, TouchableOpacity, StyleSheet, TextInput, TextInputProps } f
 import { useStore } from '../store';
 import { getQuestTheme } from '../design/tokens';
 import { getLanguage, t } from '../i18n';
-import { Category, CompletionSchema, ExecutionLog, GoalType, ParsedEntry, ProgressType, QuestModule, TaskType } from '../types';
+import { Category, CompletionSchema, DataFieldOrigin, DataParserMetadata, ExecutionLog, GoalType, ParsedEntry, ProgressType, QuestModule, TaskType } from '../types';
 import QuestCard from '../components/ui/QuestCard';
 import { assessCaptureCompletion, type CompletionDomain } from '../utils/captureCompletion';
 import { getSmartRouteResult, SmartRouteResult } from '../utils/smartRouting';
@@ -38,6 +38,14 @@ import {
   isConcreteExercise,
   uniqueLocalizedActions,
 } from '../utils/universalCapture';
+import {
+  buildConfirmedCaptureProvenance,
+  captureCandidateCorrections,
+} from '../utils/dataProvenance';
+import {
+  recordCaptureFriction,
+  type CaptureFrictionDomain,
+} from '../utils/captureFriction';
 
 const WebView = View as any;
 
@@ -560,6 +568,107 @@ function estimateDuration(entry: ParsedEntry): number {
     return entry.fields.durationMinutes ?? 0;
   }
   return entry.fields.durationMinutes ?? 0;
+}
+
+function provenanceDomain(domain: string): CaptureFrictionDomain {
+  if (domain === 'fitness' || domain === 'exercise') return 'exercise';
+  if (domain === 'learning' || domain === 'reading') return 'learning';
+  if (domain === 'work' || domain === 'project') return 'work';
+  if (domain === 'state') return 'state';
+  return 'other';
+}
+
+function proposedStrengthValue(entry: ParsedEntry, field: 'weight' | 'sets' | 'reps' | 'rpe') {
+  if (field === 'weight') return entry.fields.extraWeight ?? entry.fields.sets?.find((set) => set.weight != null)?.weight;
+  if (field === 'sets') return entry.fields.sets?.length;
+  if (field === 'reps') return entry.fields.sets?.find((set) => set.reps != null)?.reps;
+  return typeof entry.fields.rpe === 'number' ? entry.fields.rpe : undefined;
+}
+
+function captureLogProvenance(input: {
+  captureId: string;
+  entryIndex: number;
+  entryKey: string;
+  parser?: DataParserMetadata;
+  proposed: ParsedEntry;
+  confirmed: ParsedEntry;
+  title: string;
+  linkedSkillId?: string;
+  linkedGoalId?: string;
+  linkedModuleId?: string;
+  proposedGoalId?: string | null;
+  proposedModuleId?: string | null;
+  durationMinutes: number;
+  qualityRating?: number;
+  structuredData?: Record<string, unknown>;
+  userEnteredStrengthFields?: string[];
+  isCustomAction?: boolean;
+}) {
+  const corrections = captureCandidateCorrections(input.proposed, input.confirmed);
+  const correctionByField = new Map(corrections.map((row) => [row.field, row]));
+  const addCorrection = (field: string, proposed: unknown, confirmed: unknown) => {
+    if (JSON.stringify(proposed) === JSON.stringify(confirmed) || correctionByField.has(field)) return;
+    const scalar = (value: unknown) => (
+      value == null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean'
+        ? value as string | number | boolean | null | undefined
+        : undefined
+    );
+    const row = { field, proposed: scalar(proposed), confirmed: scalar(confirmed) };
+    corrections.push(row);
+    correctionByField.set(field, row);
+  };
+  addCorrection('title', input.proposed.skillName, input.title);
+  addCorrection('linkedSkillId', input.proposed.matchedSkillId, input.linkedSkillId);
+  addCorrection('linkedGoalId', input.proposedGoalId, input.linkedGoalId);
+  addCorrection('linkedModuleId', input.proposedModuleId, input.linkedModuleId);
+
+  const corrected = new Set(corrections.map((row) => row.field));
+  const fieldOrigins: Record<string, DataFieldOrigin> = {
+    title: input.isCustomAction
+      ? 'owner_entered'
+      : corrected.has('title') ? 'owner_corrected' : 'model_proposed_owner_confirmed',
+    linkedSkillId: corrected.has('linkedSkillId')
+      ? 'owner_corrected'
+      : input.proposed.matchedSkillId ? 'model_proposed_owner_confirmed' : 'owner_entered',
+    linkedGoalId: corrected.has('linkedGoalId')
+      ? 'owner_corrected'
+      : input.proposedGoalId ? 'model_proposed_owner_confirmed' : 'owner_entered',
+    linkedModuleId: corrected.has('linkedModuleId')
+      ? 'owner_corrected'
+      : input.proposedModuleId ? 'model_proposed_owner_confirmed' : 'owner_entered',
+  };
+  if (input.durationMinutes > 0) {
+    fieldOrigins.durationMinutes = corrected.has('fields.durationMinutes')
+      ? 'owner_corrected'
+      : input.proposed.fields.durationMinutes != null
+        ? 'model_proposed_owner_confirmed'
+        : 'owner_entered';
+  }
+  if (input.qualityRating != null) {
+    fieldOrigins.qualityRating = corrected.has('qualityRating')
+      ? 'owner_corrected'
+      : input.proposed.qualityRating != null
+        ? 'model_proposed_owner_confirmed'
+        : 'owner_entered';
+  }
+  (['weight', 'sets', 'reps', 'rpe'] as const).forEach((field) => {
+    if (input.structuredData?.[field] == null) return;
+    const userEntered = input.userEnteredStrengthFields?.includes(field) === true;
+    fieldOrigins[`structuredData.${field}`] = userEntered
+      ? (proposedStrengthValue(input.proposed, field) == null ? 'owner_entered' : 'owner_corrected')
+      : proposedStrengthValue(input.proposed, field) != null
+        ? 'model_proposed_owner_confirmed'
+        : 'unknown';
+  });
+
+  return buildConfirmedCaptureProvenance({
+    rawCaptureId: input.captureId,
+    entryIndex: input.entryIndex,
+    entryKey: input.entryKey,
+    parser: input.parser,
+    corrections,
+    fieldOrigins,
+  });
 }
 
 function entryWithCompletion(entry: ParsedEntry, ui: EntryUI): ParsedEntry {
@@ -1130,6 +1239,8 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
     setConfirming(true);
     const date = parseTargetDate(captureText);
     const savedLogs: ExecutionLog[] = [];
+    const frictionCorrectedFields = new Set<string>();
+    let frictionDomain: CaptureFrictionDomain = 'unknown';
 
     effectiveEntries.forEach((entry, i) => {
       if (completionSchema && (completionSchema.domain === 'state' || completionSchema.domain === 'food')) return;
@@ -1158,6 +1269,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
       const semanticRoute = inferSemanticRoute(completedEntry, captureText);
       const routing = resolveRouting(completedEntry);
       const saveDomain = completionSchema?.domain ?? smartRoute.domain;
+      frictionDomain = provenanceDomain(saveDomain);
       const resolvedGoalForEntry = resolveGoalForSave(ui, saveDomain, completedEntry, smartRoute, routing);
       const resolvedModuleForEntry = resolveModuleForSave(ui, saveDomain, completedEntry, resolvedGoalForEntry, smartRoute, routing);
 
@@ -1211,6 +1323,62 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
           const strengthSet = (weight || sets || reps || rpe)
             ? { weight, sets, reps, rpe: rpe ?? undefined }
             : undefined;
+          const structuredData = {
+            exerciseName,
+            weight,
+            sets,
+            reps,
+            rpe,
+            sessionDurationMinutes: sessionDuration || undefined,
+            durationMinutes: perActionDuration,
+            sourceCaptureId: captureId,
+            sourceCaptureEntryIndex: i,
+            sourceCaptureEntryKey: actionKey,
+            sourceActionType: isCustomAction ? 'customAction' : 'suggestedAction',
+            source: isCustomAction ? 'customAction' : 'suggestedAction',
+            isCustomAction,
+            customAction: isCustomAction ? exerciseName : undefined,
+            route: smartRoute.domain,
+            routeConfidence: smartRoute.confidence,
+            routeReason: smartRoute.reason,
+            selectedExerciseCount: multiExercises.length,
+            rawParsedFields: completedEntry.fields,
+          };
+          const captureProvenance = captureLogProvenance({
+            captureId,
+            entryIndex: i,
+            entryKey: actionKey,
+            parser: capture?.parsed?.parserMeta,
+            proposed: entry,
+            confirmed: completedEntry,
+            title: exerciseName,
+            linkedSkillId: actionSkillId,
+            linkedGoalId: selectedGoalId,
+            linkedModuleId: selectedModuleId,
+            proposedGoalId: completionSchema?.matchedGoalId,
+            proposedModuleId: completionSchema?.matchedModuleId,
+            durationMinutes: perActionDuration,
+            qualityRating: completedEntry.qualityRating,
+            structuredData,
+            userEnteredStrengthFields: [
+              ...(detail.weight?.trim() ? ['weight'] : []),
+              ...(detail.sets?.trim() ? ['sets'] : []),
+              ...(detail.reps?.trim() ? ['reps'] : []),
+              ...(detail.rpe != null || ui.rpe != null ? ['rpe'] : []),
+            ],
+            isCustomAction,
+          });
+          if (multiExercises.length > 1 && perActionDuration > 0) {
+            captureProvenance.fieldOrigins = {
+              ...(captureProvenance.fieldOrigins || {}),
+              durationMinutes: 'rule_derived',
+            };
+            captureProvenance.limitations = [
+              ...(captureProvenance.limitations || []),
+              'CAPTURE_DURATION_SPLIT_ACROSS_ACTIONS',
+            ];
+          }
+          (captureProvenance.correctedFields || []).forEach((field) => frictionCorrectedFields.add(field));
           const savedLog = createExecutionLog({
             id: `capture-${captureId}-${i}-${actionIndex}`,
             linkedSkillId: actionSkillId,
@@ -1229,27 +1397,8 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
               sets: strengthSet ? [strengthSet] : [],
               rawParsedFields: completedEntry.fields,
             },
-            structuredData: {
-              exerciseName,
-              weight,
-              sets,
-              reps,
-              rpe,
-              sessionDurationMinutes: sessionDuration || undefined,
-              durationMinutes: perActionDuration,
-              sourceCaptureId: captureId,
-              sourceCaptureEntryIndex: i,
-              sourceCaptureEntryKey: actionKey,
-              sourceActionType: isCustomAction ? 'customAction' : 'suggestedAction',
-              source: isCustomAction ? 'customAction' : 'suggestedAction',
-              isCustomAction,
-              customAction: isCustomAction ? exerciseName : undefined,
-              route: smartRoute.domain,
-              routeConfidence: smartRoute.confidence,
-              routeReason: smartRoute.reason,
-              selectedExerciseCount: multiExercises.length,
-              rawParsedFields: completedEntry.fields,
-            },
+            structuredData,
+            dataProvenance: captureProvenance,
             metricUpdate: {
               metricType: 'performance_log',
               performanceValue: weight,
@@ -1328,6 +1477,60 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
         sourceCaptureId: captureId,
       } : undefined;
       const isCustomAction = (ui.customExerciseNames ?? []).some((name) => normalizeName(name) === normalizeName(completedEntry.skillName));
+      const structuredData = isStrength ? {
+        exerciseName: completedEntry.skillName,
+        weight: topWeight,
+        sets: compactSet?.sets ?? (detailedStrengthSets.length || undefined),
+        reps: firstReps,
+        durationMinutes,
+        sourceCaptureId: captureId,
+        sourceCaptureEntryIndex: i,
+        sourceCaptureEntryKey: sourceKey,
+        route: semanticRoute.route,
+        routeConfidence: routing.confidence,
+        routeReason: routing.reason,
+        needsUserChoice: routing.needsUserChoice,
+        sourceActionType: isCustomAction ? 'customAction' : 'suggestedAction',
+        source: isCustomAction ? 'customAction' : 'suggestedAction',
+        isCustomAction,
+        customAction: isCustomAction ? completedEntry.skillName : undefined,
+        rawParsedFields: completedEntry.fields,
+      } : {
+        ...completedEntry.fields,
+        sourceCaptureId: captureId,
+        sourceCaptureEntryIndex: i,
+        sourceCaptureEntryKey: sourceKey,
+        route: semanticRoute.route,
+        routeConfidence: routing.confidence,
+        routeReason: routing.reason,
+        needsUserChoice: routing.needsUserChoice,
+        sourceActionType: isCustomAction ? 'customAction' : 'suggestedAction',
+        source: isCustomAction ? 'customAction' : 'suggestedAction',
+        isCustomAction,
+        customAction: isCustomAction ? completedEntry.skillName : undefined,
+      };
+      const captureProvenance = captureLogProvenance({
+        captureId,
+        entryIndex: i,
+        entryKey: sourceKey,
+        parser: capture?.parsed?.parserMeta,
+        proposed: entry,
+        confirmed: completedEntry,
+        title: completedEntry.skillName,
+        linkedSkillId: skillId,
+        linkedGoalId,
+        linkedModuleId,
+        proposedGoalId: completionSchema?.matchedGoalId,
+        proposedModuleId: completionSchema?.matchedModuleId,
+        durationMinutes,
+        qualityRating: completedEntry.qualityRating,
+        structuredData,
+        userEnteredStrengthFields: [
+          ...(ui.rpe != null ? ['rpe'] : []),
+        ],
+        isCustomAction,
+      });
+      (captureProvenance.correctedFields || []).forEach((field) => frictionCorrectedFields.add(field));
 
       const savedLog = createExecutionLog({
         id: `capture-${captureId}-${i}`,
@@ -1353,38 +1556,8 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
           sets: detailedStrengthSets,
           rawParsedFields: completedEntry.fields,
         } : undefined,
-        structuredData: isStrength ? {
-          exerciseName: completedEntry.skillName,
-          weight: topWeight,
-          sets: compactSet?.sets ?? (detailedStrengthSets.length || undefined),
-          reps: firstReps,
-          durationMinutes,
-          sourceCaptureId: captureId,
-          sourceCaptureEntryIndex: i,
-          sourceCaptureEntryKey: sourceKey,
-          route: semanticRoute.route,
-          routeConfidence: routing.confidence,
-          routeReason: routing.reason,
-          needsUserChoice: routing.needsUserChoice,
-          sourceActionType: isCustomAction ? 'customAction' : 'suggestedAction',
-          source: isCustomAction ? 'customAction' : 'suggestedAction',
-          isCustomAction,
-          customAction: isCustomAction ? completedEntry.skillName : undefined,
-          rawParsedFields: completedEntry.fields,
-        } : {
-          ...completedEntry.fields,
-          sourceCaptureId: captureId,
-          sourceCaptureEntryIndex: i,
-          sourceCaptureEntryKey: sourceKey,
-          route: semanticRoute.route,
-          routeConfidence: routing.confidence,
-          routeReason: routing.reason,
-          needsUserChoice: routing.needsUserChoice,
-          sourceActionType: isCustomAction ? 'customAction' : 'suggestedAction',
-          source: isCustomAction ? 'customAction' : 'suggestedAction',
-          isCustomAction,
-          customAction: isCustomAction ? completedEntry.skillName : undefined,
-        },
+        structuredData,
+        dataProvenance: captureProvenance,
         metricUpdate: isStrength
           ? {
               metricType: 'performance_log' as ProgressType,
@@ -1402,6 +1575,18 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
     });
 
     if (savedLogs.length > 0) {
+      if (frictionCorrectedFields.size > 0) {
+        recordCaptureFriction(captureId, 'candidate_corrected', {
+          domain: frictionDomain,
+          correctedFields: Array.from(frictionCorrectedFields),
+        });
+      }
+      recordCaptureFriction(captureId, 'capture_confirmed', {
+        domain: frictionDomain,
+        candidateCount: effectiveEntries.length,
+        correctedFields: Array.from(frictionCorrectedFields),
+        tapCount: 1,
+      });
       setPostSaveFeedback(buildPostSaveFeedback({ savedLogs, data, lang }));
       setSavedLogIds(savedLogs.map((log) => log.id));
       setAfterStateDraft({});

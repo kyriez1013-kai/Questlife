@@ -40,6 +40,12 @@ import {
   V11TextField,
 } from '../v11/components/V11SheetControls';
 import V11RebaselineIcon from '../v11-stage2-rebaseline/V11RebaselineIcon';
+import { buildRawCaptureProvenance } from '../utils/dataProvenance';
+import {
+  recordCaptureFriction,
+  startCaptureFriction,
+  type CaptureFrictionDomain,
+} from '../utils/captureFriction';
 
 const WebView = View as any;
 
@@ -88,6 +94,16 @@ function shouldDebugParse(): boolean {
   } catch {
     return false;
   }
+}
+
+function captureFrictionDomain(result: any): CaptureFrictionDomain {
+  const domain = result?.completionSchema?.domain;
+  if (domain === 'fitness') return 'exercise';
+  if (domain === 'learning') return 'learning';
+  if (domain === 'state') return 'state';
+  if (result?.type === 'reading') return 'learning';
+  if (result?.type === 'training') return 'exercise';
+  return 'other';
 }
 
 // ── Insight-type helpers ────────────────────────────────────────────────────
@@ -320,6 +336,7 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
     const requestId = (captureParseRequestRef.current.get(captureId) ?? 0) + 1;
     captureParseRequestRef.current.set(captureId, requestId);
     const isCurrentRequest = () => captureParseRequestRef.current.get(captureId) === requestId;
+    recordCaptureFriction(captureId, 'parser_started');
     // 1. Recent capture history (raw, for cross-link detection)
     const history = activeCaptureHistory
       .filter((c) => c.parseStatus === 'done' && c.id !== captureId)
@@ -400,6 +417,26 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
       });
       if (!isCurrentRequest()) return;
       if (result.ok) {
+        const frictionDomain = captureFrictionDomain(result);
+        const parsedEntries: any[] = Array.isArray(result.entries) ? result.entries : [];
+        const fieldsPresent: string[] = Array.from(new Set<string>(parsedEntries.flatMap((entry: any) => [
+          'skillName',
+          'progressType',
+          ...Object.keys(entry?.fields && typeof entry.fields === 'object' ? entry.fields : {}).map((field) => `fields.${field}`),
+          ...(entry?.qualityRating != null ? ['qualityRating'] : []),
+        ])));
+        recordCaptureFriction(captureId, 'parser_succeeded', {
+          domain: frictionDomain,
+          candidateCount: parsedEntries.length,
+          fieldsPresent,
+        });
+        if (parsedEntries.length > 0 || result.completionSchema?.needsCompletion === true) {
+          recordCaptureFriction(captureId, 'candidate_presented', {
+            domain: frictionDomain,
+            candidateCount: parsedEntries.length,
+            fieldsPresent,
+          });
+        }
         if (debugParse) {
           console.log('[parse result final]', JSON.stringify({
             ok: result.ok,
@@ -414,8 +451,14 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
               : undefined,
           }, null, 2));
         }
+        const currentCapture = (data.rawCaptures || []).find((capture) => capture.id === captureId);
+        const baseProvenance = currentCapture?.dataProvenance ?? buildRawCaptureProvenance(currentCapture?.createdAt);
         updateRawCapture(captureId, {
           parseStatus: 'done',
+          dataProvenance: {
+            ...baseProvenance,
+            parser: result.parserMeta,
+          },
           parsed: {
             type:            result.type,
             fields:          result.fields,
@@ -427,16 +470,19 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
             entries:          Array.isArray(result.entries) ? result.entries : [],
             entriesDismissed: false,
             completionSchema: result.completionSchema ?? undefined,
+            parserMeta: result.parserMeta ?? undefined,
           },
         });
       } else {
+        recordCaptureFriction(captureId, 'parser_failed', { failureCode: 'parse' });
         updateRawCapture(captureId, { parseStatus: 'failed' });
       }
     } catch {
       if (!isCurrentRequest()) return;
+      recordCaptureFriction(captureId, 'parser_failed', { failureCode: 'network' });
       updateRawCapture(captureId, { parseStatus: 'failed' });
     }
-  }, [activeCaptureHistory, data.skills, data.categories, data.executionLogs, updateRawCapture]);
+  }, [activeCaptureHistory, data.skills, data.categories, data.executionLogs, data.rawCaptures, updateRawCapture]);
 
   // ── Fetch greeting once per focus ─────────────────────────────────────────
 
@@ -483,6 +529,7 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
 
     // 1. Save locally immediately — UI completes right here
     const capture = addRawCapture(text);
+    startCaptureFriction(capture.id, 'text');
 
     setIsPosting(false);
 
@@ -494,6 +541,7 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
     const text = label.trim();
     if (!text || isPosting) return;
     const capture = addRawCapture(text);
+    startCaptureFriction(capture.id, 'recent');
     triggerParse(capture.id, text);
   }, [addRawCapture, isPosting, triggerParse]);
 
@@ -516,6 +564,7 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
       confirmText: t(lang, 'delete'),
       destructive: true,
       onConfirm: () => {
+        recordCaptureFriction(captureId, 'capture_abandoned');
         captureParseRequestRef.current.set(
           captureId,
           (captureParseRequestRef.current.get(captureId) ?? 0) + 1,
@@ -565,20 +614,24 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
             captureId={capture.id}
             entries={entriesForConfirmation}
             onOpenState={onOpenState}
-            onDismiss={() => updateRawCapture(capture.id, {
-              parsed: {
-                type: capture.parsed?.type ?? 'misc',
-                fields: capture.parsed?.fields ?? {},
-                crossLinks: capture.parsed?.crossLinks ?? [],
-                insight: capture.parsed?.insight ?? { zh: '', en: '' },
-                matchedSkillIds: capture.parsed?.matchedSkillIds ?? [],
-                linkedGoalId: capture.parsed?.linkedGoalId,
-                insightType: capture.parsed?.insightType ?? 'encourage',
-                entries: capture.parsed?.entries ?? entriesForConfirmation,
-                entriesDismissed: true,
-                completionSchema: capture.parsed?.completionSchema,
-              },
-            })}
+            onDismiss={() => {
+              recordCaptureFriction(capture.id, 'capture_abandoned');
+              updateRawCapture(capture.id, {
+                parsed: {
+                  type: capture.parsed?.type ?? 'misc',
+                  fields: capture.parsed?.fields ?? {},
+                  crossLinks: capture.parsed?.crossLinks ?? [],
+                  insight: capture.parsed?.insight ?? { zh: '', en: '' },
+                  matchedSkillIds: capture.parsed?.matchedSkillIds ?? [],
+                  linkedGoalId: capture.parsed?.linkedGoalId,
+                  insightType: capture.parsed?.insightType ?? 'encourage',
+                  entries: capture.parsed?.entries ?? entriesForConfirmation,
+                  entriesDismissed: true,
+                  completionSchema: capture.parsed?.completionSchema,
+                  parserMeta: capture.parsed?.parserMeta,
+                },
+              });
+            }}
           />
         ) : null}
       </View>

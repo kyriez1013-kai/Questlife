@@ -1,4 +1,5 @@
 import { ContextLog } from '../types';
+import { buildRuleParsedContextProvenance } from './dataProvenance';
 
 export type ParsedHealthContext = {
   contextLogs: ContextLog[];
@@ -70,6 +71,10 @@ function pushMetric(
     intensity: input.intensity,
     note: input.note,
     rawText: input.rawText,
+    dataProvenance: buildRuleParsedContextProvenance({
+      recordedAt: input.createdAt,
+      field: input.value != null ? 'value' : 'note',
+    }),
   });
 }
 

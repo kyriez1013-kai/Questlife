@@ -275,6 +275,94 @@ export interface ScheduleBlock {
   source?: 'manual' | 'skill_rule';
 }
 
+export type DataRecordOrigin =
+  | 'OWNER_OBSERVED'
+  | 'OWNER_CONFIRMED_AI_PARSE'
+  | 'PASSIVE_IMPORTED'
+  | 'SYNTHETIC'
+  | 'QA_TEST'
+  | 'DEBUG_FIXTURE'
+  | 'DERIVED'
+  | 'LEGACY_UNKNOWN';
+
+export type DataConfirmationProvenance =
+  | 'USER_ENTERED'
+  | 'USER_CONFIRMED'
+  | 'USER_CORRECTED'
+  | 'NOT_REQUIRED'
+  | 'UNCONFIRMED'
+  | 'UNKNOWN';
+
+export type DataFieldOrigin =
+  | 'owner_entered'
+  | 'owner_confirmed'
+  | 'owner_corrected'
+  | 'model_proposed_owner_confirmed'
+  | 'rule_derived'
+  | 'derived'
+  | 'ui_default_or_owner_confirmed'
+  | 'unknown';
+
+export type DataCaptureMethod =
+  | 'manual_form'
+  | 'timer'
+  | 'one_tap'
+  | 'schedule'
+  | 'smart_capture_text'
+  | 'context_rule_parser'
+  | 'state_checkin'
+  | 'decision_engine'
+  | 'pattern_engine'
+  | 'rescue'
+  | 'import'
+  | 'unknown';
+
+export interface DataParserMetadata {
+  provider?: string;
+  model?: string;
+  version?: string;
+  promptVersion?: string;
+  responseSchemaVersion?: string;
+}
+
+export interface DataCandidateCorrection {
+  field: string;
+  proposed?: string | number | boolean | null;
+  confirmed?: string | number | boolean | null;
+  valuesRedacted?: boolean;
+}
+
+/**
+ * Additive provenance metadata for future Quant ingestion. Old records remain
+ * valid AppData and intentionally do not receive inferred provenance.
+ */
+export interface DataRecordProvenance {
+  schemaVersion: 'questlife.data.provenance.v1';
+  origin: DataRecordOrigin;
+  confirmation: DataConfirmationProvenance;
+  captureMethod: DataCaptureMethod;
+  recordedAt: string;
+  availableAt: string;
+  eventStartAt?: string;
+  eventEndAt?: string;
+  timezone?: string;
+  protocolVersion?: string;
+  instrumentVersion?: string;
+  parser?: DataParserMetadata;
+  candidate?: {
+    rawCaptureId: string;
+    entryIndex?: number;
+    entryKey?: string;
+  };
+  corrections?: DataCandidateCorrection[];
+  correctedFields?: string[];
+  fieldOrigins?: Record<string, DataFieldOrigin>;
+  sourceIds?: string[];
+  limitations?: string[];
+  retryOfRecordId?: string;
+  deleted?: boolean;
+}
+
 export interface ExecutionLog {
   id: string;
   date: string;
@@ -357,6 +445,7 @@ export interface ExecutionLog {
     qualitativeText?: string;
   };
   appliedToProgress?: boolean;
+  dataProvenance?: DataRecordProvenance;
   createdAt: string;
   updatedAt?: string;
 }
@@ -608,6 +697,7 @@ export interface StateCheckIn {
     socialDrain?: boolean;
   };
   note?: string;
+  dataProvenance?: DataRecordProvenance;
   createdAt: string;
   updatedAt?: string;
 }
@@ -720,7 +810,9 @@ export interface RawCapture {
     entriesDismissed?: boolean; // true once user confirms or ignores
     // LLM-driven completion schema (replaces hardcoded smartRouting)
     completionSchema?: CompletionSchema;
+    parserMeta?: DataParserMetadata;
   };
+  dataProvenance?: DataRecordProvenance;
 }
 
 export interface ContextLog {
@@ -735,6 +827,7 @@ export interface ContextLog {
   source?: 'manual' | 'healthkit' | 'sensor' | 'import' | 'unknown';
   note?: string;
   rawText?: string;
+  dataProvenance?: DataRecordProvenance;
 }
 
 export interface DecisionResult {
@@ -783,6 +876,7 @@ export interface DecisionResult {
     rating: 'useful' | 'not_useful';
     ts: string;
   };
+  dataProvenance?: DataRecordProvenance;
 }
 
 export interface PatternMemorySupport {
@@ -818,6 +912,7 @@ export interface PatternMemory {
     usefulCount: number;
     notUsefulCount: number;
   };
+  dataProvenance?: DataRecordProvenance;
 }
 
 export interface AppData {

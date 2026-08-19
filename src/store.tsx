@@ -22,6 +22,14 @@ import {
   reconcileExternalAppData,
   shouldPersistStoreMutation,
 } from './utils/persistenceConsistency';
+import {
+  buildDataProvenance,
+  buildDerivedProvenance,
+  buildExecutionLogProvenance,
+  buildRawCaptureProvenance,
+  buildStateCheckInProvenance,
+  withDecisionFeedbackProvenance,
+} from './utils/dataProvenance';
 
 function metricTypeForAnalytics(skill?: Skill) {
   return skill?.metricConfig?.metricType ?? skill?.progressType;
@@ -769,18 +777,30 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       : undefined;
     const requestedGoalId = logData.linkedGoalId ?? logData.goalId ?? scheduleBlock?.linkedGoalId ?? firstRequestedLink?.goalId;
     const requestedModuleId = logData.linkedModuleId ?? logData.moduleId ?? firstRequestedLink?.moduleId;
+    const createdAt = logData.createdAt ?? new Date().toISOString();
+    const date = logData.date ?? today();
+    const source = logData.source ?? (scheduleBlockId ? 'schedule_log' : 'manual');
     const log: ExecutionLog = {
       id: logData.id ?? uid(),
-      createdAt: logData.createdAt ?? new Date().toISOString(),
+      createdAt,
       appliedToProgress: logData.appliedToProgress ?? false,
       ...logData,
-      date: logData.date ?? today(),
+      date,
       durationMinutes: Math.max(0, Math.round(logData.durationMinutes ?? scheduleBlock?.plannedMinutes ?? 0)),
-      source: logData.source ?? (scheduleBlockId ? 'schedule_log' : 'manual'),
+      source,
       linkedSkillId: requestedSkillId,
       linkedGoalId: requestedGoalId,
       linkedModuleId: requestedModuleId,
       linkedScheduleBlockId: scheduleBlockId,
+      dataProvenance: logData.dataProvenance ?? buildExecutionLogProvenance({
+        source,
+        createdAt,
+        date,
+        startTime: logData.startTime,
+        endTime: logData.endTime,
+        hasExplicitDuration: logData.durationMinutes != null,
+        structuredData: logData.structuredData,
+      }),
     };
     const linkedSkillForTracking = log.linkedSkillId ? data.skills.find((s) => s.id === log.linkedSkillId) : undefined;
     const firstLinkForTracking = log.linkedSkillId
@@ -1085,10 +1105,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   ), [data.rescueLogs]);
 
   const createStateCheckIn: Ctx['createStateCheckIn'] = useCallback((checkIn) => {
+    const createdAt = checkIn.createdAt ?? new Date().toISOString();
     const row: StateCheckIn = {
       id: checkIn.id ?? uid(),
-      createdAt: checkIn.createdAt ?? new Date().toISOString(),
+      createdAt,
       ...checkIn,
+      dataProvenance: checkIn.dataProvenance ?? buildStateCheckInProvenance({
+        ...checkIn,
+        createdAt,
+      }),
     };
     mutate((d) => ({ ...d, stateCheckIns: [...(d.stateCheckIns || []), row] }));
     return row;
@@ -1149,6 +1174,25 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         createdAt: log.createdAt ?? now,
         source: log.source ?? 'manual',
         ...log,
+        dataProvenance: log.dataProvenance ?? buildDataProvenance({
+          origin: log.source === 'healthkit' || log.source === 'sensor' || log.source === 'import'
+            ? 'PASSIVE_IMPORTED'
+            : 'OWNER_OBSERVED',
+          confirmation: log.source === 'healthkit' || log.source === 'sensor' || log.source === 'import'
+            ? 'NOT_REQUIRED'
+            : 'USER_ENTERED',
+          captureMethod: log.source === 'healthkit' || log.source === 'sensor' || log.source === 'import'
+            ? 'import'
+            : 'manual_form',
+          recordedAt: log.createdAt ?? now,
+          instrumentVersion: 'questlife-context-v1',
+          protocolVersion: 'questlife-context-capture-v1',
+          fieldOrigins: {
+            ...(log.value != null ? { value: log.source === 'manual' || !log.source ? 'owner_entered' as const : 'rule_derived' as const } : {}),
+            ...(log.intensity != null ? { intensity: 'owner_entered' as const } : {}),
+          },
+          limitations: ['EVENT_TIME_PRECISION_UNAVAILABLE'],
+        }),
       }));
     if (rows.length > 0) {
       mutate((d) => ({ ...d, contextLogs: [...(d.contextLogs || []), ...rows] }));
@@ -1328,11 +1372,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   // ── Spec B-1: Smart Capture Loop ────────────────────────────────────────────
   const addRawCapture: Ctx['addRawCapture'] = useCallback((text: string): RawCapture => {
+    const createdAt = new Date().toISOString();
     const capture: RawCapture = {
       id: `rc-${uid()}`,
       text,
-      createdAt: new Date().toISOString(),
+      createdAt,
       parseStatus: 'pending',
+      dataProvenance: buildRawCaptureProvenance(createdAt),
     };
     mutate((d) => ({ ...d, rawCaptures: [...(d.rawCaptures || []), capture] }));
     return capture;
@@ -1414,10 +1460,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [data.executionLogs, mutate]);
 
   const addDecisionResult: Ctx['addDecisionResult'] = useCallback((input) => {
+    const createdAt = input.createdAt ?? new Date().toISOString();
     const result: DecisionResult = {
       id: input.id ?? `decision-${uid()}`,
-      createdAt: input.createdAt ?? new Date().toISOString(),
+      createdAt,
       ...input,
+      dataProvenance: input.dataProvenance ?? buildDerivedProvenance({
+        captureMethod: 'decision_engine',
+        recordedAt: createdAt,
+        fieldOrigins: {
+          headlineInsight: 'derived',
+          readinessBand: 'derived',
+          readinessScore: 'derived',
+          confidence: 'derived',
+        },
+      }),
     };
     mutate((d) => ({
       ...d,
@@ -1427,11 +1484,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [mutate]);
 
   const updateDecisionResultFeedback: Ctx['updateDecisionResultFeedback'] = useCallback((id, rating) => {
+    const feedbackAt = new Date().toISOString();
     mutate((d) => ({
       ...d,
       decisionResults: (d.decisionResults || []).map((result) => (
         result.id === id
-          ? { ...result, userFeedback: { rating, ts: new Date().toISOString() } }
+          ? {
+              ...result,
+              userFeedback: { rating, ts: feedbackAt },
+              dataProvenance: withDecisionFeedbackProvenance(result.dataProvenance, result.createdAt),
+            }
           : result
       )),
     }));
@@ -1449,7 +1511,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const mergePatternMemoryCandidates: Ctx['mergePatternMemoryCandidates'] = useCallback((candidates) => {
     let merged: PatternMemory[] = [];
     mutate((d) => {
-      merged = mergePatternCandidateList(d.patternMemory || [], candidates || []);
+      const taggedCandidates = (candidates || []).map((candidate) => ({
+        ...candidate,
+        dataProvenance: candidate.dataProvenance ?? buildDerivedProvenance({
+          captureMethod: 'pattern_engine',
+          recordedAt: candidate.updatedAt || candidate.createdAt,
+          sourceIds: (candidate.support || []).map((support) => support.sourceId).filter((id): id is string => !!id),
+          fieldOrigins: {
+            confidence: 'derived',
+            sampleN: 'derived',
+            support: 'derived',
+            status: 'derived',
+          },
+        }),
+      }));
+      merged = mergePatternCandidateList(d.patternMemory || [], taggedCandidates);
       return { ...d, patternMemory: merged };
     });
     return merged;
@@ -1459,7 +1535,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     mutate((d) => ({
       ...d,
       patternMemory: (d.patternMemory || []).map((pattern) => (
-        pattern.id === id ? { ...pattern, status, updatedAt: new Date().toISOString() } : pattern
+        pattern.id === id ? {
+          ...pattern,
+          status,
+          updatedAt: new Date().toISOString(),
+          dataProvenance: pattern.dataProvenance ? {
+            ...pattern.dataProvenance,
+            fieldOrigins: {
+              ...(pattern.dataProvenance.fieldOrigins || {}),
+              status: 'owner_entered',
+            },
+          } : undefined,
+        } : pattern
       )),
     }));
   }, [mutate]);

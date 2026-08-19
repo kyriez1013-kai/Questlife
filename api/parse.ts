@@ -13,6 +13,9 @@ declare const process: any;
 const DEEPSEEK_BASE  = 'https://api.deepseek.com';
 const DEEPSEEK_MODEL = 'deepseek-chat';
 const TIMEOUT_MS     = 8000;   // 8s: Vercel Hobby 函数上限 10s，留 2s 给函数本身开销
+const CAPTURE_PARSER_VERSION = 'questlife-smart-capture-parser-v1';
+const CAPTURE_PROMPT_VERSION = 'questlife-capture-prompt-v1';
+const CAPTURE_RESPONSE_SCHEMA_VERSION = 'questlife.parse.response.v1';
 
 function send(res: any, status: number, body: Record<string, unknown>) {
   res.status(status).json(body);
@@ -338,6 +341,13 @@ export default async function handler(req: any, res: any) {
         : { zh: '', en: '' },
       entries,
       completionSchema, // LLM-driven domain + suggestedActions + goal routing
+      parserMeta: {
+        provider: 'deepseek',
+        model: DEEPSEEK_MODEL,
+        version: CAPTURE_PARSER_VERSION,
+        promptVersion: CAPTURE_PROMPT_VERSION,
+        responseSchemaVersion: CAPTURE_RESPONSE_SCHEMA_VERSION,
+      },
     };
 
     if (debugParse) {
