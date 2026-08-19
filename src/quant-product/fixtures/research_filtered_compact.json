@@ -1,0 +1,3695 @@
+{
+  "analyst_context": {
+    "compare_instrument_ids": [],
+    "driver_candidate_ids": [],
+    "evidence_ids": [],
+    "operation_keys": [
+      "select_instrument",
+      "change_range",
+      "change_chart_type",
+      "add_compare",
+      "show_driver_overlay",
+      "jump_to_similar_period",
+      "show_analogue_envelope",
+      "return_to_current"
+    ],
+    "recovery_available": false,
+    "scenario_available": false,
+    "selected_instrument_id": "market:state.focus",
+    "selected_range_key": null,
+    "similar_period_ids": []
+  },
+  "eligibility_summary": {
+    "blocked_artifact_kinds": [
+      "ForecastArtifact"
+    ],
+    "blocked_research_artifact_count": 1,
+    "champion_keys": {
+      "baseline": "robust_rolling_reference_v0.4",
+      "candle": "observational_scalar_ohlc_v0.4",
+      "interpretation": "interpretation_v0.1",
+      "series": "observed_series_v0.4",
+      "signal": "registered_observational_signal_v0.2"
+    },
+    "emitted_artifact_count": 13
+  },
+  "goal_surfaces": [
+    {
+      "availability": {
+        "reason_codes": [],
+        "state": "AVAILABLE"
+      },
+      "child_instrument_ids": [],
+      "entity_id": "goal:goal-quant-analyst-v1",
+      "label": "Quant Analyst",
+      "limitation_codes": [
+        "NO_MASTERY_OR_PROGRESS_PERCENT_INFERRED"
+      ],
+      "linked_instrument_ids": [
+        "goal:goal-quant-analyst-v1:execution.duration"
+      ],
+      "movement": {
+        "absolute": 26.300000000000004,
+        "comparison_window_key": "previous_observation",
+        "direction": "HIGHER",
+        "from_value": 33.3,
+        "kind": "ABSOLUTE",
+        "relative": null,
+        "to_value": 59.6
+      },
+      "quant_deep_link": "quant://goal/goal:goal-quant-analyst-v1",
+      "recent_activity": [],
+      "scope": "GOAL"
+    }
+  ],
+  "instruments": [
+    {
+      "availability": {
+        "reason_codes": [],
+        "state": "AVAILABLE"
+      },
+      "change": {
+        "absolute": 1583.0,
+        "comparison_window_key": "previous_observation",
+        "direction": "HIGHER",
+        "from_value": 10059.0,
+        "kind": "ABSOLUTE",
+        "relative": null,
+        "to_value": 11642.0
+      },
+      "construct_key": "activity.steps",
+      "coverage": {
+        "coverage_ratio": 0.9633699633699634,
+        "expected_period_count": 546,
+        "independent_period_count": 526,
+        "missingness": {
+          "counts": {
+            "NOT_OBSERVED": 20
+          }
+        },
+        "observation_count": 526,
+        "observed_period_count": 526
+      },
+      "domain_key": "movement",
+      "entity_id": "market:person",
+      "evidence": {
+        "claim_type": "descriptive",
+        "counterexample_count": 0,
+        "independent_period_count": 526,
+        "limitation_codes": [
+          "DESCRIPTIVE_HISTORICAL_REFERENCE",
+          "NO_NORMATIVE_OR_CAUSAL_INTERPRETATION",
+          "SOURCE_REGIME_BOUNDARY_EXCLUDED_PRIOR",
+          "SYNTHETIC_HISTORICAL_SOURCE",
+          "COVERAGE_IS_NOT_MEASUREMENT_QUALITY",
+          "REFERENCE_RELATIVE_NOT_NORMATIVE",
+          "DESCRIPTIVE_LINEAR_COMPARATOR",
+          "NOT_A_FORECAST",
+          "MAD_BASED_DESCRIPTIVE_COMPARISON",
+          "NO_CAUSAL_OR_BETTER_WORSE_INTERPRETATION",
+          "DESCRIPTIVE_SEASONAL_REFERENCE_ONLY",
+          "HISTORICAL_PERSONAL_REFERENCE_NOT_POPULATION_DATA"
+        ],
+        "missingness": {
+          "counts": {
+            "NOT_OBSERVED": 20
+          }
+        },
+        "observation_count": 526,
+        "provenance": {
+          "instrument_version": "activity.steps",
+          "lineage_hash": "79e356c39be2be6d98d0921dcd4359bfa287e0bd9240bbce4fac3b132038944a",
+          "method": "legacy_presentation_bridge",
+          "method_version": "v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 526,
+          "observation_ids": [],
+          "observation_set_hash": "79e356c39be2be6d98d0921dcd4359bfa287e0bd9240bbce4fac3b132038944a",
+          "source_artifact_ids": [
+            "artifacts/v0.4/day180_personalized.json",
+            "market:activity.steps"
+          ]
+        },
+        "stage": "S3",
+        "support_count": 0
+      },
+      "instrument_id": "market:activity.steps",
+      "label_key": "steps",
+      "latest": {
+        "observation_id": "passive:3006e6d297fac5660d62",
+        "observed_at": "2026-06-30T23:59:00+10:00",
+        "source_class": "passive_device",
+        "unit": "steps",
+        "value": 11642.0
+      },
+      "maturity": {
+        "code": "reference_available",
+        "evidence_stage": "S3",
+        "product_stage": "historical_reference"
+      },
+      "provenance": {
+        "instrument_version": "activity.steps",
+        "lineage_hash": "79e356c39be2be6d98d0921dcd4359bfa287e0bd9240bbce4fac3b132038944a",
+        "method": "legacy_presentation_bridge",
+        "method_version": "v0.4",
+        "model_id": null,
+        "model_version": null,
+        "observation_count": 526,
+        "observation_ids": [],
+        "observation_set_hash": "79e356c39be2be6d98d0921dcd4359bfa287e0bd9240bbce4fac3b132038944a",
+        "source_artifact_ids": [
+          "artifacts/v0.4/day180_personalized.json",
+          "market:activity.steps"
+        ]
+      },
+      "reference": {
+        "high": 12060.3424,
+        "independent_period_count": 89,
+        "kind": "HISTORICAL_RANGE",
+        "low": 4279.6576000000005,
+        "observation_count": 89,
+        "provenance": {
+          "instrument_version": "activity.steps",
+          "lineage_hash": "df8f5b18cc89b6d5b489caaa6fc8bc4878dd190d3e5b503f86a162100ce0deac",
+          "method": "reference_passthrough",
+          "method_version": "presentation-v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 89,
+          "observation_ids": [],
+          "observation_set_hash": "df8f5b18cc89b6d5b489caaa6fc8bc4878dd190d3e5b503f86a162100ce0deac",
+          "source_artifact_ids": [
+            "market:activity.steps"
+          ]
+        },
+        "status": "ESTABLISHED",
+        "unit": "steps",
+        "value": 8170.0,
+        "window_end": "2026-06-30T23:59:00+10:00",
+        "window_start": "2026-04-02T23:59:00+11:00"
+      },
+      "scale": "COUNT",
+      "scope": "PERSONAL_MARKET",
+      "series_ids": [],
+      "supported_analysis_keys": [
+        "reference",
+        "compare",
+        "candle",
+        "signal"
+      ],
+      "unit": "steps"
+    },
+    {
+      "availability": {
+        "reason_codes": [],
+        "state": "AVAILABLE"
+      },
+      "change": {
+        "absolute": 1.471,
+        "comparison_window_key": "previous_observation",
+        "direction": "HIGHER",
+        "from_value": 7.135,
+        "kind": "ABSOLUTE",
+        "relative": null,
+        "to_value": 8.606
+      },
+      "construct_key": "activity.walking_running_distance",
+      "coverage": {
+        "coverage_ratio": 0.9340659340659341,
+        "expected_period_count": 546,
+        "independent_period_count": 510,
+        "missingness": {
+          "counts": {
+            "NOT_OBSERVED": 36
+          }
+        },
+        "observation_count": 510,
+        "observed_period_count": 510
+      },
+      "domain_key": "movement",
+      "entity_id": "market:person",
+      "evidence": {
+        "claim_type": "descriptive",
+        "counterexample_count": 0,
+        "independent_period_count": 510,
+        "limitation_codes": [
+          "DESCRIPTIVE_HISTORICAL_REFERENCE",
+          "NO_NORMATIVE_OR_CAUSAL_INTERPRETATION",
+          "SOURCE_REGIME_BOUNDARY_EXCLUDED_PRIOR",
+          "SYNTHETIC_HISTORICAL_SOURCE",
+          "COVERAGE_IS_NOT_MEASUREMENT_QUALITY",
+          "REFERENCE_RELATIVE_NOT_NORMATIVE",
+          "DESCRIPTIVE_LINEAR_COMPARATOR",
+          "NOT_A_FORECAST",
+          "MAD_BASED_DESCRIPTIVE_COMPARISON",
+          "NO_CAUSAL_OR_BETTER_WORSE_INTERPRETATION",
+          "DESCRIPTIVE_SEASONAL_REFERENCE_ONLY",
+          "HISTORICAL_PERSONAL_REFERENCE_NOT_POPULATION_DATA"
+        ],
+        "missingness": {
+          "counts": {
+            "NOT_OBSERVED": 36
+          }
+        },
+        "observation_count": 510,
+        "provenance": {
+          "instrument_version": "activity.walking_running_distance",
+          "lineage_hash": "8d72fa352120c2ed7753a361a3923c7436df942e62dab159d24691ed2fa8c799",
+          "method": "legacy_presentation_bridge",
+          "method_version": "v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 510,
+          "observation_ids": [],
+          "observation_set_hash": "8d72fa352120c2ed7753a361a3923c7436df942e62dab159d24691ed2fa8c799",
+          "source_artifact_ids": [
+            "artifacts/v0.4/day180_personalized.json",
+            "market:activity.walking_running_distance"
+          ]
+        },
+        "stage": "S3",
+        "support_count": 0
+      },
+      "instrument_id": "market:activity.walking_running_distance",
+      "label_key": "distance",
+      "latest": {
+        "observation_id": "passive:7747caa4089776c686cb",
+        "observed_at": "2026-06-30T23:59:00+10:00",
+        "source_class": "passive_device",
+        "unit": "kilometres",
+        "value": 8.606
+      },
+      "maturity": {
+        "code": "reference_available",
+        "evidence_stage": "S3",
+        "product_stage": "historical_reference"
+      },
+      "provenance": {
+        "instrument_version": "activity.walking_running_distance",
+        "lineage_hash": "8d72fa352120c2ed7753a361a3923c7436df942e62dab159d24691ed2fa8c799",
+        "method": "legacy_presentation_bridge",
+        "method_version": "v0.4",
+        "model_id": null,
+        "model_version": null,
+        "observation_count": 510,
+        "observation_ids": [],
+        "observation_set_hash": "8d72fa352120c2ed7753a361a3923c7436df942e62dab159d24691ed2fa8c799",
+        "source_artifact_ids": [
+          "artifacts/v0.4/day180_personalized.json",
+          "market:activity.walking_running_distance"
+        ]
+      },
+      "reference": {
+        "high": 8.9247476,
+        "independent_period_count": 85,
+        "kind": "HISTORICAL_RANGE",
+        "low": 2.9172524000000006,
+        "observation_count": 85,
+        "provenance": {
+          "instrument_version": "activity.walking_running_distance",
+          "lineage_hash": "f1180447edc1d4a188c099587babee6b713e925cd7874f453e256dfe406adf51",
+          "method": "reference_passthrough",
+          "method_version": "presentation-v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 85,
+          "observation_ids": [],
+          "observation_set_hash": "f1180447edc1d4a188c099587babee6b713e925cd7874f453e256dfe406adf51",
+          "source_artifact_ids": [
+            "market:activity.walking_running_distance"
+          ]
+        },
+        "status": "ESTABLISHED",
+        "unit": "kilometres",
+        "value": 5.921,
+        "window_end": "2026-06-30T23:59:00+10:00",
+        "window_start": "2026-04-02T23:59:00+11:00"
+      },
+      "scale": "RATIO",
+      "scope": "PERSONAL_MARKET",
+      "series_ids": [],
+      "supported_analysis_keys": [
+        "reference",
+        "compare",
+        "candle",
+        "signal"
+      ],
+      "unit": "kilometres"
+    },
+    {
+      "availability": {
+        "reason_codes": [],
+        "state": "AVAILABLE"
+      },
+      "change": {
+        "absolute": 9.5,
+        "comparison_window_key": "previous_observation",
+        "direction": "HIGHER",
+        "from_value": 49.8,
+        "kind": "ABSOLUTE",
+        "relative": null,
+        "to_value": 59.3
+      },
+      "construct_key": "activity.active_minutes",
+      "coverage": {
+        "coverage_ratio": 0.9413919413919414,
+        "expected_period_count": 546,
+        "independent_period_count": 514,
+        "missingness": {
+          "counts": {
+            "NOT_OBSERVED": 32
+          }
+        },
+        "observation_count": 514,
+        "observed_period_count": 514
+      },
+      "domain_key": "activity",
+      "entity_id": "market:person",
+      "evidence": {
+        "claim_type": "descriptive",
+        "counterexample_count": 0,
+        "independent_period_count": 514,
+        "limitation_codes": [
+          "DESCRIPTIVE_HISTORICAL_REFERENCE",
+          "NO_NORMATIVE_OR_CAUSAL_INTERPRETATION",
+          "SOURCE_REGIME_BOUNDARY_EXCLUDED_PRIOR",
+          "SYNTHETIC_HISTORICAL_SOURCE",
+          "COVERAGE_IS_NOT_MEASUREMENT_QUALITY",
+          "REFERENCE_RELATIVE_NOT_NORMATIVE",
+          "DESCRIPTIVE_LINEAR_COMPARATOR",
+          "NOT_A_FORECAST",
+          "MAD_BASED_DESCRIPTIVE_COMPARISON",
+          "NO_CAUSAL_OR_BETTER_WORSE_INTERPRETATION",
+          "DESCRIPTIVE_SEASONAL_REFERENCE_ONLY",
+          "HISTORICAL_PERSONAL_REFERENCE_NOT_POPULATION_DATA"
+        ],
+        "missingness": {
+          "counts": {
+            "NOT_OBSERVED": 32
+          }
+        },
+        "observation_count": 514,
+        "provenance": {
+          "instrument_version": "activity.active_minutes",
+          "lineage_hash": "ccf6f771decbb9d60a188f1ca0356842404a691f8b5db3c463135362ae1baac6",
+          "method": "legacy_presentation_bridge",
+          "method_version": "v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 514,
+          "observation_ids": [],
+          "observation_set_hash": "ccf6f771decbb9d60a188f1ca0356842404a691f8b5db3c463135362ae1baac6",
+          "source_artifact_ids": [
+            "artifacts/v0.4/day180_personalized.json",
+            "market:activity.active_minutes"
+          ]
+        },
+        "stage": "S3",
+        "support_count": 0
+      },
+      "instrument_id": "market:activity.active_minutes",
+      "label_key": "active_minutes",
+      "latest": {
+        "observation_id": "passive:3bac350ed2140a47ec44",
+        "observed_at": "2026-06-30T23:59:00+10:00",
+        "source_class": "passive_device",
+        "unit": "minutes",
+        "value": 59.3
+      },
+      "maturity": {
+        "code": "reference_available",
+        "evidence_stage": "S3",
+        "product_stage": "historical_reference"
+      },
+      "provenance": {
+        "instrument_version": "activity.active_minutes",
+        "lineage_hash": "ccf6f771decbb9d60a188f1ca0356842404a691f8b5db3c463135362ae1baac6",
+        "method": "legacy_presentation_bridge",
+        "method_version": "v0.4",
+        "model_id": null,
+        "model_version": null,
+        "observation_count": 514,
+        "observation_ids": [],
+        "observation_set_hash": "ccf6f771decbb9d60a188f1ca0356842404a691f8b5db3c463135362ae1baac6",
+        "source_artifact_ids": [
+          "artifacts/v0.4/day180_personalized.json",
+          "market:activity.active_minutes"
+        ]
+      },
+      "reference": {
+        "high": 63.675540000000005,
+        "independent_period_count": 84,
+        "kind": "HISTORICAL_RANGE",
+        "low": 25.42445999999999,
+        "observation_count": 84,
+        "provenance": {
+          "instrument_version": "activity.active_minutes",
+          "lineage_hash": "167dc707f5cf704bf869b0fd61c285a8ca49dcda575b07a8566226f9d999f7db",
+          "method": "reference_passthrough",
+          "method_version": "presentation-v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 84,
+          "observation_ids": [],
+          "observation_set_hash": "167dc707f5cf704bf869b0fd61c285a8ca49dcda575b07a8566226f9d999f7db",
+          "source_artifact_ids": [
+            "market:activity.active_minutes"
+          ]
+        },
+        "status": "ESTABLISHED",
+        "unit": "minutes",
+        "value": 44.55,
+        "window_end": "2026-06-30T23:59:00+10:00",
+        "window_start": "2026-04-02T23:59:00+11:00"
+      },
+      "scale": "TIME_DURATION",
+      "scope": "PERSONAL_MARKET",
+      "series_ids": [],
+      "supported_analysis_keys": [
+        "reference",
+        "compare",
+        "candle",
+        "signal"
+      ],
+      "unit": "minutes"
+    },
+    {
+      "availability": {
+        "reason_codes": [],
+        "state": "AVAILABLE"
+      },
+      "change": {
+        "absolute": 33.2,
+        "comparison_window_key": "previous_observation",
+        "direction": "HIGHER",
+        "from_value": 0.0,
+        "kind": "ABSOLUTE",
+        "relative": null,
+        "to_value": 33.2
+      },
+      "construct_key": "activity.exercise_minutes",
+      "coverage": {
+        "coverage_ratio": 0.9395604395604396,
+        "expected_period_count": 546,
+        "independent_period_count": 513,
+        "missingness": {
+          "counts": {
+            "NOT_OBSERVED": 33
+          }
+        },
+        "observation_count": 513,
+        "observed_period_count": 513
+      },
+      "domain_key": "activity",
+      "entity_id": "market:person",
+      "evidence": {
+        "claim_type": "descriptive",
+        "counterexample_count": 0,
+        "independent_period_count": 513,
+        "limitation_codes": [
+          "DESCRIPTIVE_HISTORICAL_REFERENCE",
+          "NO_NORMATIVE_OR_CAUSAL_INTERPRETATION",
+          "SOURCE_REGIME_BOUNDARY_EXCLUDED_PRIOR",
+          "SYNTHETIC_HISTORICAL_SOURCE",
+          "COVERAGE_IS_NOT_MEASUREMENT_QUALITY",
+          "REFERENCE_RELATIVE_NOT_NORMATIVE",
+          "DESCRIPTIVE_LINEAR_COMPARATOR",
+          "NOT_A_FORECAST",
+          "MAD_BASED_DESCRIPTIVE_COMPARISON",
+          "NO_CAUSAL_OR_BETTER_WORSE_INTERPRETATION",
+          "DESCRIPTIVE_SEASONAL_REFERENCE_ONLY",
+          "HISTORICAL_PERSONAL_REFERENCE_NOT_POPULATION_DATA"
+        ],
+        "missingness": {
+          "counts": {
+            "NOT_OBSERVED": 33
+          }
+        },
+        "observation_count": 513,
+        "provenance": {
+          "instrument_version": "activity.exercise_minutes",
+          "lineage_hash": "632128eb44dd034a7bd87ebb9e9587e4fcb3309d7ecf615a6942c5635b7ecc3b",
+          "method": "legacy_presentation_bridge",
+          "method_version": "v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 513,
+          "observation_ids": [],
+          "observation_set_hash": "632128eb44dd034a7bd87ebb9e9587e4fcb3309d7ecf615a6942c5635b7ecc3b",
+          "source_artifact_ids": [
+            "artifacts/v0.4/day180_personalized.json",
+            "market:activity.exercise_minutes"
+          ]
+        },
+        "stage": "S3",
+        "support_count": 0
+      },
+      "instrument_id": "market:activity.exercise_minutes",
+      "label_key": "exercise_minutes",
+      "latest": {
+        "observation_id": "passive:702939e621e00e44a7e0",
+        "observed_at": "2026-06-30T23:59:00+10:00",
+        "source_class": "passive_device",
+        "unit": "minutes",
+        "value": 33.2
+      },
+      "maturity": {
+        "code": "reference_available",
+        "evidence_stage": "S3",
+        "product_stage": "historical_reference"
+      },
+      "provenance": {
+        "instrument_version": "activity.exercise_minutes",
+        "lineage_hash": "632128eb44dd034a7bd87ebb9e9587e4fcb3309d7ecf615a6942c5635b7ecc3b",
+        "method": "legacy_presentation_bridge",
+        "method_version": "v0.4",
+        "model_id": null,
+        "model_version": null,
+        "observation_count": 513,
+        "observation_ids": [],
+        "observation_set_hash": "632128eb44dd034a7bd87ebb9e9587e4fcb3309d7ecf615a6942c5635b7ecc3b",
+        "source_artifact_ids": [
+          "artifacts/v0.4/day180_personalized.json",
+          "market:activity.exercise_minutes"
+        ]
+      },
+      "reference": {
+        "high": 69.55712,
+        "independent_period_count": 83,
+        "kind": "HISTORICAL_RANGE",
+        "low": -22.957119999999993,
+        "observation_count": 83,
+        "provenance": {
+          "instrument_version": "activity.exercise_minutes",
+          "lineage_hash": "43c41e0d35de3cf733b3ce48994c46054144f991f310817ba2c3b26d32683dad",
+          "method": "reference_passthrough",
+          "method_version": "presentation-v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 83,
+          "observation_ids": [],
+          "observation_set_hash": "43c41e0d35de3cf733b3ce48994c46054144f991f310817ba2c3b26d32683dad",
+          "source_artifact_ids": [
+            "market:activity.exercise_minutes"
+          ]
+        },
+        "status": "ESTABLISHED",
+        "unit": "minutes",
+        "value": 23.3,
+        "window_end": "2026-06-30T23:59:00+10:00",
+        "window_start": "2026-04-02T23:59:00+11:00"
+      },
+      "scale": "TIME_DURATION",
+      "scope": "PERSONAL_MARKET",
+      "series_ids": [],
+      "supported_analysis_keys": [
+        "reference",
+        "compare",
+        "candle",
+        "signal"
+      ],
+      "unit": "minutes"
+    },
+    {
+      "availability": {
+        "reason_codes": [],
+        "state": "AVAILABLE"
+      },
+      "change": {
+        "absolute": -6.0,
+        "comparison_window_key": "previous_observation",
+        "direction": "LOWER",
+        "from_value": 392.7,
+        "kind": "ABSOLUTE",
+        "relative": null,
+        "to_value": 386.7
+      },
+      "construct_key": "sleep.duration",
+      "coverage": {
+        "coverage_ratio": 0.9413919413919414,
+        "expected_period_count": 546,
+        "independent_period_count": 514,
+        "missingness": {
+          "counts": {
+            "NOT_OBSERVED": 32
+          }
+        },
+        "observation_count": 514,
+        "observed_period_count": 514
+      },
+      "domain_key": "sleep",
+      "entity_id": "market:person",
+      "evidence": {
+        "claim_type": "descriptive",
+        "counterexample_count": 0,
+        "independent_period_count": 514,
+        "limitation_codes": [
+          "DESCRIPTIVE_HISTORICAL_REFERENCE",
+          "NO_NORMATIVE_OR_CAUSAL_INTERPRETATION",
+          "SOURCE_REGIME_BOUNDARY_EXCLUDED_PRIOR",
+          "SYNTHETIC_HISTORICAL_SOURCE",
+          "COVERAGE_IS_NOT_MEASUREMENT_QUALITY",
+          "REFERENCE_RELATIVE_NOT_NORMATIVE",
+          "DESCRIPTIVE_LINEAR_COMPARATOR",
+          "NOT_A_FORECAST",
+          "MAD_BASED_DESCRIPTIVE_COMPARISON",
+          "NO_CAUSAL_OR_BETTER_WORSE_INTERPRETATION",
+          "DESCRIPTIVE_SEASONAL_REFERENCE_ONLY",
+          "HISTORICAL_PERSONAL_REFERENCE_NOT_POPULATION_DATA"
+        ],
+        "missingness": {
+          "counts": {
+            "NOT_OBSERVED": 32
+          }
+        },
+        "observation_count": 514,
+        "provenance": {
+          "instrument_version": "sleep.duration",
+          "lineage_hash": "7fd37fffb709fea0bc567b9f88db3dd04b4336c1a623b24ca5541388ef3df310",
+          "method": "legacy_presentation_bridge",
+          "method_version": "v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 514,
+          "observation_ids": [],
+          "observation_set_hash": "7fd37fffb709fea0bc567b9f88db3dd04b4336c1a623b24ca5541388ef3df310",
+          "source_artifact_ids": [
+            "artifacts/v0.4/day180_personalized.json",
+            "market:sleep.duration"
+          ]
+        },
+        "stage": "S3",
+        "support_count": 0
+      },
+      "instrument_id": "market:sleep.duration",
+      "label_key": "sleep_duration",
+      "latest": {
+        "observation_id": "passive:0634466b3bfedb19e0b8",
+        "observed_at": "2026-06-30T23:59:00+10:00",
+        "source_class": "passive_device",
+        "unit": "minutes",
+        "value": 386.7
+      },
+      "maturity": {
+        "code": "reference_available",
+        "evidence_stage": "S3",
+        "product_stage": "historical_reference"
+      },
+      "provenance": {
+        "instrument_version": "sleep.duration",
+        "lineage_hash": "7fd37fffb709fea0bc567b9f88db3dd04b4336c1a623b24ca5541388ef3df310",
+        "method": "legacy_presentation_bridge",
+        "method_version": "v0.4",
+        "model_id": null,
+        "model_version": null,
+        "observation_count": 514,
+        "observation_ids": [],
+        "observation_set_hash": "7fd37fffb709fea0bc567b9f88db3dd04b4336c1a623b24ca5541388ef3df310",
+        "source_artifact_ids": [
+          "artifacts/v0.4/day180_personalized.json",
+          "market:sleep.duration"
+        ]
+      },
+      "reference": {
+        "high": 489.90006000000005,
+        "independent_period_count": 84,
+        "kind": "HISTORICAL_RANGE",
+        "low": 362.09993999999995,
+        "observation_count": 84,
+        "provenance": {
+          "instrument_version": "sleep.duration",
+          "lineage_hash": "f5b8047d146ab26c186c44c2fe4206f0e9d09fb44b0c73d6a8dd03e508c8e7a2",
+          "method": "reference_passthrough",
+          "method_version": "presentation-v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 84,
+          "observation_ids": [],
+          "observation_set_hash": "f5b8047d146ab26c186c44c2fe4206f0e9d09fb44b0c73d6a8dd03e508c8e7a2",
+          "source_artifact_ids": [
+            "market:sleep.duration"
+          ]
+        },
+        "status": "ESTABLISHED",
+        "unit": "minutes",
+        "value": 426.0,
+        "window_end": "2026-06-30T23:59:00+10:00",
+        "window_start": "2026-04-02T23:59:00+11:00"
+      },
+      "scale": "TIME_DURATION",
+      "scope": "PERSONAL_MARKET",
+      "series_ids": [],
+      "supported_analysis_keys": [
+        "reference",
+        "compare",
+        "candle",
+        "signal"
+      ],
+      "unit": "minutes"
+    },
+    {
+      "availability": {
+        "reason_codes": [],
+        "state": "AVAILABLE"
+      },
+      "change": {
+        "absolute": -8.600000000000023,
+        "comparison_window_key": "previous_observation",
+        "direction": "LOWER",
+        "from_value": 704.0,
+        "kind": "ABSOLUTE",
+        "relative": null,
+        "to_value": 695.4
+      },
+      "construct_key": "sleep.start_time",
+      "coverage": {
+        "coverage_ratio": 0.9432234432234432,
+        "expected_period_count": 546,
+        "independent_period_count": 515,
+        "missingness": {
+          "counts": {
+            "NOT_OBSERVED": 31
+          }
+        },
+        "observation_count": 515,
+        "observed_period_count": 515
+      },
+      "domain_key": "sleep",
+      "entity_id": "market:person",
+      "evidence": {
+        "claim_type": "descriptive",
+        "counterexample_count": 0,
+        "independent_period_count": 515,
+        "limitation_codes": [
+          "DESCRIPTIVE_HISTORICAL_REFERENCE",
+          "NO_NORMATIVE_OR_CAUSAL_INTERPRETATION",
+          "SOURCE_REGIME_BOUNDARY_EXCLUDED_PRIOR",
+          "SYNTHETIC_HISTORICAL_SOURCE",
+          "COVERAGE_IS_NOT_MEASUREMENT_QUALITY",
+          "REFERENCE_RELATIVE_NOT_NORMATIVE",
+          "DESCRIPTIVE_LINEAR_COMPARATOR",
+          "NOT_A_FORECAST",
+          "MAD_BASED_DESCRIPTIVE_COMPARISON",
+          "NO_CAUSAL_OR_BETTER_WORSE_INTERPRETATION",
+          "DESCRIPTIVE_SEASONAL_REFERENCE_ONLY",
+          "HISTORICAL_PERSONAL_REFERENCE_NOT_POPULATION_DATA"
+        ],
+        "missingness": {
+          "counts": {
+            "NOT_OBSERVED": 31
+          }
+        },
+        "observation_count": 515,
+        "provenance": {
+          "instrument_version": "sleep.start_time",
+          "lineage_hash": "3edfd8fcbf3c44c5f3aaceefddbc4f5cf68386c891cc2fb1ba09b29e02cae8b4",
+          "method": "legacy_presentation_bridge",
+          "method_version": "v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 515,
+          "observation_ids": [],
+          "observation_set_hash": "3edfd8fcbf3c44c5f3aaceefddbc4f5cf68386c891cc2fb1ba09b29e02cae8b4",
+          "source_artifact_ids": [
+            "artifacts/v0.4/day180_personalized.json",
+            "market:sleep.start_time"
+          ]
+        },
+        "stage": "S3",
+        "support_count": 0
+      },
+      "instrument_id": "market:sleep.start_time",
+      "label_key": "sleep_timing",
+      "latest": {
+        "observation_id": "passive:036cf0ac397d22be60a1",
+        "observed_at": "2026-06-30T23:59:00+10:00",
+        "source_class": "passive_device",
+        "unit": "minutes_from_local_noon",
+        "value": 695.4
+      },
+      "maturity": {
+        "code": "reference_available",
+        "evidence_stage": "S3",
+        "product_stage": "historical_reference"
+      },
+      "provenance": {
+        "instrument_version": "sleep.start_time",
+        "lineage_hash": "3edfd8fcbf3c44c5f3aaceefddbc4f5cf68386c891cc2fb1ba09b29e02cae8b4",
+        "method": "legacy_presentation_bridge",
+        "method_version": "v0.4",
+        "model_id": null,
+        "model_version": null,
+        "observation_count": 515,
+        "observation_ids": [],
+        "observation_set_hash": "3edfd8fcbf3c44c5f3aaceefddbc4f5cf68386c891cc2fb1ba09b29e02cae8b4",
+        "source_artifact_ids": [
+          "artifacts/v0.4/day180_personalized.json",
+          "market:sleep.start_time"
+        ]
+      },
+      "reference": {
+        "high": 755.2062000000002,
+        "independent_period_count": 86,
+        "kind": "HISTORICAL_RANGE",
+        "low": 645.4937999999999,
+        "observation_count": 86,
+        "provenance": {
+          "instrument_version": "sleep.start_time",
+          "lineage_hash": "6cc65bdc4ad168d6d48cf71abb5419f286db26082935bc48ce173e2c22106efa",
+          "method": "reference_passthrough",
+          "method_version": "presentation-v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 86,
+          "observation_ids": [],
+          "observation_set_hash": "6cc65bdc4ad168d6d48cf71abb5419f286db26082935bc48ce173e2c22106efa",
+          "source_artifact_ids": [
+            "market:sleep.start_time"
+          ]
+        },
+        "status": "ESTABLISHED",
+        "unit": "minutes_from_local_noon",
+        "value": 700.35,
+        "window_end": "2026-06-30T23:59:00+10:00",
+        "window_start": "2026-04-02T23:59:00+11:00"
+      },
+      "scale": "TIME_OF_DAY",
+      "scope": "PERSONAL_MARKET",
+      "series_ids": [],
+      "supported_analysis_keys": [
+        "reference",
+        "compare",
+        "signal"
+      ],
+      "unit": "minutes_from_local_noon"
+    },
+    {
+      "availability": {
+        "reason_codes": [],
+        "state": "AVAILABLE"
+      },
+      "change": {
+        "absolute": -14.600000000000136,
+        "comparison_window_key": "previous_observation",
+        "direction": "LOWER",
+        "from_value": 1096.7,
+        "kind": "ABSOLUTE",
+        "relative": null,
+        "to_value": 1082.1
+      },
+      "construct_key": "sleep.end_time",
+      "coverage": {
+        "coverage_ratio": 0.9505494505494505,
+        "expected_period_count": 546,
+        "independent_period_count": 519,
+        "missingness": {
+          "counts": {
+            "NOT_OBSERVED": 27
+          }
+        },
+        "observation_count": 519,
+        "observed_period_count": 519
+      },
+      "domain_key": "sleep",
+      "entity_id": "market:person",
+      "evidence": {
+        "claim_type": "descriptive",
+        "counterexample_count": 0,
+        "independent_period_count": 519,
+        "limitation_codes": [
+          "DESCRIPTIVE_HISTORICAL_REFERENCE",
+          "NO_NORMATIVE_OR_CAUSAL_INTERPRETATION",
+          "SOURCE_REGIME_BOUNDARY_EXCLUDED_PRIOR",
+          "SYNTHETIC_HISTORICAL_SOURCE",
+          "COVERAGE_IS_NOT_MEASUREMENT_QUALITY",
+          "REFERENCE_RELATIVE_NOT_NORMATIVE",
+          "DESCRIPTIVE_LINEAR_COMPARATOR",
+          "NOT_A_FORECAST",
+          "MAD_BASED_DESCRIPTIVE_COMPARISON",
+          "NO_CAUSAL_OR_BETTER_WORSE_INTERPRETATION",
+          "DESCRIPTIVE_SEASONAL_REFERENCE_ONLY",
+          "HISTORICAL_PERSONAL_REFERENCE_NOT_POPULATION_DATA"
+        ],
+        "missingness": {
+          "counts": {
+            "NOT_OBSERVED": 27
+          }
+        },
+        "observation_count": 519,
+        "provenance": {
+          "instrument_version": "sleep.end_time",
+          "lineage_hash": "e6f152739e21535be98437fda01fdeeb808378c866ee54a3312a8f8414d5b199",
+          "method": "legacy_presentation_bridge",
+          "method_version": "v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 519,
+          "observation_ids": [],
+          "observation_set_hash": "e6f152739e21535be98437fda01fdeeb808378c866ee54a3312a8f8414d5b199",
+          "source_artifact_ids": [
+            "artifacts/v0.4/day180_personalized.json",
+            "market:sleep.end_time"
+          ]
+        },
+        "stage": "S3",
+        "support_count": 0
+      },
+      "instrument_id": "market:sleep.end_time",
+      "label_key": "wake_timing",
+      "latest": {
+        "observation_id": "passive:d7d5fe24a876ecab747e",
+        "observed_at": "2026-06-30T23:59:00+10:00",
+        "source_class": "passive_device",
+        "unit": "minutes_from_local_noon",
+        "value": 1082.1
+      },
+      "maturity": {
+        "code": "reference_available",
+        "evidence_stage": "S3",
+        "product_stage": "historical_reference"
+      },
+      "provenance": {
+        "instrument_version": "sleep.end_time",
+        "lineage_hash": "e6f152739e21535be98437fda01fdeeb808378c866ee54a3312a8f8414d5b199",
+        "method": "legacy_presentation_bridge",
+        "method_version": "v0.4",
+        "model_id": null,
+        "model_version": null,
+        "observation_count": 519,
+        "observation_ids": [],
+        "observation_set_hash": "e6f152739e21535be98437fda01fdeeb808378c866ee54a3312a8f8414d5b199",
+        "source_artifact_ids": [
+          "artifacts/v0.4/day180_personalized.json",
+          "market:sleep.end_time"
+        ]
+      },
+      "reference": {
+        "high": 1232.5723800000003,
+        "independent_period_count": 86,
+        "kind": "HISTORICAL_RANGE",
+        "low": 1006.3276199999998,
+        "observation_count": 86,
+        "provenance": {
+          "instrument_version": "sleep.end_time",
+          "lineage_hash": "723e575d313639fa9a481bfda15212394b1d558638723de09b62954269bfb2f7",
+          "method": "reference_passthrough",
+          "method_version": "presentation-v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 86,
+          "observation_ids": [],
+          "observation_set_hash": "723e575d313639fa9a481bfda15212394b1d558638723de09b62954269bfb2f7",
+          "source_artifact_ids": [
+            "market:sleep.end_time"
+          ]
+        },
+        "status": "ESTABLISHED",
+        "unit": "minutes_from_local_noon",
+        "value": 1119.45,
+        "window_end": "2026-06-30T23:59:00+10:00",
+        "window_start": "2026-04-05T23:59:00+10:00"
+      },
+      "scale": "TIME_OF_DAY",
+      "scope": "PERSONAL_MARKET",
+      "series_ids": [],
+      "supported_analysis_keys": [
+        "reference",
+        "compare",
+        "signal"
+      ],
+      "unit": "minutes_from_local_noon"
+    },
+    {
+      "availability": {
+        "reason_codes": [],
+        "state": "AVAILABLE"
+      },
+      "change": {
+        "absolute": 1.6000000000000014,
+        "comparison_window_key": "previous_observation",
+        "direction": "HIGHER",
+        "from_value": 63.1,
+        "kind": "ABSOLUTE",
+        "relative": null,
+        "to_value": 64.7
+      },
+      "construct_key": "body.resting_heart_rate",
+      "coverage": {
+        "coverage_ratio": 0.9487179487179487,
+        "expected_period_count": 546,
+        "independent_period_count": 518,
+        "missingness": {
+          "counts": {
+            "NOT_OBSERVED": 28
+          }
+        },
+        "observation_count": 518,
+        "observed_period_count": 518
+      },
+      "domain_key": "cardiovascular",
+      "entity_id": "market:person",
+      "evidence": {
+        "claim_type": "descriptive",
+        "counterexample_count": 0,
+        "independent_period_count": 518,
+        "limitation_codes": [
+          "DESCRIPTIVE_HISTORICAL_REFERENCE",
+          "NO_NORMATIVE_OR_CAUSAL_INTERPRETATION",
+          "SOURCE_REGIME_BOUNDARY_EXCLUDED_PRIOR",
+          "SYNTHETIC_HISTORICAL_SOURCE",
+          "COVERAGE_IS_NOT_MEASUREMENT_QUALITY",
+          "REFERENCE_RELATIVE_NOT_NORMATIVE",
+          "DESCRIPTIVE_LINEAR_COMPARATOR",
+          "NOT_A_FORECAST",
+          "MAD_BASED_DESCRIPTIVE_COMPARISON",
+          "NO_CAUSAL_OR_BETTER_WORSE_INTERPRETATION",
+          "DESCRIPTIVE_SEASONAL_REFERENCE_ONLY",
+          "HISTORICAL_PERSONAL_REFERENCE_NOT_POPULATION_DATA"
+        ],
+        "missingness": {
+          "counts": {
+            "NOT_OBSERVED": 28
+          }
+        },
+        "observation_count": 518,
+        "provenance": {
+          "instrument_version": "body.resting_heart_rate",
+          "lineage_hash": "f6b45090fbb37710cc141a431b35cf66246de516196a60915f9a7e1bb0033ffa",
+          "method": "legacy_presentation_bridge",
+          "method_version": "v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 518,
+          "observation_ids": [],
+          "observation_set_hash": "f6b45090fbb37710cc141a431b35cf66246de516196a60915f9a7e1bb0033ffa",
+          "source_artifact_ids": [
+            "artifacts/v0.4/day180_personalized.json",
+            "market:body.resting_heart_rate"
+          ]
+        },
+        "stage": "S3",
+        "support_count": 0
+      },
+      "instrument_id": "market:body.resting_heart_rate",
+      "label_key": "resting_heart_rate",
+      "latest": {
+        "observation_id": "passive:2a09913217cbb4c52abe",
+        "observed_at": "2026-06-30T23:59:00+10:00",
+        "source_class": "passive_device",
+        "unit": "bpm",
+        "value": 64.7
+      },
+      "maturity": {
+        "code": "reference_available",
+        "evidence_stage": "S3",
+        "product_stage": "historical_reference"
+      },
+      "provenance": {
+        "instrument_version": "body.resting_heart_rate",
+        "lineage_hash": "f6b45090fbb37710cc141a431b35cf66246de516196a60915f9a7e1bb0033ffa",
+        "method": "legacy_presentation_bridge",
+        "method_version": "v0.4",
+        "model_id": null,
+        "model_version": null,
+        "observation_count": 518,
+        "observation_ids": [],
+        "observation_set_hash": "f6b45090fbb37710cc141a431b35cf66246de516196a60915f9a7e1bb0033ffa",
+        "source_artifact_ids": [
+          "artifacts/v0.4/day180_personalized.json",
+          "market:body.resting_heart_rate"
+        ]
+      },
+      "reference": {
+        "high": 65.76172,
+        "independent_period_count": 85,
+        "kind": "HISTORICAL_RANGE",
+        "low": 59.238279999999996,
+        "observation_count": 85,
+        "provenance": {
+          "instrument_version": "body.resting_heart_rate",
+          "lineage_hash": "8848c41af97f4f7b17bb3fd2dc49877286c7d29f1c810638493216a3911b8b0b",
+          "method": "reference_passthrough",
+          "method_version": "presentation-v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 85,
+          "observation_ids": [],
+          "observation_set_hash": "8848c41af97f4f7b17bb3fd2dc49877286c7d29f1c810638493216a3911b8b0b",
+          "source_artifact_ids": [
+            "market:body.resting_heart_rate"
+          ]
+        },
+        "status": "ESTABLISHED",
+        "unit": "bpm",
+        "value": 62.5,
+        "window_end": "2026-06-30T23:59:00+10:00",
+        "window_start": "2026-04-02T23:59:00+11:00"
+      },
+      "scale": "RATIO",
+      "scope": "PERSONAL_MARKET",
+      "series_ids": [],
+      "supported_analysis_keys": [
+        "reference",
+        "compare",
+        "candle",
+        "signal"
+      ],
+      "unit": "bpm"
+    },
+    {
+      "availability": {
+        "reason_codes": [],
+        "state": "AVAILABLE"
+      },
+      "change": {
+        "absolute": 26.300000000000004,
+        "comparison_window_key": "previous_observation",
+        "direction": "HIGHER",
+        "from_value": 33.3,
+        "kind": "ABSOLUTE",
+        "relative": null,
+        "to_value": 59.6
+      },
+      "construct_key": "execution.duration",
+      "coverage": {
+        "coverage_ratio": null,
+        "expected_period_count": null,
+        "independent_period_count": 44,
+        "missingness": {
+          "counts": {}
+        },
+        "observation_count": 44,
+        "observed_period_count": 44
+      },
+      "domain_key": "active_questlife",
+      "entity_id": "market:person",
+      "evidence": {
+        "claim_type": "descriptive",
+        "counterexample_count": 0,
+        "independent_period_count": 44,
+        "limitation_codes": [
+          "ACTIVE_QUESTLIFE_ONLY",
+          "NO_CAUSAL_INTERPRETATION"
+        ],
+        "missingness": {
+          "counts": {}
+        },
+        "observation_count": 44,
+        "provenance": {
+          "instrument_version": "execution.duration",
+          "lineage_hash": "cdcc57281a62ce2230aaab9e5d29dad4ccd924d418f79eb10f457ccf5024cd1c",
+          "method": "legacy_presentation_bridge",
+          "method_version": "v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 44,
+          "observation_ids": [
+            "product-review-v0.4.1:active:execution-duration:015",
+            "product-review-v0.4.1:active:execution-duration:016",
+            "product-review-v0.4.1:active:execution-duration:017",
+            "product-review-v0.4.1:active:execution-duration:019",
+            "product-review-v0.4.1:active:execution-duration:020",
+            "product-review-v0.4.1:active:execution-duration:021",
+            "product-review-v0.4.1:active:execution-duration:022",
+            "product-review-v0.4.1:active:execution-duration:024",
+            "product-review-v0.4.1:active:execution-duration:026",
+            "product-review-v0.4.1:active:execution-duration:030",
+            "product-review-v0.4.1:active:execution-duration:043",
+            "product-review-v0.4.1:active:execution-duration:044",
+            "product-review-v0.4.1:active:execution-duration:046",
+            "product-review-v0.4.1:active:execution-duration:047",
+            "product-review-v0.4.1:active:execution-duration:052",
+            "product-review-v0.4.1:active:execution-duration:054",
+            "product-review-v0.4.1:active:execution-duration:055",
+            "product-review-v0.4.1:active:execution-duration:057",
+            "product-review-v0.4.1:active:execution-duration:063",
+            "product-review-v0.4.1:active:execution-duration:067",
+            "product-review-v0.4.1:active:execution-duration:071",
+            "product-review-v0.4.1:active:execution-duration:072",
+            "product-review-v0.4.1:active:execution-duration:078",
+            "product-review-v0.4.1:active:execution-duration:082",
+            "product-review-v0.4.1:active:execution-duration:091",
+            "product-review-v0.4.1:active:execution-duration:096",
+            "product-review-v0.4.1:active:execution-duration:100",
+            "product-review-v0.4.1:active:execution-duration:105",
+            "product-review-v0.4.1:active:execution-duration:108",
+            "product-review-v0.4.1:active:execution-duration:115",
+            "product-review-v0.4.1:active:execution-duration:124",
+            "product-review-v0.4.1:active:execution-duration:125",
+            "product-review-v0.4.1:active:execution-duration:129",
+            "product-review-v0.4.1:active:execution-duration:131",
+            "product-review-v0.4.1:active:execution-duration:136",
+            "product-review-v0.4.1:active:execution-duration:148",
+            "product-review-v0.4.1:active:execution-duration:149",
+            "product-review-v0.4.1:active:execution-duration:154",
+            "product-review-v0.4.1:active:execution-duration:155",
+            "product-review-v0.4.1:active:execution-duration:160",
+            "product-review-v0.4.1:active:execution-duration:161",
+            "product-review-v0.4.1:active:execution-duration:169",
+            "product-review-v0.4.1:active:execution-duration:175",
+            "product-review-v0.4.1:active:execution-duration:178"
+          ],
+          "observation_set_hash": "cdcc57281a62ce2230aaab9e5d29dad4ccd924d418f79eb10f457ccf5024cd1c",
+          "source_artifact_ids": [
+            "artifacts/v0.4/day180_personalized.json",
+            "market:execution.duration"
+          ]
+        },
+        "stage": "S2",
+        "support_count": 0
+      },
+      "instrument_id": "market:execution.duration",
+      "label_key": "execution_duration",
+      "latest": {
+        "observation_id": "product-review-v0.4.1:active:execution-duration:178",
+        "observed_at": "2026-06-28T20:00:00+10:00",
+        "source_class": "questlife_confirmed",
+        "unit": "minutes",
+        "value": 59.6
+      },
+      "maturity": {
+        "code": "reference_available",
+        "evidence_stage": "S2",
+        "product_stage": "learning_personal_baseline"
+      },
+      "provenance": {
+        "instrument_version": "execution.duration",
+        "lineage_hash": "cdcc57281a62ce2230aaab9e5d29dad4ccd924d418f79eb10f457ccf5024cd1c",
+        "method": "legacy_presentation_bridge",
+        "method_version": "v0.4",
+        "model_id": null,
+        "model_version": null,
+        "observation_count": 44,
+        "observation_ids": [
+          "product-review-v0.4.1:active:execution-duration:015",
+          "product-review-v0.4.1:active:execution-duration:016",
+          "product-review-v0.4.1:active:execution-duration:017",
+          "product-review-v0.4.1:active:execution-duration:019",
+          "product-review-v0.4.1:active:execution-duration:020",
+          "product-review-v0.4.1:active:execution-duration:021",
+          "product-review-v0.4.1:active:execution-duration:022",
+          "product-review-v0.4.1:active:execution-duration:024",
+          "product-review-v0.4.1:active:execution-duration:026",
+          "product-review-v0.4.1:active:execution-duration:030",
+          "product-review-v0.4.1:active:execution-duration:043",
+          "product-review-v0.4.1:active:execution-duration:044",
+          "product-review-v0.4.1:active:execution-duration:046",
+          "product-review-v0.4.1:active:execution-duration:047",
+          "product-review-v0.4.1:active:execution-duration:052",
+          "product-review-v0.4.1:active:execution-duration:054",
+          "product-review-v0.4.1:active:execution-duration:055",
+          "product-review-v0.4.1:active:execution-duration:057",
+          "product-review-v0.4.1:active:execution-duration:063",
+          "product-review-v0.4.1:active:execution-duration:067",
+          "product-review-v0.4.1:active:execution-duration:071",
+          "product-review-v0.4.1:active:execution-duration:072",
+          "product-review-v0.4.1:active:execution-duration:078",
+          "product-review-v0.4.1:active:execution-duration:082",
+          "product-review-v0.4.1:active:execution-duration:091",
+          "product-review-v0.4.1:active:execution-duration:096",
+          "product-review-v0.4.1:active:execution-duration:100",
+          "product-review-v0.4.1:active:execution-duration:105",
+          "product-review-v0.4.1:active:execution-duration:108",
+          "product-review-v0.4.1:active:execution-duration:115",
+          "product-review-v0.4.1:active:execution-duration:124",
+          "product-review-v0.4.1:active:execution-duration:125",
+          "product-review-v0.4.1:active:execution-duration:129",
+          "product-review-v0.4.1:active:execution-duration:131",
+          "product-review-v0.4.1:active:execution-duration:136",
+          "product-review-v0.4.1:active:execution-duration:148",
+          "product-review-v0.4.1:active:execution-duration:149",
+          "product-review-v0.4.1:active:execution-duration:154",
+          "product-review-v0.4.1:active:execution-duration:155",
+          "product-review-v0.4.1:active:execution-duration:160",
+          "product-review-v0.4.1:active:execution-duration:161",
+          "product-review-v0.4.1:active:execution-duration:169",
+          "product-review-v0.4.1:active:execution-duration:175",
+          "product-review-v0.4.1:active:execution-duration:178"
+        ],
+        "observation_set_hash": "cdcc57281a62ce2230aaab9e5d29dad4ccd924d418f79eb10f457ccf5024cd1c",
+        "source_artifact_ids": [
+          "artifacts/v0.4/day180_personalized.json",
+          "market:execution.duration"
+        ]
+      },
+      "reference": {
+        "high": 60.28332,
+        "independent_period_count": 7,
+        "kind": "PERSONAL_ROLLING",
+        "low": 6.3166799999999945,
+        "observation_count": 7,
+        "provenance": {
+          "instrument_version": "execution.duration",
+          "lineage_hash": "7fb0685afc0a8d21fbd8b931e7754792cd89716ebce9e00b7f799a3d9c879089",
+          "method": "reference_passthrough",
+          "method_version": "presentation-v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 7,
+          "observation_ids": [],
+          "observation_set_hash": "7fb0685afc0a8d21fbd8b931e7754792cd89716ebce9e00b7f799a3d9c879089",
+          "source_artifact_ids": [
+            "market:execution.duration"
+          ]
+        },
+        "status": "PROVISIONAL",
+        "unit": "minutes",
+        "value": 33.3,
+        "window_end": null,
+        "window_start": null
+      },
+      "scale": "TIME_DURATION",
+      "scope": "PERSONAL_MARKET",
+      "series_ids": [],
+      "supported_analysis_keys": [
+        "reference",
+        "compare",
+        "candle"
+      ],
+      "unit": "minutes"
+    },
+    {
+      "availability": {
+        "reason_codes": [],
+        "state": "AVAILABLE"
+      },
+      "change": {
+        "absolute": 1.0,
+        "comparison_window_key": "previous_observation",
+        "direction": "HIGHER",
+        "from_value": 2.0,
+        "kind": "ABSOLUTE",
+        "relative": null,
+        "to_value": 3.0
+      },
+      "construct_key": "execution.quality",
+      "coverage": {
+        "coverage_ratio": null,
+        "expected_period_count": null,
+        "independent_period_count": 44,
+        "missingness": {
+          "counts": {}
+        },
+        "observation_count": 44,
+        "observed_period_count": 44
+      },
+      "domain_key": "active_questlife",
+      "entity_id": "market:person",
+      "evidence": {
+        "claim_type": "descriptive",
+        "counterexample_count": 0,
+        "independent_period_count": 44,
+        "limitation_codes": [
+          "ACTIVE_QUESTLIFE_ONLY",
+          "NO_CAUSAL_INTERPRETATION"
+        ],
+        "missingness": {
+          "counts": {}
+        },
+        "observation_count": 44,
+        "provenance": {
+          "instrument_version": "execution.quality",
+          "lineage_hash": "89003d4f8997d358e239dfebfabd786a9ce3c1ca3354ef2d19d1b703749303fc",
+          "method": "legacy_presentation_bridge",
+          "method_version": "v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 44,
+          "observation_ids": [
+            "product-review-v0.4.1:active:execution-quality:015",
+            "product-review-v0.4.1:active:execution-quality:016",
+            "product-review-v0.4.1:active:execution-quality:017",
+            "product-review-v0.4.1:active:execution-quality:019",
+            "product-review-v0.4.1:active:execution-quality:020",
+            "product-review-v0.4.1:active:execution-quality:021",
+            "product-review-v0.4.1:active:execution-quality:022",
+            "product-review-v0.4.1:active:execution-quality:024",
+            "product-review-v0.4.1:active:execution-quality:026",
+            "product-review-v0.4.1:active:execution-quality:030",
+            "product-review-v0.4.1:active:execution-quality:043",
+            "product-review-v0.4.1:active:execution-quality:044",
+            "product-review-v0.4.1:active:execution-quality:046",
+            "product-review-v0.4.1:active:execution-quality:047",
+            "product-review-v0.4.1:active:execution-quality:052",
+            "product-review-v0.4.1:active:execution-quality:054",
+            "product-review-v0.4.1:active:execution-quality:055",
+            "product-review-v0.4.1:active:execution-quality:057",
+            "product-review-v0.4.1:active:execution-quality:063",
+            "product-review-v0.4.1:active:execution-quality:067",
+            "product-review-v0.4.1:active:execution-quality:071",
+            "product-review-v0.4.1:active:execution-quality:072",
+            "product-review-v0.4.1:active:execution-quality:078",
+            "product-review-v0.4.1:active:execution-quality:082",
+            "product-review-v0.4.1:active:execution-quality:091",
+            "product-review-v0.4.1:active:execution-quality:096",
+            "product-review-v0.4.1:active:execution-quality:100",
+            "product-review-v0.4.1:active:execution-quality:105",
+            "product-review-v0.4.1:active:execution-quality:108",
+            "product-review-v0.4.1:active:execution-quality:115",
+            "product-review-v0.4.1:active:execution-quality:124",
+            "product-review-v0.4.1:active:execution-quality:125",
+            "product-review-v0.4.1:active:execution-quality:129",
+            "product-review-v0.4.1:active:execution-quality:131",
+            "product-review-v0.4.1:active:execution-quality:136",
+            "product-review-v0.4.1:active:execution-quality:148",
+            "product-review-v0.4.1:active:execution-quality:149",
+            "product-review-v0.4.1:active:execution-quality:154",
+            "product-review-v0.4.1:active:execution-quality:155",
+            "product-review-v0.4.1:active:execution-quality:160",
+            "product-review-v0.4.1:active:execution-quality:161",
+            "product-review-v0.4.1:active:execution-quality:169",
+            "product-review-v0.4.1:active:execution-quality:175",
+            "product-review-v0.4.1:active:execution-quality:178"
+          ],
+          "observation_set_hash": "89003d4f8997d358e239dfebfabd786a9ce3c1ca3354ef2d19d1b703749303fc",
+          "source_artifact_ids": [
+            "artifacts/v0.4/day180_personalized.json",
+            "market:execution.quality"
+          ]
+        },
+        "stage": "S2",
+        "support_count": 0
+      },
+      "instrument_id": "market:execution.quality",
+      "label_key": "execution_quality",
+      "latest": {
+        "observation_id": "product-review-v0.4.1:active:execution-quality:178",
+        "observed_at": "2026-06-28T20:00:00+10:00",
+        "source_class": "questlife_confirmed",
+        "unit": "/5",
+        "value": 3.0
+      },
+      "maturity": {
+        "code": "reference_available",
+        "evidence_stage": "S2",
+        "product_stage": "learning_personal_baseline"
+      },
+      "provenance": {
+        "instrument_version": "execution.quality",
+        "lineage_hash": "89003d4f8997d358e239dfebfabd786a9ce3c1ca3354ef2d19d1b703749303fc",
+        "method": "legacy_presentation_bridge",
+        "method_version": "v0.4",
+        "model_id": null,
+        "model_version": null,
+        "observation_count": 44,
+        "observation_ids": [
+          "product-review-v0.4.1:active:execution-quality:015",
+          "product-review-v0.4.1:active:execution-quality:016",
+          "product-review-v0.4.1:active:execution-quality:017",
+          "product-review-v0.4.1:active:execution-quality:019",
+          "product-review-v0.4.1:active:execution-quality:020",
+          "product-review-v0.4.1:active:execution-quality:021",
+          "product-review-v0.4.1:active:execution-quality:022",
+          "product-review-v0.4.1:active:execution-quality:024",
+          "product-review-v0.4.1:active:execution-quality:026",
+          "product-review-v0.4.1:active:execution-quality:030",
+          "product-review-v0.4.1:active:execution-quality:043",
+          "product-review-v0.4.1:active:execution-quality:044",
+          "product-review-v0.4.1:active:execution-quality:046",
+          "product-review-v0.4.1:active:execution-quality:047",
+          "product-review-v0.4.1:active:execution-quality:052",
+          "product-review-v0.4.1:active:execution-quality:054",
+          "product-review-v0.4.1:active:execution-quality:055",
+          "product-review-v0.4.1:active:execution-quality:057",
+          "product-review-v0.4.1:active:execution-quality:063",
+          "product-review-v0.4.1:active:execution-quality:067",
+          "product-review-v0.4.1:active:execution-quality:071",
+          "product-review-v0.4.1:active:execution-quality:072",
+          "product-review-v0.4.1:active:execution-quality:078",
+          "product-review-v0.4.1:active:execution-quality:082",
+          "product-review-v0.4.1:active:execution-quality:091",
+          "product-review-v0.4.1:active:execution-quality:096",
+          "product-review-v0.4.1:active:execution-quality:100",
+          "product-review-v0.4.1:active:execution-quality:105",
+          "product-review-v0.4.1:active:execution-quality:108",
+          "product-review-v0.4.1:active:execution-quality:115",
+          "product-review-v0.4.1:active:execution-quality:124",
+          "product-review-v0.4.1:active:execution-quality:125",
+          "product-review-v0.4.1:active:execution-quality:129",
+          "product-review-v0.4.1:active:execution-quality:131",
+          "product-review-v0.4.1:active:execution-quality:136",
+          "product-review-v0.4.1:active:execution-quality:148",
+          "product-review-v0.4.1:active:execution-quality:149",
+          "product-review-v0.4.1:active:execution-quality:154",
+          "product-review-v0.4.1:active:execution-quality:155",
+          "product-review-v0.4.1:active:execution-quality:160",
+          "product-review-v0.4.1:active:execution-quality:161",
+          "product-review-v0.4.1:active:execution-quality:169",
+          "product-review-v0.4.1:active:execution-quality:175",
+          "product-review-v0.4.1:active:execution-quality:178"
+        ],
+        "observation_set_hash": "89003d4f8997d358e239dfebfabd786a9ce3c1ca3354ef2d19d1b703749303fc",
+        "source_artifact_ids": [
+          "artifacts/v0.4/day180_personalized.json",
+          "market:execution.quality"
+        ]
+      },
+      "reference": {
+        "high": 5.965199999999999,
+        "independent_period_count": 7,
+        "kind": "PERSONAL_ROLLING",
+        "low": 0.034800000000000164,
+        "observation_count": 7,
+        "provenance": {
+          "instrument_version": "execution.quality",
+          "lineage_hash": "6a807319fff54fb68357d8430d939043135729aae6d154e361ab53beae84fe4f",
+          "method": "reference_passthrough",
+          "method_version": "presentation-v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 7,
+          "observation_ids": [],
+          "observation_set_hash": "6a807319fff54fb68357d8430d939043135729aae6d154e361ab53beae84fe4f",
+          "source_artifact_ids": [
+            "market:execution.quality"
+          ]
+        },
+        "status": "PROVISIONAL",
+        "unit": "/5",
+        "value": 3.0,
+        "window_end": null,
+        "window_start": null
+      },
+      "scale": "ORDINAL",
+      "scope": "PERSONAL_MARKET",
+      "series_ids": [],
+      "supported_analysis_keys": [
+        "reference",
+        "compare",
+        "candle"
+      ],
+      "unit": "/5"
+    },
+    {
+      "availability": {
+        "reason_codes": [],
+        "state": "AVAILABLE"
+      },
+      "change": {
+        "absolute": 0.0,
+        "comparison_window_key": "previous_observation",
+        "direction": "FLAT",
+        "from_value": 3.0,
+        "kind": "ABSOLUTE",
+        "relative": null,
+        "to_value": 3.0
+      },
+      "construct_key": "state.focus",
+      "coverage": {
+        "coverage_ratio": null,
+        "expected_period_count": null,
+        "independent_period_count": 158,
+        "missingness": {
+          "counts": {}
+        },
+        "observation_count": 158,
+        "observed_period_count": 158
+      },
+      "domain_key": "active_questlife",
+      "entity_id": "market:person",
+      "evidence": {
+        "claim_type": "descriptive",
+        "counterexample_count": 0,
+        "independent_period_count": 158,
+        "limitation_codes": [
+          "ACTIVE_QUESTLIFE_ONLY",
+          "NO_CAUSAL_INTERPRETATION"
+        ],
+        "missingness": {
+          "counts": {}
+        },
+        "observation_count": 158,
+        "provenance": {
+          "instrument_version": "state.focus",
+          "lineage_hash": "952bfad0409a7fc29728f78a4caf6a808f40a9058fe5b908b3485af44d9b6c82",
+          "method": "legacy_presentation_bridge",
+          "method_version": "v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 158,
+          "observation_ids": [],
+          "observation_set_hash": "952bfad0409a7fc29728f78a4caf6a808f40a9058fe5b908b3485af44d9b6c82",
+          "source_artifact_ids": [
+            "artifacts/v0.4/day180_personalized.json",
+            "market:state.focus"
+          ]
+        },
+        "stage": "S2",
+        "support_count": 0
+      },
+      "instrument_id": "market:state.focus",
+      "label_key": "focus_state",
+      "latest": {
+        "observation_id": "product-review-v0.4.1:active:state-focus:180",
+        "observed_at": "2026-06-30T20:00:00+10:00",
+        "source_class": "questlife_confirmed",
+        "unit": "/5",
+        "value": 3.0
+      },
+      "maturity": {
+        "code": "reference_available",
+        "evidence_stage": "S2",
+        "product_stage": "learning_personal_baseline"
+      },
+      "provenance": {
+        "instrument_version": "state.focus",
+        "lineage_hash": "952bfad0409a7fc29728f78a4caf6a808f40a9058fe5b908b3485af44d9b6c82",
+        "method": "legacy_presentation_bridge",
+        "method_version": "v0.4",
+        "model_id": null,
+        "model_version": null,
+        "observation_count": 158,
+        "observation_ids": [],
+        "observation_set_hash": "952bfad0409a7fc29728f78a4caf6a808f40a9058fe5b908b3485af44d9b6c82",
+        "source_artifact_ids": [
+          "artifacts/v0.4/day180_personalized.json",
+          "market:state.focus"
+        ]
+      },
+      "reference": {
+        "high": 5.0,
+        "independent_period_count": 23,
+        "kind": "PERSONAL_ROLLING",
+        "low": 1.0,
+        "observation_count": 23,
+        "provenance": {
+          "instrument_version": "state.focus",
+          "lineage_hash": "49abb48467089cd23fc6f5ac5b7c5594cf364c04e8b8cf551464395032339806",
+          "method": "reference_passthrough",
+          "method_version": "presentation-v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 23,
+          "observation_ids": [],
+          "observation_set_hash": "49abb48467089cd23fc6f5ac5b7c5594cf364c04e8b8cf551464395032339806",
+          "source_artifact_ids": [
+            "market:state.focus"
+          ]
+        },
+        "status": "ESTABLISHED",
+        "unit": "/5",
+        "value": 3.0,
+        "window_end": null,
+        "window_start": null
+      },
+      "scale": "ORDINAL",
+      "scope": "PERSONAL_MARKET",
+      "series_ids": [],
+      "supported_analysis_keys": [
+        "reference",
+        "compare",
+        "candle"
+      ],
+      "unit": "/5"
+    },
+    {
+      "availability": {
+        "reason_codes": [],
+        "state": "AVAILABLE"
+      },
+      "change": {
+        "absolute": 26.300000000000004,
+        "comparison_window_key": "previous_observation",
+        "direction": "HIGHER",
+        "from_value": 33.3,
+        "kind": "ABSOLUTE",
+        "relative": null,
+        "to_value": 59.6
+      },
+      "construct_key": "execution.duration",
+      "coverage": {
+        "coverage_ratio": null,
+        "expected_period_count": null,
+        "independent_period_count": 44,
+        "missingness": {
+          "counts": {}
+        },
+        "observation_count": 44,
+        "observed_period_count": 44
+      },
+      "domain_key": "active_questlife",
+      "entity_id": "goal:goal-quant-analyst-v1",
+      "evidence": {
+        "claim_type": "descriptive",
+        "counterexample_count": 0,
+        "independent_period_count": 44,
+        "limitation_codes": [
+          "ACTIVITY_SHARE_IS_NOT_CAUSAL_CONTRIBUTION"
+        ],
+        "missingness": {
+          "counts": {}
+        },
+        "observation_count": 44,
+        "provenance": {
+          "instrument_version": "execution.duration",
+          "lineage_hash": "cdcc57281a62ce2230aaab9e5d29dad4ccd924d418f79eb10f457ccf5024cd1c",
+          "method": "legacy_presentation_bridge",
+          "method_version": "v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 44,
+          "observation_ids": [
+            "product-review-v0.4.1:active:execution-duration:015",
+            "product-review-v0.4.1:active:execution-duration:016",
+            "product-review-v0.4.1:active:execution-duration:017",
+            "product-review-v0.4.1:active:execution-duration:019",
+            "product-review-v0.4.1:active:execution-duration:020",
+            "product-review-v0.4.1:active:execution-duration:021",
+            "product-review-v0.4.1:active:execution-duration:022",
+            "product-review-v0.4.1:active:execution-duration:024",
+            "product-review-v0.4.1:active:execution-duration:026",
+            "product-review-v0.4.1:active:execution-duration:030",
+            "product-review-v0.4.1:active:execution-duration:043",
+            "product-review-v0.4.1:active:execution-duration:044",
+            "product-review-v0.4.1:active:execution-duration:046",
+            "product-review-v0.4.1:active:execution-duration:047",
+            "product-review-v0.4.1:active:execution-duration:052",
+            "product-review-v0.4.1:active:execution-duration:054",
+            "product-review-v0.4.1:active:execution-duration:055",
+            "product-review-v0.4.1:active:execution-duration:057",
+            "product-review-v0.4.1:active:execution-duration:063",
+            "product-review-v0.4.1:active:execution-duration:067",
+            "product-review-v0.4.1:active:execution-duration:071",
+            "product-review-v0.4.1:active:execution-duration:072",
+            "product-review-v0.4.1:active:execution-duration:078",
+            "product-review-v0.4.1:active:execution-duration:082",
+            "product-review-v0.4.1:active:execution-duration:091",
+            "product-review-v0.4.1:active:execution-duration:096",
+            "product-review-v0.4.1:active:execution-duration:100",
+            "product-review-v0.4.1:active:execution-duration:105",
+            "product-review-v0.4.1:active:execution-duration:108",
+            "product-review-v0.4.1:active:execution-duration:115",
+            "product-review-v0.4.1:active:execution-duration:124",
+            "product-review-v0.4.1:active:execution-duration:125",
+            "product-review-v0.4.1:active:execution-duration:129",
+            "product-review-v0.4.1:active:execution-duration:131",
+            "product-review-v0.4.1:active:execution-duration:136",
+            "product-review-v0.4.1:active:execution-duration:148",
+            "product-review-v0.4.1:active:execution-duration:149",
+            "product-review-v0.4.1:active:execution-duration:154",
+            "product-review-v0.4.1:active:execution-duration:155",
+            "product-review-v0.4.1:active:execution-duration:160",
+            "product-review-v0.4.1:active:execution-duration:161",
+            "product-review-v0.4.1:active:execution-duration:169",
+            "product-review-v0.4.1:active:execution-duration:175",
+            "product-review-v0.4.1:active:execution-duration:178"
+          ],
+          "observation_set_hash": "cdcc57281a62ce2230aaab9e5d29dad4ccd924d418f79eb10f457ccf5024cd1c",
+          "source_artifact_ids": [
+            "artifacts/v0.4/day180_personalized.json",
+            "goal:goal-quant-analyst-v1:execution.duration"
+          ]
+        },
+        "stage": "S2",
+        "support_count": 0
+      },
+      "instrument_id": "goal:goal-quant-analyst-v1:execution.duration",
+      "label_key": "execution_duration",
+      "latest": {
+        "observation_id": "product-review-v0.4.1:active:execution-duration:178",
+        "observed_at": "2026-06-28T10:00:00+10:00",
+        "source_class": "derived_research",
+        "unit": "minutes",
+        "value": 59.6
+      },
+      "maturity": {
+        "code": "reference_available",
+        "evidence_stage": "S2",
+        "product_stage": "learning_personal_baseline"
+      },
+      "provenance": {
+        "instrument_version": "execution.duration",
+        "lineage_hash": "cdcc57281a62ce2230aaab9e5d29dad4ccd924d418f79eb10f457ccf5024cd1c",
+        "method": "legacy_presentation_bridge",
+        "method_version": "v0.4",
+        "model_id": null,
+        "model_version": null,
+        "observation_count": 44,
+        "observation_ids": [
+          "product-review-v0.4.1:active:execution-duration:015",
+          "product-review-v0.4.1:active:execution-duration:016",
+          "product-review-v0.4.1:active:execution-duration:017",
+          "product-review-v0.4.1:active:execution-duration:019",
+          "product-review-v0.4.1:active:execution-duration:020",
+          "product-review-v0.4.1:active:execution-duration:021",
+          "product-review-v0.4.1:active:execution-duration:022",
+          "product-review-v0.4.1:active:execution-duration:024",
+          "product-review-v0.4.1:active:execution-duration:026",
+          "product-review-v0.4.1:active:execution-duration:030",
+          "product-review-v0.4.1:active:execution-duration:043",
+          "product-review-v0.4.1:active:execution-duration:044",
+          "product-review-v0.4.1:active:execution-duration:046",
+          "product-review-v0.4.1:active:execution-duration:047",
+          "product-review-v0.4.1:active:execution-duration:052",
+          "product-review-v0.4.1:active:execution-duration:054",
+          "product-review-v0.4.1:active:execution-duration:055",
+          "product-review-v0.4.1:active:execution-duration:057",
+          "product-review-v0.4.1:active:execution-duration:063",
+          "product-review-v0.4.1:active:execution-duration:067",
+          "product-review-v0.4.1:active:execution-duration:071",
+          "product-review-v0.4.1:active:execution-duration:072",
+          "product-review-v0.4.1:active:execution-duration:078",
+          "product-review-v0.4.1:active:execution-duration:082",
+          "product-review-v0.4.1:active:execution-duration:091",
+          "product-review-v0.4.1:active:execution-duration:096",
+          "product-review-v0.4.1:active:execution-duration:100",
+          "product-review-v0.4.1:active:execution-duration:105",
+          "product-review-v0.4.1:active:execution-duration:108",
+          "product-review-v0.4.1:active:execution-duration:115",
+          "product-review-v0.4.1:active:execution-duration:124",
+          "product-review-v0.4.1:active:execution-duration:125",
+          "product-review-v0.4.1:active:execution-duration:129",
+          "product-review-v0.4.1:active:execution-duration:131",
+          "product-review-v0.4.1:active:execution-duration:136",
+          "product-review-v0.4.1:active:execution-duration:148",
+          "product-review-v0.4.1:active:execution-duration:149",
+          "product-review-v0.4.1:active:execution-duration:154",
+          "product-review-v0.4.1:active:execution-duration:155",
+          "product-review-v0.4.1:active:execution-duration:160",
+          "product-review-v0.4.1:active:execution-duration:161",
+          "product-review-v0.4.1:active:execution-duration:169",
+          "product-review-v0.4.1:active:execution-duration:175",
+          "product-review-v0.4.1:active:execution-duration:178"
+        ],
+        "observation_set_hash": "cdcc57281a62ce2230aaab9e5d29dad4ccd924d418f79eb10f457ccf5024cd1c",
+        "source_artifact_ids": [
+          "artifacts/v0.4/day180_personalized.json",
+          "goal:goal-quant-analyst-v1:execution.duration"
+        ]
+      },
+      "reference": {
+        "high": 60.28332,
+        "independent_period_count": 7,
+        "kind": "PERSONAL_ROLLING",
+        "low": 6.3166799999999945,
+        "observation_count": 7,
+        "provenance": {
+          "instrument_version": "execution.duration",
+          "lineage_hash": "b0209239a284e0c703fe195937bfd5ba8d08954955b981cfa9597acdcce67d15",
+          "method": "reference_passthrough",
+          "method_version": "presentation-v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 7,
+          "observation_ids": [],
+          "observation_set_hash": "b0209239a284e0c703fe195937bfd5ba8d08954955b981cfa9597acdcce67d15",
+          "source_artifact_ids": [
+            "goal:goal-quant-analyst-v1:execution.duration"
+          ]
+        },
+        "status": "PROVISIONAL",
+        "unit": "minutes",
+        "value": 33.3,
+        "window_end": "2026-06-28T20:00:00+10:00",
+        "window_start": "2026-06-04T20:00:00+10:00"
+      },
+      "scale": "TIME_DURATION",
+      "scope": "GOAL",
+      "series_ids": [],
+      "supported_analysis_keys": [
+        "reference",
+        "compare",
+        "candle"
+      ],
+      "unit": "minutes"
+    },
+    {
+      "availability": {
+        "reason_codes": [],
+        "state": "AVAILABLE"
+      },
+      "change": {
+        "absolute": 26.300000000000004,
+        "comparison_window_key": "previous_observation",
+        "direction": "HIGHER",
+        "from_value": 33.3,
+        "kind": "ABSOLUTE",
+        "relative": null,
+        "to_value": 59.6
+      },
+      "construct_key": "execution.duration",
+      "coverage": {
+        "coverage_ratio": null,
+        "expected_period_count": null,
+        "independent_period_count": 44,
+        "missingness": {
+          "counts": {}
+        },
+        "observation_count": 44,
+        "observed_period_count": 44
+      },
+      "domain_key": "active_questlife",
+      "entity_id": "skill:skill-sql-v1",
+      "evidence": {
+        "claim_type": "descriptive",
+        "counterexample_count": 0,
+        "independent_period_count": 44,
+        "limitation_codes": [
+          "ACTIVITY_SHARE_IS_NOT_CAUSAL_CONTRIBUTION"
+        ],
+        "missingness": {
+          "counts": {}
+        },
+        "observation_count": 44,
+        "provenance": {
+          "instrument_version": "execution.duration",
+          "lineage_hash": "cdcc57281a62ce2230aaab9e5d29dad4ccd924d418f79eb10f457ccf5024cd1c",
+          "method": "legacy_presentation_bridge",
+          "method_version": "v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 44,
+          "observation_ids": [
+            "product-review-v0.4.1:active:execution-duration:015",
+            "product-review-v0.4.1:active:execution-duration:016",
+            "product-review-v0.4.1:active:execution-duration:017",
+            "product-review-v0.4.1:active:execution-duration:019",
+            "product-review-v0.4.1:active:execution-duration:020",
+            "product-review-v0.4.1:active:execution-duration:021",
+            "product-review-v0.4.1:active:execution-duration:022",
+            "product-review-v0.4.1:active:execution-duration:024",
+            "product-review-v0.4.1:active:execution-duration:026",
+            "product-review-v0.4.1:active:execution-duration:030",
+            "product-review-v0.4.1:active:execution-duration:043",
+            "product-review-v0.4.1:active:execution-duration:044",
+            "product-review-v0.4.1:active:execution-duration:046",
+            "product-review-v0.4.1:active:execution-duration:047",
+            "product-review-v0.4.1:active:execution-duration:052",
+            "product-review-v0.4.1:active:execution-duration:054",
+            "product-review-v0.4.1:active:execution-duration:055",
+            "product-review-v0.4.1:active:execution-duration:057",
+            "product-review-v0.4.1:active:execution-duration:063",
+            "product-review-v0.4.1:active:execution-duration:067",
+            "product-review-v0.4.1:active:execution-duration:071",
+            "product-review-v0.4.1:active:execution-duration:072",
+            "product-review-v0.4.1:active:execution-duration:078",
+            "product-review-v0.4.1:active:execution-duration:082",
+            "product-review-v0.4.1:active:execution-duration:091",
+            "product-review-v0.4.1:active:execution-duration:096",
+            "product-review-v0.4.1:active:execution-duration:100",
+            "product-review-v0.4.1:active:execution-duration:105",
+            "product-review-v0.4.1:active:execution-duration:108",
+            "product-review-v0.4.1:active:execution-duration:115",
+            "product-review-v0.4.1:active:execution-duration:124",
+            "product-review-v0.4.1:active:execution-duration:125",
+            "product-review-v0.4.1:active:execution-duration:129",
+            "product-review-v0.4.1:active:execution-duration:131",
+            "product-review-v0.4.1:active:execution-duration:136",
+            "product-review-v0.4.1:active:execution-duration:148",
+            "product-review-v0.4.1:active:execution-duration:149",
+            "product-review-v0.4.1:active:execution-duration:154",
+            "product-review-v0.4.1:active:execution-duration:155",
+            "product-review-v0.4.1:active:execution-duration:160",
+            "product-review-v0.4.1:active:execution-duration:161",
+            "product-review-v0.4.1:active:execution-duration:169",
+            "product-review-v0.4.1:active:execution-duration:175",
+            "product-review-v0.4.1:active:execution-duration:178"
+          ],
+          "observation_set_hash": "cdcc57281a62ce2230aaab9e5d29dad4ccd924d418f79eb10f457ccf5024cd1c",
+          "source_artifact_ids": [
+            "artifacts/v0.4/day180_personalized.json",
+            "skill:skill-sql-v1:execution.duration"
+          ]
+        },
+        "stage": "S2",
+        "support_count": 0
+      },
+      "instrument_id": "skill:skill-sql-v1:execution.duration",
+      "label_key": "execution_duration",
+      "latest": {
+        "observation_id": "product-review-v0.4.1:active:execution-duration:178",
+        "observed_at": "2026-06-28T10:00:00+10:00",
+        "source_class": "derived_research",
+        "unit": "minutes",
+        "value": 59.6
+      },
+      "maturity": {
+        "code": "reference_available",
+        "evidence_stage": "S2",
+        "product_stage": "learning_personal_baseline"
+      },
+      "provenance": {
+        "instrument_version": "execution.duration",
+        "lineage_hash": "cdcc57281a62ce2230aaab9e5d29dad4ccd924d418f79eb10f457ccf5024cd1c",
+        "method": "legacy_presentation_bridge",
+        "method_version": "v0.4",
+        "model_id": null,
+        "model_version": null,
+        "observation_count": 44,
+        "observation_ids": [
+          "product-review-v0.4.1:active:execution-duration:015",
+          "product-review-v0.4.1:active:execution-duration:016",
+          "product-review-v0.4.1:active:execution-duration:017",
+          "product-review-v0.4.1:active:execution-duration:019",
+          "product-review-v0.4.1:active:execution-duration:020",
+          "product-review-v0.4.1:active:execution-duration:021",
+          "product-review-v0.4.1:active:execution-duration:022",
+          "product-review-v0.4.1:active:execution-duration:024",
+          "product-review-v0.4.1:active:execution-duration:026",
+          "product-review-v0.4.1:active:execution-duration:030",
+          "product-review-v0.4.1:active:execution-duration:043",
+          "product-review-v0.4.1:active:execution-duration:044",
+          "product-review-v0.4.1:active:execution-duration:046",
+          "product-review-v0.4.1:active:execution-duration:047",
+          "product-review-v0.4.1:active:execution-duration:052",
+          "product-review-v0.4.1:active:execution-duration:054",
+          "product-review-v0.4.1:active:execution-duration:055",
+          "product-review-v0.4.1:active:execution-duration:057",
+          "product-review-v0.4.1:active:execution-duration:063",
+          "product-review-v0.4.1:active:execution-duration:067",
+          "product-review-v0.4.1:active:execution-duration:071",
+          "product-review-v0.4.1:active:execution-duration:072",
+          "product-review-v0.4.1:active:execution-duration:078",
+          "product-review-v0.4.1:active:execution-duration:082",
+          "product-review-v0.4.1:active:execution-duration:091",
+          "product-review-v0.4.1:active:execution-duration:096",
+          "product-review-v0.4.1:active:execution-duration:100",
+          "product-review-v0.4.1:active:execution-duration:105",
+          "product-review-v0.4.1:active:execution-duration:108",
+          "product-review-v0.4.1:active:execution-duration:115",
+          "product-review-v0.4.1:active:execution-duration:124",
+          "product-review-v0.4.1:active:execution-duration:125",
+          "product-review-v0.4.1:active:execution-duration:129",
+          "product-review-v0.4.1:active:execution-duration:131",
+          "product-review-v0.4.1:active:execution-duration:136",
+          "product-review-v0.4.1:active:execution-duration:148",
+          "product-review-v0.4.1:active:execution-duration:149",
+          "product-review-v0.4.1:active:execution-duration:154",
+          "product-review-v0.4.1:active:execution-duration:155",
+          "product-review-v0.4.1:active:execution-duration:160",
+          "product-review-v0.4.1:active:execution-duration:161",
+          "product-review-v0.4.1:active:execution-duration:169",
+          "product-review-v0.4.1:active:execution-duration:175",
+          "product-review-v0.4.1:active:execution-duration:178"
+        ],
+        "observation_set_hash": "cdcc57281a62ce2230aaab9e5d29dad4ccd924d418f79eb10f457ccf5024cd1c",
+        "source_artifact_ids": [
+          "artifacts/v0.4/day180_personalized.json",
+          "skill:skill-sql-v1:execution.duration"
+        ]
+      },
+      "reference": {
+        "high": 60.28332,
+        "independent_period_count": 7,
+        "kind": "PERSONAL_ROLLING",
+        "low": 6.3166799999999945,
+        "observation_count": 7,
+        "provenance": {
+          "instrument_version": "execution.duration",
+          "lineage_hash": "357442c807ae13a9cf031058cde2daa727205630073525fe9efa5e48900e052a",
+          "method": "reference_passthrough",
+          "method_version": "presentation-v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 7,
+          "observation_ids": [],
+          "observation_set_hash": "357442c807ae13a9cf031058cde2daa727205630073525fe9efa5e48900e052a",
+          "source_artifact_ids": [
+            "skill:skill-sql-v1:execution.duration"
+          ]
+        },
+        "status": "PROVISIONAL",
+        "unit": "minutes",
+        "value": 33.3,
+        "window_end": "2026-06-28T20:00:00+10:00",
+        "window_start": "2026-06-04T20:00:00+10:00"
+      },
+      "scale": "TIME_DURATION",
+      "scope": "SKILL",
+      "series_ids": [],
+      "supported_analysis_keys": [
+        "reference",
+        "compare",
+        "candle"
+      ],
+      "unit": "minutes"
+    }
+  ],
+  "interpretation": null,
+  "limitation_codes": [
+    "OBSERVATIONAL_NOT_CAUSAL",
+    "BASELINE_IS_NOT_TARGET",
+    "MISSING_IS_NOT_ZERO",
+    "PLAN_IS_NOT_EXECUTION",
+    "NO_ADVANCED_RESEARCH_ARTIFACTS"
+  ],
+  "metadata": {
+    "as_of": "2026-07-01T07:59:00+10:00",
+    "bundle_id": "product:product-v1-market-subject:personal_market:9100763277bd702a:compact",
+    "contains_real_user_data": false,
+    "contract_schema_hash": "da7bd3987a9343c72cb37f2edd4dbc81b604e655d4b915c9f85949f001632335",
+    "contract_version": "questlife.quant.product.v1",
+    "eligibility": "PRODUCT_ELIGIBLE",
+    "engine_versions": {
+      "materialized": "questlife-quant-v0.4.1-materialized",
+      "product": "questlife.quant.product.v1",
+      "source": "questlife-cold-start-terminal-v0.4"
+    },
+    "entity_id": null,
+    "feature_versions": {
+      "presentation_bridge": "questlife-terminal-presentation-v0.4.2"
+    },
+    "generated_at": "2026-07-01T07:59:00+10:00",
+    "instrument_versions": {
+      "goal:goal-quant-analyst-v1:execution.duration": "execution.duration",
+      "market:activity.active_minutes": "activity.active_minutes",
+      "market:activity.exercise_minutes": "activity.exercise_minutes",
+      "market:activity.steps": "activity.steps",
+      "market:activity.walking_running_distance": "activity.walking_running_distance",
+      "market:body.resting_heart_rate": "body.resting_heart_rate",
+      "market:execution.duration": "execution.duration",
+      "market:execution.quality": "execution.quality",
+      "market:sleep.duration": "sleep.duration",
+      "market:sleep.end_time": "sleep.end_time",
+      "market:sleep.start_time": "sleep.start_time",
+      "market:state.focus": "state.focus",
+      "skill:skill-sql-v1:execution.duration": "execution.duration"
+    },
+    "mode": "COMPACT",
+    "scope": "PERSONAL_MARKET",
+    "source_snapshot_hash": "9100763277bd702ab589f0ab7a8e0138c38acdc61e339e99994d8df3a2f64b8f",
+    "staleness": {
+      "evaluated_at": "2026-07-01T07:59:00+10:00",
+      "source_as_of": "2026-07-01T07:59:00+10:00",
+      "stale_after": null,
+      "state": "CURRENT"
+    },
+    "subject_id": "product-v1-market-subject",
+    "synthetic_only": true
+  },
+  "personal_market": {
+    "availability_counts": {
+      "ABSTAINED": 0,
+      "AVAILABLE": 13,
+      "FORMING": 0,
+      "INSUFFICIENT_DATA": 0,
+      "NOT_SUPPORTED": 0,
+      "RESEARCH_ONLY": 0,
+      "UNAVAILABLE_SOURCE": 0
+    },
+    "instrument_ids": [
+      "market:activity.steps",
+      "market:activity.walking_running_distance",
+      "market:activity.active_minutes",
+      "market:activity.exercise_minutes",
+      "market:sleep.duration",
+      "market:sleep.start_time",
+      "market:sleep.end_time",
+      "market:body.resting_heart_rate",
+      "market:execution.duration",
+      "market:execution.quality",
+      "market:state.focus",
+      "goal:goal-quant-analyst-v1:execution.duration",
+      "skill:skill-sql-v1:execution.duration"
+    ],
+    "limitation_codes": [
+      "NO_COMPOSITE_PERSONAL_INDEX",
+      "POSITION_IS_NOT_GOOD_OR_BAD",
+      "DIRECTION_IS_DESCRIPTIVE_NOT_CAUSAL",
+      "INDEPENDENT_INSTRUMENT_SCALES"
+    ],
+    "top_movements": [
+      {
+        "change": {
+          "absolute": 1.471,
+          "comparison_window_key": "previous_observation",
+          "direction": "HIGHER",
+          "from_value": 7.135,
+          "kind": "ABSOLUTE",
+          "relative": null,
+          "to_value": 8.606
+        },
+        "instrument_id": "market:activity.walking_running_distance",
+        "rank_basis": "absolute_valid_reference_relative_percentage"
+      },
+      {
+        "change": {
+          "absolute": 1583.0,
+          "comparison_window_key": "previous_observation",
+          "direction": "HIGHER",
+          "from_value": 10059.0,
+          "kind": "ABSOLUTE",
+          "relative": null,
+          "to_value": 11642.0
+        },
+        "instrument_id": "market:activity.steps",
+        "rank_basis": "absolute_valid_reference_relative_percentage"
+      },
+      {
+        "change": {
+          "absolute": 1.471,
+          "comparison_window_key": "previous_observation",
+          "direction": "HIGHER",
+          "from_value": 7.135,
+          "kind": "ABSOLUTE",
+          "relative": null,
+          "to_value": 8.606
+        },
+        "instrument_id": "market:activity.walking_running_distance",
+        "rank_basis": "micro_candle_capability_available"
+      }
+    ],
+    "watchlist": [
+      {
+        "availability": {
+          "reason_codes": [],
+          "state": "AVAILABLE"
+        },
+        "change": {
+          "absolute": 1583.0,
+          "comparison_window_key": "previous_observation",
+          "direction": "HIGHER",
+          "from_value": 10059.0,
+          "kind": "ABSOLUTE",
+          "relative": null,
+          "to_value": 11642.0
+        },
+        "instrument_id": "market:activity.steps",
+        "latest": {
+          "observation_id": "passive:3006e6d297fac5660d62",
+          "observed_at": "2026-06-30T23:59:00+10:00",
+          "source_class": "passive_device",
+          "unit": "steps",
+          "value": 11642.0
+        },
+        "maturity": {
+          "code": "reference_available",
+          "evidence_stage": "S3",
+          "product_stage": "historical_reference"
+        },
+        "reference": {
+          "high": 12060.3424,
+          "independent_period_count": 89,
+          "kind": "HISTORICAL_RANGE",
+          "low": 4279.6576000000005,
+          "observation_count": 89,
+          "provenance": {
+            "instrument_version": "activity.steps",
+            "lineage_hash": "df8f5b18cc89b6d5b489caaa6fc8bc4878dd190d3e5b503f86a162100ce0deac",
+            "method": "reference_passthrough",
+            "method_version": "presentation-v0.4",
+            "model_id": null,
+            "model_version": null,
+            "observation_count": 89,
+            "observation_ids": [],
+            "observation_set_hash": "df8f5b18cc89b6d5b489caaa6fc8bc4878dd190d3e5b503f86a162100ce0deac",
+            "source_artifact_ids": [
+              "market:activity.steps"
+            ]
+          },
+          "status": "ESTABLISHED",
+          "unit": "steps",
+          "value": 8170.0,
+          "window_end": "2026-06-30T23:59:00+10:00",
+          "window_start": "2026-04-02T23:59:00+11:00"
+        },
+        "sparkline": [
+          {
+            "observation_id": "spark:market:activity.steps:0",
+            "observed_at": "2026-06-19T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "steps",
+            "value": 6732.0
+          },
+          {
+            "observation_id": "spark:market:activity.steps:1",
+            "observed_at": "2026-06-20T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "steps",
+            "value": 5623.0
+          },
+          {
+            "observation_id": "spark:market:activity.steps:2",
+            "observed_at": "2026-06-21T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "steps",
+            "value": 5333.0
+          },
+          {
+            "observation_id": "spark:market:activity.steps:3",
+            "observed_at": "2026-06-22T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "steps",
+            "value": 8111.0
+          },
+          {
+            "observation_id": "spark:market:activity.steps:4",
+            "observed_at": "2026-06-23T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "steps",
+            "value": 8831.0
+          },
+          {
+            "observation_id": "spark:market:activity.steps:5",
+            "observed_at": "2026-06-24T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "steps",
+            "value": 8832.0
+          },
+          {
+            "observation_id": "spark:market:activity.steps:6",
+            "observed_at": "2026-06-25T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "steps",
+            "value": 9688.0
+          },
+          {
+            "observation_id": "spark:market:activity.steps:7",
+            "observed_at": "2026-06-26T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "steps",
+            "value": 9482.0
+          },
+          {
+            "observation_id": "spark:market:activity.steps:8",
+            "observed_at": "2026-06-27T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "steps",
+            "value": 6660.0
+          },
+          {
+            "observation_id": "spark:market:activity.steps:9",
+            "observed_at": "2026-06-28T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "steps",
+            "value": 5194.0
+          },
+          {
+            "observation_id": "spark:market:activity.steps:10",
+            "observed_at": "2026-06-29T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "steps",
+            "value": 10059.0
+          },
+          {
+            "observation_id": "spark:market:activity.steps:11",
+            "observed_at": "2026-06-30T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "steps",
+            "value": 11642.0
+          }
+        ],
+        "updated_at": "2026-06-30T23:59:00+10:00"
+      },
+      {
+        "availability": {
+          "reason_codes": [],
+          "state": "AVAILABLE"
+        },
+        "change": {
+          "absolute": 1.471,
+          "comparison_window_key": "previous_observation",
+          "direction": "HIGHER",
+          "from_value": 7.135,
+          "kind": "ABSOLUTE",
+          "relative": null,
+          "to_value": 8.606
+        },
+        "instrument_id": "market:activity.walking_running_distance",
+        "latest": {
+          "observation_id": "passive:7747caa4089776c686cb",
+          "observed_at": "2026-06-30T23:59:00+10:00",
+          "source_class": "passive_device",
+          "unit": "kilometres",
+          "value": 8.606
+        },
+        "maturity": {
+          "code": "reference_available",
+          "evidence_stage": "S3",
+          "product_stage": "historical_reference"
+        },
+        "reference": {
+          "high": 8.9247476,
+          "independent_period_count": 85,
+          "kind": "HISTORICAL_RANGE",
+          "low": 2.9172524000000006,
+          "observation_count": 85,
+          "provenance": {
+            "instrument_version": "activity.walking_running_distance",
+            "lineage_hash": "f1180447edc1d4a188c099587babee6b713e925cd7874f453e256dfe406adf51",
+            "method": "reference_passthrough",
+            "method_version": "presentation-v0.4",
+            "model_id": null,
+            "model_version": null,
+            "observation_count": 85,
+            "observation_ids": [],
+            "observation_set_hash": "f1180447edc1d4a188c099587babee6b713e925cd7874f453e256dfe406adf51",
+            "source_artifact_ids": [
+              "market:activity.walking_running_distance"
+            ]
+          },
+          "status": "ESTABLISHED",
+          "unit": "kilometres",
+          "value": 5.921,
+          "window_end": "2026-06-30T23:59:00+10:00",
+          "window_start": "2026-04-02T23:59:00+11:00"
+        },
+        "sparkline": [
+          {
+            "observation_id": "spark:market:activity.walking_running_distance:0",
+            "observed_at": "2026-06-17T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "kilometres",
+            "value": 5.992
+          },
+          {
+            "observation_id": "spark:market:activity.walking_running_distance:1",
+            "observed_at": "2026-06-18T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "kilometres",
+            "value": 6.397
+          },
+          {
+            "observation_id": "spark:market:activity.walking_running_distance:2",
+            "observed_at": "2026-06-20T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "kilometres",
+            "value": 3.761
+          },
+          {
+            "observation_id": "spark:market:activity.walking_running_distance:3",
+            "observed_at": "2026-06-21T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "kilometres",
+            "value": 4.63
+          },
+          {
+            "observation_id": "spark:market:activity.walking_running_distance:4",
+            "observed_at": "2026-06-22T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "kilometres",
+            "value": 5.993
+          },
+          {
+            "observation_id": "spark:market:activity.walking_running_distance:5",
+            "observed_at": "2026-06-23T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "kilometres",
+            "value": 6.442
+          },
+          {
+            "observation_id": "spark:market:activity.walking_running_distance:6",
+            "observed_at": "2026-06-24T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "kilometres",
+            "value": 6.12
+          },
+          {
+            "observation_id": "spark:market:activity.walking_running_distance:7",
+            "observed_at": "2026-06-25T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "kilometres",
+            "value": 6.189
+          },
+          {
+            "observation_id": "spark:market:activity.walking_running_distance:8",
+            "observed_at": "2026-06-26T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "kilometres",
+            "value": 6.801
+          },
+          {
+            "observation_id": "spark:market:activity.walking_running_distance:9",
+            "observed_at": "2026-06-28T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "kilometres",
+            "value": 3.633
+          },
+          {
+            "observation_id": "spark:market:activity.walking_running_distance:10",
+            "observed_at": "2026-06-29T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "kilometres",
+            "value": 7.135
+          },
+          {
+            "observation_id": "spark:market:activity.walking_running_distance:11",
+            "observed_at": "2026-06-30T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "kilometres",
+            "value": 8.606
+          }
+        ],
+        "updated_at": "2026-06-30T23:59:00+10:00"
+      },
+      {
+        "availability": {
+          "reason_codes": [],
+          "state": "AVAILABLE"
+        },
+        "change": {
+          "absolute": 9.5,
+          "comparison_window_key": "previous_observation",
+          "direction": "HIGHER",
+          "from_value": 49.8,
+          "kind": "ABSOLUTE",
+          "relative": null,
+          "to_value": 59.3
+        },
+        "instrument_id": "market:activity.active_minutes",
+        "latest": {
+          "observation_id": "passive:3bac350ed2140a47ec44",
+          "observed_at": "2026-06-30T23:59:00+10:00",
+          "source_class": "passive_device",
+          "unit": "minutes",
+          "value": 59.3
+        },
+        "maturity": {
+          "code": "reference_available",
+          "evidence_stage": "S3",
+          "product_stage": "historical_reference"
+        },
+        "reference": {
+          "high": 63.675540000000005,
+          "independent_period_count": 84,
+          "kind": "HISTORICAL_RANGE",
+          "low": 25.42445999999999,
+          "observation_count": 84,
+          "provenance": {
+            "instrument_version": "activity.active_minutes",
+            "lineage_hash": "167dc707f5cf704bf869b0fd61c285a8ca49dcda575b07a8566226f9d999f7db",
+            "method": "reference_passthrough",
+            "method_version": "presentation-v0.4",
+            "model_id": null,
+            "model_version": null,
+            "observation_count": 84,
+            "observation_ids": [],
+            "observation_set_hash": "167dc707f5cf704bf869b0fd61c285a8ca49dcda575b07a8566226f9d999f7db",
+            "source_artifact_ids": [
+              "market:activity.active_minutes"
+            ]
+          },
+          "status": "ESTABLISHED",
+          "unit": "minutes",
+          "value": 44.55,
+          "window_end": "2026-06-30T23:59:00+10:00",
+          "window_start": "2026-04-02T23:59:00+11:00"
+        },
+        "sparkline": [
+          {
+            "observation_id": "spark:market:activity.active_minutes:0",
+            "observed_at": "2026-06-18T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 47.8
+          },
+          {
+            "observation_id": "spark:market:activity.active_minutes:1",
+            "observed_at": "2026-06-19T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 50.3
+          },
+          {
+            "observation_id": "spark:market:activity.active_minutes:2",
+            "observed_at": "2026-06-20T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 46.2
+          },
+          {
+            "observation_id": "spark:market:activity.active_minutes:3",
+            "observed_at": "2026-06-21T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 35.2
+          },
+          {
+            "observation_id": "spark:market:activity.active_minutes:4",
+            "observed_at": "2026-06-22T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 46.3
+          },
+          {
+            "observation_id": "spark:market:activity.active_minutes:5",
+            "observed_at": "2026-06-23T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 46.8
+          },
+          {
+            "observation_id": "spark:market:activity.active_minutes:6",
+            "observed_at": "2026-06-24T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 49.1
+          },
+          {
+            "observation_id": "spark:market:activity.active_minutes:7",
+            "observed_at": "2026-06-26T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 51.0
+          },
+          {
+            "observation_id": "spark:market:activity.active_minutes:8",
+            "observed_at": "2026-06-27T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 45.1
+          },
+          {
+            "observation_id": "spark:market:activity.active_minutes:9",
+            "observed_at": "2026-06-28T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 29.4
+          },
+          {
+            "observation_id": "spark:market:activity.active_minutes:10",
+            "observed_at": "2026-06-29T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 49.8
+          },
+          {
+            "observation_id": "spark:market:activity.active_minutes:11",
+            "observed_at": "2026-06-30T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 59.3
+          }
+        ],
+        "updated_at": "2026-06-30T23:59:00+10:00"
+      },
+      {
+        "availability": {
+          "reason_codes": [],
+          "state": "AVAILABLE"
+        },
+        "change": {
+          "absolute": 33.2,
+          "comparison_window_key": "previous_observation",
+          "direction": "HIGHER",
+          "from_value": 0.0,
+          "kind": "ABSOLUTE",
+          "relative": null,
+          "to_value": 33.2
+        },
+        "instrument_id": "market:activity.exercise_minutes",
+        "latest": {
+          "observation_id": "passive:702939e621e00e44a7e0",
+          "observed_at": "2026-06-30T23:59:00+10:00",
+          "source_class": "passive_device",
+          "unit": "minutes",
+          "value": 33.2
+        },
+        "maturity": {
+          "code": "reference_available",
+          "evidence_stage": "S3",
+          "product_stage": "historical_reference"
+        },
+        "reference": {
+          "high": 69.55712,
+          "independent_period_count": 83,
+          "kind": "HISTORICAL_RANGE",
+          "low": -22.957119999999993,
+          "observation_count": 83,
+          "provenance": {
+            "instrument_version": "activity.exercise_minutes",
+            "lineage_hash": "43c41e0d35de3cf733b3ce48994c46054144f991f310817ba2c3b26d32683dad",
+            "method": "reference_passthrough",
+            "method_version": "presentation-v0.4",
+            "model_id": null,
+            "model_version": null,
+            "observation_count": 83,
+            "observation_ids": [],
+            "observation_set_hash": "43c41e0d35de3cf733b3ce48994c46054144f991f310817ba2c3b26d32683dad",
+            "source_artifact_ids": [
+              "market:activity.exercise_minutes"
+            ]
+          },
+          "status": "ESTABLISHED",
+          "unit": "minutes",
+          "value": 23.3,
+          "window_end": "2026-06-30T23:59:00+10:00",
+          "window_start": "2026-04-02T23:59:00+11:00"
+        },
+        "sparkline": [
+          {
+            "observation_id": "spark:market:activity.exercise_minutes:0",
+            "observed_at": "2026-06-17T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 23.3
+          },
+          {
+            "observation_id": "spark:market:activity.exercise_minutes:1",
+            "observed_at": "2026-06-18T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 29.3
+          },
+          {
+            "observation_id": "spark:market:activity.exercise_minutes:2",
+            "observed_at": "2026-06-19T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 13.3
+          },
+          {
+            "observation_id": "spark:market:activity.exercise_minutes:3",
+            "observed_at": "2026-06-20T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 25.0
+          },
+          {
+            "observation_id": "spark:market:activity.exercise_minutes:4",
+            "observed_at": "2026-06-21T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 20.9
+          },
+          {
+            "observation_id": "spark:market:activity.exercise_minutes:5",
+            "observed_at": "2026-06-22T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 28.9
+          },
+          {
+            "observation_id": "spark:market:activity.exercise_minutes:6",
+            "observed_at": "2026-06-24T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 25.1
+          },
+          {
+            "observation_id": "spark:market:activity.exercise_minutes:7",
+            "observed_at": "2026-06-26T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 35.7
+          },
+          {
+            "observation_id": "spark:market:activity.exercise_minutes:8",
+            "observed_at": "2026-06-27T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 0.0
+          },
+          {
+            "observation_id": "spark:market:activity.exercise_minutes:9",
+            "observed_at": "2026-06-28T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 41.2
+          },
+          {
+            "observation_id": "spark:market:activity.exercise_minutes:10",
+            "observed_at": "2026-06-29T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 0.0
+          },
+          {
+            "observation_id": "spark:market:activity.exercise_minutes:11",
+            "observed_at": "2026-06-30T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 33.2
+          }
+        ],
+        "updated_at": "2026-06-30T23:59:00+10:00"
+      },
+      {
+        "availability": {
+          "reason_codes": [],
+          "state": "AVAILABLE"
+        },
+        "change": {
+          "absolute": -6.0,
+          "comparison_window_key": "previous_observation",
+          "direction": "LOWER",
+          "from_value": 392.7,
+          "kind": "ABSOLUTE",
+          "relative": null,
+          "to_value": 386.7
+        },
+        "instrument_id": "market:sleep.duration",
+        "latest": {
+          "observation_id": "passive:0634466b3bfedb19e0b8",
+          "observed_at": "2026-06-30T23:59:00+10:00",
+          "source_class": "passive_device",
+          "unit": "minutes",
+          "value": 386.7
+        },
+        "maturity": {
+          "code": "reference_available",
+          "evidence_stage": "S3",
+          "product_stage": "historical_reference"
+        },
+        "reference": {
+          "high": 489.90006000000005,
+          "independent_period_count": 84,
+          "kind": "HISTORICAL_RANGE",
+          "low": 362.09993999999995,
+          "observation_count": 84,
+          "provenance": {
+            "instrument_version": "sleep.duration",
+            "lineage_hash": "f5b8047d146ab26c186c44c2fe4206f0e9d09fb44b0c73d6a8dd03e508c8e7a2",
+            "method": "reference_passthrough",
+            "method_version": "presentation-v0.4",
+            "model_id": null,
+            "model_version": null,
+            "observation_count": 84,
+            "observation_ids": [],
+            "observation_set_hash": "f5b8047d146ab26c186c44c2fe4206f0e9d09fb44b0c73d6a8dd03e508c8e7a2",
+            "source_artifact_ids": [
+              "market:sleep.duration"
+            ]
+          },
+          "status": "ESTABLISHED",
+          "unit": "minutes",
+          "value": 426.0,
+          "window_end": "2026-06-30T23:59:00+10:00",
+          "window_start": "2026-04-02T23:59:00+11:00"
+        },
+        "sparkline": [
+          {
+            "observation_id": "spark:market:sleep.duration:0",
+            "observed_at": "2026-06-18T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 409.2
+          },
+          {
+            "observation_id": "spark:market:sleep.duration:1",
+            "observed_at": "2026-06-19T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 403.6
+          },
+          {
+            "observation_id": "spark:market:sleep.duration:2",
+            "observed_at": "2026-06-20T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 450.5
+          },
+          {
+            "observation_id": "spark:market:sleep.duration:3",
+            "observed_at": "2026-06-21T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 433.7
+          },
+          {
+            "observation_id": "spark:market:sleep.duration:4",
+            "observed_at": "2026-06-22T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 403.4
+          },
+          {
+            "observation_id": "spark:market:sleep.duration:5",
+            "observed_at": "2026-06-23T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 379.2
+          },
+          {
+            "observation_id": "spark:market:sleep.duration:6",
+            "observed_at": "2026-06-24T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 392.6
+          },
+          {
+            "observation_id": "spark:market:sleep.duration:7",
+            "observed_at": "2026-06-25T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 417.0
+          },
+          {
+            "observation_id": "spark:market:sleep.duration:8",
+            "observed_at": "2026-06-26T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 428.6
+          },
+          {
+            "observation_id": "spark:market:sleep.duration:9",
+            "observed_at": "2026-06-28T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 438.4
+          },
+          {
+            "observation_id": "spark:market:sleep.duration:10",
+            "observed_at": "2026-06-29T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 392.7
+          },
+          {
+            "observation_id": "spark:market:sleep.duration:11",
+            "observed_at": "2026-06-30T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes",
+            "value": 386.7
+          }
+        ],
+        "updated_at": "2026-06-30T23:59:00+10:00"
+      },
+      {
+        "availability": {
+          "reason_codes": [],
+          "state": "AVAILABLE"
+        },
+        "change": {
+          "absolute": -8.600000000000023,
+          "comparison_window_key": "previous_observation",
+          "direction": "LOWER",
+          "from_value": 704.0,
+          "kind": "ABSOLUTE",
+          "relative": null,
+          "to_value": 695.4
+        },
+        "instrument_id": "market:sleep.start_time",
+        "latest": {
+          "observation_id": "passive:036cf0ac397d22be60a1",
+          "observed_at": "2026-06-30T23:59:00+10:00",
+          "source_class": "passive_device",
+          "unit": "minutes_from_local_noon",
+          "value": 695.4
+        },
+        "maturity": {
+          "code": "reference_available",
+          "evidence_stage": "S3",
+          "product_stage": "historical_reference"
+        },
+        "reference": {
+          "high": 755.2062000000002,
+          "independent_period_count": 86,
+          "kind": "HISTORICAL_RANGE",
+          "low": 645.4937999999999,
+          "observation_count": 86,
+          "provenance": {
+            "instrument_version": "sleep.start_time",
+            "lineage_hash": "6cc65bdc4ad168d6d48cf71abb5419f286db26082935bc48ce173e2c22106efa",
+            "method": "reference_passthrough",
+            "method_version": "presentation-v0.4",
+            "model_id": null,
+            "model_version": null,
+            "observation_count": 86,
+            "observation_ids": [],
+            "observation_set_hash": "6cc65bdc4ad168d6d48cf71abb5419f286db26082935bc48ce173e2c22106efa",
+            "source_artifact_ids": [
+              "market:sleep.start_time"
+            ]
+          },
+          "status": "ESTABLISHED",
+          "unit": "minutes_from_local_noon",
+          "value": 700.35,
+          "window_end": "2026-06-30T23:59:00+10:00",
+          "window_start": "2026-04-02T23:59:00+11:00"
+        },
+        "sparkline": [
+          {
+            "observation_id": "spark:market:sleep.start_time:0",
+            "observed_at": "2026-06-19T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes_from_local_noon",
+            "value": 702.3
+          },
+          {
+            "observation_id": "spark:market:sleep.start_time:1",
+            "observed_at": "2026-06-20T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes_from_local_noon",
+            "value": 723.8
+          },
+          {
+            "observation_id": "spark:market:sleep.start_time:2",
+            "observed_at": "2026-06-21T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes_from_local_noon",
+            "value": 765.3
+          },
+          {
+            "observation_id": "spark:market:sleep.start_time:3",
+            "observed_at": "2026-06-22T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes_from_local_noon",
+            "value": 703.2
+          },
+          {
+            "observation_id": "spark:market:sleep.start_time:4",
+            "observed_at": "2026-06-23T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes_from_local_noon",
+            "value": 680.8
+          },
+          {
+            "observation_id": "spark:market:sleep.start_time:5",
+            "observed_at": "2026-06-24T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes_from_local_noon",
+            "value": 685.1
+          },
+          {
+            "observation_id": "spark:market:sleep.start_time:6",
+            "observed_at": "2026-06-25T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes_from_local_noon",
+            "value": 661.0
+          },
+          {
+            "observation_id": "spark:market:sleep.start_time:7",
+            "observed_at": "2026-06-26T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes_from_local_noon",
+            "value": 683.0
+          },
+          {
+            "observation_id": "spark:market:sleep.start_time:8",
+            "observed_at": "2026-06-27T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes_from_local_noon",
+            "value": 711.8
+          },
+          {
+            "observation_id": "spark:market:sleep.start_time:9",
+            "observed_at": "2026-06-28T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes_from_local_noon",
+            "value": 753.7
+          },
+          {
+            "observation_id": "spark:market:sleep.start_time:10",
+            "observed_at": "2026-06-29T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes_from_local_noon",
+            "value": 704.0
+          },
+          {
+            "observation_id": "spark:market:sleep.start_time:11",
+            "observed_at": "2026-06-30T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes_from_local_noon",
+            "value": 695.4
+          }
+        ],
+        "updated_at": "2026-06-30T23:59:00+10:00"
+      },
+      {
+        "availability": {
+          "reason_codes": [],
+          "state": "AVAILABLE"
+        },
+        "change": {
+          "absolute": -14.600000000000136,
+          "comparison_window_key": "previous_observation",
+          "direction": "LOWER",
+          "from_value": 1096.7,
+          "kind": "ABSOLUTE",
+          "relative": null,
+          "to_value": 1082.1
+        },
+        "instrument_id": "market:sleep.end_time",
+        "latest": {
+          "observation_id": "passive:d7d5fe24a876ecab747e",
+          "observed_at": "2026-06-30T23:59:00+10:00",
+          "source_class": "passive_device",
+          "unit": "minutes_from_local_noon",
+          "value": 1082.1
+        },
+        "maturity": {
+          "code": "reference_available",
+          "evidence_stage": "S3",
+          "product_stage": "historical_reference"
+        },
+        "reference": {
+          "high": 1232.5723800000003,
+          "independent_period_count": 86,
+          "kind": "HISTORICAL_RANGE",
+          "low": 1006.3276199999998,
+          "observation_count": 86,
+          "provenance": {
+            "instrument_version": "sleep.end_time",
+            "lineage_hash": "723e575d313639fa9a481bfda15212394b1d558638723de09b62954269bfb2f7",
+            "method": "reference_passthrough",
+            "method_version": "presentation-v0.4",
+            "model_id": null,
+            "model_version": null,
+            "observation_count": 86,
+            "observation_ids": [],
+            "observation_set_hash": "723e575d313639fa9a481bfda15212394b1d558638723de09b62954269bfb2f7",
+            "source_artifact_ids": [
+              "market:sleep.end_time"
+            ]
+          },
+          "status": "ESTABLISHED",
+          "unit": "minutes_from_local_noon",
+          "value": 1119.45,
+          "window_end": "2026-06-30T23:59:00+10:00",
+          "window_start": "2026-04-05T23:59:00+10:00"
+        },
+        "sparkline": [
+          {
+            "observation_id": "spark:market:sleep.end_time:0",
+            "observed_at": "2026-06-19T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes_from_local_noon",
+            "value": 1105.9
+          },
+          {
+            "observation_id": "spark:market:sleep.end_time:1",
+            "observed_at": "2026-06-20T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes_from_local_noon",
+            "value": 1174.3
+          },
+          {
+            "observation_id": "spark:market:sleep.end_time:2",
+            "observed_at": "2026-06-21T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes_from_local_noon",
+            "value": 1199.0
+          },
+          {
+            "observation_id": "spark:market:sleep.end_time:3",
+            "observed_at": "2026-06-22T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes_from_local_noon",
+            "value": 1106.6
+          },
+          {
+            "observation_id": "spark:market:sleep.end_time:4",
+            "observed_at": "2026-06-23T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes_from_local_noon",
+            "value": 1060.0
+          },
+          {
+            "observation_id": "spark:market:sleep.end_time:5",
+            "observed_at": "2026-06-24T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes_from_local_noon",
+            "value": 1077.7
+          },
+          {
+            "observation_id": "spark:market:sleep.end_time:6",
+            "observed_at": "2026-06-25T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes_from_local_noon",
+            "value": 1078.0
+          },
+          {
+            "observation_id": "spark:market:sleep.end_time:7",
+            "observed_at": "2026-06-26T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes_from_local_noon",
+            "value": 1111.6
+          },
+          {
+            "observation_id": "spark:market:sleep.end_time:8",
+            "observed_at": "2026-06-27T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes_from_local_noon",
+            "value": 1179.3
+          },
+          {
+            "observation_id": "spark:market:sleep.end_time:9",
+            "observed_at": "2026-06-28T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes_from_local_noon",
+            "value": 1192.1
+          },
+          {
+            "observation_id": "spark:market:sleep.end_time:10",
+            "observed_at": "2026-06-29T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes_from_local_noon",
+            "value": 1096.7
+          },
+          {
+            "observation_id": "spark:market:sleep.end_time:11",
+            "observed_at": "2026-06-30T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "minutes_from_local_noon",
+            "value": 1082.1
+          }
+        ],
+        "updated_at": "2026-06-30T23:59:00+10:00"
+      },
+      {
+        "availability": {
+          "reason_codes": [],
+          "state": "AVAILABLE"
+        },
+        "change": {
+          "absolute": 1.6000000000000014,
+          "comparison_window_key": "previous_observation",
+          "direction": "HIGHER",
+          "from_value": 63.1,
+          "kind": "ABSOLUTE",
+          "relative": null,
+          "to_value": 64.7
+        },
+        "instrument_id": "market:body.resting_heart_rate",
+        "latest": {
+          "observation_id": "passive:2a09913217cbb4c52abe",
+          "observed_at": "2026-06-30T23:59:00+10:00",
+          "source_class": "passive_device",
+          "unit": "bpm",
+          "value": 64.7
+        },
+        "maturity": {
+          "code": "reference_available",
+          "evidence_stage": "S3",
+          "product_stage": "historical_reference"
+        },
+        "reference": {
+          "high": 65.76172,
+          "independent_period_count": 85,
+          "kind": "HISTORICAL_RANGE",
+          "low": 59.238279999999996,
+          "observation_count": 85,
+          "provenance": {
+            "instrument_version": "body.resting_heart_rate",
+            "lineage_hash": "8848c41af97f4f7b17bb3fd2dc49877286c7d29f1c810638493216a3911b8b0b",
+            "method": "reference_passthrough",
+            "method_version": "presentation-v0.4",
+            "model_id": null,
+            "model_version": null,
+            "observation_count": 85,
+            "observation_ids": [],
+            "observation_set_hash": "8848c41af97f4f7b17bb3fd2dc49877286c7d29f1c810638493216a3911b8b0b",
+            "source_artifact_ids": [
+              "market:body.resting_heart_rate"
+            ]
+          },
+          "status": "ESTABLISHED",
+          "unit": "bpm",
+          "value": 62.5,
+          "window_end": "2026-06-30T23:59:00+10:00",
+          "window_start": "2026-04-02T23:59:00+11:00"
+        },
+        "sparkline": [
+          {
+            "observation_id": "spark:market:body.resting_heart_rate:0",
+            "observed_at": "2026-06-18T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "bpm",
+            "value": 61.7
+          },
+          {
+            "observation_id": "spark:market:body.resting_heart_rate:1",
+            "observed_at": "2026-06-19T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "bpm",
+            "value": 61.7
+          },
+          {
+            "observation_id": "spark:market:body.resting_heart_rate:2",
+            "observed_at": "2026-06-20T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "bpm",
+            "value": 62.1
+          },
+          {
+            "observation_id": "spark:market:body.resting_heart_rate:3",
+            "observed_at": "2026-06-21T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "bpm",
+            "value": 62.9
+          },
+          {
+            "observation_id": "spark:market:body.resting_heart_rate:4",
+            "observed_at": "2026-06-22T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "bpm",
+            "value": 64.2
+          },
+          {
+            "observation_id": "spark:market:body.resting_heart_rate:5",
+            "observed_at": "2026-06-23T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "bpm",
+            "value": 65.6
+          },
+          {
+            "observation_id": "spark:market:body.resting_heart_rate:6",
+            "observed_at": "2026-06-24T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "bpm",
+            "value": 65.7
+          },
+          {
+            "observation_id": "spark:market:body.resting_heart_rate:7",
+            "observed_at": "2026-06-25T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "bpm",
+            "value": 64.5
+          },
+          {
+            "observation_id": "spark:market:body.resting_heart_rate:8",
+            "observed_at": "2026-06-26T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "bpm",
+            "value": 66.9
+          },
+          {
+            "observation_id": "spark:market:body.resting_heart_rate:9",
+            "observed_at": "2026-06-27T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "bpm",
+            "value": 61.7
+          },
+          {
+            "observation_id": "spark:market:body.resting_heart_rate:10",
+            "observed_at": "2026-06-28T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "bpm",
+            "value": 63.1
+          },
+          {
+            "observation_id": "spark:market:body.resting_heart_rate:11",
+            "observed_at": "2026-06-30T23:59:00+10:00",
+            "source_class": "compact_reference",
+            "unit": "bpm",
+            "value": 64.7
+          }
+        ],
+        "updated_at": "2026-06-30T23:59:00+10:00"
+      },
+      {
+        "availability": {
+          "reason_codes": [],
+          "state": "AVAILABLE"
+        },
+        "change": {
+          "absolute": 26.300000000000004,
+          "comparison_window_key": "previous_observation",
+          "direction": "HIGHER",
+          "from_value": 33.3,
+          "kind": "ABSOLUTE",
+          "relative": null,
+          "to_value": 59.6
+        },
+        "instrument_id": "market:execution.duration",
+        "latest": {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:178",
+          "observed_at": "2026-06-28T20:00:00+10:00",
+          "source_class": "questlife_confirmed",
+          "unit": "minutes",
+          "value": 59.6
+        },
+        "maturity": {
+          "code": "reference_available",
+          "evidence_stage": "S2",
+          "product_stage": "learning_personal_baseline"
+        },
+        "reference": {
+          "high": 60.28332,
+          "independent_period_count": 7,
+          "kind": "PERSONAL_ROLLING",
+          "low": 6.3166799999999945,
+          "observation_count": 7,
+          "provenance": {
+            "instrument_version": "execution.duration",
+            "lineage_hash": "7fb0685afc0a8d21fbd8b931e7754792cd89716ebce9e00b7f799a3d9c879089",
+            "method": "reference_passthrough",
+            "method_version": "presentation-v0.4",
+            "model_id": null,
+            "model_version": null,
+            "observation_count": 7,
+            "observation_ids": [],
+            "observation_set_hash": "7fb0685afc0a8d21fbd8b931e7754792cd89716ebce9e00b7f799a3d9c879089",
+            "source_artifact_ids": [
+              "market:execution.duration"
+            ]
+          },
+          "status": "PROVISIONAL",
+          "unit": "minutes",
+          "value": 33.3,
+          "window_end": null,
+          "window_start": null
+        },
+        "sparkline": [],
+        "updated_at": "2026-06-28T20:00:00+10:00"
+      },
+      {
+        "availability": {
+          "reason_codes": [],
+          "state": "AVAILABLE"
+        },
+        "change": {
+          "absolute": 1.0,
+          "comparison_window_key": "previous_observation",
+          "direction": "HIGHER",
+          "from_value": 2.0,
+          "kind": "ABSOLUTE",
+          "relative": null,
+          "to_value": 3.0
+        },
+        "instrument_id": "market:execution.quality",
+        "latest": {
+          "observation_id": "product-review-v0.4.1:active:execution-quality:178",
+          "observed_at": "2026-06-28T20:00:00+10:00",
+          "source_class": "questlife_confirmed",
+          "unit": "/5",
+          "value": 3.0
+        },
+        "maturity": {
+          "code": "reference_available",
+          "evidence_stage": "S2",
+          "product_stage": "learning_personal_baseline"
+        },
+        "reference": {
+          "high": 5.965199999999999,
+          "independent_period_count": 7,
+          "kind": "PERSONAL_ROLLING",
+          "low": 0.034800000000000164,
+          "observation_count": 7,
+          "provenance": {
+            "instrument_version": "execution.quality",
+            "lineage_hash": "6a807319fff54fb68357d8430d939043135729aae6d154e361ab53beae84fe4f",
+            "method": "reference_passthrough",
+            "method_version": "presentation-v0.4",
+            "model_id": null,
+            "model_version": null,
+            "observation_count": 7,
+            "observation_ids": [],
+            "observation_set_hash": "6a807319fff54fb68357d8430d939043135729aae6d154e361ab53beae84fe4f",
+            "source_artifact_ids": [
+              "market:execution.quality"
+            ]
+          },
+          "status": "PROVISIONAL",
+          "unit": "/5",
+          "value": 3.0,
+          "window_end": null,
+          "window_start": null
+        },
+        "sparkline": [],
+        "updated_at": "2026-06-28T20:00:00+10:00"
+      },
+      {
+        "availability": {
+          "reason_codes": [],
+          "state": "AVAILABLE"
+        },
+        "change": {
+          "absolute": 0.0,
+          "comparison_window_key": "previous_observation",
+          "direction": "FLAT",
+          "from_value": 3.0,
+          "kind": "ABSOLUTE",
+          "relative": null,
+          "to_value": 3.0
+        },
+        "instrument_id": "market:state.focus",
+        "latest": {
+          "observation_id": "product-review-v0.4.1:active:state-focus:180",
+          "observed_at": "2026-06-30T20:00:00+10:00",
+          "source_class": "questlife_confirmed",
+          "unit": "/5",
+          "value": 3.0
+        },
+        "maturity": {
+          "code": "reference_available",
+          "evidence_stage": "S2",
+          "product_stage": "learning_personal_baseline"
+        },
+        "reference": {
+          "high": 5.0,
+          "independent_period_count": 23,
+          "kind": "PERSONAL_ROLLING",
+          "low": 1.0,
+          "observation_count": 23,
+          "provenance": {
+            "instrument_version": "state.focus",
+            "lineage_hash": "49abb48467089cd23fc6f5ac5b7c5594cf364c04e8b8cf551464395032339806",
+            "method": "reference_passthrough",
+            "method_version": "presentation-v0.4",
+            "model_id": null,
+            "model_version": null,
+            "observation_count": 23,
+            "observation_ids": [],
+            "observation_set_hash": "49abb48467089cd23fc6f5ac5b7c5594cf364c04e8b8cf551464395032339806",
+            "source_artifact_ids": [
+              "market:state.focus"
+            ]
+          },
+          "status": "ESTABLISHED",
+          "unit": "/5",
+          "value": 3.0,
+          "window_end": null,
+          "window_start": null
+        },
+        "sparkline": [],
+        "updated_at": "2026-06-30T20:00:00+10:00"
+      },
+      {
+        "availability": {
+          "reason_codes": [],
+          "state": "AVAILABLE"
+        },
+        "change": {
+          "absolute": 26.300000000000004,
+          "comparison_window_key": "previous_observation",
+          "direction": "HIGHER",
+          "from_value": 33.3,
+          "kind": "ABSOLUTE",
+          "relative": null,
+          "to_value": 59.6
+        },
+        "instrument_id": "goal:goal-quant-analyst-v1:execution.duration",
+        "latest": {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:178",
+          "observed_at": "2026-06-28T10:00:00+10:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 59.6
+        },
+        "maturity": {
+          "code": "reference_available",
+          "evidence_stage": "S2",
+          "product_stage": "learning_personal_baseline"
+        },
+        "reference": {
+          "high": 60.28332,
+          "independent_period_count": 7,
+          "kind": "PERSONAL_ROLLING",
+          "low": 6.3166799999999945,
+          "observation_count": 7,
+          "provenance": {
+            "instrument_version": "execution.duration",
+            "lineage_hash": "b0209239a284e0c703fe195937bfd5ba8d08954955b981cfa9597acdcce67d15",
+            "method": "reference_passthrough",
+            "method_version": "presentation-v0.4",
+            "model_id": null,
+            "model_version": null,
+            "observation_count": 7,
+            "observation_ids": [],
+            "observation_set_hash": "b0209239a284e0c703fe195937bfd5ba8d08954955b981cfa9597acdcce67d15",
+            "source_artifact_ids": [
+              "goal:goal-quant-analyst-v1:execution.duration"
+            ]
+          },
+          "status": "PROVISIONAL",
+          "unit": "minutes",
+          "value": 33.3,
+          "window_end": "2026-06-28T20:00:00+10:00",
+          "window_start": "2026-06-04T20:00:00+10:00"
+        },
+        "sparkline": [],
+        "updated_at": "2026-06-28T10:00:00+10:00"
+      },
+      {
+        "availability": {
+          "reason_codes": [],
+          "state": "AVAILABLE"
+        },
+        "change": {
+          "absolute": 26.300000000000004,
+          "comparison_window_key": "previous_observation",
+          "direction": "HIGHER",
+          "from_value": 33.3,
+          "kind": "ABSOLUTE",
+          "relative": null,
+          "to_value": 59.6
+        },
+        "instrument_id": "skill:skill-sql-v1:execution.duration",
+        "latest": {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:178",
+          "observed_at": "2026-06-28T10:00:00+10:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 59.6
+        },
+        "maturity": {
+          "code": "reference_available",
+          "evidence_stage": "S2",
+          "product_stage": "learning_personal_baseline"
+        },
+        "reference": {
+          "high": 60.28332,
+          "independent_period_count": 7,
+          "kind": "PERSONAL_ROLLING",
+          "low": 6.3166799999999945,
+          "observation_count": 7,
+          "provenance": {
+            "instrument_version": "execution.duration",
+            "lineage_hash": "357442c807ae13a9cf031058cde2daa727205630073525fe9efa5e48900e052a",
+            "method": "reference_passthrough",
+            "method_version": "presentation-v0.4",
+            "model_id": null,
+            "model_version": null,
+            "observation_count": 7,
+            "observation_ids": [],
+            "observation_set_hash": "357442c807ae13a9cf031058cde2daa727205630073525fe9efa5e48900e052a",
+            "source_artifact_ids": [
+              "skill:skill-sql-v1:execution.duration"
+            ]
+          },
+          "status": "PROVISIONAL",
+          "unit": "minutes",
+          "value": 33.3,
+          "window_end": "2026-06-28T20:00:00+10:00",
+          "window_start": "2026-06-04T20:00:00+10:00"
+        },
+        "sparkline": [],
+        "updated_at": "2026-06-28T10:00:00+10:00"
+      }
+    ]
+  },
+  "series": [],
+  "signals": [],
+  "skill_surfaces": [
+    {
+      "availability": {
+        "reason_codes": [],
+        "state": "AVAILABLE"
+      },
+      "child_instrument_ids": [],
+      "entity_id": "skill:skill-sql-v1",
+      "label": "SQL",
+      "limitation_codes": [
+        "NO_MASTERY_OR_PROGRESS_PERCENT_INFERRED"
+      ],
+      "linked_instrument_ids": [
+        "skill:skill-sql-v1:execution.duration"
+      ],
+      "movement": {
+        "absolute": 26.300000000000004,
+        "comparison_window_key": "previous_observation",
+        "direction": "HIGHER",
+        "from_value": 33.3,
+        "kind": "ABSOLUTE",
+        "relative": null,
+        "to_value": 59.6
+      },
+      "quant_deep_link": "quant://skill/skill:skill-sql-v1",
+      "recent_activity": [],
+      "scope": "SKILL"
+    }
+  ]
+}

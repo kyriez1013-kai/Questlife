@@ -1,0 +1,408 @@
+{
+  "analyst_context": {
+    "compare_instrument_ids": [],
+    "driver_candidate_ids": [],
+    "evidence_ids": [],
+    "operation_keys": [
+      "select_instrument",
+      "change_range",
+      "change_chart_type",
+      "add_compare",
+      "show_driver_overlay",
+      "jump_to_similar_period",
+      "show_analogue_envelope",
+      "return_to_current"
+    ],
+    "recovery_available": false,
+    "scenario_available": false,
+    "selected_instrument_id": "market:state.focus",
+    "selected_range_key": "RECENT",
+    "similar_period_ids": []
+  },
+  "eligibility_summary": {
+    "blocked_artifact_kinds": [],
+    "blocked_research_artifact_count": 0,
+    "champion_keys": {
+      "baseline": "robust_rolling_reference_v0.4",
+      "candle": "observational_scalar_ohlc_v0.4",
+      "interpretation": "interpretation_v0.1",
+      "series": "observed_series_v0.4",
+      "signal": "registered_observational_signal_v0.2"
+    },
+    "emitted_artifact_count": 2
+  },
+  "goal_surfaces": [],
+  "instruments": [
+    {
+      "availability": {
+        "reason_codes": [
+          "FIRST_OBSERVATION"
+        ],
+        "state": "FORMING"
+      },
+      "change": {
+        "absolute": null,
+        "comparison_window_key": null,
+        "direction": "UNAVAILABLE",
+        "from_value": null,
+        "kind": "NONE",
+        "relative": null,
+        "to_value": null
+      },
+      "construct_key": "state.focus",
+      "coverage": {
+        "coverage_ratio": null,
+        "expected_period_count": null,
+        "independent_period_count": 1,
+        "missingness": {
+          "counts": {}
+        },
+        "observation_count": 1,
+        "observed_period_count": 1
+      },
+      "domain_key": "active_questlife",
+      "entity_id": "market:person",
+      "evidence": {
+        "claim_type": "descriptive",
+        "counterexample_count": 0,
+        "independent_period_count": 1,
+        "limitation_codes": [
+          "ACTIVE_QUESTLIFE_ONLY",
+          "NO_CAUSAL_INTERPRETATION"
+        ],
+        "missingness": {
+          "counts": {}
+        },
+        "observation_count": 1,
+        "provenance": {
+          "instrument_version": "state.focus",
+          "lineage_hash": "5f0f7b2c7fa1dbcd7cc0fe717866c5f2a2f0d15f0004c918aa8d83fe04ae1420",
+          "method": "legacy_presentation_bridge",
+          "method_version": "v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 1,
+          "observation_ids": [
+            "stage312-focus-1-observation:active:state-focus:001"
+          ],
+          "observation_set_hash": "5f0f7b2c7fa1dbcd7cc0fe717866c5f2a2f0d15f0004c918aa8d83fe04ae1420",
+          "source_artifact_ids": [
+            "synthetic/stage3.12/focus_1_observation",
+            "market:state.focus"
+          ]
+        },
+        "stage": "S1",
+        "support_count": 0
+      },
+      "instrument_id": "market:state.focus",
+      "label_key": "focus_state",
+      "latest": {
+        "observation_id": "stage312-focus-1-observation:active:state-focus:001",
+        "observed_at": "2026-01-02T20:00:00+11:00",
+        "source_class": "questlife_confirmed",
+        "unit": "/5",
+        "value": 4.0
+      },
+      "maturity": {
+        "code": "first_observation",
+        "evidence_stage": "S1",
+        "product_stage": "initial_observation"
+      },
+      "provenance": {
+        "instrument_version": "state.focus",
+        "lineage_hash": "5f0f7b2c7fa1dbcd7cc0fe717866c5f2a2f0d15f0004c918aa8d83fe04ae1420",
+        "method": "legacy_presentation_bridge",
+        "method_version": "v0.4",
+        "model_id": null,
+        "model_version": null,
+        "observation_count": 1,
+        "observation_ids": [
+          "stage312-focus-1-observation:active:state-focus:001"
+        ],
+        "observation_set_hash": "5f0f7b2c7fa1dbcd7cc0fe717866c5f2a2f0d15f0004c918aa8d83fe04ae1420",
+        "source_artifact_ids": [
+          "synthetic/stage3.12/focus_1_observation",
+          "market:state.focus"
+        ]
+      },
+      "reference": {
+        "high": null,
+        "independent_period_count": 1,
+        "kind": "PERSONAL_ROLLING",
+        "low": null,
+        "observation_count": 1,
+        "provenance": {
+          "instrument_version": "state.focus",
+          "lineage_hash": "5ed337cf98621c65400287c30511db1de34a85fc5c0980ec545650dd0ecc5703",
+          "method": "reference_passthrough",
+          "method_version": "presentation-v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 1,
+          "observation_ids": [],
+          "observation_set_hash": "5ed337cf98621c65400287c30511db1de34a85fc5c0980ec545650dd0ecc5703",
+          "source_artifact_ids": [
+            "market:state.focus"
+          ]
+        },
+        "status": "FORMING",
+        "unit": "/5",
+        "value": null,
+        "window_end": null,
+        "window_start": null
+      },
+      "scale": "ORDINAL",
+      "scope": "PERSONAL_MARKET",
+      "series_ids": [
+        "market:state.focus"
+      ],
+      "supported_analysis_keys": [
+        "reference"
+      ],
+      "unit": "/5"
+    }
+  ],
+  "interpretation": null,
+  "limitation_codes": [
+    "OBSERVATIONAL_NOT_CAUSAL",
+    "BASELINE_IS_NOT_TARGET",
+    "MISSING_IS_NOT_ZERO",
+    "PLAN_IS_NOT_EXECUTION",
+    "NO_ADVANCED_RESEARCH_ARTIFACTS"
+  ],
+  "metadata": {
+    "as_of": "2026-01-04T07:59:00+11:00",
+    "bundle_id": "product:product-v1-lifecycle-subject:personal_market:a254a3d6e1b959ae:full",
+    "contains_real_user_data": false,
+    "contract_schema_hash": "da7bd3987a9343c72cb37f2edd4dbc81b604e655d4b915c9f85949f001632335",
+    "contract_version": "questlife.quant.product.v1",
+    "eligibility": "PRODUCT_ELIGIBLE",
+    "engine_versions": {
+      "materialized": "questlife-quant-v0.4.1-materialized",
+      "product": "questlife.quant.product.v1",
+      "source": "questlife-cold-start-terminal-v0.4"
+    },
+    "entity_id": null,
+    "feature_versions": {
+      "presentation_bridge": "questlife-terminal-presentation-v0.4.2"
+    },
+    "generated_at": "2026-01-04T07:59:00+11:00",
+    "instrument_versions": {
+      "market:state.focus": "state.focus"
+    },
+    "mode": "FULL",
+    "scope": "PERSONAL_MARKET",
+    "source_snapshot_hash": "a254a3d6e1b959ae4c7864ae10a11c49b0f1b5dd9a7d590c78d3f12fcda5a778",
+    "staleness": {
+      "evaluated_at": "2026-01-04T07:59:00+11:00",
+      "source_as_of": "2026-01-04T07:59:00+11:00",
+      "stale_after": null,
+      "state": "CURRENT"
+    },
+    "subject_id": "product-v1-lifecycle-subject",
+    "synthetic_only": true
+  },
+  "personal_market": {
+    "availability_counts": {
+      "ABSTAINED": 0,
+      "AVAILABLE": 0,
+      "FORMING": 1,
+      "INSUFFICIENT_DATA": 0,
+      "NOT_SUPPORTED": 0,
+      "RESEARCH_ONLY": 0,
+      "UNAVAILABLE_SOURCE": 0
+    },
+    "instrument_ids": [
+      "market:state.focus"
+    ],
+    "limitation_codes": [
+      "NO_COMPOSITE_PERSONAL_INDEX",
+      "POSITION_IS_NOT_GOOD_OR_BAD",
+      "DIRECTION_IS_DESCRIPTIVE_NOT_CAUSAL",
+      "INDEPENDENT_INSTRUMENT_SCALES"
+    ],
+    "top_movements": [],
+    "watchlist": [
+      {
+        "availability": {
+          "reason_codes": [
+            "FIRST_OBSERVATION"
+          ],
+          "state": "FORMING"
+        },
+        "change": {
+          "absolute": null,
+          "comparison_window_key": null,
+          "direction": "UNAVAILABLE",
+          "from_value": null,
+          "kind": "NONE",
+          "relative": null,
+          "to_value": null
+        },
+        "instrument_id": "market:state.focus",
+        "latest": {
+          "observation_id": "stage312-focus-1-observation:active:state-focus:001",
+          "observed_at": "2026-01-02T20:00:00+11:00",
+          "source_class": "questlife_confirmed",
+          "unit": "/5",
+          "value": 4.0
+        },
+        "maturity": {
+          "code": "first_observation",
+          "evidence_stage": "S1",
+          "product_stage": "initial_observation"
+        },
+        "reference": {
+          "high": null,
+          "independent_period_count": 1,
+          "kind": "PERSONAL_ROLLING",
+          "low": null,
+          "observation_count": 1,
+          "provenance": {
+            "instrument_version": "state.focus",
+            "lineage_hash": "5ed337cf98621c65400287c30511db1de34a85fc5c0980ec545650dd0ecc5703",
+            "method": "reference_passthrough",
+            "method_version": "presentation-v0.4",
+            "model_id": null,
+            "model_version": null,
+            "observation_count": 1,
+            "observation_ids": [],
+            "observation_set_hash": "5ed337cf98621c65400287c30511db1de34a85fc5c0980ec545650dd0ecc5703",
+            "source_artifact_ids": [
+              "market:state.focus"
+            ]
+          },
+          "status": "FORMING",
+          "unit": "/5",
+          "value": null,
+          "window_end": null,
+          "window_start": null
+        },
+        "sparkline": [
+          {
+            "observation_id": "spark:market:state.focus:0",
+            "observed_at": "2026-01-02T20:00:00+11:00",
+            "source_class": "compact_reference",
+            "unit": "/5",
+            "value": 4.0
+          }
+        ],
+        "updated_at": "2026-01-02T20:00:00+11:00"
+      }
+    ]
+  },
+  "series": [
+    {
+      "availability": {
+        "reason_codes": [
+          "FIRST_OBSERVATION"
+        ],
+        "state": "FORMING"
+      },
+      "candles": {},
+      "construct_key": "state.focus",
+      "default_range_key": "RECENT",
+      "events": [],
+      "instrument_id": "market:state.focus",
+      "points": [
+        {
+          "observation_id": "stage312-focus-1-observation:active:state-focus:001",
+          "observed_at": "2026-01-02T20:00:00+11:00",
+          "source_class": "questlife_confirmed",
+          "unit": "/5",
+          "value": 4.0
+        }
+      ],
+      "provenance": {
+        "instrument_version": "state.focus",
+        "lineage_hash": "5f0f7b2c7fa1dbcd7cc0fe717866c5f2a2f0d15f0004c918aa8d83fe04ae1420",
+        "method": "legacy_presentation_bridge",
+        "method_version": "v0.4",
+        "model_id": null,
+        "model_version": null,
+        "observation_count": 1,
+        "observation_ids": [
+          "stage312-focus-1-observation:active:state-focus:001"
+        ],
+        "observation_set_hash": "5f0f7b2c7fa1dbcd7cc0fe717866c5f2a2f0d15f0004c918aa8d83fe04ae1420",
+        "source_artifact_ids": [
+          "synthetic/stage3.12/focus_1_observation",
+          "market:state.focus"
+        ]
+      },
+      "range_points": [],
+      "reference": {
+        "high": null,
+        "independent_period_count": 1,
+        "kind": "PERSONAL_ROLLING",
+        "low": null,
+        "observation_count": 1,
+        "provenance": {
+          "instrument_version": "state.focus",
+          "lineage_hash": "5ed337cf98621c65400287c30511db1de34a85fc5c0980ec545650dd0ecc5703",
+          "method": "reference_passthrough",
+          "method_version": "presentation-v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 1,
+          "observation_ids": [],
+          "observation_set_hash": "5ed337cf98621c65400287c30511db1de34a85fc5c0980ec545650dd0ecc5703",
+          "source_artifact_ids": [
+            "market:state.focus"
+          ]
+        },
+        "status": "FORMING",
+        "unit": "/5",
+        "value": null,
+        "window_end": null,
+        "window_start": null
+      },
+      "scale": "ORDINAL",
+      "series_id": "market:state.focus",
+      "supported_chart_types": [
+        "POINT"
+      ],
+      "supported_ranges": [
+        {
+          "aggregation_bucket": "quant_source_points",
+          "count": 1,
+          "end": null,
+          "key": "RECENT",
+          "kind": "LAST_N_OBSERVATIONS",
+          "observation_window_count": 1,
+          "start": null
+        },
+        {
+          "aggregation_bucket": "quant_source_points",
+          "count": null,
+          "end": null,
+          "key": "ALL",
+          "kind": "ALL",
+          "observation_window_count": null,
+          "start": null
+        },
+        {
+          "aggregation_bucket": "quant_source_points",
+          "count": null,
+          "end": null,
+          "key": "CUSTOM_CALENDAR",
+          "kind": "CALENDAR_RANGE",
+          "observation_window_count": null,
+          "start": null
+        },
+        {
+          "aggregation_bucket": "quant_source_points",
+          "count": 1,
+          "end": null,
+          "key": "CUSTOM_OBSERVATIONS",
+          "kind": "LAST_N_OBSERVATIONS",
+          "observation_window_count": 1,
+          "start": null
+        }
+      ],
+      "unit": "/5"
+    }
+  ],
+  "signals": [],
+  "skill_surfaces": []
+}

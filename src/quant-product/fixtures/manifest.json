@@ -1,0 +1,17 @@
+{
+  "contractVersion": "questlife.quant.product.v1",
+  "contractSchemaHash": "da7bd3987a9343c72cb37f2edd4dbc81b604e655d4b915c9f85949f001632335",
+  "syntheticOnly": true,
+  "containsRealUserData": false,
+  "source": "QuestLife-Quant/artifacts/product_v1",
+  "fixtures": [
+    "no_data_compact",
+    "one_observation_full",
+    "forming_history_full",
+    "mature_market_compact",
+    "goal_full",
+    "skill_full",
+    "driver_analysis_full",
+    "research_filtered_compact"
+  ]
+}

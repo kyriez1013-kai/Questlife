@@ -1,0 +1,97 @@
+{
+  "analyst_context": {
+    "compare_instrument_ids": [],
+    "driver_candidate_ids": [],
+    "evidence_ids": [],
+    "operation_keys": [
+      "select_instrument",
+      "change_range",
+      "change_chart_type",
+      "add_compare",
+      "show_driver_overlay",
+      "jump_to_similar_period",
+      "show_analogue_envelope",
+      "return_to_current"
+    ],
+    "recovery_available": false,
+    "scenario_available": false,
+    "selected_instrument_id": null,
+    "selected_range_key": null,
+    "similar_period_ids": []
+  },
+  "eligibility_summary": {
+    "blocked_artifact_kinds": [],
+    "blocked_research_artifact_count": 0,
+    "champion_keys": {
+      "baseline": "robust_rolling_reference_v0.4",
+      "candle": "observational_scalar_ohlc_v0.4",
+      "interpretation": "interpretation_v0.1",
+      "series": "observed_series_v0.4",
+      "signal": "registered_observational_signal_v0.2"
+    },
+    "emitted_artifact_count": 0
+  },
+  "goal_surfaces": [],
+  "instruments": [],
+  "interpretation": null,
+  "limitation_codes": [
+    "OBSERVATIONAL_NOT_CAUSAL",
+    "BASELINE_IS_NOT_TARGET",
+    "MISSING_IS_NOT_ZERO",
+    "PLAN_IS_NOT_EXECUTION",
+    "NO_ADVANCED_RESEARCH_ARTIFACTS"
+  ],
+  "metadata": {
+    "as_of": "2026-01-03T07:59:00+11:00",
+    "bundle_id": "product:product-v1-lifecycle-subject:personal_market:847f77578f0decc9:compact",
+    "contains_real_user_data": false,
+    "contract_schema_hash": "da7bd3987a9343c72cb37f2edd4dbc81b604e655d4b915c9f85949f001632335",
+    "contract_version": "questlife.quant.product.v1",
+    "eligibility": "PRODUCT_ELIGIBLE",
+    "engine_versions": {
+      "materialized": "questlife-quant-v0.4.1-materialized",
+      "product": "questlife.quant.product.v1",
+      "source": "questlife-cold-start-terminal-v0.4"
+    },
+    "entity_id": null,
+    "feature_versions": {
+      "presentation_bridge": "questlife-terminal-presentation-v0.4.2"
+    },
+    "generated_at": "2026-01-03T07:59:00+11:00",
+    "instrument_versions": {},
+    "mode": "COMPACT",
+    "scope": "PERSONAL_MARKET",
+    "source_snapshot_hash": "847f77578f0decc98367d2920ff45566eca04ad49c2d58640620ba47019789c4",
+    "staleness": {
+      "evaluated_at": "2026-01-03T07:59:00+11:00",
+      "source_as_of": "2026-01-03T07:59:00+11:00",
+      "stale_after": null,
+      "state": "CURRENT"
+    },
+    "subject_id": "product-v1-lifecycle-subject",
+    "synthetic_only": true
+  },
+  "personal_market": {
+    "availability_counts": {
+      "ABSTAINED": 0,
+      "AVAILABLE": 0,
+      "FORMING": 0,
+      "INSUFFICIENT_DATA": 0,
+      "NOT_SUPPORTED": 0,
+      "RESEARCH_ONLY": 0,
+      "UNAVAILABLE_SOURCE": 0
+    },
+    "instrument_ids": [],
+    "limitation_codes": [
+      "NO_COMPOSITE_PERSONAL_INDEX",
+      "POSITION_IS_NOT_GOOD_OR_BAD",
+      "DIRECTION_IS_DESCRIPTIVE_NOT_CAUSAL",
+      "INDEPENDENT_INSTRUMENT_SCALES"
+    ],
+    "top_movements": [],
+    "watchlist": []
+  },
+  "series": [],
+  "signals": [],
+  "skill_surfaces": []
+}

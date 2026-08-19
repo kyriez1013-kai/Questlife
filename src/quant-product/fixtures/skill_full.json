@@ -1,0 +1,974 @@
+{
+  "analyst_context": {
+    "compare_instrument_ids": [],
+    "driver_candidate_ids": [],
+    "evidence_ids": [],
+    "operation_keys": [
+      "select_instrument",
+      "change_range",
+      "change_chart_type",
+      "add_compare",
+      "show_driver_overlay",
+      "jump_to_similar_period",
+      "show_analogue_envelope",
+      "return_to_current"
+    ],
+    "recovery_available": false,
+    "scenario_available": false,
+    "selected_instrument_id": "skill:skill-sql-v1:execution.duration",
+    "selected_range_key": "30D",
+    "similar_period_ids": []
+  },
+  "eligibility_summary": {
+    "blocked_artifact_kinds": [],
+    "blocked_research_artifact_count": 0,
+    "champion_keys": {
+      "baseline": "robust_rolling_reference_v0.4",
+      "candle": "observational_scalar_ohlc_v0.4",
+      "interpretation": "interpretation_v0.1",
+      "series": "observed_series_v0.4",
+      "signal": "registered_observational_signal_v0.2"
+    },
+    "emitted_artifact_count": 27
+  },
+  "goal_surfaces": [],
+  "instruments": [
+    {
+      "availability": {
+        "reason_codes": [],
+        "state": "AVAILABLE"
+      },
+      "change": {
+        "absolute": 26.300000000000004,
+        "comparison_window_key": "previous_observation",
+        "direction": "HIGHER",
+        "from_value": 33.3,
+        "kind": "ABSOLUTE",
+        "relative": null,
+        "to_value": 59.6
+      },
+      "construct_key": "execution.duration",
+      "coverage": {
+        "coverage_ratio": null,
+        "expected_period_count": null,
+        "independent_period_count": 44,
+        "missingness": {
+          "counts": {}
+        },
+        "observation_count": 44,
+        "observed_period_count": 44
+      },
+      "domain_key": "active_questlife",
+      "entity_id": "skill:skill-sql-v1",
+      "evidence": {
+        "claim_type": "descriptive",
+        "counterexample_count": 0,
+        "independent_period_count": 44,
+        "limitation_codes": [
+          "ACTIVITY_SHARE_IS_NOT_CAUSAL_CONTRIBUTION"
+        ],
+        "missingness": {
+          "counts": {}
+        },
+        "observation_count": 44,
+        "provenance": {
+          "instrument_version": "execution.duration",
+          "lineage_hash": "cdcc57281a62ce2230aaab9e5d29dad4ccd924d418f79eb10f457ccf5024cd1c",
+          "method": "legacy_presentation_bridge",
+          "method_version": "v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 44,
+          "observation_ids": [
+            "product-review-v0.4.1:active:execution-duration:015",
+            "product-review-v0.4.1:active:execution-duration:016",
+            "product-review-v0.4.1:active:execution-duration:017",
+            "product-review-v0.4.1:active:execution-duration:019",
+            "product-review-v0.4.1:active:execution-duration:020",
+            "product-review-v0.4.1:active:execution-duration:021",
+            "product-review-v0.4.1:active:execution-duration:022",
+            "product-review-v0.4.1:active:execution-duration:024",
+            "product-review-v0.4.1:active:execution-duration:026",
+            "product-review-v0.4.1:active:execution-duration:030",
+            "product-review-v0.4.1:active:execution-duration:043",
+            "product-review-v0.4.1:active:execution-duration:044",
+            "product-review-v0.4.1:active:execution-duration:046",
+            "product-review-v0.4.1:active:execution-duration:047",
+            "product-review-v0.4.1:active:execution-duration:052",
+            "product-review-v0.4.1:active:execution-duration:054",
+            "product-review-v0.4.1:active:execution-duration:055",
+            "product-review-v0.4.1:active:execution-duration:057",
+            "product-review-v0.4.1:active:execution-duration:063",
+            "product-review-v0.4.1:active:execution-duration:067",
+            "product-review-v0.4.1:active:execution-duration:071",
+            "product-review-v0.4.1:active:execution-duration:072",
+            "product-review-v0.4.1:active:execution-duration:078",
+            "product-review-v0.4.1:active:execution-duration:082",
+            "product-review-v0.4.1:active:execution-duration:091",
+            "product-review-v0.4.1:active:execution-duration:096",
+            "product-review-v0.4.1:active:execution-duration:100",
+            "product-review-v0.4.1:active:execution-duration:105",
+            "product-review-v0.4.1:active:execution-duration:108",
+            "product-review-v0.4.1:active:execution-duration:115",
+            "product-review-v0.4.1:active:execution-duration:124",
+            "product-review-v0.4.1:active:execution-duration:125",
+            "product-review-v0.4.1:active:execution-duration:129",
+            "product-review-v0.4.1:active:execution-duration:131",
+            "product-review-v0.4.1:active:execution-duration:136",
+            "product-review-v0.4.1:active:execution-duration:148",
+            "product-review-v0.4.1:active:execution-duration:149",
+            "product-review-v0.4.1:active:execution-duration:154",
+            "product-review-v0.4.1:active:execution-duration:155",
+            "product-review-v0.4.1:active:execution-duration:160",
+            "product-review-v0.4.1:active:execution-duration:161",
+            "product-review-v0.4.1:active:execution-duration:169",
+            "product-review-v0.4.1:active:execution-duration:175",
+            "product-review-v0.4.1:active:execution-duration:178"
+          ],
+          "observation_set_hash": "cdcc57281a62ce2230aaab9e5d29dad4ccd924d418f79eb10f457ccf5024cd1c",
+          "source_artifact_ids": [
+            "artifacts/v0.4/day180_personalized.json",
+            "skill:skill-sql-v1:execution.duration"
+          ]
+        },
+        "stage": "S2",
+        "support_count": 0
+      },
+      "instrument_id": "skill:skill-sql-v1:execution.duration",
+      "label_key": "execution_duration",
+      "latest": {
+        "observation_id": "product-review-v0.4.1:active:execution-duration:178",
+        "observed_at": "2026-06-28T10:00:00+10:00",
+        "source_class": "derived_research",
+        "unit": "minutes",
+        "value": 59.6
+      },
+      "maturity": {
+        "code": "reference_available",
+        "evidence_stage": "S2",
+        "product_stage": "learning_personal_baseline"
+      },
+      "provenance": {
+        "instrument_version": "execution.duration",
+        "lineage_hash": "cdcc57281a62ce2230aaab9e5d29dad4ccd924d418f79eb10f457ccf5024cd1c",
+        "method": "legacy_presentation_bridge",
+        "method_version": "v0.4",
+        "model_id": null,
+        "model_version": null,
+        "observation_count": 44,
+        "observation_ids": [
+          "product-review-v0.4.1:active:execution-duration:015",
+          "product-review-v0.4.1:active:execution-duration:016",
+          "product-review-v0.4.1:active:execution-duration:017",
+          "product-review-v0.4.1:active:execution-duration:019",
+          "product-review-v0.4.1:active:execution-duration:020",
+          "product-review-v0.4.1:active:execution-duration:021",
+          "product-review-v0.4.1:active:execution-duration:022",
+          "product-review-v0.4.1:active:execution-duration:024",
+          "product-review-v0.4.1:active:execution-duration:026",
+          "product-review-v0.4.1:active:execution-duration:030",
+          "product-review-v0.4.1:active:execution-duration:043",
+          "product-review-v0.4.1:active:execution-duration:044",
+          "product-review-v0.4.1:active:execution-duration:046",
+          "product-review-v0.4.1:active:execution-duration:047",
+          "product-review-v0.4.1:active:execution-duration:052",
+          "product-review-v0.4.1:active:execution-duration:054",
+          "product-review-v0.4.1:active:execution-duration:055",
+          "product-review-v0.4.1:active:execution-duration:057",
+          "product-review-v0.4.1:active:execution-duration:063",
+          "product-review-v0.4.1:active:execution-duration:067",
+          "product-review-v0.4.1:active:execution-duration:071",
+          "product-review-v0.4.1:active:execution-duration:072",
+          "product-review-v0.4.1:active:execution-duration:078",
+          "product-review-v0.4.1:active:execution-duration:082",
+          "product-review-v0.4.1:active:execution-duration:091",
+          "product-review-v0.4.1:active:execution-duration:096",
+          "product-review-v0.4.1:active:execution-duration:100",
+          "product-review-v0.4.1:active:execution-duration:105",
+          "product-review-v0.4.1:active:execution-duration:108",
+          "product-review-v0.4.1:active:execution-duration:115",
+          "product-review-v0.4.1:active:execution-duration:124",
+          "product-review-v0.4.1:active:execution-duration:125",
+          "product-review-v0.4.1:active:execution-duration:129",
+          "product-review-v0.4.1:active:execution-duration:131",
+          "product-review-v0.4.1:active:execution-duration:136",
+          "product-review-v0.4.1:active:execution-duration:148",
+          "product-review-v0.4.1:active:execution-duration:149",
+          "product-review-v0.4.1:active:execution-duration:154",
+          "product-review-v0.4.1:active:execution-duration:155",
+          "product-review-v0.4.1:active:execution-duration:160",
+          "product-review-v0.4.1:active:execution-duration:161",
+          "product-review-v0.4.1:active:execution-duration:169",
+          "product-review-v0.4.1:active:execution-duration:175",
+          "product-review-v0.4.1:active:execution-duration:178"
+        ],
+        "observation_set_hash": "cdcc57281a62ce2230aaab9e5d29dad4ccd924d418f79eb10f457ccf5024cd1c",
+        "source_artifact_ids": [
+          "artifacts/v0.4/day180_personalized.json",
+          "skill:skill-sql-v1:execution.duration"
+        ]
+      },
+      "reference": {
+        "high": 60.28332,
+        "independent_period_count": 7,
+        "kind": "PERSONAL_ROLLING",
+        "low": 6.3166799999999945,
+        "observation_count": 7,
+        "provenance": {
+          "instrument_version": "execution.duration",
+          "lineage_hash": "357442c807ae13a9cf031058cde2daa727205630073525fe9efa5e48900e052a",
+          "method": "reference_passthrough",
+          "method_version": "presentation-v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 7,
+          "observation_ids": [],
+          "observation_set_hash": "357442c807ae13a9cf031058cde2daa727205630073525fe9efa5e48900e052a",
+          "source_artifact_ids": [
+            "skill:skill-sql-v1:execution.duration"
+          ]
+        },
+        "status": "PROVISIONAL",
+        "unit": "minutes",
+        "value": 33.3,
+        "window_end": "2026-06-28T20:00:00+10:00",
+        "window_start": "2026-06-04T20:00:00+10:00"
+      },
+      "scale": "TIME_DURATION",
+      "scope": "SKILL",
+      "series_ids": [
+        "skill:skill-sql-v1:execution.duration"
+      ],
+      "supported_analysis_keys": [
+        "reference",
+        "compare",
+        "candle"
+      ],
+      "unit": "minutes"
+    }
+  ],
+  "interpretation": null,
+  "limitation_codes": [
+    "OBSERVATIONAL_NOT_CAUSAL",
+    "BASELINE_IS_NOT_TARGET",
+    "MISSING_IS_NOT_ZERO",
+    "PLAN_IS_NOT_EXECUTION",
+    "NO_ADVANCED_RESEARCH_ARTIFACTS"
+  ],
+  "metadata": {
+    "as_of": "2026-07-01T07:59:00+10:00",
+    "bundle_id": "product:product-v1-portfolio-subject:skill:beb115d33ea292d6:full",
+    "contains_real_user_data": false,
+    "contract_schema_hash": "da7bd3987a9343c72cb37f2edd4dbc81b604e655d4b915c9f85949f001632335",
+    "contract_version": "questlife.quant.product.v1",
+    "eligibility": "PRODUCT_ELIGIBLE",
+    "engine_versions": {
+      "materialized": "questlife-quant-v0.4.1-materialized",
+      "product": "questlife.quant.product.v1",
+      "source": "questlife-cold-start-terminal-v0.4"
+    },
+    "entity_id": "skill:skill-sql-v1",
+    "feature_versions": {
+      "presentation_bridge": "questlife-terminal-presentation-v0.4.2"
+    },
+    "generated_at": "2026-07-01T07:59:00+10:00",
+    "instrument_versions": {
+      "goal:goal-quant-analyst-v1:execution.duration": "execution.duration",
+      "market:activity.active_minutes": "activity.active_minutes",
+      "market:activity.exercise_minutes": "activity.exercise_minutes",
+      "market:activity.steps": "activity.steps",
+      "market:activity.walking_running_distance": "activity.walking_running_distance",
+      "market:body.resting_heart_rate": "body.resting_heart_rate",
+      "market:execution.duration": "execution.duration",
+      "market:execution.quality": "execution.quality",
+      "market:sleep.duration": "sleep.duration",
+      "market:sleep.end_time": "sleep.end_time",
+      "market:sleep.start_time": "sleep.start_time",
+      "market:state.focus": "state.focus",
+      "skill:skill-sql-v1:execution.duration": "execution.duration"
+    },
+    "mode": "FULL",
+    "scope": "SKILL",
+    "source_snapshot_hash": "beb115d33ea292d6fe1bbfd5dcb7bdf56d5907b8111873f303612842ab48f328",
+    "staleness": {
+      "evaluated_at": "2026-07-01T07:59:00+10:00",
+      "source_as_of": "2026-07-01T07:59:00+10:00",
+      "stale_after": null,
+      "state": "CURRENT"
+    },
+    "subject_id": "product-v1-portfolio-subject",
+    "synthetic_only": true
+  },
+  "personal_market": null,
+  "series": [
+    {
+      "availability": {
+        "reason_codes": [],
+        "state": "AVAILABLE"
+      },
+      "candles": {
+        "RECENT": [
+          {
+            "bucket_semantics": "last_5_ordered_observations_scalar_ohlc",
+            "close": 27.0,
+            "end": "2026-01-27T11:00:00.000001+11:00",
+            "high": 52.5,
+            "low": 27.0,
+            "observation_count": 5,
+            "open": 34.1,
+            "representation": "OBSERVATIONAL_SCALAR_OHLC",
+            "source_ids": [
+              "product-review-v0.4.1:active:execution-duration:020",
+              "product-review-v0.4.1:active:execution-duration:021",
+              "product-review-v0.4.1:active:execution-duration:022",
+              "product-review-v0.4.1:active:execution-duration:024",
+              "product-review-v0.4.1:active:execution-duration:026"
+            ],
+            "start": "2026-01-21T11:00:00+11:00",
+            "valid": true
+          },
+          {
+            "bucket_semantics": "last_5_ordered_observations_scalar_ohlc",
+            "close": 20.5,
+            "end": "2026-02-17T11:00:00.000001+11:00",
+            "high": 57.3,
+            "low": 20.5,
+            "observation_count": 5,
+            "open": 39.0,
+            "representation": "OBSERVATIONAL_SCALAR_OHLC",
+            "source_ids": [
+              "product-review-v0.4.1:active:execution-duration:030",
+              "product-review-v0.4.1:active:execution-duration:043",
+              "product-review-v0.4.1:active:execution-duration:044",
+              "product-review-v0.4.1:active:execution-duration:046",
+              "product-review-v0.4.1:active:execution-duration:047"
+            ],
+            "start": "2026-01-31T11:00:00+11:00",
+            "valid": true
+          },
+          {
+            "bucket_semantics": "last_5_ordered_observations_scalar_ohlc",
+            "close": 34.8,
+            "end": "2026-03-05T11:00:00.000001+11:00",
+            "high": 56.6,
+            "low": 34.8,
+            "observation_count": 5,
+            "open": 49.4,
+            "representation": "OBSERVATIONAL_SCALAR_OHLC",
+            "source_ids": [
+              "product-review-v0.4.1:active:execution-duration:052",
+              "product-review-v0.4.1:active:execution-duration:054",
+              "product-review-v0.4.1:active:execution-duration:055",
+              "product-review-v0.4.1:active:execution-duration:057",
+              "product-review-v0.4.1:active:execution-duration:063"
+            ],
+            "start": "2026-02-22T11:00:00+11:00",
+            "valid": true
+          },
+          {
+            "bucket_semantics": "last_5_ordered_observations_scalar_ohlc",
+            "close": 54.9,
+            "end": "2026-03-24T11:00:00.000001+11:00",
+            "high": 54.9,
+            "low": 23.6,
+            "observation_count": 5,
+            "open": 42.3,
+            "representation": "OBSERVATIONAL_SCALAR_OHLC",
+            "source_ids": [
+              "product-review-v0.4.1:active:execution-duration:067",
+              "product-review-v0.4.1:active:execution-duration:071",
+              "product-review-v0.4.1:active:execution-duration:072",
+              "product-review-v0.4.1:active:execution-duration:078",
+              "product-review-v0.4.1:active:execution-duration:082"
+            ],
+            "start": "2026-03-09T11:00:00+11:00",
+            "valid": true
+          },
+          {
+            "bucket_semantics": "last_5_ordered_observations_scalar_ohlc",
+            "close": 16.8,
+            "end": "2026-04-19T10:00:00.000001+10:00",
+            "high": 56.0,
+            "low": 13.9,
+            "observation_count": 5,
+            "open": 35.8,
+            "representation": "OBSERVATIONAL_SCALAR_OHLC",
+            "source_ids": [
+              "product-review-v0.4.1:active:execution-duration:091",
+              "product-review-v0.4.1:active:execution-duration:096",
+              "product-review-v0.4.1:active:execution-duration:100",
+              "product-review-v0.4.1:active:execution-duration:105",
+              "product-review-v0.4.1:active:execution-duration:108"
+            ],
+            "start": "2026-04-02T11:00:00+11:00",
+            "valid": true
+          },
+          {
+            "bucket_semantics": "last_5_ordered_observations_scalar_ohlc",
+            "close": 31.2,
+            "end": "2026-05-12T10:00:00.000001+10:00",
+            "high": 51.3,
+            "low": 21.1,
+            "observation_count": 5,
+            "open": 21.1,
+            "representation": "OBSERVATIONAL_SCALAR_OHLC",
+            "source_ids": [
+              "product-review-v0.4.1:active:execution-duration:115",
+              "product-review-v0.4.1:active:execution-duration:124",
+              "product-review-v0.4.1:active:execution-duration:125",
+              "product-review-v0.4.1:active:execution-duration:129",
+              "product-review-v0.4.1:active:execution-duration:131"
+            ],
+            "start": "2026-04-26T10:00:00+10:00",
+            "valid": true
+          },
+          {
+            "bucket_semantics": "last_5_ordered_observations_scalar_ohlc",
+            "close": 25.7,
+            "end": "2026-06-05T10:00:00.000001+10:00",
+            "high": 54.1,
+            "low": 13.7,
+            "observation_count": 5,
+            "open": 25.7,
+            "representation": "OBSERVATIONAL_SCALAR_OHLC",
+            "source_ids": [
+              "product-review-v0.4.1:active:execution-duration:136",
+              "product-review-v0.4.1:active:execution-duration:148",
+              "product-review-v0.4.1:active:execution-duration:149",
+              "product-review-v0.4.1:active:execution-duration:154",
+              "product-review-v0.4.1:active:execution-duration:155"
+            ],
+            "start": "2026-05-17T10:00:00+10:00",
+            "valid": true
+          },
+          {
+            "bucket_semantics": "last_5_ordered_observations_scalar_ohlc",
+            "close": 59.6,
+            "end": "2026-06-28T10:00:00.000001+10:00",
+            "high": 72.4,
+            "low": 27.2,
+            "observation_count": 5,
+            "open": 42.4,
+            "representation": "OBSERVATIONAL_SCALAR_OHLC",
+            "source_ids": [
+              "product-review-v0.4.1:active:execution-duration:160",
+              "product-review-v0.4.1:active:execution-duration:161",
+              "product-review-v0.4.1:active:execution-duration:169",
+              "product-review-v0.4.1:active:execution-duration:175",
+              "product-review-v0.4.1:active:execution-duration:178"
+            ],
+            "start": "2026-06-10T10:00:00+10:00",
+            "valid": true
+          }
+        ]
+      },
+      "construct_key": "execution.duration",
+      "default_range_key": "30D",
+      "events": [],
+      "instrument_id": "skill:skill-sql-v1:execution.duration",
+      "points": [
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:015",
+          "observed_at": "2026-01-16T11:00:00+11:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 12.0
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:016",
+          "observed_at": "2026-01-17T11:00:00+11:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 37.4
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:017",
+          "observed_at": "2026-01-18T11:00:00+11:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 85.3
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:019",
+          "observed_at": "2026-01-20T11:00:00+11:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 38.7
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:020",
+          "observed_at": "2026-01-21T11:00:00+11:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 34.1
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:021",
+          "observed_at": "2026-01-22T11:00:00+11:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 52.5
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:022",
+          "observed_at": "2026-01-23T11:00:00+11:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 39.4
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:024",
+          "observed_at": "2026-01-25T11:00:00+11:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 35.2
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:026",
+          "observed_at": "2026-01-27T11:00:00+11:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 27.0
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:030",
+          "observed_at": "2026-01-31T11:00:00+11:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 39.0
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:043",
+          "observed_at": "2026-02-13T11:00:00+11:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 48.8
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:044",
+          "observed_at": "2026-02-14T11:00:00+11:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 30.4
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:046",
+          "observed_at": "2026-02-16T11:00:00+11:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 57.3
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:047",
+          "observed_at": "2026-02-17T11:00:00+11:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 20.5
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:052",
+          "observed_at": "2026-02-22T11:00:00+11:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 49.4
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:054",
+          "observed_at": "2026-02-24T11:00:00+11:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 37.3
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:055",
+          "observed_at": "2026-02-25T11:00:00+11:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 43.4
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:057",
+          "observed_at": "2026-02-27T11:00:00+11:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 56.6
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:063",
+          "observed_at": "2026-03-05T11:00:00+11:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 34.8
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:067",
+          "observed_at": "2026-03-09T11:00:00+11:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 42.3
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:071",
+          "observed_at": "2026-03-13T11:00:00+11:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 23.6
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:072",
+          "observed_at": "2026-03-14T11:00:00+11:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 31.2
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:078",
+          "observed_at": "2026-03-20T11:00:00+11:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 40.5
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:082",
+          "observed_at": "2026-03-24T11:00:00+11:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 54.9
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:091",
+          "observed_at": "2026-04-02T11:00:00+11:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 35.8
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:096",
+          "observed_at": "2026-04-07T10:00:00+10:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 18.3
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:100",
+          "observed_at": "2026-04-11T10:00:00+10:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 13.9
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:105",
+          "observed_at": "2026-04-16T10:00:00+10:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 56.0
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:108",
+          "observed_at": "2026-04-19T10:00:00+10:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 16.8
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:115",
+          "observed_at": "2026-04-26T10:00:00+10:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 21.1
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:124",
+          "observed_at": "2026-05-05T10:00:00+10:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 51.3
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:125",
+          "observed_at": "2026-05-06T10:00:00+10:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 36.8
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:129",
+          "observed_at": "2026-05-10T10:00:00+10:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 29.1
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:131",
+          "observed_at": "2026-05-12T10:00:00+10:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 31.2
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:136",
+          "observed_at": "2026-05-17T10:00:00+10:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 25.7
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:148",
+          "observed_at": "2026-05-29T10:00:00+10:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 54.1
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:149",
+          "observed_at": "2026-05-30T10:00:00+10:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 36.1
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:154",
+          "observed_at": "2026-06-04T10:00:00+10:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 13.7
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:155",
+          "observed_at": "2026-06-05T10:00:00+10:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 25.7
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:160",
+          "observed_at": "2026-06-10T10:00:00+10:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 42.4
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:161",
+          "observed_at": "2026-06-11T10:00:00+10:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 27.2
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:169",
+          "observed_at": "2026-06-19T10:00:00+10:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 72.4
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:175",
+          "observed_at": "2026-06-25T10:00:00+10:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 33.3
+        },
+        {
+          "observation_id": "product-review-v0.4.1:active:execution-duration:178",
+          "observed_at": "2026-06-28T10:00:00+10:00",
+          "source_class": "derived_research",
+          "unit": "minutes",
+          "value": 59.6
+        }
+      ],
+      "provenance": {
+        "instrument_version": "execution.duration",
+        "lineage_hash": "cdcc57281a62ce2230aaab9e5d29dad4ccd924d418f79eb10f457ccf5024cd1c",
+        "method": "legacy_presentation_bridge",
+        "method_version": "v0.4",
+        "model_id": null,
+        "model_version": null,
+        "observation_count": 44,
+        "observation_ids": [
+          "product-review-v0.4.1:active:execution-duration:015",
+          "product-review-v0.4.1:active:execution-duration:016",
+          "product-review-v0.4.1:active:execution-duration:017",
+          "product-review-v0.4.1:active:execution-duration:019",
+          "product-review-v0.4.1:active:execution-duration:020",
+          "product-review-v0.4.1:active:execution-duration:021",
+          "product-review-v0.4.1:active:execution-duration:022",
+          "product-review-v0.4.1:active:execution-duration:024",
+          "product-review-v0.4.1:active:execution-duration:026",
+          "product-review-v0.4.1:active:execution-duration:030",
+          "product-review-v0.4.1:active:execution-duration:043",
+          "product-review-v0.4.1:active:execution-duration:044",
+          "product-review-v0.4.1:active:execution-duration:046",
+          "product-review-v0.4.1:active:execution-duration:047",
+          "product-review-v0.4.1:active:execution-duration:052",
+          "product-review-v0.4.1:active:execution-duration:054",
+          "product-review-v0.4.1:active:execution-duration:055",
+          "product-review-v0.4.1:active:execution-duration:057",
+          "product-review-v0.4.1:active:execution-duration:063",
+          "product-review-v0.4.1:active:execution-duration:067",
+          "product-review-v0.4.1:active:execution-duration:071",
+          "product-review-v0.4.1:active:execution-duration:072",
+          "product-review-v0.4.1:active:execution-duration:078",
+          "product-review-v0.4.1:active:execution-duration:082",
+          "product-review-v0.4.1:active:execution-duration:091",
+          "product-review-v0.4.1:active:execution-duration:096",
+          "product-review-v0.4.1:active:execution-duration:100",
+          "product-review-v0.4.1:active:execution-duration:105",
+          "product-review-v0.4.1:active:execution-duration:108",
+          "product-review-v0.4.1:active:execution-duration:115",
+          "product-review-v0.4.1:active:execution-duration:124",
+          "product-review-v0.4.1:active:execution-duration:125",
+          "product-review-v0.4.1:active:execution-duration:129",
+          "product-review-v0.4.1:active:execution-duration:131",
+          "product-review-v0.4.1:active:execution-duration:136",
+          "product-review-v0.4.1:active:execution-duration:148",
+          "product-review-v0.4.1:active:execution-duration:149",
+          "product-review-v0.4.1:active:execution-duration:154",
+          "product-review-v0.4.1:active:execution-duration:155",
+          "product-review-v0.4.1:active:execution-duration:160",
+          "product-review-v0.4.1:active:execution-duration:161",
+          "product-review-v0.4.1:active:execution-duration:169",
+          "product-review-v0.4.1:active:execution-duration:175",
+          "product-review-v0.4.1:active:execution-duration:178"
+        ],
+        "observation_set_hash": "cdcc57281a62ce2230aaab9e5d29dad4ccd924d418f79eb10f457ccf5024cd1c",
+        "source_artifact_ids": [
+          "artifacts/v0.4/day180_personalized.json",
+          "skill:skill-sql-v1:execution.duration"
+        ]
+      },
+      "range_points": [],
+      "reference": {
+        "high": 60.28332,
+        "independent_period_count": 7,
+        "kind": "PERSONAL_ROLLING",
+        "low": 6.3166799999999945,
+        "observation_count": 7,
+        "provenance": {
+          "instrument_version": "execution.duration",
+          "lineage_hash": "357442c807ae13a9cf031058cde2daa727205630073525fe9efa5e48900e052a",
+          "method": "reference_passthrough",
+          "method_version": "presentation-v0.4",
+          "model_id": null,
+          "model_version": null,
+          "observation_count": 7,
+          "observation_ids": [],
+          "observation_set_hash": "357442c807ae13a9cf031058cde2daa727205630073525fe9efa5e48900e052a",
+          "source_artifact_ids": [
+            "skill:skill-sql-v1:execution.duration"
+          ]
+        },
+        "status": "PROVISIONAL",
+        "unit": "minutes",
+        "value": 33.3,
+        "window_end": "2026-06-28T20:00:00+10:00",
+        "window_start": "2026-06-04T20:00:00+10:00"
+      },
+      "scale": "TIME_DURATION",
+      "series_id": "skill:skill-sql-v1:execution.duration",
+      "supported_chart_types": [
+        "POINT",
+        "LINE",
+        "BAR",
+        "CANDLE",
+        "RANGE",
+        "COMPARE"
+      ],
+      "supported_ranges": [
+        {
+          "aggregation_bucket": "quant_source_points",
+          "count": 5,
+          "end": null,
+          "key": "RECENT",
+          "kind": "LAST_N_OBSERVATIONS",
+          "observation_window_count": 5,
+          "start": null
+        },
+        {
+          "aggregation_bucket": "quant_source_points",
+          "count": 7,
+          "end": null,
+          "key": "7D",
+          "kind": "LAST_N_DAYS",
+          "observation_window_count": null,
+          "start": null
+        },
+        {
+          "aggregation_bucket": "quant_source_points",
+          "count": 30,
+          "end": null,
+          "key": "30D",
+          "kind": "LAST_N_DAYS",
+          "observation_window_count": null,
+          "start": null
+        },
+        {
+          "aggregation_bucket": "quant_source_points",
+          "count": 90,
+          "end": null,
+          "key": "90D",
+          "kind": "LAST_N_DAYS",
+          "observation_window_count": null,
+          "start": null
+        },
+        {
+          "aggregation_bucket": "quant_source_points",
+          "count": null,
+          "end": null,
+          "key": "ALL",
+          "kind": "ALL",
+          "observation_window_count": null,
+          "start": null
+        },
+        {
+          "aggregation_bucket": "quant_source_points",
+          "count": null,
+          "end": null,
+          "key": "CUSTOM_CALENDAR",
+          "kind": "CALENDAR_RANGE",
+          "observation_window_count": null,
+          "start": null
+        },
+        {
+          "aggregation_bucket": "quant_source_points",
+          "count": 1,
+          "end": null,
+          "key": "CUSTOM_OBSERVATIONS",
+          "kind": "LAST_N_OBSERVATIONS",
+          "observation_window_count": 1,
+          "start": null
+        }
+      ],
+      "unit": "minutes"
+    }
+  ],
+  "signals": [],
+  "skill_surfaces": [
+    {
+      "availability": {
+        "reason_codes": [],
+        "state": "AVAILABLE"
+      },
+      "child_instrument_ids": [],
+      "entity_id": "skill:skill-sql-v1",
+      "label": "SQL",
+      "limitation_codes": [
+        "NO_MASTERY_OR_PROGRESS_PERCENT_INFERRED"
+      ],
+      "linked_instrument_ids": [
+        "skill:skill-sql-v1:execution.duration"
+      ],
+      "movement": {
+        "absolute": 26.300000000000004,
+        "comparison_window_key": "previous_observation",
+        "direction": "HIGHER",
+        "from_value": 33.3,
+        "kind": "ABSOLUTE",
+        "relative": null,
+        "to_value": 59.6
+      },
+      "quant_deep_link": "quant://skill/skill:skill-sql-v1",
+      "recent_activity": [],
+      "scope": "SKILL"
+    }
+  ]
+}
