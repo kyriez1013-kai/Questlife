@@ -483,7 +483,17 @@ const InterpretationSchema = z.object({
   uncertainty_codes: z.array(z.string()),
   next_useful_observation_key: z.string().nullable(),
   provenance: ProvenanceSchema,
-}).strict();
+}).strict().superRefine((value, context) => {
+  const asOf = Date.parse(value.as_of);
+  value.similar_periods?.periods.forEach((period, index) => {
+    if (Date.parse(period.end_at) > asOf) {
+      context.addIssue({ code: 'custom', path: ['similar_periods', 'periods', index, 'end_at'], message: 'Similar period exceeds as_of.' });
+    }
+    if (period.subsequent_series.some((point) => Date.parse(point.observed_at) > asOf)) {
+      context.addIssue({ code: 'custom', path: ['similar_periods', 'periods', index, 'subsequent_series'], message: 'Future analogue observation exceeds as_of.' });
+    }
+  });
+});
 
 const AnalystContextSchema = z.object({
   selected_instrument_id: z.string().nullable(),
@@ -557,11 +567,58 @@ const BundleCoreSchema = z.object({
     }
   });
   const asOf = Date.parse(value.metadata.as_of);
+  if (value.metadata.staleness.source_as_of !== value.metadata.as_of) {
+    context.addIssue({ code: 'custom', path: ['metadata', 'staleness', 'source_as_of'], message: 'Staleness source_as_of must match bundle as_of.' });
+  }
+  if (value.metadata.staleness.evaluated_at !== value.metadata.generated_at) {
+    context.addIssue({ code: 'custom', path: ['metadata', 'staleness', 'evaluated_at'], message: 'Staleness evaluated_at must match generated_at.' });
+  }
+  const staleAfter = value.metadata.staleness.stale_after == null
+    ? null
+    : Date.parse(value.metadata.staleness.stale_after);
+  if (staleAfter == null && value.metadata.staleness.state === 'STALE') {
+    context.addIssue({ code: 'custom', path: ['metadata', 'staleness', 'state'], message: 'STALE requires stale_after.' });
+  }
+  if (staleAfter != null) {
+    const expected = Date.parse(value.metadata.staleness.evaluated_at) > staleAfter ? 'STALE' : 'CURRENT';
+    if (value.metadata.staleness.state !== expected) {
+      context.addIssue({ code: 'custom', path: ['metadata', 'staleness', 'state'], message: 'Staleness state does not match stale_after.' });
+    }
+  }
+  const observations = [
+    ...value.instruments.flatMap((instrument) => instrument.latest == null ? [] : [instrument.latest]),
+    ...(value.personal_market?.watchlist.flatMap((item) => [
+      ...(item.latest == null ? [] : [item.latest]),
+      ...item.sparkline,
+    ]) ?? []),
+  ];
+  if (observations.some((point) => Date.parse(point.observed_at) > asOf)) {
+    context.addIssue({ code: 'custom', message: 'Future compact observation exceeds as_of.' });
+  }
   value.series.forEach((series, index) => {
     if (series.points.some((point) => Date.parse(point.observed_at) > asOf)) {
       context.addIssue({ code: 'custom', path: ['series', index, 'points'], message: 'Future observation exceeds as_of.' });
     }
+    if (series.range_points.some((point) => Date.parse(point.timestamp) > asOf)) {
+      context.addIssue({ code: 'custom', path: ['series', index, 'range_points'], message: 'Future range point exceeds as_of.' });
+    }
+    if (series.events.some((event) => Date.parse(event.timestamp) > asOf)) {
+      context.addIssue({ code: 'custom', path: ['series', index, 'events'], message: 'Future event exceeds as_of.' });
+    }
   });
+  [...value.goal_surfaces, ...value.skill_surfaces].forEach((surface, index) => {
+    if (surface.recent_activity.some((event) => Date.parse(event.timestamp) > asOf)) {
+      context.addIssue({ code: 'custom', path: ['entity_surfaces', index, 'recent_activity'], message: 'Future entity event exceeds as_of.' });
+    }
+  });
+  const references = [
+    ...value.instruments.map((instrument) => instrument.reference),
+    ...value.series.map((series) => series.reference),
+    ...(value.personal_market?.watchlist.map((item) => item.reference) ?? []),
+  ];
+  if (references.some((reference) => reference.window_end != null && Date.parse(reference.window_end) > asOf)) {
+    context.addIssue({ code: 'custom', message: 'Reference window exceeds as_of.' });
+  }
   if (value.metadata.mode === 'COMPACT' && (value.series.length > 0 || value.signals.length > 0 || value.interpretation != null)) {
     context.addIssue({ code: 'custom', message: 'Compact bundle contains full analytical payload.' });
   }

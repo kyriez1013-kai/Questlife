@@ -92,6 +92,14 @@ const futureObservation = clone(load('one_observation_full'));
 futureObservation.series[0].points[0].observed_at = '2099-01-01T00:00:00+00:00';
 assert.equal(parseQuantProductBundleV1(futureObservation).ok, false);
 
+const futureCompactObservation = clone(load('mature_market_compact'));
+futureCompactObservation.instruments[0].latest.observed_at = '2099-01-01T00:00:00+00:00';
+assert.equal(parseQuantProductBundleV1(futureCompactObservation).ok, false);
+
+const inconsistentStaleness = clone(load('one_observation_full'));
+inconsistentStaleness.metadata.staleness.state = 'STALE';
+assert.equal(parseQuantProductBundleV1(inconsistentStaleness).ok, false);
+
 const duplicateInstrument = clone(load('driver_analysis_full'));
 duplicateInstrument.instruments.push(clone(duplicateInstrument.instruments[0]));
 assert.equal(parseQuantProductBundleV1(duplicateInstrument).ok, false);
