@@ -3147,3 +3147,49 @@ Known remaining UI/product debt:
 
 This milestone is an owner beta for daily longitudinal data collection. It is
 not a public release or an App Store readiness claim.
+
+## Global Theme Cleanup - Production Visual Foundation Lock
+
+Status: local implementation and mechanical validation complete on
+`design/global-theme-cleanup`; owner visual review and Preview verification are
+pending. No merge to `main` and no Production promotion have been performed.
+
+Completed:
+- Replaced the five-family user theme selector with System, Light, and Dark.
+- Removed the normal-user app accent picker and stopped all core surfaces from
+  consuming `settings.accentColor`.
+- Internalized the approved light and dark values as one semantic visual
+  foundation covering Environment, Material, Text, Border, Interaction, Data,
+  and Semantic roles.
+- Added reactive system appearance resolution and retained query-only V11
+  theme overrides as non-persisted debug controls.
+- Added a deterministic, idempotent migration for legacy palette, background,
+  and accent settings while preserving unrelated settings and user data.
+- Kept entity colours, semantic status colours, and Quant/chart palettes
+  separate from product chrome.
+- Updated the V11 token layer and legacy StyleSheet compatibility facade to
+  consume canonical values rather than independent theme defaults.
+
+Validation:
+- Nine targeted appearance migration cases pass, including valid
+  System/Light/Dark preservation, unknown-value fallback, unrelated-data
+  preservation, and idempotency.
+- The targeted visual-foundation static audit passes.
+- V11 feature selection, Today presentation, persistence consistency, and
+  persistence lock regression tests pass.
+- `npx tsc --noEmit` passes.
+- `npm run build` passes; exported web bundle
+  `index-759a2bcb651dc3647a3219fd40ec6115.js` in `dist`.
+- Local browser checks at 375, 393, 430, and 1280px found no horizontal
+  overflow; the tested minimum interactive height was 44px.
+- Today dark/light, Smart Capture dark, Settings appearance, and Insights chart
+  sanity screenshots are stored in `artifacts/global-theme-cleanup/`.
+- No runtime errors were observed. The existing Expo Notifications Web support
+  warning remains.
+
+Documentation:
+- `docs/design/QUESTLIFE_VISUAL_FOUNDATION.md`
+
+Pending before promotion:
+- isolated Vercel Preview and owner visual acceptance;
+- Production web UI verification after an explicit promotion instruction.
