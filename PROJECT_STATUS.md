@@ -3150,8 +3150,8 @@ not a public release or an App Store readiness claim.
 
 ## Global Theme Cleanup - Production Visual Foundation Lock
 
-Status: local implementation and mechanical validation complete on
-`design/global-theme-cleanup`; owner visual review and Preview verification are
+Status: local implementation, mechanical validation, and isolated Preview smoke
+verification complete on `design/global-theme-cleanup`; owner visual review is
 pending. No merge to `main` and no Production promotion have been performed.
 
 Completed:
@@ -3186,10 +3186,19 @@ Validation:
   sanity screenshots are stored in `artifacts/global-theme-cleanup/`.
 - No runtime errors were observed. The existing Expo Notifications Web support
   warning remains.
+- Git-integrated Vercel Preview deployment `dpl_5rGk7BhzciE96ScMsqQvuAyWYait`
+  reached `READY` for commit `1aac866` and returned HTTP 200.
+- The isolated Preview rendered the Stage 2 representative Today fixture in
+  both dark and light themes at 375px with no horizontal overflow and a tested
+  minimum interactive height of 44px.
+- The fresh Preview origin correctly entered onboarding on ordinary routes. No
+  fake goal, observation, or other persistent data was created to bypass it;
+  populated Settings and Insights states therefore remain locally verified
+  rather than claimed as Preview-verified.
 
 Documentation:
 - `docs/design/QUESTLIFE_VISUAL_FOUNDATION.md`
 
 Pending before promotion:
-- isolated Vercel Preview and owner visual acceptance;
+- owner visual acceptance of the isolated Vercel Preview;
 - Production web UI verification after an explicit promotion instruction.
