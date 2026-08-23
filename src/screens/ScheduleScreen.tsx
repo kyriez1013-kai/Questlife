@@ -7,12 +7,13 @@ import {
   flexibilityLabel, getLanguage, progressTypeLabel, qualityLabel, rigidityLabel, sourceLabel, statusLabel, t, taskTypeLabel,
 } from '../i18n';
 import { today } from '../storage';
-import { appAccent, theme } from '../theme';
+import { theme } from '../theme';
 import { Quality, QUALITY_OPTIONS, ScheduleBlock, TaskType } from '../types';
 import BottomSheetForm from '../components/BottomSheetForm';
 import { generateScheduleBlocksFromSkills } from '../scheduleAdjust';
 import { formatMetricSummary, progressTypeForSkill } from '../progress';
-import { getQuestTheme, questLayout, QuestTheme } from '../design/tokens';
+import { questLayout, QuestTheme } from '../design/tokens';
+import { useQuestTheme } from '../design/useQuestTheme';
 import { systemIcons } from '../design/systemIcons';
 import { getSkillSemanticIcon } from '../design/entityIcons';
 import { isStrengthPredictionSkill, strengthVolume } from '../utils/prediction';
@@ -132,8 +133,8 @@ export default function ScheduleScreen() {
   const { data, addScheduleBlock, createExecutionLog, updateScheduleBlock, deleteScheduleBlock } = useStore();
   const route = useRoute<any>();
   const lang = getV11ProductLanguage(getLanguage(data.settings.language));
-  const questTheme = getQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
-  const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
+  const questTheme = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
+  const accent = questTheme.colors.primary;
   const [view, setView] = useState<'day' | 'week' | 'month' | 'year'>('day');
   const [selectedDate, setSelectedDate] = useState(today());
   const [highlightHour, setHighlightHour] = useState<number | null>(null);

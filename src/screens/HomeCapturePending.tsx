@@ -13,6 +13,7 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, TextInputProps } from 'react-native';
 import { useStore } from '../store';
 import { getQuestTheme } from '../design/tokens';
+import { useQuestTheme } from '../design/useQuestTheme';
 import { getLanguage, t } from '../i18n';
 import { Category, CompletionSchema, DataFieldOrigin, DataParserMetadata, ExecutionLog, GoalType, ParsedEntry, ProgressType, QuestModule, TaskType } from '../types';
 import QuestCard from '../components/ui/QuestCard';
@@ -818,7 +819,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
   const lang = v11TodayEnabled
     ? getV11ProductLanguage(getLanguage(data.settings.language ?? data.settings.preferredLanguage))
     : getLanguage(data.settings.language ?? data.settings.preferredLanguage);
-  const questTheme = getQuestTheme(v11TodayEnabled
+  const questTheme = useQuestTheme(v11TodayEnabled
     ? getV11ProductThemeId(data.settings.selectedThemeId)
     : data.settings.selectedThemeId);
   const capture = (data.rawCaptures || []).find((item) => item.id === captureId);

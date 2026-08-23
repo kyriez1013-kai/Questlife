@@ -25,7 +25,7 @@ import {
 } from 'react-native';
 import { theme } from '../theme';
 import { useStore } from '../store';
-import { getQuestTheme } from '../design/tokens';
+import { useQuestTheme } from '../design/useQuestTheme';
 import { useQuestReducedMotion } from '../design/motion';
 import QuestIcon from './ui/QuestIcon';
 import { getLanguage, t } from '../i18n';
@@ -41,7 +41,7 @@ export interface BottomSheetFormProps {
 
 export default function BottomSheetForm({ visible, onClose, children, footer, closeAccessibilityLabel }: BottomSheetFormProps) {
   const { data } = useStore();
-  const questTheme = getQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
+  const questTheme = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const language = getV11ProductLanguage(getLanguage(data.settings.language));
   const v11ProductEnabled = isV11ProductEnabled();
   const reducedMotion = useQuestReducedMotion();

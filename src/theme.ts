@@ -1,14 +1,22 @@
+import { questThemes } from './design/tokens';
+
+const canonicalLight = questThemes.cleanFocus;
+
+/**
+ * Compatibility facade for older StyleSheet declarations. Product chrome is
+ * sourced from the canonical semantic themes; entity colours remain separate.
+ */
 export const theme = {
-  bg: '#F5F5F7',
-  card: '#FFFFFF',
-  cardAlt: '#EEF0F5',
-  border: '#E5E5EA',
-  text: '#111827',
-  textDim: '#6B7280',
-  primary: '#007AFF',
-  accent: '#FF9F0A',
-  success: '#34C759',
-  danger: '#FF3B30',
+  bg: canonicalLight.colors.background,
+  card: canonicalLight.colors.surface,
+  cardAlt: canonicalLight.colors.surfaceSoft,
+  border: canonicalLight.colors.border,
+  text: canonicalLight.colors.text,
+  textDim: canonicalLight.colors.textMuted,
+  primary: canonicalLight.colors.primary,
+  accent: canonicalLight.colors.accent,
+  success: canonicalLight.colors.success,
+  danger: canonicalLight.colors.danger,
   radius: {
     sm: 10,
     md: 14,
@@ -22,7 +30,6 @@ export const theme = {
     shadowRadius: 24,
     elevation: 4,
   },
-  accentPalette: ['#007AFF', '#5856D6', '#AF52DE', '#FF2D55', '#FF9500', '#34C759', '#00C7BE', '#111827'],
   // 默认技能调色板
   palette: ['#007AFF', '#FF9500', '#34C759', '#FF3B30', '#AF52DE', '#FFD60A', '#00C7BE', '#FF2D55'],
   // 三层目标颜色
@@ -32,7 +39,3 @@ export const theme = {
     daily: '#34C759', // 绿色 = 每日
   } as const,
 };
-
-export function appAccent(color?: string) {
-  return color || theme.primary;
-}

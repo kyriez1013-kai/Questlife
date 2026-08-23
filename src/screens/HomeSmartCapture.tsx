@@ -20,6 +20,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { useStore } from '../store';
 import { getQuestTheme } from '../design/tokens';
+import { useQuestTheme } from '../design/useQuestTheme';
 import { getLanguage, t } from '../i18n';
 import { RawCapture } from '../types';
 import QuestCard from '../components/ui/QuestCard';
@@ -267,7 +268,7 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
   const lang = v11TodayEnabled
     ? getV11ProductLanguage(getLanguage(data.settings.language ?? data.settings.preferredLanguage))
     : getLanguage(data.settings.language ?? data.settings.preferredLanguage);
-  const questTheme = getQuestTheme(v11TodayEnabled
+  const questTheme = useQuestTheme(v11TodayEnabled
     ? getV11ProductThemeId(data.settings.selectedThemeId)
     : data.settings.selectedThemeId);
   const v11Theme = getV11ThemeTokens(questTheme.id === 'cleanFocus' ? 'light' : 'dark');

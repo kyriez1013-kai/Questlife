@@ -2,12 +2,12 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Keyboard } from 'react-native';
 import { useStore } from '../store';
-import { appAccent, theme } from '../theme';
+import { theme } from '../theme';
 import { Category, GoalProgressModel, GoalType } from '../types';
 import BottomSheetForm from './BottomSheetForm';
 import EmojiPicker from './EmojiPicker';
 import { getLanguage, goalTypeLabel, progressModelLabel, t } from '../i18n';
-import { getQuestTheme } from '../design/tokens';
+import { useQuestTheme } from '../design/useQuestTheme';
 import QuestButton from './ui/QuestButton';
 import QuestEntityIcon from './ui/QuestEntityIcon';
 import QuestInput from './ui/QuestInput';
@@ -29,8 +29,8 @@ export interface GoalFormProps {
 
 export default function GoalForm({ visible, onClose, initial }: GoalFormProps) {
   const { data, addCategory, updateCategory, applyDomainTemplateToGoal } = useStore();
-  const questTheme = getQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
-  const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
+  const questTheme = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
+  const accent = questTheme.colors.primary;
   const lang = getV11ProductLanguage(getLanguage(data.settings.language));
   const [name, setName] = useState('');
   const [emoji, setEmoji] = useState('');

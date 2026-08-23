@@ -7,7 +7,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { theme } from '../theme';
 import { useStore } from '../store';
-import { getQuestTheme } from '../design/tokens';
+import { useQuestTheme } from '../design/useQuestTheme';
 import { getV11ProductThemeId } from '../v11/featureFlag';
 
 export interface EmojiPickerProps {
@@ -18,7 +18,7 @@ export interface EmojiPickerProps {
 
 function EmojiPickerInner({ emojis, value, onChange }: EmojiPickerProps) {
   const { data } = useStore();
-  const questTheme = getQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
+  const questTheme = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   return (
     <View style={styles.row}>
       {emojis.map((e) => (

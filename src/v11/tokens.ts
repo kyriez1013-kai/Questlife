@@ -1,4 +1,5 @@
 import { getQuestTheme, QuestTheme } from '../design/tokens';
+import { getQuestVisualFoundation } from '../design/visualFoundation';
 
 export type V11ThemeMode = 'dark' | 'light';
 export type V11EvidenceStage = 'S0' | 'S1' | 'S2' | 'S3';
@@ -201,75 +202,76 @@ export type V11ThemeTokens = {
 
 function buildThemeTokens(mode: V11ThemeMode): V11ThemeTokens {
   const questTheme = getQuestTheme(mode === 'dark' ? 'deepWork' : 'cleanFocus');
+  const foundation = getQuestVisualFoundation(questTheme);
 
   return {
     mode,
     questTheme,
     field: {
-      background: questTheme.colors.background,
-      near: questTheme.colors.surfaceSoft,
-      middle: questTheme.colors.background,
-      far: questTheme.colors.surfaceSubtle,
-      grid: questTheme.colors.textSubtle,
+      background: foundation.environment.canvas,
+      near: foundation.material.soft,
+      middle: foundation.environment.canvas,
+      far: foundation.environment.canvasNear,
+      grid: foundation.text.metadata,
       directionDegrees: 145,
     },
     text: {
       primary: mode === 'light'
-        ? questTheme.colors.textPrimary
+        ? foundation.text.primary
         : questTheme.colors.text,
       secondary: mode === 'light'
-        ? questTheme.colors.textSecondary
+        ? foundation.text.secondary
         : questTheme.colors.textMuted,
       metadata: mode === 'light'
         ? questTheme.colors.textMuted
-        : questTheme.colors.textSubtle,
-      disabled: questTheme.colors.disabledText,
+        : foundation.text.metadata,
+      disabled: foundation.text.disabled,
     },
     glow: {
-      primary: questTheme.colors.primary,
-      supporting: questTheme.colors.accent,
+      primary: foundation.data.observed,
+      supporting: foundation.data.comparison,
       primaryBlur: 120,
       supportingBlur: 96,
       primaryDiameter: 280,
       supportingDiameter: 230,
     },
     material: {
-      glassBase: questTheme.colors.surface,
-      fallback: questTheme.colors.surfaceElevated,
+      glassBase: foundation.material.base,
+      fallback: foundation.material.elevated,
       highlight: mode === 'light'
         ? questTheme.colors.surface
         : questTheme.colors.text,
-      shadow: questTheme.colors.cardShadow,
+      shadow: foundation.material.shadow,
       blur: 28,
       saturation: 1.6,
       upperHighlightOpacity: mode === 'light' ? 0.82 : 0.74,
       outerShadowOpacity: mode === 'light' ? 0.24 : 0.28,
     },
     control: {
-      surface: questTheme.colors.surfaceSoft,
-      elevatedSurface: questTheme.colors.surfaceElevated,
-      selectedSurface: questTheme.colors.primarySoft,
-      pressedSurface: questTheme.colors.surfaceMuted,
+      surface: foundation.material.soft,
+      elevatedSurface: foundation.material.elevated,
+      selectedSurface: foundation.interaction.primarySoft,
+      pressedSurface: foundation.material.muted,
       primaryText: questTheme.colors.text,
       secondaryText: questTheme.colors.textMuted,
       selectedText: questTheme.colors.text,
-      borderSubtle: questTheme.colors.border,
-      borderSelected: questTheme.colors.primary,
-      focus: questTheme.colors.accentStrong,
-      disabledSurface: questTheme.colors.disabledBg,
-      disabledText: questTheme.colors.disabledText,
-      error: questTheme.colors.danger,
-      primaryAction: questTheme.colors.primary,
-      primaryActionText: questTheme.colors.primaryText,
-      secondaryAction: questTheme.colors.surfaceSoft,
-      secondaryActionText: questTheme.colors.text,
-      placeholder: questTheme.colors.textSubtle,
-      neutralSurface: questTheme.colors.cardSurface,
-      neutralElevatedSurface: questTheme.colors.surfaceMuted,
-      neutralPressedSurface: questTheme.colors.cardSurfaceHover,
-      neutralBorder: questTheme.colors.cardBorder,
-      neutralAction: questTheme.colors.text,
-      neutralActionText: questTheme.colors.background,
+      borderSubtle: foundation.border.standard,
+      borderSelected: foundation.interaction.primary,
+      focus: foundation.interaction.focus,
+      disabledSurface: foundation.interaction.disabledSurface,
+      disabledText: foundation.interaction.disabledText,
+      error: foundation.semantic.negative,
+      primaryAction: foundation.interaction.primary,
+      primaryActionText: foundation.text.onPrimary,
+      secondaryAction: foundation.material.soft,
+      secondaryActionText: foundation.text.primary,
+      placeholder: foundation.text.metadata,
+      neutralSurface: foundation.material.translucent,
+      neutralElevatedSurface: foundation.material.muted,
+      neutralPressedSurface: foundation.material.translucentPressed,
+      neutralBorder: foundation.border.subtle,
+      neutralAction: foundation.text.primary,
+      neutralActionText: foundation.environment.canvas,
     },
   };
 }

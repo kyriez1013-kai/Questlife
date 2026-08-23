@@ -24,6 +24,7 @@ import {
 import { uid } from '../storage';
 import { getGoalCoreLoopStatus } from '../utils/coreLoop';
 import { getQuestTheme, questLayout, QuestTheme } from '../design/tokens';
+import { useQuestTheme } from '../design/useQuestTheme';
 import { getGoalSemanticIcon, getModuleSemanticIcon, getSkillSemanticIcon } from '../design/entityIcons';
 import QuestButton from '../components/ui/QuestButton';
 import QuestEntityIcon from '../components/ui/QuestEntityIcon';
@@ -70,7 +71,7 @@ export default function GoalDetailScreen() {
   const route = useRoute<RouteProp<ParamList, 'GoalDetail'>>();
   const { data, updateCategory, addModule, updateModule, deleteModule, addExistingSkillToModule, removeSkillFromModule } = useStore();
   const lang = getV11ProductLanguage(getLanguage(data.settings.language));
-  const questTheme = getQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
+  const questTheme = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const categoryId = route.params.categoryId;
   const cat = data.categories.find((c) => c.id === categoryId);
 

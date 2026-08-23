@@ -10,15 +10,18 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useStore } from '../store';
-import { appAccent, theme } from '../theme';
+import { theme } from '../theme';
 import { Skill, Category, skillTotalMinutes, skillStreak, skillMinutesOnDate } from '../types';
 import { today } from '../storage';
 import SkillForm from '../components/SkillForm';
+import { useQuestTheme } from '../design/useQuestTheme';
+import { getV11ProductThemeId } from '../v11/featureFlag';
 
 export default function SkillsScreen() {
   const { data, deleteSkill } = useStore();
   const nav = useNavigation<any>();
-  const accent = appAccent(data.settings.accentColor);
+  const questTheme = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
+  const accent = questTheme.colors.primary;
   const todayStr = today();
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 

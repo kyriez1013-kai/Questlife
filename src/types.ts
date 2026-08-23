@@ -937,6 +937,7 @@ export interface AppData {
     reminderHour?: number;
     reminderMinute?: number;
     reminderEnabled?: boolean;
+    /** @deprecated Migrated away by the global visual foundation cleanup. */
     accentColor?: string;
     language?: 'zh' | 'en';
     preferredLanguage?: 'zh' | 'en';
@@ -987,7 +988,7 @@ export const DEFAULT_DATA: AppData = {
   patternMemory: [],
   scheduleBlocks: [],
   rawCaptures: [],
-  settings: { selectedThemeId: 'cleanFocus' },
+  settings: { selectedThemeId: 'system' },
 };
 
 // 默认"未分类"分类的稳定 id, 迁移时使用

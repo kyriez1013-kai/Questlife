@@ -21,6 +21,7 @@ import { SKILL_PROFILE_DEFAULTS } from '../scheduleAdjust';
 import { flexibilityLabel, getLanguage, progressTypeLabel, rigidityLabel, t, taskTypeLabel } from '../i18n';
 import { calculateSkillProgress, formatMetricSummary, formatMetricUpdateSummary, progressTypeForSkill } from '../progress';
 import { getQuestTheme, questLayout } from '../design/tokens';
+import { useQuestTheme } from '../design/useQuestTheme';
 import { systemIcons } from '../design/systemIcons';
 import { getGoalSemanticIcon, getSkillSemanticIcon } from '../design/entityIcons';
 import QuestButton from '../components/ui/QuestButton';
@@ -82,7 +83,7 @@ export default function SkillDetailScreen() {
   const nav = useNavigation<any>();
   const { data, deleteSkillFromLibrary } = useStore();
   const lang = getV11ProductLanguage(getLanguage(data.settings.language));
-  const questTheme = getQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
+  const questTheme = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const skillId = route.params.skillId;
   const skill = data.skills.find((s) => s.id === skillId);
 

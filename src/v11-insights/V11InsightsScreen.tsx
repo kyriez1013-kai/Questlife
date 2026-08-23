@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '../store';
 import { getLanguage, t, type Lang } from '../i18n';
 import { getQuestTheme, questLayout } from '../design/tokens';
+import { useQuestTheme } from '../design/useQuestTheme';
 import { isDarkTheme } from '../design/darkSurfaceGuard';
 import { getAppCoreLoopStatus } from '../utils/coreLoop';
 import { generateInsightsSummary } from '../utils/insightsEngine';
@@ -277,7 +278,7 @@ export default function V11InsightsScreen() {
   const navigation = useNavigation<any>();
   const language = getV11InsightsDebugLanguage() ?? getLanguage(data.settings.language);
   const debugTheme = getV11InsightsDebugTheme();
-  const questTheme = getQuestTheme(
+  const questTheme = useQuestTheme(
     debugTheme === 'light'
       ? 'cleanFocus'
       : debugTheme === 'dark'

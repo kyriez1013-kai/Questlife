@@ -344,7 +344,7 @@
 .questlife-v11-product .v11-onboarding::after {
   bottom: -34%;
   left: -26%;
-  background: color-mix(in srgb, #6f85ff 32%, transparent);
+  background: color-mix(in srgb, var(--ql-accent) 32%, transparent);
 }
 
 .questlife-v11-product .v11-onboarding-scroll {

@@ -7,7 +7,7 @@ import {
   View, Text, StyleSheet, TouchableOpacity, TextInput, Switch, Alert, Keyboard,
 } from 'react-native';
 import { useStore } from '../store';
-import { appAccent, theme } from '../theme';
+import { theme } from '../theme';
 import { PerformanceType, PrimaryPerformanceMetric, ProgressType, Skill, StateMetric, TaskType } from '../types';
 import { SKILL_PROFILE_DEFAULTS } from '../scheduleAdjust';
 import BottomSheetForm from './BottomSheetForm';
@@ -15,7 +15,7 @@ import EmojiPicker from './EmojiPicker';
 import ColorPicker from './ColorPicker';
 import TimePickerInput from './TimePickerInput';
 import { flexibilityLabel, getLanguage, progressTypeLabel, rigidityLabel, t, taskTypeLabel } from '../i18n';
-import { getQuestTheme } from '../design/tokens';
+import { useQuestTheme } from '../design/useQuestTheme';
 import QuestButton from './ui/QuestButton';
 import QuestEntityIcon from './ui/QuestEntityIcon';
 import QuestInput from './ui/QuestInput';
@@ -99,8 +99,8 @@ export interface SkillFormProps {
 export default function SkillForm({ visible, onClose, initial, presetCategoryId, presetModuleId, linkOnCreate }: SkillFormProps) {
   const { data, addSkill, updateSkill, createSkillAndAttachToModule } = useStore();
   const lang = getV11ProductLanguage(getLanguage(data.settings.language));
-  const questTheme = getQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
-  const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
+  const questTheme = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
+  const accent = questTheme.colors.primary;
   const themedInputStyle = { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, color: questTheme.colors.text };
   const placeholderColor = questTheme.colors.textSubtle;
   const [name, setName] = useState('');

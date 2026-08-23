@@ -4,11 +4,12 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { Linking, View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import ColorPicker from '../components/ColorPicker';
 import { useStore } from '../store';
 import { getLanguage, t } from '../i18n';
-import { appAccent, theme } from '../theme';
-import { getQuestTheme, questLayout, themeOptions } from '../design/tokens';
+import { theme } from '../theme';
+import { questLayout, themeOptions } from '../design/tokens';
+import { normalizeAppearancePreference } from '../design/appearance';
+import { useQuestTheme } from '../design/useQuestTheme';
 import { trackEvent } from '../utils/analytics';
 import { confirmAction } from '../utils/confirm';
 import { buildDecisionPayload } from '../utils/decisionPayload';
@@ -31,8 +32,9 @@ const LIGHTWEIGHT_CHARTS_LICENSE_URL = 'https://github.com/tradingview/lightweig
 
 export default function SettingsScreen() {
   const { data, setSettings, addContextLogs, runIntegrityCheck, repairSafeIntegrityIssues, rebuildDerivedData, mergePatternMemoryCandidates, updatePatternMemoryStatus } = useStore();
-  const questTheme = getQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
-  const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
+  const questTheme = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
+  const appearancePreference = normalizeAppearancePreference(data.settings.selectedThemeId);
+  const accent = questTheme.colors.primary;
   const lang = getV11ProductLanguage(getLanguage(data.settings.language));
   const [integrityIssueCount, setIntegrityIssueCount] = useState<number | null>(null);
   const [decisionLabOutput, setDecisionLabOutput] = useState('');
@@ -308,45 +310,20 @@ export default function SettingsScreen() {
           <View style={[styles.settingsGroupItem, styles.settingsGroupDivider, { borderTopColor: questTheme.colors.divider }]}>
             <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'interfaceTheme')}</Text>
             <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>{t(lang, 'visualStyle')}</Text>
-            <View style={styles.themeGrid}>
-              {themeOptions.map((opt) => {
-                const on = questTheme.id === opt.id;
-                const preview = getQuestTheme(opt.id);
-                return (
-                  <TouchableOpacity
-                    key={opt.id}
-                    style={[
-                      styles.themeOption,
-                      { backgroundColor: preview.colors.surfaceSoft, borderColor: on ? preview.colors.primary : questTheme.colors.border },
-                      on && { borderWidth: 2 },
-                    ]}
-                    onPress={() => {
-                      setSettings({ selectedThemeId: opt.id });
-                      trackEvent('theme_changed', { themeId: opt.id }, { page: 'settings' });
-                    }}
-                    accessibilityRole="button"
-                    accessibilityLabel={t(lang, opt.i18nKey)}
-                    accessibilityState={{ selected: on }}
-                  >
-                    <View style={styles.themeSwatches}>
-                      <View style={[styles.themeSwatch, { backgroundColor: preview.colors.background }]} />
-                      <View style={[styles.themeSwatch, { backgroundColor: preview.colors.primary }]} />
-                      <View style={[styles.themeSwatch, { backgroundColor: preview.colors.accent }]} />
-                    </View>
-                    <Text style={[styles.languageText, { color: preview.colors.textPrimary }]}>{t(lang, opt.i18nKey)}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-          <View style={[styles.settingsGroupItem, styles.settingsGroupDivider, { borderTopColor: questTheme.colors.divider }]}>
-            <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'accentColor')}</Text>
-            <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>{t(lang, 'accentColorDesc')}</Text>
-            <View style={styles.colorPreviewRow}>
-              <View style={[styles.colorPreview, { backgroundColor: accent }]} />
-              <Text style={[styles.colorValue, { color: accent }]}>{accent}</Text>
-            </View>
-            <ColorPicker colors={theme.accentPalette} value={accent} onChange={(color) => setSettings({ accentColor: color })} />
+            <QuestSegmentedControl
+              value={appearancePreference}
+              options={themeOptions.map((option) => ({
+                value: option.id,
+                label: t(lang, option.i18nKey),
+              }))}
+              onChange={(selectedThemeId) => {
+                setSettings({ selectedThemeId });
+                trackEvent('theme_changed', { themeId: selectedThemeId }, { page: 'settings' });
+              }}
+              questTheme={questTheme}
+              accessibilityLabel={t(lang, 'interfaceTheme')}
+              style={styles.appearanceRow}
+            />
           </View>
           <QuestCompactRow
             questTheme={questTheme}
@@ -806,21 +783,15 @@ const styles = StyleSheet.create({
   aboutRow: { paddingVertical: 2 },
   aboutRowDivider: { borderTopWidth: 1, marginTop: 10, paddingTop: 10 },
   aboutLabel: { fontSize: 14, marginBottom: 4 },
-  colorPreviewRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, marginBottom: 10 },
-  colorPreview: { width: 34, height: 34, borderRadius: 17 },
-  colorValue: { fontSize: 13, fontWeight: '800' },
   contextInput: { minHeight: 72, marginTop: 10, marginBottom: 8, textAlignVertical: 'top' },
   dataSourceActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8, marginBottom: 8 },
   dataSourceButton: { flexGrow: 1, flexBasis: 140, minWidth: 140 },
   languageRow: { width: '100%' },
+  appearanceRow: { width: '100%', marginTop: 10 },
   languageText: { color: theme.text, fontWeight: '800' },
   languageTextOn: { color: '#fff' },
-  themeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
   memoryBox: { marginTop: 14, padding: 12, borderWidth: 1, borderRadius: theme.radius.md },
   memoryRow: { paddingTop: 8, marginTop: 8, borderTopWidth: 1 },
-  themeOption: { width: '48.5%', minWidth: 142, padding: 10, borderRadius: theme.radius.md, borderWidth: 1 },
-  themeSwatches: { flexDirection: 'row', gap: 6, marginBottom: 8 },
-  themeSwatch: { width: 18, height: 18, borderRadius: 9, borderWidth: 1, borderColor: 'rgba(0,0,0,0.08)' },
   debugActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   debugBtn: { minHeight: questLayout.controlMinHeight, justifyContent: 'center', borderWidth: 1, borderRadius: theme.radius.md, paddingHorizontal: 10, paddingVertical: 9 },
   debugBtnText: { fontSize: 12, fontWeight: '800' },

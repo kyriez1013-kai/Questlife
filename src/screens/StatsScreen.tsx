@@ -12,12 +12,13 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Rect } from 'react-native-svg';
 import { useStore } from '../store';
-import { appAccent, theme } from '../theme';
+import { theme } from '../theme';
 import { DashboardCardSize, PatternMemory, Skill } from '../types';
 import { getLanguage, progressTypeLabel, t, taskTypeLabel } from '../i18n';
 import { getAppCoreLoopStatus } from '../utils/coreLoop';
 import { trackEvent } from '../utils/analytics';
 import { getQuestTheme, questLayout } from '../design/tokens';
+import { useQuestTheme } from '../design/useQuestTheme';
 import QuestCard from '../components/ui/QuestCard';
 import QuestEntityIcon from '../components/ui/QuestEntityIcon';
 import { getSkillSemanticIcon } from '../design/entityIcons';
@@ -55,8 +56,8 @@ export default function StatsScreen() {
   } = useStore();
   const [insightsView, setInsightsView] = useState<'overview' | 'trends' | 'patterns' | 'advanced'>('overview');
   const lang = getLanguage(data.settings.language);
-  const questTheme = getQuestTheme(data.settings.selectedThemeId);
-  const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
+  const questTheme = useQuestTheme(data.settings.selectedThemeId);
+  const accent = questTheme.colors.primary;
   const logs = useMemo(() => getLiveExecutionLogs(data.executionLogs || [], { skills: data.skills }), [data.executionLogs, data.skills]);
   const timeLogs = useMemo(() => logs.filter((log) => (log.durationMinutes ?? 0) > 0), [logs]);
   const appLoop = useMemo(() => getAppCoreLoopStatus({ ...data, executionLogs: logs }, lang), [data, logs, lang]);

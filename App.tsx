@@ -6,12 +6,12 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, DefaultTheme, useIsFocused } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Text, View, ActivityIndicator, Platform } from 'react-native';
+import { Text, View, ActivityIndicator, Platform, useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StoreProvider, useStore } from './src/store';
 import { getLanguage, t } from './src/i18n';
-import { appAccent } from './src/theme';
 import { getQuestTheme, questLayout } from './src/design/tokens';
+import { getQuestVisualFoundation } from './src/design/visualFoundation';
 import { isDarkTheme } from './src/design/darkSurfaceGuard';
 import QuestIcon, { QuestIconName } from './src/components/ui/QuestIcon';
 import HomeScreen from './src/screens/HomeScreen';
@@ -116,13 +116,16 @@ function AppContent() {
   const v11InsightsEnabled = isV11InsightsEnabled();
   const v11ProductEnabled = isV11ProductEnabled();
   const v11InsightsDebugTheme = getV11InsightsDebugTheme();
+  const systemColorScheme = useColorScheme();
   const questTheme = getQuestTheme(
     v11InsightsDebugTheme === 'light'
       ? 'cleanFocus'
       : v11InsightsDebugTheme === 'dark'
         ? 'deepWork'
         : data.settings.selectedThemeId,
+    systemColorScheme,
   );
+  const foundation = getQuestVisualFoundation(questTheme);
   const darkTheme = isDarkTheme(questTheme);
   const RootView = View as any;
   const rootClassName = `questlife-root ${darkTheme ? 'questlife-theme-dark' : 'questlife-theme-light'}${v11ProductEnabled ? ' questlife-v11-product' : ''}`;
@@ -133,18 +136,20 @@ function AppContent() {
   };
   const rootStyle = {
     flex: 1,
-    backgroundColor: questTheme.colors.background,
-    '--ql-bg': questTheme.colors.background,
-    '--ql-surface': questTheme.colors.surface,
-    '--ql-surface-elevated': questTheme.colors.surfaceElevated,
-    '--ql-surface-soft': questTheme.colors.surfaceSoft,
-    '--ql-border': questTheme.colors.border,
+    backgroundColor: foundation.environment.canvas,
+    '--ql-bg': foundation.environment.canvas,
+    '--ql-surface': foundation.material.base,
+    '--ql-surface-elevated': foundation.material.elevated,
+    '--ql-surface-soft': foundation.material.soft,
+    '--ql-border': foundation.border.standard,
     '--ql-text': questTheme.colors.text,
     '--ql-text-muted': questTheme.colors.textMuted,
-    '--ql-text-subtle': questTheme.colors.textSubtle,
-    '--ql-primary': questTheme.colors.primary,
+    '--ql-text-subtle': foundation.text.metadata,
+    '--ql-primary': foundation.interaction.primary,
+    '--ql-accent': foundation.interaction.accent,
+    '--ql-overlay': foundation.material.overlay,
   } as any;
-  const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
+  const accent = foundation.interaction.primary;
   const lang = getV11InsightsDebugLanguage() ?? getLanguage(data.settings.language);
   const appOpenedTrackedRef = useRef(false);
   useEffect(() => {
@@ -168,17 +173,19 @@ function AppContent() {
       target.classList.toggle('questlife-theme-dark', darkTheme);
       target.classList.toggle('questlife-theme-light', !darkTheme);
       target.setAttribute('data-theme', darkTheme ? 'dark' : questTheme.id);
-      target.style.setProperty('--ql-bg', questTheme.colors.background);
-      target.style.setProperty('--ql-surface', questTheme.colors.surface);
-      target.style.setProperty('--ql-surface-elevated', questTheme.colors.surfaceElevated);
-      target.style.setProperty('--ql-surface-soft', questTheme.colors.surfaceSoft);
-      target.style.setProperty('--ql-border', questTheme.colors.border);
+      target.style.setProperty('--ql-bg', foundation.environment.canvas);
+      target.style.setProperty('--ql-surface', foundation.material.base);
+      target.style.setProperty('--ql-surface-elevated', foundation.material.elevated);
+      target.style.setProperty('--ql-surface-soft', foundation.material.soft);
+      target.style.setProperty('--ql-border', foundation.border.standard);
       target.style.setProperty('--ql-text', questTheme.colors.text);
       target.style.setProperty('--ql-text-muted', questTheme.colors.textMuted);
-      target.style.setProperty('--ql-text-subtle', questTheme.colors.textSubtle);
-      target.style.setProperty('--ql-primary', questTheme.colors.primary);
+      target.style.setProperty('--ql-text-subtle', foundation.text.metadata);
+      target.style.setProperty('--ql-primary', foundation.interaction.primary);
+      target.style.setProperty('--ql-accent', foundation.interaction.accent);
+      target.style.setProperty('--ql-overlay', foundation.material.overlay);
     });
-  }, [darkTheme, questTheme]);
+  }, [darkTheme, foundation, questTheme]);
   const navTheme = {
     ...DefaultTheme,
     dark: false,

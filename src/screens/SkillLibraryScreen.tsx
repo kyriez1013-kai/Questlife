@@ -8,7 +8,8 @@ import { getLanguage, progressTypeLabel, t, taskTypeLabel } from '../i18n';
 import { formatSkillProgress, getSkillLinkedCount, progressTypeForSkill } from '../progress';
 import { Skill } from '../types';
 import SkillForm from '../components/SkillForm';
-import { getQuestTheme, questLayout } from '../design/tokens';
+import { questLayout } from '../design/tokens';
+import { useQuestTheme } from '../design/useQuestTheme';
 import { getSkillSemanticIcon } from '../design/entityIcons';
 import QuestButton from '../components/ui/QuestButton';
 import QuestCard from '../components/ui/QuestCard';
@@ -26,7 +27,7 @@ export default function SkillLibraryScreen() {
   const { data, deleteSkillFromLibrary } = useStore();
   const nav = useNavigation<any>();
   const lang = getV11ProductLanguage(getLanguage(data.settings.language));
-  const questTheme = getQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
+  const questTheme = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const [creating, setCreating] = useState(false);
   const [editingSkill, setEditingSkill] = useState<Skill | undefined>();
   const confirmDeleteSkill = (skillId: string, linkedCount: number) => {

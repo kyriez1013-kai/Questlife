@@ -7,7 +7,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web --port 8084",
-    "build": "expo export --platform web"
+    "build": "expo export --platform web",
+    "test:theme": "node --experimental-strip-types src/design/appearance.test.ts && node --experimental-strip-types src/design/visualFoundation.static.test.ts"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",

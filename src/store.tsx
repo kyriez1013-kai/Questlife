@@ -30,6 +30,7 @@ import {
   buildStateCheckInProvenance,
   withDecisionFeedbackProvenance,
 } from './utils/dataProvenance';
+import { migrateAppearanceSettings } from './design/appearance';
 
 function metricTypeForAnalytics(skill?: Skill) {
   return skill?.metricConfig?.metricType ?? skill?.progressType;
@@ -1237,7 +1238,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [mutate]);
 
   const setSettings: Ctx['setSettings'] = useCallback((s) => {
-    mutate((d) => ({ ...d, settings: { ...d.settings, ...s } }));
+    mutate((d) => ({
+      ...d,
+      settings: migrateAppearanceSettings({ ...d.settings, ...s }) as AppData['settings'],
+    }));
   }, [mutate]);
 
   const updateDashboardPreferences: Ctx['updateDashboardPreferences'] = useCallback((patch) => {

@@ -1,4 +1,11 @@
-export type QuestThemeId = 'cleanFocus' | 'deepWork' | 'forestGrowth' | 'oceanCalm' | 'warmRecovery';
+import { Appearance, type ColorSchemeName } from 'react-native';
+import {
+  defaultQuestAppearancePreference,
+  normalizeAppearancePreference,
+  type QuestAppearancePreference,
+} from './appearance';
+
+export type QuestThemeId = 'cleanFocus' | 'deepWork';
 
 export type QuestTheme = {
   id: QuestThemeId;
@@ -299,188 +306,28 @@ export const questThemes: Record<QuestThemeId, QuestTheme> = {
     },
     ...baseScale,
   },
-  forestGrowth: {
-    id: 'forestGrowth',
-    name: 'Forest Growth',
-    colors: {
-      background: '#F1F7F0',
-      surface: '#FFFFFF',
-      surfaceElevated: '#FBFEFA',
-      surfaceSoft: '#E3F0E4',
-      surfaceMuted: '#D9E8DB',
-      surfaceSubtle: '#F7FBF6',
-      primary: '#1F5E3B',
-      primarySoft: '#DCEFE3',
-      primaryText: '#FFFFFF',
-      accent: '#7A9E35',
-      accentSoft: '#EEF6D8',
-      accentStrong: '#4D7C0F',
-      text: '#17251D',
-      textMuted: '#64756B',
-      textSubtle: '#91A196',
-      disabledBg: '#D7E5D8',
-      disabledText: '#64756B',
-      border: '#D7E5D8',
-      borderStrong: '#B7CEBA',
-      success: '#168A43',
-      successSoft: '#DDF4E6',
-      warning: '#A16207',
-      warningSoft: '#FEF3C7',
-      danger: '#B42318',
-      dangerSoft: '#FEE4E2',
-      navBackground: 'rgba(251,254,250,0.96)',
-      navActive: '#1F5E3B',
-      navInactive: '#87968C',
-      cardShadow: '#1F3D2B',
-      // light theme → dark-overlay card tokens
-      cardBorder: 'rgba(0,0,0,0.06)',
-      cardSurface: 'rgba(0,0,0,0.02)',
-      cardSurfaceHover: 'rgba(0,0,0,0.05)',
-      textPrimary: '#17251D',
-      textSecondary: 'rgba(23,37,29,0.6)',
-      textDisabled: 'rgba(23,37,29,0.15)',
-      chipBg: '#E3F0E4',
-      chipSelectedBg: '#DCEFE3',
-      chipBorder: '#B7CEBA',
-      inputBg: '#FFFFFF',
-      inputBorder: '#B7CEBA',
-      overlay: 'rgba(23,37,29,0.42)',
-      divider: '#D7E5D8',
-      positive: '#168A43',
-      negative: '#B42318',
-      predicted: '#6D28D9',
-      neutral: '#7A9E35',
-      info: '#1F5E3B',
-      infoSoft: '#DCEFE3',
-    },
-    ...baseScale,
-  },
-  oceanCalm: {
-    id: 'oceanCalm',
-    name: 'Ocean Calm',
-    colors: {
-      background: '#EEF8FB',
-      surface: '#FFFFFF',
-      surfaceElevated: '#F9FEFF',
-      surfaceSoft: '#DDF2F7',
-      surfaceMuted: '#D2EAF1',
-      surfaceSubtle: '#F5FCFE',
-      primary: '#0E7490',
-      primarySoft: '#CFF4FC',
-      primaryText: '#FFFFFF',
-      accent: '#2563EB',
-      accentSoft: '#DBEAFE',
-      accentStrong: '#1D4ED8',
-      text: '#102A36',
-      textMuted: '#5D7280',
-      textSubtle: '#92A5B0',
-      disabledBg: '#CDE7EE',
-      disabledText: '#5D7280',
-      border: '#CDE7EE',
-      borderStrong: '#A9CED8',
-      success: '#059669',
-      successSoft: '#D1FAE5',
-      warning: '#D97706',
-      warningSoft: '#FEF3C7',
-      danger: '#E11D48',
-      dangerSoft: '#FFE4E6',
-      navBackground: 'rgba(249,254,255,0.96)',
-      navActive: '#0E7490',
-      navInactive: '#78919E',
-      cardShadow: '#0E3B4A',
-      // light theme → dark-overlay card tokens
-      cardBorder: 'rgba(0,0,0,0.07)',
-      cardSurface: 'rgba(0,0,0,0.02)',
-      cardSurfaceHover: 'rgba(0,0,0,0.05)',
-      textPrimary: '#102A36',
-      textSecondary: 'rgba(16,42,54,0.6)',
-      textDisabled: 'rgba(16,42,54,0.15)',
-      chipBg: '#DDF2F7',
-      chipSelectedBg: '#CFF4FC',
-      chipBorder: '#A9CED8',
-      inputBg: '#FFFFFF',
-      inputBorder: '#A9CED8',
-      overlay: 'rgba(14,59,74,0.42)',
-      divider: '#CDE7EE',
-      positive: '#059669',
-      negative: '#E11D48',
-      predicted: '#6D28D9',
-      neutral: '#0E7490',
-      info: '#0E7490',
-      infoSoft: '#CFF4FC',
-    },
-    ...baseScale,
-  },
-  warmRecovery: {
-    id: 'warmRecovery',
-    name: 'Warm Recovery',
-    colors: {
-      background: '#FAF6F0',
-      surface: '#FFFDFC',
-      surfaceElevated: '#FFFFFF',
-      surfaceSoft: '#F3E9DC',
-      surfaceMuted: '#ECDDCB',
-      surfaceSubtle: '#FFF8F2',
-      primary: '#8A4B22',
-      primarySoft: '#F6E2D0',
-      primaryText: '#FFFFFF',
-      accent: '#C77824',
-      accentSoft: '#FBE7C8',
-      accentStrong: '#9A3412',
-      text: '#2E2118',
-      textMuted: '#78685A',
-      textSubtle: '#A69484',
-      disabledBg: '#EADCCD',
-      disabledText: '#78685A',
-      border: '#EADCCD',
-      borderStrong: '#D6C2AD',
-      success: '#3F8F4A',
-      successSoft: '#E3F4E5',
-      warning: '#B86B00',
-      warningSoft: '#FDECC8',
-      danger: '#B42318',
-      dangerSoft: '#FEE4E2',
-      navBackground: 'rgba(255,253,252,0.96)',
-      navActive: '#8A4B22',
-      navInactive: '#9B8978',
-      cardShadow: '#5B3C25',
-      // light theme → dark-overlay card tokens
-      cardBorder: 'rgba(0,0,0,0.07)',
-      cardSurface: 'rgba(0,0,0,0.02)',
-      cardSurfaceHover: 'rgba(0,0,0,0.05)',
-      textPrimary: '#2E2118',
-      textSecondary: 'rgba(46,33,24,0.6)',
-      textDisabled: 'rgba(46,33,24,0.15)',
-      chipBg: '#F3E9DC',
-      chipSelectedBg: '#F6E2D0',
-      chipBorder: '#D6C2AD',
-      inputBg: '#FFFDFC',
-      inputBorder: '#D6C2AD',
-      overlay: 'rgba(91,60,37,0.42)',
-      divider: '#EADCCD',
-      positive: '#3F8F4A',
-      negative: '#B42318',
-      predicted: '#6D28D9',
-      neutral: '#C77824',
-      info: '#8A4B22',
-      infoSoft: '#F6E2D0',
-    },
-    ...baseScale,
-  },
 };
 
 export const defaultQuestThemeId: QuestThemeId = 'cleanFocus';
 
-export const themeOptions: { id: QuestThemeId; name: string; i18nKey: string }[] = [
-  { id: 'cleanFocus', name: 'Clean Focus', i18nKey: 'cleanFocus' },
-  { id: 'deepWork', name: 'Deep Work', i18nKey: 'deepWork' },
-  { id: 'forestGrowth', name: 'Forest Growth', i18nKey: 'forestGrowth' },
-  { id: 'oceanCalm', name: 'Ocean Calm', i18nKey: 'oceanCalm' },
-  { id: 'warmRecovery', name: 'Warm Recovery', i18nKey: 'warmRecovery' },
+export const themeOptions: { id: QuestAppearancePreference; i18nKey: string }[] = [
+  { id: 'system', i18nKey: 'systemAppearance' },
+  { id: 'light', i18nKey: 'lightAppearance' },
+  { id: 'dark', i18nKey: 'darkAppearance' },
 ];
 
-export function getQuestTheme(id?: string): QuestTheme {
-  return questThemes[(id as QuestThemeId) || defaultQuestThemeId] ?? questThemes[defaultQuestThemeId];
+export function resolveQuestThemeId(
+  preference?: string,
+  systemColorScheme: ColorSchemeName = Appearance.getColorScheme(),
+): QuestThemeId {
+  const normalized = normalizeAppearancePreference(preference ?? defaultQuestAppearancePreference);
+  if (normalized === 'dark') return 'deepWork';
+  if (normalized === 'light') return 'cleanFocus';
+  return systemColorScheme === 'dark' ? 'deepWork' : 'cleanFocus';
+}
+
+export function getQuestTheme(id?: string, systemColorScheme?: ColorSchemeName): QuestTheme {
+  return questThemes[resolveQuestThemeId(id, systemColorScheme)];
 }
 
 export function getStateToneColor(value: number | undefined, questTheme: QuestTheme) {

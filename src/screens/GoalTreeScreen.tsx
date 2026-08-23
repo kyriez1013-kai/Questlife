@@ -9,11 +9,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useStore } from '../store';
-import { appAccent, theme } from '../theme';
+import { theme } from '../theme';
 import { Category } from '../types';
 import GoalForm from '../components/GoalForm';
 import { getLanguage, t } from '../i18n';
-import { getQuestTheme, questLayout } from '../design/tokens';
+import { questLayout } from '../design/tokens';
+import { useQuestTheme } from '../design/useQuestTheme';
 import { getGoalSemanticIcon } from '../design/entityIcons';
 import QuestButton from '../components/ui/QuestButton';
 import QuestCard from '../components/ui/QuestCard';
@@ -26,8 +27,8 @@ import { QuestContextBar } from '../components/ui/QuestPrimitives';
 export default function GoalTreeScreen() {
   const { data, deleteCategory } = useStore();
   const nav = useNavigation<any>();
-  const questTheme = getQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
-  const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
+  const questTheme = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
+  const accent = questTheme.colors.primary;
   const lang = getV11ProductLanguage(getLanguage(data.settings.language));
 
   const [creating, setCreating] = useState(false);

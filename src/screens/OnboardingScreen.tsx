@@ -10,8 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '../store';
-import { appAccent } from '../theme';
-import { getQuestTheme } from '../design/tokens';
+import { useQuestTheme } from '../design/useQuestTheme';
 import QuestButton from '../components/ui/QuestButton';
 import QuestIcon, { QuestIconName } from '../components/ui/QuestIcon';
 import QuestPill from '../components/ui/QuestPill';
@@ -71,9 +70,9 @@ export default function OnboardingScreen() {
     applyDomainTemplateToGoal,
     setSettings,
   } = useStore();
-  const questTheme = getQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
+  const questTheme = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const v11ProductEnabled = isV11ProductEnabled();
-  const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
+  const accent = questTheme.colors.primary;
   const lang = getV11ProductLanguage(getLanguage(data.settings.language ?? data.settings.preferredLanguage));
   const hasExistingCoreData = data.categories.length > 0 || data.skills.length > 0 || (data.executionLogs || []).length > 0;
   const [step, setStep] = useState<Step>(data.settings.language ? 'positioning' : 'language');

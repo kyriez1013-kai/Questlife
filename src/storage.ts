@@ -5,6 +5,7 @@ import { AppData, DEFAULT_DATA, Category, UNCATEGORIZED_ID, Skill, TaskType, Pro
 import { isPersistenceDebugEnabled, recordPersistenceTrace } from './utils/persistenceTrace';
 import { rebaseAppDataWrite } from './utils/persistenceConsistency';
 import { createPersistenceWriteQueue, PersistenceLockManager } from './utils/persistenceLock';
+import { appearanceSettingsChanged, migrateAppearanceSettings } from './design/appearance';
 
 export const APP_DATA_STORAGE_KEY = 'questlife.v1';
 const KEY = APP_DATA_STORAGE_KEY;
@@ -254,6 +255,11 @@ export async function loadData(): Promise<AppData> {
       return DEFAULT_DATA;
     }
     const parsed = JSON.parse(raw);
+    const parsedSettings = parsed.settings && typeof parsed.settings === 'object' && !Array.isArray(parsed.settings)
+      ? parsed.settings as Record<string, unknown>
+      : {};
+    const migratedAppearanceSettings = migrateAppearanceSettings(parsedSettings);
+    const appearanceMigrated = appearanceSettingsChanged(parsedSettings, migratedAppearanceSettings);
     const rawModules = parsed.modules || [];
     const migrated: AppData = {
       ...DEFAULT_DATA,
@@ -273,7 +279,7 @@ export async function loadData(): Promise<AppData> {
       decisionResults: (parsed.decisionResults || []).map(migrateDecisionResult).filter(Boolean) as DecisionResult[],
       patternMemory: (parsed.patternMemory || []).map(migratePatternMemory).filter(Boolean) as PatternMemory[],
       scheduleBlocks: parsed.scheduleBlocks || [],
-      settings: { ...DEFAULT_DATA.settings, ...(parsed.settings || {}) },
+      settings: { ...DEFAULT_DATA.settings, ...migratedAppearanceSettings },
     };
     // V1 迁移: 给老 skill 补 dailyTargetMinutes 默认值; 旧 module.skills 对象也进入全局 Skill Library.
     const skillByName = new Map<string, Skill>();
@@ -421,6 +427,13 @@ export async function loadData(): Promise<AppData> {
       base: parsed as AppData,
       next: migrated,
     });
+    if (appearanceMigrated) {
+      await AsyncStorage.setItem(KEY, JSON.stringify({
+        ...parsed,
+        settings: migratedAppearanceSettings,
+      }));
+      console.log('[persist] migrated legacy appearance preferences');
+    }
     console.log(
       `[persist] loaded: ${migrated.categories.length} categories, ${migrated.modules.length} modules, ${migrated.moduleSkillLinks.length} links, ${migrated.skills.length} skills, ${migrated.actions.length} actions, ${migrated.scheduleBlocks.length} schedule blocks, ${migrated.rescueLogs.length} rescue logs, ${migrated.stateCheckIns.length} state check-ins`
     );

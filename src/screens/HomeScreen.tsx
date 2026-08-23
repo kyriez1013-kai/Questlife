@@ -17,8 +17,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useStore } from '../store';
-import { appAccent, theme } from '../theme';
+import { theme } from '../theme';
 import { getQuestTheme, getStateToneColor, questLayout } from '../design/tokens';
+import { useQuestTheme } from '../design/useQuestTheme';
 import { useQuestReducedMotion } from '../design/motion';
 import { getSurfaceStyle } from '../design/surfaces';
 import { isDarkTheme } from '../design/darkSurfaceGuard';
@@ -495,8 +496,8 @@ export default function HomeScreen() {
     updateDecisionResultFeedback,
   } = useStore();
   const navigation = useNavigation<any>();
-  const questTheme = getQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
-  const accent = appAccent(data.settings.accentColor ?? questTheme.colors.primary);
+  const questTheme = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
+  const accent = questTheme.colors.primary;
   const lang = getV11ProductLanguage(getLanguage(data.settings.language));
   const themedCard = {
     ...getSurfaceStyle(questTheme, 'elevated'),
