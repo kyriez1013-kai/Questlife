@@ -85,7 +85,8 @@ type InstantReadProps = {
 
 type Props = {
   capturePlaceholder: string;
-  contextLine: string;
+  contextDate: string;
+  contextMeta: string;
   debugPerformance: boolean;
   decision: V11TodayPresentation;
   expanded: boolean;
@@ -227,7 +228,8 @@ function LatestRecord({
 
 export default function V11IntegratedTodaySurface({
   capturePlaceholder,
-  contextLine,
+  contextDate,
+  contextMeta,
   debugPerformance,
   decision,
   expanded,
@@ -272,7 +274,7 @@ export default function V11IntegratedTodaySurface({
     '--v11-today-context-gap': `${v11Spacing.sm}px`,
     '--v11-today-context-padding': `${v11Spacing.xs}px`,
     '--v11-today-hairline': `${v11Spacing.hairline}px`,
-    '--v11-today-top-padding': `${v11Spacing.xl}px`,
+    '--v11-today-top-padding': `${v11Spacing.xl + v11Spacing.sm}px`,
   } as any;
 
   useIntegratedPerformanceMeasurement({
@@ -311,12 +313,20 @@ export default function V11IntegratedTodaySurface({
 
       <WebView dataSet={{ 'v11-rebaseline-role': 'content' }}>
         <WebView dataSet={{ 'v11-rebaseline-role': 'context-line' }}>
-          <WebText
-            dataSet={{ 'v11-rebaseline-role': 'context-primary' }}
-            style={{ color: theme.text.primary, ...v11Typography.context }}
-          >
-            {contextLine}
-          </WebText>
+          <WebView dataSet={{ 'v11-rebaseline-role': 'context-copy' }}>
+            <WebText
+              dataSet={{ 'v11-rebaseline-role': 'context-primary' }}
+              style={{ color: theme.text.primary, ...v11Typography.context }}
+            >
+              {contextDate}
+            </WebText>
+            <WebText
+              dataSet={{ 'v11-rebaseline-role': 'context-meta' }}
+              style={{ color: theme.text.secondary, ...v11Typography.metadata }}
+            >
+              {contextMeta}
+            </WebText>
+          </WebView>
           <WebText
             dataSet={{ 'v11-rebaseline-role': 'context-stage' }}
             style={{ color: theme.text.metadata, ...v11Typography.metadata }}
@@ -332,13 +342,20 @@ export default function V11IntegratedTodaySurface({
             dataSet={{ 'v11-rebaseline-role': 'capture-entry' }}
             onPress={onCapture}
           >
-            <V11RebaselineIcon name="capture" size={18} color={theme.text.secondary} />
-            <Text
-              numberOfLines={1}
-              style={{ flex: 1, flexShrink: 1, minWidth: 0, color: theme.text.secondary, fontSize: 14, lineHeight: 20 }}
-            >
-              {capturePlaceholder}
-            </Text>
+            <WebView dataSet={{ 'v11-rebaseline-role': 'capture-leading' }}>
+              <V11RebaselineIcon name="capture" size={17} color={theme.text.secondary} />
+            </WebView>
+            <WebView dataSet={{ 'v11-rebaseline-role': 'capture-copy' }}>
+              <Text style={{ color: theme.text.primary, fontSize: 12.5, lineHeight: 17, fontWeight: '500' }}>
+                {labels.capture}
+              </Text>
+              <Text
+                numberOfLines={1}
+                style={{ color: theme.text.secondary, fontSize: 12, lineHeight: 17 }}
+              >
+                {capturePlaceholder}
+              </Text>
+            </WebView>
             <WebView dataSet={{ 'v11-rebaseline-role': 'capture-send' }}>
               <V11RebaselineIcon name="arrow" size={16} color={theme.text.secondary} />
             </WebView>

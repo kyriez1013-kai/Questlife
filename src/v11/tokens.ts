@@ -195,6 +195,9 @@ export type V11ThemeTokens = {
     neutralElevatedSurface: string;
     neutralPressedSurface: string;
     neutralBorder: string;
+    neutralSelectedSurface: string;
+    neutralSelectedBorder: string;
+    neutralSelectedText: string;
     neutralAction: string;
     neutralActionText: string;
   };
@@ -255,23 +258,28 @@ function buildThemeTokens(mode: V11ThemeMode): V11ThemeTokens {
       primaryText: questTheme.colors.text,
       secondaryText: questTheme.colors.textMuted,
       selectedText: questTheme.colors.text,
-      borderSubtle: foundation.border.standard,
-      borderSelected: foundation.interaction.primary,
-      focus: foundation.interaction.focus,
-      disabledSurface: foundation.interaction.disabledSurface,
-      disabledText: foundation.interaction.disabledText,
-      error: foundation.semantic.negative,
-      primaryAction: foundation.interaction.primary,
-      primaryActionText: foundation.text.onPrimary,
-      secondaryAction: foundation.material.soft,
-      secondaryActionText: foundation.text.primary,
-      placeholder: foundation.text.metadata,
-      neutralSurface: foundation.material.translucent,
-      neutralElevatedSurface: foundation.material.muted,
-      neutralPressedSurface: foundation.material.translucentPressed,
-      neutralBorder: foundation.border.subtle,
-      neutralAction: foundation.text.primary,
-      neutralActionText: foundation.environment.canvas,
+      borderSubtle: questTheme.colors.border,
+      borderSelected: questTheme.colors.primary,
+      focus: questTheme.colors.accentStrong,
+      disabledSurface: questTheme.colors.disabledBg,
+      disabledText: questTheme.colors.disabledText,
+      error: questTheme.colors.danger,
+      primaryAction: questTheme.colors.primary,
+      primaryActionText: questTheme.colors.primaryText,
+      secondaryAction: questTheme.colors.surfaceSoft,
+      secondaryActionText: questTheme.colors.text,
+      placeholder: questTheme.colors.textSubtle,
+      neutralSurface: questTheme.colors.cardSurface,
+      neutralElevatedSurface: questTheme.colors.surfaceMuted,
+      neutralPressedSurface: questTheme.colors.cardSurfaceHover,
+      neutralBorder: questTheme.colors.cardBorder,
+      neutralSelectedSurface: questTheme.colors.cardSurfaceHover,
+      neutralSelectedBorder: mode === 'light'
+        ? 'rgba(17,19,24,0.28)'
+        : 'rgba(248,250,252,0.30)',
+      neutralSelectedText: questTheme.colors.text,
+      neutralAction: questTheme.colors.text,
+      neutralActionText: questTheme.colors.background,
     },
   };
 }
