@@ -38,6 +38,28 @@ export function isV11InsightsEnabled() {
   return isV11InsightsMode(resolveV11ProductMode(route()));
 }
 
+export function isInsightsV3Enabled() {
+  return resolveV11ProductMode(route()) === 'insights_v3';
+}
+
+export function hasInsightsV3ReviewFixture() {
+  if (!isInsightsV3Enabled()) return false;
+  const value = query()?.get('quantProductFixture');
+  return value === 'empty'
+    || value === 'sparse-1'
+    || value === 'sparse-3'
+    || value === 'forming'
+    || value === 'sparse-10'
+    || value === 'mature'
+    || value === 'drivers'
+    || value === 'similar'
+    || value === 'recovery'
+    || value === 'scenario'
+    || value === 'research-filtered'
+    || value === 'goal'
+    || value === 'skill';
+}
+
 export function isV11PersonalTerminalEnabled() {
   return isV11PersonalTerminalMode(resolveV11ProductMode(route()));
 }

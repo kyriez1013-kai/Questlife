@@ -64,9 +64,16 @@ export function selectDefaultInstrumentId(model: QuantProductConsumerModel): str
     || null;
 }
 
-export function instrumentLabel(lang: Lang, instrument: Pick<QuantProductConsumerInstrument, 'labelKey'> | Pick<QuantProductInstrumentV1, 'label_key'>) {
+export function instrumentLabel(
+  lang: Lang,
+  instrument: (Pick<QuantProductConsumerInstrument, 'labelKey'> & Partial<Pick<QuantProductConsumerInstrument, 'scope'>>)
+    | (Pick<QuantProductInstrumentV1, 'label_key'> & Partial<Pick<QuantProductInstrumentV1, 'scope'>>),
+) {
   const key = 'labelKey' in instrument ? instrument.labelKey : instrument.label_key;
-  return iv3(lang, instrumentKeys[key] || 'instrumentGeneric');
+  const label = iv3(lang, instrumentKeys[key] || 'instrumentGeneric');
+  if (instrument.scope === 'GOAL') return iv3(lang, 'goalScopedInstrument', { instrument: label });
+  if (instrument.scope === 'SKILL') return iv3(lang, 'skillScopedInstrument', { instrument: label });
+  return label;
 }
 
 export function featureLabel(lang: Lang, value: string) {
@@ -84,6 +91,7 @@ export function sourceClassLabel(lang: Lang, value: string) {
   if (value === 'passive_device') return iv3(lang, 'sourcePassive');
   if (value === 'historical_analogue') return iv3(lang, 'sourceHistorical');
   if (value === 'compact_reference') return iv3(lang, 'sourceCompact');
+  if (value === 'derived_research') return iv3(lang, 'sourceDerived');
   return iv3(lang, 'sourceGeneric');
 }
 
@@ -98,11 +106,11 @@ function timingLabel(value: number) {
   return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
 }
 
-export function unitLabel(unit: string) {
-  if (unit === 'steps') return 'steps';
+export function unitLabel(unit: string, lang: Lang = 'en') {
+  if (unit === 'steps') return lang === 'zh' ? '步' : 'steps';
   if (unit === 'kilometres') return 'km';
-  if (unit === 'minutes') return 'min';
-  if (unit === 'bpm') return 'bpm';
+  if (unit === 'minutes') return lang === 'zh' ? '分钟' : 'min';
+  if (unit === 'bpm') return lang === 'zh' ? '次/分' : 'bpm';
   if (unit === '/5') return '/ 5';
   if (unit === 'binary') return '';
   if (unit === 'minutes_from_local_noon') return '';
@@ -122,7 +130,7 @@ export function formatQuantValue(value: number | null | undefined, unit: string,
 export function formatSignedValue(value: number | null | undefined, unit: string, lang: Lang) {
   if (value == null || !Number.isFinite(value)) return '—';
   const absolute = formatQuantValue(Math.abs(value), unit, lang);
-  return `${value > 0 ? '+' : value < 0 ? '−' : ''}${absolute}${unitLabel(unit) ? ` ${unitLabel(unit)}` : ''}`;
+  return `${value > 0 ? '+' : value < 0 ? '−' : ''}${absolute}${unitLabel(unit, lang) ? ` ${unitLabel(unit, lang)}` : ''}`;
 }
 
 export function formatDateTime(lang: Lang, value: string, includeTime = false) {
@@ -162,10 +170,20 @@ export function contractQuickRanges(series: QuantProductSeriesV1 | null) {
 }
 
 export function rangeLabel(lang: Lang, selection: InsightsV3RangeSelection) {
-  if (selection.kind === 'contract') return selection.key;
+  if (selection.kind === 'contract') {
+    if (selection.key === 'RECENT') return iv3(lang, 'rangeRecent');
+    if (selection.key === 'ALL') return iv3(lang, 'rangeAll');
+    const days = selection.key.match(/^(\d+)D$/)?.[1];
+    return days ? iv3(lang, 'rangeDays', { count: days }) : selection.key;
+  }
   if (selection.kind === 'last_n_days') return iv3(lang, 'lastNDays', { count: selection.days });
   if (selection.kind === 'last_n_observations') return iv3(lang, 'lastNObservations', { count: selection.count });
   return `${selection.start} — ${selection.end}`;
+}
+
+export function aggregationBucketLabel(lang: Lang, value: string | null | undefined) {
+  if (value === 'quant_source_points') return iv3(lang, 'sourceObservationsBucket');
+  return value || '—';
 }
 
 export function selectSeriesPoints(
@@ -188,7 +206,8 @@ export function selectSeriesPoints(
     });
   }
   const contractRange = series.supported_ranges.find((range) => range.key === selection.key);
-  if (!contractRange || contractRange.kind === 'ALL') return series.points;
+  if (!contractRange) return [];
+  if (contractRange.kind === 'ALL') return series.points;
   if (contractRange.kind === 'LAST_N_OBSERVATIONS' && contractRange.count != null) {
     return series.points.slice(-contractRange.count);
   }
@@ -267,10 +286,10 @@ export function buildCompactCue(
     return {
       boundary: 'fact',
       text: iv3(lang, 'formingCue', { count: instrument.evidence.observation_count }),
-      detail: iv3(lang, 'continueSameMetric'),
+      detail: null,
     };
   }
-  return { boundary: 'fact', text: iv3(lang, 'observationCue'), detail: iv3(lang, 'continueSameMetric') };
+  return { boundary: 'fact', text: iv3(lang, 'observationCue'), detail: null };
 }
 
 export function nextObservationCopy(lang: Lang, bundle: QuantProductBundleV1) {
