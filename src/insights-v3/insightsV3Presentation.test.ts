@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { parseQuantProductBundleV1 } from '../quant-product/quantProductContract';
-import { availableChartKinds, buildCompactCue, buildInsightsV3Consumer, defaultRangeSelection, isChartKindRenderable, selectDefaultInstrumentId, selectSeriesCandles, selectSeriesPoints, seriesForInstrument } from './insightsV3Presentation';
+import { aggregationBucketLabel, availableChartKinds, buildCompactCue, buildInsightsV3Consumer, defaultRangeSelection, instrumentLabel, isChartKindRenderable, rangeLabel, selectDefaultInstrumentId, selectSeriesCandles, selectSeriesPoints, seriesForInstrument, unitLabel } from './insightsV3Presentation';
 import { isSafeReviewBundle, resolveInsightsV3FixtureId } from './insightsV3Source';
 
 const fixtureRoot = resolve(process.cwd(), 'src/quant-product/fixtures');
@@ -17,6 +17,10 @@ const load = (name: string) => {
 assert.equal(resolveInsightsV3FixtureId('?quantProductFixture=mature'), 'mature');
 assert.equal(resolveInsightsV3FixtureId('quantProductFixture=sparse-3'), 'sparse-3');
 assert.equal(resolveInsightsV3FixtureId('?quantProductFixture=owner-data'), null);
+assert.equal(rangeLabel('zh', { kind: 'contract', key: 'RECENT' }), '最近');
+assert.equal(rangeLabel('en', { kind: 'contract', key: '30D' }), '30D');
+assert.equal(aggregationBucketLabel('zh', 'quant_source_points'), '原始观察');
+assert.equal(unitLabel('minutes', 'zh'), '分钟');
 
 const manifest = loadRaw('manifest');
 for (const name of manifest.fixtures) {
@@ -59,6 +63,10 @@ const matureModel = buildInsightsV3Consumer(mature);
 const matureId = selectDefaultInstrumentId(matureModel);
 assert.ok(matureId);
 const matureInstrument = matureModel.instruments.find((row) => row.id === matureId)!;
+const goalInstrument = matureModel.instruments.find((row) => row.scope === 'GOAL')!;
+const skillInstrument = matureModel.instruments.find((row) => row.scope === 'SKILL')!;
+assert.match(instrumentLabel('en', goalInstrument), /^Goal · /);
+assert.match(instrumentLabel('en', skillInstrument), /^Skill · /);
 const matureSeries = seriesForInstrument(matureInstrument)!;
 assert.ok(matureSeries.points.length > 10);
 assert.ok(availableChartKinds(matureSeries).includes('line'));
@@ -70,6 +78,7 @@ if (selectSeriesCandles(matureSeries, defaultRange).length > 0) {
 }
 const threePointWindow = selectSeriesPoints(matureSeries, { kind: 'last_n_observations', count: 3 }, mature.metadata.as_of);
 assert.equal(threePointWindow.length, 3);
+assert.equal(selectSeriesPoints(matureSeries, { kind: 'contract', key: 'UNSUPPORTED_RANGE' }, mature.metadata.as_of).length, 0);
 
 const driverBundle = load('driver_analysis_full');
 const driverModel = buildInsightsV3Consumer(driverBundle);
@@ -90,6 +99,8 @@ assert.equal(researchFiltered.metadata.eligibility, 'PRODUCT_ELIGIBLE');
 const sourceText = [
   readFileSync(resolve(process.cwd(), 'src/insights-v3/insightsV3Presentation.ts'), 'utf8'),
   readFileSync(resolve(process.cwd(), 'src/insights-v3/insightsV3I18n.ts'), 'utf8'),
+  readFileSync(resolve(process.cwd(), 'src/insights-v3/InsightsV3Analysis.tsx'), 'utf8'),
+  readFileSync(resolve(process.cwd(), 'src/insights-v3/InsightsV3Screen.tsx'), 'utf8'),
 ].join('\n');
 for (const forbidden of ['Life Score', 'Readiness Score', 'Productivity Score']) {
   assert.equal(sourceText.includes(forbidden), false, `${forbidden} must not enter Insights V3`);

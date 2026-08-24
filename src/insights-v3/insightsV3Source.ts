@@ -131,16 +131,17 @@ function recordMetric(result: InsightsV3BundleLoadResult) {
   if (!debugEnabled() || typeof window === 'undefined') return;
   const target = window as typeof window & { __questlifeInsightsV3Metrics?: Record<string, unknown> };
   const current = target.__questlifeInsightsV3Metrics || {};
+  const metric = {
+    ok: result.ok,
+    durationMs: Math.round(result.durationMs * 10) / 10,
+    bundleMode: result.ok ? result.bundle.metadata.mode : null,
+    measuredAt: new Date().toISOString(),
+  };
   target.__questlifeInsightsV3Metrics = {
     ...current,
-    [`${result.fixtureId}:${result.phase}`]: {
-      ok: result.ok,
-      durationMs: Math.round(result.durationMs * 10) / 10,
-      bundleMode: result.ok ? result.bundle.metadata.mode : null,
-      measuredAt: new Date().toISOString(),
-    },
+    [`${result.fixtureId}:${result.phase}`]: metric,
   };
-  console.info('[insights-v3 bundle]', target.__questlifeInsightsV3Metrics[`${result.fixtureId}:${result.phase}`]);
+  console.info('[insights-v3 bundle]', JSON.stringify({ phase: result.phase, fixtureId: result.fixtureId, ...metric }));
 }
 
 async function loadFixture(

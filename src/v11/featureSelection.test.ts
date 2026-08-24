@@ -36,6 +36,12 @@ function runFeatureSelectionTests() {
   equal(isV11TodayMode(personalTerminal), true, 'personal terminal route enables V11 Today');
   equal(isV11PersonalTerminalMode(personalTerminal), true, 'personal terminal route enables Personal Terminal');
 
+  const insightsV3 = resolveV11ProductMode('insights-v3');
+  equal(insightsV3, 'insights_v3', 'Insights V3 route is explicit');
+  equal(isV11TodayMode(insightsV3), false, 'Insights V3 keeps legacy Today');
+  equal(isV11InsightsMode(insightsV3), true, 'Insights V3 owns only Insights');
+  equal(isV11PersonalTerminalMode(insightsV3), false, 'Insights V3 excludes prior Personal Terminal');
+
   const unknown = resolveV11ProductMode('unrecognized-route');
   equal(unknown, 'owner_beta', 'unknown route fails open to current product');
 }

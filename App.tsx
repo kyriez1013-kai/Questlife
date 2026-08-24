@@ -1,7 +1,7 @@
 import 'react-native-gesture-handler';
 import './src/styles/theme-overrides.css';
 import './src/v11/v11-product.css';
-import React, { useEffect, useRef } from 'react';
+import React, { Suspense, useEffect, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, DefaultTheme, useIsFocused } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -35,11 +35,15 @@ import V11InsightsScreen from './src/v11-insights/V11InsightsScreen';
 import {
   getV11InsightsDebugLanguage,
   getV11InsightsDebugTheme,
+  hasInsightsV3ReviewFixture,
+  isInsightsV3Enabled,
   isV11InsightsEnabled,
   isV11MarathonEnabled,
   isV11ProductEnabled,
 } from './src/v11/featureFlag';
 import PersistenceDebugPanel from './src/components/debug/PersistenceDebugPanel';
+
+const InsightsV3Screen = React.lazy(() => import('./src/insights-v3/InsightsV3Screen'));
 
 const Tab = createBottomTabNavigator();
 const SkillsStack = createNativeStackNavigator();
@@ -113,6 +117,8 @@ function GoalsTabStack() {
 // 根据加载状态和数据决定显示 Onboarding 还是正常 Tabs
 function AppContent() {
   const { data, loading } = useStore();
+  const insightsV3Enabled = isInsightsV3Enabled();
+  const insightsV3ReviewFixture = hasInsightsV3ReviewFixture();
   const v11InsightsEnabled = isV11InsightsEnabled();
   const v11ProductEnabled = isV11ProductEnabled();
   const v11InsightsDebugTheme = getV11InsightsDebugTheme();
@@ -215,7 +221,7 @@ function AppContent() {
     || (!data.settings.onboardingCompleted && !hasExistingCoreData);
 
   // 新用户或 Settings 里手动重启 → 引导流程
-  if (shouldShowOnboarding) {
+  if (shouldShowOnboarding && !insightsV3ReviewFixture) {
     return (
       <RootView {...rootProps} style={rootStyle}>
         <OnboardingScreen />
@@ -272,7 +278,7 @@ function AppContent() {
               </FocusedTabSurface>
             )}
           </Tab.Screen>
-          <Tab.Screen name="Quest" options={{ popToTopOnBlur: true, tabBarLabel: t(lang, 'quest'), tabBarIcon: ({ focused, color }) => <TabIcon name="target" focused={focused} color={color} /> }}>
+          <Tab.Screen name="Quest" options={{ popToTopOnBlur: true, tabBarLabel: t(lang, 'goals'), tabBarIcon: ({ focused, color }) => <TabIcon name="target" focused={focused} color={color} /> }}>
             {() => (
               <FocusedTabSurface backgroundColor={questTheme.colors.background}>
                 <GoalsTabStack />
@@ -289,7 +295,11 @@ function AppContent() {
           <Tab.Screen name="Insights" options={{ tabBarLabel: t(lang, 'insights'), tabBarIcon: ({ focused, color }) => <TabIcon name="barChart" focused={focused} color={color} /> }}>
             {() => (
               <FocusedTabSurface backgroundColor={questTheme.colors.background}>
-                {v11InsightsEnabled ? <V11InsightsScreen /> : <StatsScreen />}
+                {insightsV3Enabled ? (
+                  <Suspense fallback={<ActivityIndicator color={accent} style={{ flex: 1 }} />}>
+                    <InsightsV3Screen />
+                  </Suspense>
+                ) : v11InsightsEnabled ? <V11InsightsScreen /> : <StatsScreen />}
               </FocusedTabSurface>
             )}
           </Tab.Screen>
