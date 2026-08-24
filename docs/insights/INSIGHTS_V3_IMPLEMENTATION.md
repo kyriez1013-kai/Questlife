@@ -105,3 +105,7 @@ surfaces only and are namespaced away from real watchlist preferences.
 - Objective browser checks at 375, 393, 430, and 1280 px found no document
   overflow and a 44 px minimum tested interactive height. Owner aesthetic and
   physical iPhone Safari acceptance remain manual gates.
+- Vercel Preview `dpl_4KFmwaURoHC5SgbdjtT1MuPkr3wQ` reached READY for commit
+  `9929ecf`. Authenticated Preview checks confirmed chart loading and controls,
+  independent-scale Compare, watchlist persistence, deep analysis sheets,
+  honest empty data, and no-flag rollback. No Production alias was changed.

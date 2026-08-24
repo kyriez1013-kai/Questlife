@@ -3205,9 +3205,9 @@ Pending before promotion:
 
 ## Insights V3 - Product Contract Productization
 
-Status: implemented and locally validated on isolated branch
-`product/insights-v3`; Vercel Preview and owner visual acceptance pending. No
-merge to `main` and no Production promotion have been performed.
+Status: implemented, locally validated, and verified on an isolated Vercel
+Preview from `product/insights-v3`; owner visual acceptance remains pending.
+No merge to `main` and no Production promotion have been performed.
 
 Completed:
 - Added a mobile-first Personal Market surface with a compact watchlist, active
@@ -3250,6 +3250,22 @@ Local validation:
 - Eight final-bundle local runs measured compact validation P50/P95 at
   8.9/11.5 ms, initial surface readiness at 51.8/52.9 ms, mature detail
   validation at 14.4/18.7 ms, and chart readiness at 1.9/5.0 ms.
+
+Isolated Preview validation:
+- Deployment `dpl_4KFmwaURoHC5SgbdjtT1MuPkr3wQ` reached READY for commit
+  `9929ecf`; its target is Preview, not Production.
+- Authenticated Chrome checks at 393px covered mature full-history loading,
+  line/observational-candle views, Fit, Zoom Out, independent-scale Compare,
+  watchlist add/remove/reorder/pin with reload persistence, Drivers, Similar,
+  Recovery, honest empty data, and no-flag rollback.
+- The deployed V3 chunk is
+  `InsightsV3Screen-ee161029e0b6420e41da5fbe9ad49d6d.js`.
+- Preview timing includes network and lazy chunk delivery: five measured runs
+  gave compact validation P50/P95 332.2/595.2 ms and initial surface readiness
+  349.0/729.5 ms. One mature detail load measured 1328.6 ms.
+- No QuestLife runtime error was observed. The existing Expo Notifications web
+  warning remains; the Vercel login page emitted its own Google Identity log
+  before authentication and is not part of the App bundle.
 
 Known integration debt:
 - The App has no runtime owner Product Bundle read endpoint yet. The ordinary
