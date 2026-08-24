@@ -86,8 +86,9 @@ const driverId = selectDefaultInstrumentId(driverModel)!;
 const driverInstrument = driverModel.instruments.find((row) => row.id === driverId)!;
 const cue = buildCompactCue('en', driverBundle, driverInstrument);
 assert.equal(cue.boundary, 'inference');
-assert.match(cue.text, /registered observational candidates/);
-assert.match(cue.detail || '', /not causes/);
+assert.match(cue.text, /appears alongside/);
+assert.match(cue.detail || '', /observational/);
+assert.match(cue.evidence, /94 supporting observations · 23 counterexamples/);
 assert.equal(driverBundle.interpretation?.recovery?.forecast_allowed, false);
 assert.equal(driverBundle.interpretation?.scenario?.causal_effect_estimated, false);
 
