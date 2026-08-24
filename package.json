@@ -8,7 +8,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web --port 8084",
     "build": "expo export --platform web",
-    "test:theme": "node --experimental-strip-types src/design/appearance.test.ts && node --experimental-strip-types src/design/visualFoundation.static.test.ts"
+    "test:theme": "node --experimental-strip-types src/design/appearance.test.ts && node --experimental-strip-types src/design/visualFoundation.static.test.ts",
+    "test:insights-v3": "rm -rf /tmp/questlife-insights-v3-test && tsc --module commonjs --target es2022 --moduleResolution node --esModuleInterop --resolveJsonModule --skipLibCheck --rootDir src --outDir /tmp/questlife-insights-v3-test src/insights-v3/insightsV3Presentation.test.ts && NODE_PATH=$PWD/node_modules node /tmp/questlife-insights-v3-test/insights-v3/insightsV3Presentation.test.js"
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
