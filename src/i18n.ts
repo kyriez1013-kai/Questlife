@@ -5,6 +5,7 @@ export type Lang = 'zh' | 'en';
 const zh: Record<string, string> = {
   today: '今日',
   quest: '目标',
+  goals: '目标',
   schedule: '日程',
   insights: '洞察',
   settings: '设置',
@@ -2770,6 +2771,7 @@ const zh: Record<string, string> = {
 const en: Record<string, string> = {
   today: 'Today',
   quest: 'Quest',
+  goals: 'Goals',
   schedule: 'Schedule',
   insights: 'Insights',
   settings: 'Settings',
