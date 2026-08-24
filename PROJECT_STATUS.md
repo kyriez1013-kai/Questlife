@@ -3276,3 +3276,43 @@ Known integration debt:
 
 Documentation:
 - `docs/insights/INSIGHTS_V3_IMPLEMENTATION.md`
+
+## Insights V3.1 - Personal Intelligence Product Layer Refinement
+
+Status: implementation, local validation, and isolated Preview verification
+complete on `product/insights-v3-personal-layer`; owner visual acceptance is
+pending. No merge to `main` and no Production promotion have been performed.
+
+Completed:
+- Reordered the existing terminal so the active instrument, current reading,
+  recent personal reference, change, and evidence establish the first context;
+  the Watchlist remains compact secondary navigation.
+- Added one deterministic, evidence-backed Analyst cue that can deep-link to
+  Drivers, Similar, historical Recovery, or source evidence without becoming
+  an AI chat or recommendation surface.
+- Replaced research-facing Driver/Similar/Recovery/Scenario wording with
+  concise personal-history language while keeping support, counterexamples,
+  independent periods, limitations, and observational boundaries visible.
+- Added an explicit guard so Product Contract population references cannot be
+  presented as the owner's personal reference.
+- Preserved the chart, range controls, View/Compare/Indicators/Analyze/More,
+  Quant Product Contract, models, schemas, Store, APIs, and research firewall.
+
+Validation:
+- App typecheck/build, V3.1 product-layer tests, theme tests, and App Product
+  Contract tests pass; the relevant Quant suite passes 56 tests.
+- Final chunk:
+  `InsightsV3Screen-9bc43a1435d8509fb68df33572fee29c.js` (about 111 kB).
+- Local 375/393/430/1280px checks found no horizontal overflow and a 44px
+  minimum tested control height across zh/en and dark/light review states.
+- Local mature P50/P95: compact 7.4/10.3 ms, initial surface 45.8/57.3 ms,
+  detail 12.8/15.0 ms, chart 1.8/2.3 ms.
+- Isolated Preview `dpl_AsnJzZwDnQQmYpwExtMpheFMzeYM` reached READY for code
+  commit `1d28c77`. Mature history, Drivers, historical Recovery, sparse state,
+  and no-flag rollback passed authenticated Chrome verification; no runtime
+  error was observed and no Production alias changed.
+
+Remaining:
+- owner visual review and physical iPhone Safari verification;
+- authenticated runtime owner Product Bundle delivery;
+- the existing approximately 20.9 MB main bundle remains a performance debt.

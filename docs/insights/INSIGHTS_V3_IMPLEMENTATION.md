@@ -109,3 +109,52 @@ surfaces only and are namespaced away from real watchlist preferences.
   `9929ecf`. Authenticated Preview checks confirmed chart loading and controls,
   independent-scale Compare, watchlist persistence, deep analysis sheets,
   honest empty data, and no-flag rollback. No Production alias was changed.
+
+## V3.1 personal intelligence product layer
+
+V3.1 keeps the V3 chart, ranges, tool architecture, Product Contract, and
+research firewall unchanged. It adds a deterministic presentation layer that
+makes the active instrument personal and immediately legible before the
+Watchlist:
+
+- current reading, recent personal reference, change, and evidence are grouped
+  around the active instrument;
+- Watchlist remains instrument navigation and no longer leads the hierarchy;
+- one compact Analyst cue may route to Drivers, Similar, historical Recovery,
+  or evidence, using only the corresponding validated artifact for the active
+  instrument;
+- Drivers retain support, counterexamples, independent periods, and the
+  observational-not-causal boundary in user-facing language;
+- Similar, Recovery, and Scenario describe personal historical evidence without
+  implying recurrence, forecast, causality, or a recommended action;
+- population references, when explicitly provided by the Product Contract, are
+  labelled as population references rather than personal history.
+
+The frontend still performs no statistical inference. The mapping is strict,
+deterministic, target-instrument scoped, and abstains when the relevant
+interpretation artifact is missing.
+
+### V3.1 validation snapshot
+
+- Commits: `50b4d85` (mapping/tests) and `1d28c77` (surface refinement).
+- `npx tsc --noEmit`, `npm run build`, V3.1 product-layer tests, theme tests,
+  App Product Contract tests, and 56 Quant Product/adapter/adversarial/release/
+  tooling/real-data/interpretation/candle tests pass.
+- Final V3.1 chunk:
+  `InsightsV3Screen-9bc43a1435d8509fb68df33572fee29c.js` (about 111 kB).
+- Local Chromium checks at 375, 393, 430, and 1280 px found no document
+  overflow and a 44 px minimum tested control height in zh/en and dark/light
+  review states.
+- Five local mature runs measured compact validation P50/P95 7.4/10.3 ms,
+  initial surface 45.8/57.3 ms, mature detail 12.8/15.0 ms, and chart readiness
+  1.8/2.3 ms.
+- Isolated Preview deployment `dpl_AsnJzZwDnQQmYpwExtMpheFMzeYM` reached READY
+  for code commit `1d28c77`; target is Preview and no Production alias changed.
+- Preview checks covered mature full history, Drivers, historical Recovery,
+  sparse evidence, and no-flag rollback. Five Preview runs measured compact
+  P50/P95 447.9/530.9 ms and initial surface 458.9/542.4 ms; four complete
+  detail samples measured 502.6/1007.9 ms.
+
+Owner visual acceptance and physical iPhone Safari verification remain pending.
+The authenticated runtime owner Product Bundle endpoint remains an integration
+dependency; synthetic review fixtures are not owner evidence.
