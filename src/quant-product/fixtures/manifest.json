@@ -7,11 +7,21 @@
   "fixtures": [
     "no_data_compact",
     "one_observation_full",
+    "three_observations_full",
     "forming_history_full",
+    "ten_observations_full",
     "mature_market_compact",
+    "mature_market_full",
     "goal_full",
     "skill_full",
+    "driver_analysis_compact",
     "driver_analysis_full",
+    "similar_periods_compact",
+    "similar_periods_full",
+    "recovery_compact",
+    "recovery_full",
+    "scenario_compact",
+    "scenario_full",
     "research_filtered_compact"
   ]
 }
