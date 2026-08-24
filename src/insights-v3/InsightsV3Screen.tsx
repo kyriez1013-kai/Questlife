@@ -29,13 +29,13 @@ import {
   availableChartKinds,
   buildCompactCue,
   buildInsightsV3Consumer,
+  buildPersonalContext,
   contractQuickRanges,
   defaultChartKind,
   defaultRangeSelection,
   evidenceStageLabel,
   formatDateTime,
   formatQuantValue,
-  formatSignedValue,
   instrumentLabel,
   isChartKindRenderable,
   nextObservationCopy,
@@ -71,6 +71,7 @@ const WebView = View as any;
 const WebPressable = Pressable as any;
 const WebScrollView = ScrollView as any;
 const WebTextInput = TextInput as any;
+const WebText = Text as any;
 
 type ToolId =
   | 'view'
@@ -191,13 +192,13 @@ function InstrumentStrip({
             onPress={() => onSelect(id)}
           >
             <WebView style={{ minWidth: 0, flex: 1 }}>
-              <Text numberOfLines={1} style={{ color: selected ? foundation.text.primary : foundation.text.secondary }}>
+              <WebText dataSet={{ 'insights-v3-role': 'watchlist-label' }} numberOfLines={1} style={{ color: selected ? foundation.text.primary : foundation.text.secondary }}>
                 {instrumentLabel(lang, instrument)}
-              </Text>
-              <Text style={{ color: foundation.text.primary }}>
+              </WebText>
+              <WebText dataSet={{ 'insights-v3-role': 'watchlist-reading' }} style={{ color: foundation.text.primary }}>
                 {formatQuantValue(latest?.value, instrument.unit, lang)}
                 {unitLabel(instrument.unit, lang) ? <Text style={{ color: foundation.text.metadata }}> {unitLabel(instrument.unit, lang)}</Text> : null}
-              </Text>
+              </WebText>
             </WebView>
             <Sparkline color={selected ? foundation.data.observed : foundation.text.metadata} values={values} />
           </WebPressable>
@@ -501,6 +502,7 @@ export default function InsightsV3Screen() {
     );
   }
 
+  const personalContext = buildPersonalContext(lang, instrument);
   const compactCue = buildCompactCue(lang, bundle, instrument);
   const chartKinds = availableChartKinds(series);
   const quickRanges = contractQuickRanges(series);
@@ -535,33 +537,34 @@ export default function InsightsV3Screen() {
             </WebView>
           </WebView>
 
-          <InstrumentStrip
-            foundation={foundation}
-            ids={displayedWatchlistIds}
-            lang={lang}
-            model={model}
-            onSelect={selectInstrument}
-            selectedId={selectedId}
-          />
-
           <WebView dataSet={{ 'insights-v3-role': 'desktop-grid' }}>
             <WebView dataSet={{ 'insights-v3-role': 'primary-column' }}>
               <WebView dataSet={{ 'insights-v3-role': 'instrument-header' }}>
                 <WebView style={{ minWidth: 0, flex: 1 }}>
-                  <Text style={{ color: foundation.text.metadata }}>{availabilityLabel(lang, instrument.availability.state)} · {evidenceStageLabel(lang, instrument.evidence.stage)}</Text>
-                  <Text numberOfLines={2} style={{ color: foundation.text.primary }}>{instrumentLabel(lang, instrument)}</Text>
+                  <WebText dataSet={{ 'insights-v3-role': 'instrument-eyebrow' }} style={{ color: foundation.text.metadata }}>{availabilityLabel(lang, instrument.availability.state)} · {evidenceStageLabel(lang, instrument.evidence.stage)}</WebText>
+                  <WebText dataSet={{ 'insights-v3-role': 'instrument-name' }} numberOfLines={2} style={{ color: foundation.text.primary }}>{instrumentLabel(lang, instrument)}</WebText>
+                  <WebText dataSet={{ 'insights-v3-role': 'personal-context' }} numberOfLines={2} style={{ color: foundation.text.secondary }}>{personalContext.summary}</WebText>
                 </WebView>
                 <WebView dataSet={{ 'insights-v3-role': 'latest-reading' }}>
-                  <Text style={{ color: foundation.text.primary }}>{formatQuantValue(instrument.latest?.value, instrument.unit, lang)}</Text>
-                  {unitLabel(instrument.unit, lang) ? <Text style={{ color: foundation.text.metadata }}>{unitLabel(instrument.unit, lang)}</Text> : null}
+                  <Text style={{ color: foundation.text.primary }}>{personalContext.currentValue}</Text>
+                  {personalContext.currentUnit ? <Text style={{ color: foundation.text.metadata }}>{personalContext.currentUnit}</Text> : null}
                 </WebView>
               </WebView>
 
               <WebView dataSet={{ 'insights-v3-role': 'metric-strip' }}>
-                <MetricCell foundation={foundation} label={iv3(lang, 'reference')} value={instrument.reference.value == null ? iv3(lang, 'noReference') : `${formatQuantValue(instrument.reference.value, instrument.unit, lang)} ${unitLabel(instrument.unit, lang)}`.trim()} />
-                <MetricCell foundation={foundation} label={iv3(lang, 'change')} value={instrument.change.absolute == null ? iv3(lang, 'noComparison') : formatSignedValue(instrument.change.absolute, instrument.unit, lang)} />
-                <MetricCell foundation={foundation} label={iv3(lang, 'evidence')} value={iv3(lang, 'observations', { count: instrument.evidence.observation_count })} />
+                <MetricCell foundation={foundation} label={personalContext.referenceLabel} value={personalContext.referenceValue} />
+                <MetricCell foundation={foundation} label={iv3(lang, 'change')} value={personalContext.changeValue} />
+                <MetricCell foundation={foundation} label={iv3(lang, 'evidence')} value={personalContext.evidenceValue} />
               </WebView>
+
+              <InstrumentStrip
+                foundation={foundation}
+                ids={displayedWatchlistIds}
+                lang={lang}
+                model={model}
+                onSelect={selectInstrument}
+                selectedId={selectedId}
+              />
 
               <WebView dataSet={{ 'insights-v3-role': 'chart-stage' }}>
                 {series ? (
@@ -647,10 +650,14 @@ export default function InsightsV3Screen() {
             </WebView>
 
             <WebView dataSet={{ 'insights-v3-role': 'context-column' }}>
-              <WebPressable accessibilityRole="button" dataSet={{ 'insights-v3-role': 'interpretation-cue' }} onPress={() => openTool(compactCue.boundary === 'inference' ? 'drivers' : 'evidence')}>
-                <Text style={{ color: foundation.text.metadata }}>{compactCue.boundary === 'fact' ? iv3(lang, 'observed') : iv3(lang, 'derived')}</Text>
+              <WebPressable accessibilityRole="button" dataSet={{ 'insights-v3-role': 'interpretation-cue' }} onPress={() => openTool(compactCue.action)}>
+                <Text style={{ color: foundation.text.metadata }}>{compactCue.eyebrow}</Text>
                 <Text style={{ color: foundation.text.primary }}>{compactCue.text}</Text>
                 {compactCue.detail ? <Text style={{ color: foundation.text.secondary }}>{compactCue.detail}</Text> : null}
+                <WebView dataSet={{ 'insights-v3-role': 'interpretation-evidence' }}>
+                  <Text style={{ color: foundation.text.metadata }}>{compactCue.evidence}</Text>
+                  <Text style={{ color: foundation.interaction.primary }}>{compactCue.actionLabel} →</Text>
+                </WebView>
               </WebPressable>
               <WebView dataSet={{ 'insights-v3-role': 'next-observation' }}>
                 <Text style={{ color: foundation.text.metadata }}>{iv3(lang, 'nextObservation')}</Text>

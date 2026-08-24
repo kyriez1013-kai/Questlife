@@ -45,6 +45,17 @@ assert.notEqual(matureContextEn.referenceValue, 'Reference not formed');
 assert.match(matureContextEn.evidenceValue, /observations/);
 assert.match(matureContextEn.summary, /recent personal reference/i);
 
+const populationContext = buildPersonalContext('en', {
+  ...mature.instrument,
+  reference: {
+    ...mature.instrument.reference,
+    kind: 'POPULATION',
+  },
+});
+assert.equal(populationContext.referenceLabel, 'Population reference');
+assert.match(populationContext.summary, /population reference/i);
+assert.doesNotMatch(populationContext.summary, /personal reference/i);
+
 const driver = selectedInstrument('driver_analysis_full');
 const driverCueZh = buildCompactCue('zh', driver.bundle, driver.instrument);
 const driverCueEn = buildCompactCue('en', driver.bundle, driver.instrument);
