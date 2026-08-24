@@ -1,6 +1,6 @@
 # QuestLife Project Status
 
-Updated: 2026-07-24
+Updated: 2026-08-24
 
 ## Current Version State
 
@@ -3202,3 +3202,61 @@ Documentation:
 Pending before promotion:
 - owner visual acceptance of the isolated Vercel Preview;
 - Production web UI verification after an explicit promotion instruction.
+
+## Insights V3 - Product Contract Productization
+
+Status: implemented and locally validated on isolated branch
+`product/insights-v3`; Vercel Preview and owner visual acceptance pending. No
+merge to `main` and no Production promotion have been performed.
+
+Completed:
+- Added a mobile-first Personal Market surface with a compact watchlist, active
+  instrument summary, primary chart, direct range/Fit/Zoom controls, Compare,
+  Indicators, Events, Analyst navigation, Drivers, Similar periods, historical
+  Recovery analogue, and historical Scenario branches.
+- Made the App a strict `validate -> map -> render` consumer of
+  `questlife.quant.product.v1`; the frontend does not calculate Quant
+  statistics or observational candles.
+- Added first-class zero, one, three, ten, forming, mature, partial, unavailable,
+  and contract-error presentation paths without fake charts or scores.
+- Preserved the research firewall: no forecast challenger, latent state,
+  change-point conclusion, causal claim, medical claim, or composite personal
+  score is surfaced.
+- Split the V3 screen, Lightweight Charts, compact bundles, and full bundles
+  into lazy chunks. Full history loads only after explicit history/tool access.
+- Kept synthetic review bundles behind an explicit fixture parameter with
+  strict provenance checks. Removing `questlife_v11_ui=insights-v3` restores
+  the previous Insights implementation.
+- Reused the Global Theme Cleanup semantic foundation for product chrome while
+  retaining independent Quant data colours.
+- Preserved the existing terminal watchlist preference behavior: instruments
+  can be added, removed, reordered, and pinned without changing Quant data.
+  Explicit fixture reviews use isolated preference namespaces.
+
+Local validation:
+- `npx tsc --noEmit`: passed.
+- `npm run build`: passed.
+- Final V3 chunk:
+  `InsightsV3Screen-ee161029e0b6420e41da5fbe9ad49d6d.js` (about 100 kB);
+  mature compact/full chunks remain separate at about 93.5 kB/1.38 MB.
+- Insights V3 presentation, watchlist, Product Contract, and feature-selection
+  tests: passed.
+- Theme and V11 feature-selection regression tests: passed.
+- The relevant Quant Product/adapter/adversarial/release/tooling/real-data/
+  interpretation/candle suite passed 56 tests.
+- Local 375/393/430/1280px dark/light and zh/en checks cover empty,
+  single-observation, mature, Drivers, Similar, and Recovery states with no
+  document-level horizontal overflow and a 44px minimum tested touch target.
+- Eight final-bundle local runs measured compact validation P50/P95 at
+  8.9/11.5 ms, initial surface readiness at 51.8/52.9 ms, mature detail
+  validation at 14.4/18.7 ms, and chart readiness at 1.9/5.0 ms.
+
+Known integration debt:
+- The App has no runtime owner Product Bundle read endpoint yet. The ordinary
+  V3 route abstains instead of calculating a parallel frontend Quant model.
+- Fixture-based local/Preview review is synthetic evidence only and is not a
+  claim that real owner longitudinal Quant delivery is connected.
+- Physical iPhone Safari and owner aesthetic acceptance remain manual gates.
+
+Documentation:
+- `docs/insights/INSIGHTS_V3_IMPLEMENTATION.md`
