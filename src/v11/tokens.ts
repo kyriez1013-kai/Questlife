@@ -195,6 +195,9 @@ export type V11ThemeTokens = {
     neutralElevatedSurface: string;
     neutralPressedSurface: string;
     neutralBorder: string;
+    neutralSelectedSurface: string;
+    neutralSelectedBorder: string;
+    neutralSelectedText: string;
     neutralAction: string;
     neutralActionText: string;
   };
@@ -270,6 +273,9 @@ function buildThemeTokens(mode: V11ThemeMode): V11ThemeTokens {
       neutralElevatedSurface: foundation.material.muted,
       neutralPressedSurface: foundation.material.translucentPressed,
       neutralBorder: foundation.border.subtle,
+      neutralSelectedSurface: foundation.material.translucentPressed,
+      neutralSelectedBorder: foundation.border.strong,
+      neutralSelectedText: foundation.text.primary,
       neutralAction: foundation.text.primary,
       neutralActionText: foundation.environment.canvas,
     },
