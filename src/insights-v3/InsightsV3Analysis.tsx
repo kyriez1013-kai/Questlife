@@ -3,7 +3,7 @@ import { Pressable, Text, View } from 'react-native';
 import type { Lang } from '../i18n';
 import type { QuestVisualFoundation } from '../design/visualFoundation';
 import type { QuantProductBundleV1, QuantProductInstrumentV1, QuantProductSeriesV1 } from '../quant-product/quantProductContract';
-import { actionLabel, evidenceStageLabel, featureLabel, formatDateTime, formatQuantValue, formatSignedValue, instrumentLabel, sourceClassLabel, type InsightsV3RangeSelection } from './insightsV3Presentation';
+import { actionLabel, driverRelationshipCopy, evidenceStageLabel, featureLabel, formatDateTime, formatQuantValue, formatSignedValue, instrumentLabel, sourceClassLabel, type InsightsV3RangeSelection } from './insightsV3Presentation';
 import { iv3, type InsightsV3CopyKey } from './insightsV3I18n';
 
 const WebView = View as any;
@@ -53,11 +53,15 @@ export function DriversPanel({ bundle, foundation, lang }: { bundle: QuantProduc
               <WebView style={{ flex: 1, minWidth: 0 }}>
                 <Text style={{ color: foundation.text.metadata }}>{iv3(lang, 'candidateRank', { rank: candidate.rank })}</Text>
                 <Text style={{ color: foundation.text.primary }}>{source ? instrumentLabel(lang, source) : iv3(lang, 'instrumentGeneric')}</Text>
-                <Text style={{ color: foundation.text.secondary }}>
+                <Text style={{ color: foundation.text.secondary }}>{driverRelationshipCopy(lang, candidate)}</Text>
+                <Text style={{ color: foundation.text.metadata }}>
                   {iv3(lang, 'supportCounter', { support: candidate.support_count, counter: candidate.counterexample_count })}
                 </Text>
               </WebView>
-              <Text style={{ color: foundation.text.primary }}>{evidenceStageLabel(lang, candidate.evidence.stage)}</Text>
+              <WebView dataSet={{ 'insights-v3-role': 'analysis-row-meta' }}>
+                <Text style={{ color: foundation.text.primary }}>{iv3(lang, 'driverIndependentPeriods', { count: candidate.independent_period_count })}</Text>
+                <Text style={{ color: foundation.text.metadata }}>{evidenceStageLabel(lang, candidate.evidence.stage)}</Text>
+              </WebView>
             </WebView>
           );
         })}
@@ -81,7 +85,7 @@ export function SimilarPanel({
   if (!similar || similar.status.state !== 'AVAILABLE') return <Limitation foundation={foundation}>{iv3(lang, 'deepUnavailable')}</Limitation>;
   return (
     <>
-      <Limitation foundation={foundation}>{iv3(lang, 'similarLimit')}</Limitation>
+      <Limitation foundation={foundation}>{iv3(lang, 'similarIntro')} {iv3(lang, 'similarLimit')}</Limitation>
       <Section foundation={foundation} title={iv3(lang, 'similarTitle')}>
         {similar.periods.map((period) => (
           <WebView dataSet={{ 'insights-v3-role': 'period-row' }} key={period.period_id}>
@@ -93,6 +97,9 @@ export function SimilarPanel({
             </Text>
             <Text style={{ color: foundation.text.metadata }}>
               {iv3(lang, 'periodDifference', { items: period.different_feature_keys.map((key) => featureLabel(lang, key)).join(' · ') })}
+            </Text>
+            <Text style={{ color: foundation.text.secondary }}>
+              {iv3(lang, period.subsequent_series.length ? 'periodFollowup' : 'periodNoFollowup', { count: period.subsequent_series.length })}
             </Text>
             <WebPressable
               accessibilityRole="button"
@@ -117,7 +124,7 @@ export function RecoveryPanel({ bundle, foundation, lang }: { bundle: QuantProdu
   if (!recovery || recovery.status.state !== 'AVAILABLE') return <Limitation foundation={foundation}>{iv3(lang, 'deepUnavailable')}</Limitation>;
   return (
     <>
-      <Limitation foundation={foundation}>{iv3(lang, 'recoveryLimit')}</Limitation>
+      <Limitation foundation={foundation}>{iv3(lang, 'recoveryIntro')} {iv3(lang, 'recoveryLimit')}</Limitation>
       <Section foundation={foundation} title={iv3(lang, 'recoveryTitle')}>
         {recovery.reference_path.map((point) => (
           <WebView dataSet={{ 'insights-v3-role': 'trajectory-row' }} key={point.offset_days}>
@@ -144,7 +151,7 @@ export function ScenarioPanel({ bundle, foundation, lang }: { bundle: QuantProdu
   if (!scenario || scenario.status.state !== 'AVAILABLE') return <Limitation foundation={foundation}>{iv3(lang, 'deepUnavailable')}</Limitation>;
   return (
     <>
-      <Limitation foundation={foundation}>{iv3(lang, 'scenarioLimit')}</Limitation>
+      <Limitation foundation={foundation}>{iv3(lang, 'scenarioIntro')} {iv3(lang, 'scenarioLimit')}</Limitation>
       <Section foundation={foundation} title={iv3(lang, 'scenarioTitle')}>
         {scenario.branches.map((branch) => (
           <WebView dataSet={{ 'insights-v3-role': 'analysis-row' }} key={branch.branch_id}>
