@@ -33,6 +33,7 @@ export type InsightsV3CompactCue = {
 export type InsightsV3PersonalContext = {
   currentValue: string;
   currentUnit: string;
+  referenceLabel: string;
   referenceValue: string;
   changeValue: string;
   evidenceValue: string;
@@ -168,8 +169,16 @@ export function buildPersonalContext(
   lang: Lang,
   instrument: QuantProductConsumerInstrument,
 ): InsightsV3PersonalContext {
+  const personalReference = instrument.reference.kind === 'PERSONAL_ROLLING'
+    || instrument.reference.kind === 'HISTORICAL_RANGE';
+  const populationReference = instrument.reference.kind === 'POPULATION';
   const currentValue = formatQuantValue(instrument.latest?.value, instrument.unit, lang);
   const currentUnit = unitLabel(instrument.unit, lang);
+  const referenceLabel = populationReference
+    ? iv3(lang, 'populationReference')
+    : personalReference
+      ? iv3(lang, 'reference')
+      : iv3(lang, 'referenceGeneric');
   const referenceValue = instrument.reference.value == null
     ? iv3(lang, 'noReference')
     : `${formatQuantValue(instrument.reference.value, instrument.unit, lang)} ${currentUnit}`.trim();
@@ -184,6 +193,7 @@ export function buildPersonalContext(
     return {
       currentValue,
       currentUnit,
+      referenceLabel,
       referenceValue,
       changeValue,
       evidenceValue,
@@ -195,22 +205,24 @@ export function buildPersonalContext(
     return {
       currentValue,
       currentUnit,
+      referenceLabel,
       referenceValue,
       changeValue,
       evidenceValue,
       relationship: 'reference_forming',
-      summary: iv3(lang, 'referenceFormingContext'),
+      summary: iv3(lang, personalReference ? 'referenceFormingContext' : 'referenceUnavailableContext'),
     };
   }
   if (latest === reference) {
     return {
       currentValue,
       currentUnit,
+      referenceLabel,
       referenceValue,
       changeValue,
       evidenceValue,
       relationship: 'at_reference',
-      summary: iv3(lang, 'currentAtReference'),
+      summary: iv3(lang, populationReference ? 'currentAtPopulationReference' : 'currentAtReference'),
     };
   }
   if (instrument.unit === 'minutes_from_local_noon') {
@@ -218,22 +230,28 @@ export function buildPersonalContext(
     return {
       currentValue,
       currentUnit,
+      referenceLabel,
       referenceValue,
       changeValue,
       evidenceValue,
       relationship: later ? 'later_than_reference' : 'earlier_than_reference',
-      summary: iv3(lang, later ? 'currentLaterReference' : 'currentEarlierReference'),
+      summary: iv3(lang, populationReference
+        ? later ? 'currentLaterPopulationReference' : 'currentEarlierPopulationReference'
+        : later ? 'currentLaterReference' : 'currentEarlierReference'),
     };
   }
   const above = latest > reference;
   return {
     currentValue,
     currentUnit,
+    referenceLabel,
     referenceValue,
     changeValue,
     evidenceValue,
     relationship: above ? 'above_reference' : 'below_reference',
-    summary: iv3(lang, above ? 'currentAboveReference' : 'currentBelowReference'),
+    summary: iv3(lang, populationReference
+      ? above ? 'currentAbovePopulationReference' : 'currentBelowPopulationReference'
+      : above ? 'currentAboveReference' : 'currentBelowReference'),
   };
 }
 
