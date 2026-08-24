@@ -31,6 +31,7 @@ export type InsightsV3ChartSelection = {
 
 export type InsightsV3ChartHandle = {
   fit: () => void;
+  zoomIn: () => void;
   zoomOut: () => void;
 };
 
@@ -91,6 +92,14 @@ const InsightsV3Chart = forwardRef<InsightsV3ChartHandle, {
 
   useImperativeHandle(ref, () => ({
     fit: () => chartRef.current?.timeScale().fitContent(),
+    zoomIn: () => {
+      const scale = chartRef.current?.timeScale();
+      const visible = scale?.getVisibleLogicalRange();
+      if (!scale || !visible) return;
+      const center = (visible.from + visible.to) / 2;
+      const span = Math.max(2, (visible.to - visible.from) / 1.5);
+      scale.setVisibleLogicalRange({ from: center - span / 2, to: center + span / 2 });
+    },
     zoomOut: () => {
       const scale = chartRef.current?.timeScale();
       const visible = scale?.getVisibleLogicalRange();
