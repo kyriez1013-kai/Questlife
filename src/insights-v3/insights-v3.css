@@ -68,28 +68,23 @@
 
 [data-insights-v3-role="watchlist-item"] {
   display: flex;
-  width: 108px;
-  min-width: 108px;
+  width: 98px;
+  min-width: 98px;
   min-height: 44px;
   align-items: center;
   justify-content: space-between;
   flex-direction: row !important;
   gap: 4px;
   padding: 5px 8px;
-  border: 1px solid transparent;
-  border-left-color: var(--iv3-divider);
+  border: 0;
+  border-bottom: 2px solid transparent;
   outline: none;
   background: transparent;
   cursor: pointer;
 }
 
-[data-insights-v3-role="watchlist-item"]:first-child {
-  border-left-color: transparent;
-}
-
 [data-insights-v3-role="watchlist-item"][data-insights-v3-selected="true"] {
-  border-color: var(--iv3-border);
-  background: var(--iv3-soft);
+  border-bottom-color: var(--iv3-primary);
 }
 
 [data-insights-v3-role="watchlist-label"] {
@@ -154,9 +149,9 @@
 
 [data-insights-v3-role="instrument-name"] {
   overflow-wrap: anywhere;
-  font-size: 18px;
+  font-size: 21px;
   font-weight: 580;
-  line-height: 23px;
+  line-height: 27px;
 }
 
 [data-insights-v3-role="personal-context"] {
@@ -176,7 +171,7 @@
 }
 
 [data-insights-v3-role="latest-reading"] > span:first-child {
-  font-size: clamp(28px, 9vw, 42px);
+  font-size: clamp(34px, 10vw, 48px);
   font-weight: 430;
   line-height: 1;
   letter-spacing: -1.4px;
@@ -192,46 +187,55 @@
   white-space: nowrap;
 }
 
-[data-insights-v3-role="metric-strip"] {
-  display: grid;
+[data-insights-v3-role="personal-context-summary"] {
+  display: flex;
   min-width: 0;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  min-height: 52px;
+  align-items: center;
+  justify-content: space-between;
+  flex-direction: row !important;
+  gap: 14px;
+  padding: 6px 0;
   border-bottom: 1px solid var(--iv3-divider);
 }
 
-[data-insights-v3-role="metric-cell"] {
+[data-insights-v3-role="reference-reading"],
+[data-insights-v3-role="context-meta"] {
   display: flex;
   min-width: 0;
-  min-height: 54px;
   justify-content: center;
   flex-direction: column;
   gap: 2px;
-  padding: 7px 9px;
-  border-left: 1px solid var(--iv3-divider);
 }
 
-[data-insights-v3-role="metric-cell"]:first-child {
-  padding-left: 0;
-  border-left: 0;
+[data-insights-v3-role="reference-reading"] {
+  flex: 1;
 }
 
-[data-insights-v3-role="metric-cell"] > span:first-child {
-  overflow: hidden;
+[data-insights-v3-role="context-meta"] {
+  flex: 0 1 auto;
+  align-items: flex-end;
+  text-align: right;
+}
+
+[data-insights-v3-role="reference-reading"] > span:first-child,
+[data-insights-v3-role="context-meta"] > span:last-child {
   font-size: 8px;
   line-height: 11px;
   letter-spacing: 0.38px;
-  text-overflow: ellipsis;
   text-transform: uppercase;
-  white-space: nowrap;
 }
 
-[data-insights-v3-role="metric-cell"] > span:last-child {
-  overflow: hidden;
+[data-insights-v3-role="reference-reading"] > span:last-child {
   font-size: 12px;
   font-weight: 540;
   line-height: 16px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-insights-v3-role="context-meta"] > span:first-child {
+  font-size: 11px;
+  line-height: 15px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -253,13 +257,55 @@
   touch-action: pan-x pinch-zoom;
 }
 
+[data-insights-v3-role="chart-controls"] {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  flex-direction: row !important;
+  border: 1px solid var(--iv3-border);
+  background: color-mix(in srgb, var(--iv3-elevated) 92%, transparent);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--iv3-bg) 38%, transparent);
+}
+
+[data-insights-v3-role="chart-control"] {
+  display: flex;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  border: 0;
+  border-left: 1px solid var(--iv3-divider);
+  outline: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+[data-insights-v3-role="chart-control"]:first-child {
+  border-left: 0;
+}
+
+[data-insights-v3-role="chart-control"] span {
+  font-size: 12px;
+  line-height: 16px;
+}
+
+[data-insights-v3-role="chart-control"]:first-child span,
+[data-insights-v3-role="chart-control"]:nth-child(2) span {
+  font-size: 19px;
+  font-weight: 380;
+}
+
 [data-insights-v3-role="chart-selection"] {
   position: absolute;
   top: 9px;
+  right: 148px;
   left: 9px;
   z-index: 4;
   display: flex;
-  max-width: calc(100% - 18px);
   flex-direction: column;
   gap: 2px;
   padding: 7px 9px;
@@ -301,9 +347,7 @@
   min-width: 0;
   min-height: 48px;
   align-items: center;
-  justify-content: space-between;
   flex-direction: row !important;
-  gap: 8px;
   border-bottom: 1px solid var(--iv3-divider);
 }
 
@@ -314,7 +358,6 @@
 }
 
 [data-insights-v3-role="range-button"],
-[data-insights-v3-role="viewport-actions"] > [role="button"],
 [data-insights-v3-role="tool-button"] {
   display: flex;
   min-width: 44px;
@@ -329,7 +372,6 @@
 }
 
 [data-insights-v3-role="range-button"] span,
-[data-insights-v3-role="viewport-actions"] span,
 [data-insights-v3-role="tool-button"] span {
   font-size: 10px;
   line-height: 14px;
@@ -338,13 +380,6 @@
 [data-insights-v3-role="range-button"][data-insights-v3-selected="true"],
 [data-insights-v3-role="tool-button"][data-insights-v3-selected="true"] {
   background: var(--iv3-primary-soft);
-}
-
-[data-insights-v3-role="viewport-actions"] {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  flex-direction: row !important;
 }
 
 [data-insights-v3-role="bucket-label"] {
@@ -884,6 +919,7 @@
 }
 
 [data-insights-v3-role="watchlist-item"]:focus-visible,
+[data-insights-v3-role="chart-control"]:focus-visible,
 [data-insights-v3-role="range-button"]:focus-visible,
 [data-insights-v3-role="tool-button"]:focus-visible,
 [data-insights-v3-role="choice-row"]:focus-visible,
@@ -898,6 +934,7 @@
 }
 
 [data-insights-v3-role="watchlist-item"]:active,
+[data-insights-v3-role="chart-control"]:active,
 [data-insights-v3-role="range-button"]:active,
 [data-insights-v3-role="tool-button"]:active,
 [data-insights-v3-role="choice-row"]:active {
@@ -910,8 +947,8 @@
   }
 
   [data-insights-v3-role="watchlist-item"] {
-    width: 132px;
-    min-width: 132px;
+    width: 116px;
+    min-width: 116px;
   }
 
   [data-insights-v3-role="chart-stage"],
@@ -973,18 +1010,8 @@
     font-size: 27px;
   }
 
-  [data-insights-v3-role="metric-cell"] {
-    padding-right: 5px;
-    padding-left: 5px;
-  }
-
-  [data-insights-v3-role="metric-cell"] > span:last-child,
   [data-insights-v3-role="tool-button"] span {
     font-size: 9px;
-  }
-
-  [data-insights-v3-role="viewport-actions"] {
-    display: none;
   }
 }
 

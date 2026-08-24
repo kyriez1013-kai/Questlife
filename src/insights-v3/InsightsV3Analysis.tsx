@@ -51,7 +51,6 @@ export function DriversPanel({ bundle, foundation, lang }: { bundle: QuantProduc
           return (
             <WebView dataSet={{ 'insights-v3-role': 'analysis-row' }} key={candidate.candidate_id}>
               <WebView style={{ flex: 1, minWidth: 0 }}>
-                <Text style={{ color: foundation.text.metadata }}>{iv3(lang, 'candidateRank', { rank: candidate.rank })}</Text>
                 <Text style={{ color: foundation.text.primary }}>{source ? instrumentLabel(lang, source) : iv3(lang, 'instrumentGeneric')}</Text>
                 <Text style={{ color: foundation.text.secondary }}>{driverRelationshipCopy(lang, candidate)}</Text>
                 <Text style={{ color: foundation.text.metadata }}>

@@ -45,6 +45,33 @@ assert.notEqual(matureContextEn.referenceValue, 'Reference not formed');
 assert.match(matureContextEn.evidenceValue, /observations/);
 assert.match(matureContextEn.summary, /recent personal reference/i);
 
+const exactReferenceContext = buildPersonalContext('zh', {
+  ...mature.instrument,
+  latest: { ...mature.instrument.latest!, value: 3 },
+  reference: { ...mature.instrument.reference, status: 'ESTABLISHED', value: 3 },
+  change: { ...mature.instrument.change, absolute: 0 },
+});
+assert.equal(exactReferenceContext.relationship, 'at_reference');
+assert.equal(exactReferenceContext.summary, '当前与近期个人参考一致。');
+
+const belowReferenceContext = buildPersonalContext('zh', {
+  ...mature.instrument,
+  latest: { ...mature.instrument.latest!, value: 2.5 },
+  reference: { ...mature.instrument.reference, status: 'ESTABLISHED', value: 3 },
+  change: { ...mature.instrument.change, absolute: -0.5 },
+});
+assert.equal(belowReferenceContext.relationship, 'below_reference');
+assert.equal(belowReferenceContext.summary, '当前低于近期个人参考。');
+
+const aboveReferenceContext = buildPersonalContext('en', {
+  ...mature.instrument,
+  latest: { ...mature.instrument.latest!, value: 3.5 },
+  reference: { ...mature.instrument.reference, status: 'ESTABLISHED', value: 3 },
+  change: { ...mature.instrument.change, absolute: 0.5 },
+});
+assert.equal(aboveReferenceContext.relationship, 'above_reference');
+assert.equal(aboveReferenceContext.summary, 'Current reading is above the recent personal reference.');
+
 const populationContext = buildPersonalContext('en', {
   ...mature.instrument,
   reference: {
@@ -61,15 +88,25 @@ const driverCueZh = buildCompactCue('zh', driver.bundle, driver.instrument);
 const driverCueEn = buildCompactCue('en', driver.bundle, driver.instrument);
 assert.equal(driverCueZh.boundary, 'inference');
 assert.equal(driverCueZh.action, 'drivers');
-assert.match(driverCueZh.text, /同时出现/);
+assert.match(driverCueZh.text, /反复出现/);
 assert.match(driverCueZh.evidence, /94 次符合 · 23 次反例/);
-assert.match(driverCueEn.text, /appears alongside/i);
+assert.match(driverCueEn.text, /appears repeatedly/i);
 assert.match(driverCueEn.evidence, /94 supporting observations · 23 counterexamples/);
+
+const strongCandidate = driver.bundle.interpretation?.driver_analysis?.candidates[0];
+assert.ok(strongCandidate);
+assert.match(driverRelationshipCopy('zh', strongCandidate!), /多个独立时期/);
+assert.match(driverRelationshipCopy('zh', strongCandidate!), /反例/);
+assert.doesNotMatch(driverRelationshipCopy('zh', strongCandidate!), /因果|导致/);
 
 const mixedCandidate = driver.bundle.interpretation?.driver_analysis?.candidates[2];
 assert.ok(mixedCandidate);
 assert.match(driverRelationshipCopy('zh', mixedCandidate!), /反例/);
 assert.match(driverRelationshipCopy('en', mixedCandidate!), /still being observed/i);
+
+const limitedCandidate = { ...mixedCandidate!, evidence_status: 'LIMITED' };
+assert.match(driverRelationshipCopy('zh', limitedCandidate), /证据仍有限/);
+assert.match(driverRelationshipCopy('en', limitedCandidate), /evidence remains limited/i);
 
 const similar = selectedInstrument('similar_periods_full');
 assert.ok(similar.bundle.interpretation);
