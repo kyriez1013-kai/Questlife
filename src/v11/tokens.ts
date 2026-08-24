@@ -194,6 +194,9 @@ export type V11ThemeTokens = {
     neutralElevatedSurface: string;
     neutralPressedSurface: string;
     neutralBorder: string;
+    neutralSelectedSurface: string;
+    neutralSelectedBorder: string;
+    neutralSelectedText: string;
     neutralAction: string;
     neutralActionText: string;
   };
@@ -268,6 +271,11 @@ function buildThemeTokens(mode: V11ThemeMode): V11ThemeTokens {
       neutralElevatedSurface: questTheme.colors.surfaceMuted,
       neutralPressedSurface: questTheme.colors.cardSurfaceHover,
       neutralBorder: questTheme.colors.cardBorder,
+      neutralSelectedSurface: questTheme.colors.cardSurfaceHover,
+      neutralSelectedBorder: mode === 'light'
+        ? 'rgba(17,19,24,0.28)'
+        : 'rgba(248,250,252,0.30)',
+      neutralSelectedText: questTheme.colors.text,
       neutralAction: questTheme.colors.text,
       neutralActionText: questTheme.colors.background,
     },

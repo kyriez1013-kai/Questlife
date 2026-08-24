@@ -676,10 +676,9 @@ export default function HomeScreen() {
   const todayLogs = (data.executionLogs || []).filter((a) => a.date === todayStr);
   const todayMinutes = todayLogs.reduce((sum, a) => sum + a.durationMinutes, 0);
   const contextLocale = lang === 'zh' ? 'zh-CN' : 'en-AU';
-  const todayContextDate = [
-    new Date().toLocaleDateString(contextLocale, { month: 'short', day: 'numeric' }),
-    new Date().toLocaleDateString(contextLocale, { weekday: 'short' }),
-  ].join(' · ');
+  const todayContextPrimary = new Date().toLocaleDateString(contextLocale, { month: 'short', day: 'numeric' });
+  const todayContextWeekday = new Date().toLocaleDateString(contextLocale, { weekday: 'short' });
+  const todayContextDate = [todayContextPrimary, todayContextWeekday].join(' · ');
   const todayRescueLogs = (data.rescueLogs || []).filter((log) => log.date === todayStr);
   const completedRescuesToday = todayRescueLogs.filter((log) => log.activationStepCompleted).length;
   const unfinishedRescue = todayRescueLogs.slice().reverse().find((log) => !log.activationStepCompleted);
@@ -2433,7 +2432,8 @@ export default function HomeScreen() {
         {v11TodayEnabled ? (
           <V11IntegratedTodaySurface
             capturePlaceholder={t(lang, 'scPlaceholder')}
-            contextLine={`${todayContextDate} · ${t(lang, currentTimeBlock)}`}
+            contextDate={todayContextPrimary}
+            contextMeta={`${todayContextWeekday} · ${t(lang, currentTimeBlock)}`}
             decision={v11TodayPresentation}
             debugPerformance={getV11DebugPerformance(isDecisionDebugEnabled())}
             expanded={v11EvidenceExpanded}
