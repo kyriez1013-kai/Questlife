@@ -3316,3 +3316,42 @@ Remaining:
 - owner visual review and physical iPhone Safari verification;
 - authenticated runtime owner Product Bundle delivery;
 - the existing approximately 20.9 MB main bundle remains a performance debt.
+
+## Insights V3 - Final Product Polish
+
+Status: implementation, local validation, and isolated Preview verification
+complete on `product/insights-v3-personal-layer`; owner visual acceptance is
+pending. No merge to `main` and no Production promotion have been performed.
+
+Completed:
+- Restored direct Zoom In, Zoom Out, and Fit controls as a compact chart-edge
+  cluster with 44 px interaction targets.
+- Strengthened the active instrument and current reading as the dominant
+  context; Watchlist remains secondary instrument navigation.
+- Reframed current/reference/change/evidence as one continuous personal context
+  and kept Current Observation concise and deterministic.
+- Refined Drivers, Similar, historical Recovery, and Scenario language without
+  causal, predictive, medical, or prescriptive overclaiming.
+- Preserved the V3/V3.1 terminal architecture, Quant Product Contract, Quant
+  Engine, Store, APIs, schemas, calculations, persistence, and research
+  firewall.
+
+Validation:
+- Code commit: `1581528` (`polish insights v3 product surface`).
+- App typecheck/build, Insights V3 tests, theme tests, and App Product Contract
+  tests pass; the relevant Quant suite passes 58 tests.
+- Final V3 chunk:
+  `InsightsV3Screen-9ac3f440732f3547a3df73d7220e4b5f.js` (about 112 kB).
+- Isolated Preview `dpl_4ytFQkASAAQqnuuGcsKCzfzVTHbs` reached READY.
+- Authenticated Preview verification covered 393 px mature main and chart zoom,
+  Drivers, historical Recovery, 375/430/1280 px responsive states, zh/en,
+  dark/light, no-flag rollback, 44 px minimum controls, and runtime errors.
+- Four owner-review screenshots are recorded in
+  `artifacts/insights-v3-final/`.
+
+Remaining:
+- owner visual review and physical iPhone Safari verification;
+- authenticated runtime owner Product Bundle delivery;
+- chart pan/crosshair physical-device interaction remains a manual verification
+  item after the browser control channel timed out during drag input;
+- the existing approximately 20.9 MB main bundle remains a performance debt.

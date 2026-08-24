@@ -158,3 +158,39 @@ interpretation artifact is missing.
 Owner visual acceptance and physical iPhone Safari verification remain pending.
 The authenticated runtime owner Product Bundle endpoint remains an integration
 dependency; synthetic review fixtures are not owner evidence.
+
+## V3 final product polish
+
+The final polish pass preserves the V3/V3.1 information architecture and
+Product Contract while tightening the direct analysis workflow:
+
+- Zoom In, Zoom Out, and Fit are now a compact 44 px chart-edge control group;
+- the active instrument and latest reading lead the hierarchy, while Watchlist
+  instruments remain compact secondary navigation;
+- recent personal reference, change, and evidence now read as one continuous
+  personal-context summary instead of equal finance-style KPI boxes;
+- Current Observation remains deterministic and compact;
+- Drivers, Similar, historical Recovery, and Scenario use natural observational
+  language, with one sheet-level not-causal limitation and no inferred action;
+- no Quant Engine, Product Contract, Store, API, schema, calculation, or
+  persistence behavior changed.
+
+### Final polish validation snapshot
+
+- Code commit: `1581528` (`polish insights v3 product surface`).
+- `npx tsc --noEmit`, `npm run build`, Insights V3 tests, theme tests, and App
+  Product Contract tests pass.
+- The relevant Quant Product/adapter/adversarial/release/tooling/real-data/
+  interpretation/candle suites pass 58 tests.
+- Final V3 screen chunk:
+  `InsightsV3Screen-9ac3f440732f3547a3df73d7220e4b5f.js` (about 112 kB).
+- Isolated Preview deployment `dpl_4ytFQkASAAQqnuuGcsKCzfzVTHbs`
+  reached READY. Authenticated Preview checks covered the 393 px mature main
+  view, working Zoom In/Zoom Out/Fit controls, Drivers, historical Recovery,
+  375/430/1280 px responsive states, zh/en, dark/light, and no-flag rollback.
+- Preview checks found no document-level horizontal overflow, a 44 px minimum
+  tested control size, and no QuestLife runtime errors.
+
+The four owner-review screenshots are stored under
+`artifacts/insights-v3-final/`. Owner aesthetic acceptance and physical iPhone
+Safari verification remain manual gates. No Production alias was changed.
