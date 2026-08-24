@@ -208,15 +208,6 @@ function InstrumentStrip({
   );
 }
 
-function MetricCell({ label, value, foundation }: { label: string; value: string; foundation: ReturnType<typeof getQuestVisualFoundation> }) {
-  return (
-    <WebView dataSet={{ 'insights-v3-role': 'metric-cell' }}>
-      <Text style={{ color: foundation.text.metadata }}>{label}</Text>
-      <Text numberOfLines={1} style={{ color: foundation.text.primary }}>{value}</Text>
-    </WebView>
-  );
-}
-
 function ToolButton({
   active,
   foundation,
@@ -237,6 +228,49 @@ function ToolButton({
     >
       <Text style={{ color: active ? foundation.text.primary : foundation.text.secondary }}>{label}</Text>
     </WebPressable>
+  );
+}
+
+function ChartViewportControls({
+  foundation,
+  lang,
+  onFit,
+  onZoomIn,
+  onZoomOut,
+}: {
+  foundation: ReturnType<typeof getQuestVisualFoundation>;
+  lang: Lang;
+  onFit: () => void;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
+}) {
+  return (
+    <WebView accessibilityRole="toolbar" dataSet={{ 'insights-v3-role': 'chart-controls' }}>
+      <WebPressable
+        accessibilityLabel={iv3(lang, 'zoomIn')}
+        accessibilityRole="button"
+        dataSet={{ 'insights-v3-role': 'chart-control' }}
+        onPress={onZoomIn}
+      >
+        <Text style={{ color: foundation.text.primary }}>+</Text>
+      </WebPressable>
+      <WebPressable
+        accessibilityLabel={iv3(lang, 'zoomOut')}
+        accessibilityRole="button"
+        dataSet={{ 'insights-v3-role': 'chart-control' }}
+        onPress={onZoomOut}
+      >
+        <Text style={{ color: foundation.text.primary }}>−</Text>
+      </WebPressable>
+      <WebPressable
+        accessibilityLabel={iv3(lang, 'fit')}
+        accessibilityRole="button"
+        dataSet={{ 'insights-v3-role': 'chart-control' }}
+        onPress={onFit}
+      >
+        <Text style={{ color: foundation.text.secondary }}>{iv3(lang, 'fit')}</Text>
+      </WebPressable>
+    </WebView>
   );
 }
 
@@ -551,10 +585,15 @@ export default function InsightsV3Screen() {
                 </WebView>
               </WebView>
 
-              <WebView dataSet={{ 'insights-v3-role': 'metric-strip' }}>
-                <MetricCell foundation={foundation} label={personalContext.referenceLabel} value={personalContext.referenceValue} />
-                <MetricCell foundation={foundation} label={iv3(lang, 'change')} value={personalContext.changeValue} />
-                <MetricCell foundation={foundation} label={iv3(lang, 'evidence')} value={personalContext.evidenceValue} />
+              <WebView dataSet={{ 'insights-v3-role': 'personal-context-summary' }}>
+                <WebView dataSet={{ 'insights-v3-role': 'reference-reading' }}>
+                  <Text style={{ color: foundation.text.metadata }}>{personalContext.referenceLabel}</Text>
+                  <Text style={{ color: foundation.text.primary }}>{personalContext.referenceValue}</Text>
+                </WebView>
+                <WebView dataSet={{ 'insights-v3-role': 'context-meta' }}>
+                  <Text style={{ color: foundation.text.secondary }}>{iv3(lang, 'change')} {personalContext.changeValue}</Text>
+                  <Text style={{ color: foundation.text.metadata }}>{personalContext.evidenceValue}</Text>
+                </WebView>
               </WebView>
 
               <InstrumentStrip
@@ -568,20 +607,29 @@ export default function InsightsV3Screen() {
 
               <WebView dataSet={{ 'insights-v3-role': 'chart-stage' }}>
                 {series ? (
-                  <InsightsV3Chart
-                    asOf={bundle.metadata.as_of}
-                    chartKind={isChartKindRenderable(series, chartKind, range) ? chartKind : 'line'}
-                    comparisonSeries={comparisonSeries}
-                    foundation={foundation}
-                    lang={lang}
-                    onReady={recordChartReady}
-                    range={range}
-                    ref={chartRef}
-                    series={series}
-                    showEvents={showEvents}
-                    showReference={showReference}
-                    showReferenceRange={showReferenceRange}
-                  />
+                  <>
+                    <InsightsV3Chart
+                      asOf={bundle.metadata.as_of}
+                      chartKind={isChartKindRenderable(series, chartKind, range) ? chartKind : 'line'}
+                      comparisonSeries={comparisonSeries}
+                      foundation={foundation}
+                      lang={lang}
+                      onReady={recordChartReady}
+                      range={range}
+                      ref={chartRef}
+                      series={series}
+                      showEvents={showEvents}
+                      showReference={showReference}
+                      showReferenceRange={showReferenceRange}
+                    />
+                    <ChartViewportControls
+                      foundation={foundation}
+                      lang={lang}
+                      onFit={() => chartRef.current?.fit()}
+                      onZoomIn={() => chartRef.current?.zoomIn()}
+                      onZoomOut={() => chartRef.current?.zoomOut()}
+                    />
+                  </>
                 ) : (
                   <WebView dataSet={{ 'insights-v3-role': 'chart-empty' }}>
                     {detailLoading ? <ActivityIndicator color={foundation.interaction.primary} /> : null}
@@ -623,14 +671,6 @@ export default function InsightsV3Screen() {
                     </Text>
                   </WebPressable>
                 </WebScrollView>
-                <WebView dataSet={{ 'insights-v3-role': 'viewport-actions' }}>
-                  <WebPressable accessibilityLabel={iv3(lang, 'fit')} accessibilityRole="button" onPress={() => chartRef.current?.fit()}>
-                    <Text style={{ color: foundation.text.secondary }}>{iv3(lang, 'fit')}</Text>
-                  </WebPressable>
-                  <WebPressable accessibilityLabel={iv3(lang, 'zoomOut')} accessibilityRole="button" onPress={() => chartRef.current?.zoomOut()}>
-                    <Text style={{ color: foundation.text.secondary }}>{iv3(lang, 'zoomOut')}</Text>
-                  </WebPressable>
-                </WebView>
               </WebView>
               {series ? (
                 <WebView dataSet={{ 'insights-v3-role': 'bucket-label' }}>
