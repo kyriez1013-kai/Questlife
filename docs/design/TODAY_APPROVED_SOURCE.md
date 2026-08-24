@@ -92,6 +92,25 @@ rejected and must not be used as references:
 Do not replace the canonical source unless the user explicitly approves a newer
 Today and this document and tag are deliberately superseded.
 
+## Latest implementation refinement
+
+- Refinement commit: `c0b62ee` (`polish canonical Today capture experience`,
+  2026-08-24).
+- Scope: productized date/context hierarchy, neutral collapsed Smart Capture,
+  compact Universal Capture interpretation/details controls, sticky confirmation
+  actions, and Today-specific neutral interaction tokens.
+- Preserved: the approved Today information architecture, `todayCommand`
+  authority, Smart Capture parsing and persistence, evidence-stage derivation,
+  Store/API contracts, Activity History semantics, and five-tab navigation.
+- Validation candidate: 320, 375, 393, and 430px local web layouts; dark/light;
+  Chinese/English; TypeScript, existing V11 Today tests, and Expo web export.
+- Approval state: Preview candidate awaiting explicit human visual approval.
+
+The canonical Figma node `21:3` and tag `v11-today-approved` remain unchanged.
+If this refinement is approved in Preview, the exact approved implementation
+can be captured into a new Figma source node in the subsequent approval-gated
+task.
+
 ## Known design-system debt
 
 Some secondary controls may retain historical blue-token leakage. This is
