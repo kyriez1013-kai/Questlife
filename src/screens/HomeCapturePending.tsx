@@ -1825,6 +1825,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
               weight: ui.exerciseDetails?.[name]?.weight,
               sets: ui.exerciseDetails?.[name]?.sets,
               reps: ui.exerciseDetails?.[name]?.reps,
+              rpe: ui.exerciseDetails?.[name]?.rpe,
             }))
           : [],
         goalOptions: orderedGoals(data.categories || [], [activeGoalId, cs?.matchedGoalId, smartRoute.selectedGoalId, routing.linkedGoalId])
@@ -1853,6 +1854,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
           confirmDisabled={confirmDisabled}
           entries={universalEntries}
           labels={{
+            actions: t(lang, 'scChooseAction'),
             add: t(lang, 'addCustomAction'),
             advanced: t(lang, 'universalCaptureMoreFields'),
             cancel: t(lang, 'scEntryIgnore'),
@@ -1865,6 +1867,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
             decreaseDuration: t(lang, 'universalCaptureDecreaseDuration'),
             duration: t(lang, 'universalCaptureDuration'),
             durationPlaceholder: t(lang, 'universalCaptureDurationPlaceholder'),
+            details: t(lang, 'captureOptionalCalibration'),
             existing: t(lang, 'scEntryExisting'),
             goal: t(lang, 'goal'),
             interpreted: t(lang, 'universalCaptureInterpreted'),
@@ -1877,11 +1880,14 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
             noModule: t(lang, 'noModule'),
             quality: t(lang, 'quality'),
             reps: t(lang, 'reps'),
+            rpe: t(lang, 'scRpe'),
             route: t(lang, 'routing'),
+            routeUncertain: t(lang, 'scNeedsRouteConfirm'),
             saving: t(lang, 'savingRecord'),
             stateAction: t(lang, 'universalCaptureOpenState'),
             stateHint: t(lang, 'universalCaptureStateHandoff'),
             sets: t(lang, 'sets'),
+            skip: t(lang, 'scSkip'),
             weight: t(lang, 'captureWeight'),
             weightUnit: t(lang, 'captureWeightUnit'),
           }}
@@ -1905,6 +1911,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
           onCustomActionChange={setCustomExercise}
           onDurationChange={setDuration}
           onExerciseValueChange={(index, exerciseName, field, value) => setExerciseDetail(index, exerciseName, field, value)}
+          onExerciseRpeChange={(index, exerciseName, value) => setExerciseDetail(index, exerciseName, 'rpe', value)}
           onNewGoalNameChange={setNewGoalName}
           onNewModuleNameChange={setNewModuleName}
           onOpenState={onOpenState ? () => {

@@ -50,12 +50,16 @@ function fixtureEntry(id: FixtureId, lang: 'zh' | 'en'): UniversalCaptureEntryVi
         { id: 'bench', label: lang === 'zh' ? '卧推' : 'Bench press', value: lang === 'zh' ? '卧推' : 'Bench press' },
         { id: 'incline', label: lang === 'zh' ? '上斜卧推' : 'Incline bench press', value: lang === 'zh' ? '上斜卧推' : 'Incline bench press' },
         { id: 'fly', label: lang === 'zh' ? '飞鸟' : 'Chest fly', value: lang === 'zh' ? '飞鸟' : 'Chest fly' },
+        { id: 'chest-press', label: 'Chest press', value: 'Chest press' },
+        { id: 'push-up', label: lang === 'zh' ? '俯卧撑' : 'Push-up', value: lang === 'zh' ? '俯卧撑' : 'Push-up' },
+        { id: 'dip', label: lang === 'zh' ? '双杠撑臂' : 'Dips', value: lang === 'zh' ? '双杠撑臂' : 'Dips' },
       ],
       selectedActions: [lang === 'zh' ? '卧推' : 'Bench press'],
-      showDuration: false,
+      durationValue: 45,
+      showDuration: true,
       showQuality: true,
       qualityValue: 4,
-      exercises: [{ name: lang === 'zh' ? '卧推' : 'Bench press', weight: '80', sets: '4', reps: '8' }],
+      exercises: [{ name: lang === 'zh' ? '卧推' : 'Bench press', weight: '80', sets: '4', reps: '8', rpe: 8 }],
     };
   }
 
@@ -107,6 +111,7 @@ export default function UniversalCaptureFixtureScreen() {
   const [entry, setEntry] = useState(() => fixtureEntry(fixtureId(), lang));
   const [confirmed, setConfirmed] = useState(false);
   const labels = useMemo<UniversalCaptureLabels>(() => ({
+    actions: t(lang, 'scChooseAction'),
     add: t(lang, 'addCustomAction'),
     advanced: t(lang, 'universalCaptureMoreFields'),
     cancel: t(lang, 'scEntryIgnore'),
@@ -119,6 +124,7 @@ export default function UniversalCaptureFixtureScreen() {
     decreaseDuration: t(lang, 'universalCaptureDecreaseDuration'),
     duration: t(lang, 'universalCaptureDuration'),
     durationPlaceholder: t(lang, 'universalCaptureDurationPlaceholder'),
+    details: t(lang, 'captureOptionalCalibration'),
     existing: t(lang, 'scEntryExisting'),
     goal: t(lang, 'goal'),
     interpreted: t(lang, 'universalCaptureInterpreted'),
@@ -131,11 +137,14 @@ export default function UniversalCaptureFixtureScreen() {
     noModule: t(lang, 'noModule'),
     quality: t(lang, 'quality'),
     reps: t(lang, 'reps'),
+    rpe: t(lang, 'scRpe'),
     route: t(lang, 'routing'),
+    routeUncertain: t(lang, 'scNeedsRouteConfirm'),
     saving: t(lang, 'savingRecord'),
     stateAction: t(lang, 'universalCaptureOpenState'),
     stateHint: t(lang, 'universalCaptureStateHandoff'),
     sets: t(lang, 'sets'),
+    skip: t(lang, 'scSkip'),
     weight: t(lang, 'captureWeight'),
     weightUnit: t(lang, 'captureWeightUnit'),
   }), [lang]);
@@ -186,6 +195,9 @@ export default function UniversalCaptureFixtureScreen() {
               onDurationChange={(_, value) => update({ durationValue: value })}
               onExerciseValueChange={(_, exerciseName, field, value) => update({
                 exercises: entry.exercises.map((exercise) => exercise.name === exerciseName ? { ...exercise, [field]: value } : exercise),
+              })}
+              onExerciseRpeChange={(_, exerciseName, value) => update({
+                exercises: entry.exercises.map((exercise) => exercise.name === exerciseName ? { ...exercise, rpe: value } : exercise),
               })}
               onNewGoalNameChange={(_, value) => update({ newGoalName: value })}
               onNewModuleNameChange={(_, value) => update({ newModuleName: value })}

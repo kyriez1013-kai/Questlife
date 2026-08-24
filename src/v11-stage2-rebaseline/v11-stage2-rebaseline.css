@@ -166,37 +166,79 @@
 
 [data-v11-rebaseline-role="production-root"]
   [data-v11-rebaseline-role="context-line"] {
-  padding: 0 var(--v11-today-context-padding) var(--v11-today-context-padding);
-  align-items: flex-start;
+  padding: 0 var(--v11-today-context-padding) 10px;
+  align-items: center;
   gap: var(--v11-today-context-gap);
+}
+
+[data-v11-rebaseline-role="context-copy"] {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
 }
 
 [data-v11-rebaseline-role="context-primary"] {
   min-width: 0;
-  flex: 1 1 auto;
+  font-size: 17px;
+  line-height: 22px;
+  letter-spacing: -0.1px;
+}
+
+[data-v11-rebaseline-role="context-meta"] {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 [data-v11-rebaseline-role="context-stage"] {
   flex: 0 0 auto;
-  padding-top: var(--v11-today-hairline);
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--v11-rebaseline-neutral-surface) 72%, transparent);
   white-space: nowrap;
 }
 
 [data-v11-rebaseline-role="capture-entry"] {
-  min-height: 52px;
-  padding: 0 9px 0 16px;
+  min-height: 60px;
+  padding: 7px 5px 7px 7px;
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   border-radius: 18px;
   border: var(--v11-today-hairline, 1px) solid var(--v11-rebaseline-neutral-border, transparent);
-  background: var(--v11-rebaseline-neutral-surface, color-mix(in srgb, var(--v11-rebaseline-soft) 48%, transparent));
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--v11-rebaseline-neutral-elevated) 54%, transparent),
+      color-mix(in srgb, var(--v11-rebaseline-neutral-surface) 74%, transparent)
+    );
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--v11-rebaseline-text) 10%, transparent),
-    0 12px 30px color-mix(in srgb, var(--v11-rebaseline-bg) 20%, transparent);
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
+    inset 0 1px 0 color-mix(in srgb, var(--v11-rebaseline-text) 12%, transparent),
+    0 10px 24px color-mix(in srgb, var(--v11-rebaseline-bg) 18%, transparent);
+  backdrop-filter: blur(16px) saturate(128%);
+  -webkit-backdrop-filter: blur(16px) saturate(128%);
+}
+
+[data-v11-rebaseline-role="capture-leading"] {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  flex: 0 0 38px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--v11-rebaseline-neutral-elevated) 70%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--v11-rebaseline-text) 9%, transparent);
+}
+
+[data-v11-rebaseline-role="capture-copy"] {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
 }
 
 [data-v11-rebaseline-role="capture-group"] {
@@ -219,14 +261,14 @@
 }
 
 [data-v11-rebaseline-role="capture-send"] {
-  border: var(--v11-today-hairline, 1px) solid var(--v11-rebaseline-neutral-border, transparent);
-  background: var(--v11-rebaseline-neutral-surface, transparent);
+  border: 0;
+  background: transparent;
 }
 
 [data-v11-rebaseline-role="state-update"] {
-  min-width: 76px;
+  min-width: 44px;
   min-height: 44px;
-  padding: 0 12px;
+  padding: 0 10px;
   display: flex;
   flex: 0 0 auto;
   flex-direction: row;
@@ -234,7 +276,8 @@
   justify-content: center;
   gap: 6px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--v11-rebaseline-elevated) 76%, transparent);
+  border: 1px solid var(--v11-rebaseline-neutral-border);
+  background: color-mix(in srgb, var(--v11-rebaseline-neutral-surface) 68%, transparent);
 }
 
 [data-v11-rebaseline-role="latest-record"] {
@@ -837,10 +880,25 @@
   min-width: 0;
   margin: 12px 0 0;
   padding: 12px 0 max(16px, env(safe-area-inset-bottom));
-  background: color-mix(in srgb, var(--v11-rebaseline-elevated) 92%, transparent);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid color-mix(in srgb, var(--v11-rebaseline-text) 10%, transparent);
+  background: color-mix(in srgb, var(--v11-rebaseline-elevated) 96%, var(--v11-rebaseline-bg));
   box-shadow: 0 -16px 28px color-mix(in srgb, var(--v11-rebaseline-bg) 52%, transparent);
   backdrop-filter: blur(22px) saturate(140%);
   -webkit-backdrop-filter: blur(22px) saturate(140%);
+}
+
+[data-v11-rebaseline-role="capture-pending-actions"] > [data-v11-control="sheet-button"] {
+  min-height: 48px;
+  flex: 1 1 0;
+}
+
+[data-v11-rebaseline-role="capture-pending-actions"]
+  > [data-v11-control="sheet-button"][data-v11-variant="primary"] {
+  flex-grow: 1.35;
 }
 
 [data-v11-rebaseline-role="capture-recognized-action"] {
@@ -983,6 +1041,7 @@
 
 [data-universal-capture-role="confirmation-heading"] {
   min-width: 0;
+  padding-bottom: 3px;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -1028,6 +1087,11 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+[data-universal-capture-role="details-label"] {
+  padding-top: 2px;
+  letter-spacing: 0.9px;
 }
 
 [data-universal-capture-role="compact-choice-row"] {
@@ -1081,6 +1145,28 @@
   grid-template-columns: minmax(76px, 1.15fr) repeat(3, minmax(0, 1fr));
   align-items: end;
   gap: 7px;
+}
+
+[data-universal-capture-role="exercise-details"] {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+[data-universal-capture-role="exercise-calibration"] {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(76px, 1.15fr) minmax(0, 3fr);
+  align-items: center;
+  gap: 7px;
+}
+
+[data-universal-capture-role="exercise-calibration"]
+  [data-v11-control="compact-value-option"]
+  > * {
+  white-space: nowrap;
+  overflow-wrap: normal;
 }
 
 [data-universal-capture-role="numeric-heading"],
@@ -1171,17 +1257,16 @@
 }
 
 @media (max-width: 374px) {
-  [data-universal-capture-role="confirmation"]
-    > [data-v11-rebaseline-role="capture-pending-actions"] {
-    position: static;
-  }
-
   [data-universal-capture-role="numeric-row"] {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   [data-universal-capture-role="numeric-heading"] {
     grid-column: 1 / -1;
+  }
+
+  [data-universal-capture-role="exercise-calibration"] {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   [data-universal-capture-role="correction-grid"] {

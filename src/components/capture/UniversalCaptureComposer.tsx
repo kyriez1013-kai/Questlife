@@ -13,6 +13,7 @@ import type { UniversalCaptureDomain } from '../../utils/universalCapture';
 import V11RebaselineIcon from '../../v11-stage2-rebaseline/V11RebaselineIcon';
 
 const WebView = View as any;
+const WebText = Text as any;
 
 export type UniversalCaptureOption = {
   id: string;
@@ -30,6 +31,7 @@ export type UniversalCaptureExerciseValues = {
   weight?: string;
   sets?: string;
   reps?: string;
+  rpe?: number | null;
 };
 
 export type UniversalCaptureEntryView = {
@@ -63,6 +65,7 @@ export type UniversalCaptureEntryView = {
 };
 
 export type UniversalCaptureLabels = {
+  actions: string;
   add: string;
   advanced: string;
   cancel: string;
@@ -74,6 +77,7 @@ export type UniversalCaptureLabels = {
   customAction: string;
   duration: string;
   durationPlaceholder: string;
+  details: string;
   decreaseDuration: string;
   existing: string;
   goal: string;
@@ -87,11 +91,14 @@ export type UniversalCaptureLabels = {
   noModule: string;
   quality: string;
   reps: string;
+  rpe: string;
   route: string;
+  routeUncertain: string;
   saving: string;
   stateAction: string;
   stateHint: string;
   sets: string;
+  skip: string;
   weight: string;
   weightUnit: string;
 };
@@ -114,6 +121,7 @@ type Props = {
     field: 'weight' | 'sets' | 'reps',
     value: string,
   ) => void;
+  onExerciseRpeChange: (entryIndex: number, exerciseName: string, value: number | null) => void;
   onNewGoalNameChange: (entryIndex: number, value: string) => void;
   onNewModuleNameChange: (entryIndex: number, value: string) => void;
   onOpenState?: () => void;
@@ -211,6 +219,7 @@ function EntryActions({
 
   return (
     <WebView dataSet={{ 'universal-capture-role': 'action-selector' }}>
+      <Text style={{ color: theme.text.secondary, ...v11Typography.metadata }}>{labels.actions}</Text>
       <WebView dataSet={{ 'universal-capture-role': 'compact-choice-row' }}>
         {primaryOptions.map((option) => (
           <V11CategoricalChip
@@ -393,6 +402,7 @@ function UniversalEntry({
   onCreateModule,
   onCustomActionChange,
   onDurationChange,
+  onExerciseRpeChange,
   onExerciseValueChange,
   onNewGoalNameChange,
   onNewModuleNameChange,
@@ -449,45 +459,69 @@ function UniversalEntry({
             theme={theme}
           />
 
+          {(entry.exercises.length > 0 || entry.showDuration || entry.showQuality) ? (
+            <WebText
+              dataSet={{ 'universal-capture-role': 'details-label' }}
+              style={{ color: theme.text.secondary, ...v11Typography.metadata }}
+            >
+              {labels.details}
+            </WebText>
+          ) : null}
+
           {entry.exercises.map((exercise) => (
-            <WebView dataSet={{ 'universal-capture-role': 'numeric-row' }} key={exercise.name}>
-              <WebView dataSet={{ 'universal-capture-role': 'numeric-heading' }}>
-                <Text numberOfLines={1} style={{ color: theme.text.primary, ...v11Typography.label }}>{exercise.name}</Text>
-              </WebView>
-              <WebView dataSet={{ 'universal-capture-role': 'numeric-field' }}>
-                <Text style={{ color: theme.text.secondary, ...v11Typography.metadata }}>{labels.weight}</Text>
-                <WebView dataSet={{ 'universal-capture-role': 'numeric-control' }}>
+            <WebView dataSet={{ 'universal-capture-role': 'exercise-details' }} key={exercise.name}>
+              <WebView dataSet={{ 'universal-capture-role': 'numeric-row' }}>
+                <WebView dataSet={{ 'universal-capture-role': 'numeric-heading' }}>
+                  <Text numberOfLines={1} style={{ color: theme.text.primary, ...v11Typography.label }}>{exercise.name}</Text>
+                </WebView>
+                <WebView dataSet={{ 'universal-capture-role': 'numeric-field' }}>
+                  <Text style={{ color: theme.text.secondary, ...v11Typography.metadata }}>{labels.weight}</Text>
+                  <WebView dataSet={{ 'universal-capture-role': 'numeric-control' }}>
+                    <V11TextField
+                      keyboardType="numeric"
+                      onChangeText={(value) => onExerciseValueChange(entry.index, exercise.name, 'weight', value)}
+                      placeholder="0"
+                      theme={theme}
+                      tone="neutral"
+                      value={exercise.weight ?? ''}
+                    />
+                    <Text style={{ color: theme.text.secondary, ...v11Typography.metadata }}>{labels.weightUnit}</Text>
+                  </WebView>
+                </WebView>
+                <WebView dataSet={{ 'universal-capture-role': 'numeric-field' }}>
+                  <Text style={{ color: theme.text.secondary, ...v11Typography.metadata }}>{labels.sets}</Text>
                   <V11TextField
                     keyboardType="numeric"
-                    onChangeText={(value) => onExerciseValueChange(entry.index, exercise.name, 'weight', value)}
+                    onChangeText={(value) => onExerciseValueChange(entry.index, exercise.name, 'sets', value)}
                     placeholder="0"
                     theme={theme}
                     tone="neutral"
-                    value={exercise.weight ?? ''}
+                    value={exercise.sets ?? ''}
                   />
-                  <Text style={{ color: theme.text.secondary, ...v11Typography.metadata }}>{labels.weightUnit}</Text>
+                </WebView>
+                <WebView dataSet={{ 'universal-capture-role': 'numeric-field' }}>
+                  <Text style={{ color: theme.text.secondary, ...v11Typography.metadata }}>{labels.reps}</Text>
+                  <V11TextField
+                    keyboardType="numeric"
+                    onChangeText={(value) => onExerciseValueChange(entry.index, exercise.name, 'reps', value)}
+                    placeholder="0"
+                    theme={theme}
+                    tone="neutral"
+                    value={exercise.reps ?? ''}
+                  />
                 </WebView>
               </WebView>
-              <WebView dataSet={{ 'universal-capture-role': 'numeric-field' }}>
-                <Text style={{ color: theme.text.secondary, ...v11Typography.metadata }}>{labels.sets}</Text>
-                <V11TextField
-                  keyboardType="numeric"
-                  onChangeText={(value) => onExerciseValueChange(entry.index, exercise.name, 'sets', value)}
-                  placeholder="0"
+              <WebView dataSet={{ 'universal-capture-role': 'exercise-calibration' }}>
+                <Text style={{ color: theme.text.secondary, ...v11Typography.metadata }}>{labels.rpe}</Text>
+                <V11CompactValueSelector<number | null>
+                  columns={6}
+                  onChange={(value) => onExerciseRpeChange(entry.index, exercise.name, value)}
+                  options={[
+                    ...[6, 7, 8, 9, 10].map((value) => ({ value, label: String(value) })),
+                    { value: null, label: labels.skip },
+                  ]}
                   theme={theme}
-                  tone="neutral"
-                  value={exercise.sets ?? ''}
-                />
-              </WebView>
-              <WebView dataSet={{ 'universal-capture-role': 'numeric-field' }}>
-                <Text style={{ color: theme.text.secondary, ...v11Typography.metadata }}>{labels.reps}</Text>
-                <V11TextField
-                  keyboardType="numeric"
-                  onChangeText={(value) => onExerciseValueChange(entry.index, exercise.name, 'reps', value)}
-                  placeholder="0"
-                  theme={theme}
-                  tone="neutral"
-                  value={exercise.reps ?? ''}
+                  value={exercise.rpe}
                 />
               </WebView>
             </WebView>
@@ -524,7 +558,9 @@ function UniversalEntry({
           {entry.routeLabel ? (
             <WebView dataSet={{ 'universal-capture-role': 'route-summary', 'universal-capture-uncertain': entry.routeUncertain ? 'true' : 'false' }}>
               <V11RebaselineIcon name="target" size={15} color={theme.text.secondary} />
-              <Text style={{ color: theme.text.secondary, ...v11Typography.metadata }}>{entry.routeLabel}</Text>
+              <Text style={{ color: theme.text.secondary, ...v11Typography.metadata }}>
+                {entry.routeUncertain ? `${labels.routeUncertain} · ` : ''}{entry.routeLabel}
+              </Text>
               <V11SheetButton
                 label={advancedOpen ? labels.less : labels.advanced}
                 onPress={() => setAdvancedOpen((value) => !value)}
