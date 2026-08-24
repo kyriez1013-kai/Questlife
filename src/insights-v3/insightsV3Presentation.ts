@@ -22,9 +22,32 @@ export type InsightsV3RangeSelection =
 
 export type InsightsV3CompactCue = {
   boundary: 'fact' | 'inference';
+  eyebrow: string;
   text: string;
   detail: string | null;
+  evidence: string;
+  action: 'drivers' | 'similar' | 'recovery' | 'evidence';
+  actionLabel: string;
 };
+
+export type InsightsV3PersonalContext = {
+  currentValue: string;
+  currentUnit: string;
+  referenceValue: string;
+  changeValue: string;
+  evidenceValue: string;
+  relationship:
+    | 'above_reference'
+    | 'below_reference'
+    | 'at_reference'
+    | 'later_than_reference'
+    | 'earlier_than_reference'
+    | 'reference_forming'
+    | 'observation_unavailable';
+  summary: string;
+};
+
+type DriverCandidate = NonNullable<NonNullable<QuantProductBundleV1['interpretation']>['driver_analysis']>['candidates'][number];
 
 const instrumentKeys: Record<string, InsightsV3CopyKey> = {
   steps: 'instrumentSteps',
@@ -141,6 +164,85 @@ export function formatDateTime(lang: Lang, value: string, includeTime = false) {
     : { year: 'numeric', month: 'short', day: 'numeric' }).format(date);
 }
 
+export function buildPersonalContext(
+  lang: Lang,
+  instrument: QuantProductConsumerInstrument,
+): InsightsV3PersonalContext {
+  const currentValue = formatQuantValue(instrument.latest?.value, instrument.unit, lang);
+  const currentUnit = unitLabel(instrument.unit, lang);
+  const referenceValue = instrument.reference.value == null
+    ? iv3(lang, 'noReference')
+    : `${formatQuantValue(instrument.reference.value, instrument.unit, lang)} ${currentUnit}`.trim();
+  const changeValue = instrument.change.absolute == null
+    ? iv3(lang, 'noComparison')
+    : formatSignedValue(instrument.change.absolute, instrument.unit, lang);
+  const evidenceValue = iv3(lang, 'observations', { count: instrument.evidence.observation_count });
+  const latest = instrument.latest?.value;
+  const reference = instrument.reference.value;
+
+  if (latest == null) {
+    return {
+      currentValue,
+      currentUnit,
+      referenceValue,
+      changeValue,
+      evidenceValue,
+      relationship: 'observation_unavailable',
+      summary: iv3(lang, 'currentObservationUnavailable'),
+    };
+  }
+  if (reference == null || instrument.reference.status === 'UNAVAILABLE' || instrument.reference.status === 'FORMING') {
+    return {
+      currentValue,
+      currentUnit,
+      referenceValue,
+      changeValue,
+      evidenceValue,
+      relationship: 'reference_forming',
+      summary: iv3(lang, 'referenceFormingContext'),
+    };
+  }
+  if (latest === reference) {
+    return {
+      currentValue,
+      currentUnit,
+      referenceValue,
+      changeValue,
+      evidenceValue,
+      relationship: 'at_reference',
+      summary: iv3(lang, 'currentAtReference'),
+    };
+  }
+  if (instrument.unit === 'minutes_from_local_noon') {
+    const later = latest > reference;
+    return {
+      currentValue,
+      currentUnit,
+      referenceValue,
+      changeValue,
+      evidenceValue,
+      relationship: later ? 'later_than_reference' : 'earlier_than_reference',
+      summary: iv3(lang, later ? 'currentLaterReference' : 'currentEarlierReference'),
+    };
+  }
+  const above = latest > reference;
+  return {
+    currentValue,
+    currentUnit,
+    referenceValue,
+    changeValue,
+    evidenceValue,
+    relationship: above ? 'above_reference' : 'below_reference',
+    summary: iv3(lang, above ? 'currentAboveReference' : 'currentBelowReference'),
+  };
+}
+
+export function driverRelationshipCopy(lang: Lang, candidate: DriverCandidate) {
+  if (candidate.evidence_status === 'STRONG_OBSERVATIONAL_FIT') return iv3(lang, 'driverRelationshipRepeated');
+  if (candidate.evidence_status === 'WEAK_OR_MIXED') return iv3(lang, 'driverRelationshipMixed');
+  return iv3(lang, 'driverRelationshipObserved');
+}
+
 export function evidenceStageLabel(lang: Lang, stage: QuantProductInstrumentV1['evidence']['stage']) {
   return iv3(lang, `stage${stage}` as InsightsV3CopyKey);
 }
@@ -252,44 +354,75 @@ export function buildCompactCue(
   bundle: QuantProductBundleV1,
   instrument: QuantProductConsumerInstrument,
 ): InsightsV3CompactCue {
+  const personalContext = buildPersonalContext(lang, instrument);
   const interpretation = bundle.interpretation;
   const driver = interpretation?.target_instrument_id === instrument.id
     ? interpretation.driver_analysis?.candidates[0]
     : null;
   if (driver) {
     const source = bundle.instruments.find((row) => row.instrument_id === driver.driver_instrument_id);
+    const driverName = source ? instrumentLabel(lang, source) : iv3(lang, 'instrumentGeneric');
     return {
       boundary: 'inference',
+      eyebrow: iv3(lang, 'interpretationCue'),
       text: iv3(lang, 'driverCue', {
-        driver: source ? instrumentLabel(lang, source) : iv3(lang, 'instrumentGeneric'),
+        driver: driverName,
         target: instrumentLabel(lang, instrument),
-        support: driver.support_count,
-        counter: driver.counterexample_count,
       }),
-      detail: iv3(lang, 'driverLimit'),
+      detail: driverRelationshipCopy(lang, driver),
+      evidence: iv3(lang, 'supportCounter', { support: driver.support_count, counter: driver.counterexample_count }),
+      action: 'drivers',
+      actionLabel: iv3(lang, 'viewObservedAssociations'),
     };
   }
-  const change = instrument.change;
-  if (change.kind !== 'NONE' && change.absolute != null) {
-    const value = formatSignedValue(Math.abs(change.absolute), instrument.unit, lang);
+
+  const similar = interpretation?.target_instrument_id === instrument.id
+    && interpretation.similar_periods?.status.state === 'AVAILABLE'
+    ? interpretation.similar_periods
+    : null;
+  if (similar?.periods.length) {
     return {
-      boundary: 'fact',
-      text: change.direction === 'HIGHER'
-        ? iv3(lang, 'comparedPreviousHigher', { value })
-        : change.direction === 'LOWER'
-          ? iv3(lang, 'comparedPreviousLower', { value })
-          : iv3(lang, 'comparedPreviousFlat'),
-      detail: null,
+      boundary: 'inference',
+      eyebrow: iv3(lang, 'interpretationCue'),
+      text: iv3(lang, 'similarCue', { count: similar.periods.length }),
+      detail: iv3(lang, 'similarCueLimit'),
+      evidence: iv3(lang, 'similarPeriodEvidence', { count: similar.periods.length }),
+      action: 'similar',
+      actionLabel: iv3(lang, 'viewSimilarPeriods'),
     };
   }
-  if (instrument.evidence.observation_count > 1) {
+
+  const recovery = interpretation?.target_instrument_id === instrument.id
+    && interpretation.recovery?.status.state === 'AVAILABLE'
+    && interpretation.recovery.semantics === 'HISTORICAL_ANALOGUE'
+    ? interpretation.recovery
+    : null;
+  if (recovery?.historical_episode_ids.length) {
     return {
-      boundary: 'fact',
-      text: iv3(lang, 'formingCue', { count: instrument.evidence.observation_count }),
-      detail: null,
+      boundary: 'inference',
+      eyebrow: iv3(lang, 'interpretationCue'),
+      text: iv3(lang, 'recoveryCue', { count: recovery.historical_episode_ids.length }),
+      detail: iv3(lang, 'recoveryCueLimit'),
+      evidence: iv3(lang, 'historicalEpisodes', { count: recovery.historical_episode_ids.length }),
+      action: 'recovery',
+      actionLabel: iv3(lang, 'viewHistoricalFollowup'),
     };
   }
-  return { boundary: 'fact', text: iv3(lang, 'observationCue'), detail: null };
+
+  return {
+    boundary: 'fact',
+    eyebrow: iv3(lang, 'currentObservation'),
+    text: personalContext.summary,
+    detail: instrument.evidence.observation_count <= 1
+      ? iv3(lang, 'firstObservationContext')
+      : iv3(lang, 'explanationInsufficient'),
+    evidence: iv3(lang, 'observationEvidence', {
+      count: instrument.evidence.observation_count,
+      periods: instrument.evidence.independent_period_count,
+    }),
+    action: 'evidence',
+    actionLabel: iv3(lang, 'viewEvidence'),
+  };
 }
 
 export function nextObservationCopy(lang: Lang, bundle: QuantProductBundleV1) {
