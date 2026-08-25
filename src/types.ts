@@ -270,6 +270,8 @@ export interface ScheduleBlock {
   flexibility: 'fixed' | 'flexible' | 'movable';
   rigidity: 'low' | 'medium' | 'high';
   status: 'planned' | 'adjusted' | 'completed' | 'skipped';
+  /** Explicit user placement authority. Fixed commitments remain locked regardless. */
+  placementLocked?: boolean;
   notes?: string;
   createdAt: number;
   source?: 'manual' | 'skill_rule';
