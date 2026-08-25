@@ -1,5 +1,5 @@
-import React, { useMemo, useRef, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute } from '@react-navigation/native';
 import { useStore } from '../store';
@@ -14,17 +14,16 @@ import { generateScheduleBlocksFromSkills } from '../scheduleAdjust';
 import { formatMetricSummary, progressTypeForSkill } from '../progress';
 import { questLayout, QuestTheme } from '../design/tokens';
 import { useQuestTheme } from '../design/useQuestTheme';
-import { systemIcons } from '../design/systemIcons';
-import { getSkillSemanticIcon } from '../design/entityIcons';
 import { isStrengthPredictionSkill, strengthVolume } from '../utils/prediction';
 import QuestButton from '../components/ui/QuestButton';
-import { QuestCompactRow, QuestContextBar, QuestGroupedSurface, QuestSectionHeader } from '../components/ui/QuestPrimitives';
-import QuestEntityIcon from '../components/ui/QuestEntityIcon';
+import { QuestSectionHeader } from '../components/ui/QuestPrimitives';
 import QuestIcon from '../components/ui/QuestIcon';
 import QuestInput from '../components/ui/QuestInput';
 import QuestPill from '../components/ui/QuestPill';
 import QuestSegmentedControl from '../components/ui/QuestSegmentedControl';
 import ScheduleProposalReview from '../components/schedule/ScheduleProposalReview';
+import ScheduleDayTimeline from '../components/schedule/ScheduleDayTimeline';
+import SchedulePlanCompilerSheet from '../components/schedule/SchedulePlanCompilerSheet';
 import { confirmAction } from '../utils/confirm';
 import {
   buildScheduleProposalPatch,
@@ -33,6 +32,12 @@ import {
 } from '../utils/scheduleProposal';
 import { isDecisionDebugEnabled } from '../services/decisionService';
 import { getV11ProductLanguage, getV11ProductThemeId } from '../v11/featureFlag';
+import {
+  compileScheduleDay,
+  deriveScheduleOpenWindows,
+  ScheduleCompilerResult,
+  scheduleTimeToMinutes,
+} from '../utils/scheduleCompiler';
 
 const TASK_TYPES: TaskType[] = [
   'deep_study',
@@ -65,12 +70,7 @@ function weekDates(base: string) {
   });
 }
 
-const HOURS = Array.from({ length: 19 }, (_, i) => i + 6);
 const WEEKDAY_FULL_KEYS = ['weekdayFullSun', 'weekdayFullMon', 'weekdayFullTue', 'weekdayFullWed', 'weekdayFullThu', 'weekdayFullFri', 'weekdayFullSat'];
-
-function hourOf(time: string) {
-  return Number(time.split(':')[0]);
-}
 
 function minuteOfDay(time: string) {
   const [h, m] = time.split(':').map(Number);
@@ -83,24 +83,30 @@ function optionalNumber(value: string) {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
-function closestSectionHour(time: string) {
-  const hour = Math.max(6, Math.min(24, hourOf(time)));
-  return Math.max(6, Math.min(24, hour));
-}
-
-function currentSectionHour() {
-  const h = new Date().getHours();
-  return Math.max(6, Math.min(24, h));
-}
-
-function currentTimeTop() {
-  const now = new Date();
-  return ((now.getHours() * 60 + now.getMinutes()) - 6 * 60) / (18 * 60);
-}
-
 function dateWithWeekday(date: string, lang: 'zh' | 'en') {
   const d = new Date(`${date}T00:00:00`);
   return `${date} · ${t(lang, WEEKDAY_FULL_KEYS[d.getDay()])}`;
+}
+
+function shiftScheduleDate(date: string, days: number) {
+  const next = new Date(`${date}T00:00:00`);
+  next.setDate(next.getDate() + days);
+  return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`;
+}
+
+function scheduleCopy(lang: 'zh' | 'en', key: string, values: Record<string, string | number> = {}) {
+  return Object.entries(values).reduce(
+    (copy, [name, value]) => copy.replace(new RegExp(`\\{${name}\\}`, 'g'), String(value)),
+    t(lang, key),
+  );
+}
+
+function resolveScheduleDayBounds(blocks: ScheduleBlock[]) {
+  const starts = blocks.map((block) => scheduleTimeToMinutes(block.startTime)).filter(Number.isFinite);
+  const ends = blocks.map((block) => scheduleTimeToMinutes(block.endTime)).filter(Number.isFinite);
+  const dayStartMinutes = Math.max(0, Math.min(7 * 60, starts.length ? Math.floor(Math.min(...starts) / 60) * 60 : 7 * 60));
+  const dayEndMinutes = Math.min(24 * 60, Math.max(23 * 60, ends.length ? Math.ceil(Math.max(...ends) / 60) * 60 : 23 * 60));
+  return { dayStartMinutes, dayEndMinutes };
 }
 
 function monthCells(base: string) {
@@ -135,10 +141,48 @@ export default function ScheduleScreen() {
   const lang = getV11ProductLanguage(getLanguage(data.settings.language));
   const questTheme = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const accent = questTheme.colors.primary;
+  const scheduleV3Styles = useMemo(() => ({
+    dateNavigator: {
+      minHeight: questLayout.controlMinHeight,
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: questTheme.spacing.sm,
+      paddingVertical: questTheme.spacing.sm,
+      borderBottomWidth: 1,
+    },
+    iconButton: { width: questLayout.controlMinHeight, paddingHorizontal: 0 },
+    dateNavigatorLabel: {
+      flex: 1,
+      textAlign: 'center' as const,
+      fontSize: questTheme.typography.compactBodySize,
+      lineHeight: questTheme.typography.compactBodyLineHeight,
+      fontWeight: questTheme.typography.weightBold,
+    },
+    planStatusSurface: {
+      marginTop: questTheme.spacing.md,
+      padding: questTheme.spacing.lg,
+      borderRadius: questTheme.radius.lg,
+      borderWidth: 1,
+    },
+    planStatusTopRow: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'space-between' as const, gap: questTheme.spacing.sm },
+    planStatusEyebrow: { fontSize: questTheme.typography.metaSize, lineHeight: questTheme.typography.metaLineHeight, fontWeight: questTheme.typography.weightBold },
+    planStatusTitle: { marginTop: questTheme.spacing.md, fontSize: questTheme.typography.titleSize, lineHeight: questTheme.typography.titleLineHeight, fontWeight: questTheme.typography.weightBold },
+    planStatusMeta: { marginTop: questTheme.spacing.xs, fontSize: questTheme.typography.helperSize, lineHeight: questTheme.typography.helperLineHeight },
+    currentNextStrip: { flexDirection: 'row' as const, alignItems: 'stretch' as const, marginTop: questTheme.spacing.lg, borderTopWidth: 1, borderBottomWidth: 1, paddingVertical: questTheme.spacing.sm },
+    currentNextItem: { flex: 1, minWidth: 0, paddingHorizontal: questTheme.spacing.sm },
+    currentNextLabel: { fontSize: questTheme.typography.metaSize, lineHeight: questTheme.typography.metaLineHeight },
+    currentNextValue: { marginTop: questTheme.spacing.xs, fontSize: questTheme.typography.compactBodySize, lineHeight: questTheme.typography.compactBodyLineHeight, fontWeight: questTheme.typography.weightMedium },
+    currentNextDivider: { width: 1 },
+    planActions: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, alignItems: 'center' as const, gap: questTheme.spacing.sm, marginTop: questTheme.spacing.lg },
+    planPrimaryAction: { flexGrow: 1, flexBasis: 210 },
+    planHelper: { marginTop: questTheme.spacing.sm, fontSize: questTheme.typography.helperSize, lineHeight: questTheme.typography.helperLineHeight },
+    timelineLegend: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, alignItems: 'center' as const, gap: questTheme.spacing.md, paddingVertical: questTheme.spacing.md },
+    legendItem: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: questTheme.spacing.xs },
+    legendText: { fontSize: questTheme.typography.metaSize, lineHeight: questTheme.typography.metaLineHeight },
+    timelineHint: { flexGrow: 1, minWidth: 160, fontSize: questTheme.typography.metaSize, lineHeight: questTheme.typography.metaLineHeight, textAlign: 'right' as const },
+  }), [questTheme]);
   const [view, setView] = useState<'day' | 'week' | 'month' | 'year'>('day');
   const [selectedDate, setSelectedDate] = useState(today());
-  const [highlightHour, setHighlightHour] = useState<number | null>(null);
-  const scrollRef = useRef<ScrollView | null>(null);
   const [open, setOpen] = useState(false);
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
 
@@ -149,6 +193,8 @@ export default function ScheduleScreen() {
   const [taskType, setTaskType] = useState<TaskType>('deep_study');
   const [flexibility, setFlexibility] = useState<ScheduleBlock['flexibility']>('flexible');
   const [rigidity, setRigidity] = useState<ScheduleBlock['rigidity']>('medium');
+  const [placementLocked, setPlacementLocked] = useState(false);
+  const [editingSeedBlock, setEditingSeedBlock] = useState<ScheduleBlock | null>(null);
   const [linkedGoalId, setLinkedGoalId] = useState<string | undefined>();
   const [linkedSkillId, setLinkedSkillId] = useState<string | undefined>();
   const [notes, setNotes] = useState('');
@@ -172,6 +218,12 @@ export default function ScheduleScreen() {
   const [logChecklistIds, setLogChecklistIds] = useState<string[]>([]);
   const [proposalStatuses, setProposalStatuses] = useState<Record<string, ScheduleProposalStatus>>({});
   const [proposalUndo, setProposalUndo] = useState<{ proposalId: string; block: ScheduleBlock } | null>(null);
+  const [pendingPlan, setPendingPlan] = useState<ScheduleCompilerResult | null>(null);
+  const [compilerOpen, setCompilerOpen] = useState(false);
+  const [nowMinutes, setNowMinutes] = useState(() => {
+    const now = new Date();
+    return now.getHours() * 60 + now.getMinutes();
+  });
 
   const proposalReview = route.params?.scheduleProposalReview as {
     proposals?: ScheduleProposal[];
@@ -198,9 +250,50 @@ export default function ScheduleScreen() {
     () => allBlocks.filter((b) => b.date === selectedDate).sort((a, b) => a.startTime.localeCompare(b.startTime)),
     [allBlocks, selectedDate]
   );
+  const { dayStartMinutes, dayEndMinutes } = useMemo(() => resolveScheduleDayBounds(dayBlocks), [dayBlocks]);
+  const persistedScheduleIds = useMemo(() => new Set((data.scheduleBlocks || []).map((block) => block.id)), [data.scheduleBlocks]);
+  const fixedDayBlocks = useMemo(() => dayBlocks.filter((block) => block.flexibility === 'fixed'), [dayBlocks]);
+  const flexibleCandidates = useMemo(() => dayBlocks
+    .filter((block) => block.flexibility !== 'fixed')
+    .map((block) => {
+      const skill = block.linkedSkillId ? data.skills.find((item) => item.id === block.linkedSkillId) : undefined;
+      const explicitGoalId = block.linkedGoalId ?? skill?.categoryId ?? skill?.goalId ?? skill?.linkedGoalIds?.[0];
+      const goal = explicitGoalId ? data.categories.find((item) => item.id === explicitGoalId) : undefined;
+      return {
+        block,
+        persisted: persistedScheduleIds.has(block.id),
+        preferredStartTime: block.source === 'skill_rule' ? block.startTime : undefined,
+        deadlineAt: goal?.targetDate ? `${goal.targetDate}T23:59:59` : undefined,
+      };
+    }), [data.categories, data.skills, dayBlocks, persistedScheduleIds]);
+  const openWindows = useMemo(() => (
+    pendingPlan?.openWindows ?? deriveScheduleOpenWindows(dayStartMinutes, dayEndMinutes, dayBlocks)
+  ), [dayBlocks, dayEndMinutes, dayStartMinutes, pendingPlan?.openWindows]);
+  const openMinutes = useMemo(() => openWindows.reduce((sum, window) => sum + window.endMinutes - window.startMinutes, 0), [openWindows]);
+  const overlapCount = useMemo(() => dayBlocks.filter((block) => blocksOverlap(block, dayBlocks)).length, [dayBlocks]);
+  const planStatus = pendingPlan
+    ? pendingPlan.unplaced.length > 0 ? 'needs_adjustment' : 'proposal'
+    : dayBlocks.length === 0
+      ? 'none'
+      : overlapCount > 0
+        ? 'needs_adjustment'
+        : 'accepted';
+
+  useEffect(() => {
+    const updateNow = () => {
+      const now = new Date();
+      setNowMinutes(now.getHours() * 60 + now.getMinutes());
+    };
+    const timer = setInterval(updateNow, 30_000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    setPendingPlan(null);
+    setCompilerOpen(false);
+  }, [selectedDate]);
+
   const nowInfo = useMemo(() => {
-    const now = new Date();
-    const nowMinutes = now.getHours() * 60 + now.getMinutes();
     const active = selectedDate === today()
       ? dayBlocks.find((b) => minuteOfDay(b.startTime) <= nowMinutes && nowMinutes < minuteOfDay(b.endTime))
       : undefined;
@@ -208,16 +301,11 @@ export default function ScheduleScreen() {
       ? dayBlocks.find((b) => minuteOfDay(b.startTime) > nowMinutes)
       : dayBlocks[0];
     return { active, next };
-  }, [dayBlocks, selectedDate]);
-
-  const jumpToNow = () => {
-    const hour = currentSectionHour();
-    setHighlightHour(hour);
-    scrollRef.current?.scrollTo({ y: 190 + HOURS.indexOf(hour) * 56, animated: true });
-  };
+  }, [dayBlocks, nowMinutes, selectedDate]);
 
   const openCreateBlock = () => {
     setEditingBlockId(null);
+    setEditingSeedBlock(null);
     setTitle('');
     setDate(selectedDate);
     setStartTime('09:00');
@@ -225,14 +313,19 @@ export default function ScheduleScreen() {
     setTaskType('deep_study');
     setFlexibility('flexible');
     setRigidity('medium');
+    setPlacementLocked(false);
     setLinkedGoalId(undefined);
     setLinkedSkillId(undefined);
     setNotes('');
+    setPendingPlan(null);
+    setCompilerOpen(false);
     setOpen(true);
   };
 
   const openEditBlock = (block: ScheduleBlock) => {
-    setEditingBlockId(block.id);
+    const persisted = persistedScheduleIds.has(block.id);
+    setEditingBlockId(persisted ? block.id : null);
+    setEditingSeedBlock(block);
     setTitle(block.title);
     setDate(block.date);
     setStartTime(block.startTime);
@@ -240,9 +333,12 @@ export default function ScheduleScreen() {
     setTaskType(block.taskType);
     setFlexibility(block.flexibility);
     setRigidity(block.rigidity);
+    setPlacementLocked(block.flexibility === 'fixed' ? true : block.placementLocked ?? persisted);
     setLinkedGoalId(block.linkedGoalId);
     setLinkedSkillId(block.linkedSkillId);
     setNotes(block.notes ?? '');
+    setPendingPlan(null);
+    setCompilerOpen(false);
     setOpen(true);
   };
 
@@ -260,11 +356,12 @@ export default function ScheduleScreen() {
       taskType,
       flexibility,
       rigidity,
+      placementLocked: flexibility === 'fixed' ? true : placementLocked,
       linkedGoalId,
       linkedSkillId,
-      status: 'planned',
+      status: editingSeedBlock?.status ?? 'planned',
       notes: notes.trim() || undefined,
-      source: 'manual',
+      source: editingSeedBlock?.source ?? 'manual',
     } satisfies Omit<ScheduleBlock, 'id' | 'createdAt'>;
     if (editingBlockId) {
       updateScheduleBlock(editingBlockId, input);
@@ -273,6 +370,8 @@ export default function ScheduleScreen() {
     }
     setOpen(false);
     setEditingBlockId(null);
+    setEditingSeedBlock(null);
+    setPendingPlan(null);
     setSelectedDate(date);
     setTitle('');
     setNotes('');
@@ -285,7 +384,10 @@ export default function ScheduleScreen() {
       cancelText: t(lang, 'cancel'),
       confirmText: t(lang, 'delete'),
       destructive: true,
-      onConfirm: () => deleteScheduleBlock(block.id),
+      onConfirm: () => {
+        deleteScheduleBlock(block.id);
+        setPendingPlan(null);
+      },
     });
   };
 
@@ -454,10 +556,75 @@ export default function ScheduleScreen() {
     setProposalUndo(null);
   };
 
+  const compileCurrentDay = () => {
+    const notBeforeMinutes = selectedDate === today()
+      ? Math.min(dayEndMinutes, Math.ceil(nowMinutes / 15) * 15)
+      : dayStartMinutes;
+    const result = compileScheduleDay({
+      date: selectedDate,
+      fixedBlocks: fixedDayBlocks,
+      flexibleBlocks: flexibleCandidates,
+      dayStartMinutes,
+      dayEndMinutes,
+      notBeforeMinutes,
+      mode: dayBlocks.length > 0 ? 'replan' : 'initial',
+    });
+    setPendingPlan(result);
+    setCompilerOpen(true);
+  };
+
+  const deployPendingPlan = () => {
+    if (!pendingPlan || pendingPlan.placements.length === 0 || pendingPlan.unplaced.length > 0) return;
+    pendingPlan.placements.forEach((placement) => {
+      const sourceBlock = placement.candidate.block;
+      if (placement.candidate.persisted) {
+        updateScheduleBlock(sourceBlock.id, {
+          startTime: placement.startTime,
+          endTime: placement.endTime,
+          plannedMinutes: placement.endMinutes - placement.startMinutes,
+          status: placement.changed && sourceBlock.status === 'planned' ? 'adjusted' : sourceBlock.status,
+        });
+        return;
+      }
+      const { id: _id, createdAt: _createdAt, ...input } = sourceBlock;
+      addScheduleBlock({
+        ...input,
+        startTime: placement.startTime,
+        endTime: placement.endTime,
+        plannedMinutes: placement.endMinutes - placement.startMinutes,
+        status: 'planned',
+        placementLocked: false,
+      });
+    });
+    setCompilerOpen(false);
+    setPendingPlan(null);
+  };
+
+  const adjustPlanBlock = (blockId: string) => {
+    const block = pendingPlan?.placements.find((placement) => placement.candidate.block.id === blockId)?.candidate.block
+      ?? pendingPlan?.unplaced.find((item) => item.candidate.block.id === blockId)?.candidate.block
+      ?? dayBlocks.find((item) => item.id === blockId);
+    if (!block) return;
+    setCompilerOpen(false);
+    openEditBlock(block);
+  };
+
+  const planStatusKey = planStatus === 'proposal'
+    ? 'schedulePlanReady'
+    : planStatus === 'accepted'
+      ? 'schedulePlanDeployed'
+      : planStatus === 'needs_adjustment'
+        ? 'schedulePlanNeedsAdjustment'
+        : 'schedulePlanNotDeployed';
+  const planStatusMeta = planStatus === 'proposal'
+    ? scheduleCopy(lang, 'scheduleProposalCount', { count: pendingPlan?.placements.length ?? 0 })
+    : planStatus === 'needs_adjustment'
+      ? scheduleCopy(lang, 'scheduleAffectedCount', { count: pendingPlan?.unplaced.length ?? overlapCount })
+      : scheduleCopy(lang, 'scheduleOpenMinutes', { minutes: openMinutes });
+
   return (
     <SafeAreaView nativeID="v11-schedule-screen" edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
       <ScrollView
-        ref={scrollRef}
         style={[styles.container, { backgroundColor: questTheme.colors.background }]}
         contentContainerStyle={{
           paddingHorizontal: questTheme.spacing.md,
@@ -468,12 +635,25 @@ export default function ScheduleScreen() {
           alignSelf: 'center',
         }}
       >
-        <QuestContextBar
-          questTheme={questTheme}
-          primary={dateWithWeekday(selectedDate, lang)}
-          secondary={t(lang, 'scheduleSubtitle')}
-          trailing={<QuestButton questTheme={questTheme} variant="primary" icon="plus" label={t(lang, 'addBlock')} onPress={openCreateBlock} />}
-        />
+        <View style={[scheduleV3Styles.dateNavigator, { borderBottomColor: questTheme.colors.divider }]}>
+          <QuestButton
+            questTheme={questTheme}
+            variant="ghost"
+            icon="chevronLeft"
+            accessibilityLabel={t(lang, 'previous')}
+            onPress={() => setSelectedDate((value) => shiftScheduleDate(value, -1))}
+            style={scheduleV3Styles.iconButton}
+          />
+          <Text style={[scheduleV3Styles.dateNavigatorLabel, { color: questTheme.colors.text }]}>{dateWithWeekday(selectedDate, lang)}</Text>
+          <QuestButton
+            questTheme={questTheme}
+            variant="ghost"
+            icon="chevronRight"
+            accessibilityLabel={t(lang, 'next')}
+            onPress={() => setSelectedDate((value) => shiftScheduleDate(value, 1))}
+            style={scheduleV3Styles.iconButton}
+          />
+        </View>
 
         <QuestSegmentedControl
           value={view}
@@ -486,36 +666,76 @@ export default function ScheduleScreen() {
 
         {view === 'day' ? (
           <>
-            <QuestSectionHeader
+            <View style={[scheduleV3Styles.planStatusSurface, { backgroundColor: questTheme.colors.surfaceElevated, borderColor: questTheme.colors.cardBorder }]}>
+              <View style={scheduleV3Styles.planStatusTopRow}>
+                <Text style={[scheduleV3Styles.planStatusEyebrow, { color: questTheme.colors.textMuted }]}>{t(lang, 'schedulePlan')}</Text>
+                <QuestPill
+                  questTheme={questTheme}
+                  variant={planStatus === 'accepted' ? 'success' : planStatus === 'needs_adjustment' ? 'warning' : planStatus === 'proposal' ? 'default' : 'muted'}
+                  label={planStatus === 'proposal'
+                    ? t(lang, 'scheduleProposed')
+                    : planStatus === 'accepted'
+                      ? t(lang, 'scheduleAccepted')
+                      : planStatus === 'needs_adjustment'
+                        ? t(lang, 'scheduleNeedsAdjustmentShort')
+                        : t(lang, 'noSchedule')}
+                />
+              </View>
+              <Text style={[scheduleV3Styles.planStatusTitle, { color: questTheme.colors.text }]}>{t(lang, planStatusKey)}</Text>
+              <Text style={[scheduleV3Styles.planStatusMeta, { color: questTheme.colors.textMuted }]}>{planStatusMeta}</Text>
+
+              <View style={[scheduleV3Styles.currentNextStrip, { borderTopColor: questTheme.colors.divider, borderBottomColor: questTheme.colors.divider }]}>
+                <View style={scheduleV3Styles.currentNextItem}>
+                  <Text style={[scheduleV3Styles.currentNextLabel, { color: questTheme.colors.textSubtle }]}>{t(lang, 'currentBlock')}</Text>
+                  <Text numberOfLines={1} style={[scheduleV3Styles.currentNextValue, { color: questTheme.colors.text }]}>{nowInfo.active?.title ?? t(lang, 'noCurrentBlock')}</Text>
+                </View>
+                <View style={[scheduleV3Styles.currentNextDivider, { backgroundColor: questTheme.colors.divider }]} />
+                <View style={scheduleV3Styles.currentNextItem}>
+                  <Text style={[scheduleV3Styles.currentNextLabel, { color: questTheme.colors.textSubtle }]}>{t(lang, 'nextBlock')}</Text>
+                  <Text numberOfLines={1} style={[scheduleV3Styles.currentNextValue, { color: questTheme.colors.text }]}>{nowInfo.next?.title ?? t(lang, 'noNextBlock')}</Text>
+                </View>
+              </View>
+
+              <View style={scheduleV3Styles.planActions}>
+                <QuestButton
+                  questTheme={questTheme}
+                  variant="primary"
+                  icon="calendar"
+                  label={pendingPlan ? t(lang, 'scheduleReviewPlan') : dayBlocks.length ? t(lang, 'scheduleReplanRemaining') : t(lang, 'scheduleGeneratePlan')}
+                  onPress={pendingPlan ? () => setCompilerOpen(true) : compileCurrentDay}
+                  style={scheduleV3Styles.planPrimaryAction}
+                />
+                <QuestButton questTheme={questTheme} variant="ghost" icon="plus" label={t(lang, 'addBlock')} onPress={openCreateBlock} />
+              </View>
+              {dayBlocks.length === 0 ? <Text style={[scheduleV3Styles.planHelper, { color: questTheme.colors.textMuted }]}>{t(lang, 'scheduleAddBeforeCompile')}</Text> : null}
+            </View>
+
+            <View style={scheduleV3Styles.timelineLegend}>
+              <View style={scheduleV3Styles.legendItem}>
+                <QuestIcon name="lock" size={16} color={questTheme.colors.borderStrong} />
+                <Text style={[scheduleV3Styles.legendText, { color: questTheme.colors.textMuted }]}>{t(lang, 'scheduleFixed')}</Text>
+              </View>
+              <View style={scheduleV3Styles.legendItem}>
+                <QuestIcon name="unlock" size={16} color={questTheme.colors.primary} />
+                <Text style={[scheduleV3Styles.legendText, { color: questTheme.colors.textMuted }]}>{t(lang, 'scheduleFlexible')}</Text>
+              </View>
+              <Text style={[scheduleV3Styles.timelineHint, { color: questTheme.colors.textSubtle }]}>{t(lang, 'scheduleTapBlockToEdit')}</Text>
+            </View>
+
+            <ScheduleDayTimeline
+              blocks={dayBlocks}
+              proposalPlacements={pendingPlan?.placements}
+              dayStartMinutes={dayStartMinutes}
+              dayEndMinutes={dayEndMinutes}
+              nowMinutes={selectedDate === today() ? nowMinutes : undefined}
+              language={lang}
               questTheme={questTheme}
-              title={t(lang, 'nowNext')}
-              subtitle={selectedDate === today()
-                ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                : dateWithWeekday(selectedDate, lang)}
-              trailing={selectedDate === today() ? (
-                <QuestButton questTheme={questTheme} variant="ghost" icon="activity" label={t(lang, 'jumpToNow')} onPress={jumpToNow} />
-              ) : undefined}
-              style={styles.firstSectionHeader}
+              skills={data.skills}
+              modules={data.modules || []}
+              goals={data.categories}
+              moduleSkillLinks={data.moduleSkillLinks || []}
+              onBlockPress={(block, proposed) => proposed ? setCompilerOpen(true) : openEditBlock(block)}
             />
-            <QuestGroupedSurface questTheme={questTheme} elevated className="v11-schedule-now-next" style={styles.nowNextGroup}>
-              <QuestCompactRow
-                questTheme={questTheme}
-                title={`${t(lang, 'currentBlock')}: ${nowInfo.active?.title ?? t(lang, 'noCurrentBlock')}`}
-                body={nowInfo.active
-                  ? `${nowInfo.active.startTime}-${nowInfo.active.endTime} · ${statusLabel(lang, nowInfo.active.status)}`
-                  : t(lang, 'addLightTask')}
-                leading={<QuestIcon name="activity" size={18} color={nowInfo.active ? questTheme.colors.primary : questTheme.colors.textMuted} />}
-              />
-              <QuestCompactRow
-                questTheme={questTheme}
-                divider
-                title={`${t(lang, 'nextBlock')}: ${nowInfo.next?.title ?? t(lang, 'noNextBlock')}`}
-                body={nowInfo.next
-                  ? `${nowInfo.next.startTime}-${nowInfo.next.endTime} · ${nowInfo.next.plannedMinutes}m`
-                  : t(lang, 'noBlocksToday')}
-                leading={<QuestIcon name="calendar" size={18} color={nowInfo.next ? questTheme.colors.primary : questTheme.colors.textMuted} />}
-              />
-            </QuestGroupedSurface>
 
             {scheduleProposals.length > 0 ? (
               <>
@@ -538,88 +758,6 @@ export default function ScheduleScreen() {
                 />
               </>
             ) : null}
-
-            <QuestSectionHeader
-              questTheme={questTheme}
-              title={t(lang, 'laterSchedule')}
-              subtitle={dayBlocks.length === 0 ? t(lang, 'noBlocksToday') : `${dayBlocks.length} ${t(lang, 'blocks')}`}
-              style={styles.scheduleSectionHeader}
-            />
-            <View nativeID="v11-schedule-day-instrument" style={[styles.timelineSurface, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>
-              {selectedDate === today() && currentTimeTop() >= 0 && currentTimeTop() <= 1 ? (
-                <View style={[styles.nowLine, { top: `${currentTimeTop() * 100}%` }]}>
-                  <View style={[styles.nowDot, { backgroundColor: questTheme.colors.primary }]} />
-                  <View style={[styles.nowRule, { backgroundColor: questTheme.colors.primary }]} />
-                  <Text style={[styles.nowLabel, { color: questTheme.colors.primary, backgroundColor: questTheme.colors.surface }]}>{t(lang, 'currentTime')}</Text>
-                </View>
-              ) : null}
-              {HOURS.map((hour) => {
-                const blocks = dayBlocks.filter((b) => closestSectionHour(b.startTime) === hour);
-                const highlighted = selectedDate === today() && (highlightHour ?? currentSectionHour()) === hour;
-                return (
-                  <View key={hour} style={[styles.hourRow, { borderBottomColor: questTheme.colors.border }, highlighted && { backgroundColor: questTheme.colors.primarySoft }]}>
-                    <Text style={[styles.hourLabel, { color: questTheme.colors.textMuted }]}>{hour}:00</Text>
-                    <View style={styles.hourContent}>
-                      {blocks.map((b) => {
-                        const skill = b.linkedSkillId ? data.skills.find((item) => item.id === b.linkedSkillId) : undefined;
-                        const link = skill ? (data.moduleSkillLinks || []).find((item) => item.skillId === skill.id) : undefined;
-                        const goal = (b.linkedGoalId ?? link?.goalId)
-                          ? data.categories.find((item) => item.id === (b.linkedGoalId ?? link?.goalId))
-                          : undefined;
-                        const module = link?.moduleId ? (data.modules || []).find((item) => item.id === link.moduleId) : undefined;
-                        const contextLabel = [
-                          goal?.name,
-                          module ? (module.id.includes('-default') ? t(lang, 'defaultModule') : module.name) : undefined,
-                          skill?.name,
-                        ].filter(Boolean).join(' › ');
-                        const persisted = data.scheduleBlocks.some((item) => item.id === b.id);
-                        const overlaps = blocksOverlap(b, dayBlocks);
-                        return (
-                          <View
-                            key={b.id}
-                            style={[
-                              styles.timelineBlock,
-                              {
-                                minHeight: Math.max(48, Math.min(150, (b.plannedMinutes / 60) * 56)),
-                                backgroundColor: questTheme.colors.surfaceSoft,
-                                borderLeftColor: b.status === 'completed' ? questTheme.colors.success : questTheme.colors.primary,
-                              },
-                              overlaps ? { borderRightWidth: 2, borderRightColor: questTheme.colors.warning } : null,
-                            ]}
-                          >
-                            <View style={styles.blockTitleRow}>
-                              <QuestEntityIcon icon={skill?.icon} systemIcon={skill ? getSkillSemanticIcon(skill) : systemIcons.schedule} color={skill?.color} questTheme={questTheme} size="sm" />
-                              <Text style={[styles.blockTitle, { color: questTheme.colors.text }]} numberOfLines={2}>{b.title}</Text>
-                              <QuestPill
-                                questTheme={questTheme}
-                                variant={b.status === 'completed' ? 'success' : 'muted'}
-                                label={statusLabel(lang, b.status)}
-                              />
-                              {overlaps ? <QuestPill questTheme={questTheme} variant="warning" label={t(lang, 'scheduleOverlap')} /> : null}
-                            </View>
-                            <Text style={[styles.blockMeta, { color: questTheme.colors.textMuted }]}>
-                              {b.startTime}-{b.endTime} · {b.plannedMinutes}m
-                            </Text>
-                            <Text style={[styles.blockMeta, { color: questTheme.colors.textMuted }]} numberOfLines={2}>
-                              {contextLabel || t(lang, 'manualBlock')}
-                            </Text>
-                            <View style={styles.blockActionsRow}>
-                              <QuestButton questTheme={questTheme} variant="ghost" icon="play" label={t(lang, 'logProgress')} onPress={() => openLogBlock(b)} style={styles.blockAction} />
-                              {persisted ? (
-                                <>
-                                  <QuestButton questTheme={questTheme} variant="ghost" label={t(lang, 'edit')} onPress={() => openEditBlock(b)} style={styles.blockAction} />
-                                  <QuestButton questTheme={questTheme} variant="ghost" label={t(lang, 'delete')} onPress={() => requestDeleteBlock(b)} style={styles.blockAction} />
-                                </>
-                              ) : null}
-                            </View>
-                          </View>
-                        );
-                      })}
-                    </View>
-                  </View>
-                );
-              })}
-            </View>
           </>
         ) : view === 'week' ? (
           <WeekInstrument
@@ -649,7 +787,17 @@ export default function ScheduleScreen() {
         )}
       </ScrollView>
 
-      <BottomSheetForm visible={open} onClose={() => { setOpen(false); setEditingBlockId(null); }}>
+      <SchedulePlanCompilerSheet
+        visible={compilerOpen}
+        plan={pendingPlan}
+        language={lang}
+        questTheme={questTheme}
+        onClose={() => setCompilerOpen(false)}
+        onDeploy={deployPendingPlan}
+        onAdjust={adjustPlanBlock}
+      />
+
+      <BottomSheetForm visible={open} onClose={() => { setOpen(false); setEditingBlockId(null); setEditingSeedBlock(null); }}>
         <Text style={[styles.h2, { color: questTheme.colors.text }]}>{editingBlockId ? `${t(lang, 'edit')} ${t(lang, 'schedulePlan')}` : t(lang, 'addBlock')}</Text>
         <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'title')}</Text>
         <QuestInput questTheme={questTheme} value={title} onChangeText={setTitle} placeholder={t(lang, 'scheduleTitlePlaceholder')} />
@@ -670,6 +818,22 @@ export default function ScheduleScreen() {
         <ChipGroup questTheme={questTheme} title={t(lang, 'taskType')} values={TASK_TYPES} labels={Object.fromEntries(TASK_TYPES.map((v) => [v, taskTypeLabel(lang, v)]))} value={taskType} onChange={(v) => v && setTaskType(v)} accent={accent} />
         <ChipGroup questTheme={questTheme} title={t(lang, 'flexibility')} values={FLEX} labels={Object.fromEntries(FLEX.map((v) => [v, flexibilityLabel(lang, v)]))} value={flexibility} onChange={(v) => v && setFlexibility(v)} accent={accent} />
         <ChipGroup questTheme={questTheme} title={t(lang, 'rigidity')} values={RIGID} labels={Object.fromEntries(RIGID.map((v) => [v, rigidityLabel(lang, v)]))} value={rigidity} onChange={(v) => v && setRigidity(v)} accent={accent} />
+        <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'scheduleLockPlacement')}</Text>
+        <QuestButton
+          questTheme={questTheme}
+          variant={placementLocked || flexibility === 'fixed' ? 'secondary' : 'ghost'}
+          icon={placementLocked || flexibility === 'fixed' ? 'lock' : 'unlock'}
+          label={placementLocked || flexibility === 'fixed' ? t(lang, 'scheduleLockPlacement') : t(lang, 'scheduleUnlockPlacement')}
+          onPress={() => setPlacementLocked((value) => !value)}
+          disabled={flexibility === 'fixed'}
+        />
+        <Text style={[styles.calc, { color: questTheme.colors.textMuted }]}>
+          {flexibility === 'fixed'
+            ? t(lang, 'scheduleFixedCannotMove')
+            : placementLocked
+              ? t(lang, 'schedulePlacementLocked')
+              : t(lang, 'schedulePlacementFlexible')}
+        </Text>
 
         <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'linkedGoalOptional')}</Text>
         <ChipGroup questTheme={questTheme} values={data.categories.map((c) => c.id)} labels={Object.fromEntries(data.categories.map((c) => [c.id, c.name]))} value={linkedGoalId} onChange={setLinkedGoalId} accent={accent} allowNone noneLabel={t(lang, 'none')} />
@@ -678,6 +842,25 @@ export default function ScheduleScreen() {
 
         <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'notes')}</Text>
         <QuestInput questTheme={questTheme} value={notes} onChangeText={setNotes} style={{ height: 70, textAlignVertical: 'top' }} multiline />
+        {editingSeedBlock && persistedScheduleIds.has(editingSeedBlock.id) ? (
+          <View style={styles.sheetActions}>
+            <QuestButton
+              questTheme={questTheme}
+              variant="ghost"
+              icon="play"
+              label={t(lang, 'logProgress')}
+              onPress={() => { setOpen(false); openLogBlock(editingSeedBlock); }}
+              style={{ flex: 1 }}
+            />
+            <QuestButton
+              questTheme={questTheme}
+              variant="danger"
+              label={t(lang, 'delete')}
+              onPress={() => { setOpen(false); requestDeleteBlock(editingSeedBlock); }}
+              style={{ flex: 1 }}
+            />
+          </View>
+        ) : null}
         <QuestButton questTheme={questTheme} variant="primary" icon={editingBlockId ? undefined : 'plus'} label={editingBlockId ? t(lang, 'save') : t(lang, 'createBlock')} onPress={submit} style={{ marginTop: 18 }} />
       </BottomSheetForm>
 

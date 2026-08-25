@@ -8,18 +8,22 @@ export type QuestIconName =
   | 'brain'
   | 'calendar'
   | 'check'
+  | 'chevronLeft'
+  | 'chevronRight'
   | 'code'
   | 'dumbbell'
   | 'folder'
   | 'heartPulse'
   | 'home'
   | 'library'
+  | 'lock'
   | 'lifeBuoy'
   | 'play'
   | 'plus'
   | 'settings'
   | 'target'
   | 'tree'
+  | 'unlock'
   | 'wallet'
   | 'zap';
 
@@ -120,6 +124,20 @@ export default function QuestIcon({ name, size = 22, color = '#111827', strokeWi
         <Path {...common} fill={color} d="M8 5v14l11-7L8 5Z" />
       ) : name === 'check' ? (
         <Polyline {...common} points="20 6 9 17 4 12" />
+      ) : name === 'chevronLeft' ? (
+        <Polyline {...common} points="15 18 9 12 15 6" />
+      ) : name === 'chevronRight' ? (
+        <Polyline {...common} points="9 18 15 12 9 6" />
+      ) : name === 'lock' ? (
+        <>
+          <Rect {...common} x="5" y="10" width="14" height="10" rx="2" />
+          <Path {...common} d="M8 10V7a4 4 0 0 1 8 0v3" />
+        </>
+      ) : name === 'unlock' ? (
+        <>
+          <Rect {...common} x="5" y="10" width="14" height="10" rx="2" />
+          <Path {...common} d="M8 10V7a4 4 0 0 1 7.4-2" />
+        </>
       ) : name === 'plus' ? (
         <>
           <Line {...common} x1="12" y1="5" x2="12" y2="19" />
