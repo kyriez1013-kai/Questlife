@@ -33,6 +33,7 @@ import V11SheetControlFixtureScreen from './src/v11-stage2-rebaseline/V11SheetCo
 import UniversalCaptureFixtureScreen from './src/components/capture/UniversalCaptureFixtureScreen';
 import V11InsightsScreen from './src/v11-insights/V11InsightsScreen';
 import {
+  getScheduleV3Fixture,
   getV11InsightsDebugLanguage,
   getV11InsightsDebugTheme,
   isV11InsightsEnabled,
@@ -113,6 +114,7 @@ function GoalsTabStack() {
 // 根据加载状态和数据决定显示 Onboarding 还是正常 Tabs
 function AppContent() {
   const { data, loading } = useStore();
+  const scheduleV3Fixture = getScheduleV3Fixture();
   const v11InsightsEnabled = isV11InsightsEnabled();
   const v11ProductEnabled = isV11ProductEnabled();
   const v11InsightsDebugTheme = getV11InsightsDebugTheme();
@@ -215,7 +217,7 @@ function AppContent() {
     || (!data.settings.onboardingCompleted && !hasExistingCoreData);
 
   // 新用户或 Settings 里手动重启 → 引导流程
-  if (shouldShowOnboarding) {
+  if (shouldShowOnboarding && !scheduleV3Fixture) {
     return (
       <RootView {...rootProps} style={rootStyle}>
         <OnboardingScreen />
@@ -229,7 +231,7 @@ function AppContent() {
       <NavigationContainer theme={navTheme}>
         <Tab.Navigator
           detachInactiveScreens={Platform.OS !== 'web'}
-          initialRouteName={v11InsightsEnabled && !isV11MarathonEnabled() ? 'Insights' : 'Today'}
+          initialRouteName={scheduleV3Fixture ? 'Schedule' : v11InsightsEnabled && !isV11MarathonEnabled() ? 'Insights' : 'Today'}
           screenOptions={{
             headerShown: false,
             lazy: true,

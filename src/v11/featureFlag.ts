@@ -12,6 +12,7 @@ import {
   isV11TodayMode,
   resolveV11ProductMode,
 } from './featureSelection';
+import type { ScheduleV3FixtureId } from '../components/schedule/scheduleV3Fixtures';
 
 function query() {
   if (Platform.OS !== 'web' || typeof window === 'undefined') return undefined;
@@ -108,6 +109,14 @@ export function getV11QuantInterpretationScenario(): QuantInterpretationScenario
 
 export function isV11QuantTerminalEnabled() {
   return query()?.get('questlife_v11_ui') === 'stage3-quant-terminal';
+}
+
+export function getScheduleV3Fixture(): ScheduleV3FixtureId | null {
+  if (route() !== 'schedule-v3') return null;
+  const value = query()?.get('scheduleFixture');
+  return value === 's0' || value === 's1' || value === 's2' || value === 's3' || value === 's4'
+    ? value
+    : null;
 }
 
 export function getV11QuantTerminalFixture(): 'empty' | 'forming' | 'signal' | 'mature' | null {

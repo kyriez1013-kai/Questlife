@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Pressable, Text, useWindowDimensions, View } from 'react-native';
 import type { QuestModule, ScheduleBlock, Skill } from '../../types';
 import type { QuestTheme } from '../../design/tokens';
-import { t } from '../../i18n';
+import { statusLabel, t } from '../../i18n';
 import QuestIcon from '../ui/QuestIcon';
 import type { SchedulePlacement, ScheduleWindow } from '../../utils/scheduleCompiler';
 import { deriveScheduleOpenWindows, scheduleMinutesToTime, scheduleTimeToMinutes } from '../../utils/scheduleCompiler';
@@ -265,9 +265,9 @@ export default function ScheduleDayTimeline({
                 <Text numberOfLines={1} style={{ flex: 1, minWidth: 0, color: q.colors.text, fontSize: q.typography.compactBodySize, lineHeight: q.typography.compactBodyLineHeight, fontWeight: q.typography.weightBold }}>
                   {block.title}
                 </Text>
-                {proposed ? (
+                {proposed || completed || skipped ? (
                   <Text style={{ color: q.colors.primary, fontSize: q.typography.metaSize, lineHeight: q.typography.metaLineHeight }}>
-                    {t(language, 'scheduleProposed')}
+                    {proposed ? t(language, 'scheduleProposed') : statusLabel(language, block.status)}
                   </Text>
                 ) : null}
               </View>

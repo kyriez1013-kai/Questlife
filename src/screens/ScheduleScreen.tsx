@@ -8,7 +8,7 @@ import {
 } from '../i18n';
 import { today } from '../storage';
 import { theme } from '../theme';
-import { Quality, QUALITY_OPTIONS, ScheduleBlock, TaskType } from '../types';
+import { ExecutionLog, Quality, QUALITY_OPTIONS, ScheduleBlock, TaskType } from '../types';
 import BottomSheetForm from '../components/BottomSheetForm';
 import { generateScheduleBlocksFromSkills } from '../scheduleAdjust';
 import { formatMetricSummary, progressTypeForSkill } from '../progress';
@@ -24,6 +24,7 @@ import QuestSegmentedControl from '../components/ui/QuestSegmentedControl';
 import ScheduleProposalReview from '../components/schedule/ScheduleProposalReview';
 import ScheduleDayTimeline from '../components/schedule/ScheduleDayTimeline';
 import SchedulePlanCompilerSheet from '../components/schedule/SchedulePlanCompilerSheet';
+import { buildScheduleV3Fixture } from '../components/schedule/scheduleV3Fixtures';
 import { confirmAction } from '../utils/confirm';
 import {
   buildScheduleProposalPatch,
@@ -31,7 +32,7 @@ import {
   ScheduleProposalStatus,
 } from '../utils/scheduleProposal';
 import { isDecisionDebugEnabled } from '../services/decisionService';
-import { getV11ProductLanguage, getV11ProductThemeId } from '../v11/featureFlag';
+import { getScheduleV3Fixture, getV11ProductLanguage, getV11ProductThemeId } from '../v11/featureFlag';
 import {
   compileScheduleDay,
   deriveScheduleOpenWindows,
@@ -101,6 +102,15 @@ function scheduleCopy(lang: 'zh' | 'en', key: string, values: Record<string, str
   );
 }
 
+function scheduleDurationLabel(lang: 'zh' | 'en', minutes: number) {
+  if (minutes < 60) return `${minutes}${t(lang, 'scheduleMinuteShort')}`;
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  return remainder
+    ? `${hours}${t(lang, 'scheduleHourShort')} ${remainder}${t(lang, 'scheduleMinuteShort')}`
+    : `${hours}${t(lang, 'scheduleHourShort')}`;
+}
+
 function resolveScheduleDayBounds(blocks: ScheduleBlock[]) {
   const starts = blocks.map((block) => scheduleTimeToMinutes(block.startTime)).filter(Number.isFinite);
   const ends = blocks.map((block) => scheduleTimeToMinutes(block.endTime)).filter(Number.isFinite);
@@ -136,9 +146,60 @@ function blocksOverlap(block: ScheduleBlock, all: ScheduleBlock[]) {
 }
 
 export default function ScheduleScreen() {
-  const { data, addScheduleBlock, createExecutionLog, updateScheduleBlock, deleteScheduleBlock } = useStore();
+  const store = useStore();
   const route = useRoute<any>();
-  const lang = getV11ProductLanguage(getLanguage(data.settings.language));
+  const scheduleFixtureId = getScheduleV3Fixture();
+  const lang = getV11ProductLanguage(getLanguage(store.data.settings.language));
+  const scheduleFixture = useMemo(
+    () => scheduleFixtureId ? buildScheduleV3Fixture(scheduleFixtureId, today(), lang) : null,
+    [lang, scheduleFixtureId],
+  );
+  const [fixtureBlocks, setFixtureBlocks] = useState<ScheduleBlock[]>(() => scheduleFixture?.scheduleBlocks ?? []);
+  useEffect(() => {
+    setFixtureBlocks(scheduleFixture?.scheduleBlocks ?? []);
+  }, [scheduleFixture]);
+  const data = scheduleFixture ? {
+    ...store.data,
+    categories: scheduleFixture.categories,
+    skills: scheduleFixture.skills,
+    modules: [],
+    moduleSkillLinks: [],
+    scheduleBlocks: fixtureBlocks,
+    executionLogs: [],
+  } : store.data;
+  const addScheduleBlock: typeof store.addScheduleBlock = scheduleFixture
+    ? (input) => {
+      const block: ScheduleBlock = {
+        ...input,
+        id: `schedule-v3-fixture-user-${Date.now()}`,
+        createdAt: Date.now(),
+      };
+      setFixtureBlocks((current) => [...current, block]);
+      return block;
+    }
+    : store.addScheduleBlock;
+  const updateScheduleBlock: typeof store.updateScheduleBlock = scheduleFixture
+    ? (id, patch) => setFixtureBlocks((current) => current.map((block) => block.id === id ? { ...block, ...patch } : block))
+    : store.updateScheduleBlock;
+  const deleteScheduleBlock: typeof store.deleteScheduleBlock = scheduleFixture
+    ? (id) => setFixtureBlocks((current) => current.filter((block) => block.id !== id))
+    : store.deleteScheduleBlock;
+  const createExecutionLog: typeof store.createExecutionLog = scheduleFixture
+    ? (input) => {
+      if (input.linkedScheduleBlockId) {
+        setFixtureBlocks((current) => current.map((block) => block.id === input.linkedScheduleBlockId ? { ...block, status: 'completed' } : block));
+      }
+      return {
+        ...input,
+        id: input.id ?? `schedule-v3-fixture-log-${Date.now()}`,
+        date: input.date ?? today(),
+        durationMinutes: input.durationMinutes ?? 0,
+        source: input.source ?? 'schedule_log',
+        createdAt: input.createdAt ?? new Date().toISOString(),
+        appliedToProgress: input.appliedToProgress ?? false,
+      } as ExecutionLog;
+    }
+    : store.createExecutionLog;
   const questTheme = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const accent = questTheme.colors.primary;
   const scheduleV3Styles = useMemo(() => ({
@@ -221,6 +282,7 @@ export default function ScheduleScreen() {
   const [pendingPlan, setPendingPlan] = useState<ScheduleCompilerResult | null>(null);
   const [compilerOpen, setCompilerOpen] = useState(false);
   const [nowMinutes, setNowMinutes] = useState(() => {
+    if (scheduleFixture) return scheduleFixture.nowMinutes;
     const now = new Date();
     return now.getHours() * 60 + now.getMinutes();
   });
@@ -280,13 +342,17 @@ export default function ScheduleScreen() {
         : 'accepted';
 
   useEffect(() => {
+    if (scheduleFixture) {
+      setNowMinutes(scheduleFixture.nowMinutes);
+      return undefined;
+    }
     const updateNow = () => {
       const now = new Date();
       setNowMinutes(now.getHours() * 60 + now.getMinutes());
     };
     const timer = setInterval(updateNow, 30_000);
     return () => clearInterval(timer);
-  }, []);
+  }, [scheduleFixture]);
 
   useEffect(() => {
     setPendingPlan(null);
@@ -620,7 +686,19 @@ export default function ScheduleScreen() {
     ? scheduleCopy(lang, 'scheduleProposalCount', { count: pendingPlan?.placements.length ?? 0 })
     : planStatus === 'needs_adjustment'
       ? scheduleCopy(lang, 'scheduleAffectedCount', { count: pendingPlan?.unplaced.length ?? overlapCount })
-      : scheduleCopy(lang, 'scheduleOpenMinutes', { minutes: openMinutes });
+      : `${t(lang, 'scheduleOpenCapacity')} · ${scheduleDurationLabel(lang, openMinutes)}`;
+  const hasFlexibleItems = flexibleCandidates.length > 0;
+  const primaryPlanLabel = pendingPlan
+    ? t(lang, 'scheduleReviewPlan')
+    : hasFlexibleItems
+      ? t(lang, 'scheduleReplanRemaining')
+      : t(lang, 'addBlock');
+  const primaryPlanIcon = pendingPlan || hasFlexibleItems ? 'calendar' : 'plus';
+  const runPrimaryPlanAction = pendingPlan
+    ? () => setCompilerOpen(true)
+    : hasFlexibleItems
+      ? compileCurrentDay
+      : openCreateBlock;
 
   return (
     <SafeAreaView nativeID="v11-schedule-screen" edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
@@ -700,14 +778,20 @@ export default function ScheduleScreen() {
                 <QuestButton
                   questTheme={questTheme}
                   variant="primary"
-                  icon="calendar"
-                  label={pendingPlan ? t(lang, 'scheduleReviewPlan') : dayBlocks.length ? t(lang, 'scheduleReplanRemaining') : t(lang, 'scheduleGeneratePlan')}
-                  onPress={pendingPlan ? () => setCompilerOpen(true) : compileCurrentDay}
+                  icon={primaryPlanIcon}
+                  label={primaryPlanLabel}
+                  onPress={runPrimaryPlanAction}
                   style={scheduleV3Styles.planPrimaryAction}
                 />
-                <QuestButton questTheme={questTheme} variant="ghost" icon="plus" label={t(lang, 'addBlock')} onPress={openCreateBlock} />
+                {pendingPlan || hasFlexibleItems ? (
+                  <QuestButton questTheme={questTheme} variant="ghost" icon="plus" label={t(lang, 'addBlock')} onPress={openCreateBlock} />
+                ) : null}
               </View>
-              {dayBlocks.length === 0 ? <Text style={[scheduleV3Styles.planHelper, { color: questTheme.colors.textMuted }]}>{t(lang, 'scheduleAddBeforeCompile')}</Text> : null}
+              {!hasFlexibleItems ? (
+                <Text style={[scheduleV3Styles.planHelper, { color: questTheme.colors.textMuted }]}>
+                  {dayBlocks.length === 0 ? t(lang, 'scheduleAddBeforeCompile') : t(lang, 'scheduleNoFlexibleItems')}
+                </Text>
+              ) : null}
             </View>
 
             <View style={scheduleV3Styles.timelineLegend}>
