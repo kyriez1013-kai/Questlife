@@ -49,6 +49,9 @@ export function endTimeFrom(start: string, duration: number) {
 export function generateScheduleBlocksFromSkills(skills: Skill[], dateRange: string[], existing: ScheduleBlock[] = []): ScheduleBlock[] {
   const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
   const exists = new Set(existing.map((b) => `${b.linkedSkillId ?? ''}|${b.date}|${b.startTime}|${b.source ?? 'manual'}`));
+  const acceptedSkillRuleDates = new Set(existing
+    .filter((block) => block.source === 'skill_rule' && block.linkedSkillId)
+    .map((block) => `${block.linkedSkillId}|${block.date}`));
   const generated: ScheduleBlock[] = [];
 
   for (const skill of skills) {
@@ -68,7 +71,7 @@ export function generateScheduleBlocksFromSkills(skills: Skill[], dateRange: str
 
     for (const date of dates) {
       const key = `${skill.id}|${date}|${startTime}|skill_rule`;
-      if (exists.has(key)) continue;
+      if (exists.has(key) || acceptedSkillRuleDates.has(`${skill.id}|${date}`)) continue;
       generated.push({
         id: `skill-rule-${skill.id}-${date}-${startTime}`,
         title: skill.name,
