@@ -37,6 +37,7 @@ import {
   getV11InsightsDebugTheme,
   hasInsightsV3ReviewFixture,
   isInsightsV3Enabled,
+  isInterviewDemoMode,
   isV11InsightsEnabled,
   isV11MarathonEnabled,
   isV11ProductEnabled,
@@ -117,6 +118,7 @@ function GoalsTabStack() {
 // 根据加载状态和数据决定显示 Onboarding 还是正常 Tabs
 function AppContent() {
   const { data, loading } = useStore();
+  const interviewDemo = isInterviewDemoMode();
   const insightsV3Enabled = isInsightsV3Enabled();
   const insightsV3ReviewFixture = hasInsightsV3ReviewFixture();
   const v11InsightsEnabled = isV11InsightsEnabled();
@@ -218,7 +220,7 @@ function AppContent() {
 
   const hasExistingCoreData = data.categories.length > 0 || data.skills.length > 0 || (data.executionLogs || []).length > 0;
   const shouldShowOnboarding = !!data.settings.onboardingRestartRequested
-    || (!data.settings.onboardingCompleted && !hasExistingCoreData);
+    || (!interviewDemo && !data.settings.onboardingCompleted && !hasExistingCoreData);
 
   // 新用户或 Settings 里手动重启 → 引导流程
   if (shouldShowOnboarding && !insightsV3ReviewFixture) {
@@ -318,6 +320,7 @@ function AppContent() {
 
 export default function App() {
   const v11FixtureRoute = getV11FixtureRoute();
+  const interviewDemo = isInterviewDemoMode();
 
   if (v11FixtureRoute) {
     return (
@@ -338,7 +341,7 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <StoreProvider>
+      <StoreProvider ephemeral={interviewDemo}>
         <StatusBar style="auto" />
         <AppContent />
         <PersistenceDebugPanel />

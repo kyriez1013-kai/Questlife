@@ -22,6 +22,10 @@ function route() {
   return query()?.get('questlife_v11_ui') ?? null;
 }
 
+export function isInterviewDemoMode() {
+  return query()?.get('demo') === 'interview';
+}
+
 export function isV11ProductEnabled() {
   return isV11ProductMode(resolveV11ProductMode(route()));
 }
@@ -117,6 +121,7 @@ export function getV11QuantV042Lifecycle(): QuantV042LifecycleId | null {
 
 export function getV11QuantInterpretationScenario(): QuantInterpretationScenarioId | null {
   if (!isV11PersonalTerminalEnabled()) return null;
+  if (isInterviewDemoMode()) return 'accumulated_load';
   const value = query()?.get('quantInterpretation');
   return value === 'accumulated_load'
     || value === 'sleep_disruption'

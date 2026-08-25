@@ -284,7 +284,7 @@ function recomputeSkillFromLogs(skill: Skill, logsForSkill: ExecutionLog[]): Ski
 
 const StoreContext = createContext<Ctx | null>(null);
 
-export function StoreProvider({ children }: { children: React.ReactNode }) {
+export function StoreProvider({ children, ephemeral = false }: { children: React.ReactNode; ephemeral?: boolean }) {
   const [data, setData] = useState<AppData>(DEFAULT_DATA);
   const [loading, setLoading] = useState(true);
   // 标记是否已经完成首次加载, 防止 loading 阶段意外写盘把已有数据覆盖成空.
@@ -294,6 +294,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   // 启动时从 AsyncStorage 读取
   useEffect(() => {
+    if (ephemeral) {
+      dataRef.current = DEFAULT_DATA;
+      setData(DEFAULT_DATA);
+      setLoading(false);
+      loadedRef.current = true;
+      return;
+    }
     loadData().then((d) => {
       const integrity = validateAppDataIntegrity(d);
       const repaired = integrity.ok ? d : repairAppDataIntegrity(d);
@@ -313,7 +320,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       // 启动后重新排所有技能提醒 (防系统清掉)
       rescheduleAllReminders(repaired.skills).catch((e) => console.warn('[notify] reschedule failed', e));
     });
-  }, []);
+  }, [ephemeral]);
 
   /** 通用 mutation helper: 同时更新 React state 和 AsyncStorage. */
   const mutate = useCallback((fn: (d: AppData) => AppData, source = 'store.mutation') => {
@@ -324,6 +331,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     dataRef.current = next;
     setData(next);
+    if (ephemeral) return;
     if (!shouldPersistStoreMutation(loadedRef.current)) return;
 
     // fire-and-forget; web commit 本身同步, native commit 由 storage queue 串行化.
@@ -340,22 +348,25 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         return reconciled;
       });
     }).catch(() => {});
-  }, []);
+  }, [ephemeral]);
 
   // Data mutations persist through mutate(); this effect only queues server sync.
   useEffect(() => {
-    if (loadedRef.current) {
+    if (!ephemeral && loadedRef.current) {
       scheduleServerSync(data);
     }
-  }, [data]);
-
-  useEffect(() => installPersistenceDebugBridge({
-    getStoreData: () => dataRef.current,
-    readPersistedData: readPersistedDataForDebug,
-  }), []);
+  }, [data, ephemeral]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
+    if (ephemeral) return undefined;
+    return installPersistenceDebugBridge({
+      getStoreData: () => dataRef.current,
+      readPersistedData: readPersistedDataForDebug,
+    });
+  }, [ephemeral]);
+
+  useEffect(() => {
+    if (ephemeral || typeof window === 'undefined') return undefined;
     const handleStorage = (event: StorageEvent) => {
       if (event.key !== 'questlife.v1' || !event.newValue || !loadedRef.current) return;
       try {
@@ -374,7 +385,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     };
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
-  }, []);
+  }, [ephemeral]);
 
   const addGoal: Ctx['addGoal'] = useCallback((g) => {
     const goal: Goal = {
