@@ -2,8 +2,9 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import type { Lang } from '../i18n';
 import type { QuestVisualFoundation } from '../design/visualFoundation';
+import type { QuantJointAnalysisV1, QuantJointDriverV1 } from '../quant-product/quantAnalysisContract';
 import type { QuantProductBundleV1, QuantProductInstrumentV1, QuantProductSeriesV1 } from '../quant-product/quantProductContract';
-import { actionLabel, driverRelationshipCopy, evidenceStageLabel, featureLabel, formatDateTime, formatQuantValue, formatSignedValue, instrumentLabel, sourceClassLabel, type InsightsV3RangeSelection } from './insightsV3Presentation';
+import { actionLabel, driverRelationshipCopy, evidenceStageLabel, featureLabel, formatDateTime, formatQuantValue, formatSignedValue, instrumentLabel, sourceClassLabel, unitLabel, type InsightsV3RangeSelection } from './insightsV3Presentation';
 import { iv3, type InsightsV3CopyKey } from './insightsV3I18n';
 
 const WebView = View as any;
@@ -37,6 +38,270 @@ function Limitation({ children, foundation }: { children: React.ReactNode; found
 
 function findInstrument(bundle: QuantProductBundleV1, id: string) {
   return bundle.instruments.find((row) => row.instrument_id === id) || null;
+}
+
+type AnalyzeDestination = 'joint-analysis' | 'drivers' | 'similar' | 'recovery' | 'scenario';
+
+const analysisStatusKeys: Record<QuantJointAnalysisV1['status'], InsightsV3CopyKey> = {
+  AVAILABLE: 'jointStatusAvailable',
+  FORMING: 'jointStatusForming',
+  INSUFFICIENT_DATA: 'jointStatusInsufficient',
+  ABSTAINED: 'jointStatusAbstained',
+  NOT_SUPPORTED: 'jointStatusUnsupported',
+};
+
+const stabilityKeys: Record<QuantJointDriverV1['stability'], InsightsV3CopyKey> = {
+  STABLE: 'stabilityStable',
+  MODERATE: 'stabilityModerate',
+  UNSTABLE: 'stabilityUnstable',
+  INSUFFICIENT: 'stabilityInsufficient',
+};
+
+function AnalysisAction({
+  detail,
+  foundation,
+  label,
+  onPress,
+}: {
+  detail: string;
+  foundation: QuestVisualFoundation;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <WebPressable
+      accessibilityRole="button"
+      dataSet={{ 'insights-v3-role': 'analysis-action' }}
+      onPress={onPress}
+    >
+      <WebView style={{ flex: 1, minWidth: 0 }}>
+        <Text style={{ color: foundation.text.primary }}>{label}</Text>
+        <Text style={{ color: foundation.text.secondary }}>{detail}</Text>
+      </WebView>
+      <Text style={{ color: foundation.text.metadata }}>›</Text>
+    </WebPressable>
+  );
+}
+
+export function AnalyzeOverviewPanel({
+  analysis,
+  analysisError,
+  analysisLoading,
+  foundation,
+  instrument,
+  lang,
+  onOpen,
+}: {
+  analysis: QuantJointAnalysisV1 | null;
+  analysisError: boolean;
+  analysisLoading: boolean;
+  foundation: QuestVisualFoundation;
+  instrument: QuantProductInstrumentV1;
+  lang: Lang;
+  onOpen: (destination: AnalyzeDestination) => void;
+}) {
+  const windowLabel = analysis?.window_start && analysis.window_end
+    ? `${formatDateTime(lang, analysis.window_start)} — ${formatDateTime(lang, analysis.window_end)}`
+    : iv3(lang, 'analysisWindowUnavailable');
+
+  return (
+    <>
+      <Section foundation={foundation} title={iv3(lang, 'analysisSetup')}>
+        <StatRow foundation={foundation} label={iv3(lang, 'analysisTarget')} value={instrumentLabel(lang, instrument)} />
+        {analysisLoading ? (
+          <Limitation foundation={foundation}>{iv3(lang, 'analysisExtensionLoading')}</Limitation>
+        ) : analysisError ? (
+          <Limitation foundation={foundation}>{iv3(lang, 'analysisExtensionUnavailable')}</Limitation>
+        ) : analysis ? (
+          <>
+            <StatRow foundation={foundation} label={iv3(lang, 'analysisWindow')} value={windowLabel} />
+            <StatRow
+              foundation={foundation}
+              label={iv3(lang, 'completeObservations')}
+              value={iv3(lang, 'observationCountPlain', { count: analysis.complete_observation_count })}
+            />
+            <StatRow
+              foundation={foundation}
+              label={iv3(lang, 'candidateVariables')}
+              value={iv3(lang, 'eligibleCandidateCount', {
+                eligible: analysis.eligible_variable_count,
+                total: analysis.candidate_variable_count,
+              })}
+            />
+            <StatRow foundation={foundation} label={iv3(lang, 'modelStatus')} value={iv3(lang, analysisStatusKeys[analysis.status])} />
+          </>
+        ) : (
+          <Limitation foundation={foundation}>{iv3(lang, 'analysisExtensionUnavailable')}</Limitation>
+        )}
+      </Section>
+
+      <Section foundation={foundation} title={iv3(lang, 'analysisPaths')}>
+        {analysis ? (
+          <AnalysisAction
+            detail={analysis.status === 'AVAILABLE'
+              ? iv3(lang, 'jointAnalysisAvailable', { count: analysis.drivers.length })
+              : iv3(lang, 'jointAnalysisUnavailable', { count: analysis.complete_observation_count })}
+            foundation={foundation}
+            label={iv3(lang, 'jointAnalysis')}
+            onPress={() => onOpen('joint-analysis')}
+          />
+        ) : null}
+        <AnalysisAction
+          detail={iv3(lang, 'observedAssociationsDetail')}
+          foundation={foundation}
+          label={iv3(lang, 'drivers')}
+          onPress={() => onOpen('drivers')}
+        />
+        <AnalysisAction
+          detail={iv3(lang, 'similarAnalysisDetail')}
+          foundation={foundation}
+          label={iv3(lang, 'similar')}
+          onPress={() => onOpen('similar')}
+        />
+        <AnalysisAction
+          detail={iv3(lang, 'recoveryAnalysisDetail')}
+          foundation={foundation}
+          label={iv3(lang, 'recovery')}
+          onPress={() => onOpen('recovery')}
+        />
+        <AnalysisAction
+          detail={iv3(lang, 'scenarioAnalysisDetail')}
+          foundation={foundation}
+          label={iv3(lang, 'scenario')}
+          onPress={() => onOpen('scenario')}
+        />
+      </Section>
+      <Limitation foundation={foundation}>{iv3(lang, 'jointAnalysisLimit')}</Limitation>
+    </>
+  );
+}
+
+export function JointAnalysisPanel({
+  analysis,
+  bundle,
+  foundation,
+  lang,
+  onSelectDriver,
+}: {
+  analysis: QuantJointAnalysisV1 | null;
+  bundle: QuantProductBundleV1;
+  foundation: QuestVisualFoundation;
+  lang: Lang;
+  onSelectDriver: (driverId: string) => void;
+}) {
+  if (!analysis) return <Limitation foundation={foundation}>{iv3(lang, 'analysisExtensionUnavailable')}</Limitation>;
+
+  const target = findInstrument(bundle, analysis.target_instrument_id);
+  const unit = analysis.target_unit;
+  const available = analysis.status === 'AVAILABLE';
+  return (
+    <>
+      <Section foundation={foundation} title={iv3(lang, 'jointAnalysisSummary')}>
+        <StatRow foundation={foundation} label={iv3(lang, 'analysisTarget')} value={target ? instrumentLabel(lang, target) : iv3(lang, 'instrumentGeneric')} />
+        <StatRow foundation={foundation} label={iv3(lang, 'modelStatus')} value={iv3(lang, analysisStatusKeys[analysis.status])} />
+        <StatRow foundation={foundation} label={iv3(lang, 'completeObservations')} value={iv3(lang, 'observationCountPlain', { count: analysis.complete_observation_count })} />
+        <StatRow foundation={foundation} label={iv3(lang, 'excludedObservations')} value={iv3(lang, 'observationCountPlain', { count: analysis.excluded_observation_count })} />
+      </Section>
+
+      {available ? (
+        <Section foundation={foundation} title={iv3(lang, 'deviationDecomposition')}>
+          <StatRow foundation={foundation} label={iv3(lang, 'observedValue')} value={`${formatQuantValue(analysis.observed_value, unit, lang)} ${unitLabel(unit, lang)}`.trim()} />
+          <StatRow foundation={foundation} label={iv3(lang, 'personalReferenceValue')} value={`${formatQuantValue(analysis.reference_value, unit, lang)} ${unitLabel(unit, lang)}`.trim()} />
+          <StatRow foundation={foundation} label={iv3(lang, 'observedDeviation')} value={formatSignedValue(analysis.observed_deviation, unit, lang)} />
+          <StatRow foundation={foundation} label={iv3(lang, 'modelAssociatedComponent')} value={formatSignedValue(analysis.model_attributed_deviation, unit, lang)} />
+          <StatRow foundation={foundation} label={iv3(lang, 'unexplainedResidual')} value={formatSignedValue(analysis.residual_deviation, unit, lang)} />
+        </Section>
+      ) : (
+        <Limitation foundation={foundation}>{iv3(lang, 'jointAnalysisUnavailable', { count: analysis.complete_observation_count })}</Limitation>
+      )}
+
+      {analysis.drivers.length ? (
+        <Section foundation={foundation} title={iv3(lang, 'jointDrivers')}>
+          {analysis.drivers.map((driver) => {
+            const predictor = findInstrument(bundle, driver.predictor_instrument_id);
+            const label = predictor ? instrumentLabel(lang, predictor) : iv3(lang, 'instrumentGeneric');
+            return (
+              <WebPressable
+                accessibilityRole="button"
+                dataSet={{ 'insights-v3-role': 'joint-driver-row' }}
+                key={driver.driver_id}
+                onPress={() => onSelectDriver(driver.driver_id)}
+              >
+                <WebView style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={{ color: foundation.text.primary }}>{driver.predictor_instrument_id === analysis.target_instrument_id ? iv3(lang, 'previousTarget', { target: label }) : label}</Text>
+                  <Text style={{ color: foundation.text.secondary }}>{iv3(lang, stabilityKeys[driver.stability])} · {iv3(lang, 'lagAndWindow', { lag: driver.lag_periods, window: driver.rolling_periods })}</Text>
+                </WebView>
+                <WebView dataSet={{ 'insights-v3-role': 'analysis-row-meta' }}>
+                  <Text style={{ color: foundation.text.primary }}>{formatSignedValue(driver.contribution_target_units, analysis.target_unit, lang)}</Text>
+                  <Text style={{ color: foundation.text.metadata }}>›</Text>
+                </WebView>
+              </WebPressable>
+            );
+          })}
+        </Section>
+      ) : null}
+
+      <Section foundation={foundation} title={iv3(lang, 'timeAwareValidation')}>
+        <StatRow foundation={foundation} label={iv3(lang, 'validationMethod')} value={iv3(lang, 'blockedForwardValidation')} />
+        <StatRow foundation={foundation} label={iv3(lang, 'heldOutObservations')} value={iv3(lang, 'observationCountPlain', { count: analysis.validation.held_out_observation_count })} />
+        <StatRow
+          foundation={foundation}
+          label={iv3(lang, 'heldOutError')}
+          value={analysis.validation.held_out_mae == null
+            ? '—'
+            : `${formatQuantValue(analysis.validation.held_out_mae, unit, lang)} ${unitLabel(unit, lang)}`.trim()}
+        />
+      </Section>
+      <Limitation foundation={foundation}>{iv3(lang, 'jointAnalysisLimit')}</Limitation>
+    </>
+  );
+}
+
+export function JointDriverDetailPanel({
+  analysis,
+  bundle,
+  driver,
+  foundation,
+  lang,
+}: {
+  analysis: QuantJointAnalysisV1 | null;
+  bundle: QuantProductBundleV1;
+  driver: QuantJointDriverV1 | null;
+  foundation: QuestVisualFoundation;
+  lang: Lang;
+}) {
+  if (!analysis || !driver) return <Limitation foundation={foundation}>{iv3(lang, 'driverUnavailable')}</Limitation>;
+  const predictor = findInstrument(bundle, driver.predictor_instrument_id);
+  const target = findInstrument(bundle, analysis.target_instrument_id);
+  const group = analysis.collinearity_groups.find((items) => items.includes(driver.predictor_instrument_id));
+  const groupLabel = group?.map((id) => {
+    const item = findInstrument(bundle, id);
+    return item ? instrumentLabel(lang, item) : iv3(lang, 'instrumentGeneric');
+  }).join(' · ');
+
+  return (
+    <>
+      <Section foundation={foundation} title={iv3(lang, 'driverRelationship')}>
+        <StatRow foundation={foundation} label={iv3(lang, 'analysisTarget')} value={target ? instrumentLabel(lang, target) : iv3(lang, 'instrumentGeneric')} />
+        <StatRow foundation={foundation} label={iv3(lang, 'candidateVariable')} value={predictor ? instrumentLabel(lang, predictor) : iv3(lang, 'instrumentGeneric')} />
+        <StatRow foundation={foundation} label={iv3(lang, 'modelAssociatedComponent')} value={formatSignedValue(driver.contribution_target_units, analysis.target_unit, lang)} />
+        <StatRow foundation={foundation} label={iv3(lang, 'relationshipStability')} value={iv3(lang, stabilityKeys[driver.stability])} />
+      </Section>
+      <Section foundation={foundation} title={iv3(lang, 'temporalSpecification')}>
+        <StatRow foundation={foundation} label={iv3(lang, 'lagPeriods')} value={iv3(lang, 'periodCount', { count: driver.lag_periods })} />
+        <StatRow foundation={foundation} label={iv3(lang, 'rollingPeriods')} value={iv3(lang, 'periodCount', { count: driver.rolling_periods })} />
+        <StatRow foundation={foundation} label={iv3(lang, 'completeObservations')} value={iv3(lang, 'observationCountPlain', { count: driver.complete_observation_count })} />
+        <StatRow foundation={foundation} label={iv3(lang, 'missingObservations')} value={iv3(lang, 'observationCountPlain', { count: driver.missing_observation_count })} />
+        <StatRow foundation={foundation} label={iv3(lang, 'stabilityWindows')} value={iv3(lang, 'foldCount', { count: driver.stability_fold_count })} />
+      </Section>
+      {groupLabel ? (
+        <Section foundation={foundation} title={iv3(lang, 'collinearityGroup')}>
+          <Limitation foundation={foundation}>{iv3(lang, 'collinearityDetail', { items: groupLabel })}</Limitation>
+        </Section>
+      ) : null}
+      <Limitation foundation={foundation}>{iv3(lang, 'jointDriverLimit')}</Limitation>
+    </>
+  );
 }
 
 export function DriversPanel({ bundle, foundation, lang }: { bundle: QuantProductBundleV1; foundation: QuestVisualFoundation; lang: Lang }) {
