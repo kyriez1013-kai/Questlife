@@ -1,0 +1,111 @@
+{
+  "artifact_id": "analysis:1ef71c09402ffff9728a",
+  "as_of": "2026-01-04T07:59:00+11:00",
+  "base_bundle_id": "product:product-v1-lifecycle-subject:personal_market:a254a3d6e1b959ae:full",
+  "base_product_contract_version": "questlife.quant.product.v1",
+  "compare_overlaps": [],
+  "contains_real_user_data": false,
+  "contract_version": "questlife.quant.analysis.v1",
+  "generated_at": "2026-01-04T07:59:00+11:00",
+  "indicator_series": [
+    {
+      "indicator_id": "indicator:market:state.focus:ewma:short",
+      "instrument_id": "market:state.focus",
+      "layer_kind": "EWMA_SHORT",
+      "limitation_codes": [
+        "EWMA_IS_NOT_A_PREDICTION",
+        "IRREGULAR_GAPS_USE_TIME_AWARE_DECAY"
+      ],
+      "method": "time_aware_half_life_ewma",
+      "parameter_key": "half_life_days:3",
+      "points": [
+        {
+          "observed_at": "2026-01-02T20:00:00+11:00",
+          "source_observation_ids": [
+            "stage312-focus-1-observation:active:state-focus:001"
+          ],
+          "value": 4.0
+        }
+      ],
+      "product_label_key": "ewma_short",
+      "unit": "/5"
+    },
+    {
+      "indicator_id": "indicator:market:state.focus:ewma:long",
+      "instrument_id": "market:state.focus",
+      "layer_kind": "EWMA_LONG",
+      "limitation_codes": [
+        "EWMA_IS_NOT_A_PREDICTION",
+        "IRREGULAR_GAPS_USE_TIME_AWARE_DECAY"
+      ],
+      "method": "time_aware_half_life_ewma",
+      "parameter_key": "half_life_days:14",
+      "points": [
+        {
+          "observed_at": "2026-01-02T20:00:00+11:00",
+          "source_observation_ids": [
+            "stage312-focus-1-observation:active:state-focus:001"
+          ],
+          "value": 4.0
+        }
+      ],
+      "product_label_key": "ewma_long",
+      "unit": "/5"
+    }
+  ],
+  "joint_analyses": [
+    {
+      "analysis_id": "joint:market:state.focus:v1",
+      "candidate_variable_count": 1,
+      "collinearity_groups": [],
+      "complete_observation_count": 0,
+      "drivers": [],
+      "eligible_variable_count": 0,
+      "excluded_observation_count": 1,
+      "limitation_codes": [
+        "OBSERVATIONAL_NOT_CAUSAL",
+        "MODEL_ATTRIBUTION_NOT_TREATMENT_EFFECT",
+        "MISSING_IS_NOT_ZERO",
+        "RESIDUAL_REMAINS_UNEXPLAINED",
+        "NO_FORECAST_OUTPUT",
+        "INSUFFICIENT_COMPLETE_OBSERVATIONS"
+      ],
+      "model_attributed_deviation": null,
+      "model_family": "time_aware_regularized_regression",
+      "model_version": "joint-ridge-v1",
+      "observed_deviation": null,
+      "observed_value": null,
+      "reference_value": null,
+      "residual_deviation": null,
+      "source_observation_ids": [],
+      "source_observation_set_hash": null,
+      "status": "INSUFFICIENT_DATA",
+      "target_instrument_id": "market:state.focus",
+      "target_unit": "/5",
+      "validation": {
+        "fold_count": 0,
+        "future_leakage_check_passed": true,
+        "held_out_mae": null,
+        "held_out_observation_count": 0,
+        "limitation_codes": [
+          "INSUFFICIENT_COMPLETE_OBSERVATIONS"
+        ],
+        "selected_ridge_penalty": null,
+        "strategy": "blocked_forward_validation",
+        "target_mad": null
+      },
+      "window_end": null,
+      "window_start": null
+    }
+  ],
+  "limitation_codes": [
+    "OBSERVATIONAL_NOT_CAUSAL",
+    "MISSING_IS_NOT_ZERO",
+    "NO_FORECAST_OUTPUT",
+    "RESEARCH_MODELS_EXCLUDED",
+    "EWMA_IS_NOT_A_PREDICTION",
+    "NO_MEDICAL_AUTHORITY",
+    "NO_AUTOMATIC_DECISION_AUTHORITY"
+  ],
+  "synthetic_only": true
+}
