@@ -9,20 +9,32 @@ import { getQuestVisualFoundation } from '../design/visualFoundation';
 import { questLayout } from '../design/tokens';
 import { useQuestTheme } from '../design/useQuestTheme';
 import { getV11ProductDebugLanguage, getV11ProductThemeId } from '../v11/featureFlag';
+import type { QuantAnalysisExtensionV1, QuantJointDriverV1 } from '../quant-product/quantAnalysisContract';
 import type { QuantProductBundleV1 } from '../quant-product/quantProductContract';
 import type { QuantProductConsumerInstrument, QuantProductConsumerModel } from '../quant-product/quantProductV1Adapter';
-import InsightsV3Chart, { type InsightsV3ChartHandle } from './InsightsV3Chart';
+import InsightsV3Chart, {
+  type InsightsV3ChartHandle,
+  type InsightsV3ComparisonSeries,
+  type InsightsV3IndicatorLayer,
+} from './InsightsV3Chart';
 import InsightsV3Sheet from './InsightsV3Sheet';
 import InsightsV3Watchlist from './InsightsV3Watchlist';
 import {
   AnalystPanel,
+  AnalyzeOverviewPanel,
   DriversPanel,
   EvidencePanel,
   EventsPanel,
+  JointAnalysisPanel,
+  JointDriverDetailPanel,
   RecoveryPanel,
   ScenarioPanel,
   SimilarPanel,
 } from './InsightsV3Analysis';
+import {
+  hasInsightsV3AnalysisExtension,
+  loadInsightsV3AnalysisExtension,
+} from './insightsV3AnalysisSource';
 import {
   aggregationBucketLabel,
   availabilityLabel,
@@ -78,6 +90,8 @@ type ToolId =
   | 'compare'
   | 'indicators'
   | 'analyze'
+  | 'joint-analysis'
+  | 'joint-driver-detail'
   | 'more'
   | 'custom-range'
   | 'drivers'
@@ -275,15 +289,22 @@ export default function InsightsV3Screen() {
   const fixtureId = useMemo(() => resolveInsightsV3FixtureId(currentSearch()), []);
   const [loadResult, setLoadResult] = useState<InsightsV3BundleLoadResult | null>(null);
   const [bundle, setBundle] = useState<QuantProductBundleV1 | null>(null);
+  const [analysisExtension, setAnalysisExtension] = useState<QuantAnalysisExtensionV1 | null>(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [analysisError, setAnalysisError] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [compareId, setCompareId] = useState<string | null>(null);
+  const [compareIds, setCompareIds] = useState<string[]>([]);
   const [range, setRange] = useState<InsightsV3RangeSelection>({ kind: 'contract', key: 'ALL' });
   const [chartKind, setChartKind] = useState<InsightsV3ChartKind>('line');
+  const [showRawObservations, setShowRawObservations] = useState(true);
   const [showReference, setShowReference] = useState(true);
   const [showReferenceRange, setShowReferenceRange] = useState(true);
+  const [showShortEwma, setShowShortEwma] = useState(false);
+  const [showLongEwma, setShowLongEwma] = useState(false);
   const [showEvents, setShowEvents] = useState(true);
+  const [selectedJointDriverId, setSelectedJointDriverId] = useState<string | null>(null);
   const [watchlistPreferences, setWatchlistPreferences] = useState<InsightsV3WatchlistPreferences>({ order: [], pinnedIds: [] });
   const [tool, setTool] = useState<ToolId | null>(initialTool);
   const [customMode, setCustomMode] = useState<'days' | 'observations' | 'calendar'>('days');
@@ -301,6 +322,8 @@ export default function InsightsV3Screen() {
     if (!fixtureId) return;
     setLoadResult(null);
     setBundle(null);
+    setAnalysisExtension(null);
+    setAnalysisError(false);
     setDetailError(false);
     const result = await loadInsightsV3InitialBundle(fixtureId);
     setLoadResult(result);
@@ -359,16 +382,74 @@ export default function InsightsV3Screen() {
     }
   }, [bundle?.metadata.mode, ensureDetailBundle, tool]);
 
+  useEffect(() => {
+    if (!fixtureId || bundle?.metadata.mode !== 'FULL' || !hasInsightsV3AnalysisExtension(fixtureId)) {
+      setAnalysisExtension(null);
+      setAnalysisLoading(false);
+      setAnalysisError(false);
+      return undefined;
+    }
+    let cancelled = false;
+    const startedAt = typeof performance === 'undefined' ? null : performance.now();
+    setAnalysisLoading(true);
+    setAnalysisError(false);
+    void loadInsightsV3AnalysisExtension(fixtureId, bundle.metadata.bundle_id).then((result) => {
+      if (cancelled) return;
+      setAnalysisLoading(false);
+      if (result.ok) {
+        setAnalysisExtension(result.extension);
+        if (startedAt != null) recordInsightsV3Performance('analysisExtensionReadyMs', performance.now() - startedAt);
+      } else {
+        setAnalysisExtension(null);
+        setAnalysisError(result.code !== 'NOT_AVAILABLE');
+      }
+    });
+    return () => { cancelled = true; };
+  }, [bundle?.metadata.bundle_id, bundle?.metadata.mode, fixtureId]);
+
   const instrument = useMemo<QuantProductConsumerInstrument | null>(
     () => model?.instruments.find((row) => row.id === selectedId) || null,
     [model, selectedId],
   );
   const series = useMemo(() => seriesForInstrument(instrument), [instrument]);
-  const compareInstrument = useMemo(
-    () => model?.instruments.find((row) => row.id === compareId) || null,
-    [compareId, model],
+  const compareInstruments = useMemo(
+    () => compareIds.flatMap((id) => {
+      const row = model?.instruments.find((item) => item.id === id);
+      return row ? [row] : [];
+    }),
+    [compareIds, model],
   );
-  const comparisonSeries = useMemo(() => seriesForInstrument(compareInstrument), [compareInstrument]);
+  const comparisonSeries = useMemo<InsightsV3ComparisonSeries[]>(() => compareInstruments.flatMap((row) => {
+    const rowSeries = seriesForInstrument(row);
+    if (!rowSeries || !instrument) return [];
+    const overlap = analysisExtension?.compare_overlaps.find((item) => (
+      item.target_instrument_id === instrument.id && item.compare_instrument_id === row.id
+    ));
+    return [{
+      instrumentId: row.id,
+      label: instrumentLabel(lang, row),
+      matchingWindowKey: overlap?.matching_window_key ?? null,
+      overlapCount: overlap?.overlapping_window_count ?? null,
+      series: rowSeries,
+    }];
+  }), [analysisExtension?.artifact_id, compareInstruments, instrument, lang]);
+  const indicatorLayers = useMemo<InsightsV3IndicatorLayer[]>(() => {
+    if (!analysisExtension || !instrument) return [];
+    return analysisExtension.indicator_series.flatMap((item) => {
+      if (item.instrument_id !== instrument.id) return [];
+      if (item.layer_kind === 'EWMA_SHORT' && showShortEwma) return [{ label: iv3(lang, 'shortEwmaIndicator'), series: item }];
+      if (item.layer_kind === 'EWMA_LONG' && showLongEwma) return [{ label: iv3(lang, 'longEwmaIndicator'), series: item }];
+      return [];
+    });
+  }, [analysisExtension, instrument, lang, showLongEwma, showShortEwma]);
+  const jointAnalysis = useMemo(
+    () => analysisExtension?.joint_analyses.find((item) => item.target_instrument_id === instrument?.id) ?? null,
+    [analysisExtension, instrument?.id],
+  );
+  const selectedJointDriver = useMemo<QuantJointDriverV1 | null>(
+    () => jointAnalysis?.drivers.find((item) => item.driver_id === selectedJointDriverId) ?? null,
+    [jointAnalysis, selectedJointDriverId],
+  );
 
   useEffect(() => {
     if (!fixtureId || !instrument || series || detailLoading || detailError || bundle?.metadata.mode !== 'COMPACT') return;
@@ -405,14 +486,15 @@ export default function InsightsV3Screen() {
   const selectInstrument = (id: string) => {
     instrumentSwitchStartedAt.current = typeof performance === 'undefined' ? null : performance.now();
     setSelectedId(id);
-    setCompareId(null);
+    setCompareIds([]);
+    setSelectedJointDriverId(null);
     if (bundle?.metadata.mode === 'COMPACT') void ensureDetailBundle();
   };
 
   const openTool = (nextTool: ToolId) => {
     toolOpenedAt.current = typeof performance === 'undefined' ? null : performance.now();
     setTool(nextTool);
-    if (['view', 'compare', 'indicators', 'drivers', 'similar', 'recovery', 'scenario', 'events'].includes(nextTool)
+    if (['view', 'compare', 'indicators', 'analyze', 'joint-analysis', 'drivers', 'similar', 'recovery', 'scenario', 'events'].includes(nextTool)
       && bundle?.metadata.mode === 'COMPACT') {
       void ensureDetailBundle();
     }
@@ -538,6 +620,8 @@ export default function InsightsV3Screen() {
   const chartKinds = availableChartKinds(series);
   const quickRanges = contractQuickRanges(series);
   const activeToolTitle = tool === 'drivers' ? iv3(lang, 'drivers')
+    : tool === 'joint-analysis' ? iv3(lang, 'jointAnalysis')
+      : tool === 'joint-driver-detail' ? iv3(lang, 'driverDetail')
     : tool === 'similar' ? iv3(lang, 'similar')
       : tool === 'recovery' ? iv3(lang, 'recovery')
         : tool === 'scenario' ? iv3(lang, 'scenario')
@@ -601,26 +685,34 @@ export default function InsightsV3Screen() {
               <WebView dataSet={{ 'insights-v3-role': 'chart-stage' }}>
                 {series ? (
                   <>
+                    <WebView dataSet={{ 'insights-v3-role': 'chart-toolbar' }}>
+                      <Text style={{ color: foundation.text.metadata }}>
+                        {comparisonSeries.length ? iv3(lang, 'independentScales') : `${instrumentLabel(lang, instrument)} · ${unitLabel(series.unit, lang)}`}
+                      </Text>
+                      <ChartViewportControls
+                        foundation={foundation}
+                        lang={lang}
+                        onFit={() => chartRef.current?.fit()}
+                        onZoomIn={() => chartRef.current?.zoomIn()}
+                        onZoomOut={() => chartRef.current?.zoomOut()}
+                      />
+                    </WebView>
                     <InsightsV3Chart
                       asOf={bundle.metadata.as_of}
                       chartKind={isChartKindRenderable(series, chartKind, range) ? chartKind : 'line'}
                       comparisonSeries={comparisonSeries}
                       foundation={foundation}
+                      indicatorSeries={indicatorLayers}
                       lang={lang}
                       onReady={recordChartReady}
                       range={range}
                       ref={chartRef}
                       series={series}
                       showEvents={showEvents}
+                      showRawObservations={showRawObservations}
                       showReference={showReference}
                       showReferenceRange={showReferenceRange}
-                    />
-                    <ChartViewportControls
-                      foundation={foundation}
-                      lang={lang}
-                      onFit={() => chartRef.current?.fit()}
-                      onZoomIn={() => chartRef.current?.zoomIn()}
-                      onZoomOut={() => chartRef.current?.zoomOut()}
+                      targetLabel={instrumentLabel(lang, instrument)}
                     />
                   </>
                 ) : (
@@ -675,8 +767,8 @@ export default function InsightsV3Screen() {
 
               <WebView accessibilityRole="toolbar" dataSet={{ 'insights-v3-role': 'tool-row' }}>
                 <ToolButton foundation={foundation} label={iv3(lang, 'view')} onPress={() => openTool('view')} />
-                <ToolButton active={Boolean(compareId)} foundation={foundation} label={iv3(lang, 'compare')} onPress={() => openTool('compare')} />
-                <ToolButton active={showReference || showReferenceRange || showEvents} foundation={foundation} label={iv3(lang, 'indicators')} onPress={() => openTool('indicators')} />
+                <ToolButton active={compareIds.length > 0} foundation={foundation} label={iv3(lang, 'compare')} onPress={() => openTool('compare')} />
+                <ToolButton active={showReference || showReferenceRange || showShortEwma || showLongEwma || showEvents} foundation={foundation} label={iv3(lang, 'indicators')} onPress={() => openTool('indicators')} />
                 <ToolButton foundation={foundation} label={iv3(lang, 'analyze')} onPress={() => openTool('analyze')} />
                 <ToolButton foundation={foundation} label={iv3(lang, 'more')} onPress={() => openTool('more')} />
               </WebView>
@@ -696,10 +788,17 @@ export default function InsightsV3Screen() {
                 <Text style={{ color: foundation.text.metadata }}>{iv3(lang, 'nextObservation')}</Text>
                 <Text style={{ color: foundation.text.primary }}>{nextObservationCopy(lang, bundle)}</Text>
               </WebView>
-              {compareInstrument ? (
+              {compareInstruments.length ? (
                 <WebView dataSet={{ 'insights-v3-role': 'compare-note' }}>
                   <Text style={{ color: foundation.text.metadata }}>{iv3(lang, 'independentScales')}</Text>
-                  <Text style={{ color: foundation.text.primary }}>{instrumentLabel(lang, instrument)} × {instrumentLabel(lang, compareInstrument)}</Text>
+                  <Text style={{ color: foundation.text.primary }}>{iv3(lang, 'targetSeries')}: {instrumentLabel(lang, instrument)} · {unitLabel(instrument.unit, lang)}</Text>
+                  {comparisonSeries.map((item) => (
+                    <Text key={item.instrumentId} style={{ color: foundation.text.secondary }}>
+                      {item.label} · {unitLabel(item.series.unit, lang)} · {item.overlapCount == null
+                        ? iv3(lang, 'overlapUnavailable')
+                        : iv3(lang, 'overlapWindows', { count: item.overlapCount })}
+                    </Text>
+                  ))}
                 </WebView>
               ) : null}
               {loadResult.ok && loadResult.warnings.includes('OPTIONAL_INTERPRETATION_REJECTED') ? (
@@ -742,24 +841,53 @@ export default function InsightsV3Screen() {
           <WebView dataSet={{ 'insights-v3-role': 'choice-list' }}>
             {model.instruments.filter((row) => row.id !== instrument.id && row.series.length > 0).length === 0 ? (
               <Text style={{ color: foundation.text.secondary }}>{iv3(lang, 'compareUnavailable')}</Text>
-            ) : model.instruments.filter((row) => row.id !== instrument.id && row.series.length > 0).map((row) => (
-              <WebPressable
-                accessibilityRole="button"
-                accessibilityState={{ selected: compareId === row.id }}
-                dataSet={{ 'insights-v3-role': 'choice-row', 'insights-v3-selected': compareId === row.id ? 'true' : 'false' }}
-                key={row.id}
-                onPress={() => { setCompareId(compareId === row.id ? null : row.id); setTool(null); }}
-              >
-                <Text style={{ color: foundation.text.primary }}>{instrumentLabel(lang, row)}</Text>
-                <Text style={{ color: foundation.text.metadata }}>{unitLabel(row.unit, lang)}</Text>
-              </WebPressable>
-            ))}
+            ) : (
+              <>
+                <Text style={{ color: foundation.text.secondary }}>{iv3(lang, 'compareLimit')}</Text>
+                {model.instruments.filter((row) => row.id !== instrument.id && row.series.length > 0).map((row) => {
+                  const selected = compareIds.includes(row.id);
+                  const overlap = analysisExtension?.compare_overlaps.find((item) => (
+                    item.target_instrument_id === instrument.id && item.compare_instrument_id === row.id
+                  ));
+                  const disabled = !selected && compareIds.length >= 3;
+                  return (
+                    <WebPressable
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: selected, disabled }}
+                      dataSet={{ 'insights-v3-role': 'choice-row', 'insights-v3-selected': selected ? 'true' : 'false' }}
+                      disabled={disabled}
+                      key={row.id}
+                      onPress={() => setCompareIds((current) => current.includes(row.id)
+                        ? current.filter((id) => id !== row.id)
+                        : [...current, row.id].slice(0, 3))}
+                    >
+                      <WebView style={{ minWidth: 0, flex: 1 }}>
+                        <Text style={{ color: disabled ? foundation.text.disabled : foundation.text.primary }}>{instrumentLabel(lang, row)}</Text>
+                        <Text style={{ color: foundation.text.metadata }}>
+                          {unitLabel(row.unit, lang)} · {overlap
+                            ? iv3(lang, 'overlapWindows', { count: overlap.overlapping_window_count })
+                            : iv3(lang, 'overlapUnavailable')}
+                        </Text>
+                      </WebView>
+                      <Text style={{ color: foundation.text.metadata }}>{selected ? '✓' : ''}</Text>
+                    </WebPressable>
+                  );
+                })}
+              </>
+            )}
           </WebView>
         ) : tool === 'indicators' ? (
           <WebView dataSet={{ 'insights-v3-role': 'choice-list' }}>
             {[
+              [iv3(lang, 'rawObservationsIndicator'), showRawObservations, setShowRawObservations],
               [iv3(lang, 'baselineIndicator'), showReference, setShowReference],
               [iv3(lang, 'rangeIndicator'), showReferenceRange, setShowReferenceRange],
+              ...(analysisExtension?.indicator_series.some((item) => item.instrument_id === instrument.id && item.layer_kind === 'EWMA_SHORT')
+                ? [[iv3(lang, 'shortEwmaIndicator'), showShortEwma, setShowShortEwma] as const]
+                : []),
+              ...(analysisExtension?.indicator_series.some((item) => item.instrument_id === instrument.id && item.layer_kind === 'EWMA_LONG')
+                ? [[iv3(lang, 'longEwmaIndicator'), showLongEwma, setShowLongEwma] as const]
+                : []),
               [iv3(lang, 'eventsIndicator'), showEvents, setShowEvents],
             ].map(([label, selected, setter]) => (
               <WebPressable
@@ -773,6 +901,7 @@ export default function InsightsV3Screen() {
                 <Text style={{ color: foundation.text.metadata }}>{selected ? '✓' : ''}</Text>
               </WebPressable>
             ))}
+            {(showShortEwma || showLongEwma) ? <Text style={{ color: foundation.text.secondary }}>{iv3(lang, 'ewmaNotForecast')}</Text> : null}
           </WebView>
         ) : tool === 'custom-range' ? (
           <WebView dataSet={{ 'insights-v3-role': 'custom-range' }}>
@@ -798,14 +927,15 @@ export default function InsightsV3Screen() {
             </WebPressable>
           </WebView>
         ) : tool === 'analyze' ? (
-          <WebView dataSet={{ 'insights-v3-role': 'choice-list' }}>
-            {(['drivers', 'similar', 'recovery', 'scenario'] as const).map((id) => (
-              <WebPressable accessibilityRole="button" dataSet={{ 'insights-v3-role': 'choice-row' }} key={id} onPress={() => openTool(id)}>
-                <Text style={{ color: foundation.text.primary }}>{iv3(lang, id)}</Text>
-                <Text style={{ color: foundation.text.metadata }}>›</Text>
-              </WebPressable>
-            ))}
-          </WebView>
+          <AnalyzeOverviewPanel
+            analysis={jointAnalysis}
+            analysisError={analysisError}
+            analysisLoading={analysisLoading}
+            foundation={foundation}
+            instrument={bundle.instruments.find((row) => row.instrument_id === instrument.id)!}
+            lang={lang}
+            onOpen={(id) => openTool(id)}
+          />
         ) : tool === 'more' ? (
           <WebView dataSet={{ 'insights-v3-role': 'choice-list' }}>
             {(['watchlist', 'analyst', 'evidence', 'events'] as const).map((id) => (
@@ -827,6 +957,25 @@ export default function InsightsV3Screen() {
             onTogglePin={togglePinnedInstrument}
             preferences={watchlistPreferences}
             selectedId={instrument.id}
+          />
+        ) : tool === 'joint-analysis' ? (
+          <JointAnalysisPanel
+            analysis={jointAnalysis}
+            bundle={bundle}
+            foundation={foundation}
+            lang={lang}
+            onSelectDriver={(driverId) => {
+              setSelectedJointDriverId(driverId);
+              openTool('joint-driver-detail');
+            }}
+          />
+        ) : tool === 'joint-driver-detail' ? (
+          <JointDriverDetailPanel
+            analysis={jointAnalysis}
+            bundle={bundle}
+            driver={selectedJointDriver}
+            foundation={foundation}
+            lang={lang}
           />
         ) : tool === 'drivers' ? <DriversPanel bundle={bundle} foundation={foundation} lang={lang} />
           : tool === 'similar' ? <SimilarPanel bundle={bundle} foundation={foundation} lang={lang} onJump={jumpToRange} />
