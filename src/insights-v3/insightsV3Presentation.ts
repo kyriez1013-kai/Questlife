@@ -184,7 +184,9 @@ export function buildPersonalContext(
     : `${formatQuantValue(instrument.reference.value, instrument.unit, lang)} ${currentUnit}`.trim();
   const changeValue = instrument.change.absolute == null
     ? iv3(lang, 'noComparison')
-    : formatSignedValue(instrument.change.absolute, instrument.unit, lang);
+    : instrument.change.absolute === 0
+      ? iv3(lang, 'changeFlat')
+      : formatSignedValue(instrument.change.absolute, instrument.unit === '/5' ? '' : instrument.unit, lang);
   const evidenceValue = iv3(lang, 'observations', { count: instrument.evidence.observation_count });
   const latest = instrument.latest?.value;
   const reference = instrument.reference.value;
@@ -372,7 +374,6 @@ export function buildCompactCue(
   bundle: QuantProductBundleV1,
   instrument: QuantProductConsumerInstrument,
 ): InsightsV3CompactCue {
-  const personalContext = buildPersonalContext(lang, instrument);
   const interpretation = bundle.interpretation;
   const driver = interpretation?.target_instrument_id === instrument.id
     ? interpretation.driver_analysis?.candidates[0]
@@ -430,10 +431,10 @@ export function buildCompactCue(
   return {
     boundary: 'fact',
     eyebrow: iv3(lang, 'currentObservation'),
-    text: personalContext.summary,
+    text: iv3(lang, 'explanationInsufficient'),
     detail: instrument.evidence.observation_count <= 1
       ? iv3(lang, 'firstObservationContext')
-      : iv3(lang, 'explanationInsufficient'),
+      : null,
     evidence: iv3(lang, 'observationEvidence', {
       count: instrument.evidence.observation_count,
       periods: instrument.evidence.independent_period_count,

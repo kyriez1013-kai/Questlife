@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Polyline } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import { useStore } from '../store';
 import { getLanguage, type Lang } from '../i18n';
 import { getQuestVisualFoundation } from '../design/visualFoundation';
@@ -109,19 +109,6 @@ function initialTool(): ToolId | null {
     : null;
 }
 
-function Sparkline({ values, color }: { values: number[]; color: string }) {
-  if (values.length < 2) return <WebView dataSet={{ 'insights-v3-role': 'sparkline-empty' }} />;
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const span = Math.max(0.001, max - min);
-  const points = values.map((value, index) => `${index / (values.length - 1) * 48},${18 - (value - min) / span * 16}`).join(' ');
-  return (
-    <Svg accessibilityElementsHidden height={20} width={50} viewBox="0 0 48 20">
-      <Polyline fill="none" points={points} stroke={color} strokeWidth="1.4" />
-    </Svg>
-  );
-}
-
 function EmptySurface({
   action,
   body,
@@ -176,10 +163,6 @@ function InstrumentStrip({
         const instrument = model.instruments.find((row) => row.id === id);
         if (!instrument) return null;
         const item = model.watchlist.find((row) => row.instrument_id === id);
-        const fallbackSeries = seriesForInstrument(instrument);
-        const values = item?.sparkline.map((row) => row.value)
-          ?? fallbackSeries?.points.slice(-20).map((row) => row.value)
-          ?? [];
         const latest = item?.latest ?? instrument.latest;
         const selected = id === selectedId;
         return (
@@ -191,16 +174,13 @@ function InstrumentStrip({
             key={id}
             onPress={() => onSelect(id)}
           >
-            <WebView style={{ minWidth: 0, flex: 1 }}>
-              <WebText dataSet={{ 'insights-v3-role': 'watchlist-label' }} numberOfLines={1} style={{ color: selected ? foundation.text.primary : foundation.text.secondary }}>
-                {instrumentLabel(lang, instrument)}
-              </WebText>
-              <WebText dataSet={{ 'insights-v3-role': 'watchlist-reading' }} style={{ color: foundation.text.primary }}>
-                {formatQuantValue(latest?.value, instrument.unit, lang)}
-                {unitLabel(instrument.unit, lang) ? <Text style={{ color: foundation.text.metadata }}> {unitLabel(instrument.unit, lang)}</Text> : null}
-              </WebText>
-            </WebView>
-            <Sparkline color={selected ? foundation.data.observed : foundation.text.metadata} values={values} />
+            <WebText dataSet={{ 'insights-v3-role': 'watchlist-label' }} numberOfLines={1} style={{ color: selected ? foundation.text.primary : foundation.text.secondary }}>
+              {instrumentLabel(lang, instrument)}
+            </WebText>
+            <WebText dataSet={{ 'insights-v3-role': 'watchlist-reading' }} numberOfLines={1} style={{ color: selected ? foundation.text.primary : foundation.text.secondary }}>
+              {formatQuantValue(latest?.value, instrument.unit, lang)}
+              {unitLabel(instrument.unit, lang) ? <Text style={{ color: foundation.text.metadata }}> {unitLabel(instrument.unit, lang)}</Text> : null}
+            </WebText>
           </WebPressable>
         );
       })}
@@ -244,6 +224,18 @@ function ChartViewportControls({
   onZoomIn: () => void;
   onZoomOut: () => void;
 }) {
+  const fitIcon = (
+    <Svg height={17} width={17} viewBox="0 0 20 20">
+      <Path
+        d="M7 3H3v4 M13 3h4v4 M17 13v4h-4 M7 17H3v-4"
+        fill="none"
+        stroke={foundation.text.secondary}
+        strokeLinecap="square"
+        strokeLinejoin="miter"
+        strokeWidth="1.4"
+      />
+    </Svg>
+  );
   return (
     <WebView accessibilityRole="toolbar" dataSet={{ 'insights-v3-role': 'chart-controls' }}>
       <WebPressable
@@ -268,7 +260,7 @@ function ChartViewportControls({
         dataSet={{ 'insights-v3-role': 'chart-control' }}
         onPress={onFit}
       >
-        <Text style={{ color: foundation.text.secondary }}>{iv3(lang, 'fit')}</Text>
+        {fitIcon}
       </WebPressable>
     </WebView>
   );
@@ -377,6 +369,11 @@ export default function InsightsV3Screen() {
     [compareId, model],
   );
   const comparisonSeries = useMemo(() => seriesForInstrument(compareInstrument), [compareInstrument]);
+
+  useEffect(() => {
+    if (!fixtureId || !instrument || series || detailLoading || detailError || bundle?.metadata.mode !== 'COMPACT') return;
+    if (hasInsightsV3DetailBundle(fixtureId)) void ensureDetailBundle();
+  }, [bundle?.metadata.mode, detailError, detailLoading, ensureDetailBundle, fixtureId, instrument, series]);
 
   useEffect(() => {
     if (surfaceReadyRecorded.current || !bundle || !model || surfaceStartedAt.current == null || typeof performance === 'undefined') return;
@@ -583,16 +580,12 @@ export default function InsightsV3Screen() {
                   <Text style={{ color: foundation.text.primary }}>{personalContext.currentValue}</Text>
                   {personalContext.currentUnit ? <Text style={{ color: foundation.text.metadata }}>{personalContext.currentUnit}</Text> : null}
                 </WebView>
-              </WebView>
-
-              <WebView dataSet={{ 'insights-v3-role': 'personal-context-summary' }}>
-                <WebView dataSet={{ 'insights-v3-role': 'reference-reading' }}>
-                  <Text style={{ color: foundation.text.metadata }}>{personalContext.referenceLabel}</Text>
-                  <Text style={{ color: foundation.text.primary }}>{personalContext.referenceValue}</Text>
-                </WebView>
-                <WebView dataSet={{ 'insights-v3-role': 'context-meta' }}>
-                  <Text style={{ color: foundation.text.secondary }}>{iv3(lang, 'change')} {personalContext.changeValue}</Text>
-                  <Text style={{ color: foundation.text.metadata }}>{personalContext.evidenceValue}</Text>
+                <WebView dataSet={{ 'insights-v3-role': 'personal-context-line' }}>
+                  <Text style={{ color: foundation.text.secondary }}>
+                    {personalContext.referenceLabel} {personalContext.referenceValue}
+                    {' · '}{personalContext.changeValue}
+                    {' · '}{personalContext.evidenceValue}
+                  </Text>
                 </WebView>
               </WebView>
 
