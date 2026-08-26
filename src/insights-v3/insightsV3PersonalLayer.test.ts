@@ -53,6 +53,7 @@ const exactReferenceContext = buildPersonalContext('zh', {
 });
 assert.equal(exactReferenceContext.relationship, 'at_reference');
 assert.equal(exactReferenceContext.summary, '当前与近期个人参考一致。');
+assert.equal(exactReferenceContext.changeValue, '持平');
 
 const belowReferenceContext = buildPersonalContext('zh', {
   ...mature.instrument,
@@ -62,6 +63,7 @@ const belowReferenceContext = buildPersonalContext('zh', {
 });
 assert.equal(belowReferenceContext.relationship, 'below_reference');
 assert.equal(belowReferenceContext.summary, '当前低于近期个人参考。');
+assert.equal(belowReferenceContext.changeValue, '−0.5');
 
 const aboveReferenceContext = buildPersonalContext('en', {
   ...mature.instrument,
@@ -71,6 +73,7 @@ const aboveReferenceContext = buildPersonalContext('en', {
 });
 assert.equal(aboveReferenceContext.relationship, 'above_reference');
 assert.equal(aboveReferenceContext.summary, 'Current reading is above the recent personal reference.');
+assert.equal(aboveReferenceContext.changeValue, '+0.5');
 
 const populationContext = buildPersonalContext('en', {
   ...mature.instrument,
@@ -121,7 +124,8 @@ assert.match(similarCue.detail || '', /does not imply/i);
 
 const noInterpretationCue = buildCompactCue('en', mature.bundle, mature.instrument);
 assert.equal(noInterpretationCue.action, 'evidence');
-assert.match(noInterpretationCue.detail || '', /not enough evidence/i);
+assert.match(noInterpretationCue.text, /no sufficiently stable observational association/i);
+assert.notEqual(noInterpretationCue.text, matureContextEn.summary);
 
 for (const cue of [driverCueEn, similarCue, noInterpretationCue]) {
   const productText = [cue.text, cue.detail, cue.evidence].filter(Boolean).join(' ');
