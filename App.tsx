@@ -7,7 +7,7 @@ import { NavigationContainer, DefaultTheme, useIsFocused } from '@react-navigati
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Text, View, ActivityIndicator, Platform, useColorScheme } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { StoreProvider, useStore } from './src/store';
 import { getLanguage, t } from './src/i18n';
 import { getQuestTheme, questLayout } from './src/design/tokens';
@@ -43,6 +43,7 @@ import {
   isV11ProductEnabled,
 } from './src/v11/featureFlag';
 import PersistenceDebugPanel from './src/components/debug/PersistenceDebugPanel';
+import { applyWebShellThemeColor } from './src/utils/installableShell';
 
 const InsightsV3Screen = React.lazy(() => import('./src/insights-v3/InsightsV3Screen'));
 
@@ -176,6 +177,7 @@ function AppContent() {
   }, [loading, data]);
   useEffect(() => {
     if (typeof document === 'undefined') return;
+    applyWebShellThemeColor(questTheme.colors.background);
     const targets = [document.documentElement, document.body].filter(Boolean);
     targets.forEach((target) => {
       target.classList.toggle('questlife-theme-dark', darkTheme);
@@ -342,9 +344,11 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <StoreProvider ephemeral={interviewDemo}>
-        <StatusBar style="auto" />
-        <AppContent />
-        <PersistenceDebugPanel />
+        <SafeAreaView edges={['bottom']} style={{ flex: 1 }}>
+          <StatusBar style="auto" />
+          <AppContent />
+          <PersistenceDebugPanel />
+        </SafeAreaView>
       </StoreProvider>
     </SafeAreaProvider>
   );

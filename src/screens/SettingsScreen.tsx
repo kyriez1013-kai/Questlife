@@ -26,6 +26,7 @@ import QuestPill from '../components/ui/QuestPill';
 import { QuestCompactRow, QuestGroupedSurface, QuestSectionHeader } from '../components/ui/QuestPrimitives';
 import QuestSegmentedControl from '../components/ui/QuestSegmentedControl';
 import { getV11ProductLanguage, getV11ProductThemeId, isV11PersonalTerminalEnabled } from '../v11/featureFlag';
+import InstallQuestLifeSection from '../components/settings/InstallQuestLifeSection';
 
 const TRADINGVIEW_URL = 'https://www.tradingview.com/';
 const LIGHTWEIGHT_CHARTS_LICENSE_URL = 'https://github.com/tradingview/lightweight-charts/blob/v5.2.0/LICENSE';
@@ -342,6 +343,8 @@ export default function SettingsScreen() {
           <QuestCompactRow questTheme={questTheme} divider title={t(lang, 'reminders')} body={t(lang, 'remindersText')} />
           <QuestCompactRow questTheme={questTheme} divider title={t(lang, 'version')} body={t(lang, 'versionText')} />
         </QuestGroupedSurface>
+
+        <InstallQuestLifeSection lang={lang} questTheme={questTheme} />
 
         <QuestSectionHeader
           questTheme={questTheme}
