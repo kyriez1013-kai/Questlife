@@ -33,7 +33,19 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "output": "single",
+      "favicon": "./assets/favicon.png",
+      "name": "QuestLife",
+      "shortName": "QuestLife",
+      "lang": "en",
+      "scope": "/",
+      "description": "Turn goals into daily executable systems.",
+      "display": "standalone",
+      "startUrl": "/",
+      "orientation": "portrait-primary",
+      "backgroundColor": "#090E1A",
+      "barStyle": "default",
+      "preferRelatedApplications": false
     }
   }
 }

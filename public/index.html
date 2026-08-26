@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="%LANG_ISO_CODE%">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <meta id="questlife-theme-color" name="theme-color" content="#090E1A" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="QuestLife" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
+    <title>%WEB_TITLE%</title>
+    <script>
+      (function () {
+        var light = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+        var color = light ? '#F6F7FB' : '#090E1A';
+        document.documentElement.style.setProperty('--questlife-shell-background', color);
+        var themeMeta = document.getElementById('questlife-theme-color');
+        if (themeMeta) themeMeta.setAttribute('content', color);
+      })();
+    </script>
+    <style id="expo-reset">
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        min-height: 100%;
+        margin: 0;
+        background: var(--questlife-shell-background, #090E1A);
+        overscroll-behavior: none;
+      }
+
+      body {
+        overflow: hidden;
+      }
+
+      #root {
+        display: flex;
+        width: 100%;
+        height: 100%;
+        min-height: 100dvh;
+        flex: 1;
+        background: var(--questlife-shell-background, #090E1A);
+      }
+    </style>
+  </head>
+
+  <body>
+    <noscript>You need to enable JavaScript to run QuestLife.</noscript>
+    <div id="root"></div>
+  </body>
+</html>
