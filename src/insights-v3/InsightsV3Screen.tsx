@@ -5,12 +5,23 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { useStore } from '../store';
 import { getLanguage, type Lang } from '../i18n';
+import { isDarkTheme } from '../design/darkSurfaceGuard';
 import { getQuestVisualFoundation } from '../design/visualFoundation';
 import { questLayout } from '../design/tokens';
 import { useQuestTheme } from '../design/useQuestTheme';
+import V11GlowOrb from '../v11/components/V11GlowOrb';
+import { V11GlassSheet } from '../v11/components/V11Material';
 import { getV11ProductDebugLanguage, getV11ProductThemeId } from '../v11/featureFlag';
+import {
+  getV11ThemeTokens,
+  v11Radius,
+  v11Spacing,
+  v11Typography,
+  type V11EvidenceStage,
+} from '../v11/tokens';
+import useV11ReducedMotion from '../v11/useV11ReducedMotion';
 import type { QuantAnalysisExtensionV1, QuantJointDriverV1 } from '../quant-product/quantAnalysisContract';
-import type { QuantProductBundleV1 } from '../quant-product/quantProductContract';
+import type { QuantProductBundleV1, QuantProductSeriesV1 } from '../quant-product/quantProductContract';
 import type { QuantProductConsumerInstrument, QuantProductConsumerModel } from '../quant-product/quantProductV1Adapter';
 import InsightsV3Chart, {
   type InsightsV3ChartHandle,
@@ -42,6 +53,7 @@ import {
   buildCompactCue,
   buildInsightsV3Consumer,
   buildPersonalContext,
+  chartTypeContractKey,
   contractQuickRanges,
   defaultChartKind,
   defaultRangeSelection,
@@ -77,11 +89,13 @@ import {
   writeInsightsV3Watchlist,
   type InsightsV3WatchlistPreferences,
 } from './insightsV3WatchlistPreferences';
+import '../v11/v11-components.css';
 import './insights-v3.css';
 
 const WebView = View as any;
 const WebPressable = Pressable as any;
 const WebScrollView = ScrollView as any;
+const WebSafeAreaView = SafeAreaView as any;
 const WebTextInput = TextInput as any;
 const WebText = Text as any;
 
@@ -102,6 +116,31 @@ type ToolId =
   | 'evidence'
   | 'events'
   | 'watchlist';
+
+const PRIMARY_CHART_KINDS: InsightsV3ChartKind[] = ['line', 'candle', 'bar'];
+
+function chartKindLabel(lang: Lang, kind: InsightsV3ChartKind) {
+  if (kind === 'candle') return iv3(lang, 'chartCandle');
+  if (kind === 'bar') return iv3(lang, 'chartBar');
+  if (kind === 'point') return iv3(lang, 'chartPoint');
+  return iv3(lang, 'chartLine');
+}
+
+function chartKindUnavailableReason(
+  lang: Lang,
+  series: QuantProductSeriesV1 | null,
+  kind: InsightsV3ChartKind,
+  range: InsightsV3RangeSelection,
+) {
+  if (!series) return iv3(lang, 'chartModeNoSeries');
+  if (!series.supported_chart_types.includes(chartTypeContractKey(kind))) {
+    return iv3(lang, 'chartModeUnsupported');
+  }
+  if (kind === 'candle' && !isChartKindRenderable(series, kind, range)) {
+    return iv3(lang, 'chartCandleRangeUnavailable');
+  }
+  return null;
+}
 
 function currentSearch() {
   return typeof window === 'undefined' ? '' : window.location.search;
@@ -225,6 +264,30 @@ function ToolButton({
   );
 }
 
+function SheetToggleChoice({
+  foundation,
+  label,
+  onPress,
+  selected,
+}: {
+  foundation: ReturnType<typeof getQuestVisualFoundation>;
+  label: string;
+  onPress: () => void;
+  selected: boolean;
+}) {
+  return (
+    <WebPressable
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: selected }}
+      dataSet={{ 'insights-v3-role': 'choice-row', 'insights-v3-selected': selected ? 'true' : 'false' }}
+      onPress={onPress}
+    >
+      <Text style={{ color: foundation.text.primary }}>{label}</Text>
+      <Text style={{ color: foundation.text.metadata }}>{selected ? '✓' : ''}</Text>
+    </WebPressable>
+  );
+}
+
 function ChartViewportControls({
   foundation,
   lang,
@@ -285,6 +348,9 @@ export default function InsightsV3Screen() {
   const navigation = useNavigation<any>();
   const theme = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const foundation = useMemo(() => getQuestVisualFoundation(theme), [theme]);
+  const v11ThemeMode = isDarkTheme(theme) ? 'dark' : 'light';
+  const v11Theme = useMemo(() => getV11ThemeTokens(v11ThemeMode), [v11ThemeMode]);
+  const reducedMotion = useV11ReducedMotion();
   const lang = getV11ProductDebugLanguage() ?? getLanguage(data.settings.language);
   const fixtureId = useMemo(() => resolveInsightsV3FixtureId(currentSearch()), []);
   const [loadResult, setLoadResult] = useState<InsightsV3BundleLoadResult | null>(null);
@@ -560,43 +626,71 @@ export default function InsightsV3Screen() {
     '--iv3-primary-soft': foundation.interaction.primarySoft,
     '--iv3-data': foundation.data.observed,
     '--iv3-compare': foundation.data.comparison,
+    '--iv3-overlay': foundation.material.overlay,
+    '--iv3-field-near': v11Theme.field.near,
+    '--iv3-field-middle': v11Theme.field.middle,
+    '--iv3-field-far': v11Theme.field.far,
+    '--iv3-field-grid': v11Theme.field.grid,
+    '--iv3-glow-primary': v11Theme.glow.primary,
+    '--iv3-glow-supporting': v11Theme.glow.supporting,
+    '--iv3-control-surface': v11Theme.control.neutralSurface,
+    '--iv3-control-pressed': v11Theme.control.neutralPressedSurface,
+    '--iv3-control-border': v11Theme.control.neutralBorder,
+    '--iv3-motion-standard': reducedMotion ? '0.001ms' : '320ms',
+    '--iv3-radius-control': `${v11Radius.control}px`,
+    '--iv3-radius-panel': `${v11Radius.panel}px`,
+    '--iv3-radius-sheet': `${v11Radius.sheet}px`,
+    '--iv3-space-xxs': `${v11Spacing.xxs}px`,
+    '--iv3-space-xs': `${v11Spacing.xs}px`,
+    '--iv3-space-sm': `${v11Spacing.sm}px`,
+    '--iv3-space-md': `${v11Spacing.md}px`,
+    '--iv3-space-lg': `${v11Spacing.lg}px`,
+    '--iv3-space-xl': `${v11Spacing.xl}px`,
+    '--iv3-type-body': `${v11Typography.body.fontSize}px`,
+    '--iv3-type-body-line': `${v11Typography.body.lineHeight}px`,
+    '--iv3-type-label': `${v11Typography.label.fontSize}px`,
+    '--iv3-type-meta': `${v11Typography.metadata.fontSize}px`,
+    '--iv3-type-title': `${v11Typography.title.fontSize}px`,
+    '--iv3-type-instrument': `${v11Typography.judgement.fontSize}px`,
+    '--iv3-type-reading': `${Math.round(v11Typography.reading.fontSize * 0.52)}px`,
+    '--iv3-shadow': v11Theme.material.shadow,
     backgroundColor: foundation.environment.canvas,
   } as any;
 
   if (!fixtureId) {
     return (
-      <SafeAreaView edges={['top', 'left', 'right']} style={[{ flex: 1 }, rootStyle]}>
+      <WebSafeAreaView dataSet={{ 'insights-v3-role': 'root', 'insights-v3-theme': v11ThemeMode }} edges={['top', 'left', 'right']} style={[{ flex: 1 }, rootStyle]}>
         <EmptySurface
           action={{ label: iv3(lang, 'sourceUnavailableAction'), onPress: () => navigation.navigate('Today') }}
           body={iv3(lang, 'sourceUnavailableBody')}
           foundation={foundation}
           title={iv3(lang, 'sourceUnavailableTitle')}
         />
-      </SafeAreaView>
+      </WebSafeAreaView>
     );
   }
 
   if (!loadResult || (!bundle && loadResult == null)) {
     return (
-      <SafeAreaView edges={['top', 'left', 'right']} style={[{ flex: 1 }, rootStyle]}>
+      <WebSafeAreaView dataSet={{ 'insights-v3-role': 'root', 'insights-v3-theme': v11ThemeMode }} edges={['top', 'left', 'right']} style={[{ flex: 1 }, rootStyle]}>
         <WebView dataSet={{ 'insights-v3-role': 'loading' }}>
           <ActivityIndicator color={foundation.interaction.primary} />
           <Text style={{ color: foundation.text.secondary }}>{iv3(lang, 'loading')}</Text>
         </WebView>
-      </SafeAreaView>
+      </WebSafeAreaView>
     );
   }
 
   if (!loadResult.ok && !bundle) {
     return (
-      <SafeAreaView edges={['top', 'left', 'right']} style={[{ flex: 1 }, rootStyle]}>
+      <WebSafeAreaView dataSet={{ 'insights-v3-role': 'root', 'insights-v3-theme': v11ThemeMode }} edges={['top', 'left', 'right']} style={[{ flex: 1 }, rootStyle]}>
         <EmptySurface
           action={{ label: iv3(lang, 'retry'), onPress: () => void loadInitial() }}
           body={iv3(lang, 'contractErrorBody')}
           foundation={foundation}
           title={iv3(lang, 'contractErrorTitle')}
         />
-      </SafeAreaView>
+      </WebSafeAreaView>
     );
   }
 
@@ -604,20 +698,24 @@ export default function InsightsV3Screen() {
 
   if (!instrument) {
     return (
-      <SafeAreaView edges={['top', 'left', 'right']} style={[{ flex: 1 }, rootStyle]}>
+      <WebSafeAreaView dataSet={{ 'insights-v3-role': 'root', 'insights-v3-theme': v11ThemeMode }} edges={['top', 'left', 'right']} style={[{ flex: 1 }, rootStyle]}>
         <EmptySurface
           action={{ label: iv3(lang, 'emptyAction'), onPress: () => navigation.navigate('Today') }}
           body={iv3(lang, 'emptyBody')}
           foundation={foundation}
           title={iv3(lang, 'emptyTitle')}
         />
-      </SafeAreaView>
+      </WebSafeAreaView>
     );
   }
 
   const personalContext = buildPersonalContext(lang, instrument);
   const compactCue = buildCompactCue(lang, bundle, instrument);
   const chartKinds = availableChartKinds(series);
+  const chartViewKinds = [
+    ...PRIMARY_CHART_KINDS,
+    ...(chartKinds.includes('point') && !chartKinds.includes('line') ? ['point' as const] : []),
+  ];
   const quickRanges = contractQuickRanges(series);
   const activeToolTitle = tool === 'drivers' ? iv3(lang, 'drivers')
     : tool === 'joint-analysis' ? iv3(lang, 'jointAnalysis')
@@ -637,7 +735,27 @@ export default function InsightsV3Screen() {
                           : iv3(lang, 'more');
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={[{ flex: 1 }, rootStyle]}>
+    <WebSafeAreaView
+      dataSet={{
+        'insights-v3-role': 'root',
+        'insights-v3-theme': v11ThemeMode,
+        'v11-motion': reducedMotion ? 'reduced' : 'normal',
+      }}
+      edges={['top', 'left', 'right']}
+      style={[{ flex: 1 }, rootStyle]}
+    >
+      <WebView dataSet={{ 'insights-v3-role': 'environment' }} pointerEvents="none" />
+      <V11GlowOrb
+        stage={instrument.evidence.stage as V11EvidenceStage}
+        style={{ position: 'absolute', top: 66, left: -116 }}
+        theme={v11Theme}
+      />
+      <V11GlowOrb
+        stage={(instrument.evidence.stage === 'S3' ? 'S2' : instrument.evidence.stage) as V11EvidenceStage}
+        style={{ position: 'absolute', top: 474, right: -156 }}
+        theme={v11Theme}
+        tone="supporting"
+      />
       <WebScrollView
         contentContainerStyle={{ paddingBottom: questLayout.contentBottomInset + 22 }}
         dataSet={{ 'insights-v3-role': 'screen-scroll' }}
@@ -645,7 +763,7 @@ export default function InsightsV3Screen() {
       >
         <WebView dataSet={{ 'insights-v3-role': 'terminal' }}>
           <WebView dataSet={{ 'insights-v3-role': 'topline' }}>
-            <Text style={{ color: foundation.text.metadata }}>{iv3(lang, 'personalMarket')}</Text>
+            <Text style={{ color: foundation.text.primary }}>{iv3(lang, 'personalMarket')}</Text>
             <WebView dataSet={{ 'insights-v3-role': 'topline-meta' }}>
               {bundle.metadata.synthetic_only ? <Text style={{ color: foundation.text.metadata }}>{iv3(lang, 'reviewData')}</Text> : null}
               <Text style={{ color: foundation.text.metadata }}>{iv3(lang, 'asOf', { date: formatDateTime(lang, bundle.metadata.as_of) })}</Text>
@@ -655,10 +773,16 @@ export default function InsightsV3Screen() {
           <WebView dataSet={{ 'insights-v3-role': 'desktop-grid' }}>
             <WebView dataSet={{ 'insights-v3-role': 'primary-column' }}>
               <WebView dataSet={{ 'insights-v3-role': 'instrument-header' }}>
-                <WebView style={{ minWidth: 0, flex: 1 }}>
-                  <WebText dataSet={{ 'insights-v3-role': 'instrument-eyebrow' }} style={{ color: foundation.text.metadata }}>{availabilityLabel(lang, instrument.availability.state)} · {evidenceStageLabel(lang, instrument.evidence.stage)}</WebText>
-                  <WebText dataSet={{ 'insights-v3-role': 'instrument-name' }} numberOfLines={2} style={{ color: foundation.text.primary }}>{instrumentLabel(lang, instrument)}</WebText>
-                  <WebText dataSet={{ 'insights-v3-role': 'personal-context' }} numberOfLines={2} style={{ color: foundation.text.secondary }}>{personalContext.summary}</WebText>
+                <WebView dataSet={{ 'insights-v3-role': 'instrument-copy' }}>
+                  <WebText dataSet={{ 'insights-v3-role': 'instrument-eyebrow' }} style={{ color: foundation.text.metadata }}>
+                    {availabilityLabel(lang, instrument.availability.state)} · {evidenceStageLabel(lang, instrument.evidence.stage)}
+                  </WebText>
+                  <WebText dataSet={{ 'insights-v3-role': 'instrument-name' }} numberOfLines={2} style={{ color: foundation.text.primary }}>
+                    {instrumentLabel(lang, instrument)}
+                  </WebText>
+                  <WebText dataSet={{ 'insights-v3-role': 'personal-context' }} numberOfLines={2} style={{ color: foundation.text.secondary }}>
+                    {personalContext.summary}
+                  </WebText>
                 </WebView>
                 <WebView dataSet={{ 'insights-v3-role': 'latest-reading' }}>
                   <Text style={{ color: foundation.text.primary }}>{personalContext.currentValue}</Text>
@@ -682,95 +806,111 @@ export default function InsightsV3Screen() {
                 selectedId={selectedId}
               />
 
-              <WebView dataSet={{ 'insights-v3-role': 'chart-stage' }}>
-                {series ? (
-                  <>
-                    <WebView dataSet={{ 'insights-v3-role': 'chart-toolbar' }}>
-                      <Text style={{ color: foundation.text.metadata }}>
-                        {comparisonSeries.length ? iv3(lang, 'independentScales') : `${instrumentLabel(lang, instrument)} · ${unitLabel(series.unit, lang)}`}
-                      </Text>
-                      <ChartViewportControls
-                        foundation={foundation}
-                        lang={lang}
-                        onFit={() => chartRef.current?.fit()}
-                        onZoomIn={() => chartRef.current?.zoomIn()}
-                        onZoomOut={() => chartRef.current?.zoomOut()}
-                      />
-                    </WebView>
-                    <InsightsV3Chart
-                      asOf={bundle.metadata.as_of}
-                      chartKind={isChartKindRenderable(series, chartKind, range) ? chartKind : 'line'}
-                      comparisonSeries={comparisonSeries}
-                      foundation={foundation}
-                      indicatorSeries={indicatorLayers}
-                      lang={lang}
-                      onReady={recordChartReady}
-                      range={range}
-                      ref={chartRef}
-                      series={series}
-                      showEvents={showEvents}
-                      showRawObservations={showRawObservations}
-                      showReference={showReference}
-                      showReferenceRange={showReferenceRange}
-                      targetLabel={instrumentLabel(lang, instrument)}
-                    />
-                  </>
-                ) : (
-                  <WebView dataSet={{ 'insights-v3-role': 'chart-empty' }}>
-                    {detailLoading ? <ActivityIndicator color={foundation.interaction.primary} /> : null}
-                    <Text style={{ color: foundation.text.primary }}>{detailLoading ? iv3(lang, 'loadingHistory') : iv3(lang, 'noChartTitle')}</Text>
-                    <Text style={{ color: foundation.text.secondary }}>{iv3(lang, 'noChartBody')}</Text>
-                    {!detailLoading && hasInsightsV3DetailBundle(fixtureId) ? (
-                      <WebPressable accessibilityRole="button" dataSet={{ 'insights-v3-role': 'inline-action' }} onPress={() => void ensureDetailBundle()}>
-                        <Text style={{ color: foundation.interaction.primary }}>{iv3(lang, 'loadHistory')}</Text>
-                      </WebPressable>
-                    ) : null}
-                    {detailError ? <Text style={{ color: foundation.text.secondary }}>{iv3(lang, 'detailLoadFailed')}</Text> : null}
+              <WebView dataSet={{ 'insights-v3-role': 'chart-material' }}>
+                <V11GlassSheet
+                  contentStyle={{ padding: 0, gap: 0 }}
+                  minHeight={430}
+                  reducedMotion={reducedMotion}
+                  stage={instrument.evidence.stage as V11EvidenceStage}
+                  style={{ width: '100%' }}
+                  theme={v11Theme}
+                >
+                  <WebView dataSet={{ 'insights-v3-role': 'chart-stage' }}>
+                    {series ? (
+                      <>
+                        <WebView dataSet={{ 'insights-v3-role': 'chart-toolbar' }}>
+                          <WebView dataSet={{ 'insights-v3-role': 'chart-title' }}>
+                            <Text numberOfLines={1} style={{ color: foundation.text.primary }}>
+                              {instrumentLabel(lang, instrument)} · {chartKindLabel(lang, chartKind)}
+                            </Text>
+                            <Text numberOfLines={1} style={{ color: foundation.text.metadata }}>
+                              {comparisonSeries.length ? iv3(lang, 'independentScales') : unitLabel(series.unit, lang)}
+                            </Text>
+                          </WebView>
+                          <ChartViewportControls
+                            foundation={foundation}
+                            lang={lang}
+                            onFit={() => chartRef.current?.fit()}
+                            onZoomIn={() => chartRef.current?.zoomIn()}
+                            onZoomOut={() => chartRef.current?.zoomOut()}
+                          />
+                        </WebView>
+                        <InsightsV3Chart
+                          asOf={bundle.metadata.as_of}
+                          chartKind={isChartKindRenderable(series, chartKind, range) ? chartKind : 'line'}
+                          comparisonSeries={comparisonSeries}
+                          foundation={foundation}
+                          indicatorSeries={indicatorLayers}
+                          lang={lang}
+                          onReady={recordChartReady}
+                          range={range}
+                          ref={chartRef}
+                          series={series}
+                          showEvents={showEvents}
+                          showRawObservations={showRawObservations}
+                          showReference={showReference}
+                          showReferenceRange={showReferenceRange}
+                          targetLabel={instrumentLabel(lang, instrument)}
+                        />
+                      </>
+                    ) : (
+                      <WebView dataSet={{ 'insights-v3-role': 'chart-empty' }}>
+                        {detailLoading ? <ActivityIndicator color={foundation.interaction.primary} /> : null}
+                        <Text style={{ color: foundation.text.primary }}>{detailLoading ? iv3(lang, 'loadingHistory') : iv3(lang, 'noChartTitle')}</Text>
+                        <Text style={{ color: foundation.text.secondary }}>{iv3(lang, 'noChartBody')}</Text>
+                        {!detailLoading && hasInsightsV3DetailBundle(fixtureId) ? (
+                          <WebPressable accessibilityRole="button" dataSet={{ 'insights-v3-role': 'inline-action' }} onPress={() => void ensureDetailBundle()}>
+                            <Text style={{ color: foundation.interaction.primary }}>{iv3(lang, 'loadHistory')}</Text>
+                          </WebPressable>
+                        ) : null}
+                        {detailError ? <Text style={{ color: foundation.text.secondary }}>{iv3(lang, 'detailLoadFailed')}</Text> : null}
+                      </WebView>
+                    )}
                   </WebView>
-                )}
-              </WebView>
 
-              <WebView dataSet={{ 'insights-v3-role': 'range-row' }}>
-                <WebScrollView contentContainerStyle={{ gap: 4 }} horizontal showsHorizontalScrollIndicator={false}>
-                  {quickRanges.map((item) => {
-                    const selected = range.kind === 'contract' && range.key === item.key;
-                    return (
-                      <WebPressable
-                        accessibilityRole="button"
-                        accessibilityState={{ selected }}
-                        dataSet={{ 'insights-v3-role': 'range-button', 'insights-v3-selected': selected ? 'true' : 'false' }}
-                        key={item.key}
-                        onPress={() => {
-                          const next: InsightsV3RangeSelection = { kind: 'contract', key: item.key };
-                          setRange(next);
-                          if (series && !isChartKindRenderable(series, chartKind, next)) setChartKind('line');
-                        }}
-                      >
-                        <Text style={{ color: selected ? foundation.text.primary : foundation.text.secondary }}>{rangeLabel(lang, { kind: 'contract', key: item.key })}</Text>
+                  <WebView dataSet={{ 'insights-v3-role': 'range-row' }}>
+                    <WebScrollView contentContainerStyle={{ gap: 4 }} horizontal showsHorizontalScrollIndicator={false}>
+                      {quickRanges.map((item) => {
+                        const selected = range.kind === 'contract' && range.key === item.key;
+                        return (
+                          <WebPressable
+                            accessibilityRole="button"
+                            accessibilityState={{ selected }}
+                            dataSet={{ 'insights-v3-role': 'range-button', 'insights-v3-selected': selected ? 'true' : 'false' }}
+                            key={item.key}
+                            onPress={() => {
+                              const next: InsightsV3RangeSelection = { kind: 'contract', key: item.key };
+                              setRange(next);
+                              if (series && !isChartKindRenderable(series, chartKind, next)) setChartKind('line');
+                            }}
+                          >
+                            <Text style={{ color: selected ? foundation.text.primary : foundation.text.secondary }}>{rangeLabel(lang, { kind: 'contract', key: item.key })}</Text>
+                          </WebPressable>
+                        );
+                      })}
+                      <WebPressable accessibilityRole="button" dataSet={{ 'insights-v3-role': 'range-button' }} onPress={() => openTool('custom-range')}>
+                        <Text style={{ color: range.kind === 'contract' ? foundation.text.secondary : foundation.text.primary }}>
+                          {range.kind === 'contract' ? iv3(lang, 'customRange') : rangeLabel(lang, range)}
+                        </Text>
                       </WebPressable>
-                    );
-                  })}
-                  <WebPressable accessibilityRole="button" dataSet={{ 'insights-v3-role': 'range-button' }} onPress={() => openTool('custom-range')}>
-                    <Text style={{ color: range.kind === 'contract' ? foundation.text.secondary : foundation.text.primary }}>
-                      {range.kind === 'contract' ? iv3(lang, 'customRange') : rangeLabel(lang, range)}
-                    </Text>
-                  </WebPressable>
-                </WebScrollView>
-              </WebView>
-              {series ? (
-                <WebView dataSet={{ 'insights-v3-role': 'bucket-label' }}>
-                  <Text style={{ color: foundation.text.metadata }}>
-                    {iv3(lang, 'range')}: {rangeLabel(lang, range)} · {iv3(lang, 'bucket')}: {aggregationBucketLabel(lang, range.kind === 'contract' ? series.supported_ranges.find((item) => item.key === range.key)?.aggregation_bucket : 'quant_source_points')}
-                  </Text>
-                </WebView>
-              ) : null}
+                    </WebScrollView>
+                  </WebView>
+                  {series ? (
+                    <WebView dataSet={{ 'insights-v3-role': 'bucket-label' }}>
+                      <Text style={{ color: foundation.text.metadata }}>
+                        {iv3(lang, 'range')}: {rangeLabel(lang, range)} · {iv3(lang, 'bucket')}: {aggregationBucketLabel(lang, range.kind === 'contract' ? series.supported_ranges.find((item) => item.key === range.key)?.aggregation_bucket : 'quant_source_points')}
+                      </Text>
+                    </WebView>
+                  ) : null}
 
-              <WebView accessibilityRole="toolbar" dataSet={{ 'insights-v3-role': 'tool-row' }}>
-                <ToolButton foundation={foundation} label={iv3(lang, 'view')} onPress={() => openTool('view')} />
-                <ToolButton active={compareIds.length > 0} foundation={foundation} label={iv3(lang, 'compare')} onPress={() => openTool('compare')} />
-                <ToolButton active={showReference || showReferenceRange || showShortEwma || showLongEwma || showEvents} foundation={foundation} label={iv3(lang, 'indicators')} onPress={() => openTool('indicators')} />
-                <ToolButton foundation={foundation} label={iv3(lang, 'analyze')} onPress={() => openTool('analyze')} />
-                <ToolButton foundation={foundation} label={iv3(lang, 'more')} onPress={() => openTool('more')} />
+                  <WebView accessibilityRole="toolbar" dataSet={{ 'insights-v3-role': 'tool-row' }}>
+                    <ToolButton foundation={foundation} label={iv3(lang, 'view')} onPress={() => openTool('view')} />
+                    <ToolButton active={compareIds.length > 0} foundation={foundation} label={iv3(lang, 'compare')} onPress={() => openTool('compare')} />
+                    <ToolButton active={showReference || showReferenceRange || showShortEwma || showLongEwma || showEvents} foundation={foundation} label={iv3(lang, 'indicators')} onPress={() => openTool('indicators')} />
+                    <ToolButton foundation={foundation} label={iv3(lang, 'analyze')} onPress={() => openTool('analyze')} />
+                    <ToolButton foundation={foundation} label={iv3(lang, 'more')} onPress={() => openTool('more')} />
+                  </WebView>
+                </V11GlassSheet>
               </WebView>
             </WebView>
 
@@ -810,7 +950,15 @@ export default function InsightsV3Screen() {
         </WebView>
       </WebScrollView>
 
-      <InsightsV3Sheet foundation={foundation} lang={lang} onClose={() => setTool(null)} open={tool != null} title={activeToolTitle}>
+      <InsightsV3Sheet
+        foundation={foundation}
+        lang={lang}
+        onClose={() => setTool(null)}
+        open={tool != null}
+        reducedMotion={reducedMotion}
+        theme={v11Theme}
+        title={activeToolTitle}
+      >
         {detailLoading ? (
           <WebView dataSet={{ 'insights-v3-role': 'sheet-loading' }}>
             <ActivityIndicator color={foundation.interaction.primary} />
@@ -818,10 +966,10 @@ export default function InsightsV3Screen() {
           </WebView>
         ) : tool === 'view' ? (
           <WebView dataSet={{ 'insights-v3-role': 'choice-list' }}>
-            {chartKinds.map((kind) => {
+            {chartViewKinds.map((kind) => {
               const selected = kind === chartKind;
-              const label = kind === 'candle' ? iv3(lang, 'chartCandle') : kind === 'bar' ? iv3(lang, 'chartBar') : kind === 'point' ? iv3(lang, 'chartPoint') : iv3(lang, 'chartLine');
               const enabled = series ? isChartKindRenderable(series, kind, range) : false;
+              const unavailableReason = enabled ? null : chartKindUnavailableReason(lang, series, kind, range);
               return (
                 <WebPressable
                   accessibilityRole="button"
@@ -831,7 +979,12 @@ export default function InsightsV3Screen() {
                   key={kind}
                   onPress={() => { setChartKind(kind); setTool(null); }}
                 >
-                  <Text style={{ color: enabled ? foundation.text.primary : foundation.text.disabled }}>{label}</Text>
+                  <WebView style={{ minWidth: 0, flex: 1 }}>
+                    <Text style={{ color: enabled ? foundation.text.primary : foundation.text.disabled }}>{chartKindLabel(lang, kind)}</Text>
+                    {unavailableReason ? (
+                      <Text style={{ color: foundation.text.metadata }}>{unavailableReason}</Text>
+                    ) : null}
+                  </WebView>
                   <Text style={{ color: foundation.text.metadata }}>{selected ? '✓' : ''}</Text>
                 </WebPressable>
               );
@@ -878,30 +1031,72 @@ export default function InsightsV3Screen() {
           </WebView>
         ) : tool === 'indicators' ? (
           <WebView dataSet={{ 'insights-v3-role': 'choice-list' }}>
-            {[
-              [iv3(lang, 'rawObservationsIndicator'), showRawObservations, setShowRawObservations],
-              [iv3(lang, 'baselineIndicator'), showReference, setShowReference],
-              [iv3(lang, 'rangeIndicator'), showReferenceRange, setShowReferenceRange],
-              ...(analysisExtension?.indicator_series.some((item) => item.instrument_id === instrument.id && item.layer_kind === 'EWMA_SHORT')
-                ? [[iv3(lang, 'shortEwmaIndicator'), showShortEwma, setShowShortEwma] as const]
-                : []),
-              ...(analysisExtension?.indicator_series.some((item) => item.instrument_id === instrument.id && item.layer_kind === 'EWMA_LONG')
-                ? [[iv3(lang, 'longEwmaIndicator'), showLongEwma, setShowLongEwma] as const]
-                : []),
-              [iv3(lang, 'eventsIndicator'), showEvents, setShowEvents],
-            ].map(([label, selected, setter]) => (
-              <WebPressable
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: Boolean(selected) }}
-                dataSet={{ 'insights-v3-role': 'choice-row', 'insights-v3-selected': selected ? 'true' : 'false' }}
-                key={String(label)}
-                onPress={() => (setter as React.Dispatch<React.SetStateAction<boolean>>)(!selected)}
-              >
-                <Text style={{ color: foundation.text.primary }}>{String(label)}</Text>
-                <Text style={{ color: foundation.text.metadata }}>{selected ? '✓' : ''}</Text>
-              </WebPressable>
-            ))}
-            {(showShortEwma || showLongEwma) ? <Text style={{ color: foundation.text.secondary }}>{iv3(lang, 'ewmaNotForecast')}</Text> : null}
+            <WebView dataSet={{ 'insights-v3-role': 'indicator-group' }}>
+              <WebText dataSet={{ 'insights-v3-role': 'indicator-group-title' }} style={{ color: foundation.text.metadata }}>
+                {iv3(lang, 'indicatorGroupBase')}
+              </WebText>
+              <SheetToggleChoice
+                foundation={foundation}
+                label={iv3(lang, 'rawObservationsIndicator')}
+                onPress={() => setShowRawObservations((current) => !current)}
+                selected={showRawObservations}
+              />
+              <SheetToggleChoice
+                foundation={foundation}
+                label={iv3(lang, 'baselineIndicator')}
+                onPress={() => setShowReference((current) => !current)}
+                selected={showReference}
+              />
+            </WebView>
+
+            {analysisExtension?.indicator_series.some((item) => item.instrument_id === instrument.id && (item.layer_kind === 'EWMA_SHORT' || item.layer_kind === 'EWMA_LONG')) ? (
+              <WebView dataSet={{ 'insights-v3-role': 'indicator-group' }}>
+                <WebText dataSet={{ 'insights-v3-role': 'indicator-group-title' }} style={{ color: foundation.text.metadata }}>
+                  {iv3(lang, 'indicatorGroupTrend')}
+                </WebText>
+                {analysisExtension.indicator_series.some((item) => item.instrument_id === instrument.id && item.layer_kind === 'EWMA_SHORT') ? (
+                  <SheetToggleChoice
+                    foundation={foundation}
+                    label={iv3(lang, 'shortEwmaIndicator')}
+                    onPress={() => setShowShortEwma((current) => !current)}
+                    selected={showShortEwma}
+                  />
+                ) : null}
+                {analysisExtension.indicator_series.some((item) => item.instrument_id === instrument.id && item.layer_kind === 'EWMA_LONG') ? (
+                  <SheetToggleChoice
+                    foundation={foundation}
+                    label={iv3(lang, 'longEwmaIndicator')}
+                    onPress={() => setShowLongEwma((current) => !current)}
+                    selected={showLongEwma}
+                  />
+                ) : null}
+                <Text style={{ color: foundation.text.secondary }}>{iv3(lang, 'ewmaNotForecast')}</Text>
+              </WebView>
+            ) : null}
+
+            <WebView dataSet={{ 'insights-v3-role': 'indicator-group' }}>
+              <WebText dataSet={{ 'insights-v3-role': 'indicator-group-title' }} style={{ color: foundation.text.metadata }}>
+                {iv3(lang, 'indicatorGroupRange')}
+              </WebText>
+              <SheetToggleChoice
+                foundation={foundation}
+                label={iv3(lang, 'rangeIndicator')}
+                onPress={() => setShowReferenceRange((current) => !current)}
+                selected={showReferenceRange}
+              />
+            </WebView>
+
+            <WebView dataSet={{ 'insights-v3-role': 'indicator-group' }}>
+              <WebText dataSet={{ 'insights-v3-role': 'indicator-group-title' }} style={{ color: foundation.text.metadata }}>
+                {iv3(lang, 'indicatorGroupEvents')}
+              </WebText>
+              <SheetToggleChoice
+                foundation={foundation}
+                label={iv3(lang, 'eventsIndicator')}
+                onPress={() => setShowEvents((current) => !current)}
+                selected={showEvents}
+              />
+            </WebView>
           </WebView>
         ) : tool === 'custom-range' ? (
           <WebView dataSet={{ 'insights-v3-role': 'custom-range' }}>
@@ -986,6 +1181,6 @@ export default function InsightsV3Screen() {
                     : tool === 'events' ? <EventsPanel foundation={foundation} lang={lang} series={series} />
                       : null}
       </InsightsV3Sheet>
-    </SafeAreaView>
+    </WebSafeAreaView>
   );
 }

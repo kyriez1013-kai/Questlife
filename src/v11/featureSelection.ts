@@ -20,6 +20,7 @@ export function resolveV11ProductMode(route: string | null): V11ProductMode {
     case 'stage3-personal-terminal':
       return 'stage3_personal_terminal';
     case 'insights-v3':
+    case 'insights-v5':
       return 'insights_v3';
     default:
       return 'owner_beta';

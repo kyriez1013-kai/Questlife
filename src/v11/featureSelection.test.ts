@@ -42,6 +42,11 @@ function runFeatureSelectionTests() {
   equal(isV11InsightsMode(insightsV3), true, 'Insights V3 owns only Insights');
   equal(isV11PersonalTerminalMode(insightsV3), false, 'Insights V3 excludes prior Personal Terminal');
 
+  const insightsV5 = resolveV11ProductMode('insights-v5');
+  equal(insightsV5, 'insights_v3', 'Insights V5 route reuses the Quant presentation contract');
+  equal(isV11TodayMode(insightsV5), false, 'Insights V5 keeps canonical Today isolated');
+  equal(isV11InsightsMode(insightsV5), true, 'Insights V5 owns only Insights');
+
   const unknown = resolveV11ProductMode('unrecognized-route');
   equal(unknown, 'owner_beta', 'unknown route fails open to current product');
 }
