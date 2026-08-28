@@ -5,7 +5,8 @@ export type V11ProductMode =
   | 'stage3_insights'
   | 'stage3_quant_terminal'
   | 'stage3_personal_terminal'
-  | 'insights_v3';
+  | 'insights_v3'
+  | 'insights_reconstruction';
 
 export function resolveV11ProductMode(route: string | null): V11ProductMode {
   switch (route) {
@@ -21,6 +22,8 @@ export function resolveV11ProductMode(route: string | null): V11ProductMode {
       return 'stage3_personal_terminal';
     case 'insights-v3':
       return 'insights_v3';
+    case 'insights-reconstruction':
+      return 'insights_reconstruction';
     default:
       return 'owner_beta';
   }
@@ -41,7 +44,8 @@ export function isV11InsightsMode(mode: V11ProductMode): boolean {
     || mode === 'stage3_insights'
     || mode === 'stage3_quant_terminal'
     || mode === 'stage3_personal_terminal'
-    || mode === 'insights_v3';
+    || mode === 'insights_v3'
+    || mode === 'insights_reconstruction';
 }
 
 export function isV11PersonalTerminalMode(mode: V11ProductMode): boolean {

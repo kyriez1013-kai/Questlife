@@ -42,6 +42,12 @@ function runFeatureSelectionTests() {
   equal(isV11InsightsMode(insightsV3), true, 'Insights V3 owns only Insights');
   equal(isV11PersonalTerminalMode(insightsV3), false, 'Insights V3 excludes prior Personal Terminal');
 
+  const reconstruction = resolveV11ProductMode('insights-reconstruction');
+  equal(reconstruction, 'insights_reconstruction', 'reconstruction route is isolated');
+  equal(isV11TodayMode(reconstruction), false, 'reconstruction route keeps legacy Today');
+  equal(isV11InsightsMode(reconstruction), true, 'reconstruction route owns only Insights');
+  equal(isV11PersonalTerminalMode(reconstruction), false, 'reconstruction route excludes prior Personal Terminal');
+
   const unknown = resolveV11ProductMode('unrecognized-route');
   equal(unknown, 'owner_beta', 'unknown route fails open to current product');
 }

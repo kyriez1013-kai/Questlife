@@ -39,7 +39,8 @@ export function isV11InsightsEnabled() {
 }
 
 export function isInsightsV3Enabled() {
-  return resolveV11ProductMode(route()) === 'insights_v3';
+  const mode = resolveV11ProductMode(route());
+  return mode === 'insights_v3' || mode === 'insights_reconstruction';
 }
 
 export function hasInsightsV3ReviewFixture() {
