@@ -42,6 +42,7 @@ import {
   isV11ProductEnabled,
 } from './src/v11/featureFlag';
 import PersistenceDebugPanel from './src/components/debug/PersistenceDebugPanel';
+import AdaptiveDecisionLoopDemoScreen from './src/adaptive-decision/AdaptiveDecisionLoopDemoScreen';
 
 const InsightsV3Screen = React.lazy(() => import('./src/insights-v3/InsightsV3Screen'));
 
@@ -55,6 +56,11 @@ function getV11FixtureRoute(): 'stage0' | 'stage1' | 'stage2-rebaseline' | 'stag
   return route === 'stage0' || route === 'stage1' || route === 'stage2-rebaseline' || route === 'stage2-controls' || route === 'universal-capture'
     ? route
     : null;
+}
+
+function hasAdaptiveDecisionLoopDemoRoute(): boolean {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') return false;
+  return new URLSearchParams(window.location.search).get('demo') === 'adaptive-decision-loop';
 }
 
 function FocusedTabSurface({ children, backgroundColor }: { children: React.ReactNode; backgroundColor: string }) {
@@ -317,6 +323,15 @@ function AppContent() {
 }
 
 export default function App() {
+  if (hasAdaptiveDecisionLoopDemoRoute()) {
+    return (
+      <SafeAreaProvider>
+        <StatusBar style="auto" />
+        <AdaptiveDecisionLoopDemoScreen />
+      </SafeAreaProvider>
+    );
+  }
+
   const v11FixtureRoute = getV11FixtureRoute();
 
   if (v11FixtureRoute) {
