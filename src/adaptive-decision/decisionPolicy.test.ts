@@ -127,6 +127,32 @@ const cognitive = generateDecisionProposals({
 });
 assert.deepEqual(cognitive.map((item) => item.kind), ['shorten', 'move', 'continue']);
 
+const mixedTraining = generateDecisionProposals({
+  episodeId: 'mixed-training',
+  questionType: 'training_recovery',
+  context: context([reading, workout, fixed], { overall: 2, sleep: 330, load: 180 }),
+  evidence,
+  safety: normalSafety.status,
+  generatedAt: NOW,
+});
+assert.ok(
+  mixedTraining.every((item) => item.planPatch.operations.every((operation) => operation.blockId !== reading.id)),
+  'training proposals must prefer a relevant training block over an earlier cognitive block',
+);
+
+const mixedCognitive = generateDecisionProposals({
+  episodeId: 'mixed-cognitive',
+  questionType: 'cognitive_adjustment',
+  context: context([workout, reading, fixed], { overall: 2, focus: 2, sleep: 360 }),
+  evidence,
+  safety: normalSafety.status,
+  generatedAt: NOW,
+});
+assert.ok(
+  mixedCognitive.every((item) => item.planPatch.operations.every((operation) => operation.blockId !== workout.id)),
+  'cognitive proposals must prefer a relevant cognitive block over an earlier training block',
+);
+
 const overloaded = generateDecisionProposals({
   episodeId: 'overloaded',
   questionType: 'overloaded_day',

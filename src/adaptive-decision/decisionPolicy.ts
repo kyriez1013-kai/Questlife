@@ -81,8 +81,21 @@ function relevantEvidenceIds(evidence: DecisionEvidencePacketV1): string[] {
     .map((item) => item.id);
 }
 
-function primaryMovableBlock(context: DecisionContextSnapshotV1) {
-  return context.schedule.blocks.find((block) => block.flexibility !== 'fixed' && block.status !== 'completed');
+function primaryMovableBlock(
+  context: DecisionContextSnapshotV1,
+  questionType: DecisionQuestionType,
+) {
+  const movable = context.schedule.blocks.filter(
+    (block) => block.flexibility !== 'fixed' && block.status !== 'completed',
+  );
+  const relevantTaskTypes = questionType === 'training_recovery'
+    ? new Set(['strength_training', 'cardio_recovery'])
+    : questionType === 'cognitive_adjustment' || questionType === 'custom'
+      ? new Set(['deep_study', 'light_review', 'creative_building'])
+      : null;
+  return relevantTaskTypes
+    ? movable.find((block) => relevantTaskTypes.has(block.taskType)) ?? movable[0]
+    : movable[0];
 }
 
 function withReplacement(blocks: ScheduleBlock[], replacement: ScheduleBlock) {
@@ -108,7 +121,7 @@ function unchangedCandidate(input: GenerateDecisionProposalsInput, kind: 'contin
 }
 
 function trainingCandidates(input: GenerateDecisionProposalsInput): DecisionCandidateActionV1[] {
-  const target = primaryMovableBlock(input.context);
+  const target = primaryMovableBlock(input.context, input.questionType);
   if (!target) return [unchangedCandidate(input, 'continue')];
   const reducedMinutes = Math.max(20, Math.min(30, Math.round(target.plannedMinutes * 0.5)));
   const shortened = scheduleBlockWithDuration(target, reducedMinutes);
@@ -172,7 +185,7 @@ function trainingCandidates(input: GenerateDecisionProposalsInput): DecisionCand
 }
 
 function cognitiveCandidates(input: GenerateDecisionProposalsInput): DecisionCandidateActionV1[] {
-  const target = primaryMovableBlock(input.context);
+  const target = primaryMovableBlock(input.context, input.questionType);
   if (!target) return [unchangedCandidate(input, 'continue')];
   const reducedMinutes = Math.max(15, Math.min(30, Math.round(target.plannedMinutes * 0.5)));
   const shorten = candidate(input, {
