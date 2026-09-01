@@ -203,6 +203,14 @@ export function buildDecisionEvidence(input: BuildDecisionEvidenceInput): BuildD
       sourceIds: joint.source_observation_ids,
       limitationCodes: joint.limitation_codes,
     });
+    items.push({
+      id: 'evidence-unknown-unexplained-residual',
+      category: 'unknown',
+      labelKey: 'adaptiveEvidenceUnexplainedResidual',
+      values: { residual: joint.residual_deviation },
+      sourceIds: joint.source_observation_ids,
+      limitationCodes: joint.limitation_codes,
+    });
   } else {
     missingness.add('MULTIVARIATE_EVIDENCE_UNAVAILABLE');
   }
