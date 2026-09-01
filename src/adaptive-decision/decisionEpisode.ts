@@ -158,6 +158,13 @@ export type DecisionEvidencePacketV1 = {
     absolute?: number;
     sourceIds: string[];
   };
+  ewma?: {
+    short?: number;
+    long?: number;
+    observedAt?: string;
+    sourceIds: string[];
+    limitationCodes: string[];
+  };
   jointModel?: {
     observedDeviation: number;
     modelAssociated: number;
