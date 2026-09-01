@@ -227,9 +227,18 @@ function cognitiveCandidates(input: GenerateDecisionProposalsInput): DecisionCan
 function overloadedCandidates(input: GenerateDecisionProposalsInput): DecisionCandidateActionV1[] {
   const flexible = input.context.schedule.blocks.filter((block) => block.flexibility !== 'fixed' && block.status !== 'completed');
   if (flexible.length === 0) return [unchangedCandidate(input, 'protect')];
-  const longest = flexible.slice().sort((a, b) => b.plannedMinutes - a.plannedMinutes || a.id.localeCompare(b.id))[0];
-  const lowestPriority = flexible.slice().sort((a, b) => a.rigidity.localeCompare(b.rigidity) || b.startTime.localeCompare(a.startTime) || a.id.localeCompare(b.id))[0];
-  const shortened = scheduleBlockWithDuration(longest, Math.max(15, Math.round(longest.plannedMinutes * 0.5)));
+  const rigidityRank = { low: 0, medium: 1, high: 2 } as const;
+  const nonPriority = flexible.filter((block) => block.rigidity !== 'high');
+  const capacityTarget = (nonPriority.length > 0 ? nonPriority : flexible)
+    .slice()
+    .sort((a, b) => b.plannedMinutes - a.plannedMinutes || a.id.localeCompare(b.id))[0];
+  const lowestPriority = flexible.slice().sort((a, b) => (
+    rigidityRank[a.rigidity] - rigidityRank[b.rigidity]
+    || a.plannedMinutes - b.plannedMinutes
+    || b.startTime.localeCompare(a.startTime)
+    || a.id.localeCompare(b.id)
+  ))[0];
+  const shortened = scheduleBlockWithDuration(capacityTarget, Math.max(15, Math.round(capacityTarget.plannedMinutes * 0.5)));
   const moved = scheduleBlockOnNextDay(lowestPriority);
 
   const protectAndShorten = candidate(input, {
@@ -237,7 +246,7 @@ function overloadedCandidates(input: GenerateDecisionProposalsInput): DecisionCa
     titleKey: 'adaptiveActionProtectPriority',
     descriptionKey: 'adaptiveActionProtectPriorityDescription',
     exactEffectKey: 'adaptiveEffectShorten',
-    values: { title: longest.title, from: longest.plannedMinutes, to: shortened.plannedMinutes },
+    values: { title: capacityTarget.title, from: capacityTarget.plannedMinutes, to: shortened.plannedMinutes },
     protectsKey: 'adaptiveProtectsFixedAndPriority',
     feasibilityKey: 'adaptiveFeasibleReleasesCapacity',
     uncertaintyKey: 'adaptiveUncertaintyPriorityExplicit',

@@ -153,12 +153,16 @@ assert.ok(
   'cognitive proposals must prefer a relevant cognitive block over an earlier training block',
 );
 
+const overloadedPriority = { ...block('priority', 'Priority work', '09:00', 90, 'flexible'), rigidity: 'high' as const };
+const overloadedAdmin = { ...block('admin', 'Admin', '11:00', 60, 'movable'), rigidity: 'low' as const, taskType: 'admin' as const };
+const overloadedTraining = { ...block('training-low', 'Training', '13:00', 120, 'movable'), rigidity: 'low' as const };
 const overloaded = generateDecisionProposals({
   episodeId: 'overloaded',
   questionType: 'overloaded_day',
   context: context([
-    block('priority', 'Priority work', '09:00', 90, 'flexible'),
-    block('admin', 'Admin', '11:00', 60, 'movable'),
+    overloadedPriority,
+    overloadedAdmin,
+    overloadedTraining,
     fixed,
   ]),
   evidence,
@@ -167,6 +171,10 @@ const overloaded = generateDecisionProposals({
 });
 assert.deepEqual(overloaded.map((item) => item.kind), ['protect', 'move', 'leave_unplaced']);
 assert.ok(overloaded.every((item) => item.planPatch.afterSnapshot.some((candidate) => candidate.id === 'fixed')));
+assert.ok(overloaded.every((item) => item.planPatch.operations.every((operation) => operation.blockId !== overloadedPriority.id)));
+assert.equal(overloaded[0].planPatch.operations[0]?.blockId, overloadedTraining.id, 'capacity release must not shorten the protected priority');
+assert.equal(overloaded[1].planPatch.operations[0]?.blockId, overloadedAdmin.id, 'move must choose the lowest-rigidity, least-disruptive block');
+assert.equal(overloaded[2].planPatch.operations[0]?.blockId, overloadedAdmin.id, 'unplaced work must choose the same lowest-priority block');
 
 const impossible = generateDecisionProposals({
   episodeId: 'fixed-only',
