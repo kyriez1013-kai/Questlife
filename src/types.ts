@@ -1,3 +1,5 @@
+import type { DecisionEpisodeV1 } from './adaptive-decision/decisionEpisode';
+
 // QuestLife 核心数据模型
 // V2 层级: Category (大目标) → Skill (子技能) → Action (打卡)
 // 旧 Goal 类型保留以便老数据兼容, UI 不再使用
@@ -876,6 +878,7 @@ export interface DecisionResult {
     rating: 'useful' | 'not_useful';
     ts: string;
   };
+  decisionEpisode?: DecisionEpisodeV1;
   dataProvenance?: DataRecordProvenance;
 }
 

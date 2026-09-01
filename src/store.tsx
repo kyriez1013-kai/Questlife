@@ -31,6 +31,11 @@ import {
   withDecisionFeedbackProvenance,
 } from './utils/dataProvenance';
 import { migrateAppearanceSettings } from './design/appearance';
+import type { DecisionEpisodeV1, DecisionPlanPatchV1 } from './adaptive-decision/decisionEpisode';
+import {
+  applyDecisionPlanPatch as applyDecisionPlanPatchToBlocks,
+  undoDecisionPlanPatch as undoDecisionPlanPatchFromBlocks,
+} from './adaptive-decision/planPatch';
 
 function metricTypeForAnalytics(skill?: Skill) {
   return skill?.metricConfig?.metricType ?? skill?.progressType;
@@ -120,6 +125,9 @@ interface Ctx {
   repairSafeIntegrityIssues: () => CoreFlowIntegrityResult;
   rebuildDerivedData: () => { effortUnitCount: number; contributionLinkCount: number };
   addDecisionResult: (result: Omit<DecisionResult, 'id' | 'createdAt'> & { id?: string; createdAt?: string }) => DecisionResult;
+  updateDecisionEpisode: (id: string, episode: DecisionEpisodeV1) => void;
+  applyDecisionSchedulePatch: (patch: DecisionPlanPatchV1) => ScheduleBlock[];
+  undoDecisionSchedulePatch: (patch: DecisionPlanPatchV1) => ScheduleBlock[];
   updateDecisionResultFeedback: (id: string, rating: 'useful' | 'not_useful') => void;
   deleteDecisionResult: (id: string) => void;
   mergePatternMemoryCandidates: (candidates: PatternMemory[]) => PatternMemory[];
@@ -1487,6 +1495,33 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return result;
   }, [mutate]);
 
+  const updateDecisionEpisode: Ctx['updateDecisionEpisode'] = useCallback((id, episode) => {
+    mutate((d) => ({
+      ...d,
+      decisionResults: (d.decisionResults || []).map((result) => (
+        result.id === id ? { ...result, decisionEpisode: episode } : result
+      )),
+    }), 'store.update_decision_episode');
+  }, [mutate]);
+
+  const applyDecisionSchedulePatch: Ctx['applyDecisionSchedulePatch'] = useCallback((patch) => {
+    let scheduleBlocks = dataRef.current.scheduleBlocks || [];
+    mutate((d) => {
+      scheduleBlocks = applyDecisionPlanPatchToBlocks(d.scheduleBlocks || [], patch);
+      return { ...d, scheduleBlocks };
+    }, 'store.apply_decision_schedule_patch');
+    return scheduleBlocks;
+  }, [mutate]);
+
+  const undoDecisionSchedulePatch: Ctx['undoDecisionSchedulePatch'] = useCallback((patch) => {
+    let scheduleBlocks = dataRef.current.scheduleBlocks || [];
+    mutate((d) => {
+      scheduleBlocks = undoDecisionPlanPatchFromBlocks(d.scheduleBlocks || [], patch);
+      return { ...d, scheduleBlocks };
+    }, 'store.undo_decision_schedule_patch');
+    return scheduleBlocks;
+  }, [mutate]);
+
   const updateDecisionResultFeedback: Ctx['updateDecisionResultFeedback'] = useCallback((id, rating) => {
     const feedbackAt = new Date().toISOString();
     mutate((d) => ({
@@ -1619,6 +1654,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         repairSafeIntegrityIssues,
         rebuildDerivedData,
         addDecisionResult,
+        updateDecisionEpisode,
+        applyDecisionSchedulePatch,
+        undoDecisionSchedulePatch,
         updateDecisionResultFeedback,
         deleteDecisionResult,
         mergePatternMemoryCandidates,
