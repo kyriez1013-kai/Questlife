@@ -89,6 +89,7 @@ type Props = {
   contextMeta: string;
   debugPerformance: boolean;
   decision: V11TodayPresentation;
+  decisionAction?: V11IntegratedUtilityAction;
   expanded: boolean;
   formatCopy: (copy: V11TodayPresentation['judgement']) => string;
   instantRead: InstantReadProps;
@@ -232,6 +233,7 @@ export default function V11IntegratedTodaySurface({
   contextMeta,
   debugPerformance,
   decision,
+  decisionAction,
   expanded,
   formatCopy,
   instantRead,
@@ -376,6 +378,27 @@ export default function V11IntegratedTodaySurface({
             <Text style={{ color: theme.text.primary, fontSize: 25, lineHeight: 33, fontWeight: '400' }}>
               {judgement}
             </Text>
+            {decisionAction ? (
+              <WebPressable
+                accessibilityLabel={decisionAction.label}
+                accessibilityRole="button"
+                dataSet={{ 'v11-rebaseline-role': 'decision-adjustment' }}
+                onPress={decisionAction.onPress}
+              >
+                <V11RebaselineIcon name="target" size={15} color={theme.text.secondary} />
+                <WebView style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={{ color: theme.text.primary, fontSize: 12.5, lineHeight: 18, fontWeight: '500' }}>
+                    {decisionAction.label}
+                  </Text>
+                  {decisionAction.metadata ? (
+                    <Text numberOfLines={1} style={{ color: theme.text.metadata, fontSize: 10, lineHeight: 15 }}>
+                      {decisionAction.metadata}
+                    </Text>
+                  ) : null}
+                </WebView>
+                <V11RebaselineIcon name="arrow" size={14} color={theme.text.metadata} />
+              </WebPressable>
+            ) : null}
           </WebView>
 
           <WebView dataSet={{ 'v11-rebaseline-role': 'action-stack' }}>

@@ -49,7 +49,23 @@ export function candidateCopy(lang: Lang, candidate: DecisionCandidateActionV1) 
 }
 
 export function evidenceItemText(lang: Lang, item: DecisionEvidenceItemV1): string {
-  return adaptiveText(lang, item.labelKey, item.values);
+  const code = typeof item.values?.code === 'string' ? item.values.code : undefined;
+  const codeKey = code ? {
+    CURRENT_STATE_MISSING: 'adaptiveMissingCurrentState',
+    SLEEP_MISSING: 'adaptiveMissingSleep',
+    RECENT_EXECUTION_MISSING: 'adaptiveMissingRecentExecution',
+    PERSONAL_REFERENCE_UNAVAILABLE: 'adaptiveMissingPersonalReference',
+    EWMA_UNAVAILABLE: 'adaptiveMissingEwma',
+    MULTIVARIATE_EVIDENCE_UNAVAILABLE: 'adaptiveMissingMultivariate',
+    SIMILAR_PERIODS_UNAVAILABLE: 'adaptiveMissingSimilarPeriods',
+    RECOVERY_HISTORY_UNAVAILABLE: 'adaptiveMissingRecoveryHistory',
+    SCENARIO_HISTORY_UNAVAILABLE: 'adaptiveMissingScenarioHistory',
+    OBSERVATIONAL_NOT_CAUSAL: 'adaptiveLimitationObservational',
+  }[code] : undefined;
+  return adaptiveText(lang, item.labelKey, {
+    ...item.values,
+    ...(codeKey ? { code: adaptiveText(lang, codeKey) } : {}),
+  });
 }
 
 export function contextFactLabel(lang: Lang, fact: DecisionContextFactV1): string {

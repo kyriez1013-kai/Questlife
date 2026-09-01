@@ -118,8 +118,18 @@ function factValue(
   unit?: string,
 ): string {
   if (value == null) return '—';
+  const semanticValueKey = typeof value === 'string' ? {
+    fixed: 'adaptiveFixed',
+    movable: 'adaptiveMovable',
+    optional: 'adaptiveOptional',
+    first: 'adaptivePriorityFirst',
+    deadline: 'adaptivePriorityDeadline',
+    recovery: 'adaptivePriorityRecovery',
+  }[value] : undefined;
+  const displayValue = semanticValueKey ? adaptiveText(lang, semanticValueKey) : String(value);
   const displayUnit = unit === 'minutes' ? adaptiveText(lang, 'minutes') : unit;
-  return `${String(value)}${displayUnit ? ` ${displayUnit}` : ''}`;
+  const separator = displayUnit?.startsWith('/') ? '' : ' ';
+  return `${displayValue}${displayUnit ? `${separator}${displayUnit}` : ''}`;
 }
 
 function compactDateTime(value: string, lang: Lang): string {

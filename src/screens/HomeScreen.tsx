@@ -2257,13 +2257,14 @@ export default function HomeScreen() {
         )
       : '';
 
+  const adaptiveDecisionAction: V11IntegratedUtilityAction | undefined = adaptiveDecisionEnabled ? {
+    id: 'adaptive-decision',
+    label: t(lang, 'adaptiveOwnerEntryAction'),
+    metadata: t(lang, 'adaptiveOwnerEntryMeta'),
+    onPress: openAdaptiveDecision,
+  } : undefined;
+
   const v11UtilityActions: V11IntegratedUtilityAction[] = [
-    ...(adaptiveDecisionEnabled ? [{
-      id: 'adaptive-decision',
-      label: t(lang, 'adaptiveOwnerEntryAction'),
-      metadata: t(lang, 'adaptiveOwnerEntryMeta'),
-      onPress: openAdaptiveDecision,
-    }] : []),
     ...(activeSession ? [{
       id: 'finish-session',
       label: t(lang, 'finishAndRecord'),
@@ -2461,6 +2462,7 @@ export default function HomeScreen() {
             contextDate={todayContextPrimary}
             contextMeta={`${todayContextWeekday} · ${t(lang, currentTimeBlock)}`}
             decision={v11TodayPresentation}
+            decisionAction={adaptiveDecisionAction}
             debugPerformance={getV11DebugPerformance(isDecisionDebugEnabled())}
             expanded={v11EvidenceExpanded}
             formatCopy={(copy) => copy.kind === 'text'
