@@ -39,7 +39,19 @@ export function recordAdaptiveDecisionTelemetry(
 ): void {
   if (typeof window === 'undefined') return;
   try {
-    const events = [...readEvents(), { ...event, at: new Date().toISOString() }].slice(-100);
+    const sanitized: AdaptiveDecisionTelemetryEvent = {
+      name: event.name,
+      at: new Date().toISOString(),
+      fixtureOnly: event.fixtureOnly,
+      ...(event.questionType != null ? { questionType: event.questionType } : {}),
+      ...(event.contextFactCount != null ? { contextFactCount: event.contextFactCount } : {}),
+      ...(event.missingQuestionCount != null ? { missingQuestionCount: event.missingQuestionCount } : {}),
+      ...(event.proposalCount != null ? { proposalCount: event.proposalCount } : {}),
+      ...(event.operationCount != null ? { operationCount: event.operationCount } : {}),
+      ...(event.elapsedMs != null ? { elapsedMs: event.elapsedMs } : {}),
+      ...(event.usefulness != null ? { usefulness: event.usefulness } : {}),
+    };
+    const events = [...readEvents(), sanitized].slice(-100);
     window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(events));
   } catch {
     // Telemetry is best-effort and must never affect the decision flow.
