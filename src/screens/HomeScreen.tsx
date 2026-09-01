@@ -95,6 +95,8 @@ import {
   V11StickySheetFooter,
   V11TextField,
 } from '../v11/components/V11SheetControls';
+import AdaptiveDecisionLoopOwnerSheet from '../adaptive-decision/AdaptiveDecisionLoopOwnerSheet';
+import { isAdaptiveDecisionLoopOwnerEnabled } from '../adaptive-decision/featureFlag';
 
 const WebView = View as any;
 
@@ -493,6 +495,9 @@ export default function HomeScreen() {
     addContextLogs,
     setSettings,
     addDecisionResult,
+    updateDecisionEpisode,
+    applyDecisionSchedulePatch,
+    undoDecisionSchedulePatch,
     updateDecisionResultFeedback,
   } = useStore();
   const navigation = useNavigation<any>();
@@ -529,6 +534,7 @@ export default function HomeScreen() {
   const [v11EvidenceExpanded, setV11EvidenceExpanded] = useState(false);
   const [v11CaptureOpen, setV11CaptureOpen] = useState(false);
   const [v11ActivityHistoryOpen, setV11ActivityHistoryOpen] = useState(false);
+  const [adaptiveDecisionOpen, setAdaptiveDecisionOpen] = useState(false);
   const v11TodayScrollRef = useRef<any>(null);
   const v11TodayScrollOffsetRef = useRef(0);
   const v11TodayScrollRestoreRef = useRef(0);
@@ -627,6 +633,7 @@ export default function HomeScreen() {
   const v11EffectiveReducedMotion = v11ReducedMotion
     || getV11DebugReducedMotion(isDecisionDebugEnabled());
   const v11TodayEnabled = isV11TodayEnabled();
+  const adaptiveDecisionEnabled = v11TodayEnabled && isAdaptiveDecisionLoopOwnerEnabled();
   const v11ThemeTokens = getV11ThemeTokens(isDarkTheme(questTheme) ? 'dark' : 'light');
 
   // 晨间状态: null=尚未加载, undefined=今日未设置, number=已设置
@@ -2097,6 +2104,16 @@ export default function HomeScreen() {
     restoreV11TodayScroll();
   }, [restoreV11TodayScroll]);
 
+  const openAdaptiveDecision = useCallback(() => {
+    rememberV11TodayScroll();
+    setAdaptiveDecisionOpen(true);
+  }, [rememberV11TodayScroll]);
+
+  const closeAdaptiveDecision = useCallback(() => {
+    setAdaptiveDecisionOpen(false);
+    restoreV11TodayScroll();
+  }, [restoreV11TodayScroll]);
+
   const openV11State = useCallback(() => {
     rememberV11TodayScroll();
     v11TransientSheetRef.current = 'state';
@@ -2241,6 +2258,12 @@ export default function HomeScreen() {
       : '';
 
   const v11UtilityActions: V11IntegratedUtilityAction[] = [
+    ...(adaptiveDecisionEnabled ? [{
+      id: 'adaptive-decision',
+      label: t(lang, 'adaptiveOwnerEntryAction'),
+      metadata: t(lang, 'adaptiveOwnerEntryMeta'),
+      onPress: openAdaptiveDecision,
+    }] : []),
     ...(activeSession ? [{
       id: 'finish-session',
       label: t(lang, 'finishAndRecord'),
@@ -2348,6 +2371,8 @@ export default function HomeScreen() {
     ? 'capture-open'
     : v11ActivityHistoryOpen
       ? 'activity-history-open'
+    : adaptiveDecisionOpen
+      ? 'decision-details-open'
     : stateModal
       ? 'state-open'
       : todayDecisionDetailsOpen
@@ -3059,6 +3084,22 @@ export default function HomeScreen() {
           theme={v11ThemeTokens}
           visible={v11ActivityHistoryOpen}
         />
+
+        {adaptiveDecisionEnabled ? (
+          <AdaptiveDecisionLoopOwnerSheet
+            data={data}
+            decisionResults={data.decisionResults || []}
+            lang={lang}
+            onAddDecisionResult={addDecisionResult}
+            onApplySchedulePatch={applyDecisionSchedulePatch}
+            onClose={closeAdaptiveDecision}
+            onUndoSchedulePatch={undoDecisionSchedulePatch}
+            onUpdateDecisionEpisode={updateDecisionEpisode}
+            reducedMotion={v11EffectiveReducedMotion}
+            theme={v11ThemeTokens}
+            visible={adaptiveDecisionOpen}
+          />
+        ) : null}
         </>
       ) : null}
 
