@@ -198,8 +198,66 @@ Status: passed locally before report finalization.
 
 ## Preview Verification
 
-Pending branch push and isolated Vercel Preview. Production will not be
-promoted.
+Verified on the isolated Vercel Preview; Production was not promoted.
+
+- Deployment: `dpl_2i4xv8o4peVHgmx4G7oW2a8PziB1`
+- Preview URL:
+  `https://questlife-alpha-91nj5bxx8-kyrie-z-s-projects.vercel.app`
+- Preview Web bundle: `index-a842cf72603a0339d24fcb879f619d52.js`
+
+### Scenario A - live Preview clicks
+
+1. Opened the training fixture at 390 x 844.
+2. Clicked `Assemble context`; the page entered `PROPOSED`, used six known
+   facts, and rendered three materially distinct actions.
+3. Expanded evidence; direct fact, personal comparison, joint observational
+   evidence, unexplained residual, unknowns, and non-causal limitations were
+   visible.
+4. Selected the shorter-training action. The preview showed 60 to 30 minutes
+   while the current plan remained at 60 before confirmation.
+5. Clicked confirm/apply. The receipt appeared and only the intended workout
+   changed to 30 minutes; the fixed commitment remained unchanged.
+6. Clicked exact undo. Status returned to `PROPOSED` and the workout returned
+   to 60 minutes.
+7. Reapplied, opened the due follow-up, recorded all required outcome fields,
+   and reached `OUTCOME_RECORDED` with Decision Memory.
+8. Refreshed. The same outcome, Decision Memory, and session plan snapshot
+   remained present without duplication.
+
+### Scenario B - live Preview clicks
+
+The cognitive flow entered `PROPOSED` and targeted `Read research article`,
+offering continue, 60 to 30 minute shorten, and move-to-tomorrow actions. It did
+not target the training block and retained the fixed meeting.
+
+### Scenario C - live Preview clicks
+
+The overloaded flow asked one material priority question. After selecting
+`Protect the first item`, it produced three actions: shorten the non-priority
+120-minute training block to 60, move the low-rigidity admin block, or leave the
+admin block explicitly unplaced. The SQL priority and both fixed commitments
+remained protected.
+
+### Safety and isolation
+
+The synthetic custom question containing chest symptoms and breathing
+difficulty entered `ABSTAINED`, displayed a safety boundary, showed no ordinary
+apply control, made no diagnosis, and left the 60-minute plan unchanged.
+
+The no-flag root route contained no demo fixture and no adaptive-decision
+entry. On the fresh Preview origin it correctly opened the existing onboarding
+screen. This confirms route isolation without creating QA data in an owner
+namespace.
+
+### Responsive and runtime checks
+
+- 390 x 844: document and body width both 390; no horizontal overflow.
+- 1280 x 900 English/light: document and body width both 1280; no horizontal
+  overflow.
+- Browser console: no runtime errors. The only warning was the pre-existing
+  Expo Notifications message that push-token listeners have no effect on web.
+- Physical iPhone Safari: `UNVERIFIED` for this Preview; no device was attached
+  during this run.
 
 ## Remaining Concrete Gap
 
