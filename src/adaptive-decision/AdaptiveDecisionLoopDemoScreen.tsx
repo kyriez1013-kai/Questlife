@@ -155,9 +155,11 @@ function scenarioUrl(id: AdaptiveDecisionDemoScenarioId, lang: Lang, themeMode: 
   return `${window.location.pathname}?${params.toString()}`;
 }
 
-function contextFactValue(value: string | number | boolean | undefined, unit?: string): string {
+function contextFactValue(lang: Lang, value: string | number | boolean | undefined, unit?: string): string {
   if (value == null) return '—';
-  return `${String(value)}${unit ? ` ${unit}` : ''}`;
+  const displayUnit = unit === 'minutes' ? adaptiveText(lang, 'minutes') : unit;
+  const separator = displayUnit?.startsWith('/') ? '' : ' ';
+  return `${String(value)}${displayUnit ? `${separator}${displayUnit}` : ''}`;
 }
 
 function isRequired(
@@ -575,7 +577,7 @@ export default function AdaptiveDecisionLoopDemoScreen() {
                             <WebView uiClass="adl-context-dot" />
                             <WebView uiClass="adl-context-copy">
                               <WebText uiClass="adl-context-label">{contextFactLabel(route.lang, fact)}</WebText>
-                              <WebText uiClass="adl-context-value">{contextFactValue(fact.value, fact.unit)}</WebText>
+                              <WebText uiClass="adl-context-value">{contextFactValue(route.lang, fact.value, fact.unit)}</WebText>
                             </WebView>
                           </WebView>
                         ))}

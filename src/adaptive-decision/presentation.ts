@@ -50,6 +50,14 @@ export function candidateCopy(lang: Lang, candidate: DecisionCandidateActionV1) 
 
 export function evidenceItemText(lang: Lang, item: DecisionEvidenceItemV1): string {
   const code = typeof item.values?.code === 'string' ? item.values.code : undefined;
+  const unit = typeof item.values?.unit === 'string' ? item.values.unit : undefined;
+  const displayUnit = unit === '/5'
+    ? '/5'
+    : unit === 'minutes'
+      ? ` ${adaptiveText(lang, 'minutes')}`
+      : unit
+        ? ` ${unit}`
+        : undefined;
   const codeKey = code ? {
     CURRENT_STATE_MISSING: 'adaptiveMissingCurrentState',
     SLEEP_MISSING: 'adaptiveMissingSleep',
@@ -78,6 +86,7 @@ export function evidenceItemText(lang: Lang, item: DecisionEvidenceItemV1): stri
   }[code] : undefined;
   return adaptiveText(lang, item.labelKey, {
     ...item.values,
+    ...(displayUnit != null ? { unit: displayUnit } : {}),
     ...(codeKey ? { code: adaptiveText(lang, codeKey) } : {}),
   });
 }
