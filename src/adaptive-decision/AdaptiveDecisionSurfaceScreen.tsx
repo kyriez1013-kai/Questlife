@@ -192,6 +192,7 @@ export default function AdaptiveDecisionSurfaceScreen() {
     '--adl2-overlay': theme.questTheme.colors.overlay,
     '--adl2-error': theme.control.error,
     '--adl2-space-xs': `${v11Spacing.xs}px`,
+    '--adl2-space-xxs': `${v11Spacing.xxs}px`,
     '--adl2-space-sm': `${v11Spacing.sm}px`,
     '--adl2-space-md': `${v11Spacing.md}px`,
     '--adl2-space-lg': `${v11Spacing.lg}px`,
