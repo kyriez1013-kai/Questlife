@@ -3023,6 +3023,7 @@ const zh: Record<string, string> = {
   adaptiveSurfaceEvidence_historical_analogue: '相似时期',
   adaptiveSurfaceEvidence_unknown: '仍然未知',
   adaptiveSurfaceEvidence_limitation: '证据边界',
+  adaptiveSurfaceSafetyQuestion: '训练时出现胸闷和呼吸困难，我还要继续吗？',
 };
 
 const en: Record<string, string> = {
@@ -6046,6 +6047,7 @@ const en: Record<string, string> = {
   adaptiveSurfaceEvidence_historical_analogue: 'Similar periods',
   adaptiveSurfaceEvidence_unknown: 'Still unknown',
   adaptiveSurfaceEvidence_limitation: 'Evidence boundary',
+  adaptiveSurfaceSafetyQuestion: 'I have chest pressure and difficulty breathing during training. Should I continue?',
 };
 
 const dict: Record<Lang, Record<string, string>> = { zh, en };
