@@ -67,8 +67,10 @@ export type DecisionSurfacePresentationV2 = {
 const evidenceOrder: DecisionEvidenceItemV1['category'][] = [
   'fact',
   'personal_comparison',
+  'observational_signal',
   'joint_evidence',
   'historical_analogue',
+  'historical_decision',
   'unknown',
   'limitation',
 ];

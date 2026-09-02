@@ -190,6 +190,50 @@ const answered = proposeDecisionEpisode({
 assert.equal(answered.status, 'PROPOSED');
 assert.equal(answered.evidencePacket?.eligibility, 'limited');
 
+const memoryDraft = beginDecisionEpisode({
+  id: 'episode-memory-next',
+  questionType: 'training_recovery',
+  subjectKind: 'owner',
+  now: '2025-05-02T18:00:00+00:00',
+  timezone: 'UTC',
+  observationWindowStart: '2025-04-02T00:00:00+00:00',
+});
+const ownerHistory = {
+  ...completed,
+  subject: { kind: 'owner' as const },
+  provenance: {
+    ...completed.provenance,
+    origin: 'OWNER_OBSERVED' as const,
+    syntheticOnly: false,
+    containsRealUserData: true,
+  },
+};
+const memoryData: DecisionEngineData = {
+  ...data,
+  stateCheckIns: data.stateCheckIns.map((item) => ({
+    ...item,
+    dataProvenance: { ...item.dataProvenance!, origin: 'OWNER_OBSERVED' as const },
+  })),
+  contextLogs: data.contextLogs.map((item) => ({
+    ...item,
+    dataProvenance: { ...item.dataProvenance!, origin: 'OWNER_OBSERVED' as const },
+  })),
+  executionLogs: data.executionLogs.map((item) => ({
+    ...item,
+    dataProvenance: { ...item.dataProvenance!, origin: 'OWNER_OBSERVED' as const },
+  })),
+  decisionResults: [{ ...result, decisionEpisode: ownerHistory }],
+};
+const withMemory = proposeDecisionEpisode({
+  episode: memoryDraft,
+  data: memoryData,
+  answers: { 'target-flexibility': 'movable' },
+  now: '2025-05-02T18:00:01+00:00',
+});
+assert.equal(withMemory.evidencePacket?.highestEvidenceLevel, 'E');
+assert.ok(withMemory.evidencePacket?.items.some((item) => item.category === 'historical_decision'));
+assert.ok(withMemory.candidateActions[0].evidenceItemIds.includes('evidence-historical-decisions'));
+
 const blockedDraft = beginDecisionEpisode({
   id: 'episode-blocked',
   questionType: 'training_recovery',

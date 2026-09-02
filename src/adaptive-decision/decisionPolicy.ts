@@ -75,10 +75,13 @@ function candidate(
 }
 
 function relevantEvidenceIds(evidence: DecisionEvidencePacketV1): string[] {
-  return evidence.items
-    .filter((item) => item.category === 'fact' || item.category === 'personal_comparison' || item.category === 'joint_evidence')
-    .slice(0, 3)
-    .map((item) => item.id);
+  const substantive = evidence.items.filter((item) => item.evidenceLevel);
+  const selected = [
+    substantive.find((item) => item.evidenceLevel === 'A'),
+    [...substantive].reverse().find((item) => item.evidenceLevel === evidence.highestEvidenceLevel),
+    substantive.find((item) => item.evidenceLevel === 'B' || item.evidenceLevel === 'C'),
+  ].filter((item): item is NonNullable<typeof item> => Boolean(item));
+  return Array.from(new Set(selected.map((item) => item.id))).slice(0, 3);
 }
 
 function primaryMovableBlock(

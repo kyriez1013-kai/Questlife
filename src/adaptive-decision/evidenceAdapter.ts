@@ -32,15 +32,25 @@ export type BuildDecisionEvidenceResult = {
 
 function targetCandidates(questionType: DecisionQuestionType): string[] {
   if (questionType === 'training_recovery') {
-    return ['market:execution.load', 'market:activity.minutes', 'market:state.focus', 'market:sleep.duration'];
+    return ['market:execution.duration', 'market:execution.load', 'market:activity.minutes', 'market:state.focus', 'market:sleep.duration'];
   }
   if (questionType === 'cognitive_adjustment') {
-    return ['market:state.focus', 'market:sleep.duration', 'market:execution.load'];
+    return ['market:state.focus', 'market:sleep.duration', 'market:execution.duration', 'market:execution.load'];
   }
   if (questionType === 'overloaded_day') {
-    return ['market:execution.load', 'market:state.focus', 'market:schedule.disruption'];
+    return ['market:execution.duration', 'market:execution.load', 'market:state.focus', 'market:schedule.disruption'];
   }
-  return ['market:state.focus', 'market:execution.load', 'market:sleep.duration'];
+  return ['market:state.focus', 'market:execution.duration', 'market:execution.load', 'market:sleep.duration'];
+}
+
+const EVIDENCE_LEVELS = ['A', 'B', 'C', 'D', 'E'] as const;
+
+function evidenceLevels(items: DecisionEvidenceItemV1[]) {
+  const availableLevels = EVIDENCE_LEVELS.filter((level) => items.some((item) => item.evidenceLevel === level));
+  return {
+    availableLevels,
+    highestEvidenceLevel: availableLevels[availableLevels.length - 1],
+  };
 }
 
 function pickInstrument(bundle: QuantProductBundleV1 | undefined, questionType: DecisionQuestionType): QuantProductInstrumentV1 | undefined {
@@ -149,6 +159,7 @@ export function buildDecisionEvidence(input: BuildDecisionEvidenceInput): BuildD
     items.push({
       id: 'evidence-fact-current',
       category: 'fact',
+      evidenceLevel: 'A',
       labelKey: 'adaptiveEvidenceCurrentFact',
       values: { value: instrument.latest.value, unit: instrument.latest.unit },
       sourceIds: [instrument.latest.observation_id],
@@ -157,6 +168,7 @@ export function buildDecisionEvidence(input: BuildDecisionEvidenceInput): BuildD
     items.push({
       id: 'evidence-fact-state',
       category: 'fact',
+      evidenceLevel: 'A',
       labelKey: 'adaptiveEvidenceCurrentState',
       values: { value: input.context.currentState.overall, unit: '/5' },
       sourceIds: [input.context.currentState.sourceId],
@@ -167,6 +179,7 @@ export function buildDecisionEvidence(input: BuildDecisionEvidenceInput): BuildD
     items.push({
       id: 'evidence-personal-reference',
       category: 'personal_comparison',
+      evidenceLevel: 'B',
       labelKey: 'adaptiveEvidencePersonalReference',
       values: {
         current: instrument.latest?.value ?? '',
@@ -188,12 +201,57 @@ export function buildDecisionEvidence(input: BuildDecisionEvidenceInput): BuildD
   ));
   const shortPoint = latestValue(shortSeries);
   const longPoint = latestValue(longSeries);
-  if (!shortPoint && !longPoint) missingness.add('EWMA_UNAVAILABLE');
+  if (shortPoint || longPoint) {
+    items.push({
+      id: 'evidence-ewma',
+      category: 'personal_comparison',
+      evidenceLevel: 'B',
+      labelKey: 'adaptiveEvidenceEwma',
+      values: {
+        short: shortPoint?.value ?? '',
+        long: longPoint?.value ?? '',
+        unit: instrument?.unit ?? '',
+      },
+      sourceIds: Array.from(new Set([
+        ...(shortPoint?.source_observation_ids ?? []),
+        ...(longPoint?.source_observation_ids ?? []),
+      ])),
+      limitationCodes: Array.from(new Set([
+        ...(shortSeries?.limitation_codes ?? []),
+        ...(longSeries?.limitation_codes ?? []),
+      ])),
+    });
+  } else {
+    missingness.add('EWMA_UNAVAILABLE');
+  }
+
+  const observedSignals = (bundle?.signals ?? []).filter((signal) => (
+    signal.availability.state === 'AVAILABLE'
+    && (!instrument
+      || signal.target_instrument_id === instrument.instrument_id
+      || signal.source_instrument_id === instrument.instrument_id)
+  )).slice(0, 2);
+  observedSignals.forEach((signal) => items.push({
+    id: `evidence-signal-${signal.signal_id}`,
+    category: 'observational_signal',
+    evidenceLevel: 'C',
+    labelKey: 'adaptiveEvidenceObservationalSignal',
+    values: {
+      source: signal.source_instrument_id,
+      target: signal.target_instrument_id,
+      lag: signal.lag_key,
+    },
+    sourceIds: signal.provenance.observation_ids,
+    supportCount: signal.support_count,
+    counterexampleCount: signal.counterexample_count,
+    limitationCodes: signal.limitation_codes,
+  }));
 
   if (joint?.observed_deviation != null && joint.model_attributed_deviation != null && joint.residual_deviation != null) {
     items.push({
       id: 'evidence-joint-model',
       category: 'joint_evidence',
+      evidenceLevel: 'D',
       labelKey: 'adaptiveEvidenceJointModel',
       values: {
         deviation: joint.observed_deviation,
@@ -206,6 +264,7 @@ export function buildDecisionEvidence(input: BuildDecisionEvidenceInput): BuildD
     items.push({
       id: 'evidence-unknown-unexplained-residual',
       category: 'unknown',
+      evidenceLevel: 'D',
       labelKey: 'adaptiveEvidenceUnexplainedResidual',
       values: { residual: joint.residual_deviation },
       sourceIds: joint.source_observation_ids,
@@ -231,7 +290,8 @@ export function buildDecisionEvidence(input: BuildDecisionEvidenceInput): BuildD
   });
   driverCandidates.slice(0, 3).forEach((candidate) => items.push({
     id: `evidence-driver-${candidate.candidate_id}`,
-    category: 'joint_evidence',
+    category: 'observational_signal',
+    evidenceLevel: 'C',
     labelKey: 'adaptiveEvidenceObservedAssociation',
     values: { driver: candidate.driver_instrument_id, lag: candidate.lag_key },
     sourceIds: candidate.evidence.provenance.observation_ids,
@@ -258,6 +318,7 @@ export function buildDecisionEvidence(input: BuildDecisionEvidenceInput): BuildD
     items.push({
       id: 'evidence-similar-periods',
       category: 'historical_analogue',
+      evidenceLevel: 'C',
       labelKey: 'adaptiveEvidenceSimilarPeriods',
       values: { count: similarPeriods.length },
       sourceIds: similarPeriods.map((period) => period.id),
@@ -317,6 +378,7 @@ export function buildDecisionEvidence(input: BuildDecisionEvidenceInput): BuildD
     target: instrument?.instrument_id ?? (input.questionType === 'cognitive_adjustment' ? 'current_state.focus' : 'current_state.overall'),
     asOf: bundle?.metadata.as_of ?? input.asOf,
     eligibility: instrument ? 'eligible' : input.context.facts.length > 0 ? 'limited' : 'abstained',
+    ...evidenceLevels(items),
     fact: instrument?.latest ? {
       value: instrument.latest.value,
       unit: instrument.latest.unit,

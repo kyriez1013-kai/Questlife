@@ -123,7 +123,16 @@ export type DecisionContextSnapshotV1 = {
 
 export type DecisionEvidenceItemV1 = {
   id: string;
-  category: 'fact' | 'personal_comparison' | 'joint_evidence' | 'historical_analogue' | 'unknown' | 'limitation';
+  category:
+    | 'fact'
+    | 'personal_comparison'
+    | 'observational_signal'
+    | 'joint_evidence'
+    | 'historical_analogue'
+    | 'historical_decision'
+    | 'unknown'
+    | 'limitation';
+  evidenceLevel?: 'A' | 'B' | 'C' | 'D' | 'E';
   labelKey: string;
   values?: Record<string, string | number>;
   sourceIds: string[];
@@ -137,6 +146,8 @@ export type DecisionEvidencePacketV1 = {
   target: string;
   asOf: string;
   eligibility: 'eligible' | 'limited' | 'abstained';
+  availableLevels: Array<'A' | 'B' | 'C' | 'D' | 'E'>;
+  highestEvidenceLevel?: 'A' | 'B' | 'C' | 'D' | 'E';
   fact?: {
     value: number;
     unit: string;

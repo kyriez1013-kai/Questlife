@@ -19,7 +19,73 @@ import { evaluateDecisionSafety } from './safetyGate';
 export type DecisionEngineData = Pick<
   AppData,
   'stateCheckIns' | 'contextLogs' | 'executionLogs' | 'scheduleBlocks' | 'goals' | 'categories' | 'skills'
->;
+> & { decisionResults?: DecisionResult[] };
+
+const NON_OWNER_ORIGINS = new Set(['SYNTHETIC', 'QA_TEST', 'DEBUG_FIXTURE']);
+const EVIDENCE_LEVEL_ORDER = ['A', 'B', 'C', 'D', 'E'] as const;
+
+function addHistoricalDecisionEvidence(
+  packet: NonNullable<DecisionEpisodeV1['evidencePacket']>,
+  results: DecisionResult[],
+  episode: DecisionEpisodeV1,
+): NonNullable<DecisionEpisodeV1['evidencePacket']> {
+  const asOf = Date.parse(episode.time.asOf);
+  const history = results
+    .filter((result) => !result.dataProvenance?.deleted)
+    .filter((result) => !result.dataProvenance?.origin || !NON_OWNER_ORIGINS.has(result.dataProvenance.origin))
+    .map((result) => ({ result, episode: result.decisionEpisode }))
+    .filter((entry): entry is { result: DecisionResult; episode: DecisionEpisodeV1 } => Boolean(entry.episode))
+    .filter((entry) => (
+      entry.episode.id !== episode.id
+      && entry.episode.subject.kind === 'owner'
+      && entry.episode.question.type === episode.question.type
+      && !entry.episode.provenance.syntheticOnly
+      && entry.episode.provenance.containsRealUserData
+      && Date.parse(entry.episode.time.availableAt) <= asOf
+      && (entry.episode.status === 'OUTCOME_RECORDED' || entry.episode.status === 'CLOSED')
+      && entry.episode.followUpOutcomes.some((outcome) => Date.parse(outcome.recordedAt) <= asOf)
+    ))
+    .sort((left, right) => right.episode.updatedAt.localeCompare(left.episode.updatedAt))
+    .slice(0, 5);
+  if (history.length === 0) return packet;
+
+  const outcomes = history.flatMap((entry) => entry.episode.followUpOutcomes);
+  const supportCount = outcomes.filter((outcome) => (
+    outcome.usefulness === 'helpful'
+    || outcome.taskResult === 'completed'
+    || outcome.taskResult === 'partially_completed'
+  )).length;
+  const counterexampleCount = outcomes.filter((outcome) => (
+    outcome.usefulness === 'not_helpful'
+    || outcome.taskResult === 'not_completed'
+  )).length;
+  const items = [
+    ...packet.items,
+    {
+      id: 'evidence-historical-decisions',
+      category: 'historical_decision' as const,
+      evidenceLevel: 'E' as const,
+      labelKey: 'adaptiveEvidenceHistoricalDecision',
+      values: { count: history.length, outcomes: outcomes.length },
+      sourceIds: history.map((entry) => entry.result.id),
+      supportCount,
+      counterexampleCount,
+      limitationCodes: ['HISTORICAL_DECISIONS_ARE_NOT_CAUSAL'],
+    },
+  ];
+  const availableLevels = EVIDENCE_LEVEL_ORDER.filter((level) => items.some((item) => item.evidenceLevel === level));
+  return {
+    ...packet,
+    items,
+    availableLevels,
+    highestEvidenceLevel: availableLevels[availableLevels.length - 1],
+    limitations: Array.from(new Set([...packet.limitations, 'HISTORICAL_DECISIONS_ARE_NOT_CAUSAL'])),
+    sourceArtifactIds: Array.from(new Set([
+      ...packet.sourceArtifactIds,
+      ...history.map((entry) => entry.result.id),
+    ])),
+  };
+}
 
 export function beginDecisionEpisode(input: {
   id: string;
@@ -67,7 +133,7 @@ export function proposeDecisionEpisode(input: {
     context: assembled.snapshot,
     symptomSeverityAnswer: input.answers?.['symptom-severity'],
   });
-  const evidence = buildDecisionEvidence({
+  const builtEvidence = buildDecisionEvidence({
     questionType: episode.question.type,
     context: assembled.snapshot,
     asOf: episode.time.asOf,
@@ -75,6 +141,16 @@ export function proposeDecisionEpisode(input: {
     quantProduct: input.quantProduct,
     quantAnalysis: input.quantAnalysis,
   });
+  const evidence = {
+    ...builtEvidence,
+    packet: safety.status.level === 'normal'
+      ? addHistoricalDecisionEvidence(
+          builtEvidence.packet,
+          input.data.decisionResults ?? [],
+          episode,
+        )
+      : builtEvidence.packet,
+  };
   const questions = [
     ...(safety.missingQuestion ? [safety.missingQuestion] : []),
     ...assembled.missingQuestions,

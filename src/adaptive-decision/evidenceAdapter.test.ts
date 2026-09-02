@@ -55,6 +55,8 @@ const demo = buildDecisionEvidence({
 assert.deepEqual(demo.parseIssues, []);
 assert.equal(demo.packet.target, 'market:state.focus');
 assert.equal(demo.packet.eligibility, 'eligible');
+assert.deepEqual(demo.packet.availableLevels, ['A', 'B', 'C', 'D']);
+assert.equal(demo.packet.highestEvidenceLevel, 'D');
 assert.ok(demo.packet.personalReference);
 assert.ok(demo.packet.ewma?.short != null);
 assert.ok(demo.packet.ewma?.long != null);
