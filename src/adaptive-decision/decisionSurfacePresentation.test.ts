@@ -39,6 +39,10 @@ scenarios.forEach((scenario) => {
   assert.ok(presentation.primaryAction!.planChanges.length >= 1, `${scenario}: exact plan effect is visible`);
   assert.ok(presentation.primaryAction!.reasonLines.length >= 2 && presentation.primaryAction!.reasonLines.length <= 3, `${scenario}: concise evidence`);
   assert.ok(presentation.evidenceGroups.length >= 2, `${scenario}: full evidence remains available`);
+  presentation.primaryAction!.planChanges.forEach((change) => {
+    assert.equal(change.before.includes('2025-'), false, `${scenario}: current-day changes use a human date label`);
+    assert.equal(change.after.includes('2025-05-03'), false, `${scenario}: next-day changes use a human date label`);
+  });
 });
 
 console.log('adaptive decision surface presentation: passed');

@@ -42,7 +42,7 @@ import {
   isV11ProductEnabled,
 } from './src/v11/featureFlag';
 import PersistenceDebugPanel from './src/components/debug/PersistenceDebugPanel';
-import AdaptiveDecisionLoopDemoScreen from './src/adaptive-decision/AdaptiveDecisionLoopDemoScreen';
+import AdaptiveDecisionSurfaceScreen from './src/adaptive-decision/AdaptiveDecisionSurfaceScreen';
 
 const InsightsV3Screen = React.lazy(() => import('./src/insights-v3/InsightsV3Screen'));
 
@@ -327,7 +327,7 @@ export default function App() {
     return (
       <SafeAreaProvider>
         <StatusBar style="auto" />
-        <AdaptiveDecisionLoopDemoScreen />
+        <AdaptiveDecisionSurfaceScreen />
       </SafeAreaProvider>
     );
   }

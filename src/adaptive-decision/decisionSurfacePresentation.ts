@@ -77,6 +77,24 @@ function formatMinutes(lang: Lang, minutes: number): string {
   return adaptiveText(lang, 'adaptiveSurfaceMinutes', { count: minutes });
 }
 
+function roundedEvidenceText(lang: Lang, item: DecisionEvidenceItemV1): string {
+  const values = Object.fromEntries(Object.entries(item.values ?? {}).map(([key, value]) => [
+    key,
+    typeof value === 'number' ? Number(value.toFixed(1)) : value,
+  ]));
+  return evidenceItemText(lang, { ...item, values });
+}
+
+function relativeDateLabel(lang: Lang, date: string, baseDate: string): string {
+  if (date === baseDate) return adaptiveText(lang, 'today');
+  const current = new Date(`${baseDate}T12:00:00`);
+  const compared = new Date(`${date}T12:00:00`);
+  if (Number.isFinite(current.getTime()) && compared.getTime() - current.getTime() === 24 * 60 * 60 * 1000) {
+    return adaptiveText(lang, 'adaptiveTomorrow');
+  }
+  return date;
+}
+
 function formatFactValue(lang: Lang, fact: DecisionContextFactV1): string {
   if (fact.value == null) return '—';
   if (fact.unit === '/5') return `${fact.value} / 5`;
@@ -93,7 +111,11 @@ function formatFactValue(lang: Lang, fact: DecisionContextFactV1): string {
   return `${fact.value}${fact.unit ? ` ${fact.unit}` : ''}`;
 }
 
-function operationChange(lang: Lang, operation: DecisionPlanOperationV1): DecisionSurfacePlanChangeV2 {
+function operationChange(
+  lang: Lang,
+  operation: DecisionPlanOperationV1,
+  baseDate: string,
+): DecisionSurfacePlanChangeV2 {
   if (operation.type === 'remove') {
     return {
       id: operation.id,
@@ -108,7 +130,7 @@ function operationChange(lang: Lang, operation: DecisionPlanOperationV1): Decisi
       id: operation.id,
       title: operation.after.title,
       before: adaptiveText(lang, 'adaptiveSurfaceNotScheduled'),
-      after: `${operation.after.date} · ${operation.after.startTime} · ${formatMinutes(lang, operation.after.plannedMinutes)}`,
+      after: `${relativeDateLabel(lang, operation.after.date, baseDate)} · ${operation.after.startTime} · ${formatMinutes(lang, operation.after.plannedMinutes)}`,
       kind: 'add',
     };
   }
@@ -116,10 +138,10 @@ function operationChange(lang: Lang, operation: DecisionPlanOperationV1): Decisi
   const dateChanged = operation.before.date !== operation.after.date;
   const timeChanged = operation.before.startTime !== operation.after.startTime;
   const before = dateChanged || timeChanged
-    ? `${operation.before.date} · ${operation.before.startTime} · ${formatMinutes(lang, operation.before.plannedMinutes)}`
+    ? `${relativeDateLabel(lang, operation.before.date, baseDate)} · ${operation.before.startTime} · ${formatMinutes(lang, operation.before.plannedMinutes)}`
     : formatMinutes(lang, operation.before.plannedMinutes);
   const after = dateChanged || timeChanged
-    ? `${operation.after.date} · ${operation.after.startTime} · ${formatMinutes(lang, operation.after.plannedMinutes)}`
+    ? `${relativeDateLabel(lang, operation.after.date, baseDate)} · ${operation.after.startTime} · ${formatMinutes(lang, operation.after.plannedMinutes)}`
     : formatMinutes(lang, operation.after.plannedMinutes);
   return {
     id: operation.id,
@@ -169,15 +191,21 @@ function actionPresentation(
 ): DecisionSurfaceActionV2 {
   const detail = candidateCopy(lang, candidate);
   const evidence = relevantEvidence(episode, candidate);
-  const operations = candidate.planPatch.operations.map((operation) => operationChange(lang, operation));
+  const readableEvidence = evidence.filter((item) => item.category !== 'joint_evidence');
+  const reasonEvidence = readableEvidence.length >= 2 ? readableEvidence : evidence;
+  const baseDate = episode.contextSnapshot?.schedule.date ?? episode.time.asOf.slice(0, 10);
+  const operations = candidate.planPatch.operations.map((operation) => operationChange(lang, operation, baseDate));
+  const firstChange = operations[0];
   return {
     id: candidate.id,
     title: detail.title,
     description: detail.description,
-    exactEffect: detail.effect,
+    exactEffect: firstChange
+      ? `${firstChange.title} · ${firstChange.before} → ${firstChange.after}`
+      : detail.effect,
     outcomes: [detail.protects, detail.feasibility].filter(Boolean),
     reasonLines: [
-      ...evidence.map((item) => evidenceItemText(lang, item)),
+      ...reasonEvidence.map((item) => roundedEvidenceText(lang, item)),
       detail.uncertainty,
     ].filter(Boolean).slice(0, 3),
     planChanges: operations.length > 0 ? operations : [{
@@ -230,7 +258,7 @@ function evidenceGroups(lang: Lang, episode: DecisionEpisodeV1): DecisionSurface
         .filter((item) => item.category === category)
         .map((item) => ({
           id: item.id,
-          text: evidenceItemText(lang, item),
+          text: roundedEvidenceText(lang, item),
           supportCount: item.supportCount,
           counterexampleCount: item.counterexampleCount,
         })),
@@ -254,7 +282,7 @@ export function buildDecisionSurfacePresentation(input: {
     ? relevantEvidence(episode, activeCandidate).map((item) => ({
         id: item.id,
         label: adaptiveText(lang, `adaptiveSurfaceEvidence_${item.category}`),
-        text: evidenceItemText(lang, item),
+        text: roundedEvidenceText(lang, item),
       }))
     : [];
   const groups = evidenceGroups(lang, episode);
