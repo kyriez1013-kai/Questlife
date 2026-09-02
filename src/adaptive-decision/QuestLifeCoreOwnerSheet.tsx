@@ -506,7 +506,7 @@ export default function QuestLifeCoreOwnerSheet({
         <View style={styles.stack}>
           <Text style={[styles.eyebrow, { color: theme.text.metadata }]}>{copy('adaptiveDecisionMemory')}</Text>
           <Text style={[styles.heading, { color: theme.text.primary }]}>{copy('adaptiveEpisodeRemembered')}</Text>
-          <View style={[styles.memory, { backgroundColor: theme.control.neutralSurface }]}> 
+          <View style={[styles.memory, { backgroundColor: theme.control.neutralSurface }]}>
             <Text style={[styles.label, { color: theme.text.metadata }]}>{copy('adaptiveMemoryChoice')}</Text>
             <Text style={[styles.memoryValue, { color: theme.text.primary }]}>{selectedCopy?.title ?? copy('adaptiveSurfaceNoChange')}</Text>
             <Text style={[styles.meta, { color: theme.text.secondary }]}>{copy('adaptiveOneEpisodeNotPattern')}</Text>

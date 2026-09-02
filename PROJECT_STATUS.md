@@ -3202,3 +3202,61 @@ Documentation:
 Pending before promotion:
 - owner visual acceptance of the isolated Vercel Preview;
 - Production web UI verification after an explicit promotion instruction.
+
+## QuestLife Core V1 - Real Owner Decision Integration
+
+Status: implementation, local full-loop QA, isolated Quant runtime Preview, and
+isolated App Preview verification complete on `product/questlife-core-v1`.
+Owner review is pending. No Production deployment or `main` modification was
+performed.
+
+Completed:
+- Added the smallest Today entry for uncertainty-driven plan adjustment behind
+  `questlife_core_v1=1`; no flag preserves the accepted Today immediately.
+- Connected real Store context, current state, schedule constraints, recent
+  execution, explicit entity links, and eligible Quant artifacts to the
+  existing Decision Loop.
+- Added a privacy-minimized App API boundary and isolated Python Quant runtime;
+  no React-side Quant statistics were introduced.
+- Preserved provenance/as-of semantics and rejected synthetic, QA, debug,
+  deleted, future, and legacy-unknown evidence.
+- Added honest evidence downgrade from constraint-only Level A through
+  historical Decision Episode Level E, without a synthetic confidence score.
+- Preserved one primary proposal, at most two alternatives, exact Plan Patch
+  preview, explicit Apply, exact Undo, follow-up, Decision Memory, and safety
+  abstention.
+- The deterministic mature demo uses the same product surface and runtime
+  contracts; only its isolated data source differs.
+
+Preview:
+- App Preview `dpl_2mpywh2r1CuwahVsnBSn4bQmRqGd` is READY at
+  `https://questlife-alpha-dgyziu6y6-kyrie-z-s-projects.vercel.app`.
+- Quant Preview `dpl_Gd3uusHivJsWJqdkE8z1qi1YewbZ` is READY at
+  `https://questlife-core-quant-preview-aqd9dev0x-kyrie-z-s-projects.vercel.app`.
+- The final App Preview boundary returned validated Product/Analysis artifacts
+  from 7 eligible owner observations with zero excluded observations.
+- Disposable Preview Store data could not sync to the real owner Supabase
+  dataset because the Preview used an intentionally invalid sync endpoint.
+
+Validation:
+- `npx tsc --noEmit` passed.
+- `npm run build` passed; local bundle
+  `index-8bda155b88b7079310251c94cd01452f.js`.
+- Preview bundle `index-d92563bbceed579347b6ae0f0e796427.js`.
+- Adaptive Decision tests: 13 programs passed.
+- Quant targeted runtime tests: 7/7 passed; full Quant suite: 768 passed.
+- Preview real-owner path verified one-tap context assembly, zero questions,
+  honest Level A, exact `60 -> 30` preview, real schedule Apply, exact Undo,
+  refresh persistence, Smart Capture open/cancel, and no-flag rollback.
+- Preview one-tap decision latency was 388 ms; Quant materialization was
+  92.634 ms for the disposable owner request.
+- Browser console contained only the known Expo Notifications web warning.
+
+UNVERIFIED:
+- physical iPhone Safari on this final Preview;
+- natural two-hour follow-up arrival without local time acceleration;
+- genuine owner Level B-E behavior after sufficient longitudinal history;
+- Production promotion.
+
+Evidence and exact limitations are recorded in
+`docs/product/QUESTLIFE_CORE_V1_QA.md`.
