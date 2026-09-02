@@ -3009,6 +3009,20 @@ const zh: Record<string, string> = {
   adaptiveFlexibility_fixed: '固定',
   adaptiveFlexibility_flexible: '灵活',
   adaptiveFlexibility_movable: '可移动',
+  adaptiveSurfaceMinutes: '{count} 分钟',
+  adaptiveSurfaceHours: '{hours} 小时',
+  adaptiveSurfaceHoursMinutes: '{hours} 小时 {minutes} 分',
+  adaptiveSurfaceUnplaced: '暂不排入今天',
+  adaptiveSurfaceNotScheduled: '尚未安排',
+  adaptiveSurfaceUnchanged: '保持不变',
+  adaptiveSurfaceCurrentPlan: '当前计划',
+  adaptiveSurfaceNoChange: '无修改',
+  adaptiveSurfaceEvidence_fact: '当前事实',
+  adaptiveSurfaceEvidence_personal_comparison: '个人参考',
+  adaptiveSurfaceEvidence_joint_evidence: '联合分析',
+  adaptiveSurfaceEvidence_historical_analogue: '相似时期',
+  adaptiveSurfaceEvidence_unknown: '仍然未知',
+  adaptiveSurfaceEvidence_limitation: '证据边界',
 };
 
 const en: Record<string, string> = {
@@ -6018,6 +6032,20 @@ const en: Record<string, string> = {
   adaptiveFlexibility_fixed: 'Fixed',
   adaptiveFlexibility_flexible: 'Flexible',
   adaptiveFlexibility_movable: 'Movable',
+  adaptiveSurfaceMinutes: '{count} min',
+  adaptiveSurfaceHours: '{hours} hr',
+  adaptiveSurfaceHoursMinutes: '{hours} hr {minutes} min',
+  adaptiveSurfaceUnplaced: 'Leave unplaced today',
+  adaptiveSurfaceNotScheduled: 'Not scheduled',
+  adaptiveSurfaceUnchanged: 'Keep unchanged',
+  adaptiveSurfaceCurrentPlan: 'Current plan',
+  adaptiveSurfaceNoChange: 'No change',
+  adaptiveSurfaceEvidence_fact: 'Current facts',
+  adaptiveSurfaceEvidence_personal_comparison: 'Personal reference',
+  adaptiveSurfaceEvidence_joint_evidence: 'Joint analysis',
+  adaptiveSurfaceEvidence_historical_analogue: 'Similar periods',
+  adaptiveSurfaceEvidence_unknown: 'Still unknown',
+  adaptiveSurfaceEvidence_limitation: 'Evidence boundary',
 };
 
 const dict: Record<Lang, Record<string, string>> = { zh, en };

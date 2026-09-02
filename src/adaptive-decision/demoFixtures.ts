@@ -28,6 +28,7 @@ export type AdaptiveDecisionDemoFixture = {
   quantProduct: unknown;
   quantAnalysis: unknown;
   sampleOutcome: Omit<DecisionFollowUpOutcomeV1, 'id' | 'recordedAt'>;
+  initialAnswers?: Record<string, string>;
 };
 
 const DEMO_NOW = '2025-05-02T07:59:00+08:00';
@@ -317,5 +318,6 @@ export function createAdaptiveDecisionDemoFixture(
     quantProduct: driverBundle,
     quantAnalysis: analysisExtension,
     sampleOutcome: { state: 3, taskResult: 'completed', carryover: 'some', usefulness: 'helpful' },
+    initialAnswers: { priority: 'first' },
   };
 }
