@@ -112,6 +112,7 @@ export default function QuestLifeCoreOwnerSheet({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const generationRef = useRef(0);
+  const initializedVisibleRef = useRef(false);
   const persistedEpisodeIdsRef = useRef(new Set<string>());
   const artifactsRef = useRef<OwnerQuantRuntimeArtifacts | null>(null);
 
@@ -229,8 +230,11 @@ export default function QuestLifeCoreOwnerSheet({
   useEffect(() => {
     if (!visible) {
       generationRef.current += 1;
+      initializedVisibleRef.current = false;
       return;
     }
+    if (initializedVisibleRef.current) return;
+    initializedVisibleRef.current = true;
     const latest = latestOwnerDecisionEpisode(decisionResults);
     if (latest) {
       const due = markDecisionFollowUpDue(latest, new Date().toISOString());

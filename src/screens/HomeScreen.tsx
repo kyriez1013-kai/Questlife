@@ -96,7 +96,12 @@ import {
   V11TextField,
 } from '../v11/components/V11SheetControls';
 import AdaptiveDecisionLoopOwnerSheet from '../adaptive-decision/AdaptiveDecisionLoopOwnerSheet';
-import { isAdaptiveDecisionLoopOwnerEnabled } from '../adaptive-decision/featureFlag';
+import QuestLifeCoreOwnerSheet from '../adaptive-decision/QuestLifeCoreOwnerSheet';
+import {
+  isAdaptiveDecisionLoopOwnerEnabled,
+  isQuestLifeCoreV1Enabled,
+} from '../adaptive-decision/featureFlag';
+import { dueOwnerDecisionEpisode } from '../adaptive-decision/ownerDecisionFlow';
 
 const WebView = View as any;
 
@@ -633,7 +638,9 @@ export default function HomeScreen() {
   const v11EffectiveReducedMotion = v11ReducedMotion
     || getV11DebugReducedMotion(isDecisionDebugEnabled());
   const v11TodayEnabled = isV11TodayEnabled();
-  const adaptiveDecisionEnabled = v11TodayEnabled && isAdaptiveDecisionLoopOwnerEnabled();
+  const questLifeCoreV1Enabled = v11TodayEnabled && isQuestLifeCoreV1Enabled();
+  const adaptiveDecisionEnabled = v11TodayEnabled
+    && (questLifeCoreV1Enabled || isAdaptiveDecisionLoopOwnerEnabled());
   const v11ThemeTokens = getV11ThemeTokens(isDarkTheme(questTheme) ? 'dark' : 'light');
 
   // 晨间状态: null=尚未加载, undefined=今日未设置, number=已设置
@@ -2257,10 +2264,13 @@ export default function HomeScreen() {
         )
       : '';
 
+  const dueCoreFollowUp = questLifeCoreV1Enabled
+    ? dueOwnerDecisionEpisode(data.decisionResults || [], new Date().toISOString())
+    : null;
   const adaptiveDecisionAction: V11IntegratedUtilityAction | undefined = adaptiveDecisionEnabled ? {
     id: 'adaptive-decision',
-    label: t(lang, 'adaptiveOwnerEntryAction'),
-    metadata: t(lang, 'adaptiveOwnerEntryMeta'),
+    label: t(lang, dueCoreFollowUp ? 'adaptiveCoreFollowUpEntry' : 'adaptiveOwnerEntryAction'),
+    metadata: t(lang, dueCoreFollowUp ? 'adaptiveCoreFollowUpEntryMeta' : 'adaptiveOwnerEntryMeta'),
     onPress: openAdaptiveDecision,
   } : undefined;
 
@@ -3087,7 +3097,21 @@ export default function HomeScreen() {
           visible={v11ActivityHistoryOpen}
         />
 
-        {adaptiveDecisionEnabled ? (
+        {questLifeCoreV1Enabled ? (
+          <QuestLifeCoreOwnerSheet
+            data={data}
+            decisionResults={data.decisionResults || []}
+            lang={lang}
+            onAddDecisionResult={addDecisionResult}
+            onApplySchedulePatch={applyDecisionSchedulePatch}
+            onClose={closeAdaptiveDecision}
+            onUndoSchedulePatch={undoDecisionSchedulePatch}
+            onUpdateDecisionEpisode={updateDecisionEpisode}
+            reducedMotion={v11EffectiveReducedMotion}
+            theme={v11ThemeTokens}
+            visible={adaptiveDecisionOpen}
+          />
+        ) : adaptiveDecisionEnabled ? (
           <AdaptiveDecisionLoopOwnerSheet
             data={data}
             decisionResults={data.decisionResults || []}
