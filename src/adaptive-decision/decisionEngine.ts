@@ -91,6 +91,7 @@ export function beginDecisionEpisode(input: {
   id: string;
   questionType: DecisionQuestionType;
   questionText?: string;
+  targetId?: string;
   subjectKind: 'owner' | 'demo';
   subjectId?: string;
   now: string;

@@ -412,6 +412,7 @@ export function createDecisionEpisode(input: {
   id: string;
   questionType: DecisionQuestionType;
   questionText?: string;
+  targetId?: string;
   subjectKind: 'owner' | 'demo';
   subjectId?: string;
   now: string;
@@ -424,7 +425,7 @@ export function createDecisionEpisode(input: {
     id: input.id,
     subject: { kind: input.subjectKind, subjectId: input.subjectId },
     status: 'DRAFT',
-    question: { type: input.questionType, text: input.questionText },
+    question: { type: input.questionType, text: input.questionText, targetId: input.targetId },
     targetOutcome: { horizon: 'end_of_day', fields: ['task_result', 'usefulness'] },
     time: {
       eventTime: input.now,
