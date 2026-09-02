@@ -92,6 +92,25 @@ async function main() {
   assert.equal(cached.cacheHit, true);
   assert.equal(calls, 1);
 
+  const changedData = data();
+  changedData.executionLogs = [...changedData.executionLogs, {
+    id: 'execution-2',
+    date: AS_OF.slice(0, 10),
+    durationMinutes: 10,
+    source: 'manual',
+    createdAt: AS_OF,
+    appliedToProgress: true,
+  }];
+  const invalidated = await requestOwnerQuantArtifacts({
+    data: changedData,
+    subjectId: 'owner-test',
+    timezone: 'UTC',
+    asOf: AS_OF,
+    fetchImpl: fetchAvailable as typeof fetch,
+  });
+  assert.equal(invalidated.cacheHit, false);
+  assert.equal(calls, 2, 'new eligible owner data must invalidate the client artifact cache');
+
   clearOwnerQuantRuntimeCacheForTests();
   const empty = await requestOwnerQuantArtifacts({
     data: { ...DEFAULT_DATA },
