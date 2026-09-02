@@ -9,6 +9,21 @@
     var(--adl2-bg);
 }
 
+[data-adlui~="adl2-root"][data-adlui~="is-embedded"] {
+  min-height: 0;
+  overflow: visible;
+  background: transparent;
+}
+
+[data-adlui~="adl2-root"][data-adlui~="is-embedded"]::before {
+  display: none;
+}
+
+[data-adlui~="adl2-root"][data-adlui~="is-embedded"] [data-adlui~="adl2-page"] {
+  width: 100%;
+  padding: 0 0 var(--adl2-space-md);
+}
+
 [data-adlui~="adl2-root"]::before {
   position: absolute;
   inset: 0;
