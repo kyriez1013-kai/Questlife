@@ -145,11 +145,15 @@ export default function QuestLifeCoreOwnerSheet({
     setError('');
     const started = typeof performance !== 'undefined' ? performance.now() : Date.now();
     try {
+      const quantStarted = typeof performance !== 'undefined' ? performance.now() : Date.now();
       const artifacts = artifactsRef.current ?? await loadOwnerQuantArtifacts({
         data,
         timezone: draft.time.timezone,
         asOf: draft.time.asOf,
       });
+      const quantLatencyMs = artifactsRef.current
+        ? 0
+        : Math.max(0, (typeof performance !== 'undefined' ? performance.now() : Date.now()) - quantStarted);
       if (generation !== generationRef.current) return;
       artifactsRef.current = artifacts;
       const proposed = retainFeasibleOwnerCandidates(proposeDecisionEpisode({
@@ -179,6 +183,8 @@ export default function QuestLifeCoreOwnerSheet({
         contextFactCount: resolved.contextSnapshot?.facts.length ?? 0,
         missingQuestionCount: resolved.missingContext.length,
         elapsedMs,
+        quantLatencyMs,
+        totalDecisionLatencyMs: elapsedMs,
         fixtureOnly: false,
       });
       recordAdaptiveDecisionTelemetry({
@@ -187,6 +193,8 @@ export default function QuestLifeCoreOwnerSheet({
         missingQuestionCount: resolved.missingContext.length,
         proposalCount: resolved.candidateActions.length,
         elapsedMs,
+        quantLatencyMs,
+        totalDecisionLatencyMs: elapsedMs,
         fixtureOnly: false,
       });
     } catch (caught) {
@@ -307,11 +315,16 @@ export default function QuestLifeCoreOwnerSheet({
       persistEpisode(applied.episode);
       setEpisode(applied.episode);
       setActiveActionId(applied.episode.selectedActionId);
+      const planMutationLatencyMs = Math.max(
+        0,
+        (typeof performance !== 'undefined' ? performance.now() : Date.now()) - started,
+      );
       recordAdaptiveDecisionTelemetry({
         name: 'decision_plan_applied',
         questionType: applied.episode.question.type,
         operationCount: applied.episode.appliedPlanPatch.operations.length,
-        elapsedMs: Math.max(0, (typeof performance !== 'undefined' ? performance.now() : Date.now()) - started),
+        elapsedMs: planMutationLatencyMs,
+        planMutationLatencyMs,
         fixtureOnly: false,
       });
     } catch (caught) {

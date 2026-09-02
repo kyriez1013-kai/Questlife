@@ -18,6 +18,9 @@ export type AdaptiveDecisionTelemetryEvent = {
   proposalCount?: number;
   operationCount?: number;
   elapsedMs?: number;
+  quantLatencyMs?: number;
+  totalDecisionLatencyMs?: number;
+  planMutationLatencyMs?: number;
   usefulness?: string;
   fixtureOnly: boolean;
 };
@@ -49,6 +52,9 @@ export function recordAdaptiveDecisionTelemetry(
       ...(event.proposalCount != null ? { proposalCount: event.proposalCount } : {}),
       ...(event.operationCount != null ? { operationCount: event.operationCount } : {}),
       ...(event.elapsedMs != null ? { elapsedMs: event.elapsedMs } : {}),
+      ...(event.quantLatencyMs != null ? { quantLatencyMs: event.quantLatencyMs } : {}),
+      ...(event.totalDecisionLatencyMs != null ? { totalDecisionLatencyMs: event.totalDecisionLatencyMs } : {}),
+      ...(event.planMutationLatencyMs != null ? { planMutationLatencyMs: event.planMutationLatencyMs } : {}),
       ...(event.usefulness != null ? { usefulness: event.usefulness } : {}),
     };
     const events = [...readEvents(), sanitized].slice(-100);

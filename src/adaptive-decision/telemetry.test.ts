@@ -33,6 +33,9 @@ recordAdaptiveDecisionTelemetry({
   proposalCount: 2,
   operationCount: 1,
   elapsedMs: 12,
+  quantLatencyMs: 8,
+  totalDecisionLatencyMs: 12,
+  planMutationLatencyMs: 2,
   usefulness: 'helpful',
   rawQuestion: 'private owner question',
   note: 'private note',
@@ -48,8 +51,11 @@ assert.deepEqual(Object.keys(events[0]).sort(), [
   'missingQuestionCount',
   'name',
   'operationCount',
+  'planMutationLatencyMs',
   'proposalCount',
+  'quantLatencyMs',
   'questionType',
+  'totalDecisionLatencyMs',
   'usefulness',
 ]);
 assert.equal(JSON.stringify(events).includes('private owner question'), false);
