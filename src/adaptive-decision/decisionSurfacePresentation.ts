@@ -44,6 +44,7 @@ export type DecisionSurfaceActionV2 = {
   id: string;
   title: string;
   description: string;
+  basisNote?: string;
   exactEffect: string;
   outcomes: string[];
   reasonLines: string[];
@@ -59,6 +60,7 @@ export type DecisionSurfacePresentationV2 = {
   alternatives: DecisionSurfaceActionV2[];
   evidencePreview: Array<{ id: string; label: string; text: string }>;
   evidenceGroups: DecisionSurfaceEvidenceGroupV2[];
+  evidenceSummary: string;
   unknownCount: number;
   isSparse: boolean;
   isAbstained: boolean;
@@ -98,7 +100,23 @@ function relativeDateLabel(lang: Lang, date: string, baseDate: string): string {
 }
 
 function formatFactValue(lang: Lang, fact: DecisionContextFactV1): string {
-  if (fact.value == null) return '—';
+  if (fact.value == null) return adaptiveText(lang, 'adaptiveSurfaceUnknown');
+  if (fact.kind === 'priority' && typeof fact.value === 'string') {
+    const priorityKey = {
+      first: 'adaptivePriorityFirst',
+      deadline: 'adaptivePriorityDeadline',
+      recovery: 'adaptivePriorityRecovery',
+    }[fact.value];
+    if (priorityKey) return adaptiveText(lang, priorityKey);
+  }
+  if (fact.kind === 'schedule_constraint' && typeof fact.value === 'string') {
+    const flexibilityKey = {
+      fixed: 'adaptiveFixed',
+      movable: 'adaptiveMovable',
+      optional: 'adaptiveOptional',
+    }[fact.value];
+    if (flexibilityKey) return adaptiveText(lang, flexibilityKey);
+  }
   if (fact.unit === '/5') return `${fact.value} / 5`;
   if (fact.unit === 'minutes' && typeof fact.value === 'number') {
     if (fact.kind === 'sleep') {
@@ -111,6 +129,48 @@ function formatFactValue(lang: Lang, fact: DecisionContextFactV1): string {
     return formatMinutes(lang, fact.value);
   }
   return `${fact.value}${fact.unit ? ` ${fact.unit}` : ''}`;
+}
+
+function shortenedDurationBasis(
+  lang: Lang,
+  candidate: DecisionCandidateActionV1,
+): string | undefined {
+  const shortened = candidate.planPatch.operations.find((operation) => (
+    operation.type === 'update'
+    && operation.after.plannedMinutes < operation.before.plannedMinutes
+  ));
+  if (!shortened || shortened.type !== 'update') return undefined;
+  return adaptiveText(lang, 'adaptiveSurfaceShortenBasis', {
+    from: shortened.before.plannedMinutes,
+    to: shortened.after.plannedMinutes,
+  });
+}
+
+function evidenceSummary(
+  lang: Lang,
+  evidence: DecisionEvidenceItemV1[],
+): string {
+  if (evidence.some((item) => item.category === 'joint_evidence')) {
+    return adaptiveText(lang, 'adaptiveSurfaceEvidenceJointSummary');
+  }
+  if (evidence.some((item) => (
+    item.category === 'personal_comparison'
+    || item.category === 'observational_signal'
+    || item.category === 'historical_analogue'
+    || item.category === 'historical_decision'
+  ))) {
+    const counted = [...evidence].reverse().find((item) => (
+      item.supportCount != null || item.counterexampleCount != null
+    ));
+    if (counted) {
+      return adaptiveText(lang, 'adaptiveSurfaceEvidenceHistorySummary', {
+        support: counted.supportCount ?? 0,
+        counter: counted.counterexampleCount ?? 0,
+      });
+    }
+    return adaptiveText(lang, 'adaptiveSurfaceEvidencePersonalSummary');
+  }
+  return adaptiveText(lang, 'adaptiveSurfaceEvidenceConstraintSummary');
 }
 
 function operationChange(
@@ -193,8 +253,12 @@ function actionPresentation(
 ): DecisionSurfaceActionV2 {
   const detail = candidateCopy(lang, candidate);
   const evidence = relevantEvidence(episode, candidate);
-  const readableEvidence = evidence.filter((item) => item.category !== 'joint_evidence');
-  const reasonEvidence = readableEvidence.length >= 2 ? readableEvidence : evidence;
+  const summary = evidenceSummary(lang, evidence);
+  const followUpOnlyUncertainty = candidate.uncertaintyKey === 'adaptiveUncertaintyObserveOutcome'
+    || candidate.uncertaintyKey === 'adaptiveUncertaintyObserveFocus';
+  const boundary = followUpOnlyUncertainty
+    ? adaptiveText(lang, 'adaptiveSurfaceEvidenceStillLimited')
+    : detail.uncertainty;
   const baseDate = episode.contextSnapshot?.schedule.date ?? episode.time.asOf.slice(0, 10);
   const operations = candidate.planPatch.operations.map((operation) => operationChange(lang, operation, baseDate));
   const firstChange = operations[0];
@@ -202,14 +266,12 @@ function actionPresentation(
     id: candidate.id,
     title: detail.title,
     description: detail.description,
+    basisNote: shortenedDurationBasis(lang, candidate),
     exactEffect: firstChange
       ? `${firstChange.title} · ${firstChange.before} → ${firstChange.after}`
       : detail.effect,
     outcomes: [detail.protects, detail.feasibility].filter(Boolean),
-    reasonLines: [
-      ...reasonEvidence.map((item) => roundedEvidenceText(lang, item)),
-      detail.uncertainty,
-    ].filter(Boolean).slice(0, 3),
+    reasonLines: [summary, boundary].filter(Boolean).slice(0, 2),
     planChanges: operations.length > 0 ? operations : [{
       id: `${candidate.id}:unchanged`,
       title: adaptiveText(lang, 'adaptiveSurfaceCurrentPlan'),
@@ -222,32 +284,66 @@ function actionPresentation(
   };
 }
 
-function chooseContextFacts(
+const relevantContextKinds: Record<DecisionEpisodeV1['question']['type'], Set<DecisionContextFactV1['kind']>> = {
+  training_recovery: new Set(['state', 'sleep', 'recent_load', 'schedule_constraint', 'available_window']),
+  cognitive_adjustment: new Set(['state', 'schedule_constraint', 'available_window', 'priority']),
+  overloaded_day: new Set(['schedule_constraint', 'available_window', 'priority', 'recent_load']),
+  custom: new Set(['state', 'sleep', 'recent_load', 'schedule_constraint', 'available_window', 'priority']),
+};
+
+function chooseContextItems(
+  lang: Lang,
   episode: DecisionEpisodeV1,
   activeCandidate: DecisionCandidateActionV1 | undefined,
-): DecisionContextFactV1[] {
+): DecisionSurfaceContextItemV2[] {
   const facts = episode.contextSnapshot?.facts ?? [];
+  const evidenceById = new Map((episode.evidencePacket?.items ?? []).map((item) => [item.id, item]));
+  const evidenceSourceIds = activeCandidate?.evidenceItemIds.flatMap((id) => evidenceById.get(id)?.sourceIds ?? []) ?? [];
   const changedBlockIds = new Set(
     activeCandidate?.planPatch.operations.map((operation) => operation.blockId) ?? [],
   );
-  const ranked = facts.map((fact, index) => {
+  const referencedIds = new Set([
+    ...(activeCandidate?.constraintIds ?? []),
+    ...evidenceSourceIds,
+    ...changedBlockIds,
+  ]);
+  const allowedKinds = relevantContextKinds[episode.question.type];
+  const ranked = facts.filter((fact) => allowedKinds.has(fact.kind)).map((fact, index) => {
     const kindRank = {
       state: 0,
       sleep: 1,
       recent_load: 2,
       priority: 3,
-      schedule_constraint: 5,
-      available_window: 6,
+      schedule_constraint: 4,
+      available_window: 5,
       goal_alignment: 7,
       historical_episode: 8,
     }[fact.kind];
-    const affectsPatch = fact.sourceIds.some((id) => changedBlockIds.has(id));
-    return { fact, index, rank: affectsPatch ? 3.5 : kindRank };
+    const explicitlyReferenced = fact.sourceIds.some((id) => referencedIds.has(id));
+    return { fact, index, rank: explicitlyReferenced ? kindRank - 0.5 : kindRank };
   });
-  return ranked
+  const selected = ranked
     .sort((left, right) => left.rank - right.rank || left.index - right.index)
     .slice(0, 4)
-    .map(({ fact }) => fact);
+    .map(({ fact }) => ({
+      id: fact.id,
+      label: fact.kind === 'schedule_constraint' && fact.label !== 'explicit_flexibility'
+        ? fact.label
+        : contextFactLabel(lang, fact),
+      value: formatFactValue(lang, fact),
+    }));
+
+  const sleepMissing = episode.question.type === 'training_recovery'
+    && !facts.some((fact) => fact.kind === 'sleep')
+    && (episode.contextSnapshot?.missingness ?? []).some((item) => item.code === 'SLEEP_MISSING');
+  if (sleepMissing && selected.length < 4) {
+    selected.splice(Math.min(1, selected.length), 0, {
+      id: 'context-sleep-missing',
+      label: adaptiveText(lang, 'adaptiveContextSleep'),
+      value: adaptiveText(lang, 'adaptiveSurfaceUnknown'),
+    });
+  }
+  return selected.slice(0, 4);
 }
 
 function evidenceGroups(lang: Lang, episode: DecisionEpisodeV1): DecisionSurfaceEvidenceGroupV2[] {
@@ -288,15 +384,14 @@ export function buildDecisionSurfacePresentation(input: {
       }))
     : [];
   const groups = evidenceGroups(lang, episode);
-  const facts = chooseContextFacts(episode, activeCandidate);
+  const contextItems = chooseContextItems(lang, episode, activeCandidate);
+  const summary = activeCandidate
+    ? evidenceSummary(lang, relevantEvidence(episode, activeCandidate))
+    : adaptiveText(lang, 'adaptiveSurfaceEvidenceConstraintSummary');
 
   return {
     question: episode.question.text ?? questionTypeLabel(lang, episode.question.type),
-    contextItems: facts.map((fact) => ({
-      id: fact.id,
-      label: contextFactLabel(lang, fact),
-      value: formatFactValue(lang, fact),
-    })),
+    contextItems,
     primaryAction,
     alternatives: episode.candidateActions
       .filter((candidate) => candidate.id !== activeCandidate?.id)
@@ -304,6 +399,7 @@ export function buildDecisionSurfacePresentation(input: {
       .map((candidate) => actionPresentation(lang, episode, candidate, scheduleBlocks)),
     evidencePreview: evidence,
     evidenceGroups: groups,
+    evidenceSummary: summary,
     unknownCount: episode.evidencePacket?.items.filter((item) => item.category === 'unknown').length ?? 0,
     isSparse: episode.evidencePacket?.eligibility !== 'eligible',
     isAbstained: episode.status === 'ABSTAINED',

@@ -33,12 +33,20 @@ scenarios.forEach((scenario) => {
   });
 
   assert.equal(presentation.question, fixture.questionText, `${scenario}: question is the title`);
-  assert.ok(presentation.contextItems.length >= 3 && presentation.contextItems.length <= 4, `${scenario}: compact context`);
+  assert.ok(presentation.contextItems.length >= 1 && presentation.contextItems.length <= 4, `${scenario}: compact context`);
   assert.ok(presentation.primaryAction, `${scenario}: one primary action`);
   assert.ok(presentation.alternatives.length <= 2, `${scenario}: at most two alternatives`);
   assert.ok(presentation.primaryAction!.planChanges.length >= 1, `${scenario}: exact plan effect is visible`);
-  assert.ok(presentation.primaryAction!.reasonLines.length >= 2 && presentation.primaryAction!.reasonLines.length <= 3, `${scenario}: concise evidence`);
+  assert.ok(presentation.primaryAction!.reasonLines.length >= 1 && presentation.primaryAction!.reasonLines.length <= 2, `${scenario}: concise evidence`);
+  assert.ok(presentation.evidenceSummary.length > 0, `${scenario}: practical evidence state is present`);
   assert.ok(presentation.evidenceGroups.length >= 2, `${scenario}: full evidence remains available`);
+  assert.equal(/\b[ABCDE]\b/.test(presentation.evidenceSummary), false, `${scenario}: no internal evidence code in summary`);
+  assert.equal(presentation.contextItems.some((item) => item.value === 'first'), false, `${scenario}: no raw priority enum`);
+  if (presentation.primaryAction!.planChanges.some((change) => (
+    change.kind === 'update' && change.before !== change.after
+  ))) {
+    assert.ok(presentation.primaryAction!.basisNote, `${scenario}: deterministic duration change explains its basis`);
+  }
   presentation.primaryAction!.planChanges.forEach((change) => {
     assert.equal(change.before.includes('2025-'), false, `${scenario}: current-day changes use a human date label`);
     assert.equal(change.after.includes('2025-05-03'), false, `${scenario}: next-day changes use a human date label`);

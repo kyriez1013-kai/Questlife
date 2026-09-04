@@ -46,6 +46,9 @@ export default function AdaptiveDecisionEvidenceSheet({
           '--adl2-primary': theme.glow.primary,
         }}
       >
+        <WebText dataSet={{ adlui: 'adl2-evidence-summary' }}>
+          {presentation.evidenceSummary}
+        </WebText>
         <WebText dataSet={{ adlui: 'adl2-evidence-intro' }}>
           {copy('adaptiveSurfaceEvidenceIntro')}
         </WebText>

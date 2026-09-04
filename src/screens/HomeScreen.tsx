@@ -2267,10 +2267,24 @@ export default function HomeScreen() {
   const dueCoreFollowUp = questLifeCoreV1Enabled
     ? dueOwnerDecisionEpisode(data.decisionResults || [], new Date().toISOString())
     : null;
+  const adaptiveDecisionEntryKey = dueCoreFollowUp
+    ? 'adaptiveCoreFollowUpEntry'
+    : latestStateCheckIn && latestStateCheckIn.overall <= 2
+      ? 'adaptiveOwnerEntryLowState'
+      : todayScheduleBlocks.length > 0
+        ? 'adaptiveOwnerEntryPlan'
+        : 'adaptiveOwnerEntryOpen';
+  const adaptiveDecisionEntryMetaKey = dueCoreFollowUp
+    ? 'adaptiveCoreFollowUpEntryMeta'
+    : latestStateCheckIn && latestStateCheckIn.overall <= 2
+      ? 'adaptiveOwnerEntryLowStateMeta'
+      : todayScheduleBlocks.length > 0
+        ? 'adaptiveOwnerEntryPlanMeta'
+        : 'adaptiveOwnerEntryOpenMeta';
   const adaptiveDecisionAction: V11IntegratedUtilityAction | undefined = adaptiveDecisionEnabled ? {
     id: 'adaptive-decision',
-    label: t(lang, dueCoreFollowUp ? 'adaptiveCoreFollowUpEntry' : 'adaptiveOwnerEntryAction'),
-    metadata: t(lang, dueCoreFollowUp ? 'adaptiveCoreFollowUpEntryMeta' : 'adaptiveOwnerEntryMeta'),
+    label: t(lang, adaptiveDecisionEntryKey),
+    metadata: t(lang, adaptiveDecisionEntryMetaKey),
     onPress: openAdaptiveDecision,
   } : undefined;
 

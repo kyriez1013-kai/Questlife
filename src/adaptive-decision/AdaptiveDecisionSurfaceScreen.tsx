@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { Lang } from '../i18n';
 import useV11ReducedMotion from '../v11/useV11ReducedMotion';
 import { getV11ThemeTokens, type V11ThemeMode } from '../v11/tokens';
+import V11Stage2ProductionSheet from '../v11-stage2-rebaseline/V11Stage2ProductionSheet';
 import AdaptiveDecisionWorkspace from './AdaptiveDecisionWorkspace';
 import {
   answerDecisionSurfaceQuestion,
@@ -13,6 +15,7 @@ import {
   type DecisionSurfaceDemoOptionsV2,
 } from './decisionSurfaceFlow';
 import type { AdaptiveDecisionDemoScenarioId } from './demoFixtures';
+import { adaptiveText } from './presentation';
 import { recordAdaptiveDecisionTelemetry } from './telemetry';
 
 type RouteOptions = {
@@ -51,8 +54,10 @@ export default function AdaptiveDecisionSurfaceScreen() {
     lang: route.lang,
     options: route.demoOptions,
   }));
+  const [visible, setVisible] = useState(true);
   const [error, setError] = useState('');
   const canApply = canApplyDecisionSurface(session);
+  const copy = (key: string) => adaptiveText(route.lang, key);
 
   useEffect(() => {
     recordAdaptiveDecisionTelemetry({
@@ -118,21 +123,64 @@ export default function AdaptiveDecisionSurfaceScreen() {
   };
 
   return (
-    <AdaptiveDecisionWorkspace
-      activeActionId={session.activeActionId}
-      answers={session.answers}
-      canApply={canApply}
-      episode={session.episode}
-      error={error}
-      lang={route.lang}
-      onAnswer={(questionId, value) => setSession((current) => answerDecisionSurfaceQuestion(current, questionId, value))}
-      onApply={apply}
-      onSelectAction={selectAction}
-      onUndo={undo}
-      reducedMotion={reducedMotion}
-      scheduleBlocks={session.scheduleBlocks}
-      theme={theme}
-      themeMode={route.themeMode}
-    />
+    <View style={[styles.fixtureBackground, { backgroundColor: theme.field.background }]}>
+      {!visible ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => setVisible(true)}
+          style={[styles.reopen, { backgroundColor: theme.control.neutralSurface }]}
+        >
+          <Text style={[styles.reopenText, { color: theme.text.primary }]}>{copy('adaptiveOwnerEntryAction')}</Text>
+        </Pressable>
+      ) : null}
+      <V11Stage2ProductionSheet
+        closeLabel={copy('cancel')}
+        minHeight={500}
+        onClose={() => setVisible(false)}
+        reducedMotion={reducedMotion}
+        theme={theme}
+        title={copy('adaptiveOwnerSheetTitle')}
+        visible={visible}
+      >
+        <AdaptiveDecisionWorkspace
+          activeActionId={session.activeActionId}
+          answers={session.answers}
+          canApply={canApply}
+          embedded
+          episode={session.episode}
+          error={error}
+          lang={route.lang}
+          onAnswer={(questionId, value) => setSession((current) => answerDecisionSurfaceQuestion(current, questionId, value))}
+          onApply={apply}
+          onSelectAction={selectAction}
+          onUndo={undo}
+          reducedMotion={reducedMotion}
+          scheduleBlocks={session.scheduleBlocks}
+          showTopbar={false}
+          theme={theme}
+          themeMode={route.themeMode}
+        />
+      </V11Stage2ProductionSheet>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  fixtureBackground: {
+    flex: 1,
+    minHeight: '100vh' as any,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reopen: {
+    minHeight: 48,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    borderRadius: 24,
+  },
+  reopenText: {
+    fontSize: 15,
+    lineHeight: 21,
+    fontWeight: '500',
+  },
+});
