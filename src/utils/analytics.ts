@@ -1,4 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { apiUrl } from '../platform/apiUrl';
+import { platformTelemetryAllowed } from '../platform/telemetryPermission';
 
 declare const process: any;
 declare const __DEV__: boolean;
@@ -91,6 +93,7 @@ export function trackEvent(
   properties: EventProperties = {},
   options: { page?: string; appVersion?: string } = {}
 ) {
+  if (!platformTelemetryAllowed()) return;
   if (!eventName || eventName.length > 100) return;
   const enabled = typeof process !== 'undefined'
     ? (process as any).env?.EXPO_PUBLIC_ANALYTICS_ENABLED
@@ -113,7 +116,7 @@ export function trackEvent(
       if (typeof __DEV__ !== 'undefined' && __DEV__) {
         console.log('[analytics]', eventName, body.properties);
       }
-      const response = await fetch('/api/track', {
+      const response = await fetch(apiUrl('/api/track'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),

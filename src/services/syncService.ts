@@ -14,6 +14,7 @@
  * no watermark bookkeeping that could silently skip records.
  */
 import type { AppData } from '../types';
+import { apiUrl, nativeSyncConfigured } from '../platform/apiUrl';
 import { getAnonymousUserId } from '../utils/analytics';
 import {
   acknowledgeServerDeletions,
@@ -55,7 +56,7 @@ export function getServerSyncStatus(): SyncStatus {
 }
 
 function isSyncDisabled() {
-  if (typeof window === 'undefined') return true;
+  if (typeof window === 'undefined' || typeof document === 'undefined') return !nativeSyncConfigured();
   try {
     return window.localStorage?.getItem(SYNC_DISABLED_KEY) === 'true';
   } catch {
@@ -111,7 +112,7 @@ async function runSync(data: AppData, opts: { keepalive?: boolean } = {}) {
     if (print === lastSyncedFingerprint) return;
 
     const anonymousUserId = await getAnonymousUserId();
-    const response = await fetch('/api/sync', {
+    const response = await fetch(apiUrl('/api/sync'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ anonymousUserId, collections, deletions }),

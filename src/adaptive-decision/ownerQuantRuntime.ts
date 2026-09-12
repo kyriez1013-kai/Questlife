@@ -1,4 +1,5 @@
 import type { AppData } from '../types';
+import { apiUrl } from '../platform/apiUrl';
 import { getAnonymousUserId } from '../utils/analytics';
 import {
   parseQuantAnalysisExtensionV1,
@@ -152,7 +153,7 @@ export async function requestOwnerQuantArtifacts(input: {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), input.timeoutMs ?? REQUEST_TIMEOUT_MS);
   try {
-    const response = await (input.fetchImpl ?? fetch)('/api/decision-quant', {
+    const response = await (input.fetchImpl ?? fetch)(apiUrl('/api/decision-quant'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: controller.signal,
