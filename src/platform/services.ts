@@ -1,0 +1,13 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {DeviceRepository} from './deviceRepository';
+import {createHealthSource} from './health/HealthSource';
+import {HealthSync} from './health/HealthSync';
+import {CalendarService} from './calendar/CalendarService';
+import {calendarDriver} from './calendar/CalendarDriver';
+import {createNotificationService} from './notifications/NotificationService';
+import {createNotificationDriver} from './notifications/NotificationDriver';
+export const deviceRepository=new DeviceRepository(AsyncStorage);
+export const healthSource=createHealthSource(deviceRepository);
+export const healthSync=new HealthSync(healthSource,deviceRepository);
+export const calendarSource=new CalendarService(calendarDriver,deviceRepository);
+export const notifications=(lang:'zh'|'en')=>createNotificationService(createNotificationDriver(lang));

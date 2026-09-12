@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
+import { useExternalCalendarBlocks } from '../platform/calendar/useExternalCalendarBlocks';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute } from '@react-navigation/native';
@@ -186,13 +187,14 @@ export default function ScheduleScreen() {
   ), [proposalReview?.proposals, proposalStatuses]);
 
   const week = useMemo(() => weekDates(selectedDate), [selectedDate]);
+  const externalBlocks = useExternalCalendarBlocks(week);
   const generatedBlocks = useMemo(
     () => generateScheduleBlocksFromSkills(data.skills, week, data.scheduleBlocks || []),
     [data.skills, week, data.scheduleBlocks]
   );
   const allBlocks = useMemo(
-    () => [...(data.scheduleBlocks || []), ...generatedBlocks],
-    [data.scheduleBlocks, generatedBlocks]
+    () => [...(data.scheduleBlocks || []), ...generatedBlocks, ...externalBlocks],
+    [data.scheduleBlocks, generatedBlocks, externalBlocks]
   );
   const dayBlocks = useMemo(
     () => allBlocks.filter((b) => b.date === selectedDate).sort((a, b) => a.startTime.localeCompare(b.startTime)),
