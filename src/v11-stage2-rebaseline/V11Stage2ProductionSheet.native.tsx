@@ -7,7 +7,7 @@ import V11RebaselineIcon from './V11RebaselineIcon';
 export default function NativeProductionSheet({ children, closeLabel, footer, onClose, theme, title, visible }: React.ComponentProps<typeof ProductionSheet>) {
   const insets = useSafeAreaInsets();
   return <Modal transparent animationType="none" visible={visible} onRequestClose={onClose} statusBarTranslucent>
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+    <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
       <View style={{ flex: 1, justifyContent: 'flex-end', paddingTop: insets.top + 12, backgroundColor: theme.questTheme.colors.overlay }}>
         <Pressable accessibilityLabel={closeLabel} onPress={onClose} style={StyleSheet.absoluteFill} />
         <View accessibilityViewIsModal style={{ maxHeight: '94%', width: '100%', maxWidth: 680, alignSelf: 'center', backgroundColor: theme.questTheme.colors.surfaceElevated, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: Math.max(insets.bottom, 12), overflow: 'hidden' }}>

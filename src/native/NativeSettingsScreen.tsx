@@ -44,6 +44,7 @@ export default function NativeSettingsScreen({navigation}:{navigation:any}) {
         {text(c(lang,'calendarPurpose'))}
         {text(c(lang,state.calendar.connected?'granted':permission))}
         <NativeAction label={c(lang,'connect')} busy={busy==='calendar'} onPress={()=>void run('calendar',refreshCalendars)}/>
+        {permission==='granted'&&!busy&&!calendars.length?text(c(lang,'noCalendars')):null}
         {calendars.map(row=><View key={row.id} style={{gap:8}}>
           <NativeAction label={row.title} selected={state.calendar.selectedIds.includes(row.id)} disabled={!!busy} onPress={()=>void run('calendar',()=>{const ids=state.calendar.selectedIds.includes(row.id)?state.calendar.selectedIds.filter(id=>id!==row.id):[...state.calendar.selectedIds,row.id];return calendarSource.sync(ids,...range());})}/>
           {row.writable?<NativeAction label={`${c(lang,'createEvent')} · ${row.title}`} onPress={()=>{const start=new Date();const end=new Date(start.getTime()+30*60000);setEditor({calendarId:row.id,initial:{title:'',startAt:start.toISOString(),endAt:end.toISOString()}});}}/>:null}

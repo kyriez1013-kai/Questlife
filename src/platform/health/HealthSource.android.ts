@@ -31,7 +31,8 @@ export function createHealthSource(repo: DeviceRepository): HealthSource {
               const id = record.metadata?.id; if(!id) continue;
               const startAt = 'startTime' in record ? record.startTime : record.time;
               const endAt = 'endTime' in record ? record.endTime : startAt;
-              const base: Omit<RawHealthSample,'unit'> = {metric,externalId:id,startAt,endAt,availableAt:end,platform:'health_connect',app:record.metadata?.dataOrigin,device:record.metadata?.device?.model,method:record.metadata?.recordingMethod === 2 ? 'automatic' : record.metadata?.recordingMethod === 3 ? 'manual' : 'unknown',timezoneOffset:'zoneOffset' in record ? record.zoneOffset?.totalSeconds == null ? undefined : record.zoneOffset.totalSeconds / 60 : undefined,measurementMethod:metric === 'hrv' ? 'rmssd' : undefined};
+              const zone='startZoneOffset' in record?record.startZoneOffset:'zoneOffset' in record?record.zoneOffset:undefined;
+              const base: Omit<RawHealthSample,'unit'> = {metric,externalId:id,startAt,endAt,availableAt:new Date().toISOString(),platform:'health_connect',app:record.metadata?.dataOrigin,device:record.metadata?.device?.model,method:record.metadata?.recordingMethod === 2 ? 'automatic' : record.metadata?.recordingMethod === 3 ? 'manual' : 'unknown',timezoneOffset:zone?.totalSeconds==null?undefined:zone.totalSeconds/60,measurementMethod:metric === 'hrv' ? 'rmssd' : undefined};
               const add = (value:number|undefined,unit:string,extra:Partial<RawHealthSample>={}) => { const row=normalizeHealthSample({...base,value,unit,...extra}); if(row)observations.push(row); };
               switch(record.recordType) {
                 case 'Steps': add(record.count,'count'); break;

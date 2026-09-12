@@ -14,7 +14,7 @@ export default function NativeCalendarEditor({initial,lang,onSave,onClose}:{init
   const save=async()=>{setBusy(true);setError(false);try{await onSave({title,startAt:start.toISOString(),endAt:end.toISOString(),allDay:initial.allDay});onClose();}catch{setError(true);}finally{setBusy(false);}};
   return <Modal animationType="none" onRequestClose={onClose}>
     <SafeAreaView style={{flex:1,backgroundColor:f.environment.canvas}}>
-      <KeyboardAvoidingView style={{flex:1}} behavior={Platform.OS==='ios'?'padding':undefined}>
+      <KeyboardAvoidingView style={{flex:1}} behavior="padding">
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:20,gap:16}}>
           <Text accessibilityRole="header" style={{fontSize:22,color:f.text.primary}}>{c(lang,'createEvent')}</Text>
           <TextInput accessibilityLabel={c(lang,'title')} placeholder={c(lang,'title')} placeholderTextColor={f.text.metadata} value={title} onChangeText={setTitle} style={{minHeight:48,color:f.text.primary,backgroundColor:f.material.elevated,padding:12,borderRadius:8,fontSize:16}}/>

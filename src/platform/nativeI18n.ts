@@ -5,6 +5,7 @@ const copy = {
   lastSync:['最近同步','Last sync'], imported:['已导入','Imported'], metrics:['读取指标','Read metrics'], unavailable:['当前平台不可用','Unavailable on this platform'],
   healthPurpose:['读取你选择的睡眠、步数、心率、静息心率、HRV、训练、活动能量和距离。源记录保存在本机，不发送到分析追踪服务。断开后停止读取，已有记录保留；可在系统设置撤销权限。','Read selected sleep, steps, heart rate, resting heart rate, HRV, workouts, active energy and distance. Source records stay on this device, never in analytics. Disconnect stops reads and retains records; revoke permissions in system settings.'],
   calendarPurpose:['读取固定安排，只修改你明确通过 QuestLife 创建的事件。不会自动调整系统日历。','Read commitments; only edit events explicitly created with QuestLife. No automatic calendar changes.'],
+  noCalendars:['此设备暂无可用日历。请先在系统日历中添加日历账户。','No calendars are available on this device. Add a calendar account in the system calendar first.'],
   permissions:['权限','Permissions'], granted:['已授权','Granted'], denied:['未授权','Denied'], partial:['部分授权','Partial access'], read_access_unknown:['已请求，系统不公开读取授权结果','Requested; the OS does not disclose read access'], not_requested:['未请求','Not requested'], notConnected:['未连接','Not connected'],
   preferences:['偏好设置','Preferences'], appearance:['外观','Appearance'], privacy:['数据与隐私','Data & Privacy'], about:['关于','About'],
   syncError:['读取失败，保留已有数据。检查系统权限后重试。','Read failed; existing data is retained. Check system permissions and retry.'],

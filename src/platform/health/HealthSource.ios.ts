@@ -24,7 +24,7 @@ export function createHealthSource(repo: DeviceRepository): HealthSource {
       const observations: HealthObservationV1[] = []; const completedMetrics: HealthMetric[] = []; const limitations: string[] = ['HEALTHKIT_READ_ACCESS_UNDISCLOSED'];
       const options = { limit:0, ascending:true, filter:{date:{startDate:new Date(start),endDate:new Date(end)}} };
       const add = (sample: {uuid:string; startDate:Date; endDate:Date; sourceRevision?:{source:{bundleIdentifier:string};productType?:string}}, metric: HealthMetric, value: number, unit: string) => {
-        const raw: RawHealthSample = {metric,value,unit,externalId:sample.uuid,startAt:sample.startDate.toISOString(),endAt:sample.endDate.toISOString(),availableAt:end,platform:'healthkit',app:sample.sourceRevision?.source.bundleIdentifier,device:sample.sourceRevision?.productType,method:'unknown',measurementMethod:metric === 'hrv' ? 'sdnn' : undefined};
+        const raw: RawHealthSample = {metric,value,unit,externalId:sample.uuid,startAt:sample.startDate.toISOString(),endAt:sample.endDate.toISOString(),availableAt:new Date().toISOString(),platform:'healthkit',app:sample.sourceRevision?.source.bundleIdentifier,device:sample.sourceRevision?.productType,method:'unknown',measurementMethod:metric === 'hrv' ? 'sdnn' : undefined};
         const row = normalizeHealthSample(raw); if(row) observations.push(row);
       };
       for (const metric of metrics) {

@@ -363,7 +363,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }), []);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
+    if (typeof window === 'undefined' || typeof window.addEventListener !== 'function') return undefined;
     const handleStorage = (event: StorageEvent) => {
       if (event.key !== 'questlife.v1' || !event.newValue || !loadedRef.current) return;
       try {
