@@ -1,5 +1,39 @@
 # QuestLife Project Status
 
+## 2026-09-12 - Canonical V1 Native Foundation
+
+Branch: `release/questlife-v1`, base `9caf720`. Main and previous worktrees remain
+unchanged. Canonical Today, Capture, Store, Quant contracts and decision/schedule
+domain logic are retained; rejected later presentation branches are excluded.
+
+Phase 0 convergence is implemented. Phase 1 is **NOT COMPLETE**: Android native
+debug compilation, emulator launch, five-tab navigation, Capture keyboard,
+Direct Log save/restart/delete/restart and local notification scheduling/cancel
+passed. iOS native compilation is **BLOCKED by missing full Xcode**. Physical
+iPhone/Android Health, Calendar CRUD, notifications and performance acceptance
+remain unverified. iOS Hermes export is not a native compile.
+
+Native modules, typed Health/Calendar/Notification services, local provenance
+storage, incremental source sync, quick suggestions and local chart bridge are
+implemented. No owner observation was fabricated. The isolated emulator's one
+QA ExecutionLog and scheduled reminder were removed through normal handlers.
+
+Validation: TypeScript and web export passed; 59 targeted native tests passed;
+13 decision regression scripts and four Insights suites plus feature selection
+passed. Code HEAD: `6511d05`. Web bundle:
+`index-743030b663af2c5cf3960fbc8ce09b30.js`, output `dist`.
+Software-rendered emulator scrolling is visibly slow and is not a performance
+pass. Full evidence, commit list, limitations and exact human prerequisites:
+[Native Foundation Report](docs/release/QUESTLIFE_NATIVE_FOUNDATION_REPORT.md).
+
+No push, main merge, Production deployment or next phase. After this phase's
+remaining native/device gates: Identity/Sync and deep device integration only.
+
+## Historical Status Below
+
+The following dated entries describe earlier work, including the old pre-Git
+baseline note. They do not override the current branch/build status above.
+
 Updated: 2026-07-24
 
 ## Current Version State

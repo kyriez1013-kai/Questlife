@@ -48,7 +48,7 @@ Historical preview success is not native/device verification or visual approval.
 ## Single destination ownership
 
 Web retains its current product destination, not a newly selected rejected UI.
-Native resolves `App.native.tsx`: Today = existing `HomeScreen` orchestration
+Native resolves `App.tsx` -> `src/native/NativeApp.tsx`: Today = existing `HomeScreen` orchestration
 with native V11 adapters; Goals = existing Goal stack; Schedule = existing
 Schedule screen plus separately owned external commitments; Insights = native
 Quant artifact consumer and platform chart; Settings = existing controls with

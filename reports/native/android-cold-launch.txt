@@ -1,0 +1,7 @@
+Starting: Intent { act=android.intent.action.VIEW dat=exp+questlife://expo-development-client/... pkg=com.kyrie.questlife }
+Status: ok
+LaunchState: COLD
+Activity: com.kyrie.questlife/.MainActivity
+TotalTime: 4310
+WaitTime: 4360
+Complete
