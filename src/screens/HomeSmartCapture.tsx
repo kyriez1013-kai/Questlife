@@ -14,6 +14,10 @@
  */
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { apiUrl } from '../platform/apiUrl';
+import { captureLayout, nativeCapture } from '../platform/captureLayout';
+import QuickCaptureSuggestions from '../platform/QuickCaptureSuggestions';
+import { quickCaptureDraft, type QuickCaptureSuggestion } from '../platform/quickCapture';
 import {
   View, Text, TouchableOpacity, ActivityIndicator, Platform, StyleSheet,
 } from 'react-native';
@@ -77,7 +81,7 @@ function todayStr() {
 // ── Parse helper (client → /api/parse) ─────────────────────────────────────
 
 async function callParseAPI(body: object): Promise<any> {
-  const res = await fetch('/api/parse', {
+  const res = await fetch(apiUrl('/api/parse'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -546,6 +550,16 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
     triggerParse(capture.id, text);
   }, [addRawCapture, isPosting, triggerParse]);
 
+  const handleNativeSuggestion = useCallback((suggestion: QuickCaptureSuggestion) => {
+    if (isPosting) return;
+    const parsed = quickCaptureDraft(data, suggestion);
+    if (!parsed) return;
+    const capture = addRawCapture(suggestion.label);
+    startCaptureFriction(capture.id, 'recent');
+    // An explicit entity choice is already structured; no parser request or measured defaults.
+    updateRawCapture(capture.id, { parseStatus: 'done', parsed });
+  }, [data, isPosting, addRawCapture, updateRawCapture]);
+
   // ── Retry handler ─────────────────────────────────────────────────────────
 
   const handleRetry = useCallback((captureId: string) => {
@@ -643,8 +657,8 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
 
   const composer = v11TodayEnabled ? (
     <WebView dataSet={{ 'v11-rebaseline-role': 'capture-composer-form' }}>
-      <WebView dataSet={{ 'v11-rebaseline-role': 'capture-composer-row' }}>
-        <WebView dataSet={{ 'v11-rebaseline-role': 'capture-input-slot' }}>
+      <WebView style={captureLayout.row} dataSet={{ 'v11-rebaseline-role': 'capture-composer-row' }}>
+        <WebView style={captureLayout.input} dataSet={{ 'v11-rebaseline-role': 'capture-input-slot' }}>
           <V11TextField
             accessibilityHint={greeting || undefined}
             accessibilityLabel={t(lang, 'scPlaceholder')}
@@ -680,7 +694,7 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
             value={inputText}
           />
         </WebView>
-        <WebView dataSet={{ 'v11-rebaseline-role': 'capture-action-slot' }}>
+        <WebView style={captureLayout.action} dataSet={{ 'v11-rebaseline-role': 'capture-action-slot' }}>
           <V11ComposerAction
             disabled={isPosting || !inputText.trim()}
             label={t(lang, 'scSend')}
@@ -693,7 +707,8 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
           </V11ComposerAction>
         </WebView>
       </WebView>
-      {recentActivities.length > 0 && !latestCaptureNeedsAttention ? (
+      <QuickCaptureSuggestions onSelect={handleNativeSuggestion} />
+      {!nativeCapture && recentActivities.length > 0 && !latestCaptureNeedsAttention ? (
         <WebView dataSet={{ 'universal-capture-role': 'recent-path' }}>
           <Text style={{ color: v11Theme.text.secondary, fontSize: 12 }}>
             {t(lang, 'universalCaptureRecent')}
