@@ -35,7 +35,7 @@ import {
 } from './personalTerminalPresentation';
 import { resolvePersonalTerminalDisplayChange } from './personalTerminalValueMath';
 import { personalTerminalPreferenceNamespace } from './personalTerminalWorkspace';
-import './personal-terminal.css';
+import './personal-terminal.styles';
 
 const WebView = View as any;
 const WebPressable = Pressable as any;

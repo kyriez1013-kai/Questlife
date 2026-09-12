@@ -21,7 +21,7 @@ import {
   publishV11SheetGeometryDebug,
 } from './v11SheetGeometry';
 import { observeV11SheetControlDescendants, scheduleV11SheetControlAudit } from '../v11/sheetControlAudit';
-import './v11-stage2-rebaseline.css';
+import './v11-stage2-rebaseline.styles';
 
 const WebView = View as any;
 const WebPressable = Pressable as any;

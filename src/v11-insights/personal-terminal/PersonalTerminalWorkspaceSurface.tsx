@@ -73,7 +73,7 @@ import {
   togglePinnedItem,
   writePersonalTerminalPreferences,
 } from './personalTerminalWorkspace';
-import './personal-terminal-workspace.css';
+import './personal-terminal-workspace.styles';
 
 const WebView = View as any;
 const WebPressable = Pressable as any;

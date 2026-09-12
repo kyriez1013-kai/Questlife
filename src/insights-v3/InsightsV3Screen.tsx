@@ -79,7 +79,7 @@ import {
   writeInsightsV3Watchlist,
   type InsightsV3WatchlistPreferences,
 } from './insightsV3WatchlistPreferences';
-import './insights-v3.css';
+import './insights-v3.styles';
 
 const WebView = View as any;
 const WebPressable = Pressable as any;

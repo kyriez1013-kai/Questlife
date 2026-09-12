@@ -13,7 +13,7 @@ import {
   V11TextField,
 } from '../v11/components/V11SheetControls';
 import { getV11ThemeTokens, V11ThemeTokens, v11Spacing, v11Typography } from '../v11/tokens';
-import './v11-stage2-rebaseline.css';
+import './v11-stage2-rebaseline.styles';
 
 const WebView = View as any;
 

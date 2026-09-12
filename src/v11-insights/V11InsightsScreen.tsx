@@ -80,8 +80,8 @@ import {
   V11EvidenceStageMarker,
   V11TrendCanvas,
 } from './V11InsightsVisuals';
-import '../v11/v11-components.css';
-import './v11-insights.css';
+import '../v11/v11-components.styles';
+import './v11-insights.styles';
 
 const WebView = View as any;
 const WebPressable = Pressable as any;

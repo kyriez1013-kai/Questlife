@@ -5,7 +5,7 @@ import { V11InlineButton, V11SheetButton } from '../../v11/components/V11SheetCo
 import useV11ReducedMotion from '../../v11/useV11ReducedMotion';
 import V11RebaselineIcon from '../../v11-stage2-rebaseline/V11RebaselineIcon';
 import V11Stage2ProductionSheet from '../../v11-stage2-rebaseline/V11Stage2ProductionSheet';
-import '../../v11-stage2-rebaseline/v11-stage2-rebaseline.css';
+import '../../v11-stage2-rebaseline/v11-stage2-rebaseline.styles';
 
 const WebView = View as any;
 const WebPressable = Pressable as any;

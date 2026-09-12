@@ -14,8 +14,8 @@ import {
 import V11GlowOrb from '../v11/components/V11GlowOrb';
 import { V11Pill } from '../v11/components/V11Material';
 import useV11ReducedMotion from '../v11/useV11ReducedMotion';
-import '../v11/v11-components.css';
-import './v11-stage2-rebaseline.css';
+import '../v11/v11-components.styles';
+import './v11-stage2-rebaseline.styles';
 import {
   buildRebaselineFixture,
   type RebaselineExecutionRow,

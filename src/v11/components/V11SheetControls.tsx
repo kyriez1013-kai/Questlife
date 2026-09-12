@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import type { V11ThemeTokens } from '../tokens';
 import { v11Radius, v11Spacing, v11Typography } from '../tokens';
-import '../../v11-stage2-rebaseline/v11-stage2-rebaseline.css';
+import '../../v11-stage2-rebaseline/v11-stage2-rebaseline.styles';
 
 const WebPressable = Pressable as any;
 const WebText = Text as any;

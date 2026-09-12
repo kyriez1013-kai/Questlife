@@ -25,7 +25,7 @@ import Svg, {
 } from 'react-native-svg';
 import { Lang, t } from '../i18n';
 import { getQuestTheme, QuestTheme } from '../design/tokens';
-import './v11-stage0.css';
+import './v11-stage0.styles';
 
 type EvidenceStage = 'S1' | 'S3';
 type Stage0Theme = 'deepWork' | 'cleanFocus';

@@ -28,8 +28,8 @@ import {
   v11Typography,
 } from '../v11/tokens';
 import useV11ReducedMotion from '../v11/useV11ReducedMotion';
-import '../v11/v11-components.css';
-import './v11-stage1.css';
+import '../v11/v11-components.styles';
+import './v11-stage1.styles';
 
 const WebView = View as any;
 const WebPressable = Pressable as any;

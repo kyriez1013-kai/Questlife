@@ -16,8 +16,8 @@ import {
 import V11GlowOrb from '../v11/components/V11GlowOrb';
 import { V11Pill } from '../v11/components/V11Material';
 import { V11IntervalRange } from '../v11/components/V11MicroInstruments';
-import '../v11/v11-components.css';
-import './v11-today.css';
+import '../v11/v11-components.styles';
+import './v11-today.styles';
 
 const WebView = View as any;
 const WebPressable = Pressable as any;

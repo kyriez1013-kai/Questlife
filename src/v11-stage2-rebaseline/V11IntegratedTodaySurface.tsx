@@ -15,7 +15,7 @@ import {
 import V11GlowOrb from '../v11/components/V11GlowOrb';
 import { V11Pill } from '../v11/components/V11Material';
 import V11RebaselineIcon from './V11RebaselineIcon';
-import './v11-stage2-rebaseline.css';
+import './v11-stage2-rebaseline.styles';
 
 const WebView = View as any;
 const WebPressable = Pressable as any;

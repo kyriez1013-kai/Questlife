@@ -43,7 +43,7 @@ import {
   getAdaptiveDecisionTelemetry,
   recordAdaptiveDecisionTelemetry,
 } from './telemetry';
-import './adaptive-decision-loop.css';
+import './adaptive-decision-loop.styles';
 
 function createAdaptiveWebComponent(Component: any) {
   return function AdaptiveWebComponent({ uiClass, dataSet, ...props }: any) {

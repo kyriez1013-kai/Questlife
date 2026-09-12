@@ -21,7 +21,7 @@ import AdaptiveDecisionEvidenceSheet from './AdaptiveDecisionEvidenceSheet';
 import type { DecisionEpisodeV1 } from './decisionEpisode';
 import { buildDecisionSurfacePresentation } from './decisionSurfacePresentation';
 import { adaptiveText } from './presentation';
-import './adaptive-decision-surface.css';
+import './adaptive-decision-surface.styles';
 
 function createAdaptiveWebComponent(Component: any) {
   return function AdaptiveWebComponent({ uiClass, dataSet, ...props }: any) {

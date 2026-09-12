@@ -18,7 +18,7 @@ import type {
   QuantTerminalSignal,
 } from './quantTerminalPresentation';
 import V11QuantTerminalInspector, { type QuantInspectorSelection } from './V11QuantTerminalInspector';
-import './quant-terminal.css';
+import './quant-terminal.styles';
 
 const WebView = View as any;
 const WebPressable = Pressable as any;
