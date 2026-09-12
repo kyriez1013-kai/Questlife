@@ -1,0 +1,17 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {parseQuantProductBundleV1} from '../../src/quant-product/quantProductContract';
+import {adaptQuantProductBundleV1} from '../../src/quant-product/quantProductV1Adapter';
+import {chartWireModel,parseChartEvent,type QuestLifeChartModelV1} from '../../src/platform/charts/contract';
+import {selectSeriesPoints,selectSeriesCandles} from '../../src/insights-v3/insightsV3Presentation';
+const parsed=parseQuantProductBundleV1(JSON.parse(readFileSync('src/quant-product/fixtures/mature_market_full.json','utf8')));
+if(!parsed.ok)throw new Error('fixture_invalid');
+const bundle=adaptQuantProductBundleV1(parsed.bundle);const instrument=bundle.instruments.find(i=>i.series.length)!;const series=instrument.series[0];
+const foundation={environment:{canvas:'#101113'},text:{secondary:'#c4c5c6'},data:{observed:'#eeeeee',comparison:'#c0c0c0'},border:{subtle:'#202123'}} as QuestLifeChartModelV1['presentation']['foundation'];
+const model:QuestLifeChartModelV1={version:1,presentation:{series,asOf:bundle.asOf,range:{kind:'contract',key:series.default_range_key??series.supported_ranges[0].key},chartKind:'line',foundation,lang:'en',targetLabel:'TEST_ONLY',showEvents:false,showRawObservations:true,showReference:false,showReferenceRange:false}};
+test('native chart preserves existing selected observations exactly',()=>assert.deepEqual(chartWireModel(model).points.map(p=>p.value),selectSeriesPoints(series,model.presentation.range,bundle.asOf).filter(p=>p.value!=null).map(p=>p.value)));
+test('native candles are artifact values, not frontend OHLC',()=>assert.deepEqual(chartWireModel(model).candles.map(({time,...values})=>values),selectSeriesCandles(series,model.presentation.range).map(({open,high,low,close})=>({open,high,low,close}))));
+test('native chart hides reference when not requested',()=>assert.deepEqual(chartWireModel(model).reference,{value:null,low:null,high:null}));
+test('chart event rejects malformed and nonfinite data',()=>{assert.equal(parseChartEvent('{'),null);assert.equal(parseChartEvent('{"type":"selection","time":null,"value":1}'),null);assert.equal(parseChartEvent('{"type":"writeStore"}'),null);});
+test('chart ready and selection are read-only typed messages',()=>{assert.equal(parseChartEvent('{"type":"ready","durationMs":12}')?.type,'ready');assert.deepEqual(parseChartEvent('{"type":"selection","time":123,"value":null}'),{type:'selection',time:123,value:null});});
