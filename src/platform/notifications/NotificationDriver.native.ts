@@ -4,6 +4,8 @@ import type { NotificationDriver } from './NotificationService';
 import { parseNotificationIntent } from './NotificationService';
 import { nativeCopy } from '../nativeI18n';
 
+N.setNotificationHandler({handleNotification:async()=>({shouldShowBanner:true,shouldShowList:true,shouldPlaySound:false,shouldSetBadge:false})});
+
 export function createNotificationDriver(lang: 'zh'|'en'):NotificationDriver {
   return {
     permission: async request=>{
@@ -17,7 +19,7 @@ export function createNotificationDriver(lang: 'zh'|'en'):NotificationDriver {
       ]);
       return p.granted ? 'granted' : p.status === 'undetermined' ? 'not_requested' : 'denied';
     },
-    schedule: r=>N.scheduleNotificationAsync({identifier:r.id,content:{title:r.title,body:r.body,categoryIdentifier:r.kind === 'accepted_block' ? 'questlife-block' : undefined,data:{source:'questlife',kind:r.kind,entityId:r.entityId}},trigger:{type:N.SchedulableTriggerInputTypes.DATE,date:new Date(r.at),channelId:'questlife'}}),
+    schedule: r=>N.scheduleNotificationAsync({identifier:r.id,content:{title:r.title,body:r.body,categoryIdentifier:r.kind === 'accepted_block' ? 'questlife-block' : undefined,data:{source:'questlife',kind:r.kind,entityId:r.entityId}},trigger:r.daily?{type:N.SchedulableTriggerInputTypes.DAILY,hour:r.daily.hour,minute:r.daily.minute,channelId:'questlife'}:{type:N.SchedulableTriggerInputTypes.DATE,date:new Date(r.at),channelId:'questlife'}}),
     cancel:id=>N.cancelScheduledNotificationAsync(id),
     subscribe:listener=>{
       const seen = new Set<string>();

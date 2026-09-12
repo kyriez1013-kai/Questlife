@@ -15,6 +15,7 @@ export type HealthObservationV1 = {
 export type SourceSyncStatus = {
   connected: boolean; permission: PermissionState; lastSyncedAt?: string;
   imported: number; enabledMetrics: HealthMetric[]; error?: string;
+  connectionRevision?: number;
 };
 export type HealthReadResult = { observations: HealthObservationV1[]; completedMetrics: HealthMetric[]; limitations: string[] };
 export interface HealthSource {
@@ -40,8 +41,8 @@ export interface CalendarSource {
   open(record: ExternalCommitment): Promise<void>;
 }
 export type QuickAction = 'START' | 'DONE' | 'SNOOZE' | 'SKIP' | 'OPEN';
-export type NotificationKind = 'accepted_block' | 'decision_followup' | 'morning_state' | 'end_of_day';
-export type NotificationRequest = { id: string; kind: NotificationKind; at: string; title: string; body: string; entityId?: string };
+export type NotificationKind = 'accepted_block' | 'decision_followup' | 'morning_state' | 'end_of_day' | 'skill_reminder';
+export type NotificationRequest = { id: string; kind: NotificationKind; at: string; title: string; body: string; entityId?: string; daily?: {hour: number; minute: number} };
 export type QuickActionIntent = { action: QuickAction; kind: NotificationKind; entityId?: string; notificationId: string };
 export interface NotificationService {
   permission(): Promise<PermissionState>; requestPermission(): Promise<PermissionState>;

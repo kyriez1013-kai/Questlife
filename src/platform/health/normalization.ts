@@ -33,7 +33,12 @@ export function normalizeHealthSample(raw: RawHealthSample): HealthObservationV1
 }
 export function mergeHealthObservations(current: HealthObservationV1[], incoming: HealthObservationV1[]) {
   const merged = new Map(current.map(row => [row.id,row]));
-  incoming.forEach(row => merged.set(row.id, row));
+  incoming.forEach(row => {
+    const prior=merged.get(row.id);
+    const same=prior && ['metric','value','unit','eventStartAt','eventEndAt','sourceApp','sourceDevice','recordingMethod','measurementMethod'].every(key=>prior[key as keyof HealthObservationV1]===row[key as keyof HealthObservationV1]);
+    // Re-reading an unchanged source must not move its first available time forward.
+    merged.set(row.id,same?prior:row);
+  });
   return [...merged.values()].sort((a,b) => a.eventStartAt.localeCompare(b.eventStartAt) || a.id.localeCompare(b.id));
 }
 export function healthContextView(rows: HealthObservationV1[]): ContextLog[] {

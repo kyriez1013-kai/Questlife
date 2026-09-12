@@ -9,6 +9,7 @@
 // 庆祝动效:
 //   提交记录时若某技能"今日累计"首次跨过 100% 目标线, 屏幕中央弹一个 1.5s 浮层.
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { useQuickActions } from '../platform/notifications/useQuickActions';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert,
   Animated, Easing, Keyboard, Modal, Platform,
@@ -504,6 +505,7 @@ export default function HomeScreen() {
     applyDecisionSchedulePatch,
     undoDecisionSchedulePatch,
     updateDecisionResultFeedback,
+    updateScheduleBlock,
   } = useStore();
   const navigation = useNavigation<any>();
   const questTheme = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
@@ -2252,6 +2254,29 @@ export default function HomeScreen() {
     startSession,
     todayScheduleBlocks,
   ]);
+
+  useQuickActions((intent) => {
+    if (intent.kind === 'skill_reminder') {
+      const skill = data.skills.find(item => item.id === intent.entityId);
+      if (skill) openModal(skill.id);
+      return;
+    }
+    if (intent.kind === 'morning_state') { openV11State(); return; }
+    if (intent.kind === 'end_of_day') { setV11ActivityHistoryOpen(true); return; }
+    if (intent.kind === 'decision_followup') { setAdaptiveDecisionOpen(true); return; }
+    const block = data.scheduleBlocks.find(item => item.id === intent.entityId);
+    if (!block || block.status === 'completed' || block.status === 'skipped') return;
+    if (intent.action === 'SKIP') {
+      Alert.alert(t(lang, 'skip'), block.title, [{text:t(lang,'cancel'),style:'cancel'}, {text:t(lang,'skip'),onPress:()=>updateScheduleBlock(block.id,{status:'skipped'})}]);
+      return;
+    }
+    if (intent.action === 'START' && !activeSession) {
+      startSession({linkedScheduleBlockId:block.id,linkedSkillId:block.linkedSkillId,linkedGoalId:block.linkedGoalId,title:block.title,taskType:block.taskType});
+      return;
+    }
+    if (intent.action === 'DONE' && activeSession?.linkedScheduleBlockId === block.id) { finishSession(); return; }
+    openModal(block.linkedSkillId, {logType:'schedule',source:'schedule_block',scheduleBlockId:block.id,title:block.title});
+  });
 
   const instantDecisionSourceLabel = instantDecisionStatus === 'ready'
     ? t(lang, 'decisionSourceAI')

@@ -29,9 +29,13 @@ export class CalendarService implements CalendarSource {
     return [...new Map(mapped.map(row => [row.id,row])).values()];
   }
   async sync(ids: string[], start: string, end: string) {
+    const before=await this.repo.read();
     const events = await this.readEvents(ids,start,end);
-    await this.repo.update(data => ({ ...data, calendar: { ...data.calendar, connected: true, selectedIds: ids, events, lastSyncedAt: this.now(), error: undefined } }));
+    await this.repo.update(data => data.calendar.connectionRevision!==before.calendar.connectionRevision ? data : ({ ...data, calendar: { ...data.calendar, connected: true, selectedIds: ids, events, lastSyncedAt: this.now(), error: undefined } }));
     return events;
+  }
+  async disconnect() {
+    await this.repo.update(data=>({...data,calendar:{...data.calendar,connectionRevision:(data.calendar.connectionRevision??0)+1,connected:false,events:[]}}));
   }
   private async writable(calendarId: string) {
     if (!(await this.listCalendars()).some(row => row.id === calendarId && row.writable)) throw new Error('calendar_not_writable');

@@ -4,7 +4,7 @@ export const DEVICE_DATA_KEY = 'questlife_device_sources_v1';
 export type DeviceData = {
   version: 1; observations: HealthObservationV1[];
   health: SourceSyncStatus;
-  calendar: { connected: boolean; lastSyncedAt?: string; selectedIds: string[]; events: ExternalCommitment[]; ownedIds: string[]; error?: string };
+  calendar: { connected: boolean; connectionRevision?: number; lastSyncedAt?: string; selectedIds: string[]; events: ExternalCommitment[]; ownedIds: string[]; error?: string };
   notificationsEnabled: boolean;
   reminderKinds?: Partial<Record<import('./contracts').NotificationKind, boolean>>;
   scheduledNotificationIds?: string[];
