@@ -39,6 +39,8 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+/dist-native
+/reports/native/build-output
 .vercel
 .env*
 .env
