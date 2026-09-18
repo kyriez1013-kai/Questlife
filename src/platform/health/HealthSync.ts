@@ -22,16 +22,24 @@ export class HealthSync {
     const end = this.now().toISOString();
     // One day overlap catches late writes without rereading all historical data.
     const days = 86400000;
-    const start = new Date(!resyncSevenDays && before.health.lastSyncedAt ? Date.parse(before.health.lastSyncedAt) - days : Date.parse(end) - 7 * days).toISOString();
     try {
-      const batch = await this.source.readSince(start,end,before.health.enabledMetrics);
+      const batch = { observations: [] as import('../contracts').HealthObservationV1[], completedMetrics: [] as HealthMetric[], limitations: [] as string[] };
+      for (const metric of before.health.enabledMetrics) {
+        const checkpoint = before.health.metricCheckpoints?.[metric];
+        const start = new Date(!resyncSevenDays && checkpoint ? Date.parse(checkpoint) - days : Date.parse(end) - 7 * days).toISOString();
+        const result = await this.source.readSince(start,end,[metric]);
+        batch.observations.push(...result.observations); batch.completedMetrics.push(...result.completedMetrics);
+        batch.limitations.push(...result.limitations);
+      }
       let imported = 0;
       await this.repo.update(current => {
         if (!current.health.connected || current.health.connectionRevision!==before.health.connectionRevision) return current;
         const observations = mergeHealthObservations(current.observations, batch.observations);
         imported = observations.length - current.observations.length;
         const complete = before.health.enabledMetrics.every(metric => batch.completedMetrics.includes(metric));
-        return { ...current, observations, health: { ...current.health, imported: observations.length, lastSyncedAt: complete ? end : current.health.lastSyncedAt, permission: complete ? current.health.permission : 'partial', error: complete ? undefined : 'health_partial_read_retry_required' } };
+        const metricCheckpoints = { ...current.health.metricCheckpoints };
+        batch.completedMetrics.forEach(metric => { metricCheckpoints[metric] = end; });
+        return { ...current, observations, health: { ...current.health, metricCheckpoints, imported: observations.length, lastSyncedAt: complete ? end : current.health.lastSyncedAt, permission: complete ? current.health.permission : 'partial', error: complete ? undefined : 'health_partial_read_retry_required' } };
       });
       return imported;
     } catch {

@@ -6,7 +6,7 @@ export const HEALTH_METRICS: readonly HealthMetric[] = ['sleep','steps','heart_r
 export type HealthObservationV1 = {
   schemaVersion: 'questlife.health.observation.v1';
   id: string; metric: HealthMetric; value: number; unit: 'min' | 'count' | 'bpm' | 'ms' | 'kcal' | 'm';
-  eventStartAt: string; eventEndAt: string; availableAt: string; timezoneOffset: number | null;
+  eventStartAt: string; eventEndAt: string; availableAt: string; importedAt: string; timezoneOffset: number | null;
   sourcePlatform: 'healthkit' | 'health_connect'; sourceApp?: string; sourceDevice?: string;
   recordingMethod: 'automatic' | 'manual' | 'unknown'; externalId: string;
   measurementMethod?: 'sdnn' | 'rmssd'; provenance: DataRecordProvenance;
@@ -16,6 +16,7 @@ export type SourceSyncStatus = {
   connected: boolean; permission: PermissionState; lastSyncedAt?: string;
   imported: number; enabledMetrics: HealthMetric[]; error?: string;
   connectionRevision?: number;
+  metricCheckpoints?: Partial<Record<HealthMetric, string>>;
 };
 export type HealthReadResult = { observations: HealthObservationV1[]; completedMetrics: HealthMetric[]; limitations: string[] };
 export interface HealthSource {
@@ -29,7 +30,11 @@ export type ExternalCommitment = {
   id: string; externalEventId: string; calendarId: string; source: 'system_calendar';
   title: string; startAt: string; endAt: string; allDay: boolean;
   ownership: 'external' | 'questlife'; lastSyncedAt: string;
+  provider?: string; platform?: string; availability?: 'busy' | 'free' | 'unknown';
+  lastObservedAt?: string; providerEventId?: string; providerCalendarId?: string;
+  linkedScheduleBlockId?: string;
 };
+export type ExternalCommitmentV1 = ExternalCommitment;
 export type CalendarDraft = { title: string; startAt: string; endAt: string; allDay?: boolean };
 export interface CalendarSource {
   isAvailable(): Promise<boolean>; permission(): Promise<PermissionState>; requestPermission(): Promise<PermissionState>;

@@ -1,6 +1,7 @@
 import type { CalendarDraft, CalendarSource, DeviceCalendar, ExternalCommitment, PermissionState } from '../contracts';
 import { DeviceRepository } from '../deviceRepository';
 import type { ScheduleBlock } from '../../types';
+import { uniqueCommitments } from './identity';
 
 export interface CalendarDriver {
   available(): Promise<boolean>; permission(request: boolean): Promise<PermissionState>;
@@ -25,8 +26,8 @@ export class CalendarService implements CalendarSource {
     if (!Number.isFinite(Date.parse(start)) || !Number.isFinite(Date.parse(end)) || Date.parse(end) <= Date.parse(start)) throw new Error('calendar_invalid_range');
     const { calendar } = await this.repo.read();
     const read = await this.driver.read(ids,start,end);
-    const mapped = read.map(row => ({ ...row, ownership: calendar.ownedIds.includes(ownedKey(row.calendarId,row.externalEventId)) ? 'questlife' as const : 'external' as const, lastSyncedAt: this.now() }));
-    return [...new Map(mapped.map(row => [row.id,row])).values()];
+    const mapped = read.map(row => ({ ...row, availability: row.availability ?? 'unknown' as const, ownership: calendar.ownedIds.includes(ownedKey(row.calendarId,row.externalEventId)) ? 'questlife' as const : 'external' as const, lastObservedAt: this.now(), lastSyncedAt: this.now() }));
+    return uniqueCommitments(mapped);
   }
   async sync(ids: string[], start: string, end: string) {
     const before=await this.repo.read();

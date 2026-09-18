@@ -28,7 +28,7 @@ export function normalizeHealthSample(raw: RawHealthSample): HealthObservationV1
   const eventStartAt = new Date(times[0]).toISOString();
   const eventEndAt = new Date(times[1]).toISOString();
   const availableAt = new Date(times[2]).toISOString();
-  return { schemaVersion: 'questlife.health.observation.v1', id, metric: raw.metric, value, unit: units[raw.metric], eventStartAt, eventEndAt, availableAt, timezoneOffset: raw.timezoneOffset ?? null, sourcePlatform: raw.platform, sourceApp: raw.app, sourceDevice: raw.device, recordingMethod: raw.method ?? 'unknown', externalId: raw.externalId, measurementMethod: raw.measurementMethod, quality: 'recorded', limitations,
+  return { schemaVersion: 'questlife.health.observation.v1', id, metric: raw.metric, value, unit: units[raw.metric], eventStartAt, eventEndAt, availableAt, importedAt: availableAt, timezoneOffset: raw.timezoneOffset ?? null, sourcePlatform: raw.platform, sourceApp: raw.app, sourceDevice: raw.device, recordingMethod: raw.method ?? 'unknown', externalId: raw.externalId, measurementMethod: raw.measurementMethod, quality: 'recorded', limitations,
     provenance: buildDataProvenance({ origin: 'PASSIVE_IMPORTED', confirmation: 'NOT_REQUIRED', captureMethod: 'import', recordedAt: availableAt, availableAt, eventStartAt, eventEndAt, protocolVersion: 'questlife.health.v1', instrumentVersion: `${raw.platform}:${raw.metric}:${raw.measurementMethod ?? 'recorded'}`, sourceIds: [id,raw.externalId,...[raw.app,raw.device].filter((x):x is string => !!x)], limitations }) };
 }
 export function mergeHealthObservations(current: HealthObservationV1[], incoming: HealthObservationV1[]) {
