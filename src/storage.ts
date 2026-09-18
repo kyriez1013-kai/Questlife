@@ -250,6 +250,9 @@ function migratePatternMemory(pattern: any): PatternMemory | null {
 export async function loadData(): Promise<AppData> {
   try {
     const raw = await AsyncStorage.getItem(KEY);
+    if (raw && !await AsyncStorage.getItem(`${KEY}.pre-sync-v2-backup`)) {
+      await AsyncStorage.setItem(`${KEY}.pre-sync-v2-backup`, raw);
+    }
     if (!raw) {
       console.log('[persist] no saved data, starting fresh');
       return DEFAULT_DATA;
@@ -491,7 +494,7 @@ export function persist(data: AppData, context: PersistContext = {}): Promise<Ap
     });
   }
 
-  nativePersistQueue = nativePersistQueue.then(async () => {
+  nativePersistQueue = nativePersistQueue.catch(() => DEFAULT_DATA).then(async () => {
     const previousPersisted = parseStoredData(await AsyncStorage.getItem(KEY));
     const committed = commitPersist(data, context, previousPersisted);
     await AsyncStorage.setItem(KEY, JSON.stringify(committed));

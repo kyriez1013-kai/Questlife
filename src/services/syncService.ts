@@ -56,6 +56,8 @@ export function getServerSyncStatus(): SyncStatus {
 }
 
 function isSyncDisabled() {
+  // Legacy anonymous mirror is compatibility-only. Authenticated V2 is separate.
+  if (process.env.EXPO_PUBLIC_LEGACY_MIRROR_ENABLED !== 'true') return true;
   if (typeof window === 'undefined' || typeof document === 'undefined') return !nativeSyncConfigured();
   try {
     return window.localStorage?.getItem(SYNC_DISABLED_KEY) === 'true';

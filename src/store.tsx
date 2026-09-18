@@ -8,6 +8,8 @@ import { scheduleSkillReminder, cancelSkillReminder, rescheduleAllReminders } fr
 import { calculateModuleProgress, calculatePredictionDelta, progressTypeForSkill, skillsForModule } from './progress';
 import { trackEvent } from './utils/analytics';
 import { scheduleServerSync } from './services/syncService';
+import { persistWithSync, startSyncRuntime } from './sync-v2/runtime';
+import { projectAppData } from './sync-v2/projection';
 import { enqueueServerDeletions } from './services/syncDeletionOutbox';
 import { createEffortUnitsFromExecutionLog, generateContributionLinks } from './utils/effort';
 import { DOMAIN_TEMPLATES, createGoalStructureFromTemplate, templateProgressModel } from './domainTemplates';
@@ -302,6 +304,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   // 启动时从 AsyncStorage 读取
   useEffect(() => {
+    let cleanup: (() => void) | undefined;
+    let disposed = false;
     loadData().then((d) => {
       const integrity = validateAppDataIntegrity(d);
       const repaired = integrity.ok ? d : repairAppDataIntegrity(d);
@@ -320,7 +324,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       });
       // 启动后重新排所有技能提醒 (防系统清掉)
       rescheduleAllReminders(repaired.skills).catch((e) => console.warn('[notify] reschedule failed', e));
+      void startSyncRuntime(() => dataRef.current, async changes => {
+        const base = dataRef.current;
+        const next = projectAppData(base, changes);
+        if (next === base) return;
+        const committed = await persist(next, { base, source: 'remote_sync', operation: 'sync_projection' });
+        setData(current => {
+          const merged = reconcileCommittedAppData(base, committed, current);
+          dataRef.current = merged;
+          return merged;
+        });
+      }).then(stop => { if (disposed) stop(); else cleanup = stop; }).catch(() => console.warn('[sync-v2] initialization unavailable'));
     });
+    return () => { disposed = true; cleanup?.(); };
   }, []);
 
   /** 通用 mutation helper: 同时更新 React state 和 AsyncStorage. */
@@ -335,13 +351,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (!shouldPersistStoreMutation(loadedRef.current)) return;
 
     // fire-and-forget; web commit 本身同步, native commit 由 storage queue 串行化.
-    persist(next, {
+    persistWithSync(base, next, source, () => persist(next, {
       base,
       source,
       caller,
       operation: 'mutation',
       hydrationStatus: 'hydrated',
-    }).then((committed) => {
+    })).then((committed) => {
       setData((current) => {
         const reconciled = reconcileCommittedAppData(next, committed, current);
         dataRef.current = reconciled;
@@ -426,7 +442,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         goals: d.goals.filter((g) => !toDelete.has(g.id)),
         actions: d.actions.filter((a) => !a.goalId || !toDelete.has(a.goalId)),
       };
-    });
+    }, 'store.explicit_delete');
   }, [mutate]);
 
   // ───── Category mutations ─────
@@ -589,7 +605,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           childSkillIds.has(s.id) ? { ...s, categoryId: UNCATEGORIZED_ID } : s
         ),
       };
-    });
+    }, 'store.explicit_delete');
   }, [mutate]);
 
   const addModule: Ctx['addModule'] = useCallback((m) => {
@@ -614,7 +630,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       ...d,
       modules: (d.modules || []).filter((m) => m.id !== id),
       moduleSkillLinks: (d.moduleSkillLinks || []).filter((l) => l.moduleId !== id),
-    }));
+    }), 'store.explicit_delete');
   }, [mutate]);
 
   const addModuleSkillLink: Ctx['addModuleSkillLink'] = useCallback((l) => {
@@ -640,7 +656,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     mutate((d) => ({
       ...d,
       moduleSkillLinks: (d.moduleSkillLinks || []).filter((l) => l.id !== id),
-    }));
+    }), 'store.explicit_delete');
   }, [mutate]);
 
   const addSkill: Ctx['addSkill'] = useCallback((s) => {
@@ -738,7 +754,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         )),
         contributionLinks: (d.contributionLinks || []).filter((link) => !(link.targetType === 'skill' && link.targetId === id)),
       };
-    });
+    }, 'store.explicit_delete');
     cancelSkillReminder(id).catch((e) => console.warn('[notify] cancel failed', e));
   }, [mutate]);
 
@@ -774,7 +790,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             : s
         ),
       };
-    });
+    }, 'store.explicit_delete');
   }, [mutate]);
 
   const createExecutionLog: Ctx['createExecutionLog'] = useCallback((logData) => {
@@ -1034,7 +1050,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         effortUnits: derived.effortUnits,
         contributionLinks: derived.contributionLinks,
       };
-    });
+    }, 'store.explicit_delete');
   }, [mutate]);
 
   const getExecutionLogsByDate: Ctx['getExecutionLogsByDate'] = useCallback((date) => (
@@ -1140,7 +1156,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const deleteStateCheckIn: Ctx['deleteStateCheckIn'] = useCallback((id) => {
     if (!(dataRef.current.stateCheckIns || []).some((row) => row.id === id)) return;
     queueExplicitServerDeletions([{ collection: 'stateCheckIns', id }]);
-    mutate((d) => ({ ...d, stateCheckIns: (d.stateCheckIns || []).filter((row) => row.id !== id) }));
+    mutate((d) => ({ ...d, stateCheckIns: (d.stateCheckIns || []).filter((row) => row.id !== id) }), 'store.explicit_delete');
   }, [mutate]);
 
   const getStateCheckInsByDate: Ctx['getStateCheckInsByDate'] = useCallback((date) => (
@@ -1216,7 +1232,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const deleteContextLog: Ctx['deleteContextLog'] = useCallback((id) => {
     if (!(dataRef.current.contextLogs || []).some((log) => log.id === id)) return;
     queueExplicitServerDeletions([{ collection: 'contextLogs', id }]);
-    mutate((d) => ({ ...d, contextLogs: (d.contextLogs || []).filter((log) => log.id !== id) }));
+    mutate((d) => ({ ...d, contextLogs: (d.contextLogs || []).filter((log) => log.id !== id) }), 'store.explicit_delete');
   }, [mutate]);
 
   const addScheduleBlock: Ctx['addScheduleBlock'] = useCallback((b) => {
@@ -1242,7 +1258,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     mutate((d) => ({
       ...d,
       scheduleBlocks: (d.scheduleBlocks || []).filter((b) => b.id !== id),
-    }));
+    }), 'store.explicit_delete');
   }, [mutate]);
 
   const setSettings: Ctx['setSettings'] = useCallback((s) => {
@@ -1450,7 +1466,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         effortUnits: derived.effortUnits,
         contributionLinks: derived.contributionLinks,
       };
-    });
+    }, 'store.explicit_delete');
   }, [mutate]);
 
   const rebuildDerivedData: Ctx['rebuildDerivedData'] = useCallback(() => {
@@ -1544,7 +1560,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     mutate((d) => ({
       ...d,
       decisionResults: (d.decisionResults || []).filter((result) => result.id !== id),
-    }));
+    }), 'store.explicit_delete');
   }, [mutate]);
 
   const mergePatternMemoryCandidates: Ctx['mergePatternMemoryCandidates'] = useCallback((candidates) => {
