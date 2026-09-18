@@ -10,12 +10,20 @@ import { appearanceSettingsChanged, migrateAppearanceSettings } from './design/a
 export const APP_DATA_STORAGE_KEY = 'questlife.v1';
 const KEY = APP_DATA_STORAGE_KEY;
 
+export async function hasSyncAccountBinding(): Promise<boolean> {
+  const raw = await AsyncStorage.getItem('questlife.sync.v2.journal');
+  if (!raw) return false;
+  try { return !!JSON.parse(raw).ownerId; }
+  catch { return true; } // Never repair/reseed data around a corrupt sync journal.
+}
+
 export type PersistContext = {
   base?: AppData;
   source?: string;
   caller?: string;
   operation?: string;
   hydrationStatus?: 'loading' | 'hydrated' | 'unknown';
+  origin?: import('./sync-v2/contracts').Origin;
 };
 
 function parseStoredData(raw: string | null): AppData | undefined {
@@ -258,6 +266,10 @@ export async function loadData(): Promise<AppData> {
       return DEFAULT_DATA;
     }
     const parsed = JSON.parse(raw);
+    // Authenticated V2 projections already passed the registry. Re-running the
+    // legacy orphan/skill/default-module migrations on a partial pull would
+    // manufacture structure and could upload it on the next sign-in.
+    if (await hasSyncAccountBinding()) return { ...DEFAULT_DATA, ...parsed };
     const parsedSettings = parsed.settings && typeof parsed.settings === 'object' && !Array.isArray(parsed.settings)
       ? parsed.settings as Record<string, unknown>
       : {};

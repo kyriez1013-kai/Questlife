@@ -82,6 +82,10 @@ begin
         if eid ~* '(^|:|-)(fixture|synthetic|qa|debug|demo)(:|-|$)'
           or jsonb_path_exists(m->'payload', '$.**.origin ? (@ == "SYNTHETIC" || @ == "QA_TEST" || @ == "DEBUG_FIXTURE" || @ == "QA" || @ == "DEBUG" || @ == "TEST" || @ == "FIXTURE")')
           or jsonb_path_exists(m->'payload', '$.**.syntheticOnly ? (@ == true)')
+          or jsonb_path_exists(m->'payload', '$.**.isFixture ? (@ == true)')
+          or jsonb_path_exists(m->'payload', '$.**.isSynthetic ? (@ == true)')
+          or jsonb_path_exists(m->'payload', '$.**.isQA ? (@ == true)')
+          or jsonb_path_exists(m->'payload', '$.**.debugOnly ? (@ == true)')
           or jsonb_path_exists(m->'payload', '$.**.trigger ? (@ == "debug")')
           or jsonb_path_exists(m->'payload', '$.**.fixture ? (@ != null && @ != false)') then raise exception 'provenance_rejected'; end if;
         if typ = 'rawCaptures' and (m->'payload'->>'parseStatus' is distinct from 'done' or m->'payload'->'parsed'->>'entriesDismissed' is distinct from 'true') then raise exception 'unconfirmed_capture'; end if;

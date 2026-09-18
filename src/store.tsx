@@ -3,7 +3,7 @@
 // React state updater 保持纯函数, 避免跨标签事件与批量更新吞掉写入.
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { AppData, DEFAULT_DATA, Goal, Skill, Action, Category, UNCATEGORIZED_ID, ScheduleBlock, QuestModule, ModuleSkillLink, ExecutionLog, RescueLog, StateCheckIn, EffortUnit, ContributionLink, RawCapture, ContextLog, DecisionResult, PatternMemory, DashboardCardSize, DashboardPresetId, DashboardSurface, DashboardPreferences } from './types';
-import { loadData, persist, readPersistedDataForDebug, uid, today } from './storage';
+import { loadData, persist, readPersistedDataForDebug, uid, today, hasSyncAccountBinding } from './storage';
 import { scheduleSkillReminder, cancelSkillReminder, rescheduleAllReminders } from './notifications';
 import { calculateModuleProgress, calculatePredictionDelta, progressTypeForSkill, skillsForModule } from './progress';
 import { trackEvent } from './utils/analytics';
@@ -306,9 +306,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let cleanup: (() => void) | undefined;
     let disposed = false;
-    loadData().then((d) => {
+    loadData().then(async (d) => {
+      const syncBound = await hasSyncAccountBinding();
       const integrity = validateAppDataIntegrity(d);
-      const repaired = integrity.ok ? d : repairAppDataIntegrity(d);
+      const repaired = integrity.ok || syncBound ? d : repairAppDataIntegrity(d);
       if (!integrity.ok) {
         console.warn('[coreFlow] integrity issues detected on load', integrity.issues);
       }
@@ -316,7 +317,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setData(repaired);
       setLoading(false);
       loadedRef.current = true;
-      if (!integrity.ok) persist(repaired, {
+      if (!integrity.ok && !syncBound) persist(repaired, {
         base: d,
         source: 'store.hydration_repair',
         operation: 'repair_after_load',
@@ -328,12 +329,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         const base = dataRef.current;
         const next = projectAppData(base, changes);
         if (next === base) return;
-        const committed = await persist(next, { base, source: 'remote_sync', operation: 'sync_projection' });
-        setData(current => {
-          const merged = reconcileCommittedAppData(base, committed, current);
-          dataRef.current = merged;
-          return merged;
-        });
+        const committed = await persist(next, { base, source: 'remote_sync', origin: 'remote_sync', operation: 'sync_projection' });
+        const merged = reconcileCommittedAppData(base, committed, dataRef.current);
+        dataRef.current = merged;
+        setData(merged);
       }).then(stop => { if (disposed) stop(); else cleanup = stop; }).catch(() => console.warn('[sync-v2] initialization unavailable'));
     });
     return () => { disposed = true; cleanup?.(); };
@@ -354,6 +353,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     persistWithSync(base, next, source, () => persist(next, {
       base,
       source,
+      origin: 'local_user',
       caller,
       operation: 'mutation',
       hydrationStatus: 'hydrated',
@@ -363,7 +363,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         dataRef.current = reconciled;
         return reconciled;
       });
-    }).catch(() => {});
+    }).catch(() => console.warn('[sync-v2] local persistence unavailable'));
   }, []);
 
   // Data mutations persist through mutate(); this effect only queues server sync.
@@ -380,16 +380,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof window.addEventListener !== 'function') return undefined;
-    const handleStorage = (event: StorageEvent) => {
+    const handleStorage = async (event: StorageEvent) => {
       if (event.key !== 'questlife.v1' || !event.newValue || !loadedRef.current) return;
       try {
+        const syncBound = await hasSyncAccountBinding();
         const incoming = JSON.parse(event.newValue) as AppData;
         const previous = event.oldValue ? JSON.parse(event.oldValue) as AppData : undefined;
         const merged = previous
           ? reconcileExternalAppData(previous, incoming, dataRef.current)
           : incoming;
         const integrity = validateAppDataIntegrity(merged);
-        const next = integrity.ok ? merged : repairAppDataIntegrity(merged);
+        const next = integrity.ok || syncBound ? merged : repairAppDataIntegrity(merged);
         dataRef.current = next;
         setData(next);
       } catch (error) {

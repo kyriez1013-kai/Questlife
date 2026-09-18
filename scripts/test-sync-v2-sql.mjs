@@ -1,39 +1,121 @@
-import { PGlite } from '@electric-sql/pglite';
-import { readFileSync } from 'node:fs';
-import assert from 'node:assert/strict';
+import { PGlite } from "@electric-sql/pglite";
+import { readFileSync } from "node:fs";
+import assert from "node:assert/strict";
 const db = new PGlite();
 let checks = 0;
-const check = (value) => { assert.ok(value); checks++; };
+const check = (value) => {
+  assert.ok(value);
+  checks++;
+};
 await db.exec(`create role anon; create role authenticated;
 create schema auth; create table auth.users(id uuid primary key);
 create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true),'')::uuid $$;
 grant usage on schema auth,public to authenticated; grant execute on function auth.uid() to authenticated;`);
-await db.exec(readFileSync('supabase/migrations/202609180001_sync_v2.sql','utf8'));
-const A = '11111111-1111-4111-8111-111111111111', B = '22222222-2222-4222-8222-222222222222';
-await db.exec(`insert into auth.users values('${A}'),('${B}'); set role authenticated;`);
-const as = user => db.query("select set_config('request.jwt.claim.sub',$1,false)",[user]);
-const mutation = (overrides = {}) => ({ mutationId:crypto.randomUUID(),deviceId:'web:local-test',entityType:'categories',entityId:crypto.randomUUID(),operation:'upsert',payload:{id:'',name:'Local SQL test',createdAt:1},schemaVersion:1,baseRevision:0,createdAt:new Date().toISOString(),...overrides });
-async function push(m) { const {rows} = await db.query('select public.questlife_sync_push($1::jsonb) as result',[JSON.stringify(m)]); return rows[0].result; }
+await db.exec(
+  readFileSync("supabase/migrations/202609180001_sync_v2.sql", "utf8"),
+);
+const A = "11111111-1111-4111-8111-111111111111",
+  B = "22222222-2222-4222-8222-222222222222";
+await db.exec(
+  `insert into auth.users values('${A}'),('${B}'); set role authenticated;`,
+);
+const as = (user) =>
+  db.query("select set_config('request.jwt.claim.sub',$1,false)", [user]);
+const mutation = (overrides = {}) => ({
+  mutationId: crypto.randomUUID(),
+  deviceId: "web:local-test",
+  entityType: "categories",
+  entityId: crypto.randomUUID(),
+  operation: "upsert",
+  payload: { id: "", name: "Local SQL test", createdAt: 1 },
+  schemaVersion: 1,
+  baseRevision: 0,
+  createdAt: new Date().toISOString(),
+  ...overrides,
+});
+async function push(m) {
+  const { rows } = await db.query(
+    "select public.questlife_sync_push($1::jsonb) as result",
+    [JSON.stringify(m)],
+  );
+  return rows[0].result;
+}
 await as(A);
-const m = mutation(); m.payload.id = m.entityId;
-const first = (await push([m]))[0]; check(first.status==='applied'); check(first.remote.revision===1);
-check(JSON.stringify((await push([m]))[0])===JSON.stringify(first));
-const forged = {...m,payload:{...m.payload,name:'Changed retry'}};
-check((await push([forged]))[0].status==='rejected');
-const edit = mutation({...m,mutationId:crypto.randomUUID(),baseRevision:1,payload:{...m.payload,name:'Edited'}});
-const updated=(await push([edit]))[0];check(updated.remote.revision===2);check(updated.remote.change_seq>first.remote.change_seq);
-const stale=mutation({...edit,mutationId:crypto.randomUUID(),baseRevision:1});check((await push([stale]))[0].status==='conflict');
+const m = mutation();
+m.payload.id = m.entityId;
+const first = (await push([m]))[0];
+check(first.status === "applied");
+check(first.remote.revision === 1);
+check(JSON.stringify((await push([m]))[0]) === JSON.stringify(first));
+const forged = { ...m, payload: { ...m.payload, name: "Changed retry" } };
+check((await push([forged]))[0].status === "rejected");
+const edit = mutation({
+  ...m,
+  mutationId: crypto.randomUUID(),
+  baseRevision: 1,
+  payload: { ...m.payload, name: "Edited" },
+});
+const updated = (await push([edit]))[0];
+check(updated.remote.revision === 2);
+check(updated.remote.change_seq > first.remote.change_seq);
+const stale = mutation({
+  ...edit,
+  mutationId: crypto.randomUUID(),
+  baseRevision: 1,
+});
+check((await push([stale]))[0].status === "conflict");
 await as(B);
-check((await db.query('select * from public.questlife_sync_entities')).rows.length===0);
-await assert.rejects(db.query('update public.questlife_sync_entities set payload=$1 where user_id=$2',[{},A])); checks++;
-await assert.rejects(db.query('delete from public.questlife_sync_entities where user_id=$1',[A]));checks++;
-const b = (await push([m]))[0];check(b.remote.user_id===B);
-await as(A);check((await db.query('select payload from public.questlife_sync_entities')).rows[0].payload.name==='Edited');
-const deletion=mutation({...m,mutationId:crypto.randomUUID(),operation:'delete',payload:undefined,baseRevision:2});
-const removed=(await push([deletion]))[0];check(!!removed.remote.deleted_at);check(removed.remote.payload===null);check(removed.remote.revision===3);
-check((await push([deletion]))[0].remote.revision===3);
-const contaminated=mutation();contaminated.payload={id:contaminated.entityId,dataProvenance:{origin:'QA_TEST'}};
-check((await push([contaminated]))[0].status==='rejected');
-const invalid=mutation({entityType:'settings'});check((await push([invalid]))[0].status==='rejected');
-await as(''); await assert.rejects(push([m]));checks++;
-await db.close();console.log(JSON.stringify({suite:'real PostgreSQL WASM / RLS / RPC',checks,passed:checks,hostedSupabase:false}));
+check(
+  (await db.query("select * from public.questlife_sync_entities")).rows
+    .length === 0,
+);
+await assert.rejects(
+  db.query(
+    "update public.questlife_sync_entities set payload=$1 where user_id=$2",
+    [{}, A],
+  ),
+);
+checks++;
+await assert.rejects(
+  db.query("delete from public.questlife_sync_entities where user_id=$1", [A]),
+);
+checks++;
+const b = (await push([m]))[0];
+check(b.remote.user_id === B);
+await as(A);
+check(
+  (await db.query("select payload from public.questlife_sync_entities")).rows[0]
+    .payload.name === "Edited",
+);
+const deletion = mutation({
+  ...m,
+  mutationId: crypto.randomUUID(),
+  operation: "delete",
+  payload: undefined,
+  baseRevision: 2,
+});
+const removed = (await push([deletion]))[0];
+check(!!removed.remote.deleted_at);
+check(removed.remote.payload === null);
+check(removed.remote.revision === 3);
+check((await push([deletion]))[0].remote.revision === 3);
+const contaminated = mutation();
+contaminated.payload = {
+  id: contaminated.entityId,
+  dataProvenance: { origin: "QA_TEST" },
+};
+check((await push([contaminated]))[0].status === "rejected");
+const invalid = mutation({ entityType: "settings" });
+check((await push([invalid]))[0].status === "rejected");
+await as("");
+await assert.rejects(push([m]));
+checks++;
+await db.close();
+console.log(
+  JSON.stringify({
+    suite: "real PostgreSQL WASM / RLS / RPC",
+    checks,
+    passed: checks,
+    hostedSupabase: false,
+  }),
+);
