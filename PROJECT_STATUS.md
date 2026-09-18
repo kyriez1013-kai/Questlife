@@ -1,5 +1,37 @@
 # QuestLife Project Status
 
+## 2026-09-18 - Phase 2 Identity and Sync V2
+
+Canonical branch `release/questlife-v1`, start `9cd8322`, implementation head
+`e19ef83`. Local milestone `v1-phase1-native-foundation` preserved. Main,
+historical worktrees, legacy remote tables and production data were not changed.
+
+Implemented: Supabase Email OTP identity boundary, native SecureStore sessions,
+random installation identity, authenticated SQL/RLS/RPC schema, durable outbox,
+ordered pull/hydration, tombstones, CAS conflicts, immutable retry receipts,
+Realtime invalidation, Store projection, separate partitioned Health persistence,
+per-metric checkpoints, explicit Health cloud consent, Calendar ownership/linkage,
+device-local notification reconciliation, Account/Sync/conflict Settings.
+Legacy anonymous mirror is opt-in only. Local-copy clear is separate from remote
+deletion, rejects pending/conflicted data and retains original account binding.
+
+**Phase 2 is NOT COMPLETE:** hosted OTP/migration/RLS/Realtime and real two-device
+acceptance are blocked by missing authorized test project configuration. iOS
+compile remains blocked by missing full Xcode; physical Health and performance
+acceptance remain unverified. No owner observation or remote test record was
+fabricated. No Phase 3 work, push or deployment.
+
+Validation: final TypeScript and Expo web export passed; 32 sync tests, 19 actual
+PostgreSQL WASM/RLS checks, 59 native tests, 13 decision scripts, existing Insights
+and persistence/deletion regressions passed. Android API36 emulator compile,
+install/cold launch, Health Connect permission and eight-metric empty read passed;
+0 imported observations is an empty result, not real Health sample validation.
+Web settings/navigation checked at 375/393/1280px with zh/en and dark/light.
+Build output `dist`; bundle `index-68da66016ed598bb8833fc3c4b5c4cbb.js`.
+
+Full protocol, exact entities, commit list, measured scale numbers, screenshots
+and outstanding gates: [Phase 2 Identity & Sync Report](docs/release/QUESTLIFE_PHASE2_IDENTITY_SYNC_REPORT.md).
+
 ## 2026-09-12 - Canonical V1 Native Foundation
 
 Branch: `release/questlife-v1`, base `9caf720`. Main and previous worktrees remain

@@ -1,0 +1,12 @@
+
+> questlife@1.0.0 test:insights-v3
+> rm -rf /tmp/questlife-insights-v3-test && tsc --module commonjs --target es2022 --moduleResolution node --esModuleInterop --resolveJsonModule --skipLibCheck --rootDir src --outDir /tmp/questlife-insights-v3-test src/insights-v3/insightsV3Presentation.test.ts src/insights-v3/insightsV3PersonalLayer.test.ts src/insights-v3/insightsV3Watchlist.test.ts src/quant-product/quantAnalysisContract.test.ts && NODE_PATH=$PWD/node_modules node /tmp/questlife-insights-v3-test/insights-v3/insightsV3Presentation.test.js && NODE_PATH=$PWD/node_modules node /tmp/questlife-insights-v3-test/insights-v3/insightsV3PersonalLayer.test.js && NODE_PATH=$PWD/node_modules node /tmp/questlife-insights-v3-test/insights-v3/insightsV3Watchlist.test.js && NODE_PATH=$PWD/node_modules node /tmp/questlife-insights-v3-test/quant-product/quantAnalysisContract.test.js && node --experimental-strip-types src/v11/featureSelection.test.ts
+
+Insights V3 Product Contract presentation tests passed
+Insights V3 personal intelligence layer tests passed
+Insights V3 watchlist tests passed
+Quant analysis extension App boundary tests passed
+(node:44528) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kyrie/Documents/Codex%20Questlife/QuestLife-v1/src/v11/featureSelection.test.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/kyrie/Documents/Codex Questlife/QuestLife-v1/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
