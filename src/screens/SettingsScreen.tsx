@@ -26,6 +26,7 @@ import QuestPill from '../components/ui/QuestPill';
 import { QuestCompactRow, QuestGroupedSurface, QuestSectionHeader } from '../components/ui/QuestPrimitives';
 import QuestSegmentedControl from '../components/ui/QuestSegmentedControl';
 import { getV11ProductLanguage, getV11ProductThemeId, isV11PersonalTerminalEnabled } from '../v11/featureFlag';
+import AccountSyncSection from '../sync-v2/AccountSyncSection';
 
 const TRADINGVIEW_URL = 'https://www.tradingview.com/';
 const LIGHTWEIGHT_CHARTS_LICENSE_URL = 'https://github.com/tradingview/lightweight-charts/blob/v5.2.0/LICENSE';
@@ -286,6 +287,7 @@ export default function SettingsScreen() {
           alignSelf: 'center',
         }}
       >
+        <AccountSyncSection />
         <QuestSectionHeader
           questTheme={questTheme}
           title={t(lang, 'preferences')}

@@ -9,6 +9,7 @@ import { useDeviceData } from '../platform/useDeviceData';
 import { nativeCopy as c } from '../platform/nativeI18n';
 import { NativeAction, NativeSection, useNativeTheme } from './NativeControls';
 import NativeCalendarEditor from './NativeCalendarEditor';
+import AccountSyncSection from '../sync-v2/AccountSyncSection';
 
 export default function NativeSettingsScreen({navigation}:{navigation:any}) {
   const {data}=useStore();const lang=getLanguage(data.settings.language);const f=useNativeTheme();
@@ -23,7 +24,7 @@ export default function NativeSettingsScreen({navigation}:{navigation:any}) {
   const refreshCalendars=async()=>{const p=await calendarSource.requestPermission();setPermission(p);if(p==='granted')setCalendars(await calendarSource.listCalendars());};
   return <SafeAreaView edges={['top','left','right']} style={{flex:1,backgroundColor:f.environment.canvas}}>
     <ScrollView contentContainerStyle={{paddingHorizontal:20,paddingBottom:24}} keyboardShouldPersistTaps="handled">
-      <NativeSection title={c(lang,'account')}>{text(c(lang,'accountNote'))}</NativeSection>
+      <AccountSyncSection />
       <NativeSection title={c(lang,'sources')}>
         {text(c(lang,'healthPurpose'))}
         <Text style={{fontSize:16,color:f.text.primary}}>{c(lang,'health')}</Text>
