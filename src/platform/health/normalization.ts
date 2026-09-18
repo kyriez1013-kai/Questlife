@@ -41,6 +41,11 @@ export function mergeHealthObservations(current: HealthObservationV1[], incoming
   });
   return [...merged.values()].sort((a,b) => a.eventStartAt.localeCompare(b.eventStartAt) || a.id.localeCompare(b.id));
 }
+/** Phase 1 stored first-read availability, but did not name it importedAt. */
+export function restoreHealthImportTime(row: HealthObservationV1): HealthObservationV1 {
+  if (row.importedAt || !Number.isFinite(Date.parse(row.availableAt))) return row;
+  return { ...row, importedAt: row.availableAt, limitations: [...new Set([...row.limitations, 'LEGACY_IMPORT_TIME_FROM_FIRST_AVAILABLE_AT'])] };
+}
 export function healthContextView(rows: HealthObservationV1[]): ContextLog[] {
   // Sleep rows are intervals, not nightly totals. Keep their unregistered label
   // until the ledger supports interval aggregation; do not invent a nightly sum.

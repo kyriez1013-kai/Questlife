@@ -35,7 +35,7 @@ export type ExternalCommitment = {
   linkedScheduleBlockId?: string;
 };
 export type ExternalCommitmentV1 = ExternalCommitment;
-export type CalendarDraft = { title: string; startAt: string; endAt: string; allDay?: boolean };
+export type CalendarDraft = { title: string; startAt: string; endAt: string; allDay?: boolean; linkedScheduleBlockId?: string };
 export interface CalendarSource {
   isAvailable(): Promise<boolean>; permission(): Promise<PermissionState>; requestPermission(): Promise<PermissionState>;
   listCalendars(): Promise<DeviceCalendar[]>;

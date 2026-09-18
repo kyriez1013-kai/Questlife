@@ -26,7 +26,7 @@ export class CalendarService implements CalendarSource {
     if (!Number.isFinite(Date.parse(start)) || !Number.isFinite(Date.parse(end)) || Date.parse(end) <= Date.parse(start)) throw new Error('calendar_invalid_range');
     const { calendar } = await this.repo.read();
     const read = await this.driver.read(ids,start,end);
-    const mapped = read.map(row => ({ ...row, availability: row.availability ?? 'unknown' as const, ownership: calendar.ownedIds.includes(ownedKey(row.calendarId,row.externalEventId)) ? 'questlife' as const : 'external' as const, lastObservedAt: this.now(), lastSyncedAt: this.now() }));
+    const mapped = read.map(row => ({ ...row, linkedScheduleBlockId: calendar.events.find(prior => ownedKey(prior.calendarId,prior.externalEventId) === ownedKey(row.calendarId,row.externalEventId))?.linkedScheduleBlockId, availability: row.availability ?? 'unknown' as const, ownership: calendar.ownedIds.includes(ownedKey(row.calendarId,row.externalEventId)) ? 'questlife' as const : 'external' as const, lastObservedAt: this.now(), lastSyncedAt: this.now() }));
     return uniqueCommitments(mapped);
   }
   async sync(ids: string[], start: string, end: string) {
@@ -49,6 +49,15 @@ export class CalendarService implements CalendarSource {
     try { await this.repo.update(data => ({ ...data, calendar: { ...data.calendar, ownedIds: [...new Set([...data.calendar.ownedIds,ownedKey(calendarId,externalEventId)])], events: [...data.calendar.events,result] } })); }
     catch { await this.driver.remove(externalEventId); throw new Error('calendar_local_commit_failed'); }
     return result;
+  }
+  /** Explicit export only. Remote Schedule hydration never calls the OS writer. */
+  async createForBlock(calendarId: string, block: ScheduleBlock, consent: { confirmed: true }) {
+    if (consent?.confirmed !== true) throw new Error('calendar_confirmation_required');
+    const draft: CalendarDraft = { title: block.title, startAt: new Date(`${block.date}T${block.startTime}:00`).toISOString(), endAt: new Date(`${block.date}T${block.endTime}:00`).toISOString() };
+    const {calendar} = await this.repo.read();
+    const prior = calendar.events.find(event => event.linkedScheduleBlockId === block.id && event.calendarId === calendarId && event.ownership === 'questlife');
+    if (prior) return this.update(prior,draft,consent);
+    return this.create(calendarId,{...draft,linkedScheduleBlockId:block.id},consent);
   }
   private async own(record: ExternalCommitment, consent: { confirmed: true }) {
     if (consent?.confirmed !== true) throw new Error('calendar_confirmation_required');

@@ -1,5 +1,6 @@
 import type { ExternalCommitment, HealthObservationV1, KeyValueStorage, SourceSyncStatus } from './contracts';
 import { HealthCollection } from './health/HealthCollection';
+import { restoreHealthImportTime } from './health/normalization';
 
 export const DEVICE_DATA_KEY = 'questlife_device_sources_v1';
 export type DeviceData = {
@@ -28,6 +29,7 @@ export class DeviceRepository {
     const parsed = JSON.parse(value) as DeviceData;
     if (parsed.version !== 1 || !Array.isArray(parsed.observations) || !parsed.health || !parsed.calendar) throw new Error('device_data_invalid');
     if (parsed.observationsPartitioned) parsed.observations = await new HealthCollection(this.storage).read();
+    parsed.observations = parsed.observations.map(restoreHealthImportTime);
     return parsed;
   }
   update(fn: (current: DeviceData) => DeviceData | Promise<DeviceData>, origin: 'local' | 'remote_sync' = 'local'): Promise<DeviceData> {
