@@ -51,6 +51,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@types/react": "~19.1.0",
     "typescript": "~5.9.2"
   },
