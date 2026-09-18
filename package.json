@@ -21,15 +21,18 @@
     "@react-navigation/bottom-tabs": "^7.16.1",
     "@react-navigation/native": "^7.2.4",
     "@react-navigation/native-stack": "^7.15.1",
+    "@supabase/supabase-js": "^2.116.0",
     "expo": "~54.0.37",
     "expo-blur": "~15.0.8",
     "expo-calendar": "~15.0.8",
     "expo-constants": "~18.0.14",
+    "expo-crypto": "~15.0.9",
     "expo-dev-client": "~6.0.21",
     "expo-device": "~8.0.10",
     "expo-linear-gradient": "~15.0.8",
     "expo-linking": "~8.0.12",
     "expo-notifications": "~0.32.17",
+    "expo-secure-store": "~15.0.8",
     "expo-status-bar": "~3.0.9",
     "expo-system-ui": "~6.0.9",
     "lightweight-charts": "^5.2.0",
@@ -42,6 +45,7 @@
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
     "react-native-svg": "15.12.1",
+    "react-native-url-polyfill": "^4.0.0",
     "react-native-web": "^0.21.0",
     "react-native-webview": "13.15.0",
     "zod": "^4.4.3"
@@ -53,7 +57,10 @@
   "expo": {
     "autolinking": {
       "android": {
-        "exclude": ["@kingstinct/react-native-healthkit", "react-native-nitro-modules"]
+        "exclude": [
+          "@kingstinct/react-native-healthkit",
+          "react-native-nitro-modules"
+        ]
       }
     }
   },

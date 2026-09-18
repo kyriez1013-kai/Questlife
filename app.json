@@ -16,15 +16,24 @@
         }
       ],
       "expo-dev-client",
-      ["expo-calendar", {"calendarPermission": "QuestLife reads commitments and only edits events you explicitly create with QuestLife."}],
-      ["@kingstinct/react-native-healthkit", {
-        "NSHealthShareUsageDescription": "QuestLife reads selected sleep, movement and workout observations to compare your own activity over time. Data is stored locally; no health data is sent to analytics.",
-        "NSHealthUpdateUsageDescription": false,
-        "background": false
-      }],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "QuestLife reads commitments and only edits events you explicitly create with QuestLife."
+        }
+      ],
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "QuestLife reads selected sleep, movement and workout observations to compare your own activity over time. Data is stored locally; no health data is sent to analytics.",
+          "NSHealthUpdateUsageDescription": false,
+          "background": false
+        }
+      ],
       "react-native-health-connect",
       "./plugins/with-health-connect-permissions",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-secure-store"
     ],
     "splash": {
       "image": "./assets/splash-icon.png",
