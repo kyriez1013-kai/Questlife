@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useStore } from '../store';
@@ -18,6 +18,7 @@ import QuestIcon from '../components/ui/QuestIcon';
 import { confirmAction } from '../utils/confirm';
 import { getV11ProductLanguage, getV11ProductThemeId } from '../v11/featureFlag';
 import { QuestContextBar } from '../components/ui/QuestPrimitives';
+import QuestInput from '../components/ui/QuestInput';
 
 function fill(template: string, values: Record<string, string | number>) {
   return Object.entries(values).reduce((out, [key, value]) => out.replace(`{${key}}`, String(value)), template);
@@ -30,6 +31,8 @@ export default function SkillLibraryScreen() {
   const questTheme = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const [creating, setCreating] = useState(false);
   const [editingSkill, setEditingSkill] = useState<Skill | undefined>();
+  const [query, setQuery] = useState('');
+  const visibleSkills = Platform.OS === 'web' ? data.skills : data.skills.filter(skill => skill.name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
   const confirmDeleteSkill = (skillId: string, linkedCount: number) => {
     const extra = linkedCount > 0 ? `\n\n${fill(t(lang, 'linkedLocationsCount'), { count: linkedCount })}` : '';
     confirmAction({
@@ -48,11 +51,11 @@ export default function SkillLibraryScreen() {
   return (
     <SafeAreaView nativeID="v11-skill-library-screen" edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
       <View style={[styles.header, { borderBottomColor: questTheme.colors.border }]}>
-        <TouchableOpacity onPress={() => nav.goBack()} style={styles.backBtn}>
+        <TouchableOpacity accessibilityRole="button" accessibilityLabel={t(lang, 'back')} onPress={() => nav.goBack()} style={[styles.backBtn, Platform.OS !== 'web' && { minHeight: questLayout.controlMinHeight, justifyContent: 'center' }]}>
           <Text style={[styles.backText, { color: questTheme.colors.primary }]}>{t(lang, 'back')}</Text>
         </TouchableOpacity>
       </View>
-      <ScrollView contentContainerStyle={{
+      <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={{
         paddingHorizontal: questTheme.spacing.md,
         paddingTop: questTheme.spacing.sm,
         paddingBottom: questLayout.contentBottomInset,
@@ -66,17 +69,22 @@ export default function SkillLibraryScreen() {
           secondary={`${data.skills.length} ${t(lang, 'skillCount')}`}
           trailing={<QuestButton questTheme={questTheme} variant="primary" icon="plus" label={t(lang, 'createSkill')} onPress={() => setCreating(true)} />}
         />
-        {data.skills.map((skill) => {
+        {Platform.OS !== 'web' ? <QuestInput questTheme={questTheme} value={query} onChangeText={setQuery} placeholder={t(lang, 'searchSkills')}
+          returnKeyType="search" autoCorrect={false} style={{ marginBottom: questTheme.spacing.sm }} /> : null}
+        {Platform.OS !== 'web' && visibleSkills.length === 0 ? <Text style={{ color: questTheme.colors.textMuted, fontSize: questTheme.typography.bodySize }}>{t(lang, data.skills.length ? 'noAvailableSkills' : 'noSkillsInLibrary')}</Text> : null}
+        {visibleSkills.map((skill) => {
           const linkedCount = getSkillLinkedCount(skill.id, data.moduleSkillLinks || []);
           return (
             <TouchableOpacity
               key={skill.id}
               onPress={() => nav.navigate('SkillDetail', { skillId: skill.id })}
+              accessibilityRole="button"
+              accessibilityLabel={skill.name}
               activeOpacity={0.75}
             >
               <QuestCard questTheme={questTheme} variant="action" style={styles.card} className="skill-card skill-row v11-skill-library-row">
                 <QuestEntityIcon icon={skill.icon} systemIcon={getSkillSemanticIcon(skill)} color={skill.color} questTheme={questTheme} />
-                <View style={{ flex: 1 }}>
+                <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={[styles.name, { color: questTheme.colors.text }]}>{skill.name}</Text>
                 <Text style={[styles.meta, { color: questTheme.colors.textMuted }]}>
                   {taskTypeLabel(lang, skill.taskType)} · {progressTypeLabel(lang, progressTypeForSkill(skill))}
@@ -84,13 +92,25 @@ export default function SkillLibraryScreen() {
                 <Text style={[styles.meta, { color: questTheme.colors.textMuted }]}>
                   {formatSkillProgress(skill, lang)} · {linkedCount > 0 ? fill(t(lang, 'linkedCount'), { count: linkedCount }) : t(lang, 'notLinkedToAnyGoal')}
                 </Text>
+                {Platform.OS !== 'web' ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: questTheme.spacing.xs, marginTop: questTheme.spacing.sm }}>
+                  <TouchableOpacity accessibilityRole="button" accessibilityLabel={`${t(lang, 'edit')}: ${skill.name}`}
+                    style={{ minHeight: questLayout.controlMinHeight, minWidth: questLayout.controlMinHeight, paddingHorizontal: questTheme.spacing.sm, justifyContent: 'center' }}
+                    onPress={event => { event.stopPropagation(); setEditingSkill(skill); }}>
+                    <Text style={{ color: questTheme.colors.primary, fontSize: questTheme.typography.buttonSize }}>{t(lang, 'edit')}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity accessibilityRole="button" accessibilityLabel={`${t(lang, 'delete')}: ${skill.name}`}
+                    style={{ minHeight: questLayout.controlMinHeight, minWidth: questLayout.controlMinHeight, paddingHorizontal: questTheme.spacing.sm, justifyContent: 'center' }}
+                    onPress={event => { event.stopPropagation(); openSkillMenu(skill, linkedCount); }}>
+                    <Text style={{ color: questTheme.colors.danger, fontSize: questTheme.typography.buttonSize }}>{t(lang, 'delete')}</Text>
+                  </TouchableOpacity>
+                </View> : null}
                 </View>
-              <TouchableOpacity
+              {Platform.OS === 'web' ? <TouchableOpacity
                   style={[styles.moreBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surfaceSoft }]}
                 onPress={() => openSkillMenu(skill, linkedCount)}
               >
                   <Text style={[styles.moreText, { color: questTheme.colors.textMuted }]}>•••</Text>
-              </TouchableOpacity>
+              </TouchableOpacity> : null}
                 <QuestIcon name="target" size={17} color={questTheme.colors.textSubtle} />
               </QuestCard>
             </TouchableOpacity>

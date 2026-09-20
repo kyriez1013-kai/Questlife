@@ -6,7 +6,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "plugins": [
       [
@@ -25,7 +25,7 @@
       [
         "@kingstinct/react-native-healthkit",
         {
-          "NSHealthShareUsageDescription": "QuestLife reads selected sleep, movement and workout observations to compare your own activity over time. Data is stored locally; no health data is sent to analytics.",
+          "NSHealthShareUsageDescription": "QuestLife reads selected sleep, movement and workout observations. They stay on this device unless you explicitly enable health sync and analysis for your account.",
           "NSHealthUpdateUsageDescription": false,
           "background": false
         }
@@ -33,6 +33,8 @@
       "react-native-health-connect",
       "./plugins/with-health-connect-permissions",
       "./plugins/with-internal-release-signing",
+      "./plugins/with-questlife-widget",
+      "./plugins/with-questlife-ios-entries",
       "@react-native-community/datetimepicker",
       "expo-secure-store"
     ],

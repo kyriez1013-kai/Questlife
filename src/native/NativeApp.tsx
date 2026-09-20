@@ -1,5 +1,5 @@
 import 'react-native-gesture-handler';
-import React, {useCallback} from 'react';
+import React, {useCallback, useRef} from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,6 +24,7 @@ import NativeSettingsScreen from './NativeSettingsScreen';
 import NativeLicensesScreen from './NativeLicensesScreen';
 import ForegroundSources from '../platform/ForegroundSources';
 import NotificationCoordinator from '../platform/notifications/NotificationCoordinator';
+import ShortcutCoordinator from '../platform/shortcuts/ShortcutCoordinator.native';
 import {nativeCopy} from '../platform/nativeI18n';
 import OnboardingScreen from '../screens/OnboardingScreen';
 
@@ -46,12 +47,13 @@ function Content() {
   const f = getNativeFoundation(theme);
   const lang = getLanguage(data.settings.language);
   const insets = useSafeAreaInsets();
-  const navigateToday=useCallback(()=>{if(navigationRef.isReady())navigationRef.navigate('Today');},[]);
+  const pendingToday = useRef(false);
+  const navigateToday=useCallback(()=>{if(navigationRef.isReady())navigationRef.navigate('Today');else pendingToday.current=true;},[]);
   const existing = data.categories.length || data.skills.length || data.executionLogs?.length;
   if (loading) return <View style={{ flex: 1, backgroundColor: f.environment.canvas, justifyContent: 'center' }}><ActivityIndicator color={f.interaction.primary} /></View>;
   if (data.settings.onboardingRestartRequested || (!data.settings.onboardingCompleted && !existing)) return <OnboardingScreen />;
-  return <NavigationContainer ref={navigationRef} linking={{prefixes:['questlife://'],config:{screens:{Settings:{path:'settings',screens:{NativeSettings:''}}}}}} theme={{ ...DefaultTheme, colors: { ...DefaultTheme.colors, background: f.environment.canvas, card: f.environment.navigation, text: f.text.primary, border: f.border.subtle, primary: f.interaction.primary } }}>
-    <StatusBar style={isDarkTheme(theme)?'light':'dark'}/><ForegroundSources/><NotificationCoordinator navigateToday={navigateToday}/>
+  return <NavigationContainer ref={navigationRef} onReady={()=>{if(pendingToday.current){pendingToday.current=false;navigateToday();}}} linking={{prefixes:['questlife://'],config:{screens:{Settings:{path:'settings',screens:{NativeSettings:''}}}}}} theme={{ ...DefaultTheme, colors: { ...DefaultTheme.colors, background: f.environment.canvas, card: f.environment.navigation, text: f.text.primary, border: f.border.subtle, primary: f.interaction.primary } }}>
+    <StatusBar style={isDarkTheme(theme)?'light':'dark'}/><ForegroundSources/><NotificationCoordinator navigateToday={navigateToday}/><ShortcutCoordinator navigateToday={navigateToday}/>
     <Tabs.Navigator screenOptions={{ headerShown: false, tabBarHideOnKeyboard: true, tabBarActiveTintColor: f.interaction.navigationActive, tabBarInactiveTintColor: f.interaction.navigationInactive, tabBarStyle: { backgroundColor: f.environment.navigation, height: 56 + insets.bottom, paddingBottom: insets.bottom, borderTopColor: f.border.subtle }, tabBarLabelStyle: { fontSize: 11 } }}>
       <Tabs.Screen name="Today" component={HomeScreen} options={{ tabBarLabel: t(lang,'today'), tabBarIcon: ({color}) => <QuestIcon name="home" color={color} size={20} /> }} />
       <Tabs.Screen name="Quest" component={GoalStack} options={{ tabBarLabel: t(lang,'goals'), tabBarIcon: ({color}) => <QuestIcon name="target" color={color} size={20} /> }} />

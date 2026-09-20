@@ -6,6 +6,10 @@ import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repo = resolve(fileURLToPath(new URL('..', import.meta.url)));
+const apiOrigin = process.env.EXPO_PUBLIC_API_ORIGIN;
+if (!apiOrigin || !/^https:\/\/[^/?#]+\/?$/.test(apiOrigin)) {
+  throw new Error('Standalone candidates require EXPO_PUBLIC_API_ORIGIN pointing to the HTTPS candidate, not Metro or localhost');
+}
 const home = homedir();
 const java = process.env.JAVA_HOME ?? join(home, 'Library/QuestLifeToolchain/jdk/Contents/Home');
 const sdk = process.env.ANDROID_HOME ?? join(home, 'Library/Android/sdk');
@@ -45,5 +49,7 @@ const bytes = readFileSync(destination);
 const metadata = { path: destination, sourceCommit: commit, dirty: Boolean(execFileSync('git', ['status', '--porcelain'], { cwd: repo, encoding: 'utf8' }).trim()),
   sha256: createHash('sha256').update(bytes).digest('hex'), bytes: bytes.length,
   architecture: 'arm64-v8a', developmentClient: false, signing: 'dedicated local internal key', generatedAt: new Date().toISOString() };
+metadata.apiOrigin = apiOrigin;
+metadata.accountConfigured = Boolean(process.env.EXPO_PUBLIC_SUPABASE_URL && process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY);
 writeFileSync(join(output, 'android-candidate.json'), JSON.stringify(metadata, null, 2));
 console.log(JSON.stringify(metadata, null, 2));

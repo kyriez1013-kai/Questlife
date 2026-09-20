@@ -1,7 +1,8 @@
 // V2: "设置" Tab
 // 提醒已移到每个技能内, 这里只保留版本号 + 本地存储说明
 import React, { useCallback, useMemo, useState } from 'react';
-import { Linking, View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { Linking, Platform, View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import Constants from 'expo-constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useStore } from '../store';
@@ -27,12 +28,13 @@ import { QuestCompactRow, QuestGroupedSurface, QuestSectionHeader } from '../com
 import QuestSegmentedControl from '../components/ui/QuestSegmentedControl';
 import { getV11ProductLanguage, getV11ProductThemeId, isV11PersonalTerminalEnabled } from '../v11/featureFlag';
 import AccountSyncSection from '../sync-v2/AccountSyncSection';
+import { downloadPersistenceSnapshot } from '../utils/persistenceTrace';
 
 const TRADINGVIEW_URL = 'https://www.tradingview.com/';
 const LIGHTWEIGHT_CHARTS_LICENSE_URL = 'https://github.com/tradingview/lightweight-charts/blob/v5.2.0/LICENSE';
 
 export default function SettingsScreen() {
-  const { data, setSettings, addContextLogs, runIntegrityCheck, repairSafeIntegrityIssues, rebuildDerivedData, mergePatternMemoryCandidates, updatePatternMemoryStatus } = useStore();
+  const { data, loading, setSettings, addContextLogs, runIntegrityCheck, repairSafeIntegrityIssues, rebuildDerivedData, mergePatternMemoryCandidates, updatePatternMemoryStatus } = useStore();
   const questTheme = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const appearancePreference = normalizeAppearancePreference(data.settings.selectedThemeId);
   const accent = questTheme.colors.primary;
@@ -53,6 +55,7 @@ export default function SettingsScreen() {
   const [contextPasteText, setContextPasteText] = useState('');
   const [contextPreview, setContextPreview] = useState<ParsedHealthContext | null>(null);
   const [contextSaved, setContextSaved] = useState(false);
+  const [exportStatus, setExportStatus] = useState<'idle' | 'started' | 'error'>('idle');
   const [decisionFlagSnapshot, setDecisionFlagSnapshot] = useState(() => ({
     aiEnabled: isDecisionAIEnabled(),
     dailyBriefEnabled: isDecisionDailyBriefEnabled(),
@@ -342,7 +345,7 @@ export default function SettingsScreen() {
             )}
           />
           <QuestCompactRow questTheme={questTheme} divider title={t(lang, 'reminders')} body={t(lang, 'remindersText')} />
-          <QuestCompactRow questTheme={questTheme} divider title={t(lang, 'version')} body={t(lang, 'versionText')} />
+          <QuestCompactRow questTheme={questTheme} divider title={t(lang, 'version')} body={Constants.expoConfig?.version ? `QuestLife ${Constants.expoConfig.version}` : t(lang, 'versionText')} />
         </QuestGroupedSurface>
 
         <QuestSectionHeader
@@ -413,8 +416,8 @@ export default function SettingsScreen() {
             questTheme={questTheme}
             divider
             title={t(lang, 'healthDataSource')}
-            body={t(lang, 'healthDataSourceUnavailable')}
-            trailing={<QuestPill questTheme={questTheme} variant="muted" label={t(lang, 'sourceUnavailable')} />}
+            body={t(lang, Platform.OS === 'web' ? 'healthDataSourceUnavailable' : 'nativeSourceStatus')}
+            trailing={Platform.OS === 'web' ? <QuestPill questTheme={questTheme} variant="muted" label={t(lang, 'sourceUnavailable')} /> : undefined}
           />
           <QuestCompactRow
             questTheme={questTheme}
@@ -427,8 +430,8 @@ export default function SettingsScreen() {
             questTheme={questTheme}
             divider
             title={t(lang, 'calendarDataSource')}
-            body={t(lang, 'calendarDataSourceUnavailable')}
-            trailing={<QuestPill questTheme={questTheme} variant="muted" label={t(lang, 'notConfigured')} />}
+            body={t(lang, Platform.OS === 'web' ? 'calendarDataSourceUnavailable' : 'nativeSourceStatus')}
+            trailing={Platform.OS === 'web' ? <QuestPill questTheme={questTheme} variant="muted" label={t(lang, 'sourceUnavailable')} /> : undefined}
           />
         </QuestGroupedSurface>
 
@@ -470,6 +473,39 @@ export default function SettingsScreen() {
           />
           <QuestCompactRow questTheme={questTheme} divider title={t(lang, 'dataLimitations')} body={t(lang, 'dataCoverageLimitation')} />
           <QuestCompactRow questTheme={questTheme} divider title={t(lang, 'storage')} body={t(lang, 'storageText')} />
+          {Platform.OS === 'web' ? <QuestCompactRow
+            questTheme={questTheme}
+            divider
+            title={t(lang, 'exportLocalRecords')}
+            body={t(lang, 'exportLocalRecordsScope')}
+            style={{ flexDirection: 'column', alignItems: 'stretch' }}
+            trailing={<QuestButton
+              questTheme={questTheme}
+              variant="secondary"
+              label={t(lang, 'exportLocalRecords')}
+              disabled={loading}
+              onPress={() => {
+                if (loading) return;
+                setExportStatus('idle');
+                confirmAction({
+                  title: t(lang, 'exportLocalRecords'),
+                  message: t(lang, 'exportLocalRecordsConfirm'),
+                  confirmText: t(lang, 'exportLocalRecords'),
+                  cancelText: t(lang, 'cancel'),
+                  onConfirm: () => {
+                    try { setExportStatus(downloadPersistenceSnapshot(data, 'local-records') ? 'started' : 'error'); }
+                    catch { setExportStatus('error'); }
+                  },
+                });
+              }}
+            />}
+          /> : null}
+          {exportStatus !== 'idle' ? <Text
+            accessibilityRole={exportStatus === 'error' ? 'alert' : undefined}
+            accessibilityLiveRegion="polite"
+            style={[styles.value, { color: questTheme.colors.textMuted, padding: questTheme.spacing.md }]}
+          >{t(lang, exportStatus === 'started' ? 'exportLocalRecordsStarted' : 'exportLocalRecordsFailed')}</Text> : null}
+          <QuestCompactRow questTheme={questTheme} divider title={t(lang, 'recordRecovery')} body={t(lang, 'recordRecoveryLimit')} />
         </QuestGroupedSurface>
 
         {personalTerminalLegalVisible ? (

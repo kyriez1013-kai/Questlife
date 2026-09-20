@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { useExternalCalendarBlocks } from '../platform/calendar/useExternalCalendarBlocks';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute } from '@react-navigation/native';
 import { useStore } from '../store';
@@ -34,6 +34,12 @@ import {
 } from '../utils/scheduleProposal';
 import { isDecisionDebugEnabled } from '../services/decisionService';
 import { getV11ProductLanguage, getV11ProductThemeId } from '../v11/featureFlag';
+import NativeScheduleFields from '../native/NativeScheduleFields';
+import NativeDateTimeField from '../native/NativeDateTimeField';
+import NativeScheduleCalendarSheet from '../native/NativeScheduleCalendarSheet';
+import { localDateValue, scheduleConflicts, scheduleMinutes, validScheduleDate } from '../native/nativeWorkflowValidation';
+import { nativeCopy } from '../platform/nativeI18n';
+import { workflowCopy } from '../native/nativeWorkflowCopy';
 
 const TASK_TYPES: TaskType[] = [
   'deep_study',
@@ -142,6 +148,10 @@ export default function ScheduleScreen() {
   const scrollRef = useRef<ScrollView | null>(null);
   const [open, setOpen] = useState(false);
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
+  const [calendarBlockId, setCalendarBlockId] = useState<string | null>(null);
+  const editSnapshot = useRef<ScheduleBlock | null>(null);
+  const latestBlocks = useRef(data.scheduleBlocks);
+  latestBlocks.current = data.scheduleBlocks;
 
   const [title, setTitle] = useState('');
   const [date, setDate] = useState(today());
@@ -187,10 +197,11 @@ export default function ScheduleScreen() {
   ), [proposalReview?.proposals, proposalStatuses]);
 
   const week = useMemo(() => weekDates(selectedDate), [selectedDate]);
-  const externalBlocks = useExternalCalendarBlocks(week);
+  const constraintDates = useMemo(() => Platform.OS !== 'web' && open && validScheduleDate(date) ? [...new Set([...week, date])] : week, [week, open, date]);
+  const externalBlocks = useExternalCalendarBlocks(constraintDates);
   const generatedBlocks = useMemo(
-    () => generateScheduleBlocksFromSkills(data.skills, week, data.scheduleBlocks || []),
-    [data.skills, week, data.scheduleBlocks]
+    () => generateScheduleBlocksFromSkills(data.skills, constraintDates, data.scheduleBlocks || []),
+    [data.skills, constraintDates, data.scheduleBlocks]
   );
   const allBlocks = useMemo(
     () => [...(data.scheduleBlocks || []), ...generatedBlocks, ...externalBlocks],
@@ -219,6 +230,7 @@ export default function ScheduleScreen() {
   };
 
   const openCreateBlock = () => {
+    editSnapshot.current = null;
     setEditingBlockId(null);
     setTitle('');
     setDate(selectedDate);
@@ -234,6 +246,7 @@ export default function ScheduleScreen() {
   };
 
   const openEditBlock = (block: ScheduleBlock) => {
+    editSnapshot.current = block;
     setEditingBlockId(block.id);
     setTitle(block.title);
     setDate(block.date);
@@ -249,9 +262,10 @@ export default function ScheduleScreen() {
   };
 
   const submit = () => {
-    const plannedMinutes = minutesBetween(startTime, endTime);
+    const native = Platform.OS !== 'web';
+    const plannedMinutes = native ? scheduleMinutes(startTime, endTime) : minutesBetween(startTime, endTime);
     if (!title.trim()) { Alert.alert(t(lang, 'enterTitle')); return; }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { Alert.alert(t(lang, 'invalidDate')); return; }
+    if (native ? !validScheduleDate(date) : !/^\d{4}-\d{2}-\d{2}$/.test(date)) { Alert.alert(t(lang, 'invalidDate')); return; }
     if (plannedMinutes <= 0) { Alert.alert(t(lang, 'invalidTimeRange')); return; }
     const input = {
       title: title.trim(),
@@ -264,26 +278,39 @@ export default function ScheduleScreen() {
       rigidity,
       linkedGoalId,
       linkedSkillId,
-      status: 'planned',
+      status: native && editSnapshot.current ? editSnapshot.current.status : 'planned',
       notes: notes.trim() || undefined,
-      source: 'manual',
+      source: native && editSnapshot.current ? editSnapshot.current.source : 'manual',
     } satisfies Omit<ScheduleBlock, 'id' | 'createdAt'>;
-    if (editingBlockId) {
-      updateScheduleBlock(editingBlockId, input);
-    } else {
-      addScheduleBlock(input);
-    }
-    setOpen(false);
-    setEditingBlockId(null);
-    setSelectedDate(date);
-    setTitle('');
-    setNotes('');
+    const save = () => {
+      // A remote deletion/edit while this sheet is open must not be silently overwritten.
+      if (native && editingBlockId && JSON.stringify(latestBlocks.current.find(block => block.id === editingBlockId)) !== JSON.stringify(editSnapshot.current)) {
+        Alert.alert(t(lang, 'edit'), t(lang, 'rebaselineRecordUnavailable'));
+        return;
+      }
+      if (editingBlockId) {
+        updateScheduleBlock(editingBlockId, input);
+      } else {
+        addScheduleBlock(input);
+      }
+      setOpen(false);
+      setEditingBlockId(null);
+      setSelectedDate(date);
+      setTitle('');
+      setNotes('');
+    };
+    const conflicts = native ? scheduleConflicts(input, allBlocks, editingBlockId ?? undefined) : [];
+    if (conflicts.length) {
+      confirmAction({ title: t(lang, 'scheduleOverlap'),
+        message: conflicts.map(block => `${block.title} · ${block.startTime}-${block.endTime}`).join('\n'),
+        confirmText: t(lang, 'save'), cancelText: t(lang, 'cancel'), onConfirm: save });
+    } else save();
   };
 
   const requestDeleteBlock = (block: ScheduleBlock) => {
     confirmAction({
       title: `${t(lang, 'delete')} ${block.title}`,
-      message: `${block.date} · ${block.startTime}-${block.endTime}`,
+      message: `${block.date} · ${block.startTime}-${block.endTime}${Platform.OS !== 'web' ? `\n\n${workflowCopy(lang, 'calendarSeparate')}` : ''}`,
       cancelText: t(lang, 'cancel'),
       confirmText: t(lang, 'delete'),
       destructive: true,
@@ -459,6 +486,7 @@ export default function ScheduleScreen() {
   return (
     <SafeAreaView nativeID="v11-schedule-screen" edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
       <ScrollView
+        keyboardShouldPersistTaps="handled"
         ref={scrollRef}
         style={[styles.container, { backgroundColor: questTheme.colors.background }]}
         contentContainerStyle={{
@@ -485,6 +513,8 @@ export default function ScheduleScreen() {
           accessibilityLabel={t(lang, 'schedule')}
           style={styles.switcher}
         />
+        {Platform.OS !== 'web' ? <NativeDateTimeField theme={questTheme} lang={lang} mode="date" label={t(lang, 'date')}
+          value={new Date(`${selectedDate}T12:00:00`)} onChange={value => setSelectedDate(localDateValue(value))} /> : null}
 
         {view === 'day' ? (
           <>
@@ -589,7 +619,7 @@ export default function ScheduleScreen() {
                               overlaps ? { borderRightWidth: 2, borderRightColor: questTheme.colors.warning } : null,
                             ]}
                           >
-                            <View style={styles.blockTitleRow}>
+                            <View style={[styles.blockTitleRow, Platform.OS !== 'web' && { flexWrap: 'wrap' }]}>
                               <QuestEntityIcon icon={skill?.icon} systemIcon={skill ? getSkillSemanticIcon(skill) : systemIcons.schedule} color={skill?.color} questTheme={questTheme} size="sm" />
                               <Text style={[styles.blockTitle, { color: questTheme.colors.text }]} numberOfLines={2}>{b.title}</Text>
                               <QuestPill
@@ -606,11 +636,12 @@ export default function ScheduleScreen() {
                               {contextLabel || t(lang, 'manualBlock')}
                             </Text>
                             <View style={styles.blockActionsRow}>
-                              <QuestButton questTheme={questTheme} variant="ghost" icon="play" label={t(lang, 'logProgress')} onPress={() => openLogBlock(b)} style={styles.blockAction} />
+                              {Platform.OS === 'web' || !externalBlocks.some(block => block.id === b.id) ? <QuestButton questTheme={questTheme} variant="ghost" icon="play" label={t(lang, 'logProgress')} onPress={() => openLogBlock(b)} style={styles.blockAction} /> : null}
                               {persisted ? (
                                 <>
                                   <QuestButton questTheme={questTheme} variant="ghost" label={t(lang, 'edit')} onPress={() => openEditBlock(b)} style={styles.blockAction} />
                                   <QuestButton questTheme={questTheme} variant="ghost" label={t(lang, 'delete')} onPress={() => requestDeleteBlock(b)} style={styles.blockAction} />
+                                  {Platform.OS !== 'web' ? <QuestButton questTheme={questTheme} variant="ghost" icon="calendar" label={nativeCopy(lang, 'calendar')} onPress={() => setCalendarBlockId(b.id)} style={styles.blockAction} /> : null}
                                 </>
                               ) : null}
                             </View>
@@ -655,6 +686,8 @@ export default function ScheduleScreen() {
         <Text style={[styles.h2, { color: questTheme.colors.text }]}>{editingBlockId ? `${t(lang, 'edit')} ${t(lang, 'schedulePlan')}` : t(lang, 'addBlock')}</Text>
         <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'title')}</Text>
         <QuestInput questTheme={questTheme} value={title} onChangeText={setTitle} placeholder={t(lang, 'scheduleTitlePlaceholder')} />
+        {Platform.OS !== 'web' ? <NativeScheduleFields date={date} start={startTime} end={endTime}
+          onDate={setDate} onStart={setStartTime} onEnd={setEndTime} theme={questTheme} lang={lang} /> : <>
         <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'date')}</Text>
         <QuestInput questTheme={questTheme} value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" />
         <View style={styles.timeRow}>
@@ -667,7 +700,10 @@ export default function ScheduleScreen() {
             <QuestInput questTheme={questTheme} value={endTime} onChangeText={setEndTime} placeholder="10:00" />
           </View>
         </View>
+        </>}
         <Text style={[styles.calc, { color: questTheme.colors.textMuted }]}>{t(lang, 'planned')}: {minutesBetween(startTime, endTime)}m</Text>
+        {Platform.OS !== 'web' && scheduleConflicts({date, startTime, endTime}, allBlocks, editingBlockId ?? undefined).length > 0 ?
+          <Text accessibilityRole="alert" style={{ color: questTheme.colors.text, fontSize: questTheme.typography.bodySize }}>{t(lang, 'scheduleOverlap')}</Text> : null}
 
         <ChipGroup questTheme={questTheme} title={t(lang, 'taskType')} values={TASK_TYPES} labels={Object.fromEntries(TASK_TYPES.map((v) => [v, taskTypeLabel(lang, v)]))} value={taskType} onChange={(v) => v && setTaskType(v)} accent={accent} />
         <ChipGroup questTheme={questTheme} title={t(lang, 'flexibility')} values={FLEX} labels={Object.fromEntries(FLEX.map((v) => [v, flexibilityLabel(lang, v)]))} value={flexibility} onChange={(v) => v && setFlexibility(v)} accent={accent} />
@@ -682,6 +718,8 @@ export default function ScheduleScreen() {
         <QuestInput questTheme={questTheme} value={notes} onChangeText={setNotes} style={{ height: 70, textAlignVertical: 'top' }} multiline />
         <QuestButton questTheme={questTheme} variant="primary" icon={editingBlockId ? undefined : 'plus'} label={editingBlockId ? t(lang, 'save') : t(lang, 'createBlock')} onPress={submit} style={{ marginTop: 18 }} />
       </BottomSheetForm>
+
+      {Platform.OS !== 'web' && calendarBlockId ? <NativeScheduleCalendarSheet blockId={calendarBlockId} onClose={() => setCalendarBlockId(null)} /> : null}
 
       <BottomSheetForm visible={!!logBlock} onClose={() => setLogBlock(null)}>
         <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'logProgress')}</Text>

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
+  Alert, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -79,6 +79,7 @@ export default function GoalDetailScreen() {
   const [moduleOpen, setModuleOpen] = useState(false);
   const [editingModuleId, setEditingModuleId] = useState<string | undefined>();
   const [moduleName, setModuleName] = useState('');
+  const [existingSkillQuery, setExistingSkillQuery] = useState('');
   const [moduleIcon, setModuleIcon] = useState('📁');
   const [moduleDescription, setModuleDescription] = useState('');
   const [skillModuleId, setSkillModuleId] = useState<string | undefined>();
@@ -390,7 +391,7 @@ export default function GoalDetailScreen() {
                 skills={skillsForModule(module.id, skills, links)}
                 links={links.filter((link) => link.moduleId === module.id)}
                 addSkill={() => openAddSkill(module.id)}
-                addExisting={() => setExistingModuleId(module.id)}
+                addExisting={() => { setExistingSkillQuery(''); setExistingModuleId(module.id); }}
                 removeSkill={(skillId) => removeSkillFromModule(module.id, skillId)}
                 editModule={() => openEditModule(module)}
                 deleteModule={() => confirmDeleteModule(module)}
@@ -637,19 +638,22 @@ export default function GoalDetailScreen() {
       </BottomSheetForm>
       <BottomSheetForm visible={!!existingModuleId} onClose={() => setExistingModuleId(undefined)}>
         <Text style={[styles.sheetTitle, { color: questTheme.colors.text }]}>{t(lang, 'addExistingSkill')}</Text>
+        {Platform.OS !== 'web' ? <QuestInput questTheme={questTheme} value={existingSkillQuery} onChangeText={setExistingSkillQuery} placeholder={t(lang, 'searchSkills')} autoCorrect={false} returnKeyType="search" /> : null}
         {activeExistingModule ? (
           <View style={styles.inlineEntityRow}>
             <QuestEntityIcon icon={activeExistingModule.icon} systemIcon="folder" questTheme={questTheme} size="sm" />
             <Text style={[styles.sheetSub, { color: questTheme.colors.textMuted }]}>{displayModuleName(activeExistingModule, lang)}</Text>
           </View>
         ) : null}
-        {existingSkillOptions.length === 0 ? (
+        {existingSkillOptions.filter(skill => Platform.OS === 'web' || skill.name.toLocaleLowerCase().includes(existingSkillQuery.trim().toLocaleLowerCase())).length === 0 ? (
           <Text style={[styles.emptySmall, { color: questTheme.colors.textMuted }]}>{data.skills.length === 0 ? t(lang, 'noSkillsInLibrary') : t(lang, 'noAvailableSkills')}</Text>
         ) : (
-          existingSkillOptions.map((skill) => (
+          existingSkillOptions.filter(skill => Platform.OS === 'web' || skill.name.toLocaleLowerCase().includes(existingSkillQuery.trim().toLocaleLowerCase())).map((skill) => (
             <TouchableOpacity
               key={skill.id}
               style={[styles.existingSkillRow, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}
+              accessibilityRole="button"
+              accessibilityLabel={`${t(lang, 'addExistingSkill')}: ${skill.name}`}
               onPress={() => {
                 if (activeExistingModule) linkExistingSkill(activeExistingModule, skill);
               }}
@@ -667,6 +671,19 @@ export default function GoalDetailScreen() {
         )}
       </BottomSheetForm>
       <BottomSheetForm visible={moduleOpen} onClose={() => setModuleOpen(false)}>
+        {Platform.OS !== 'web' && editingModuleId ? <View style={{ flexDirection: 'row', gap: questTheme.spacing.sm, marginBottom: questTheme.spacing.sm }}>
+          {([-1, 1] as const).map(direction => {
+            const index = modules.findIndex(module => module.id === editingModuleId);
+            const target = modules[index + direction];
+            return <QuestButton key={direction} questTheme={questTheme} variant="ghost" label={t(lang, direction === -1 ? 'moveUp' : 'moveDown')} disabled={!target}
+              onPress={() => {
+                if (!target) return;
+                const reordered = [...modules];
+                [reordered[index], reordered[index + direction]] = [reordered[index + direction], reordered[index]];
+                reordered.forEach((module, order) => { if (module.order !== order) updateModule(module.id, { order }); });
+              }} />;
+          })}
+        </View> : null}
         <Text style={[styles.sheetTitle, { color: questTheme.colors.text }]}>{editingModuleId ? t(lang, 'editModule') : t(lang, 'createModule')}</Text>
         <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'moduleName')}</Text>
         <QuestInput questTheme={questTheme} value={moduleName} onChangeText={setModuleName} placeholder={t(lang, 'defaultModule')} />
@@ -776,7 +793,7 @@ function ModuleGroup({
                 </Text>
               </View>
               <TouchableOpacity
-                style={[styles.unlinkIconButton, { borderColor: questTheme.colors.border }]}
+                style={[styles.unlinkIconButton, { borderColor: questTheme.colors.border }, Platform.OS !== 'web' && { minHeight: questLayout.controlMinHeight, minWidth: questLayout.controlMinHeight }]}
                 onPress={(event) => {
                   event.stopPropagation?.();
                   confirmAction({
