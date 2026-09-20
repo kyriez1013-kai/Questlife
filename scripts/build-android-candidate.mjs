@@ -6,6 +6,9 @@ import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repo = resolve(fileURLToPath(new URL('..', import.meta.url)));
+const git = (...args) => execFileSync('git', args, { cwd: repo, encoding: 'utf8' }).trim();
+const sourceCommit = git('rev-parse', 'HEAD');
+if (git('status', '--porcelain', '--untracked-files=no')) throw new Error('Commit tracked candidate changes before the standalone build');
 const apiOrigin = process.env.EXPO_PUBLIC_API_ORIGIN;
 if (!apiOrigin || !/^https:\/\/[^/?#]+\/?$/.test(apiOrigin)) {
   throw new Error('Standalone candidates require EXPO_PUBLIC_API_ORIGIN pointing to the HTTPS candidate, not Metro or localhost');
@@ -42,11 +45,14 @@ if (!existsSync(keystore)) {
 run('npx', ['expo', 'prebuild', '--platform', 'android', '--no-install']);
 run('./gradlew', [':app:assembleRelease', '-PreactNativeArchitectures=arm64-v8a', '--console=plain', '--max-workers=4'], join(repo, 'android'));
 const apk = join(repo, 'android/app/build/outputs/apk/release/app-release.apk');
-const commit = execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim();
+if (git('rev-parse', 'HEAD') !== sourceCommit || git('status', '--porcelain', '--untracked-files=no')) {
+  throw new Error('Candidate source changed during build; do not label this APK as the new commit');
+}
+const commit = sourceCommit.slice(0, 7);
 const destination = join(output, `questlife-v1-${commit}-arm64.apk`);
 copyFileSync(apk, destination);
 const bytes = readFileSync(destination);
-const metadata = { path: destination, sourceCommit: commit, dirty: Boolean(execFileSync('git', ['status', '--porcelain'], { cwd: repo, encoding: 'utf8' }).trim()),
+const metadata = { path: destination, sourceCommit, dirty: false,
   sha256: createHash('sha256').update(bytes).digest('hex'), bytes: bytes.length,
   architecture: 'arm64-v8a', developmentClient: false, signing: 'dedicated local internal key', generatedAt: new Date().toISOString() };
 metadata.apiOrigin = apiOrigin;
