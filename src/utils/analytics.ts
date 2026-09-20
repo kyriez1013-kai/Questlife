@@ -1,9 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { apiUrl } from '../platform/apiUrl';
-import { platformTelemetryAllowed } from '../platform/telemetryPermission';
-
-declare const process: any;
-declare const __DEV__: boolean;
 
 const USER_ID_KEY = 'questlife_anonymous_user_id';
 const SESSION_ID_KEY = 'questlife_session_id';
@@ -89,45 +84,10 @@ export function sanitizeAnalyticsProperties(properties: EventProperties = {}) {
 }
 
 export function trackEvent(
-  eventName: string,
-  properties: EventProperties = {},
-  options: { page?: string; appVersion?: string } = {}
+  _eventName: string,
+  _properties: EventProperties = {},
+  _options: { page?: string; appVersion?: string } = {}
 ) {
-  if (!platformTelemetryAllowed()) return;
-  if (!eventName || eventName.length > 100) return;
-  const enabled = typeof process !== 'undefined'
-    ? (process as any).env?.EXPO_PUBLIC_ANALYTICS_ENABLED
-    : undefined;
-  if (enabled === 'false') return;
-
-  void (async () => {
-    try {
-      const anonymousUserId = await getAnonymousUserId();
-      const sessionId = await getSessionId();
-      const body = {
-        anonymousUserId,
-        eventName,
-        eventTime: new Date().toISOString(),
-        sessionId,
-        page: options.page,
-        appVersion: options.appVersion ?? '1.0.0',
-        properties: sanitizeAnalyticsProperties(properties),
-      };
-      if (typeof __DEV__ !== 'undefined' && __DEV__) {
-        console.log('[analytics]', eventName, body.properties);
-      }
-      const response = await fetch(apiUrl('/api/track'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (!response.ok && typeof __DEV__ !== 'undefined' && __DEV__) {
-        console.warn('[analytics] track failed', response.status);
-      }
-    } catch (error) {
-      if (typeof __DEV__ !== 'undefined' && __DEV__) {
-        console.warn('[analytics] unavailable', error);
-      }
-    }
-  })();
+  // Retain caller compatibility, without sending anonymous service-role writes
+  // or manufacturing tracking identifiers. Product records use Sync V2.
 }
