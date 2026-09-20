@@ -13,6 +13,8 @@ import { nativeInsightsRendererScript } from '../nativeInsightsChartRuntime';
 import type { QuestTheme } from '../../../design/tokens';
 import type { QuestLifeChartModelV1 } from '../../../platform/charts/contract';
 import type { OwnerQuantRuntimeArtifacts } from '../../../adaptive-decision/ownerQuantRuntime';
+import { clearInsightsV3BundleCacheForTests, loadInsightsV3InitialBundle, loadInsightsV3DetailBundle } from '../../../insights-v3/insightsV3Source';
+import { loadInsightsV3AnalysisExtension } from '../../../insights-v3/insightsV3AnalysisSource';
 
 function fixture(name: string) {
   const parsed = parseQuantProductBundleV1(JSON.parse(readFileSync(`src/quant-product/fixtures/${name}.json`, 'utf8')));
@@ -24,6 +26,27 @@ const all = { kind: 'contract', key: 'ALL' } as const;
 const q = { colors: { accent: '#125599', info: '#00bbbb', textMuted: '#cccccc', neutral: '#ddaaaa', textSecondary: '#888888' }, typography: { helperSize: 12 } } as QuestTheme;
 const foundation = { environment: { canvas: '#ffffff' }, text: { secondary: '#222222' }, data: { observed: '#112233', comparison: '#554433' }, border: { subtle: '#eeeeee' } } as QuestLifeChartModelV1['presentation']['foundation'];
 const presentation: QuestLifeChartModelV1 = { version: 1, presentation: { asOf: mature.metadata.as_of, series, range: all, chartKind: 'line', foundation, lang: 'en', targetLabel: 'Synthetic fixture', showEvents: false, showRawObservations: true, showReference: false, showReferenceRange: false } };
+
+test('real example loaders accept native window without browser location', async () => {
+  const original = Object.getOwnPropertyDescriptor(globalThis, 'window');
+  Object.defineProperty(globalThis, 'window', { configurable: true, value: {} });
+  clearInsightsV3BundleCacheForTests();
+  try {
+    for (const id of ['sparse-1', 'mature', 'drivers', 'similar', 'recovery', 'scenario'] as const) {
+      const result = id === 'sparse-1' ? await loadInsightsV3InitialBundle(id) : await loadInsightsV3DetailBundle(id);
+      assert.ok(result.ok, `${id}: ${JSON.stringify(result)}`);
+      assert.equal(result.bundle.metadata.synthetic_only, true);
+      assert.equal(result.bundle.metadata.contains_real_user_data, false);
+      const extension = await loadInsightsV3AnalysisExtension(id, result.bundle.metadata.bundle_id);
+      if (id === 'sparse-1' || id === 'mature' || id === 'drivers') assert.ok(extension.ok);
+    }
+    assert.equal('__questlifeInsightsV3Metrics' in window, false);
+  } finally {
+    clearInsightsV3BundleCacheForTests();
+    if (original) Object.defineProperty(globalThis, 'window', original);
+    else Reflect.deleteProperty(globalThis, 'window');
+  }
+});
 
 test('custom count validation rejects decimals, zero, exponent, negative and unsafe integers', () => {
   for (const value of ['0', '-1', '1.5', '1e3', '', '9007199254740992']) assert.equal(customSelection('days', value, '', ''), null);

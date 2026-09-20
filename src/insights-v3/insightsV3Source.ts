@@ -124,6 +124,7 @@ export function isInsightsV3InitialFullBundle(fixtureId: InsightsV3FixtureId) {
 
 function debugEnabled() {
   return typeof window !== 'undefined'
+    && typeof window.location?.search === 'string'
     && new URLSearchParams(window.location.search).get('debugInsightsV3') === '1';
 }
 
