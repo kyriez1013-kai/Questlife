@@ -1,0 +1,49 @@
+✔ two devices create, edit, delete and repeat tombstone (3.730208ms)
+✔ offline mutation survives restart (0.351583ms)
+✔ rejected head blocks later edits of the same entity but not other entities (0.605541ms)
+✔ Unicode payload limits count UTF-8 bytes, not code units (2.8295ms)
+✔ local replica clear requires signout and confirmation, preserves cloud, restores same account (0.571458ms)
+✔ local replica clear never discards unsynced changes (0.098625ms)
+✔ only public Supabase keys are accepted by client configuration (0.11825ms)
+✔ explicit Calendar block export retains linkage and does not duplicate on retry (3.075625ms)
+✔ Phase 1 Health import time uses stored first availability, never current time (9.033625ms)
+{"health":10000,"initialMs":23.54579100000001,"updateMs":37.848292000000015,"changedBytes":85001,"wholeBlobBytes":11805561,"storage":"isolated memory KV, not device disk"}
+{"count":1000,"localApplyMs":4.225500000000068,"hydrateMs":7.518916999999988,"push100Ms":7.43587500000001,"incrementalMs":3.453292000000033,"transport":"in-memory deterministic","ownerWrites":0}
+{"count":10000,"localApplyMs":39.18624999999997,"hydrateMs":329.979166000001,"push100Ms":57.925750000000335,"incrementalMs":31.299417000000176,"transport":"in-memory deterministic","ownerWrites":0}
+✔ expiry and sign-out invalidate an in-flight pull without writing remote data (3.12775ms)
+✔ a local edit queued while remote apply finishes retains its observed base revision (1.216084ms)
+✔ lost ACK retries immutable mutation without revision inflation (0.664917ms)
+✔ lost ACK then another device edits does not skip the newer remote revision (0.299625ms)
+✔ per entity create edit edit delete remains ordered (0.285708ms)
+✔ concurrent local edit keeps payload in conflict; remote remains canonical (0.524458ms)
+✔ first account merges disjoint and conflicts same id; no local loss (0.285334ms)
+✔ first account identical rows dedupe without revision change (0.1535ms)
+✔ account switch fails closed and signout keeps local data (0.139541ms)
+✔ replay crash between journal and projection without duplicate outbox (0.087541ms)
+✔ remote apply crash recovers cursor and projection together (0.169833ms)
+✔ malformed remote payload quarantined without crashing hydration (0.395375ms)
+✔ out of order remote response cannot advance cursor (0.1725ms)
+✔ provenance firewall rejects nested synthetic and QA (0.040792ms)
+✔ absent rows during retention are not deletions; explicit delete is (0.104708ms)
+✔ remote projection idempotent and preserves settings (0.077584ms)
+✔ Auth abstraction request verify restore signout, no token API (0.177083ms)
+✔ Health requires auth and explicit consent; full provenance hydrates another client (0.642792ms)
+✔ Health backlog is bounded; opt-out clears queued health but not cloud records (23.595166ms)
+✔ explicit provider deletion queues a remote Health tombstone without inferring absence (3.774625ms)
+✔ Health tombstone lost ACK survives restart with immutable mutation and no duplicate revision (0.655291ms)
+✔ Health source metadata-only revisions upload even when measurement value is unchanged (0.449375ms)
+✔ explicit Health deletion follows pending upsert and source-update child retirement stays exact (0.56325ms)
+✔ explicit Health deletions respect auth, consent, owner isolation and bounded backlog (15.114459ms)
+✔ Health deletion conflict remains explicit and is never silently requeued over remote winner (1.054875ms)
+✔ 10k Health observations: one sample edit writes one bounded partition, no AppData (389.143375ms)
+✔ provider Calendar identity dedupes only real provider IDs; title coincidence does not merge (0.103375ms)
+✔ remote ScheduleBlock reschedules device effects and tombstone cancels (1.80525ms)
+✔ scale 1000 / 10000 synthetic isolated clients, no owner storage (13978.690417ms)
+ℹ tests 38
+ℹ suites 0
+ℹ pass 38
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 14518.128084

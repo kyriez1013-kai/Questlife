@@ -1,0 +1,13 @@
+PASS native PostgreSQL migration preserves existing device metadata and owner RLS
+PASS all registry RPCs deny anonymous roles and signed-out authenticated callers
+PASS authenticated direct token reads and broad device writes are denied
+PASS two native devices register only for auth.uid and remain separately bound
+PASS B cannot register, claim, revoke or read A device/token
+PASS revoking device one leaves device two and the other owner unchanged
+PASS wrong registration or wrong device cannot retire the active exact generation
+PASS retirement replay is idempotent and a delayed register cannot resurrect its generation
+PASS disabled preference, invalid token and web-device registration fail closed
+PASS manual claim uses exact device and durable request dedupe without repeat token exposure
+PASS expired lease is unsendable and signed-out callers cannot use an existing binding
+PASS formal Health tombstone and lost-ACK receipt replay preserve exact owner and revision
+{"suite":"disposable native PostgreSQL 18 push migration and Health tombstone","checks":12,"passed":12,"databaseEngineMocked":false,"identityClaims":"fixture auth.uid under actual authenticated/anon roles","hostedSupabase":false,"ownerDataTouched":false,"tcpListener":false}

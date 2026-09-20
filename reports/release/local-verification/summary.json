@@ -1,0 +1,127 @@
+{
+  "sourceCommit": "19399f7d72d830746ab41a6206727fd8ac9ed713",
+  "generatedAt": "2026-09-20T11:36:32.568Z",
+  "scope": "local synthetic and component checks; not device/hosted acceptance",
+  "results": [
+    {
+      "name": "types",
+      "status": "PASS",
+      "exitCode": 0,
+      "ms": 7467
+    },
+    {
+      "name": "platform",
+      "status": "PASS",
+      "exitCode": 0,
+      "ms": 1001
+    },
+    {
+      "name": "device-services",
+      "status": "PASS",
+      "exitCode": 0,
+      "ms": 1524
+    },
+    {
+      "name": "sync",
+      "status": "PASS",
+      "exitCode": 0,
+      "ms": 15351
+    },
+    {
+      "name": "sync-sql",
+      "status": "PASS",
+      "exitCode": 0,
+      "ms": 877
+    },
+    {
+      "name": "sync-concurrency",
+      "status": "PASS",
+      "exitCode": 0,
+      "ms": 4001
+    },
+    {
+      "name": "push-postgres",
+      "status": "PASS",
+      "exitCode": 0,
+      "ms": 1337
+    },
+    {
+      "name": "push-boundary",
+      "status": "PASS",
+      "exitCode": 0,
+      "ms": 2012
+    },
+    {
+      "name": "health-delete",
+      "status": "PASS",
+      "exitCode": 0,
+      "ms": 1780
+    },
+    {
+      "name": "auth",
+      "status": "PASS",
+      "exitCode": 0,
+      "ms": 1137
+    },
+    {
+      "name": "shortcuts",
+      "status": "PASS",
+      "exitCode": 0,
+      "ms": 53
+    },
+    {
+      "name": "android-widget",
+      "status": "PASS",
+      "exitCode": 0,
+      "ms": 258
+    },
+    {
+      "name": "insights",
+      "status": "PASS",
+      "exitCode": 0,
+      "ms": 1549
+    },
+    {
+      "name": "workflows",
+      "status": "PASS",
+      "exitCode": 0,
+      "ms": 686
+    },
+    {
+      "name": "materials",
+      "status": "PASS",
+      "exitCode": 0,
+      "ms": 1253
+    },
+    {
+      "name": "decision",
+      "status": "PASS",
+      "exitCode": 0,
+      "ms": 2077
+    },
+    {
+      "name": "theme",
+      "status": "PASS",
+      "exitCode": 0,
+      "ms": 185
+    },
+    {
+      "name": "metro-assets",
+      "status": "PASS",
+      "exitCode": 0,
+      "ms": 113
+    },
+    {
+      "name": "web",
+      "status": "PASS",
+      "exitCode": 0,
+      "ms": 8305
+    },
+    {
+      "name": "dependency-audit",
+      "status": "PASS",
+      "exitCode": 0,
+      "ms": 1319
+    }
+  ]
+}

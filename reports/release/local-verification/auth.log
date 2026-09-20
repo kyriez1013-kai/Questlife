@@ -1,0 +1,19 @@
+PASS retired anonymous endpoint never reads, writes or acknowledges deletions
+PASS no auth and malformed bearer fail before upstream
+PASS wrong token and forged JWT claims do not authenticate
+PASS verified uid owns request and mismatched subject is forbidden
+PASS missing auth config fails closed without falling back to a service key
+PASS auth outages and malformed verified user fail closed
+PASS UTF-8 byte limit applies to raw and parsed bodies, including exact boundary
+PASS unconfigured Quant is unavailable, not insufficient observations
+PASS Quant failures, false insufficiency and cross-account/as-of replies are rejected
+PASS real request wrapper requires existing Supabase session, no anonymous fallback
+PASS local replica account ownership gates every upload
+PASS real wrapper uses bearer, removes health without consent and caches private copies
+PASS consent changes partition the cache and health upload
+PASS real client missing upstream and tampered snapshot receipt remain errors
+PASS logout discards in-flight response and prevents later cache resurrection
+PASS account switch discards A response and cannot upload A replica for B
+PASS consent revocation while waiting discards health-derived response
+Backend auth boundary: 17 scenario groups passed (fixture network; no live services).
+GoTrueClient@sb-auth-auth-token:0 (2.116.0) 2026-09-20T11:37:09.039Z The "lock" option is deprecated and will be removed in v3. The client now coordinates session refreshes without a lock, so most apps can drop the option. See https://github.com/supabase/supabase-js/blob/master/packages/core/auth-js/migrations/lockless-coordination.md

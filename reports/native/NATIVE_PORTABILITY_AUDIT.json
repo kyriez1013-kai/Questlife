@@ -2,12 +2,12 @@
   "version": 1,
   "counts": {
     "BLOCKER": 0,
-    "PLATFORM_ADAPTER": 228,
-    "WEB_ONLY_DEBUG": 169,
-    "SAFE_GUARD": 178,
+    "PLATFORM_ADAPTER": 244,
+    "WEB_ONLY_DEBUG": 171,
+    "SAFE_GUARD": 190,
     "NO_ACTION": 187
   },
-  "scannedFiles": 318,
+  "scannedFiles": 371,
   "nativeGraph": [
     "App.tsx",
     "index.ts",
@@ -30,7 +30,7 @@
     "src/adaptive-decision/presentation.ts",
     "src/adaptive-decision/safetyGate.ts",
     "src/adaptive-decision/telemetry.ts",
-    "src/components/BottomSheetForm.tsx",
+    "src/components/BottomSheetForm.native.tsx",
     "src/components/ColorPicker.tsx",
     "src/components/EmojiPicker.tsx",
     "src/components/GoalForm.tsx",
@@ -69,20 +69,44 @@
     "src/domainTemplates.ts",
     "src/i18n.ts",
     "src/insights-v3/InsightsV3Chart.native.tsx",
+    "src/insights-v3/insightsV3AnalysisSource.ts",
     "src/insights-v3/insightsV3I18n.ts",
     "src/insights-v3/insightsV3Presentation.ts",
+    "src/insights-v3/insightsV3Source.ts",
+    "src/insights-v3/insightsV3WatchlistPreferences.ts",
     "src/native/NativeApp.tsx",
     "src/native/NativeCalendarEditor.tsx",
     "src/native/NativeControls.tsx",
+    "src/native/NativeDateTimeField.tsx",
     "src/native/NativeInsightsScreen.tsx",
     "src/native/NativeLicensesScreen.tsx",
+    "src/native/NativeNotificationPreferences.tsx",
+    "src/native/NativeRecordActions.tsx",
+    "src/native/NativeScheduleCalendarSheet.tsx",
+    "src/native/NativeScheduleFields.tsx",
     "src/native/NativeSettingsScreen.tsx",
+    "src/native/insights/InsightsControls.tsx",
+    "src/native/insights/InsightsDetails.tsx",
+    "src/native/insights/InsightsRangeEditor.tsx",
+    "src/native/insights/NativeDateField.native.tsx",
+    "src/native/insights/NativeInsightsChart.native.tsx",
+    "src/native/insights/NativeInsightsExperience.tsx",
+    "src/native/insights/NativeInsightsWorkspace.tsx",
+    "src/native/insights/nativeInsightsChartModel.ts",
+    "src/native/insights/nativeInsightsChartRuntime.ts",
+    "src/native/insights/nativeInsightsPresentation.ts",
+    "src/native/insights/nativeInsightsStrings.ts",
+    "src/native/nativeDependencyNotices.ts",
+    "src/native/nativeWorkflowCopy.ts",
+    "src/native/nativeWorkflowValidation.ts",
     "src/notifications.native.ts",
     "src/platform/ForegroundSources.native.tsx",
+    "src/platform/QuestLifeBackendConfig.ts",
     "src/platform/QuickCaptureSuggestions.native.tsx",
     "src/platform/apiUrl.native.ts",
     "src/platform/calendar/CalendarDriver.native.ts",
     "src/platform/calendar/CalendarService.ts",
+    "src/platform/calendar/identity.ts",
     "src/platform/calendar/useExternalCalendarBlocks.native.ts",
     "src/platform/captureLayout.native.ts",
     "src/platform/charts/QuantChart.native.tsx",
@@ -90,9 +114,11 @@
     "src/platform/charts/localChartAsset.ts",
     "src/platform/contracts.ts",
     "src/platform/deviceRepository.ts",
+    "src/platform/health/HealthCollection.ts",
     "src/platform/health/HealthSource.android.ts",
     "src/platform/health/HealthSource.ios.ts",
     "src/platform/health/HealthSync.ts",
+    "src/platform/health/changes.ts",
     "src/platform/health/normalization.ts",
     "src/platform/nativeI18n.ts",
     "src/platform/notifications/NotificationCoordinator.native.tsx",
@@ -100,9 +126,14 @@
     "src/platform/notifications/NotificationService.ts",
     "src/platform/notifications/intentBus.ts",
     "src/platform/notifications/planner.ts",
+    "src/platform/notifications/quietHours.ts",
+    "src/platform/notifications/sessionBoundary.ts",
     "src/platform/notifications/useQuickActions.native.ts",
     "src/platform/quickCapture.ts",
     "src/platform/services.ts",
+    "src/platform/shortcuts/ShortcutCoordinator.native.tsx",
+    "src/platform/shortcuts/intent.ts",
+    "src/platform/shortcuts/strings.ts",
     "src/platform/telemetryPermission.native.ts",
     "src/platform/useDeviceData.ts",
     "src/progress.ts",
@@ -126,6 +157,21 @@
     "src/services/syncService.ts",
     "src/storage.ts",
     "src/store.tsx",
+    "src/sync-v2/AccountSyncSection.tsx",
+    "src/sync-v2/auth.ts",
+    "src/sync-v2/contracts.ts",
+    "src/sync-v2/copy.ts",
+    "src/sync-v2/device.ts",
+    "src/sync-v2/engine.ts",
+    "src/sync-v2/projection.ts",
+    "src/sync-v2/publicConfig.ts",
+    "src/sync-v2/pushRegistry.ts",
+    "src/sync-v2/pushRegistryCore.ts",
+    "src/sync-v2/registry.ts",
+    "src/sync-v2/runtime.ts",
+    "src/sync-v2/sessionStorage.native.ts",
+    "src/sync-v2/supabase.ts",
+    "src/sync-v2/transport.ts",
     "src/theme.ts",
     "src/types.ts",
     "src/utils/analytics.ts",
@@ -163,14 +209,15 @@
     "src/utils/todayDecisionPresentation.ts",
     "src/utils/universalCapture.ts",
     "src/v11-insights/insightsPresentation.ts",
+    "src/v11-insights/personal-terminal/PersonalTerminalIcon.tsx",
     "src/v11-insights/personal-terminal/personalTerminalPresentation.ts",
     "src/v11-stage2-rebaseline/V11IntegratedTodaySurface.native.tsx",
     "src/v11-stage2-rebaseline/V11RebaselineIcon.tsx",
     "src/v11-stage2-rebaseline/V11Stage2ProductionSheet.native.tsx",
     "src/v11-stage2-rebaseline/v11-stage2-rebaseline.styles.ts",
-    "src/v11/components/V11DirectionalBorder.tsx",
     "src/v11/components/V11GlowOrb.tsx",
     "src/v11/components/V11Material.native.tsx",
+    "src/v11/components/V11NativeSheet.native.tsx",
     "src/v11/components/V11SheetControls.native.tsx",
     "src/v11/featureFlag.ts",
     "src/v11/featureSelection.ts",
@@ -201,7 +248,7 @@
       "src/adaptive-decision/presentation.ts",
       "src/adaptive-decision/safetyGate.ts",
       "src/adaptive-decision/telemetry.ts",
-      "src/components/BottomSheetForm.tsx",
+      "src/components/BottomSheetForm.native.tsx",
       "src/components/ColorPicker.tsx",
       "src/components/EmojiPicker.tsx",
       "src/components/GoalForm.tsx",
@@ -240,20 +287,44 @@
       "src/domainTemplates.ts",
       "src/i18n.ts",
       "src/insights-v3/InsightsV3Chart.native.tsx",
+      "src/insights-v3/insightsV3AnalysisSource.ts",
       "src/insights-v3/insightsV3I18n.ts",
       "src/insights-v3/insightsV3Presentation.ts",
+      "src/insights-v3/insightsV3Source.ts",
+      "src/insights-v3/insightsV3WatchlistPreferences.ts",
       "src/native/NativeApp.tsx",
       "src/native/NativeCalendarEditor.tsx",
       "src/native/NativeControls.tsx",
+      "src/native/NativeDateTimeField.tsx",
       "src/native/NativeInsightsScreen.tsx",
       "src/native/NativeLicensesScreen.tsx",
+      "src/native/NativeNotificationPreferences.tsx",
+      "src/native/NativeRecordActions.tsx",
+      "src/native/NativeScheduleCalendarSheet.tsx",
+      "src/native/NativeScheduleFields.tsx",
       "src/native/NativeSettingsScreen.tsx",
+      "src/native/insights/InsightsControls.tsx",
+      "src/native/insights/InsightsDetails.tsx",
+      "src/native/insights/InsightsRangeEditor.tsx",
+      "src/native/insights/NativeDateField.native.tsx",
+      "src/native/insights/NativeInsightsChart.native.tsx",
+      "src/native/insights/NativeInsightsExperience.tsx",
+      "src/native/insights/NativeInsightsWorkspace.tsx",
+      "src/native/insights/nativeInsightsChartModel.ts",
+      "src/native/insights/nativeInsightsChartRuntime.ts",
+      "src/native/insights/nativeInsightsPresentation.ts",
+      "src/native/insights/nativeInsightsStrings.ts",
+      "src/native/nativeDependencyNotices.ts",
+      "src/native/nativeWorkflowCopy.ts",
+      "src/native/nativeWorkflowValidation.ts",
       "src/notifications.native.ts",
       "src/platform/ForegroundSources.native.tsx",
+      "src/platform/QuestLifeBackendConfig.ts",
       "src/platform/QuickCaptureSuggestions.native.tsx",
       "src/platform/apiUrl.native.ts",
       "src/platform/calendar/CalendarDriver.native.ts",
       "src/platform/calendar/CalendarService.ts",
+      "src/platform/calendar/identity.ts",
       "src/platform/calendar/useExternalCalendarBlocks.native.ts",
       "src/platform/captureLayout.native.ts",
       "src/platform/charts/QuantChart.native.tsx",
@@ -261,8 +332,10 @@
       "src/platform/charts/localChartAsset.ts",
       "src/platform/contracts.ts",
       "src/platform/deviceRepository.ts",
+      "src/platform/health/HealthCollection.ts",
       "src/platform/health/HealthSource.ios.ts",
       "src/platform/health/HealthSync.ts",
+      "src/platform/health/changes.ts",
       "src/platform/health/normalization.ts",
       "src/platform/nativeI18n.ts",
       "src/platform/notifications/NotificationCoordinator.native.tsx",
@@ -270,9 +343,14 @@
       "src/platform/notifications/NotificationService.ts",
       "src/platform/notifications/intentBus.ts",
       "src/platform/notifications/planner.ts",
+      "src/platform/notifications/quietHours.ts",
+      "src/platform/notifications/sessionBoundary.ts",
       "src/platform/notifications/useQuickActions.native.ts",
       "src/platform/quickCapture.ts",
       "src/platform/services.ts",
+      "src/platform/shortcuts/ShortcutCoordinator.native.tsx",
+      "src/platform/shortcuts/intent.ts",
+      "src/platform/shortcuts/strings.ts",
       "src/platform/telemetryPermission.native.ts",
       "src/platform/useDeviceData.ts",
       "src/progress.ts",
@@ -296,6 +374,21 @@
       "src/services/syncService.ts",
       "src/storage.ts",
       "src/store.tsx",
+      "src/sync-v2/AccountSyncSection.tsx",
+      "src/sync-v2/auth.ts",
+      "src/sync-v2/contracts.ts",
+      "src/sync-v2/copy.ts",
+      "src/sync-v2/device.ts",
+      "src/sync-v2/engine.ts",
+      "src/sync-v2/projection.ts",
+      "src/sync-v2/publicConfig.ts",
+      "src/sync-v2/pushRegistry.ts",
+      "src/sync-v2/pushRegistryCore.ts",
+      "src/sync-v2/registry.ts",
+      "src/sync-v2/runtime.ts",
+      "src/sync-v2/sessionStorage.native.ts",
+      "src/sync-v2/supabase.ts",
+      "src/sync-v2/transport.ts",
       "src/theme.ts",
       "src/types.ts",
       "src/utils/analytics.ts",
@@ -333,14 +426,15 @@
       "src/utils/todayDecisionPresentation.ts",
       "src/utils/universalCapture.ts",
       "src/v11-insights/insightsPresentation.ts",
+      "src/v11-insights/personal-terminal/PersonalTerminalIcon.tsx",
       "src/v11-insights/personal-terminal/personalTerminalPresentation.ts",
       "src/v11-stage2-rebaseline/V11IntegratedTodaySurface.native.tsx",
       "src/v11-stage2-rebaseline/V11RebaselineIcon.tsx",
       "src/v11-stage2-rebaseline/V11Stage2ProductionSheet.native.tsx",
       "src/v11-stage2-rebaseline/v11-stage2-rebaseline.styles.ts",
-      "src/v11/components/V11DirectionalBorder.tsx",
       "src/v11/components/V11GlowOrb.tsx",
       "src/v11/components/V11Material.native.tsx",
+      "src/v11/components/V11NativeSheet.native.tsx",
       "src/v11/components/V11SheetControls.native.tsx",
       "src/v11/featureFlag.ts",
       "src/v11/featureSelection.ts",
@@ -370,7 +464,7 @@
       "src/adaptive-decision/presentation.ts",
       "src/adaptive-decision/safetyGate.ts",
       "src/adaptive-decision/telemetry.ts",
-      "src/components/BottomSheetForm.tsx",
+      "src/components/BottomSheetForm.native.tsx",
       "src/components/ColorPicker.tsx",
       "src/components/EmojiPicker.tsx",
       "src/components/GoalForm.tsx",
@@ -409,20 +503,44 @@
       "src/domainTemplates.ts",
       "src/i18n.ts",
       "src/insights-v3/InsightsV3Chart.native.tsx",
+      "src/insights-v3/insightsV3AnalysisSource.ts",
       "src/insights-v3/insightsV3I18n.ts",
       "src/insights-v3/insightsV3Presentation.ts",
+      "src/insights-v3/insightsV3Source.ts",
+      "src/insights-v3/insightsV3WatchlistPreferences.ts",
       "src/native/NativeApp.tsx",
       "src/native/NativeCalendarEditor.tsx",
       "src/native/NativeControls.tsx",
+      "src/native/NativeDateTimeField.tsx",
       "src/native/NativeInsightsScreen.tsx",
       "src/native/NativeLicensesScreen.tsx",
+      "src/native/NativeNotificationPreferences.tsx",
+      "src/native/NativeRecordActions.tsx",
+      "src/native/NativeScheduleCalendarSheet.tsx",
+      "src/native/NativeScheduleFields.tsx",
       "src/native/NativeSettingsScreen.tsx",
+      "src/native/insights/InsightsControls.tsx",
+      "src/native/insights/InsightsDetails.tsx",
+      "src/native/insights/InsightsRangeEditor.tsx",
+      "src/native/insights/NativeDateField.native.tsx",
+      "src/native/insights/NativeInsightsChart.native.tsx",
+      "src/native/insights/NativeInsightsExperience.tsx",
+      "src/native/insights/NativeInsightsWorkspace.tsx",
+      "src/native/insights/nativeInsightsChartModel.ts",
+      "src/native/insights/nativeInsightsChartRuntime.ts",
+      "src/native/insights/nativeInsightsPresentation.ts",
+      "src/native/insights/nativeInsightsStrings.ts",
+      "src/native/nativeDependencyNotices.ts",
+      "src/native/nativeWorkflowCopy.ts",
+      "src/native/nativeWorkflowValidation.ts",
       "src/notifications.native.ts",
       "src/platform/ForegroundSources.native.tsx",
+      "src/platform/QuestLifeBackendConfig.ts",
       "src/platform/QuickCaptureSuggestions.native.tsx",
       "src/platform/apiUrl.native.ts",
       "src/platform/calendar/CalendarDriver.native.ts",
       "src/platform/calendar/CalendarService.ts",
+      "src/platform/calendar/identity.ts",
       "src/platform/calendar/useExternalCalendarBlocks.native.ts",
       "src/platform/captureLayout.native.ts",
       "src/platform/charts/QuantChart.native.tsx",
@@ -430,8 +548,10 @@
       "src/platform/charts/localChartAsset.ts",
       "src/platform/contracts.ts",
       "src/platform/deviceRepository.ts",
+      "src/platform/health/HealthCollection.ts",
       "src/platform/health/HealthSource.android.ts",
       "src/platform/health/HealthSync.ts",
+      "src/platform/health/changes.ts",
       "src/platform/health/normalization.ts",
       "src/platform/nativeI18n.ts",
       "src/platform/notifications/NotificationCoordinator.native.tsx",
@@ -439,9 +559,14 @@
       "src/platform/notifications/NotificationService.ts",
       "src/platform/notifications/intentBus.ts",
       "src/platform/notifications/planner.ts",
+      "src/platform/notifications/quietHours.ts",
+      "src/platform/notifications/sessionBoundary.ts",
       "src/platform/notifications/useQuickActions.native.ts",
       "src/platform/quickCapture.ts",
       "src/platform/services.ts",
+      "src/platform/shortcuts/ShortcutCoordinator.native.tsx",
+      "src/platform/shortcuts/intent.ts",
+      "src/platform/shortcuts/strings.ts",
       "src/platform/telemetryPermission.native.ts",
       "src/platform/useDeviceData.ts",
       "src/progress.ts",
@@ -465,6 +590,21 @@
       "src/services/syncService.ts",
       "src/storage.ts",
       "src/store.tsx",
+      "src/sync-v2/AccountSyncSection.tsx",
+      "src/sync-v2/auth.ts",
+      "src/sync-v2/contracts.ts",
+      "src/sync-v2/copy.ts",
+      "src/sync-v2/device.ts",
+      "src/sync-v2/engine.ts",
+      "src/sync-v2/projection.ts",
+      "src/sync-v2/publicConfig.ts",
+      "src/sync-v2/pushRegistry.ts",
+      "src/sync-v2/pushRegistryCore.ts",
+      "src/sync-v2/registry.ts",
+      "src/sync-v2/runtime.ts",
+      "src/sync-v2/sessionStorage.native.ts",
+      "src/sync-v2/supabase.ts",
+      "src/sync-v2/transport.ts",
       "src/theme.ts",
       "src/types.ts",
       "src/utils/analytics.ts",
@@ -502,14 +642,15 @@
       "src/utils/todayDecisionPresentation.ts",
       "src/utils/universalCapture.ts",
       "src/v11-insights/insightsPresentation.ts",
+      "src/v11-insights/personal-terminal/PersonalTerminalIcon.tsx",
       "src/v11-insights/personal-terminal/personalTerminalPresentation.ts",
       "src/v11-stage2-rebaseline/V11IntegratedTodaySurface.native.tsx",
       "src/v11-stage2-rebaseline/V11RebaselineIcon.tsx",
       "src/v11-stage2-rebaseline/V11Stage2ProductionSheet.native.tsx",
       "src/v11-stage2-rebaseline/v11-stage2-rebaseline.styles.ts",
-      "src/v11/components/V11DirectionalBorder.tsx",
       "src/v11/components/V11GlowOrb.tsx",
       "src/v11/components/V11Material.native.tsx",
+      "src/v11/components/V11NativeSheet.native.tsx",
       "src/v11/components/V11SheetControls.native.tsx",
       "src/v11/featureFlag.ts",
       "src/v11/featureSelection.ts",
@@ -1238,28 +1379,28 @@
       "line": 70,
       "kind": "markup",
       "classification": "PLATFORM_ADAPTER",
-      "inNativeGraph": true
+      "inNativeGraph": false
     },
     {
       "file": "src/components/BottomSheetForm.tsx",
       "line": 83,
       "kind": "markup",
       "classification": "PLATFORM_ADAPTER",
-      "inNativeGraph": true
+      "inNativeGraph": false
     },
     {
       "file": "src/components/BottomSheetForm.tsx",
       "line": 100,
       "kind": "markup",
       "classification": "PLATFORM_ADAPTER",
-      "inNativeGraph": true
+      "inNativeGraph": false
     },
     {
       "file": "src/components/BottomSheetForm.tsx",
       "line": 112,
       "kind": "markup",
       "classification": "SAFE_GUARD",
-      "inNativeGraph": true
+      "inNativeGraph": false
     },
     {
       "file": "src/components/DashboardLayoutControls.tsx",
@@ -1823,105 +1964,105 @@
     },
     {
       "file": "src/i18n.ts",
-      "line": 3888,
+      "line": 3904,
       "kind": "dom",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
     },
     {
       "file": "src/i18n.ts",
-      "line": 4528,
+      "line": 4544,
       "kind": "dom",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
     },
     {
       "file": "src/i18n.ts",
-      "line": 5108,
+      "line": 5124,
       "kind": "dom",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
     },
     {
       "file": "src/i18n.ts",
-      "line": 5214,
+      "line": 5230,
       "kind": "dom",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
     },
     {
       "file": "src/i18n.ts",
-      "line": 5408,
+      "line": 5424,
       "kind": "dom",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
     },
     {
       "file": "src/i18n.ts",
-      "line": 5410,
+      "line": 5426,
       "kind": "dom",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
     },
     {
       "file": "src/i18n.ts",
-      "line": 5599,
+      "line": 5615,
       "kind": "dom",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
     },
     {
       "file": "src/i18n.ts",
-      "line": 5654,
+      "line": 5670,
       "kind": "dom",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
     },
     {
       "file": "src/i18n.ts",
-      "line": 5683,
+      "line": 5699,
       "kind": "dom",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
     },
     {
       "file": "src/i18n.ts",
-      "line": 5734,
+      "line": 5750,
       "kind": "dom",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
     },
     {
       "file": "src/i18n.ts",
-      "line": 5754,
+      "line": 5770,
       "kind": "dom",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
     },
     {
       "file": "src/i18n.ts",
-      "line": 5997,
+      "line": 6013,
       "kind": "dom",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
     },
     {
       "file": "src/i18n.ts",
-      "line": 6004,
+      "line": 6020,
       "kind": "dom",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
     },
     {
       "file": "src/i18n.ts",
-      "line": 6022,
+      "line": 6038,
       "kind": "dom",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
     },
     {
       "file": "src/i18n.ts",
-      "line": 6035,
+      "line": 6051,
       "kind": "dom",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
@@ -2288,70 +2429,203 @@
       "line": 109,
       "kind": "dom",
       "classification": "PLATFORM_ADAPTER",
-      "inNativeGraph": false
+      "inNativeGraph": true
     },
     {
       "file": "src/insights-v3/insightsV3Source.ts",
       "line": 126,
       "kind": "dom",
       "classification": "SAFE_GUARD",
-      "inNativeGraph": false
+      "inNativeGraph": true
     },
     {
       "file": "src/insights-v3/insightsV3Source.ts",
       "line": 127,
       "kind": "dom",
       "classification": "SAFE_GUARD",
-      "inNativeGraph": false
+      "inNativeGraph": true
     },
     {
       "file": "src/insights-v3/insightsV3Source.ts",
       "line": 131,
       "kind": "dom",
       "classification": "SAFE_GUARD",
-      "inNativeGraph": false
+      "inNativeGraph": true
     },
     {
       "file": "src/insights-v3/insightsV3Source.ts",
       "line": 132,
       "kind": "dom",
       "classification": "SAFE_GUARD",
-      "inNativeGraph": false
+      "inNativeGraph": true
     },
     {
       "file": "src/insights-v3/insightsV3WatchlistPreferences.ts",
       "line": 43,
       "kind": "dom",
       "classification": "SAFE_GUARD",
-      "inNativeGraph": false
+      "inNativeGraph": true
     },
     {
       "file": "src/insights-v3/insightsV3WatchlistPreferences.ts",
       "line": 45,
       "kind": "dom",
       "classification": "SAFE_GUARD",
-      "inNativeGraph": false
+      "inNativeGraph": true
     },
     {
       "file": "src/insights-v3/insightsV3WatchlistPreferences.ts",
       "line": 58,
       "kind": "dom",
       "classification": "SAFE_GUARD",
-      "inNativeGraph": false
+      "inNativeGraph": true
     },
     {
       "file": "src/insights-v3/insightsV3WatchlistPreferences.ts",
       "line": 61,
       "kind": "dom",
       "classification": "SAFE_GUARD",
-      "inNativeGraph": false
+      "inNativeGraph": true
     },
     {
       "file": "src/insights-v3/insightsV3WatchlistPreferences.ts",
       "line": 72,
       "kind": "dom",
       "classification": "PLATFORM_ADAPTER",
+      "inNativeGraph": true
+    },
+    {
+      "file": "src/native/insights/InsightsDetails.tsx",
+      "line": 50,
+      "kind": "dom",
+      "classification": "PLATFORM_ADAPTER",
+      "inNativeGraph": true
+    },
+    {
+      "file": "src/native/insights/InsightsDetails.tsx",
+      "line": 108,
+      "kind": "dom",
+      "classification": "PLATFORM_ADAPTER",
+      "inNativeGraph": true
+    },
+    {
+      "file": "src/native/insights/InsightsDetails.tsx",
+      "line": 115,
+      "kind": "dom",
+      "classification": "PLATFORM_ADAPTER",
+      "inNativeGraph": true
+    },
+    {
+      "file": "src/native/insights/NativeInsightsChart.native.tsx",
+      "line": 18,
+      "kind": "dom",
+      "classification": "PLATFORM_ADAPTER",
+      "inNativeGraph": true
+    },
+    {
+      "file": "src/native/insights/NativeInsightsChart.tsx",
+      "line": 13,
+      "kind": "dom",
+      "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": false
+    },
+    {
+      "file": "src/native/insights/NativeInsightsChart.tsx",
+      "line": 29,
+      "kind": "dom",
+      "classification": "PLATFORM_ADAPTER",
+      "inNativeGraph": false
+    },
+    {
+      "file": "src/native/insights/NativeInsightsChart.tsx",
+      "line": 32,
+      "kind": "dom",
+      "classification": "PLATFORM_ADAPTER",
+      "inNativeGraph": false
+    },
+    {
+      "file": "src/native/insights/__tests__/nativeInsights.test.ts",
+      "line": 125,
+      "kind": "dom",
+      "classification": "WEB_ONLY_DEBUG",
+      "inNativeGraph": false
+    },
+    {
+      "file": "src/native/insights/__tests__/nativeInsights.test.ts",
+      "line": 148,
+      "kind": "dom",
+      "classification": "WEB_ONLY_DEBUG",
+      "inNativeGraph": false
+    },
+    {
+      "file": "src/native/insights/__tests__/preview.tsx",
+      "line": 13,
+      "kind": "dom",
+      "classification": "PLATFORM_ADAPTER",
+      "inNativeGraph": false
+    },
+    {
+      "file": "src/native/insights/__tests__/preview.tsx",
+      "line": 31,
+      "kind": "dom",
+      "classification": "PLATFORM_ADAPTER",
+      "inNativeGraph": false
+    },
+    {
+      "file": "src/native/insights/nativeInsightsChartRuntime.ts",
+      "line": 2,
+      "kind": "dom",
+      "classification": "PLATFORM_ADAPTER",
+      "inNativeGraph": true
+    },
+    {
+      "file": "src/native/insights/nativeInsightsChartRuntime.ts",
+      "line": 5,
+      "kind": "dom",
+      "classification": "PLATFORM_ADAPTER",
+      "inNativeGraph": true
+    },
+    {
+      "file": "src/native/insights/nativeInsightsChartRuntime.ts",
+      "line": 11,
+      "kind": "dom",
+      "classification": "PLATFORM_ADAPTER",
+      "inNativeGraph": true
+    },
+    {
+      "file": "src/native/insights/nativeInsightsChartRuntime.ts",
+      "line": 20,
+      "kind": "dom",
+      "classification": "PLATFORM_ADAPTER",
+      "inNativeGraph": true
+    },
+    {
+      "file": "src/native/insights/nativeInsightsStrings.ts",
+      "line": 35,
+      "kind": "dom",
+      "classification": "PLATFORM_ADAPTER",
+      "inNativeGraph": true
+    },
+    {
+      "file": "src/native/insights/nativeInsightsStrings.ts",
+      "line": 39,
+      "kind": "dom",
+      "classification": "PLATFORM_ADAPTER",
+      "inNativeGraph": true
+    },
+    {
+      "file": "src/native/insights/nativeInsightsStrings.ts",
+      "line": 40,
+      "kind": "dom",
+      "classification": "PLATFORM_ADAPTER",
+      "inNativeGraph": true
+    },
+    {
+      "file": "src/native/insights/nativeInsightsStrings.ts",
+      "line": 62,
+      "kind": "dom",
+      "classification": "PLATFORM_ADAPTER",
+      "inNativeGraph": true
     },
     {
       "file": "src/platform/charts/QuantChart.native.tsx",
@@ -2410,6 +2684,13 @@
       "inNativeGraph": false
     },
     {
+      "file": "src/platform/deviceRepository.ts",
+      "line": 38,
+      "kind": "dom",
+      "classification": "SAFE_GUARD",
+      "inNativeGraph": true
+    },
+    {
       "file": "src/quant-product/quantProductContract.ts",
       "line": 620,
       "kind": "dom",
@@ -2418,49 +2699,49 @@
     },
     {
       "file": "src/screens/GoalDetailScreen.tsx",
-      "line": 298,
+      "line": 299,
       "kind": "markup",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
     },
     {
       "file": "src/screens/GoalDetailScreen.tsx",
-      "line": 359,
+      "line": 360,
       "kind": "markup",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
     },
     {
       "file": "src/screens/GoalDetailScreen.tsx",
-      "line": 418,
+      "line": 419,
       "kind": "markup",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
     },
     {
       "file": "src/screens/GoalDetailScreen.tsx",
-      "line": 468,
+      "line": 469,
       "kind": "markup",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
     },
     {
       "file": "src/screens/GoalDetailScreen.tsx",
-      "line": 504,
+      "line": 505,
       "kind": "markup",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
     },
     {
       "file": "src/screens/GoalDetailScreen.tsx",
-      "line": 538,
+      "line": 539,
       "kind": "markup",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
     },
     {
       "file": "src/screens/GoalDetailScreen.tsx",
-      "line": 706,
+      "line": 723,
       "kind": "markup",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
@@ -2516,7 +2797,7 @@
     },
     {
       "file": "src/screens/HomeScreen.tsx",
-      "line": 2559,
+      "line": 2561,
       "kind": "markup",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
@@ -2656,98 +2937,98 @@
     },
     {
       "file": "src/screens/ScheduleScreen.tsx",
-      "line": 502,
+      "line": 532,
       "kind": "markup",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
     },
     {
       "file": "src/screens/SettingsScreen.tsx",
-      "line": 75,
+      "line": 79,
       "kind": "dom",
       "classification": "SAFE_GUARD",
       "inNativeGraph": true
     },
     {
       "file": "src/screens/SettingsScreen.tsx",
-      "line": 77,
+      "line": 81,
       "kind": "dom",
       "classification": "SAFE_GUARD",
       "inNativeGraph": true
     },
     {
       "file": "src/screens/SettingsScreen.tsx",
-      "line": 78,
+      "line": 82,
       "kind": "dom",
       "classification": "SAFE_GUARD",
       "inNativeGraph": true
     },
     {
       "file": "src/screens/SettingsScreen.tsx",
-      "line": 86,
+      "line": 90,
       "kind": "dom",
       "classification": "SAFE_GUARD",
       "inNativeGraph": true
     },
     {
       "file": "src/screens/SettingsScreen.tsx",
-      "line": 88,
+      "line": 92,
       "kind": "dom",
       "classification": "SAFE_GUARD",
       "inNativeGraph": true
     },
     {
       "file": "src/screens/SettingsScreen.tsx",
-      "line": 115,
+      "line": 119,
       "kind": "dom",
       "classification": "SAFE_GUARD",
       "inNativeGraph": true
     },
     {
       "file": "src/screens/SettingsScreen.tsx",
-      "line": 117,
+      "line": 121,
       "kind": "dom",
       "classification": "SAFE_GUARD",
       "inNativeGraph": true
     },
     {
       "file": "src/screens/SettingsScreen.tsx",
-      "line": 118,
+      "line": 122,
       "kind": "dom",
       "classification": "SAFE_GUARD",
       "inNativeGraph": true
     },
     {
       "file": "src/screens/SettingsScreen.tsx",
-      "line": 295,
+      "line": 300,
       "kind": "markup",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
     },
     {
       "file": "src/screens/SettingsScreen.tsx",
-      "line": 351,
+      "line": 356,
       "kind": "markup",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
     },
     {
       "file": "src/screens/SettingsScreen.tsx",
-      "line": 438,
+      "line": 443,
+      "kind": "markup",
+      "classification": "SAFE_GUARD",
+      "inNativeGraph": true
+    },
+    {
+      "file": "src/screens/SettingsScreen.tsx",
+      "line": 466,
       "kind": "markup",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
     },
     {
       "file": "src/screens/SettingsScreen.tsx",
-      "line": 461,
-      "kind": "markup",
-      "classification": "PLATFORM_ADAPTER",
-      "inNativeGraph": true
-    },
-    {
-      "file": "src/screens/SettingsScreen.tsx",
-      "line": 480,
+      "line": 518,
       "kind": "markup",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
@@ -2810,7 +3091,7 @@
     },
     {
       "file": "src/screens/SkillLibraryScreen.tsx",
-      "line": 77,
+      "line": 85,
       "kind": "markup",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
@@ -2922,13 +3203,6 @@
     },
     {
       "file": "src/services/syncService.ts",
-      "line": 59,
-      "kind": "dom",
-      "classification": "SAFE_GUARD",
-      "inNativeGraph": true
-    },
-    {
-      "file": "src/services/syncService.ts",
       "line": 61,
       "kind": "dom",
       "classification": "SAFE_GUARD",
@@ -2936,28 +3210,35 @@
     },
     {
       "file": "src/services/syncService.ts",
-      "line": 149,
+      "line": 63,
       "kind": "dom",
       "classification": "SAFE_GUARD",
       "inNativeGraph": true
     },
     {
       "file": "src/services/syncService.ts",
-      "line": 160,
+      "line": 151,
       "kind": "dom",
-      "classification": "PLATFORM_ADAPTER",
-      "inNativeGraph": true
-    },
-    {
-      "file": "src/services/syncService.ts",
-      "line": 161,
-      "kind": "dom",
-      "classification": "PLATFORM_ADAPTER",
+      "classification": "SAFE_GUARD",
       "inNativeGraph": true
     },
     {
       "file": "src/services/syncService.ts",
       "line": 162,
+      "kind": "dom",
+      "classification": "PLATFORM_ADAPTER",
+      "inNativeGraph": true
+    },
+    {
+      "file": "src/services/syncService.ts",
+      "line": 163,
+      "kind": "dom",
+      "classification": "PLATFORM_ADAPTER",
+      "inNativeGraph": true
+    },
+    {
+      "file": "src/services/syncService.ts",
+      "line": 164,
       "kind": "dom",
       "classification": "SAFE_GUARD",
       "inNativeGraph": true
@@ -2971,59 +3252,129 @@
     },
     {
       "file": "src/storage.ts",
-      "line": 31,
+      "line": 39,
       "kind": "dom",
       "classification": "SAFE_GUARD",
       "inNativeGraph": true
     },
     {
       "file": "src/storage.ts",
-      "line": 33,
+      "line": 41,
       "kind": "dom",
       "classification": "SAFE_GUARD",
       "inNativeGraph": true
     },
     {
       "file": "src/storage.ts",
-      "line": 477,
+      "line": 492,
       "kind": "dom",
       "classification": "SAFE_GUARD",
       "inNativeGraph": true
     },
     {
       "file": "src/storage.ts",
-      "line": 480,
+      "line": 495,
       "kind": "dom",
       "classification": "SAFE_GUARD",
       "inNativeGraph": true
     },
     {
       "file": "src/storage.ts",
-      "line": 482,
+      "line": 497,
       "kind": "dom",
       "classification": "SAFE_GUARD",
       "inNativeGraph": true
     },
     {
       "file": "src/store.tsx",
-      "line": 366,
+      "line": 382,
       "kind": "dom",
       "classification": "SAFE_GUARD",
       "inNativeGraph": true
     },
     {
       "file": "src/store.tsx",
-      "line": 383,
+      "line": 400,
       "kind": "dom",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
     },
     {
       "file": "src/store.tsx",
-      "line": 384,
+      "line": 401,
       "kind": "dom",
       "classification": "PLATFORM_ADAPTER",
       "inNativeGraph": true
+    },
+    {
+      "file": "src/sync-v2/AccountSyncSection.tsx",
+      "line": 115,
+      "kind": "dom",
+      "classification": "SAFE_GUARD",
+      "inNativeGraph": true
+    },
+    {
+      "file": "src/sync-v2/runtime.ts",
+      "line": 254,
+      "kind": "dom",
+      "classification": "SAFE_GUARD",
+      "inNativeGraph": true
+    },
+    {
+      "file": "src/sync-v2/runtime.ts",
+      "line": 255,
+      "kind": "dom",
+      "classification": "SAFE_GUARD",
+      "inNativeGraph": true
+    },
+    {
+      "file": "src/sync-v2/runtime.ts",
+      "line": 266,
+      "kind": "dom",
+      "classification": "SAFE_GUARD",
+      "inNativeGraph": true
+    },
+    {
+      "file": "src/sync-v2/runtime.ts",
+      "line": 267,
+      "kind": "dom",
+      "classification": "SAFE_GUARD",
+      "inNativeGraph": true
+    },
+    {
+      "file": "src/sync-v2/sessionStorage.ts",
+      "line": 4,
+      "kind": "dom",
+      "classification": "SAFE_GUARD",
+      "inNativeGraph": false
+    },
+    {
+      "file": "src/sync-v2/sessionStorage.ts",
+      "line": 6,
+      "kind": "dom",
+      "classification": "SAFE_GUARD",
+      "inNativeGraph": false
+    },
+    {
+      "file": "src/sync-v2/sessionStorage.ts",
+      "line": 9,
+      "kind": "dom",
+      "classification": "SAFE_GUARD",
+      "inNativeGraph": false
+    },
+    {
+      "file": "src/sync-v2/sessionStorage.ts",
+      "line": 11,
+      "kind": "dom",
+      "classification": "SAFE_GUARD",
+      "inNativeGraph": false
+    },
+    {
+      "file": "src/sync-v2/sessionStorage.ts",
+      "line": 14,
+      "kind": "dom",
+      "classification": "SAFE_GUARD",
+      "inNativeGraph": false
     },
     {
       "file": "src/utils/analytics.ts",
@@ -5431,35 +5782,35 @@
       "line": 38,
       "kind": "dom",
       "classification": "PLATFORM_ADAPTER",
-      "inNativeGraph": true
+      "inNativeGraph": false
     },
     {
       "file": "src/v11/components/V11DirectionalBorder.tsx",
       "line": 75,
       "kind": "dom",
       "classification": "PLATFORM_ADAPTER",
-      "inNativeGraph": true
+      "inNativeGraph": false
     },
     {
       "file": "src/v11/components/V11DirectionalBorder.tsx",
       "line": 76,
       "kind": "dom",
       "classification": "PLATFORM_ADAPTER",
-      "inNativeGraph": true
+      "inNativeGraph": false
     },
     {
       "file": "src/v11/components/V11DirectionalBorder.tsx",
       "line": 81,
       "kind": "dom",
       "classification": "PLATFORM_ADAPTER",
-      "inNativeGraph": true
+      "inNativeGraph": false
     },
     {
       "file": "src/v11/components/V11DirectionalBorder.tsx",
       "line": 82,
       "kind": "dom",
       "classification": "PLATFORM_ADAPTER",
-      "inNativeGraph": true
+      "inNativeGraph": false
     },
     {
       "file": "src/v11/components/V11GlowOrb.tsx",

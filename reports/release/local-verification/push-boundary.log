@@ -1,0 +1,25 @@
+PASS push core: token-free persistence, unchanged binding reuse and preference disable
+PASS push core: offline sign-out, A/B isolation and restart retirement retry
+PASS push core: no session fails closed
+PASS push core: lost registration ACK and crash recovery
+PASS push core: in-flight registration followed by queued sign-out
+PASS push core: late account response retires with captured original bearer
+PASS push core: durable storage failure prevents registration
+PASS push core: expired lease rejects notification intent
+Push registry core: 8/8 scenario groups passed (mock driver).
+PASS migration grants no anonymous registry or direct authenticated token writes
+PASS registration uses auth.uid and prevents account/token/device rebinding
+PASS exact-generation retirement is idempotent and blocks delayed registration resurrection
+PASS every push RPC rejects anonymous role and missing auth.uid
+PASS expired leases cannot send and stale provider results cannot retire a newer generation
+PASS push API rejects unauthenticated, forged bearer, custom content and cross-account device
+PASS manual delivery has generic payload, cooldown, durable duplicate suppression and no bearer leakage
+PASS receipt states never claim device delivery and DeviceNotRegistered retires only exact binding
+PASS lost provider ACK leaves a durable pending claim and retries never duplicate send
+PASS successful provider receipt is explicitly not proof of device delivery
+PASS production registration helper uses actual session and persisted notifications preference
+PASS production Settings callback requires ACK and persisted disable retires on retry
+PASS authService sign-out defers SDK logout on failed retirement and durable retry completes it
+PASS lost registration ACK persists retirement and never reuses A token under B
+Push boundary: 14 integration groups passed; actual local PostgreSQL RLS/RPC, production wrapper and real Supabase SDK; fixture network only, no hosted migration or delivery.
+GoTrueClient@sb-push-auth-auth-token:0 (2.116.0) 2026-09-20T11:37:06.099Z The "lock" option is deprecated and will be removed in v3. The client now coordinates session refreshes without a lock, so most apps can drop the option. See https://github.com/supabase/supabase-js/blob/master/packages/core/auth-js/migrations/lockless-coordination.md

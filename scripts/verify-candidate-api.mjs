@@ -22,6 +22,7 @@ assert.match(root.content, /<html/i);
 checks.push({ name: 'public_candidate_document', status: root.status });
 const unauthenticatedBodies = [
   ['/api/sync', 410, {}],
+  ['/api/track', 410, {}],
   ['/api/decision-quant', 401, { runtimeVersion: 'questlife.owner-quant-runtime-client.v1',
     subjectId: '00000000-0000-4000-8000-000000000001', configuredTimezone: 'UTC', asOf: new Date().toISOString(), appData: {} }],
   ['/api/push-test', 401, { deviceId: 'candidate-test-device', requestId: '00000000-0000-4000-8000-000000000002', action: 'send' }],

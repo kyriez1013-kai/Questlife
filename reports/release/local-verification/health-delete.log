@@ -1,0 +1,7 @@
+PASS runtime consent/account gates do not upload Health before consent
+PASS actual runtime converts explicit source deletion into PostgreSQL tombstone and never infers array absence
+PASS runtime lost delete ACK survives restart and replays the original PostgreSQL receipt
+PASS older ACK cleanup cannot erase a newer same-ID deletion version
+PASS remote live hydration cannot resurrect a persisted explicit local delete
+PASS explicit remote conflict choice restores its row and retires only the matching local deletion
+Health delete boundary: 6/6 production runtime + local PostgreSQL groups passed; auth/native/transport adapters are fixtures, SQL/RLS/receipt enforcement is real. No hosted Supabase or owner data.

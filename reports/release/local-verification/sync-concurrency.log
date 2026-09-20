@@ -1,0 +1,1 @@
+{"suite":"PostgreSQL 18 independent connections","checks":10,"passed":10,"realConcurrency":true,"hostedSupabase":false,"ownerDataTouched":false}

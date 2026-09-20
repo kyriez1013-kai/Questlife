@@ -1,0 +1,60 @@
+
+> questlife@1.0.0 build
+> expo export --platform web
+
+Starting Metro Bundler
+| (node:81907) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:81908) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+Web Bundled 1305ms index.ts (1285 modules)
+
+› Assets (11):
+node_modules/@react-navigation/elements/lib/module/assets/back-icon-mask.0a328cd9c1afd0afe8e3b1ec5165b1b4.png (653 B)
+node_modules/@react-navigation/elements/lib/module/assets/back-icon.35ba0eaec5a4f5ed12ca16fabeae451d.png (207 B)
+node_modules/@react-navigation/elements/lib/module/assets/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55.png (4 variations | 425 B)
+node_modules/@react-navigation/elements/lib/module/assets/close-icon.808e1b1b9b53114ec2838071a7e6daa7.png (4 variations | 235 B)
+node_modules/@react-navigation/elements/lib/module/assets/search-icon.286d67d3f74808a60a78d3ebf1a5fb57.png (928 B)
+
+› web bundles (34):
+_expo/static/css/adaptive-decision-surface-d9d7f86e9804da9f5f7f26883ecf57f1.css (14.7 kB)
+_expo/static/css/insights-v3-c8ad1786d07006a10a70fe24231fc9a8.css (33 kB)
+_expo/static/css/personal-terminal-2069b8d7748b6c54c32d4ebedc8412d6.css (95.7 kB)
+_expo/static/css/personal-terminal-workspace-b74e7cca97f14b522eb52e446b8d07e9.css (50.9 kB)
+_expo/static/css/quant-terminal-f7a9b89554b504c1f7a1b063fe6a5bfc.css (11 kB)
+_expo/static/css/theme-overrides-de918ffa78216cd85c89cd2f661df563.css (7.58 kB)
+_expo/static/css/v11-components-b2e7432f43338f39e735c686df7401e7.css (4.23 kB)
+_expo/static/css/v11-insights-606831aac854322cd0387f59dcbe67d6.css (19.3 kB)
+_expo/static/css/v11-product-4990e6bd3452e4a07e684a55b209609e.css (12.7 kB)
+_expo/static/css/v11-stage0-596d22bb56d0bb71d360000c9ffca011.css (7.62 kB)
+_expo/static/css/v11-stage1-94574616d8c90677c741f4a3a2adf183.css (4.84 kB)
+_expo/static/js/web/driver_analysis_compact-b6d1836570cffbde1e443186d37b0bf6.js (21.1 kB)
+_expo/static/js/web/forming_history_analysis_v1-21ac69d4f534eb2de0c97e7057e8c91a.js (3.85 kB)
+_expo/static/js/web/forming_history_full-a7a6d9d8972559a5a3c103ab4c496644.js (11.5 kB)
+_expo/static/js/web/goal_full-45824e4516b8836322a23df78c6314de.js (27.3 kB)
+_expo/static/js/web/index-d757d32622e2cda05d621293b37f30a1.js (21.9 MB)
+_expo/static/js/web/InsightsV3Screen-423be5073f1d489d556ed83fea54ce68.js (121 kB)
+_expo/static/js/web/lightweight-charts-152db7c7ff52b29929de3effab10725b.js (201 kB)
+_expo/static/js/web/mature_market_analysis_v1-2dd55b3167c1dcdd7e7daa60587045f1.js (1.18 MB)
+_expo/static/js/web/mature_market_compact-9bbb4de0ee881470e7533eebef2d3828.js (93.5 kB)
+_expo/static/js/web/mature_market_full-99db38fb323a403cc6a42b045013ec0e.js (1.38 MB)
+_expo/static/js/web/no_data_compact-76f96377f438d9446bb244592b194d45.js (2.28 kB)
+_expo/static/js/web/one_observation_analysis_v1-1f1717825ee235cd6a3e76e8d2237edb.js (2.57 kB)
+_expo/static/js/web/one_observation_full-ff19758ca737f09a69b5ff457c776723.js (8.33 kB)
+_expo/static/js/web/recovery_compact-775ba41a9e6f357760195b71a178db02.js (21.1 kB)
+_expo/static/js/web/recovery_full-8eab983c13b15745bf7e68c5f65948b8.js (178 kB)
+_expo/static/js/web/research_filtered_compact-1536fb870c520085b4f0c84e50184000.js (93.5 kB)
+_expo/static/js/web/scenario_compact-dc754c2f802cd88c31dffb5d5850efbb.js (21.1 kB)
+_expo/static/js/web/scenario_full-5ee9887c02108b34a671c2987f1a39ea.js (177 kB)
+_expo/static/js/web/similar_periods_compact-a41bc3769e89d42bb473ca4b85959c26.js (21.2 kB)
+_expo/static/js/web/similar_periods_full-3529a683183239dc4e74025f15bcca6e.js (178 kB)
+_expo/static/js/web/skill_full-5b465f3b3b9e3dd062109fa47cb8badc.js (27.2 kB)
+_expo/static/js/web/ten_observations_full-78bc005732edcdd1a93b3874649939fe.js (14.9 kB)
+_expo/static/js/web/three_observations_full-8e78da00641ec53515874002270a8e8f.js (10.4 kB)
+
+› Files (3):
+favicon.ico (14.5 kB)
+index.html (3.53 kB)
+metadata.json (49 B)
+
+Exported: dist
