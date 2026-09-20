@@ -3,7 +3,23 @@
 > expo export --platform web
 
 Starting Metro Bundler
-Web Bundled 612ms index.ts (1302 modules)
+| (node:2719) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:2721) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:2723) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:2724) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:2720) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:2725) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:2722) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓░░░░░░ 62.7% (261/486)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 72.1% (792/933)
+Web Bundled 8852ms index.ts (1303 modules)
 
 › Assets (11):
 node_modules/@react-navigation/elements/lib/module/assets/back-icon-mask.0a328cd9c1afd0afe8e3b1ec5165b1b4.png (653 B)
@@ -12,7 +28,7 @@ node_modules/@react-navigation/elements/lib/module/assets/clear-icon.c94f6478e7a
 node_modules/@react-navigation/elements/lib/module/assets/close-icon.808e1b1b9b53114ec2838071a7e6daa7.png (4 variations | 235 B)
 node_modules/@react-navigation/elements/lib/module/assets/search-icon.286d67d3f74808a60a78d3ebf1a5fb57.png (928 B)
 
-› web bundles (35):
+› web bundles (36):
 _expo/static/css/adaptive-decision-surface-d9d7f86e9804da9f5f7f26883ecf57f1.css (14.7 kB)
 _expo/static/css/insights-v3-c8ad1786d07006a10a70fe24231fc9a8.css (33 kB)
 _expo/static/css/personal-terminal-2069b8d7748b6c54c32d4ebedc8412d6.css (95.7 kB)
@@ -24,34 +40,35 @@ _expo/static/css/v11-insights-606831aac854322cd0387f59dcbe67d6.css (19.3 kB)
 _expo/static/css/v11-product-4990e6bd3452e4a07e684a55b209609e.css (12.7 kB)
 _expo/static/css/v11-stage0-596d22bb56d0bb71d360000c9ffca011.css (7.62 kB)
 _expo/static/css/v11-stage1-94574616d8c90677c741f4a3a2adf183.css (4.84 kB)
-_expo/static/js/web/driver_analysis_compact-c9df02e5f898de89000eb98a801d59d6.js (21.1 kB)
-_expo/static/js/web/forming_history_analysis_v1-062763036881d8ea4f41f05e180dd156.js (3.85 kB)
-_expo/static/js/web/forming_history_full-396cb9c89675893783ae1191582c0289.js (11.5 kB)
-_expo/static/js/web/goal_full-2627be906d9ef4e708850c6bdcf4d62a.js (27.3 kB)
-_expo/static/js/web/index-de6ae36ef33a27fc61fd189ccff95d40.js (4.37 MB)
-_expo/static/js/web/InsightsV3Screen-cedfb70347e3040bbd8ab8276891a5de.js (121 kB)
-_expo/static/js/web/lightweight-charts-6d583644ed65f159bcc9575acd9a1a4b.js (201 kB)
-_expo/static/js/web/mature_market_analysis_v1-62efcb0d5ed9be4e24db9f7cae958951.js (1.18 MB)
-_expo/static/js/web/mature_market_compact-4c0fc495bb09a6e1ba991d36654ccdad.js (93.5 kB)
-_expo/static/js/web/mature_market_full-630075c3ab7ec4697e4eb570d32871d6.js (1.38 MB)
-_expo/static/js/web/no_data_compact-2772ff27bd2bd2e078090a4e25f3d47c.js (2.28 kB)
-_expo/static/js/web/one_observation_analysis_v1-aae845dbde58e65500e3087cdececf5c.js (2.57 kB)
-_expo/static/js/web/one_observation_full-e6d0bfadd379ef1827c9bc573a79d3cf.js (8.33 kB)
-_expo/static/js/web/recovery_compact-3c829cd79b3a6bc3ce3adf099ee0e03e.js (21.1 kB)
-_expo/static/js/web/recovery_full-4adb4872b3a0a9b44bc23abc557cbb24.js (178 kB)
-_expo/static/js/web/research_filtered_compact-89adf25fcfd1ba761b7ada15f281d165.js (93.5 kB)
-_expo/static/js/web/scenario_compact-c9aca4102be449ee5438525285ed5750.js (21.1 kB)
-_expo/static/js/web/scenario_full-81a17c0f75a80841a382ceaa0939a421.js (177 kB)
-_expo/static/js/web/similar_periods_compact-ca973af60a5f210585ecb69a487d45b7.js (21.2 kB)
-_expo/static/js/web/similar_periods_full-921924049acb3fe44dd1c5a467c1ecc1.js (178 kB)
-_expo/static/js/web/skill_full-962d3f3cb8e49140cb775a47125376a2.js (27.2 kB)
-_expo/static/js/web/ten_observations_full-2e310ab087de731275bd16c382301212.js (14.9 kB)
-_expo/static/js/web/three_observations_full-2911f66ecfd3d97e5cb8b7a82fb3a167.js (10.4 kB)
-_expo/static/js/web/V11InsightsScreen-a417f844633c21fc7ea3370cf6487a08.js (17.9 MB)
+_expo/static/css/v11-stage2-rebaseline-d7ea9e4e28973fbf84d3162d38e46a17.css (52.8 kB)
+_expo/static/js/web/driver_analysis_compact-25733f33034a8ec110fa9de1c44b7be5.js (21.1 kB)
+_expo/static/js/web/forming_history_analysis_v1-9e8dc8c15436367ec64f51683cd98b2e.js (3.85 kB)
+_expo/static/js/web/forming_history_full-0bbcecbea42c61d6f2e1761e68ac3bb9.js (11.5 kB)
+_expo/static/js/web/goal_full-cdbd6a61d16dba23a804ace7ce2b0f4e.js (27.3 kB)
+_expo/static/js/web/index-1402fd457bfca4586c8d960070da03ff.js (4.37 MB)
+_expo/static/js/web/InsightsV3Screen-50ec64756873a496d4e9aa5f3405824b.js (121 kB)
+_expo/static/js/web/lightweight-charts-336e47745ecdcba993ea16b52901e32f.js (201 kB)
+_expo/static/js/web/mature_market_analysis_v1-7a9692127f21ef57301d5520cf4420c0.js (1.18 MB)
+_expo/static/js/web/mature_market_compact-489fec8250873e386ade5b1824b099c1.js (93.5 kB)
+_expo/static/js/web/mature_market_full-d27bc104426126e456e3f06482997923.js (1.38 MB)
+_expo/static/js/web/no_data_compact-6f0344332230e7bf980f36650245af4f.js (2.28 kB)
+_expo/static/js/web/one_observation_analysis_v1-3f652c726fcc0ed65b39704d9c72a965.js (2.57 kB)
+_expo/static/js/web/one_observation_full-72c22be0124a50897580c8ecfaa56234.js (8.33 kB)
+_expo/static/js/web/recovery_compact-18959a8aad051bee6bd18720f09a3e73.js (21.1 kB)
+_expo/static/js/web/recovery_full-ae04520201d604317179d47b8be5b69a.js (178 kB)
+_expo/static/js/web/research_filtered_compact-3d33116d68bac3d601413b2c4bb9f06a.js (93.5 kB)
+_expo/static/js/web/scenario_compact-d245d91093a64c911cfad1ef5690a808.js (21.1 kB)
+_expo/static/js/web/scenario_full-c2dca77ca593d11fbab3c20aa27edc67.js (177 kB)
+_expo/static/js/web/similar_periods_compact-85219b87267200339287ea45ae3950cd.js (21.2 kB)
+_expo/static/js/web/similar_periods_full-8c126079a6c85f0c49a29ce72c6098ba.js (178 kB)
+_expo/static/js/web/skill_full-5fe805bfbe951a83c875aef4cdd4b8c2.js (27.2 kB)
+_expo/static/js/web/ten_observations_full-0c0b358c2fcf1bdeba4706ff9da4535a.js (14.9 kB)
+_expo/static/js/web/three_observations_full-b2c9af63e348ec55bba5730f0b19cde6.js (10.4 kB)
+_expo/static/js/web/V11InsightsScreen-e1b8f51d87c4cacd42578cea6725642e.js (17.9 MB)
 
 › Files (3):
 favicon.ico (14.5 kB)
-index.html (3.53 kB)
+index.html (3.75 kB)
 metadata.json (49 B)
 
 Exported: dist

@@ -1,8 +1,8 @@
-✔ Metro security compatibility patch is idempotent (44.414667ms)
-✔ real Metro filename exporter preserves icon.png dimensions (12.756667ms)
-✔ real Metro filename exporter preserves adaptive-icon.png dimensions (0.656541ms)
-✔ real Metro filename exporter preserves favicon.png dimensions (0.601125ms)
-✔ real Metro filename exporter preserves splash-icon.png dimensions (0.521375ms)
+✔ Metro security compatibility patch is idempotent (41.445042ms)
+✔ real Metro filename exporter preserves icon.png dimensions (13.196125ms)
+✔ real Metro filename exporter preserves adaptive-icon.png dimensions (0.710833ms)
+✔ real Metro filename exporter preserves favicon.png dimensions (0.627667ms)
+✔ real Metro filename exporter preserves splash-icon.png dimensions (0.654708ms)
 ℹ tests 5
 ℹ suites 0
 ℹ pass 5
@@ -10,4 +10,4 @@
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 89.0855
+ℹ duration_ms 86.416541

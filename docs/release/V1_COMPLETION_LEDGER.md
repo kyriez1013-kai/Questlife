@@ -301,3 +301,23 @@ Production.
   FCM v1 / Android Firebase application configuration is absent; APNs still
   requires the Apple account gate. Remote notification delivery is not verified.
   No new paid service, provider credential or Google project was created.
+
+## Actual UI Regression Found and Fixed
+
+- Candidate mobile browser QA found Today rendering without its approved layout:
+  `v11-stage2-rebaseline.styles.web.ts` imported its own `.styles` entry instead
+  of the CSS file. This predates the lazy-load correction; it reproduced on the
+  `a041cac` hosted bundle. Commit `8addd88` restores the CSS import without
+  changing Today markup, handlers or native rendering.
+- The boundary test now checks every Web style adapter loads an existing CSS
+  file and its native counterpart remains CSS-free. All 24 local suites passed
+  again on the fix. The actual exported HTML now links the rebaseline stylesheet.
+- Real browser at 375x667: repaired Today layout, Capture entrance, current-state
+  update and L2 remain usable; DOM width and scrollWidth are both 375. No state
+  or execution was saved. The pre-fix hosted QA also opened all five tabs,
+  goal detail and Insights custom range. Browser error logs contained no runtime
+  errors, but did include existing web-notification and SDK/navigation
+  deprecation warnings. Final hosted same-source visual confirmation follows.
+- Fresh local Chrome origin onboarding was completed with no goal/state/action
+  samples. Today can create its normal automatic DecisionResult; this is not
+  evidence of user observation input or successful cloud sync.
