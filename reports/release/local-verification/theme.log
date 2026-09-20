@@ -4,11 +4,11 @@
 
 appearance migration tests passed: 9 cases
 visual foundation static audit passed
-(node:5304) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kyrie/Documents/Codex%20Questlife/QuestLife-v1/src/design/appearance.test.ts is not specified and it doesn't parse as CommonJS.
+(node:7926) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kyrie/Documents/Codex%20Questlife/QuestLife-v1/src/design/appearance.test.ts is not specified and it doesn't parse as CommonJS.
 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
 To eliminate this warning, add "type": "module" to /Users/kyrie/Documents/Codex Questlife/QuestLife-v1/package.json.
 (Use `node --trace-warnings ...` to show where the warning was created)
-(node:5305) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kyrie/Documents/Codex%20Questlife/QuestLife-v1/src/design/visualFoundation.static.test.ts is not specified and it doesn't parse as CommonJS.
+(node:7927) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/kyrie/Documents/Codex%20Questlife/QuestLife-v1/src/design/visualFoundation.static.test.ts is not specified and it doesn't parse as CommonJS.
 Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
 To eliminate this warning, add "type": "module" to /Users/kyrie/Documents/Codex Questlife/QuestLife-v1/package.json.
 (Use `node --trace-warnings ...` to show where the warning was created)

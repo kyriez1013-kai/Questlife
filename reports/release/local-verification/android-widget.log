@@ -1,15 +1,15 @@
-✔ plugin adds only Android mods and leaves app configuration untouched (4.665042ms)
-✔ missing scheme or unsafe package fail before generation (0.244334ms)
-✔ receiver registration is idempotent and preserves unrelated manifest entries (0.278458ms)
-✔ a changed activity entrance fails explicitly instead of generating a broken destination (0.112333ms)
-✔ generation is confined to six owned native files and can be repeated safely (1.883584ms)
-✔ all generated resource XML parses with the installed Expo XML parser (13.094042ms)
-✔ widget has no polling, lock-screen surface, configuration or fabricated data (0.510417ms)
-✔ both buttons have separate nonoverlapping 48dp targets and scalable platform typography (29.985333ms)
-✔ English and Chinese localize the same five labels without owner data (0.779958ms)
-✔ native launch intents are explicit, immutable and distinct by URL and widget id (0.331584ms)
-✔ both emitted URLs resolve through the real shared open-only contract (2.63225ms)
-﹣ Android 36 resources link and generated Kotlin compiles against native APIs (0.022459ms) # Set QUESTLIFE_WIDGET_COMPILE=1 with Android SDK and JDK to run native compilation.
+✔ plugin adds only Android mods and leaves app configuration untouched (4.679625ms)
+✔ missing scheme or unsafe package fail before generation (0.357042ms)
+✔ receiver registration is idempotent and preserves unrelated manifest entries (0.344667ms)
+✔ a changed activity entrance fails explicitly instead of generating a broken destination (0.125125ms)
+✔ generation is confined to six owned native files and can be repeated safely (2.012666ms)
+✔ all generated resource XML parses with the installed Expo XML parser (15.126208ms)
+✔ widget has no polling, lock-screen surface, configuration or fabricated data (0.512917ms)
+✔ both buttons have separate nonoverlapping 48dp targets and scalable platform typography (30.729583ms)
+✔ English and Chinese localize the same five labels without owner data (0.855292ms)
+✔ native launch intents are explicit, immutable and distinct by URL and widget id (0.342125ms)
+✔ both emitted URLs resolve through the real shared open-only contract (2.899ms)
+﹣ Android 36 resources link and generated Kotlin compiles against native APIs (0.023583ms) # Set QUESTLIFE_WIDGET_COMPILE=1 with Android SDK and JDK to run native compilation.
 ℹ tests 12
 ℹ suites 0
 ℹ pass 11
@@ -17,4 +17,4 @@
 ℹ cancelled 0
 ℹ skipped 1
 ℹ todo 0
-ℹ duration_ms 196.702542
+ℹ duration_ms 207.378875

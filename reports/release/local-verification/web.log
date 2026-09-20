@@ -3,7 +3,9 @@
 > expo export --platform web
 
 Starting Metro Bundler
-Web Bundled 589ms index.ts (1303 modules)
+| (node:8002) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+Web Bundled 709ms index.ts (1303 modules)
 
 › Assets (11):
 node_modules/@react-navigation/elements/lib/module/assets/back-icon-mask.0a328cd9c1afd0afe8e3b1ec5165b1b4.png (653 B)
@@ -29,7 +31,7 @@ _expo/static/js/web/driver_analysis_compact-25733f33034a8ec110fa9de1c44b7be5.js 
 _expo/static/js/web/forming_history_analysis_v1-9e8dc8c15436367ec64f51683cd98b2e.js (3.85 kB)
 _expo/static/js/web/forming_history_full-0bbcecbea42c61d6f2e1761e68ac3bb9.js (11.5 kB)
 _expo/static/js/web/goal_full-cdbd6a61d16dba23a804ace7ce2b0f4e.js (27.3 kB)
-_expo/static/js/web/index-1402fd457bfca4586c8d960070da03ff.js (4.37 MB)
+_expo/static/js/web/index-cc6160164aa8ff54d574ade079008299.js (4.37 MB)
 _expo/static/js/web/InsightsV3Screen-50ec64756873a496d4e9aa5f3405824b.js (121 kB)
 _expo/static/js/web/lightweight-charts-336e47745ecdcba993ea16b52901e32f.js (201 kB)
 _expo/static/js/web/mature_market_analysis_v1-7a9692127f21ef57301d5520cf4420c0.js (1.18 MB)

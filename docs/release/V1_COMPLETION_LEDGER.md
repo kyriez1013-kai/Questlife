@@ -50,7 +50,7 @@ integration and worker changes are already integrated. Do not repeat their
 setup. The remaining executable sequence is the final same-source builds and
 hosted presentation smoke after the sheet-shield fix, then update this ledger
 with exact artifact identifiers. Subsequent device/OTP work depends on the
-specific gates below. Historical checkpoints below are chronological evidence,
+  specific gates below. Historical checkpoints below are chronological evidence,
 not the current next-action queue.
 
 ## Human Actions (Consolidated, Live)
@@ -347,3 +347,22 @@ Production.
   frame times, real permission/source samples and email delivery remain
   UNVERIFIED. Existing three QA-only browser structures remain local and
   signed out; their cleanup is not falsely reported as complete.
+
+## Final Hosted Schedule Finding
+
+- Actual empty Week view exposed `Total Planned 1h` while each day correctly
+  showed zero blocks. The header used the plot's minimum 60-minute scale as its
+  reported total. `be8e799` separates the existing displayed-date sum from the
+  chart denominator; empty means 0h, and a 135-minute week displays 2.3h.
+  No scheduling mutation, duration default or calendar write was changed.
+- Two new rendered-component tests cover empty and populated weeks, exclusion
+  of a block outside the displayed dates, and unchanged source records. The
+  native workflow file passes 68 checks. These are mocked component checks;
+  actual hosted 0h readback follows the final deployment.
+- The preceding clean `ed2b7e9` candidate completed Android signing/install,
+  Web deployment `dpl_8ibr9ifStyJQzYMLMpHpkF3UovRe`, and iOS simulator cloud
+  build `177f7a4d-2428-41f7-afee-38a5483ad9e8` (FINISHED). This is an intermediate
+  artifact after the newly found display fix, not the final iPhone installer.
+- The same candidate passed ten hosted Sync V2 groups and eight API checks;
+  both disposable identities were deleted with zero remaining synced entities.
+  The display-only correction does not change these endpoints or Sync V2.
