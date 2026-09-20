@@ -1,0 +1,82 @@
+{
+  "test_kind": "hosted stateless fixture verification, not real-owner or device acceptance",
+  "owner_data_used": false,
+  "database_writes": false,
+  "url": "https://questlife-quant-v1.vercel.app/api/decision_artifacts",
+  "tested_at": "2026-09-20T08:46:59.198547+00:00",
+  "passed": 9,
+  "results": [
+    {
+      "name": "no authentication",
+      "status": 401,
+      "milliseconds": 935,
+      "eligible_observations": null,
+      "error": "unauthorized",
+      "quant_commit": null
+    },
+    {
+      "name": "body subject mismatch",
+      "status": 403,
+      "milliseconds": 880,
+      "eligible_observations": null,
+      "error": "subject_mismatch",
+      "quant_commit": null
+    },
+    {
+      "name": "future as-of",
+      "status": 400,
+      "milliseconds": 904,
+      "eligible_observations": null,
+      "error": "invalid_time_context",
+      "quant_commit": null
+    },
+    {
+      "name": "empty snapshot",
+      "status": 200,
+      "milliseconds": 1067,
+      "eligible_observations": 0,
+      "error": null,
+      "quant_commit": "ff1429f"
+    },
+    {
+      "name": "deterministic 30-day fixture, no persistence",
+      "status": 200,
+      "milliseconds": 3474,
+      "eligible_observations": 210,
+      "error": null,
+      "quant_commit": "ff1429f"
+    },
+    {
+      "name": "correction invalidates snapshot",
+      "status": 200,
+      "milliseconds": 2998,
+      "eligible_observations": 210,
+      "error": null,
+      "quant_commit": "ff1429f"
+    },
+    {
+      "name": "all observations removed",
+      "status": 200,
+      "milliseconds": 1360,
+      "eligible_observations": 0,
+      "error": null,
+      "quant_commit": "ff1429f"
+    },
+    {
+      "name": "QA provenance excluded from owner eligibility",
+      "status": 200,
+      "milliseconds": 1537,
+      "eligible_observations": 0,
+      "error": null,
+      "quant_commit": "ff1429f"
+    },
+    {
+      "name": "other subject receives no previous data",
+      "status": 200,
+      "milliseconds": 1050,
+      "eligible_observations": 0,
+      "error": null,
+      "quant_commit": "ff1429f"
+    }
+  ]
+}
