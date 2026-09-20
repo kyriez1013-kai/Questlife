@@ -31,7 +31,6 @@ import V11Stage1Screen from './src/v11-stage1/V11Stage1Screen';
 import V11Stage2RebaselineScreen from './src/v11-stage2-rebaseline/V11Stage2RebaselineScreen';
 import V11SheetControlFixtureScreen from './src/v11-stage2-rebaseline/V11SheetControlFixtureScreen';
 import UniversalCaptureFixtureScreen from './src/components/capture/UniversalCaptureFixtureScreen';
-import V11InsightsScreen from './src/v11-insights/V11InsightsScreen';
 import {
   getV11InsightsDebugLanguage,
   getV11InsightsDebugTheme,
@@ -45,6 +44,7 @@ import PersistenceDebugPanel from './src/components/debug/PersistenceDebugPanel'
 import AdaptiveDecisionSurfaceScreen from './src/adaptive-decision/AdaptiveDecisionSurfaceScreen';
 
 const InsightsV3Screen = React.lazy(() => import('./src/insights-v3/InsightsV3Screen'));
+const V11InsightsScreen = React.lazy(() => import('./src/v11-insights/V11InsightsScreen'));
 
 const Tab = createBottomTabNavigator();
 const SkillsStack = createNativeStackNavigator();
@@ -301,11 +301,9 @@ function AppContent() {
           <Tab.Screen name="Insights" options={{ tabBarLabel: t(lang, 'insights'), tabBarIcon: ({ focused, color }) => <TabIcon name="barChart" focused={focused} color={color} /> }}>
             {() => (
               <FocusedTabSurface backgroundColor={questTheme.colors.background}>
-                {insightsV3Enabled ? (
-                  <Suspense fallback={<ActivityIndicator color={accent} style={{ flex: 1 }} />}>
-                    <InsightsV3Screen />
-                  </Suspense>
-                ) : v11InsightsEnabled ? <V11InsightsScreen /> : <StatsScreen />}
+                <Suspense fallback={<ActivityIndicator color={accent} style={{ flex: 1 }} />}>
+                  {insightsV3Enabled ? <InsightsV3Screen /> : v11InsightsEnabled ? <V11InsightsScreen /> : <StatsScreen />}
+                </Suspense>
               </FocusedTabSurface>
             )}
           </Tab.Screen>

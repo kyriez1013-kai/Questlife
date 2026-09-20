@@ -27,6 +27,7 @@ const suites = [
   ['decision', 'npm', ['run', 'test:adaptive-decision']],
   ['theme', 'npm', ['run', 'test:theme']],
   ['metro-assets', node, ['--test', 'scripts/test-metro-assets.cjs']],
+  ['web-entry-boundary', node, ['--test', 'scripts/test-web-entry-boundary.cjs']],
   ['web', 'npm', ['run', 'build']],
   ['dependency-audit', 'npm', ['audit', '--json']],
 ];

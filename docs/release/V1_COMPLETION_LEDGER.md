@@ -278,3 +278,26 @@ Next: commit this backup guard narrowly, record its clean-source regression,
 build and inspect the matching Android/iOS/Web candidates, then continue actual
 UI/file tests when input is available. Do not touch `docs/quant/` or Owner
 Production.
+
+## Web Startup Payload Correction
+
+- Actual Web export measured a 22,307,402-byte entry bundle. The historical
+  `V11InsightsScreen` statically brought all of its V0.4.x and interpretation
+  fixtures into ordinary app startup, even when its debug route was unused.
+- Reused the existing `React.lazy` / Suspense route pattern for that screen.
+  No fixture, Quant calculation, Store behavior or navigation option was removed.
+  Fresh export entry is 4,371,601 bytes (987,031 gzip), an 80.4% reduction before
+  compression. The 17,935,908-byte historical workspace is a separate deferred
+  chunk, not falsely described as deleted or optimized internally.
+- A TypeScript-AST boundary test guards against reinstating the static import;
+  all 24 local suites pass after this change. Clean-source rerun and final
+  matching artifacts follow. Bundle size is not a device frame-rate measurement.
+- Candidate `a041cac` remote sync rerun passed all ten hosted groups; both
+  disposable identities were deleted and own-row counts are zero. Actual
+  stateless capture parsing passed basketball, SQL 40 minutes and bench
+  82.5 kg / 5 reps / 3 sets. This does not establish UI record persistence.
+- EAS Android credential inspection for this candidate explicitly reports no
+  credentials configured. Local APK signing is independent and verified, but
+  FCM v1 / Android Firebase application configuration is absent; APNs still
+  requires the Apple account gate. Remote notification delivery is not verified.
+  No new paid service, provider credential or Google project was created.
