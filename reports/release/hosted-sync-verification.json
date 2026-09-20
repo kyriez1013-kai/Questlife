@@ -1,0 +1,67 @@
+{
+  "sourceCommit": "d990c586744543a16792432c42dc23b0f3e77ddf",
+  "project": "gttcoocfkqwvsqfwxpyo",
+  "testedAt": "2026-09-20T12:03:35.483Z",
+  "scope": "Actual hosted Supabase Auth/password sessions and Sync V2 engine/SQL over HTTPS. Disposable admin-created email-confirmed identities only. Not email OTP delivery, physical-device, or UI acceptance.",
+  "checks": [
+    {
+      "name": "real_auth_and_session_restore",
+      "result": "PASS"
+    },
+    {
+      "name": "create_and_second_replica_pull",
+      "result": "PASS"
+    },
+    {
+      "name": "reverse_direction_update",
+      "result": "PASS"
+    },
+    {
+      "name": "hosted_Realtime_wakes_pull_and_reconnect_recovers",
+      "result": "PASS"
+    },
+    {
+      "name": "hosted_push_binding_retire_and_cross_account_denial_no_delivery",
+      "result": "PASS"
+    },
+    {
+      "name": "RLS_account_isolation_and_direct_write_denial",
+      "result": "PASS"
+    },
+    {
+      "name": "offline_restart_outbox_and_lost_ACK_receipt",
+      "result": "PASS"
+    },
+    {
+      "name": "delete_tombstone_and_stale_replica_conflict",
+      "result": "PASS"
+    },
+    {
+      "name": "unauthenticated_RPC_denied",
+      "result": "PASS"
+    },
+    {
+      "name": "candidate_authenticated_Quant_and_subject_isolation",
+      "result": "PASS"
+    }
+  ],
+  "cleanup": [
+    {
+      "userId": "21983bf0-dfdb-416d-8ee3-56d726d1d178",
+      "deleted": true,
+      "remainingEntities": 0
+    },
+    {
+      "userId": "7528343a-59f3-48fa-9449-7325b73b7233",
+      "deleted": true,
+      "remainingEntities": 0
+    }
+  ],
+  "quantReceipt": {
+    "status": 200,
+    "subjectBound": true,
+    "eligibleObservations": 0,
+    "quantCommit": "ff1429f",
+    "sourceSnapshotHash": "6b2434f892bda2bf52226a4ef350977f2ee80475af80352b18d0c926362fdeba"
+  }
+}

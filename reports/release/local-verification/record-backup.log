@@ -1,0 +1,19 @@
+AppData standalone validator: 561186 bytes
+exact record round trip and account binding: PASS
+legacy raw export cannot silently lose account binding: PASS
+invalid nested field rejected rather than coerced: PASS
+duplicate IDs rejected: PASS
+QA provenance rejected: PASS
+invalid owner binding rejected: PASS
+unsafe object keys rejected: PASS
+invalid state value rejected: PASS
+excessive nesting rejected before schema traversal: PASS
+restore durable data plus exact account restriction without network: PASS
+existing account cannot be replaced: PASS
+current local records are checked inside transaction: PASS
+failed projection retains recoverable import WAL, no duplicate outbox: PASS
+second restore cannot replace first: PASS
+Health and delete projections rejected: PASS
+restored stale backup respects remote newer record: PASS
+restored stale backup respects remote tombstone: PASS
+Record backup: 17 groups PASS; synthetic local tests, not file-picker/device acceptance.
