@@ -227,6 +227,15 @@ execution observations. Those temporary structures must be removed before closeo
   known-advisory audit and the new link tests. New native host test doubles were
   added to the auth/push tests; Health runtime test stubs include the link
   lifecycle. These are environment adapters, not weakened product assertions.
+- Hosted rerun first reproduced a Realtime timeout after channel join; that
+  failure and its successful exact-account cleanup are retained in
+  `reports/release/hosted-sync-channel-join-timeout.json`. The test now waits for
+  `system.extension=postgres_changes, status=ok` before making the measured
+  mutation, as distinguished from channel `SUBSCRIBED` by the official
+  [Realtime protocol](https://supabase.com/docs/guides/realtime/protocol).
+  All ten hosted groups then passed, with both disposable accounts deleted and
+  zero remaining entities. Existing foreground/periodic cursor pulls remain
+  the correctness path; Realtime remains a wake-up hint, not a data transport.
 - Real Chrome candidate UI: first-launch Backup and restore entrance visible;
   Today/Goals/Settings navigated, one local `QA Candidate Backup Roundtrip` goal
   created, no state/execution observations. Backup confirmation opens, but the

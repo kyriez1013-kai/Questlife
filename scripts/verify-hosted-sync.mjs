@@ -86,15 +86,20 @@ try {
   await check('hosted_Realtime_wakes_pull_and_reconnect_recovers', async () => {
     let channel, arrival;
     const statuses = [];
+    const systems = [];
+    report.realtime = { statuses, systems, waitFor: 'postgres_changes system readiness, not just channel join' };
     const wake = new Promise(resolve => { arrival = resolve; });
     const ready = new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error('realtime_subscribe_timeout')), 20000);
+      const timeout = setTimeout(() => reject(new Error('realtime_postgres_ready_timeout')), 30000);
       channel = clients[2].channel(`release-${runId}`).on('postgres_changes', {
         event: '*', schema: 'public', table: 'questlife_sync_entities', filter: `user_id=eq.${users[0]}`,
-      }, event => { if (event.new?.entity_id === id) arrival(); }).subscribe(status => {
+      }, event => { if (event.new?.entity_id === id) arrival(); }).on('system', {}, event => {
+        systems.push({ extension: event.extension, status: event.status });
+        if (event.extension === 'postgres_changes' && event.status === 'ok') { clearTimeout(timeout); resolve(); }
+        else if (event.status === 'error') { clearTimeout(timeout); reject(new Error(`realtime_system_${event.extension}`)); }
+      }).subscribe(status => {
         statuses.push(status);
-        if (status === 'SUBSCRIBED') { clearTimeout(timeout); resolve(); }
-        else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') { clearTimeout(timeout); reject(new Error(`realtime_${status}`)); }
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') { clearTimeout(timeout); reject(new Error(`realtime_${status}`)); }
       });
     });
     try {

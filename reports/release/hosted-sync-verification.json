@@ -1,7 +1,7 @@
 {
-  "sourceCommit": "d990c586744543a16792432c42dc23b0f3e77ddf",
+  "sourceCommit": "32f7d2d362867e7240aaa830419605107244f1f5",
   "project": "gttcoocfkqwvsqfwxpyo",
-  "testedAt": "2026-09-20T12:03:35.483Z",
+  "testedAt": "2026-09-20T12:43:55.979Z",
   "scope": "Actual hosted Supabase Auth/password sessions and Sync V2 engine/SQL over HTTPS. Disposable admin-created email-confirmed identities only. Not email OTP delivery, physical-device, or UI acceptance.",
   "checks": [
     {
@@ -47,16 +47,29 @@
   ],
   "cleanup": [
     {
-      "userId": "21983bf0-dfdb-416d-8ee3-56d726d1d178",
+      "userId": "bb4a6cc2-a496-4aa1-8e3b-e7406717f5d4",
       "deleted": true,
       "remainingEntities": 0
     },
     {
-      "userId": "7528343a-59f3-48fa-9449-7325b73b7233",
+      "userId": "8315bd74-54c2-49be-a152-799652ba74cb",
       "deleted": true,
       "remainingEntities": 0
     }
   ],
+  "realtime": {
+    "statuses": [
+      "SUBSCRIBED",
+      "CLOSED"
+    ],
+    "systems": [
+      {
+        "extension": "postgres_changes",
+        "status": "ok"
+      }
+    ],
+    "waitFor": "postgres_changes system readiness, not just channel join"
+  },
   "quantReceipt": {
     "status": 200,
     "subjectBound": true,

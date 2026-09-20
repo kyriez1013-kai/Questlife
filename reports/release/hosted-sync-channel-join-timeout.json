@@ -1,0 +1,33 @@
+{
+  "sourceCommit": "32f7d2d362867e7240aaa830419605107244f1f5",
+  "project": "gttcoocfkqwvsqfwxpyo",
+  "testedAt": "2026-09-20T12:41:03.486Z",
+  "scope": "Actual hosted Supabase Auth/password sessions and Sync V2 engine/SQL over HTTPS. Disposable admin-created email-confirmed identities only. Not email OTP delivery, physical-device, or UI acceptance.",
+  "checks": [
+    {
+      "name": "real_auth_and_session_restore",
+      "result": "PASS"
+    },
+    {
+      "name": "create_and_second_replica_pull",
+      "result": "PASS"
+    },
+    {
+      "name": "reverse_direction_update",
+      "result": "PASS"
+    }
+  ],
+  "cleanup": [
+    {
+      "userId": "116d8ac9-79d5-49ea-8306-3c21b0adebc4",
+      "deleted": true,
+      "remainingEntities": 0
+    },
+    {
+      "userId": "c362c6f4-1707-44eb-a6e8-1ef73ee7269a",
+      "deleted": true,
+      "remainingEntities": 0
+    }
+  ],
+  "failure": "realtime_event_timeout_SUBSCRIBED"
+}
