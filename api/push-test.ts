@@ -18,7 +18,7 @@ export default async function handler(req: any, res: any) {
     input = RequestSchema.parse(JSON.parse(raw));
   } catch { return send(400, { ok: false, error: 'invalid_request' }); }
   const auth = await verifySupabaseBearer(req);
-  if (!auth.ok) return send(auth.status, { ok: false, error: auth.error });
+  if (auth.ok === false) return send(auth.status, { ok: false, error: auth.error });
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 12000);
   const rpc = async (name: string, args: Record<string, unknown>) => {

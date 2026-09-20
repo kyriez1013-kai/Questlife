@@ -41,10 +41,12 @@ function buildConfigs(project, target) {
 
 function ensureGroup(project, name) {
   const existing = values(project.hash.project.objects.PBXGroup).find(([, group]) => unquote(group.name) === name);
-  if (existing) return existing[0];
-  const group = project.addPbxGroup([], name);
-  project.addToPbxGroup(group.uuid, project.getFirstProject().firstProject.mainGroup);
-  return group.uuid;
+  const id = existing?.[0] ?? project.addPbxGroup([], name).uuid;
+  // Files already carry source-root-relative folders. A virtual group must have
+  // no path: node-xcode otherwise serializes its undefined value as a directory.
+  delete project.hash.project.objects.PBXGroup[id].path;
+  if (!existing) project.addToPbxGroup(id, project.getFirstProject().firstProject.mainGroup);
+  return id;
 }
 
 function addLocalizedTable(project, folder, table, target, group) {
