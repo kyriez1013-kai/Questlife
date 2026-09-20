@@ -26,7 +26,7 @@ VERIFIED_DEVICE, AWAITING_OWNER, BLOCKED. Unchecked entries remain unfinished.
 | Vercel authorization | VERIFIED_REMOTE | CLI login valid; existing questlife-alpha project discovered |
 | Isolated Supabase backend | VERIFIED_REMOTE | `gttcoocfkqwvsqfwxpyo` created; both reviewed migrations executed in SQL Editor; four RLS tables, six RPCs and Realtime publication verified. Existing production `gtlknzltzntfltgjvgxx` untouched |
 | EAS / iOS signing | AWAITING_OWNER | Login restored, project `be1ec640-8b5f-4e39-97c1-1480118e993d` created; cloud internal-build attempt reached Apple credentials prompt; no existing distribution credentials |
-| Physical devices | AWAITING_OWNER | adb inventory empty; no physical acceptance claimed |
+| Physical devices | AWAITING_OWNER | Dedicated API36 arm64 emulator is connected; no physical device is connected and no physical acceptance is claimed |
 | Auth and bidirectional sync | VERIFIED_REMOTE engine/HTTPS; UI/device acceptance pending | Ten hosted groups pass: real Auth/password sessions, restore, bidirectional replicas, Realtime, offline/ACK retry, deletion, isolation and authenticated Quant. Email OTP delivery and real two-device UI still pending |
 | Commit-order concurrent sync | VERIFIED_LOCAL | PostgreSQL 18, separate backend connections: 10/10; delayed lower sequence, CAS, idempotent receipt/delete and RLS; no hosted claim |
 | Legacy anonymous endpoint safety | IMPLEMENTED, VERIFIED_LOCAL | `/api/sync` fails closed (410); Quant verifies Supabase bearer UID; 17 backend scenario groups passed |
@@ -37,22 +37,21 @@ VERIFIED_DEVICE, AWAITING_OWNER, BLOCKED. Unchecked entries remain unfinished.
 | Health / Calendar / Notifications | IMPLEMENTED, VERIFIED_LOCAL | Explicit provider deletion/correction, durable Calendar intents/reconciliation, push registration lifecycle and quiet hours; actual source samples, OS writes and delivery require device/provider gates |
 | Shortcuts / deep links | IMPLEMENTED, VERIFIED_LOCAL | Open-only entries through existing handlers; 19 intent boundary assertions; Android Widget plugin passed 12 checks including native AAPT/Kotlin compilation; final installed-widget acceptance pending |
 | Isolated example mode | IMPLEMENTED, VERIFIED_LOCAL | Native Insights examples use the same artifact/plot pipeline, visibly labeled; component checks assert no Store/outbox/OS write. Installed UI still unverified |
-| Standalone Android release APK | VERIFIED_LOCAL build; final UI pending | Clean `301dfe8` standalone signed arm64 APK, 47,198,728 bytes; real account config, no Metro. Emulator still has the older intermediate package; rebuild/install after the email-link change |
-| Standalone iPhone installation | AWAITING_OWNER | iOS simulator build `246bc6c8-30d9-4004-b962-c83e0e6a91cb` FINISHED at `301dfe8`, including Widget/Shortcut and backup support. Not a physical-iPhone package; signing and UDID still required |
-| Same-version Web candidate | VERIFIED_REMOTE intermediate deployment, final rebuild pending | `https://questlife-v1-release.vercel.app`, deployment `dpl_8Wk1LMTZzjENsvdGdKy1oJWH7mnw`, source `301dfe8`, bundle `index-23d99ca5b29dffc02902ef6b59a2fe43.js`; real candidate account config and backup. Owner production untouched; email-link update requires rebuild |
+| Standalone Android release APK | VERIFIED_LOCAL build; final UI pending | Clean `8cff773` standalone signed arm64 APK, 47,203,436 bytes; real account config, no Metro. Packaged backup exclusions and dedicated signing verified. Final presentation-only source alignment follows |
+| Standalone iPhone installation | AWAITING_OWNER | Native simulator cloud compilation succeeded, including Widget/Shortcut and backup support. Not a physical-iPhone package; Apple signing and UDID still required. Latest build IDs are recorded below |
+| Same-version Web candidate | VERIFIED_REMOTE intermediate deployment, final rebuild pending | `https://questlife-v1-release.vercel.app`, `8cff773` deployment `dpl_A3z422vy9wCecJCYxJoBRpAgfV8v`, bundle `index-675266f2d7d92e4f6c416ef375f10895.js`; real candidate account config, restored Today CSS and lazy historical workspace. Final sheet-shield alignment follows; owner production untouched |
 | Record backup / restore | IMPLEMENTED, VERIFIED_LOCAL | Versioned exact-record backup, original account binding, structural validation and empty-replica WAL restore. First-launch and Settings entrances; 17 core and five file-action/entry groups; physical file-provider acceptance pending |
 | Native recordings/performance | BLOCKED on input tool, not passed | Dedicated API36 arm64 emulator with host GPU; native screenshot works but CUA clicks return `noWindowsAvailable` even after fresh capture. ADB/UIAutomator interaction authorization requested; not yet received. Do not substitute component tests for device performance |
 
 ## Exact Resume Checkpoint
 
-Implementation is underway, not a new planning gate. Continue in the checkout
-above. Main executor owns backend/auth/shared configuration/ledger/release.
-Bounded workers own native Insights, native material primitives, device services,
-and the Quant runtime. No worker commits or deploys independently. Integrate
-their changes without overwriting other edits. Next: establish authorized test
-backend, close endpoint authentication gaps, configure native HTTPS origin, then
-run real account/replica flows and release builds. Record each result here as it
-occurs; do not carry forward historical test results as current acceptance.
+Continue this checkout, not the historical Web branches. Backend, native service
+integration and worker changes are already integrated. Do not repeat their
+setup. The remaining executable sequence is the final same-source builds and
+hosted presentation smoke after the sheet-shield fix, then update this ledger
+with exact artifact identifiers. Subsequent device/OTP work depends on the
+specific gates below. Historical checkpoints below are chronological evidence,
+not the current next-action queue.
 
 ## Human Actions (Consolidated, Live)
 
@@ -67,6 +66,9 @@ occurs; do not carry forward historical test results as current acceptance.
    screenshot capture. Browser confirmation handling also currently times out. A narrowly
    scoped request to use ADB/UIAutomator only on `QuestLife_V1_ReleaseQA` is pending;
    no unauthorized alternate input path was used.
+5. Remote push requires a candidate Firebase application / FCM v1 credential
+   and Apple APNs signing. EAS credentials inspection confirmed neither is
+   configured; no provider credential or paid service has been fabricated.
 
 ## Current Provider / Reference Evidence
 
@@ -321,3 +323,27 @@ Production.
 - Fresh local Chrome origin onboarding was completed with no goal/state/action
   samples. Today can create its normal automatic DecisionResult; this is not
   evidence of user observation input or successful cloud sync.
+
+## Sheet Readability and Final Regression
+
+- `a00f1dc` raises the shared Web interaction-sheet surface to 98% of the
+  existing elevated token in both themes, with an opaque CSS fallback. The
+  directional edge/shadow, form layout and callbacks are unchanged. This fixes
+  actual light-theme background Today text remaining legible through the form;
+  it does not assert that portal backdrop blur works on every browser.
+- Actual Chrome local export checks: Chinese/light at 393x852 and 375x667;
+  English/dark at 375x667 and 1280x900. Record Progress opens, cancels and scrolls;
+  at 375 the footer is y=582..659 and document width equals 375. At 1280 the
+  footer is 640px wide and remains in viewport. No observation was submitted.
+- English 1280x900 Insights loads its asynchronous workspace and exposes
+  watchlist, Custom, Indicators and Analyze with zero observations and no
+  fabricated baseline. Screenshots were inspected in the browser tool; no
+  native recording or physical keyboard result is claimed.
+- Full local regression on clean source `a00f1dc`: 24/24 suites PASS, including
+  TypeScript, Web export and zero known dependency advisories. The Web boundary
+  suite now includes three checks (lazy fixtures, platform CSS imports and
+  theme-independent sheet shielding).
+- Backup confirmation/file roundtrip, native installed interaction, device
+  frame times, real permission/source samples and email delivery remain
+  UNVERIFIED. Existing three QA-only browser structures remain local and
+  signed out; their cleanup is not falsely reported as complete.

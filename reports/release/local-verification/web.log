@@ -3,23 +3,7 @@
 > expo export --platform web
 
 Starting Metro Bundler
-| (node:2719) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
-| (Use `node --trace-warnings ...` to show where the warning was created)
-| (node:2721) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
-| (Use `node --trace-warnings ...` to show where the warning was created)
-| (node:2723) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
-| (Use `node --trace-warnings ...` to show where the warning was created)
-| (node:2724) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
-| (Use `node --trace-warnings ...` to show where the warning was created)
-| (node:2720) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
-| (Use `node --trace-warnings ...` to show where the warning was created)
-| (node:2725) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
-| (Use `node --trace-warnings ...` to show where the warning was created)
-| (node:2722) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
-| (Use `node --trace-warnings ...` to show where the warning was created)
-Web ./index.ts ▓▓▓▓▓▓▓▓▓▓░░░░░░ 62.7% (261/486)
-Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 72.1% (792/933)
-Web Bundled 8852ms index.ts (1303 modules)
+Web Bundled 589ms index.ts (1303 modules)
 
 › Assets (11):
 node_modules/@react-navigation/elements/lib/module/assets/back-icon-mask.0a328cd9c1afd0afe8e3b1ec5165b1b4.png (653 B)
@@ -40,7 +24,7 @@ _expo/static/css/v11-insights-606831aac854322cd0387f59dcbe67d6.css (19.3 kB)
 _expo/static/css/v11-product-4990e6bd3452e4a07e684a55b209609e.css (12.7 kB)
 _expo/static/css/v11-stage0-596d22bb56d0bb71d360000c9ffca011.css (7.62 kB)
 _expo/static/css/v11-stage1-94574616d8c90677c741f4a3a2adf183.css (4.84 kB)
-_expo/static/css/v11-stage2-rebaseline-d7ea9e4e28973fbf84d3162d38e46a17.css (52.8 kB)
+_expo/static/css/v11-stage2-rebaseline-6c62154b66e1190f5df8eaabd014eae0.css (52.9 kB)
 _expo/static/js/web/driver_analysis_compact-25733f33034a8ec110fa9de1c44b7be5.js (21.1 kB)
 _expo/static/js/web/forming_history_analysis_v1-9e8dc8c15436367ec64f51683cd98b2e.js (3.85 kB)
 _expo/static/js/web/forming_history_full-0bbcecbea42c61d6f2e1761e68ac3bb9.js (11.5 kB)

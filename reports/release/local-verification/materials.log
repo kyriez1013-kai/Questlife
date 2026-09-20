@@ -1,43 +1,41 @@
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ material policy is fail-closed and never blurs nested/evidence/Android surfaces (72.889083ms)
+✔ material policy is fail-closed and never blurs nested/evidence/Android surfaces (73.349541ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ supported iOS (35.263458ms)
+✔ supported iOS (33.237958ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ old iOS (34.552958ms)
+✔ old iOS (32.044292ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ iOS beta without API (19.223208ms)
+✔ iOS beta without API (19.527208ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ compiler compatibility mode (19.345959ms)
+✔ compiler compatibility mode (19.753542ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ old binary with no native registration (20.41025ms)
+✔ old binary with no native registration (20.785167ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ native import error (16.932916ms)
+✔ native import error (16.762167ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ Android (20.368834ms)
+✔ Android (20.2195ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ unknown version (16.467875ms)
+✔ unknown version (16.431583ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ reduced transparency (16.873667ms)
-react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ both palettes use theme-derived native gradients; Glass honors app appearance (35.71875ms)
-react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ nested materials have at most one blur/glass layer; sheets have none (17.131916ms)
-react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ live accessibility changes remove transparency and interactive glass without remounting (22.435459ms)
-react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ shared native listeners, stale query protection and foreground refresh (16.309209ms)
-react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ rejected native preference queries preserve opaque/static defaults (14.038791ms)
-react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ explicit reduced motion/fallback props are respected (20.150334ms)
+✔ reduced transparency (16.528458ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ both palettes use theme-derived native gradients; Glass honors app appearance (38.433458ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ nested materials have at most one blur/glass layer; sheets have none (17.244416ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ live accessibility changes remove transparency and interactive glass without remounting (23.24525ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ shared native listeners, stale query protection and foreground refresh (16.703375ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ rejected native preference queries preserve opaque/static defaults (15.246708ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ explicit reduced motion/fallback props are respected (20.122208ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ categorical chips preserve checkbox/radio/button semantics and disabled state (16.150625ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ categorical chips preserve checkbox/radio/button semantics and disabled state (15.029708ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
@@ -46,34 +44,36 @@ react-test-renderer is deprecated. See https://react.dev/warnings/react-test-ren
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ all native controls have allocated 44-point targets rather than overlapping hitSlop (16.420625ms)
-react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ selector columns shrink for narrow widths and large Dynamic Type (19.276666ms)
-react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ text field respects caller editability, placeholder, focus callbacks and status (15.348917ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ loading keeps button labels and prevents repeated activation (14.717333ms)
+✔ all native controls have allocated 44-point targets rather than overlapping hitSlop (16.60775ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ footer stacks large translated actions for Dynamic Type (19.12125ms)
+✔ selector columns shrink for narrow widths and large Dynamic Type (19.128709ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ ios sheet keyboard, safe-area, focus, dismissal and short-viewport fallback (24.734125ms)
+✔ text field respects caller editability, placeholder, focus callbacks and status (14.69275ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ android sheet keyboard, safe-area, focus, dismissal and short-viewport fallback (16.364ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ untitled forms focus the real close control without inventing a heading (15.39125ms)
+✔ loading keeps button labels and prevents repeated activation (14.138833ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ focused inputs scroll within the real body viewport with reduced-motion support (14.879958ms)
+✔ footer stacks large translated actions for Dynamic Type (18.939209ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ keyboard compact mode preserves live form state and real footer callbacks (19.040834ms)
+✔ ios sheet keyboard, safe-area, focus, dismissal and short-viewport fallback (25.695666ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ reopening a sheet does not reuse a dismissed scroll offset (17.257166ms)
+✔ android sheet keyboard, safe-area, focus, dismissal and short-viewport fallback (16.480792ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ existing production entry and Insights consumer reach the native sheet unchanged (26.933916ms)
+✔ untitled forms focus the real close control without inventing a heading (15.6205ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ native generic form adapter preserves children, footer, close override and visibility (38.767125ms)
+✔ focused inputs scroll within the real body viewport with reduced-motion support (15.113583ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ generic native forms reuse existing language/theme choices and system reduced motion (80.978042ms)
+✔ keyboard compact mode preserves live form state and real footer callbacks (19.3ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ reopening a sheet does not reuse a dismissed scroll offset (17.645625ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ existing production entry and Insights consumer reach the native sheet unchanged (25.545583ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ native generic form adapter preserves children, footer, close override and visibility (38.057209ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ generic native forms reuse existing language/theme choices and system reduced motion (80.277833ms)
 ℹ tests 31
 ℹ suites 0
 ℹ pass 31
@@ -81,4 +81,4 @@ react-test-renderer is deprecated. See https://react.dev/warnings/react-test-ren
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 871.788917
+ℹ duration_ms 868.962541

@@ -22,4 +22,4 @@ PASS production Settings callback requires ACK and persisted disable retires on 
 PASS authService sign-out defers SDK logout on failed retirement and durable retry completes it
 PASS lost registration ACK persists retirement and never reuses A token under B
 Push boundary: 14 integration groups passed; actual local PostgreSQL RLS/RPC, production wrapper and real Supabase SDK; fixture network only, no hosted migration or delivery.
-GoTrueClient@sb-push-auth-auth-token:0 (2.116.0) 2026-09-20T13:10:48.811Z The "lock" option is deprecated and will be removed in v3. The client now coordinates session refreshes without a lock, so most apps can drop the option. See https://github.com/supabase/supabase-js/blob/master/packages/core/auth-js/migrations/lockless-coordination.md
+GoTrueClient@sb-push-auth-auth-token:0 (2.116.0) 2026-09-20T13:20:32.668Z The "lock" option is deprecated and will be removed in v3. The client now coordinates session refreshes without a lock, so most apps can drop the option. See https://github.com/supabase/supabase-js/blob/master/packages/core/auth-js/migrations/lockless-coordination.md
