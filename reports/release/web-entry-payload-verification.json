@@ -1,0 +1,19 @@
+{
+  "scope": "Web entry payload, not device frame timing",
+  "before": {
+    "sourceCommit": "a041cac",
+    "bytes": 22307402
+  },
+  "after": {
+    "file": "index-de6ae36ef33a27fc61fd189ccff95d40.js",
+    "bytes": 4371601,
+    "gzipBytes": 987031
+  },
+  "deferred": [
+    {
+      "file": "V11InsightsScreen-a417f844633c21fc7ea3370cf6487a08.js",
+      "bytes": 17935908
+    }
+  ],
+  "reductionPercent": 80.4
+}
