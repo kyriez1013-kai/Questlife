@@ -18,13 +18,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useStore } from '../store';
+import { recordSourceBindings, timerRecordProvenance } from '../utils/recordSubmission';
 import { theme } from '../theme';
 import { getQuestTheme, getStateToneColor, questLayout } from '../design/tokens';
 import { useQuestTheme } from '../design/useQuestTheme';
 import { useQuestReducedMotion } from '../design/motion';
 import { getSurfaceStyle } from '../design/surfaces';
 import { isDarkTheme } from '../design/darkSurfaceGuard';
-import { today } from '../storage';
+import { today, uid } from '../storage';
 import {
   skillMinutesOnDate, skillStreak, skillTotalMinutes, skillMilestones,
   Skill, Category, Action, Quality, QUALITY_OPTIONS, HOUR_MILESTONES, TaskType, ExecutionLog, StateCheckIn,
@@ -493,6 +494,7 @@ export default function HomeScreen() {
   const {
     data,
     createExecutionLog,
+    waitForExecutionLog,
     deleteExecutionLog,
     createRescueLog,
     completeRescueStep,
@@ -587,6 +589,12 @@ export default function HomeScreen() {
   const [skillId, setSkillId] = useState<string | null>(null);
   const [scheduleBlockId, setScheduleBlockId] = useState<string | null>(null);
   const [timerSessionId, setTimerSessionId] = useState<string | null>(null);
+  const [timerEndedAt, setTimerEndedAt] = useState<string | null>(null);
+  const [recordSaving, setRecordSaving] = useState(false);
+  const [recordSaveError, setRecordSaveError] = useState(false);
+  const [recordDraftLocked, setRecordDraftLocked] = useState(false);
+  const recordSubmitBusy = useRef(false);
+  const recordDraftId = useRef('');
   const [minutes, setMinutes] = useState('30');
   const [note, setNote] = useState('');
   const [predictedMinutes, setPredictedMinutes] = useState('30');
@@ -693,8 +701,8 @@ export default function HomeScreen() {
   const todayLogs = (data.executionLogs || []).filter((a) => a.date === todayStr);
   const todayMinutes = todayLogs.reduce((sum, a) => sum + a.durationMinutes, 0);
   const contextLocale = lang === 'zh' ? 'zh-CN' : 'en-AU';
-  const todayContextPrimary = new Date().toLocaleDateString(contextLocale, { month: 'short', day: 'numeric' });
-  const todayContextWeekday = new Date().toLocaleDateString(contextLocale, { weekday: 'short' });
+  const todayContextPrimary = new Intl.DateTimeFormat(contextLocale, { month: 'short', day: 'numeric' }).format(new Date());
+  const todayContextWeekday = new Intl.DateTimeFormat(contextLocale, { weekday: 'short' }).format(new Date());
   const todayContextDate = [todayContextPrimary, todayContextWeekday].join(' · ');
   const todayRescueLogs = (data.rescueLogs || []).filter((log) => log.date === todayStr);
   const completedRescuesToday = todayRescueLogs.filter((log) => log.activationStepCompleted).length;
@@ -861,6 +869,7 @@ export default function HomeScreen() {
     minutes: number;
     title: string;
     timerSessionId: string | null;
+    timerEndedAt: string;
   }>) => {
     const presetSkill = presetSkillId ? data.skills.find((item) => item.id === presetSkillId) : data.skills[0];
     const shouldPredict = preset?.source === 'timer' && !isStrengthPredictionSkill(presetSkill);
@@ -870,6 +879,10 @@ export default function HomeScreen() {
     setSkillId(presetSkillId ?? data.skills[0]?.id ?? null);
     setScheduleBlockId(preset?.scheduleBlockId ?? null);
     setTimerSessionId(preset?.timerSessionId ?? null);
+    setTimerEndedAt(preset?.timerEndedAt ?? null);
+    recordDraftId.current = preset?.timerSessionId ? `execution-${preset.timerSessionId}` : uid();
+    setRecordSaveError(false);
+    setRecordDraftLocked(false);
     setMinutes(String(preset?.minutes ?? 30));
     setPredictedMinutes(String(preset?.minutes ?? 30));
     setPredictedValue('');
@@ -920,7 +933,7 @@ export default function HomeScreen() {
     }, { page: 'today' });
   }, [data.skills]);
 
-  const closeModal = useCallback(() => setModal(false), []);
+  const closeModal = useCallback(() => { if (!recordSubmitBusy.current) setModal(false); }, []);
 
   const startSession = useCallback(async (payload: Omit<ActiveSession, 'id' | 'startedAt' | 'source'>) => {
     if (activeSession) {
@@ -946,7 +959,8 @@ export default function HomeScreen() {
 
   const finishSession = useCallback(() => {
     if (!activeSession) return;
-    const durationMinutes = Math.max(1, Math.round((Date.now() - new Date(activeSession.startedAt).getTime()) / 60000));
+    const endedAt = new Date().toISOString();
+    const durationMinutes = Math.max(1, Math.round((Date.parse(endedAt) - new Date(activeSession.startedAt).getTime()) / 60000));
     openModal(activeSession.linkedSkillId, {
       logType: activeSession.linkedScheduleBlockId ? 'schedule' : activeSession.linkedSkillId ? 'skill' : 'custom',
       source: 'timer',
@@ -954,6 +968,7 @@ export default function HomeScreen() {
       minutes: durationMinutes,
       title: activeSession.title,
       timerSessionId: activeSession.id,
+      timerEndedAt: endedAt,
     });
     const skill = activeSession.linkedSkillId ? data.skills.find((item) => item.id === activeSession.linkedSkillId) : undefined;
     trackEvent('timer_finished', {
@@ -969,53 +984,36 @@ export default function HomeScreen() {
     defaultMinutes?: number;
   }) => {
     const skill = payload.skill ?? (payload.block?.linkedSkillId ? data.skills.find((item) => item.id === payload.block.linkedSkillId) : undefined);
-    const link = findPrimaryLink(skill?.id);
     const durationMinutes = payload.defaultMinutes
       ?? payload.block?.plannedMinutes
       ?? skill?.defaultDurationMinutes
       ?? skill?.dailyTargetMinutes
       ?? 30;
-    const progressType = skill?.metricConfig?.metricType ?? skill?.progressType ?? 'none';
-    createExecutionLog({
-      date: todayStr,
-      durationMinutes,
-      title: payload.block?.title ?? skill?.name ?? t(lang, 'customLog'),
-      linkedSkillId: skill?.id,
-      linkedGoalId: payload.block?.linkedGoalId ?? link?.goalId,
-      linkedModuleId: link?.moduleId,
-      linkedScheduleBlockId: payload.block?.id,
-      source: 'one_tap',
-      taskType: payload.block?.taskType ?? skill?.taskType,
-      predictedDurationMinutes: durationMinutes,
-      predictedQualityRating: 3,
-      qualityRating: 3,
-      predictionDelta: { durationDeltaMinutes: 0, qualityDelta: 0 },
-      metricUpdate: {
-        metricType: progressType,
-        minutesAdded: progressType === 'time_based' ? durationMinutes : undefined,
-        countAdded: progressType === 'frequency' ? 1 : undefined,
-        qualityValue: progressType === 'quality_score' ? 3 : undefined,
-        markCompleted: progressType === 'binary' ? true : undefined,
-      },
-      progressUpdate: {
-        progressType,
-        valueAdded: progressType === 'time_based' ? durationMinutes : progressType === 'frequency' ? 1 : undefined,
-        completed: progressType === 'binary' ? true : undefined,
-      },
+    // A plan is a draft, not an observed duration or quality result.
+    openModal(skill?.id, {
+      logType: payload.block ? 'schedule' : skill ? 'skill' : 'custom',
+      source: 'one_tap', scheduleBlockId: payload.block?.id ?? null,
+      minutes: durationMinutes, title: payload.block?.title ?? skill?.name,
     });
-    Alert.alert(t(lang, 'oneTapLogged'));
-  }, [createExecutionLog, data.skills, findPrimaryLink, lang, todayStr]);
+  }, [data.skills, openModal]);
 
-  const submit = () => {
+  const submit = async () => {
+    if (recordSubmitBusy.current) return;
     if (logType === 'skill' && !skillId) { Alert.alert(t(lang, 'selectOneSkill')); return; }
     const schemaMinutes = optionalNumber(schemaValues.durationMinutes);
     const m = parseInt(minutes, 10) || schemaMinutes || 0;
     if (!m || m <= 0) { Alert.alert(t(lang, 'invalidMinutes')); return; }
-    const selectedBlock = scheduleBlockId ? todayScheduleBlocks.find((b) => b.id === scheduleBlockId) : undefined;
-    const effectiveSkillId = logType === 'schedule' ? (selectedBlock?.linkedSkillId ?? skillId ?? undefined) : (skillId ?? undefined);
+    const { block: selectedBlock, skillId: effectiveSkillId } = recordSourceBindings(logType, skillId, scheduleBlockId, todayScheduleBlocks);
+    if (logType === 'schedule' && !selectedBlock) { setRecordSaveError(true); return; }
+    recordSubmitBusy.current = true;
+    Keyboard.dismiss();
+    setRecordSaving(true);
+    setRecordSaveError(false);
+    try {
 
-    // 庆祝判定: 提交前后是否跨过 100% 目标
     const skill = data.skills.find((s) => s.id === effectiveSkillId);
+    const showSavedFeedback = () => {
+    // Only celebrate after the durable record ACK.
     if (skill && skill.dailyTargetMinutes > 0) {
       const target = adjustTaskRecommendation(skill, effectiveCurrentState).adjustedMinutes;
       const beforeMin = skillMinutesOnDate(skill.id, todayStr, data.actions);
@@ -1056,6 +1054,7 @@ export default function HomeScreen() {
       }
     }
 
+    };
     const progressType = skill?.metricConfig?.metricType ?? skill?.progressType ?? 'time_based';
     const selectedRecordingFields = getRecordingFieldsForSkill(skill);
     const hasDomainSchema = selectedRecordingFields.length > 0;
@@ -1156,7 +1155,12 @@ export default function HomeScreen() {
       qualityRating: quality ?? undefined,
       predictedQualityRating,
     }) : undefined;
-    createExecutionLog({
+    const actualSession = logSource === 'timer' && activeSession?.id === timerSessionId ? activeSession : undefined;
+    if (logSource === 'timer' && (!actualSession || !timerEndedAt)) throw new Error('timer_session_missing');
+    setRecordDraftLocked(true);
+    const savedLog = createExecutionLog({
+      id: recordDraftId.current,
+      dataProvenance: actualSession && timerEndedAt ? timerRecordProvenance(actualSession.startedAt, timerEndedAt, new Date().toISOString()) : undefined,
       date: todayStr,
       durationMinutes: m,
       title: selectedBlock?.title ?? skill?.name ?? (note.trim() || t(lang, 'customLog')),
@@ -1229,6 +1233,12 @@ export default function HomeScreen() {
         qualitativeText: progressType === 'qualitative' ? qualitativeSummary.trim() || undefined : undefined,
       },
     });
+    await waitForExecutionLog(savedLog.id);
+    if (logSource === 'timer' && timerSessionId) {
+      await AsyncStorage.removeItem(ACTIVE_SESSION_KEY);
+      setActiveSession(null);
+    }
+    showSavedFeedback();
     setLastPredictionDelta(predictionDelta ?? null);
     if (predictionDelta) {
       const lines: string[] = [];
@@ -1251,12 +1261,15 @@ export default function HomeScreen() {
           : t(lang, 'predictionBelow');
       Alert.alert(t(lang, 'predictionResult'), `${lines.join('\n')}\n${feedback}`);
     }
-    if (logSource === 'timer' && timerSessionId) {
-      AsyncStorage.removeItem(ACTIVE_SESSION_KEY).then(() => setActiveSession(null)).catch(() => setActiveSession(null));
-    }
     setLogSource(undefined);
     setTimerSessionId(null);
     setModal(false);
+    } catch {
+      setRecordSaveError(true);
+    } finally {
+      recordSubmitBusy.current = false;
+      setRecordSaving(false);
+    }
   };
 
   // 庆祝浮层动画: 200ms fade-in + scale → 1100ms 停留 → 200ms fade-out
@@ -2256,6 +2269,8 @@ export default function HomeScreen() {
   ]);
 
   useQuickActions((intent) => {
+    if (intent.kind === 'quick_capture') { openV11Capture(); return; }
+    if (intent.kind === 'current_plan') { navigation.navigate('Schedule'); return; }
     if (intent.kind === 'skill_reminder') {
       const skill = data.skills.find(item => item.id === intent.entityId);
       if (skill) openModal(skill.id);
@@ -2290,7 +2305,7 @@ export default function HomeScreen() {
       : '';
 
   const dueCoreFollowUp = questLifeCoreV1Enabled
-    ? dueOwnerDecisionEpisode(data.decisionResults || [], new Date().toISOString())
+    ? dueOwnerDecisionEpisode(data.decisionResults || [], new Date().toISOString(), data.executionLogs)
     : null;
   const adaptiveDecisionAction: V11IntegratedUtilityAction | undefined = adaptiveDecisionEnabled ? {
     id: 'adaptive-decision',
@@ -2423,8 +2438,8 @@ export default function HomeScreen() {
   const modalPredictionSchema = getPredictionSchemaForSkill(modalSkill);
   const modalIsStrength = isStrengthPredictionSkill(modalSkill);
   const modalSchemaFields = getRecordingFieldsForSkill(modalSkill);
-  const saveDisabled = logType === 'skill' && !skillId;
-  const saveDisabledReason = saveDisabled ? t(lang, 'selectSkillFirst') : '';
+  const saveDisabled = recordSaving || (logType === 'skill' && !skillId);
+  const saveDisabledReason = recordSaveError ? t(lang, 'recordSaveRetry') : recordSaving ? t(lang, 'recordSaving') : saveDisabled ? t(lang, 'selectSkillFirst') : '';
   const modalInputStyle = {
     backgroundColor: questTheme.colors.surfaceElevated,
     borderColor: questTheme.colors.border,
@@ -3243,6 +3258,7 @@ export default function HomeScreen() {
         >
 
         <V11RecordProgressForm
+          readOnly={recordSaving || recordDraftLocked}
           accent={accent}
           amountAdded={amountAdded}
           binaryCompleted={binaryCompleted}
@@ -3268,11 +3284,15 @@ export default function HomeScreen() {
           onFrequencyCompletedChange={setFrequencyCompleted}
           onLogTypeChange={(value) => {
             setLogType(value);
+            if (logSource !== 'timer') setLogSource(undefined);
             if (value === 'schedule') {
               const first = todayScheduleBlocks[0];
               setScheduleBlockId(first?.id ?? null);
-              setSkillId(first?.linkedSkillId ?? data.skills[0]?.id ?? null);
+              setSkillId(first?.linkedSkillId ?? null);
               if (first) setMinutes(String(first.plannedMinutes));
+            } else {
+              setScheduleBlockId(null);
+              setSkillId(value === 'custom' ? null : data.skills[0]?.id ?? null);
             }
           }}
           onMentalCostChange={setMentalCost}

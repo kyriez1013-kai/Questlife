@@ -36,6 +36,7 @@ import { getV11ThemeTokens } from '../../v11/tokens';
 import QuestButton from '../ui/QuestButton';
 import QuestEntityIcon from '../ui/QuestEntityIcon';
 import QuestInput from '../ui/QuestInput';
+import { lockRecordDraftCallbacks } from '../../utils/recordSubmission';
 
 type LogType = 'skill' | 'schedule' | 'custom';
 type StrengthLogMode = 'simple' | 'session';
@@ -51,6 +52,7 @@ export type V11StrengthExerciseDraft = {
 };
 
 type Props = {
+  readOnly?: boolean;
   accent: string;
   amountAdded: string;
   binaryCompleted: boolean;
@@ -1456,7 +1458,10 @@ function V11RecordProgressContent(props: Props) {
 }
 
 export default function V11RecordProgressForm(props: Props) {
-  return props.useV11 ? <V11RecordProgressContent {...props} /> : <LegacyRecordProgressForm {...props} />;
+  const fields = lockRecordDraftCallbacks(props, props.readOnly === true);
+  return <View pointerEvents={props.readOnly ? 'none' : 'auto'} accessibilityState={{ disabled: props.readOnly }}>
+    {props.useV11 ? <V11RecordProgressContent {...fields} /> : <LegacyRecordProgressForm {...fields} />}
+  </View>;
 }
 
 const styles = StyleSheet.create({

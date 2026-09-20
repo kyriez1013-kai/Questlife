@@ -8,7 +8,9 @@ import { scheduleSkillReminder, cancelSkillReminder, rescheduleAllReminders } fr
 import { calculateModuleProgress, calculatePredictionDelta, progressTypeForSkill, skillsForModule } from './progress';
 import { trackEvent } from './utils/analytics';
 import { scheduleServerSync } from './services/syncService';
-import { persistWithSync, startSyncRuntime } from './sync-v2/runtime';
+import { getSyncEngine, persistWithSync, startSyncRuntime } from './sync-v2/runtime';
+import { ExecutionPersistence } from './utils/executionPersistence';
+import { removeExecutionProgress } from './utils/executionDeletionProgress';
 import { projectAppData } from './sync-v2/projection';
 import { enqueueServerDeletions } from './services/syncDeletionOutbox';
 import { createEffortUnitsFromExecutionLog, generateContributionLinks } from './utils/effort';
@@ -90,6 +92,7 @@ interface Ctx {
     moduleId?: string;
     scheduleBlockId?: string;
   }) => ExecutionLog;
+  waitForExecutionLog: (id: string) => Promise<void>;
   updateExecutionLog: (id: string, patch: Partial<ExecutionLog>) => void;
   deleteExecutionLog: (id: string) => void;
   getExecutionLogsByDate: (date: string) => ExecutionLog[];
@@ -228,70 +231,6 @@ function applyExecutionLogToSkillProgress(skill: Skill, log: ExecutionLog): Skil
   return skill;
 }
 
-/**
- * Recompute a skill's cached progress fields from scratch using all remaining
- * execution logs. Called after any log deletion so that skill progress bars,
- * completedHours, totalXP, bestValue etc. stay in sync (single source of truth).
- *
- * Resets all accumulator fields to 0, then re-applies each log in chronological
- * order — identical logic to the add path but starting from zero.
- *
- * Special cases:
- *  • frequency — only counts logs from the current ISO week (Mon-Sun) to match
- *    the "completedThisWeek" semantics.
- *  • All other types — all remaining logs applied in full.
- */
-function recomputeSkillFromLogs(skill: Skill, logsForSkill: ExecutionLog[]): Skill {
-  const type = progressTypeForSkill(skill);
-
-  // Current ISO-week Monday in "YYYY-MM-DD"
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  const mondayOffset = (now.getDay() + 6) % 7;
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - mondayOffset);
-  const weekStartStr = monday.toISOString().slice(0, 10);
-
-  const logsToApply = type === 'frequency'
-    ? logsForSkill.filter((l) => l.date >= weekStartStr)
-    : logsForSkill;
-
-  const sorted = logsToApply
-    .slice()
-    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-
-  // Zero out all accumulated fields
-  const zeroed: Skill = {
-    ...skill,
-    totalXP: 0,
-    completedHours: 0,
-    completedThisWeek: 0,
-    currentValue: 0,
-    metricConfig: skill.metricConfig
-      ? {
-          ...skill.metricConfig,
-          completedHours:    0,
-          completedThisWeek: 0,
-          currentValue:      0,
-          currentAmount:     0,
-          bestValue:         0,
-          bestEstimated1RM:  0,
-          bestVolume:        0,
-          currentBest:       0,
-          averageQuality:    0,
-          averageStateValue: 0,
-          completed:         false,
-        }
-      : undefined,
-  };
-
-  // Re-apply every remaining log
-  return sorted.reduce(
-    (s, log) => applyExecutionLogToSkillProgress(s, { ...log, appliedToProgress: false }),
-    zeroed,
-  );
-}
-
 const StoreContext = createContext<Ctx | null>(null);
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
@@ -299,6 +238,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   // 标记是否已经完成首次加载, 防止 loading 阶段意外写盘把已有数据覆盖成空.
   const loadedRef = useRef(false);
+  const executionWrites = useRef(new ExecutionPersistence());
   const dataRef = useRef(data);
   dataRef.current = data;
 
@@ -339,32 +279,47 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   /** 通用 mutation helper: 同时更新 React state 和 AsyncStorage. */
-  const mutate = useCallback((fn: (d: AppData) => AppData, source = 'store.mutation') => {
+  const mutate = useCallback((fn: (d: AppData) => AppData, source = 'store.mutation', executionId?: string) => {
     const caller = new Error().stack?.split('\n').slice(2, 5).join(' | ');
     const base = dataRef.current;
     const next = fn(base);
-    if (next === base) return;
+    if (next === base) {
+      if (executionId) executionWrites.current.retry(executionId);
+      return;
+    }
 
     dataRef.current = next;
     setData(next);
     if (!shouldPersistStoreMutation(loadedRef.current)) return;
 
-    // fire-and-forget; web commit 本身同步, native commit 由 storage queue 串行化.
-    persistWithSync(base, next, source, () => persist(next, {
+    let attempted = false;
+    const write = async () => {
+      let recovered: AppData | undefined;
+      if (attempted && executionId) {
+        // Recover a durable WAL before retry: an ACK loss must not enqueue twice.
+        await (await getSyncEngine()).recover();
+        const persisted = await loadData();
+        if (persisted.executionLogs?.some(log => log.id === executionId)) recovered = persisted;
+      }
+      attempted = true;
+      const committed = recovered ?? await persistWithSync(base, next, source, () => persist(next, {
       base,
       source,
       origin: 'local_user',
       caller,
       operation: 'mutation',
       hydrationStatus: 'hydrated',
-    })).then((committed) => {
+      }));
       setData((current) => {
         const reconciled = reconcileCommittedAppData(next, committed, current);
         dataRef.current = reconciled;
         return reconciled;
       });
-    }).catch(() => console.warn('[sync-v2] local persistence unavailable'));
+    };
+    if (executionId) executionWrites.current.register(executionId, write);
+    else void write().catch(() => console.warn('[sync-v2] local persistence unavailable'));
   }, []);
+  const waitForExecutionLog = useCallback((id: string) => executionWrites.current.wait(id), []);
 
   // Data mutations persist through mutate(); this effect only queues server sync.
   useEffect(() => {
@@ -795,6 +750,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [mutate]);
 
   const createExecutionLog: Ctx['createExecutionLog'] = useCallback((logData) => {
+    if (!loadedRef.current) throw new Error('store_not_hydrated');
     const scheduleBlockId = logData.linkedScheduleBlockId ?? logData.scheduleBlockId;
     const scheduleBlock = scheduleBlockId ? (data.scheduleBlocks || []).find((block) => block.id === scheduleBlockId) : undefined;
     const requestedSkillId = logData.linkedSkillId ?? logData.skillId ?? scheduleBlock?.linkedSkillId;
@@ -938,7 +894,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             : block
         )),
       };
-    });
+    }, 'store.execution_create', log.id);
     derivedEffortUnits.forEach((effortUnit) => {
       trackEvent('effort_unit_created', {
         effortType: effortUnit.effortType,
@@ -1032,14 +988,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const remainingLogs = (d.executionLogs || []).filter((log) => log.id !== id);
       const derived = removeDerivedForLogs(d, logIdsToRemove);
 
-      // Recompute the linked skill's progress from all remaining logs so that
-      // skill bars / completedHours / totalXP stay in sync (single source of truth).
+      // Reverse only known contributions; existing manual progress is not zero.
       let skills = d.skills;
       if (removedLog?.linkedSkillId) {
         const affectedSkill = d.skills.find((s) => s.id === removedLog.linkedSkillId);
         if (affectedSkill) {
-          const skillLogs = remainingLogs.filter((l) => l.linkedSkillId === removedLog.linkedSkillId);
-          const recomputed = recomputeSkillFromLogs(affectedSkill, skillLogs);
+          const recomputed = removeExecutionProgress(affectedSkill, [removedLog]);
           skills = d.skills.map((s) => (s.id === removedLog.linkedSkillId ? recomputed : s));
         }
       }
@@ -1449,13 +1403,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const remainingLogs = (d.executionLogs || []).filter((log) => !linkedLogIds.has(log.id));
       const derived = removeDerivedForLogs(d, linkedLogIds);
 
-      // Recompute each affected skill from remaining logs
+      // Preserve manual baselines while reversing the explicitly removed logs.
       let skills = d.skills;
       if (affectedSkillIds.size > 0) {
         skills = d.skills.map((s) => {
           if (!affectedSkillIds.has(s.id)) return s;
-          const skillLogs = remainingLogs.filter((l) => l.linkedSkillId === s.id);
-          return recomputeSkillFromLogs(s, skillLogs);
+          const removed = (d.executionLogs || []).filter(log => linkedLogIds.has(log.id));
+          return removeExecutionProgress(s, removed);
         });
       }
 
@@ -1634,6 +1588,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         addAction,
         deleteAction,
         createExecutionLog,
+        waitForExecutionLog,
         updateExecutionLog,
         deleteExecutionLog,
         getExecutionLogsByDate,
