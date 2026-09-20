@@ -326,6 +326,28 @@ test('web schedule retains canonical text entry and has no native calendar actio
   assert.equal(tree.root.findAllByType('QuestInput').filter(node=>node.props.placeholder==='YYYY-MM-DD').length,1);
   assert.equal(button('System Calendar'),undefined);
 });
+test('empty week reports zero planned hours rather than the chart minimum', async () => {
+  fresh();store.data.skills=[];store.data.scheduleBlocks=[];
+  await render('../screens/ScheduleScreen.tsx');
+  await act(async()=>tree.root.findByType('QuestSegmentedControl').props.onChange('week'));
+  const instrument=tree.root.find(node=>node.type==='View'&&node.props.nativeID==='v11-schedule-week-instrument');
+  const labels=instrument.findAllByType('Text').map(node=>node.children.join(''));
+  assert.ok(labels.includes('0h'));assert.ok(!labels.includes('1h'));
+});
+test('week total sums only displayed dates and remains separate from plot scale', async () => {
+  fresh();store.data.skills=[];store.data.scheduleBlocks=[
+    {...block,id:'TEST_WEEK_A',plannedMinutes:45},
+    {...block,id:'TEST_WEEK_B',date:'2026-09-19',plannedMinutes:90},
+    {...block,id:'TEST_OUTSIDE_WEEK',date:'2026-09-27',plannedMinutes:600},
+  ];
+  const original=structuredClone(store.data.scheduleBlocks);
+  await render('../screens/ScheduleScreen.tsx');
+  await act(async()=>tree.root.findByType('QuestSegmentedControl').props.onChange('week'));
+  const instrument=tree.root.find(node=>node.type==='View'&&node.props.nativeID==='v11-schedule-week-instrument');
+  const labels=instrument.findAllByType('Text').map(node=>node.children.join(''));
+  assert.ok(labels.includes('2.3h'));assert.ok(!labels.includes('10h'));
+  assert.deepEqual(store.data.scheduleBlocks,original);
+});
 test('calendar permission denied exposes recovery without offering writes', async () => {
   fresh();permission='denied';store.data.scheduleBlocks=[block];
   await render('./NativeScheduleCalendarSheet.tsx',{blockId:block.id,onClose(){}});

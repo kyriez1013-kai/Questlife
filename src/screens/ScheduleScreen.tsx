@@ -905,11 +905,12 @@ function WeekInstrument({ dates, blocks, selectedDate, lang, questTheme, onSelec
     };
   });
   const maxMinutes = Math.max(60, ...rows.map((row) => row.minutes));
+  const totalMinutes = rows.reduce((sum, row) => sum + row.minutes, 0);
   return (
     <View nativeID="v11-schedule-week-instrument" style={[styles.weekInstrument, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}>
       <View style={styles.weekAxis}>
         <Text style={[styles.weekAxisLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'totalPlanned')}</Text>
-        <Text style={[styles.weekAxisLabel, { color: questTheme.colors.textMuted }]}>{Math.round(maxMinutes / 60)}h</Text>
+        <Text style={[styles.weekAxisLabel, { color: questTheme.colors.textMuted }]}>{Math.round(totalMinutes / 6) / 10}h</Text>
       </View>
       <View style={styles.weekColumns}>
         {rows.map((row) => {
