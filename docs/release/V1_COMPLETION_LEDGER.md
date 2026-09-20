@@ -37,9 +37,9 @@ VERIFIED_DEVICE, AWAITING_OWNER, BLOCKED. Unchecked entries remain unfinished.
 | Health / Calendar / Notifications | IMPLEMENTED, VERIFIED_LOCAL | Explicit provider deletion/correction, durable Calendar intents/reconciliation, push registration lifecycle and quiet hours; actual source samples, OS writes and delivery require device/provider gates |
 | Shortcuts / deep links | IMPLEMENTED, VERIFIED_LOCAL | Open-only entries through existing handlers; 19 intent boundary assertions; Android Widget plugin passed 12 checks including native AAPT/Kotlin compilation; final installed-widget acceptance pending |
 | Isolated example mode | IMPLEMENTED, VERIFIED_LOCAL | Native Insights examples use the same artifact/plot pipeline, visibly labeled; component checks assert no Store/outbox/OS write. Installed UI still unverified |
-| Standalone Android release APK | VERIFIED_LOCAL build/install only | 43 MB arm64 signed release built and installed on new empty `QuestLife_V1_ReleaseQA`; intermediate dirty build, must rebuild final configured commit; no Metro dependency, UI acceptance not yet claimed |
-| Standalone iPhone installation | AWAITING_OWNER | iOS simulator cloud build `d36e93a4-e4e1-4800-a777-d91a4181e6d6` FINISHED at `d990c58`, including Widget/Shortcut Swift compilation and candidate account config. Not a physical-iPhone package; signing and UDID still required |
-| Same-version Web candidate | VERIFIED_REMOTE intermediate deployment, final rebuild pending | `https://questlife-v1-release.vercel.app`, deployment `dpl_11gBJfPxGqgS1m3yQLPC9NscoPif`, source `d990c58`, bundle `index-69687fe982094587bca4bf0762d15e09.js`; real candidate account config. Owner production untouched. Backup completion still requires final rebuild |
+| Standalone Android release APK | VERIFIED_LOCAL build; final UI pending | Clean `301dfe8` standalone signed arm64 APK, 47,198,728 bytes; real account config, no Metro. Emulator still has the older intermediate package; rebuild/install after the email-link change |
+| Standalone iPhone installation | AWAITING_OWNER | iOS simulator build `246bc6c8-30d9-4004-b962-c83e0e6a91cb` FINISHED at `301dfe8`, including Widget/Shortcut and backup support. Not a physical-iPhone package; signing and UDID still required |
+| Same-version Web candidate | VERIFIED_REMOTE intermediate deployment, final rebuild pending | `https://questlife-v1-release.vercel.app`, deployment `dpl_8Wk1LMTZzjENsvdGdKy1oJWH7mnw`, source `301dfe8`, bundle `index-23d99ca5b29dffc02902ef6b59a2fe43.js`; real candidate account config and backup. Owner production untouched; email-link update requires rebuild |
 | Record backup / restore | IMPLEMENTED, VERIFIED_LOCAL | Versioned exact-record backup, original account binding, structural validation and empty-replica WAL restore. First-launch and Settings entrances; 17 core and five file-action/entry groups; physical file-provider acceptance pending |
 | Native recordings/performance | BLOCKED on input tool, not passed | Dedicated API36 arm64 emulator with host GPU; native screenshot works but CUA clicks return `noWindowsAvailable` even after fresh capture. ADB/UIAutomator interaction authorization requested; not yet received. Do not substitute component tests for device performance |
 
@@ -63,7 +63,8 @@ occurs; do not carry forward historical test results as current acceptance.
    at the waiting EAS terminal. EAS login itself is already verified.
 3. Physical iPhone/Android Health and notification permission and real-device
    visual/performance acceptance. These cannot be replaced by emulator results.
-4. Native UI control currently fails despite the Mac being unlocked. A narrowly
+4. Native UI control continues to fail with `noWindowsAvailable` after fresh
+   screenshot capture. Browser confirmation handling also currently times out. A narrowly
    scoped request to use ADB/UIAutomator only on `QuestLife_V1_ReleaseQA` is pending;
    no unauthorized alternate input path was used.
 
@@ -204,7 +205,35 @@ execution observations. Those temporary structures must be removed before closeo
   updated for the new native file-picker boundary. Final first-launch entry
   additionally passed all 66 native workflow checks; final export still follows.
 
-Next: commit the backup implementation and remote-verification evidence narrowly;
-rebuild Android and iOS plus candidate Web from the same clean source, then verify
-the live UI and file restore. Physical native input/signing remain explicit gates,
-not a reason to pause other work. Do not touch `docs/quant/` or Owner Production.
+## Email Link and Current Acceptance Checkpoint
+
+- Backup and hosted verification committed as `050abae` and `301dfe8` and pushed
+  only to `release/questlife-v1`. All three configured `301dfe8` builds completed.
+- Actual Supabase candidate UI exposes a default Magic Link email template,
+  while the earlier app accepted a numeric code only. Editing that template is
+  restricted to custom SMTP/paid service/hook configuration. No paid plan was
+  selected, no SMTP credentials invented, and no owner account was modified.
+- Added the official SDK PKCE one-time-link exchange alongside numeric OTP.
+  Exact callback matching, S256 native Expo-crypto bridge, duplicate-delivery
+  protection, error-only callbacks, session events and listener disposal are
+  covered by seven tests. API responses are mocked in these link tests; they do
+  not prove SMTP delivery or installed-Hermes behavior.
+- Candidate callback configuration still awaits the specific confirmation:
+  Site URL `https://questlife-v1-release.vercel.app`, redirects restricted to
+  that root and `questlife://auth/callback`. No wildcard/owner-production URL.
+  Without provider configuration and a permitted recipient, real email-link
+  delivery remains UNVERIFIED even when the SDK tests pass.
+- Latest full local run: 22/22 suites PASS, including typecheck, Web export,
+  known-advisory audit and the new link tests. New native host test doubles were
+  added to the auth/push tests; Health runtime test stubs include the link
+  lifecycle. These are environment adapters, not weakened product assertions.
+- Real Chrome candidate UI: first-launch Backup and restore entrance visible;
+  Today/Goals/Settings navigated, one local `QA Candidate Backup Roundtrip` goal
+  created, no state/execution observations. Backup confirmation opens, but the
+  automation dialog accept timed out and no downloaded file was found. Actual
+  file roundtrip is UNVERIFIED. This QA goal and earlier IAB QA structures still
+  require explicit cleanup; no sign-in/cloud upload was performed.
+
+Next: commit the email-link implementation narrowly, rebuild the same clean
+source for Android/iOS/Web, and continue actual UI/file tests when dialog/native
+input is available. Do not touch `docs/quant/` or Owner Production.

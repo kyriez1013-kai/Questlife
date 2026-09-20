@@ -37,10 +37,11 @@ const AS_OF = fixture.metadata.as_of;
 let syncState = { ownerId: UID, healthConsent: false };
 const storage = new Map();
 const originalLoad = Module._load;
-// Only native persistence/Sync journal I/O is replaced. The production Supabase
+// Native persistence/Sync journal I/O and the platform host are replaced. The production Supabase
 // module, real SDK auth lifecycle, wrapper, API and remote verification code run.
 Module._load = function (name, parent, isMain) {
   if (name === 'react-native-url-polyfill/auto') return {};
+  if (name === 'react-native') return { Platform: { OS: 'web' }, Linking: {} };
   if (name === './sessionStorage' && parent?.filename.endsWith('/src/sync-v2/supabase.js')) {
     return { sessionStorage: {
       getItem: async (key) => storage.get(key) ?? null,

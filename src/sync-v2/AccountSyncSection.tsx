@@ -34,6 +34,7 @@ export default function AccountSyncSection() {
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [linkFailed, setLinkFailed] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
   const [devices, setDevices] = useState<string[]>([]);
   useEffect(() => {
@@ -49,6 +50,7 @@ export default function AccountSyncSection() {
         setSnapshot(state);
         setStatus(engine.status);
         setSession(identity);
+        setLinkFailed(engine.lastError === 'auth_link_failed');
       }
     };
     void getSyncEngine().then((engine) => {
@@ -298,6 +300,7 @@ export default function AccountSyncSection() {
               </>
             )}
             {note(c(lang, "privacy"))}
+            {linkFailed ? note(c(lang, 'linkFailed')) : null}
             {!session && snapshot?.ownerId ? (
               <QuestButton
                 questTheme={q}

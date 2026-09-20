@@ -56,7 +56,7 @@ Module._load = function(name, parent, isMain) {
   if (name === 'expo-crypto') return {randomUUID};
   if (name === 'react-native') return {Platform: {OS:'ios'}, AppState:{addEventListener:()=>({remove(){}})}};
   if (parent?.filename.endsWith('/src/sync-v2/runtime.js')) {
-    if (name === './supabase') return {authConfigured:()=>false, authService:{getUserId:async()=>userId, getSession:async()=>userId?{userId}:null, subscribe:()=>()=>{}}, supabaseClient:()=>{throw Error('No hosted SDK allowed');}};
+    if (name === './supabase') return {authConfigured:()=>false, listenForAuthLinks:()=>()=>{}, authService:{getUserId:async()=>userId, getSession:async()=>userId?{userId}:null, subscribe:()=>()=>{}}, supabaseClient:()=>{throw Error('No hosted SDK allowed');}};
     if (name === './device') return {getSyncDevice:async()=>({id:'ios:health-runtime',platform:'ios',appVersion:'test'})};
     if (name === './pushRegistry') return {retryPendingPushRetirement:async()=>{}};
     if (name === './transport') return {supabaseTransport:transport};

@@ -7,6 +7,9 @@ import {
 import { sessionStorage } from "./sessionStorage";
 import { AuthService, type IdentitySession } from "./auth";
 import { isPublicSupabaseKey } from "./publicConfig";
+import { Linking, Platform } from 'react-native';
+import { ensurePkceCrypto } from './pkceCrypto';
+import { authLinkConsumer, parseAuthLink } from './authLink';
 
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const key = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
@@ -22,6 +25,7 @@ export function supabaseClient(): SupabaseClient {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: false,
+        flowType: 'pkce',
         lock: processLock,
       },
     });
@@ -46,7 +50,8 @@ export const authService = new AuthService({
     return () => data.subscription.unsubscribe();
   },
   async requestOtp(email) {
-    const { error } = await supabaseClient().auth.signInWithOtp({ email });
+    ensurePkceCrypto();
+    const { error } = await supabaseClient().auth.signInWithOtp({ email, options: { emailRedirectTo: authRedirectUrl() } });
     if (error) throw new Error("otp_request_failed");
   },
   async verifyOtp(email, token) {
@@ -62,3 +67,35 @@ export const authService = new AuthService({
     await signOutWithPushRetirement();
   },
 });
+
+export function authRedirectUrl() {
+  return Platform.OS === 'web' ? `${window.location.origin}/` : 'questlife://auth/callback';
+}
+
+const consumeLink = authLinkConsumer(async (code, flowId) => {
+  const { error } = await supabaseClient().auth.exchangeCodeForSession(code, flowId ? { flowId } : undefined);
+  if (error) throw new Error('auth_link_failed');
+});
+
+export function listenForAuthLinks(onError: () => void) {
+  if (!authConfigured()) return () => {};
+  let active = true;
+  const accept = async (value: string) => {
+    if (!active) return;
+    const link = parseAuthLink(value, authRedirectUrl());
+    if (!link) return;
+    try { await consumeLink(link); } catch { if (active) onError(); }
+    finally {
+      if (Platform.OS === 'web') {
+        const clean = new URL(window.location.href);
+        for (const key of ['code', 'sb_flow_id', 'error', 'error_code', 'error_description']) clean.searchParams.delete(key);
+        if ('error' in link) clean.hash = '';
+        window.history.replaceState(window.history.state, '', clean.toString());
+      }
+    }
+  };
+  if (Platform.OS === 'web') void accept(window.location.href);
+  else void Linking.getInitialURL().then(value => { if (value) void accept(value); }).catch(() => { if (active) onError(); });
+  const sub = Platform.OS === 'web' ? null : Linking.addEventListener('url', event => void accept(event.url));
+  return () => { active = false; sub?.remove(); };
+}

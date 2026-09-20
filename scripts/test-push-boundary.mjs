@@ -139,6 +139,7 @@ try {
   let notificationsEnabled = true;
   Module._load = function (name, parent, isMain) {
     if (name === 'react-native-url-polyfill/auto') return {};
+    if (name === 'react-native') return { Platform: { OS: 'web' }, Linking: {} };
     if (name === 'expo-crypto') return { randomUUID, CryptoDigestAlgorithm: { SHA256: 'sha256' }, digestStringAsync: async (_algorithm, value) => createHash('sha256').update(value).digest('hex') };
     if (name === './sessionStorage' && /\/src\/sync-v2\/(supabase|pushRegistry)\.js$/.test(parent?.filename ?? '')) return { sessionStorage: {
       getItem: async (key) => store.get(key) ?? null, setItem: async (key, value) => { store.set(key, value); }, removeItem: async (key) => { store.delete(key); },

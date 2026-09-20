@@ -9,7 +9,7 @@ import {
   type Projection,
   type SyncState,
 } from "./contracts";
-import { authConfigured, authService, supabaseClient } from "./supabase";
+import { authConfigured, authService, supabaseClient, listenForAuthLinks } from "./supabase";
 import { getSyncDevice } from "./device";
 import { retryPendingPushRetirement } from "./pushRegistry";
 import { appEntities, canonical } from "./registry";
@@ -263,11 +263,16 @@ export async function startSyncRuntime(
   if (Platform.OS === "web" && typeof window !== "undefined")
     window.addEventListener("online", foreground);
   await connect();
+  const stopAuthLinks = listenForAuthLinks(() => {
+    engine.lastError = 'auth_link_failed';
+    void engine.recover().catch(() => undefined);
+  });
   return () => {
     disposed = true;
     authGeneration++;
     engine.detach();
     unsubscribe();
+    stopAuthLinks();
     sub.remove();
     stopHealth();
     clearInterval(retry);

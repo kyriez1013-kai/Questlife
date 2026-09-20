@@ -17,6 +17,7 @@ const suites = [
   ['push-boundary', node, ['scripts/test-push-boundary.mjs']],
   ['health-delete', node, ['scripts/test-health-delete-boundary.mjs']],
   ['auth', node, ['scripts/test-backend-auth.mjs']],
+  ['auth-links', node, ['--test', 'scripts/test-auth-links.cjs']],
   ['shortcuts', node, ['scripts/test-shortcuts.mjs']],
   ['android-widget', node, ['--test', 'tests/native/widget.test.cjs']],
   ['insights', node, ['src/native/insights/__tests__/run-tests.mjs']],
