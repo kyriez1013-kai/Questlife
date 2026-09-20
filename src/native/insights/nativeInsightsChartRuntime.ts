@@ -39,8 +39,13 @@ export const nativeInsightsRendererScript = String.raw`
       const line = chart.addSeries(library.LineSeries, { color: m.referenceColor, lineStyle: 3, lineWidth: 1, priceLineVisible: false, lastValueVisible: false });
       line.setData(m.bands.map(row => ({ time: row.time, value: row[key] })));
     });
-    const times = new Set((m.kind === 'candle' ? m.candles : m.points).map(row => row.time));
-    const markers = m.events.filter(row => times.has(row.time)).map(row => ({ time: row.time, position: row.label === 'PLAN' ? 'belowBar' : 'aboveBar', shape: row.label === 'PLAN' ? 'arrowUp' : 'circle', color: m.referenceColor }));
+    const times = (m.kind === 'candle' ? m.candles : m.points).map(row => row.time).filter(Number.isFinite).sort((a, b) => a - b);
+    // Anchor annotations only; never add readings or clamp out-of-range events onto an edge.
+    const nearest = time => times.reduce((best, candidate) => Math.abs(candidate - time) < Math.abs(best - time) ? candidate : best, times[0]);
+    const markers = m.events
+      .filter(row => times.length > 0 && Number.isFinite(row.time) && row.time >= times[0] && row.time <= times[times.length - 1])
+      .map(row => ({ time: nearest(row.time), position: row.label === 'PLAN' ? 'belowBar' : 'aboveBar', shape: row.label === 'PLAN' ? 'arrowUp' : 'circle', color: m.referenceColor }))
+      .sort((a, b) => a.time - b.time);
     if (markers.length) library.createSeriesMarkers(primary, markers);
     chart.subscribeCrosshairMove((event) => {
       if (typeof event.time !== 'number') return;

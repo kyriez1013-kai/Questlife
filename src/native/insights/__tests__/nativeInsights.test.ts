@@ -133,3 +133,51 @@ test('literal renderer is self-contained across the Hermes/WebView boundary and 
   assert.ok(visible.to - visible.from >= 1);
   win.questlifeChart({ type: 'fit' }); assert.equal(fits, 2);
 });
+
+function renderEventMarkers(model: ReturnType<typeof nativeChartModel>) {
+  const data: unknown[] = []; const messages: Array<{ type: string }> = [];
+  let markers: Array<{ time: number; position: string; shape: string }> = [];
+  const primary = { setData: (rows: unknown) => data.push(rows), createPriceLine: () => {} };
+  const chart = { remove: () => {}, addSeries: () => primary, subscribeCrosshairMove: () => {}, timeScale: () => ({ fitContent: () => {} }) };
+  const win = {
+    LightweightCharts: { createChart: () => chart, LineSeries: {}, HistogramSeries: {}, CandlestickSeries: {}, createSeriesMarkers: (target: unknown, rows: unknown) => {
+      assert.equal(target, primary); markers = JSON.parse(JSON.stringify(rows));
+    } },
+    ReactNativeWebView: { postMessage: (message: string) => messages.push(JSON.parse(message)) }, questlifeChart: (_command: object) => {},
+  };
+  runInNewContext(nativeInsightsRendererScript, { window: win, document: { getElementById: () => ({}) }, Intl, Date });
+  win.questlifeChart({ type: 'model', model });
+  assert.equal(messages.at(-1)?.type, 'ready');
+  return { data, markers };
+}
+
+test('events between readings anchor to the nearest existing X without fabricating readings', () => {
+  const model: ReturnType<typeof nativeChartModel> = { ...nativeChartModel(presentation, q), points: [{ time: 100, value: 7 }, { time: 200, value: 0 }, { time: 300, value: 4 }], events: [
+    { time: 160, label: 'EXECUTION' }, { time: 140, label: 'PLAN' }, { time: 200, label: 'EXECUTION' }, { time: 150, label: 'PLAN' },
+  ] };
+  const before = JSON.stringify(model);
+  const { data, markers } = renderEventMarkers(model);
+  assert.deepEqual(markers.map(row => row.time), [100, 100, 200, 200]);
+  assert.deepEqual(markers.map(row => [row.position, row.shape]), [['belowBar', 'arrowUp'], ['belowBar', 'arrowUp'], ['aboveBar', 'circle'], ['aboveBar', 'circle']]);
+  assert.equal(data.length, 1); assert.deepEqual(data[0], model.points);
+  assert.equal(JSON.stringify(model), before);
+});
+
+test('event markers never pull past or future events into the plotted interval', () => {
+  const model: ReturnType<typeof nativeChartModel> = { ...nativeChartModel(presentation, q), points: [{ time: 100, value: 7 }, { time: 200, value: 0 }], events: [
+    { time: 99, label: 'PLAN' }, { time: 100, label: 'PLAN' }, { time: 200, label: 'EXECUTION' }, { time: 201, label: 'PLAN' },
+    { time: NaN, label: 'PLAN' }, { time: Infinity, label: 'PLAN' },
+  ] };
+  assert.deepEqual(renderEventMarkers(model).markers.map(row => row.time), [100, 200]);
+  assert.deepEqual(renderEventMarkers({ ...model, points: model.points.slice(0, 1) }).markers.map(row => row.time), [100]);
+  assert.deepEqual(renderEventMarkers({ ...model, points: [] }).markers, []);
+});
+
+test('candle events anchor only to existing candle X positions and stay within their bounds', () => {
+  const model: ReturnType<typeof nativeChartModel> = { ...nativeChartModel(presentation, q), kind: 'candle', points: [{ time: 50, value: 2 }, { time: 250, value: 3 }], candles: [
+    { time: 100, open: 1, high: 3, low: 0, close: 2 }, { time: 200, open: 2, high: 4, low: 1, close: 3 },
+  ], events: [{ time: 90, label: 'PLAN' }, { time: 160, label: 'EXECUTION' }, { time: 210, label: 'PLAN' }] };
+  const { data, markers } = renderEventMarkers(model);
+  assert.deepEqual(markers.map(row => row.time), [200]);
+  assert.equal(data.length, 1); assert.deepEqual(data[0], model.candles);
+});

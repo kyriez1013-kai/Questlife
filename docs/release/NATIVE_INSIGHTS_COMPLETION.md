@@ -93,3 +93,19 @@ ESBUILD_RUNTIME=/Users/kyrie/.npm/_npx/fd45a72a545557e9/node_modules/esbuild nod
 ```
 
 The script reports its free local port. Append `/?fixture=mature&lang=zh&theme=dark` or use the visible example picker. The preview is synthetic and never an authenticated owner-flow substitute.
+
+## Peer Review Follow-Up: Event Anchors
+
+Uncommitted follow-up on parent commit `2084950`, limited to `nativeInsightsChartRuntime.ts`, `__tests__/nativeInsights.test.ts`, and this report. No parent-owned edits, new labels, dependencies, commits or deployment.
+
+The renderer previously discarded event annotations unless their timestamp exactly matched a plotted reading. It now anchors eligible annotations to the nearest existing primary X position (earlier on equal distance), using candle X positions for candles. Marker output is time-sorted. Events outside the first/last plotted X bounds, nonfinite timestamps, and empty-series events are excluded before anchoring; future events are never clamped onto the last reading. No readings, OHLC values or source event timestamps are added or changed.
+
+Three focused literal-renderer VM regressions cover between-reading events, boundary/empty/single-reading behavior, and candle anchoring. Before the fix, the between-reading and candle tests failed with missing markers. After the fix, **21/21 tests passed in both Asia/Shanghai and America/Los_Angeles**, running the JavaScript emitted by the targeted compiler. The emitted test used for that run was `/var/folders/95/tb247_tj4wzbw6lw6c4gqq4m0000gn/T/questlife-native-insights-test-HwlpR0/native/insights/__tests__/nativeInsights.test.js`.
+
+Strict renderer-only typecheck passed:
+
+```sh
+./node_modules/.bin/tsc --noEmit --strict --target es2022 --skipLibCheck --moduleResolution bundler --module esnext src/native/insights/nativeInsightsChartRuntime.ts
+```
+
+Both the normal targeted runner's compile stage and repository-wide `tsc --noEmit` are currently blocked by the concurrent, out-of-scope `src/platform/deviceRepository.ts:30:66` TS2345 error (`Promise<T> | Promise<Promise<T>>` callback incompatibility). The targeted compiler emitted the test files despite that unrelated diagnostic, so the runtime results above are valid but **do not constitute a clean full typecheck**. The parent must resolve that shared error and rerun the normal runner. Owned-path whitespace validation passed. This follow-up used pure tests only; no new browser, native-device or deployment verification is claimed.
