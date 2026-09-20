@@ -3,9 +3,24 @@
 > expo export --platform web
 
 Starting Metro Bundler
-| (node:8002) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (node:11126) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 | (Use `node --trace-warnings ...` to show where the warning was created)
-Web Bundled 709ms index.ts (1303 modules)
+| (node:11128) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:11129) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:11132) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:11131) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:11127) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:11130) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓░░░░░░ 66.0% (142/331)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓░░░░░░ 66.0% (584/880)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 82.9% (1087/1194)
+Web Bundled 11727ms index.ts (1303 modules)
 
 › Assets (11):
 node_modules/@react-navigation/elements/lib/module/assets/back-icon-mask.0a328cd9c1afd0afe8e3b1ec5165b1b4.png (653 B)
@@ -32,7 +47,7 @@ _expo/static/js/web/forming_history_analysis_v1-9e8dc8c15436367ec64f51683cd98b2e
 _expo/static/js/web/forming_history_full-0bbcecbea42c61d6f2e1761e68ac3bb9.js (11.5 kB)
 _expo/static/js/web/goal_full-cdbd6a61d16dba23a804ace7ce2b0f4e.js (27.3 kB)
 _expo/static/js/web/index-cc6160164aa8ff54d574ade079008299.js (4.37 MB)
-_expo/static/js/web/InsightsV3Screen-50ec64756873a496d4e9aa5f3405824b.js (121 kB)
+_expo/static/js/web/InsightsV3Screen-7e4085d3b303fd4a0e8eed6f16c5302d.js (121 kB)
 _expo/static/js/web/lightweight-charts-336e47745ecdcba993ea16b52901e32f.js (201 kB)
 _expo/static/js/web/mature_market_analysis_v1-7a9692127f21ef57301d5520cf4420c0.js (1.18 MB)
 _expo/static/js/web/mature_market_compact-489fec8250873e386ade5b1824b099c1.js (93.5 kB)

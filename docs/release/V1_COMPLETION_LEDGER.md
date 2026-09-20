@@ -31,27 +31,30 @@ VERIFIED_DEVICE, AWAITING_OWNER, BLOCKED. Unchecked entries remain unfinished.
 | Commit-order concurrent sync | VERIFIED_LOCAL | PostgreSQL 18, separate backend connections: 10/10; delayed lower sequence, CAS, idempotent receipt/delete and RLS; no hosted claim |
 | Legacy anonymous endpoint safety | IMPLEMENTED, VERIFIED_LOCAL | `/api/sync` fails closed (410); Quant verifies Supabase bearer UID; 17 backend scenario groups passed |
 | Real Quant runtime | VERIFIED_REMOTE (isolated fixtures) | 9 hosted checks: authentication, subject/as-of rejection, 210-observation computation, correction hash, empty-after-removal, QA exclusion and cross-subject isolation; `reports/release/quant-hosted-verification.json`; no owner data/database writes |
-| Native Today/materials/sheets | IMPLEMENTED, VERIFIED_LOCAL | Shared native sheet entrances, material capability guards, keyboard/safe-area controls; 31 component tests; actual compositor/device acceptance pending |
-| Native Goals / Schedule / Settings | IMPLEMENTED, integration continuing | Native editors/search/permission/settings flows; source completion and mocked component coverage, not device acceptance |
-| Native Insights workspace | IMPLEMENTED, VERIFIED_LOCAL | 21 tests in each of two timezones; bundled chart controls, isolated examples, exact event timestamps retained between readings; commits `2084950`, `29c606e` |
+| Native Today/materials/sheets | IMPLEMENTED, partial emulator verification | Standalone release opens Today S0 and State sheet; settled sheet shields background text and Cancel leaves state unrecorded. 31 component tests. Full keyboard, dark-theme and physical acceptance pending |
+| Native Goals / Schedule / Settings | IMPLEMENTED, partial emulator verification | All three tabs opened in installed release; new-goal sheet opened/canceled, Day/Week visible, empty Week reads 0h. Source permissions truthfully unrequested and account validation error visible. Full mutation/device acceptance pending |
+| Native Insights workspace | IMPLEMENTED, VERIFIED_LOCAL; installed retest pending | 22 tests in each of two timezones. Actual release found browser-only debug-location access; `2d4f365` fixes it and tests all six real example loaders with native window. Reinstalled release; final chart visual readback interrupted by locked Mac |
 | Health / Calendar / Notifications | IMPLEMENTED, VERIFIED_LOCAL | Explicit provider deletion/correction, durable Calendar intents/reconciliation, push registration lifecycle and quiet hours; actual source samples, OS writes and delivery require device/provider gates |
 | Shortcuts / deep links | IMPLEMENTED, VERIFIED_LOCAL | Open-only entries through existing handlers; 19 intent boundary assertions; Android Widget plugin passed 12 checks including native AAPT/Kotlin compilation; final installed-widget acceptance pending |
-| Isolated example mode | IMPLEMENTED, VERIFIED_LOCAL | Native Insights examples use the same artifact/plot pipeline, visibly labeled; component checks assert no Store/outbox/OS write. Installed UI still unverified |
-| Standalone Android release APK | VERIFIED_LOCAL build; final UI pending | Clean `8cff773` standalone signed arm64 APK, 47,203,436 bytes; real account config, no Metro. Packaged backup exclusions and dedicated signing verified. Final presentation-only source alignment follows |
+| Isolated example mode | IMPLEMENTED, VERIFIED_LOCAL; partial installed check | Native example gallery and isolation notice visible. Real loader regression found/fixed; final chart readback pending unlock. No example is written to Store/outbox/OS |
+| Standalone Android release APK | VERIFIED_LOCAL build/install; partial UI | Clean `2d4f365` standalone signed arm64 APK, 47,203,520 bytes; real account config, no Metro. Packaged backup exclusions, v2 signature and installed non-debug/non-backup flags verified |
 | Standalone iPhone installation | AWAITING_OWNER | Native simulator cloud compilation succeeded, including Widget/Shortcut and backup support. Not a physical-iPhone package; Apple signing and UDID still required. Latest build IDs are recorded below |
-| Same-version Web candidate | VERIFIED_REMOTE intermediate deployment, final rebuild pending | `https://questlife-v1-release.vercel.app`, `8cff773` deployment `dpl_A3z422vy9wCecJCYxJoBRpAgfV8v`, bundle `index-675266f2d7d92e4f6c416ef375f10895.js`; real candidate account config, restored Today CSS and lazy historical workspace. Final sheet-shield alignment follows; owner production untouched |
+| Same-version Web candidate | VERIFIED_REMOTE deployment/API and bounded UI smoke | `https://questlife-v1-release.vercel.app`; `2d4f365` deployment `dpl_5UmvnH2V9UMCrKH3dbFrm2wSvntC` READY. Bundle `index-7fe15de824160f79433928f92672276d.js`. Eight API checks; all tabs, Week 0h, Capture input/cancel and desktop record sheet verified. Not full mutation acceptance. Owner production untouched |
 | Record backup / restore | IMPLEMENTED, VERIFIED_LOCAL | Versioned exact-record backup, original account binding, structural validation and empty-replica WAL restore. First-launch and Settings entrances; 17 core and five file-action/entry groups; physical file-provider acceptance pending |
-| Native recordings/performance | BLOCKED on input tool, not passed | Dedicated API36 arm64 emulator with host GPU; native screenshot works but CUA clicks return `noWindowsAvailable` even after fresh capture. ADB/UIAutomator interaction authorization requested; not yet received. Do not substitute component tests for device performance |
+| Native recordings/performance | PARTIAL measurement, NOT_PASSED | CUA pointer input recovered after emulator restart. Cold launch/Insights sample on API36 host-GPU emulator: 307 frames, P50 22ms, P95 42ms, 214 histogram frames above 20ms, 43 janky. Not steady-state or physical acceptance. Mac lock now blocks final interaction/recording |
 
 ## Exact Resume Checkpoint
 
 Continue this checkout, not the historical Web branches. Backend, native service
-integration and worker changes are already integrated. Do not repeat their
-setup. The remaining executable sequence is the final same-source builds and
-hosted presentation smoke after the sheet-shield fix, then update this ledger
-with exact artifact identifiers. Subsequent device/OTP work depends on the
-  specific gates below. Historical checkpoints below are chronological evidence,
-not the current next-action queue.
+integration and worker changes are integrated; do not repeat setup. Latest
+application source is `2d4f365`. Its Android APK is installed; six actual example
+loaders now pass native-window regression tests. The dedicated emulator is on
+the example-selection flow; screenshot readback stopped because the Mac locked.
+After unlock, confirm the chart, then finish native Capture/Record/keyboard,
+theme/language, widget and steady-state performance checks using CUA. No owner
+observation has been submitted. Keep final Web and iOS build identifiers aligned
+with this source, and retain the exact external gates below. Historical entries
+are chronological evidence, not a queue to restart.
 
 ## Human Actions (Consolidated, Live)
 
@@ -62,10 +65,12 @@ not the current next-action queue.
    at the waiting EAS terminal. EAS login itself is already verified.
 3. Physical iPhone/Android Health and notification permission and real-device
    visual/performance acceptance. These cannot be replaced by emulator results.
-4. Native UI control continues to fail with `noWindowsAvailable` after fresh
-   screenshot capture. Browser confirmation handling also currently times out. A narrowly
-   scoped request to use ADB/UIAutomator only on `QuestLife_V1_ReleaseQA` is pending;
-   no unauthorized alternate input path was used.
+4. Unlock the Mac to resume CUA acceptance. The earlier `noWindowsAvailable`
+   problem recovered after emulator restart; native pointer input now works.
+   Native text entry was intercepted by the Android handwriting tutorial, and
+   clipboard paste timed out; no text-entry success is claimed. Browser backup
+   confirmation handling also timed out. Alternative ADB/UIAutomator input and
+   recording authorization remains unanswered; no alternate UI path was used.
 5. Remote push requires a candidate Firebase application / FCM v1 credential
    and Apple APNs signing. EAS credentials inspection confirmed neither is
    configured; no provider credential or paid service has been fabricated.
@@ -366,3 +371,89 @@ Production.
 - The same candidate passed ten hosted Sync V2 groups and eight API checks;
   both disposable identities were deleted with zero remaining synced entities.
   The display-only correction does not change these endpoints or Sync V2.
+
+## Installed Android Findings and Same-Source Candidate
+
+- Native CUA pointer control recovered after restarting the dedicated emulator.
+  This supersedes the earlier blanket native-input blocker. Actual installed
+  release screens inspected: Today S0, Goals, new-goal form, Schedule Day/Week,
+  Insights, example gallery, Settings and the State sheet. The empty Week total
+  is visibly 0h. State Cancel returns to an unrecorded Today. No fake owner
+  observation was saved. Calendar/Health remain explicitly unrequested and
+  disconnected, not reported as integrated real-device data.
+- The first installed example load failed. `insightsV3Source.debugEnabled`
+  assumed any global `window` had `location.search`; React Native has `window`
+  without browser location. `2d4f365` checks the capability before optional Web
+  diagnostics. Contract/provenance validation remains mandatory. A new test
+  invokes all six actual example loaders under native window semantics; all
+  22 Insights tests pass in both timezones. No copied answer/model was added.
+- The corrected clean-source Android package is
+  `reports/release/build-output/questlife-v1-2d4f365-arm64.apk`, 47,203,520 bytes.
+  SHA256 `93dc9dd37251fa218fb017deeed8c0ba7cc665e8cba9ef2da12fa6b79b0cbf88`.
+  It is installed as a non-development release with embedded Hermes code and
+  HTTPS candidate configuration. Dedicated v2 signing, no automatic backup,
+  no debuggable flag and 18 explicit cloud/device-transfer exclusions verified.
+  LAN download returned HTTP200:
+  `http://192.168.5.4:8096/questlife-v1-2d4f365-arm64.apk`.
+  The Mac is needed for this LAN download only, not subsequent app operation.
+- Full local regression on `2d4f365`: **24/24 suites PASS**, including full
+  TypeScript, Web export, native loaders, sync, PostgreSQL, materials and
+  dependency audit. No known advisories. Exact known-private-value scan covered
+  1,079 tracked files (excluding restricted quant docs), zero matches; not a
+  comprehensive security audit.
+- After reinstall, Today launched and the example gallery opened again.
+  The Mac locked before final chart readback; the corrected chart must not be
+  called visually passed. Android text entry also remains unverified: the
+  handwriting tutorial intercepted input and CUA clipboard access timed out.
+  No Goal was submitted. The settled State sheet was readable and shielded
+  background text; the first transitional screenshot is not its resting state.
+- Android gfxinfo captured a cold-start/Insights-selection sample, not a
+  controlled steady-state benchmark. Latest sample: 307 rendered frames,
+  P50 22ms, P95 42ms, 214 histogram frames over 20ms and 43 janky frames.
+  Earlier shorter capture was P95 65ms. Host builds were running concurrently.
+  Performance is **NOT_PASSED**; full loaded-chart/scroll/sheet/dark-mode
+  measurements and physical device results remain pending. See
+  `reports/release/android-runtime-sample.json`.
+- iOS `dce40c5` simulator build `40774dd7-aaed-43f7-a845-03900137d992` finished.
+  Corrected `2d4f365` build `ee893fd4-b0e0-44c5-9138-ba374db228f3` also FINISHED
+  with actual EAS preview account configuration. Downloaded archive is
+  21,253,763 bytes; SHA256
+  `2d121b9ba675b70c8c00e3b0144d2ebda6000c97e8c845ad23dd0113ab10989e`.
+  Verified `iPhoneSimulator`, `com.kyrie.questlife` 1.0.0, embedded JS/HTTPS,
+  compiled Widget extension and AppIntent metadata. See
+  `reports/release/ios-artifact-verification.json`. This is not a physical-iPhone
+  installer; owner Apple credentials/UDID remain required.
+- Browser backup/restore roundtrip, installed
+  example chart, native mutation/keyboard flow, widget interaction and native
+  recordings remain **UNVERIFIED** until their actual UI results are obtained.
+  Candidate/local signed-out QA structure cleanup is still pending the earlier
+  irreversible-delete approval; no owner data was substituted or cleared.
+- Corrected-source Web deployment is READY:
+  `https://questlife-v1-release-dqxp3nfke-kyrie-z-s-projects.vercel.app`, deployment
+  `dpl_5UmvnH2V9UMCrKH3dbFrm2wSvntC`, stable alias
+  `https://questlife-v1-release.vercel.app`. Actual root returns HTTP200 and
+  references `index-7fe15de824160f79433928f92672276d.js` plus the restored
+  `v11-stage2-rebaseline-6c62154b66e1190f5df8eaabd014eae0.css`. Fresh eight-check
+  API smoke passes, including three real current-input-matched DeepSeek parses
+  (2.4-2.7s each in this run), retired anonymous writes and authenticated endpoint
+  rejection. These were stateless requests, not native/UI persistence tests.
+- Fresh hosted sync rerun on `2d4f365`: **10/10 PASS**. Exact disposable users
+  `2e04d9d1-33f7-4916-9593-d42cbf38e53b` and
+  `f7b0c4a1-77d7-49a8-a870-1688d9ee1940` deleted, each with zero remaining synced
+  entities. Real Auth/password, session restore, both replica directions,
+  Realtime, offline restart, lost ACK, tombstone conflict, RLS, push binding
+  (not delivery) and subject-bound Quant checked. Email OTP and two-device UI
+  are separate outstanding tests.
+- Browser control remained available while native Mac UI was locked. Final
+  hosted readback: all five tabs load; Week displays 0h; existing signed-out
+  QA goal remains; Insights watchlist/Custom/Indicators/Analyze load with absent
+  baseline and no invented data. At 375x667, width equals scrollWidth=375.
+  English/dark Insights and Chinese/light Capture screenshots inspected.
+  Capture text entered, cleared and canceled without parsing/saving. At
+  1280x900, Record Progress opens with sticky footer and no horizontal overflow,
+  then cancels. Browser viewport reset; candidate tab left available.
+  Console errors: none captured. Existing web-push unsupported, Supabase lock
+  deprecation and navigation-object deprecation warnings remain.
+- Source is pinned by non-forced tag `v1-internal-candidate-20260920` at
+  `2d4f365`; later documentation/report commits do not alter built application
+  source. This tag is an internal candidate, not final acceptance or promotion.

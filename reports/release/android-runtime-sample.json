@@ -1,0 +1,23 @@
+{
+  "capturedAt": "2026-09-20T13:53:19.228Z",
+  "sourceCommit": "2d4f365a1c977f751e4234be57788580005da83e",
+  "device": "QuestLife_V1_ReleaseQA API36 arm64 emulator; host GPU; Skia OpenGL",
+  "physicalDevice": false,
+  "pixelDimensions": {
+    "width": 1080,
+    "height": 2400,
+    "densityDpi": 420
+  },
+  "scope": "Cold application launch, Insights entry and example selection; not steady-state performance acceptance",
+  "frames": 307,
+  "jankyFrames": 43,
+  "p50Ms": 22,
+  "p95Ms": 42,
+  "framesAbove20MsHistogram": 214,
+  "acceptance": "NOT_PASSED; steady-state interaction retest blocked by locked Mac; no physical device conclusion",
+  "limitations": [
+    "System gfxinfo frame histogram, not a JS-frame or WebView throughput benchmark",
+    "Host was also performing build/regression work",
+    "No recordings or physical-device acceptance"
+  ]
+}

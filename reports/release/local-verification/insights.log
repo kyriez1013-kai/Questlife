@@ -1,58 +1,60 @@
-✔ custom count validation rejects decimals, zero, exponent, negative and unsafe integers (0.658959ms)
-✔ calendar rejects overflow dates and reversed ranges; supports leap day (0.546625ms)
-✔ date projection uses local calendar day, including the supplied time zone (0.066292ms)
-✔ capabilities never invent a line for a point-only contract (0.682208ms)
-✔ custom ranges cannot manufacture OHLC; contract candles are exact values (0.55775ms)
-✔ comparison rejects different unit and scale without normalization (0.081667ms)
-✔ HRV measurement methods cannot share a scale despite matching units (0.055417ms)
-✔ last-N comparison uses primary timestamps, not independently selected points (0.155292ms)
-✔ empty primary range cannot accidentally show comparison history (0.179125ms)
-✔ analysis must match bundle ID, as-of and owner/example provenance (12.690125ms)
-✔ service failure retains a successful snapshot and explicitly marks failure (0.193125ms)
-✔ native chart keeps original observations, and absent references stay null (0.263625ms)
-✔ events use the selected interval, never all history in a custom empty range (0.064833ms)
-✔ WebView message parser rejects malformed / writable / nonfinite events (0.119458ms)
-✔ selection is outside the canvas and preserves zero instead of replacing it (11.412334ms)
-✔ every local label has Chinese and English text (0.106292ms)
-✔ unconfigured account, sign-in, context change and runtime failure are distinct from no data (0.065334ms)
-✔ literal renderer is self-contained across the Hermes/WebView boundary and zoom is bounded (0.936833ms)
-✔ events between readings anchor to the nearest existing X without fabricating readings (0.525416ms)
-✔ event markers never pull past or future events into the plotted interval (0.732833ms)
-✔ candle events anchor only to existing candle X positions and stay within their bounds (0.355459ms)
-ℹ tests 21
+✔ real example loaders accept native window without browser location (37.525625ms)
+✔ custom count validation rejects decimals, zero, exponent, negative and unsafe integers (0.4175ms)
+✔ calendar rejects overflow dates and reversed ranges; supports leap day (0.486334ms)
+✔ date projection uses local calendar day, including the supplied time zone (0.047792ms)
+✔ capabilities never invent a line for a point-only contract (0.26ms)
+✔ custom ranges cannot manufacture OHLC; contract candles are exact values (0.491709ms)
+✔ comparison rejects different unit and scale without normalization (0.078625ms)
+✔ HRV measurement methods cannot share a scale despite matching units (0.047834ms)
+✔ last-N comparison uses primary timestamps, not independently selected points (0.171125ms)
+✔ empty primary range cannot accidentally show comparison history (0.203042ms)
+✔ analysis must match bundle ID, as-of and owner/example provenance (8.259042ms)
+✔ service failure retains a successful snapshot and explicitly marks failure (0.204667ms)
+✔ native chart keeps original observations, and absent references stay null (0.255125ms)
+✔ events use the selected interval, never all history in a custom empty range (0.0595ms)
+✔ WebView message parser rejects malformed / writable / nonfinite events (0.095875ms)
+✔ selection is outside the canvas and preserves zero instead of replacing it (10.337208ms)
+✔ every local label has Chinese and English text (0.093208ms)
+✔ unconfigured account, sign-in, context change and runtime failure are distinct from no data (0.069209ms)
+✔ literal renderer is self-contained across the Hermes/WebView boundary and zoom is bounded (0.922333ms)
+✔ events between readings anchor to the nearest existing X without fabricating readings (0.507625ms)
+✔ event markers never pull past or future events into the plotted interval (0.772917ms)
+✔ candle events anchor only to existing candle X positions and stay within their bounds (0.368875ms)
+ℹ tests 22
 ℹ suites 0
-ℹ pass 21
+ℹ pass 22
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 113.117625
-✔ custom count validation rejects decimals, zero, exponent, negative and unsafe integers (0.864709ms)
-✔ calendar rejects overflow dates and reversed ranges; supports leap day (1.954833ms)
-✔ date projection uses local calendar day, including the supplied time zone (0.065209ms)
-✔ capabilities never invent a line for a point-only contract (0.487625ms)
-✔ custom ranges cannot manufacture OHLC; contract candles are exact values (0.513166ms)
-✔ comparison rejects different unit and scale without normalization (0.077667ms)
-✔ HRV measurement methods cannot share a scale despite matching units (0.057917ms)
-✔ last-N comparison uses primary timestamps, not independently selected points (0.151125ms)
-✔ empty primary range cannot accidentally show comparison history (0.179125ms)
-✔ analysis must match bundle ID, as-of and owner/example provenance (10.279291ms)
-✔ service failure retains a successful snapshot and explicitly marks failure (0.2135ms)
-✔ native chart keeps original observations, and absent references stay null (0.259875ms)
-✔ events use the selected interval, never all history in a custom empty range (0.066125ms)
-✔ WebView message parser rejects malformed / writable / nonfinite events (0.117291ms)
-✔ selection is outside the canvas and preserves zero instead of replacing it (11.583333ms)
-✔ every local label has Chinese and English text (0.113917ms)
-✔ unconfigured account, sign-in, context change and runtime failure are distinct from no data (0.065625ms)
-✔ literal renderer is self-contained across the Hermes/WebView boundary and zoom is bounded (0.939375ms)
-✔ events between readings anchor to the nearest existing X without fabricating readings (0.515125ms)
-✔ event markers never pull past or future events into the plotted interval (0.737625ms)
-✔ candle events anchor only to existing candle X positions and stay within their bounds (0.356916ms)
-ℹ tests 21
+ℹ duration_ms 143.40825
+✔ real example loaders accept native window without browser location (46.341ms)
+✔ custom count validation rejects decimals, zero, exponent, negative and unsafe integers (0.407792ms)
+✔ calendar rejects overflow dates and reversed ranges; supports leap day (1.429125ms)
+✔ date projection uses local calendar day, including the supplied time zone (0.059291ms)
+✔ capabilities never invent a line for a point-only contract (0.290667ms)
+✔ custom ranges cannot manufacture OHLC; contract candles are exact values (0.538541ms)
+✔ comparison rejects different unit and scale without normalization (0.096ms)
+✔ HRV measurement methods cannot share a scale despite matching units (0.054084ms)
+✔ last-N comparison uses primary timestamps, not independently selected points (0.190875ms)
+✔ empty primary range cannot accidentally show comparison history (0.209416ms)
+✔ analysis must match bundle ID, as-of and owner/example provenance (8.906083ms)
+✔ service failure retains a successful snapshot and explicitly marks failure (0.42775ms)
+✔ native chart keeps original observations, and absent references stay null (0.544333ms)
+✔ events use the selected interval, never all history in a custom empty range (0.092917ms)
+✔ WebView message parser rejects malformed / writable / nonfinite events (0.10775ms)
+✔ selection is outside the canvas and preserves zero instead of replacing it (10.5795ms)
+✔ every local label has Chinese and English text (0.12275ms)
+✔ unconfigured account, sign-in, context change and runtime failure are distinct from no data (0.132458ms)
+✔ literal renderer is self-contained across the Hermes/WebView boundary and zoom is bounded (1.039125ms)
+✔ events between readings anchor to the nearest existing X without fabricating readings (0.622291ms)
+✔ event markers never pull past or future events into the plotted interval (0.830208ms)
+✔ candle events anchor only to existing candle X positions and stay within their bounds (0.512042ms)
+ℹ tests 22
 ℹ suites 0
-ℹ pass 21
+ℹ pass 22
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 108.627709
+ℹ duration_ms 168.421583

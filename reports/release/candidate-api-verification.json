@@ -1,6 +1,6 @@
 {
   "origin": "https://questlife-v1-release.vercel.app",
-  "testedAt": "2026-09-20T13:31:06.869Z",
+  "testedAt": "2026-09-20T13:58:57.288Z",
   "scope": "Isolated stateless API inputs only. No Store, owner data or database writes; not UI confirmation or persistence acceptance.",
   "checks": [
     {
@@ -10,28 +10,28 @@
     {
       "name": "/api/sync",
       "status": 410,
-      "elapsedMs": 869
+      "elapsedMs": 1005
     },
     {
       "name": "/api/track",
       "status": 410,
-      "elapsedMs": 1311
+      "elapsedMs": 892
     },
     {
       "name": "/api/decision-quant",
       "status": 401,
-      "elapsedMs": 1030
+      "elapsedMs": 683
     },
     {
       "name": "/api/push-test",
       "status": 401,
-      "elapsedMs": 1051
+      "elapsedMs": 521
     },
     {
       "name": "live_capture_parse",
       "input": "打了篮球",
       "status": 200,
-      "elapsedMs": 2675,
+      "elapsedMs": 2669,
       "currentInputMatched": true,
       "response": {
         "ok": true,
@@ -45,8 +45,8 @@
         "insightType": "encourage",
         "crossLinks": [],
         "insight": {
-          "zh": "打篮球是不错的全身有氧+爆发力训练，记录一下时长和强度会更有参考价值。",
-          "en": "Basketball is a solid full-body cardio and explosive-power session — logging duration and intensity will make it more useful."
+          "zh": "打篮球是不错的全身有氧+爆发力训练，记得补充水分和拉伸放松。",
+          "en": "Basketball is a great full-body cardio and explosive-power workout — remember to hydrate and stretch."
         },
         "entries": [
           {
@@ -55,9 +55,9 @@
             "goalType": "fitness",
             "progressType": "time_based",
             "fields": {
-              "activity": "篮球",
               "durationMinutes": null
-            }
+            },
+            "qualityRating": 4
           }
         ],
         "completionSchema": {
@@ -102,7 +102,7 @@
       "name": "live_capture_parse",
       "input": "SQL 学习了 40 分钟",
       "status": 200,
-      "elapsedMs": 2515,
+      "elapsedMs": 2442,
       "currentInputMatched": true,
       "response": {
         "ok": true,
@@ -148,10 +148,7 @@
           "matchedModuleId": null,
           "goalConfidence": "low",
           "shouldCreateGoal": true,
-          "newGoalSuggestion": {
-            "name": "SQL 学习",
-            "domain": ""
-          },
+          "newGoalSuggestion": null,
           "durationOptions": [
             15,
             30,
@@ -173,7 +170,7 @@
       "name": "live_capture_parse",
       "input": "卧推 82.5 kg，5 次，3 组",
       "status": 200,
-      "elapsedMs": 2728,
+      "elapsedMs": 2547,
       "currentInputMatched": true,
       "response": {
         "ok": true,
@@ -189,8 +186,8 @@
         "insightType": "skill_progress",
         "crossLinks": [],
         "insight": {
-          "zh": "卧推 82.5 kg 完成 3 组 × 5 次，总容量约 1237.5 kg，属于中高强度力量训练。",
-          "en": "Bench press at 82.5 kg for 3 sets of 5 reps — about 1237.5 kg total volume, a solid mid-to-high intensity strength session."
+          "zh": "卧推 82.5kg × 5 次 × 3 组，总容量约 1237.5kg，属于中高强度力量训练。",
+          "en": "Bench press 82.5kg × 5 reps × 3 sets — about 1237.5kg total volume, a solid mid-to-high intensity strength session."
         },
         "entries": [
           {
@@ -217,8 +214,7 @@
             "飞鸟",
             "夹胸",
             "双杠撑臂",
-            "俯卧撑",
-            "chest press"
+            "俯卧撑"
           ],
           "matchedGoalId": null,
           "matchedModuleId": null,
@@ -226,7 +222,7 @@
           "shouldCreateGoal": true,
           "newGoalSuggestion": {
             "name": "力量训练 / 卧推进阶",
-            "domain": ""
+            "domain": "fitness"
           },
           "durationOptions": [
             15,

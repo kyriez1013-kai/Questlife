@@ -1,16 +1,16 @@
 {
-  "path": "/Users/kyrie/Documents/Codex Questlife/QuestLife-v1/reports/release/build-output/questlife-v1-dce40c5-arm64.apk",
-  "sourceCommit": "dce40c567a501b98eb858fd32641b556399960f4",
+  "path": "/Users/kyrie/Documents/Codex Questlife/QuestLife-v1/reports/release/build-output/questlife-v1-2d4f365-arm64.apk",
+  "sourceCommit": "2d4f365a1c977f751e4234be57788580005da83e",
   "dirty": false,
-  "sha256": "dda640cf091664a574a2481490fb36ed467920b9ca24437557ff0b2ab8bd387c",
-  "bytes": 47203480,
+  "sha256": "93dc9dd37251fa218fb017deeed8c0ba7cc665e8cba9ef2da12fa6b79b0cbf88",
+  "bytes": 47203520,
   "architecture": "arm64-v8a",
   "developmentClient": false,
   "signing": "dedicated local internal key",
-  "generatedAt": "2026-09-20T13:36:18.666Z",
+  "generatedAt": "2026-09-20T13:49:28.364Z",
   "apiOrigin": "https://questlife-v1-release.vercel.app",
   "accountConfigured": true,
-  "verifiedAt": "2026-09-20T13:37:13.675Z",
+  "verifiedAt": "2026-09-20T13:55:16.871Z",
   "packagedManifest": {
     "allowBackup": false,
     "fullBackupContent": false,
@@ -20,5 +20,7 @@
   "embeddedJavaScript": true,
   "embeddedHttpsOrigin": true,
   "signatureV2": true,
-  "scope": "Packaged artifact inspection; not installed UI, physical transfer or runtime performance acceptance"
+  "installedOn": "QuestLife_V1_ReleaseQA API36 arm64 emulator",
+  "installedAllowBackup": false,
+  "scope": "Packaged artifact and installed release inspection; UI checks tracked separately; not physical-device acceptance"
 }

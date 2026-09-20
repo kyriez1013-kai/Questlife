@@ -1,0 +1,20 @@
+{
+  "sourceCommit": "2d4f365a1c977f751e4234be57788580005da83e",
+  "buildId": "ee893fd4-b0e0-44c5-9138-ba374db228f3",
+  "status": "FINISHED",
+  "artifactUrl": "https://expo.dev/artifacts/eas/OGVG8hs_Da_W89ZTlBafppVGrR8t9gi3Zy07fEY0_CE.tar.gz",
+  "path": "reports/release/build-output/questlife-v1-2d4f365-ios-simulator.tar.gz",
+  "sha256": "2d121b9ba675b70c8c00e3b0144d2ebda6000c97e8c845ad23dd0113ab10989e",
+  "bytes": 21253763,
+  "bundleId": "com.kyrie.questlife",
+  "version": "1.0.0",
+  "platforms": [
+    "iPhoneSimulator"
+  ],
+  "bundledJavaScript": true,
+  "embeddedHttpsOrigin": true,
+  "widgetExtension": true,
+  "appIntentMetadata": true,
+  "verifiedAt": "2026-09-20T14:03:57.578Z",
+  "scope": "Downloaded simulator archive inspection only; not an iPhone installable IPA, installed simulator UI, Health data or physical-device acceptance"
+}
