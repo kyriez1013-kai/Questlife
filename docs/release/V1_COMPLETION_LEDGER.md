@@ -243,6 +243,38 @@ execution observations. Those temporary structures must be removed before closeo
   file roundtrip is UNVERIFIED. This QA goal and earlier IAB QA structures still
   require explicit cleanup; no sign-in/cloud upload was performed.
 
-Next: commit the email-link implementation narrowly, rebuild the same clean
-source for Android/iOS/Web, and continue actual UI/file tests when dialog/native
-input is available. Do not touch `docs/quant/` or Owner Production.
+## Device Backup Boundary Checkpoint
+
+- Email-link implementation and hosted readiness verification are committed as
+  `32f7d2d` and `5fd8d70`, pushed only to the release branch. All three `5fd8d70`
+  intermediate builds completed: signed Android APK; iOS simulator build
+  `f222b5d8-93ee-4388-a509-969f7885551f`; candidate Web deployment
+  `dpl_CDqA2eYaxcigUToio7TMcbcZRmUC`. Android APK installation on the dedicated
+  `QuestLife_V1_ReleaseQA` emulator succeeded. Installation is not a UI pass.
+- Package inspection found Android's default automatic backup enabled. Device
+  IDs, source journals and unacknowledged sync operations must not be cloned by
+  OS restore. A scoped config plugin now disables automatic backup and excludes
+  all private domains from Android 12+ cloud backup and device transfer. The
+  SecureStore plugin delegates backup configuration to this single policy.
+  Account sync and explicit record-only backup remain the supported recovery
+  paths; no stored record, schema or user permission was changed.
+- Three focused tests verify idempotent manifest configuration, preservation of
+  activities/permissions, and all-domain exclusions for both transfer modes.
+  Actual Expo Android prebuild generated the intended attributes and XML.
+  Final APK resource compilation and installed flags still need verification.
+- Installed iOS AsyncStorage source excludes its data directory from OS backup
+  by default; the generated Info.plist has no opt-in override. This is source /
+  build-configuration evidence, not a physical iCloud restore acceptance test.
+- Full local regression after the backup change: 23/23 suites PASS, including
+  TypeScript, Web export and dependency audit. Logs remain under
+  `reports/release/local-verification/`; rerun on the committed code before
+  building the final same-source artifacts.
+- Candidate browser backup confirmation was retried through the supported UI
+  tool and again failed at dialog handling. No file roundtrip pass is claimed.
+  Pending callback-allowlist and dedicated-emulator control confirmations were
+  grouped in one request; no unauthorized alternative UI path was used.
+
+Next: commit this backup guard narrowly, record its clean-source regression,
+build and inspect the matching Android/iOS/Web candidates, then continue actual
+UI/file tests when input is available. Do not touch `docs/quant/` or Owner
+Production.

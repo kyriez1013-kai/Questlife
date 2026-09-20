@@ -36,7 +36,8 @@
       "./plugins/with-questlife-widget",
       "./plugins/with-questlife-ios-entries",
       "@react-native-community/datetimepicker",
-      "expo-secure-store"
+      ["expo-secure-store", { "configureAndroidBackup": false }],
+      "./plugins/with-private-device-backup"
     ],
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -54,6 +55,7 @@
     "android": {
       "package": "com.kyrie.questlife",
       "versionCode": 1,
+      "allowBackup": false,
       "softwareKeyboardLayoutMode": "resize",
       "permissions": [
         "android.permission.READ_CALENDAR",
