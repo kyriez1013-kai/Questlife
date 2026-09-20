@@ -1,1 +1,1 @@
-import './v11-stage2-rebaseline.styles';
+import './v11-stage2-rebaseline.css';
