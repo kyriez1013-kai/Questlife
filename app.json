@@ -32,6 +32,7 @@
       ],
       "react-native-health-connect",
       "./plugins/with-health-connect-permissions",
+      "./plugins/with-internal-release-signing",
       "@react-native-community/datetimepicker",
       "expo-secure-store"
     ],
@@ -43,7 +44,10 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.kyrie.questlife",
-      "buildNumber": "1"
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.kyrie.questlife",
@@ -70,6 +74,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "be1ec640-8b5f-4e39-97c1-1480118e993d"
+      }
+    },
+    "owner": "kyirez"
   }
 }

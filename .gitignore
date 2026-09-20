@@ -41,6 +41,8 @@ yarn-error.*
 /android
 /dist-native
 /reports/native/build-output
+/reports/release/build-output
+/supabase/.temp/
 .vercel
 .env*
 .env
