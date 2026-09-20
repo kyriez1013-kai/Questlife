@@ -1,23 +1,88 @@
-import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import React, { createContext, useContext, useMemo } from 'react';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
-import V11DirectionalBorder from './V11DirectionalBorder';
+import { requireOptionalNativeModule } from 'expo-modules-core';
+import { getNativeFoundation, nativeMaterialKind, useNativeAccessibility } from '../../design/nativeFoundation';
+import { questLayout } from '../../design/tokens';
+import { v11EvidenceVisual } from '../tokens';
 import type { V11PillProps, V11GlassSheetProps } from './V11Material';
 export type { V11PillProps, V11GlassSheetProps } from './V11Material';
 
-function Material({ children, theme, style, contentStyle, fallback, radius, minHeight, onPress, accessibilityLabel }: V11GlassSheetProps & { radius: number; minHeight: number }) {
-  const content = <>
-    <View style={{ borderRadius: radius, overflow: 'hidden', minHeight }}>
-      {fallback ? <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: theme.material.fallback }]} />
-        : <BlurView pointerEvents="none" intensity={28} tint={theme.mode === 'dark' ? 'dark' : 'light'} experimentalBlurMethod="dimezisBlurView" style={StyleSheet.absoluteFill} />}
-      <View style={[{ minHeight, justifyContent: 'center', backgroundColor: fallback ? 'transparent' : theme.material.glassBase }, contentStyle]}>{children}</View>
-      <LinearGradient pointerEvents="none" colors={[theme.material.highlight, 'transparent']} style={{ position: 'absolute', top: 0, left: radius / 2, right: radius / 2, height: 1, opacity: theme.material.upperHighlightOpacity }} />
-    </View>
-    <V11DirectionalBorder radius={radius} theme={theme} />
-  </>;
-  const shell = [{ minHeight, borderRadius: radius, shadowColor: theme.material.shadow, shadowOffset: { width: 0, height: 8 }, shadowRadius: 18, shadowOpacity: theme.material.outerShadowOpacity, elevation: 3 }, style];
-  return onPress ? <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} onPress={onPress} style={({ pressed }) => [shell, { opacity: pressed ? 0.85 : 1 }]}>{content}</Pressable> : <View style={shell}>{content}</View>;
+type NativeGlassModule = typeof import('expo-glass-effect');
+let nativeGlass: NativeGlassModule | null | undefined;
+const MaterialDepthContext = createContext(false);
+
+export function resolveNativeGlass(platform: string, version: string | number) {
+  if (platform !== 'ios' || !(Number.parseInt(String(version), 10) >= 26)) return undefined;
+  if (nativeGlass !== undefined) return nativeGlass ?? undefined;
+  nativeGlass = null;
+  try {
+    // Do not evaluate the native view manager in an older installed binary.
+    if (!requireOptionalNativeModule('ExpoGlassEffect')) return undefined;
+    const glass: NativeGlassModule = require('expo-glass-effect');
+    if (glass.isGlassEffectAPIAvailable() && glass.isLiquidGlassAvailable()) nativeGlass = glass;
+  } catch {
+    // Missing native registration or an unavailable beta API keeps the frost.
+  }
+  return nativeGlass ?? undefined;
 }
-export function V11Pill({ height = 64, ...props }: V11PillProps) { return <Material {...props} radius={height / 2} minHeight={height} />; }
-export function V11GlassSheet({ minHeight = 160, radius = 24, ...props }: V11GlassSheetProps) { return <Material {...props} radius={radius} minHeight={minHeight} />; }
+
+function Material({ children, theme, style, contentStyle, fallback, radius, minHeight, onPress, accessibilityLabel, reducedMotion, stage = 'S3', sheet = false }: V11GlassSheetProps & { radius: number; minHeight: number; sheet?: boolean }) {
+  const f = useMemo(() => getNativeFoundation(theme.questTheme), [theme.questTheme]);
+  const accessibility = useNativeAccessibility();
+  const nested = useContext(MaterialDepthContext);
+  const opaque = accessibility.reduceTransparency || fallback || nested || sheet;
+  const glass = opaque ? undefined : resolveNativeGlass(Platform.OS, Platform.Version);
+  const kind = nativeMaterialKind({ platform: Platform.OS, reduceTransparency: accessibility.reduceTransparency, fallback, nested, sheet, glassAvailable: !!glass });
+  const Glass = glass?.GlassView;
+  const interactive = !reducedMotion && !accessibility.reduceMotion && !!onPress;
+  const height = Math.max(onPress ? f.layout.touch : 0, minHeight);
+  const shape = { borderRadius: radius };
+  const shell = [
+    {
+      ...shape,
+      shadowColor: f.material.shadow,
+      shadowOffset: f.surface.shadowOffset,
+      shadowRadius: f.surface.shadowRadius,
+      shadowOpacity: nested ? 0 : f.surface.shadowOpacity,
+      elevation: nested ? 0 : f.surface.elevation,
+    },
+    style,
+    { minHeight: height, minWidth: onPress ? f.layout.touch : 0 },
+  ];
+  const content = (
+    <MaterialDepthContext.Provider value>
+      <View style={[shape, { overflow: 'hidden', minHeight: height, flexGrow: 1, flexShrink: 1 }]}>
+        <View pointerEvents="none" accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={StyleSheet.absoluteFill}>
+          {kind === 'glass' && Glass ? <Glass key={interactive ? 'interactive' : 'static'} glassEffectStyle="regular" colorScheme={theme.mode} isInteractive={interactive} style={[StyleSheet.absoluteFill, shape]} /> : null}
+          {kind === 'blur' ? <BlurView intensity={f.surface.blurIntensity} tint={theme.mode === 'dark' ? 'systemMaterialDark' : 'systemMaterialLight'} style={StyleSheet.absoluteFill} /> : null}
+          <LinearGradient
+            colors={f.surface.colors}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+            style={[StyleSheet.absoluteFill, { opacity: kind === 'opaque' ? 1 : kind === 'glass' ? f.surface.glassVeilOpacity : f.surface.frostOpacity }]}
+          />
+          <View style={[StyleSheet.absoluteFill, shape, { borderWidth: StyleSheet.hairlineWidth, borderColor: f.surface.edge }]} />
+          <View style={[StyleSheet.absoluteFill, shape, { borderTopWidth: StyleSheet.hairlineWidth, borderColor: f.surface.highlight, opacity: f.surface.edgeOpacity * v11EvidenceVisual[stage].edgeStrength }]} />
+        </View>
+        <View style={[{ justifyContent: 'center', flexGrow: 1, flexShrink: 1 }, contentStyle, { minHeight: height }]}>{children}</View>
+      </View>
+    </MaterialDepthContext.Provider>
+  );
+  return onPress ? (
+    <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} onPress={onPress} style={shell}>
+      {({ pressed }) => <>
+        {content}
+        {pressed ? <View pointerEvents="none" style={[StyleSheet.absoluteFill, shape, { backgroundColor: f.interaction.pressed }]} /> : null}
+      </>}
+    </Pressable>
+  ) : <View style={shell}>{content}</View>;
+}
+
+export function V11Pill({ height = questLayout.editCardMinHeight.medium, ...props }: V11PillProps) {
+  return <Material {...props} radius={Math.max(questLayout.controlMinHeight, height) / 2} minHeight={height} />;
+}
+
+export function V11GlassSheet({ minHeight = questLayout.editCardMinHeight.large * 2, radius, ...props }: V11GlassSheetProps) {
+  return <Material {...props} radius={radius ?? props.theme.questTheme.radius.xxl} minHeight={minHeight} sheet />;
+}
