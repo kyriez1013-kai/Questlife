@@ -1,0 +1,242 @@
+{
+  "origin": "https://questlife-v1-release.vercel.app",
+  "testedAt": "2026-09-20T09:09:30.055Z",
+  "scope": "Isolated stateless API inputs only. No Store, owner data or database writes; not UI confirmation or persistence acceptance.",
+  "checks": [
+    {
+      "name": "public_candidate_document",
+      "status": 200
+    },
+    {
+      "name": "/api/sync",
+      "status": 410,
+      "elapsedMs": 423
+    },
+    {
+      "name": "/api/decision-quant",
+      "status": 401,
+      "elapsedMs": 620
+    },
+    {
+      "name": "/api/push-test",
+      "status": 401,
+      "elapsedMs": 443
+    },
+    {
+      "name": "live_capture_parse",
+      "input": "打了篮球",
+      "status": 200,
+      "elapsedMs": 2279,
+      "response": {
+        "ok": true,
+        "type": "training",
+        "fields": {
+          "activity": "篮球",
+          "durationMinutes": null
+        },
+        "matchedSkillIds": [],
+        "linkedGoalId": null,
+        "insightType": "encourage",
+        "crossLinks": [],
+        "insight": {
+          "zh": "打篮球是很棒的全身有氧+爆发力训练，记录一下时长和强度会更有参考价值。",
+          "en": "Basketball is a great full-body cardio and explosive-power workout — logging duration and intensity will make it more useful."
+        },
+        "entries": [
+          {
+            "skillName": "篮球",
+            "matchedSkillId": null,
+            "goalType": "fitness",
+            "progressType": "time_based",
+            "fields": {
+              "activity": "篮球",
+              "durationMinutes": null
+            }
+          }
+        ],
+        "completionSchema": {
+          "needsCompletion": true,
+          "domain": "fitness",
+          "suggestedActions": [
+            "篮球",
+            "跑步",
+            "跳绳",
+            "HIIT",
+            "游泳",
+            "骑车",
+            "爬楼梯",
+            "椭圆机"
+          ],
+          "matchedGoalId": null,
+          "matchedModuleId": null,
+          "goalConfidence": "low",
+          "shouldCreateGoal": true,
+          "newGoalSuggestion": {
+            "name": "运动健身",
+            "domain": ""
+          },
+          "durationOptions": [
+            15,
+            30,
+            45,
+            60
+          ],
+          "askDuration": true
+        },
+        "parserMeta": {
+          "provider": "deepseek",
+          "model": "deepseek-chat",
+          "version": "questlife-smart-capture-parser-v1",
+          "promptVersion": "questlife-capture-prompt-v1",
+          "responseSchemaVersion": "questlife.parse.response.v1"
+        }
+      }
+    },
+    {
+      "name": "live_capture_parse",
+      "input": "SQL 学习了 40 分钟",
+      "status": 200,
+      "elapsedMs": 2249,
+      "response": {
+        "ok": true,
+        "type": "reading",
+        "fields": {
+          "subject": "SQL",
+          "durationMinutes": 40
+        },
+        "matchedSkillIds": [],
+        "linkedGoalId": null,
+        "insightType": "encourage",
+        "crossLinks": [],
+        "insight": {
+          "zh": "SQL 学习 40 分钟，持续积累数据库技能，保持这个节奏。",
+          "en": "40 minutes of SQL study — steady progress on your database skills, keep it up."
+        },
+        "entries": [
+          {
+            "skillName": "SQL",
+            "matchedSkillId": null,
+            "goalType": "study",
+            "progressType": "time_based",
+            "fields": {
+              "durationMinutes": 40
+            },
+            "qualityRating": 4
+          }
+        ],
+        "completionSchema": {
+          "needsCompletion": true,
+          "domain": "learning",
+          "suggestedActions": [
+            "练习/刷题",
+            "项目实战",
+            "debug",
+            "课程学习",
+            "复习/复盘",
+            "阅读文档",
+            "刷视频教程",
+            "做笔记"
+          ],
+          "matchedGoalId": null,
+          "matchedModuleId": null,
+          "goalConfidence": "low",
+          "shouldCreateGoal": true,
+          "newGoalSuggestion": {
+            "name": "SQL 学习",
+            "domain": "learning"
+          },
+          "durationOptions": [
+            15,
+            30,
+            45,
+            60
+          ],
+          "askDuration": false
+        },
+        "parserMeta": {
+          "provider": "deepseek",
+          "model": "deepseek-chat",
+          "version": "questlife-smart-capture-parser-v1",
+          "promptVersion": "questlife-capture-prompt-v1",
+          "responseSchemaVersion": "questlife.parse.response.v1"
+        }
+      }
+    },
+    {
+      "name": "live_capture_parse",
+      "input": "卧推 82.5 kg，5 次，3 组",
+      "status": 200,
+      "elapsedMs": 2772,
+      "response": {
+        "ok": true,
+        "type": "training",
+        "fields": {
+          "exercise": "卧推",
+          "weightKg": 82.5,
+          "reps": 5,
+          "sets": 3
+        },
+        "matchedSkillIds": [],
+        "linkedGoalId": null,
+        "insightType": "skill_progress",
+        "crossLinks": [],
+        "insight": {
+          "zh": "卧推 82.5 kg × 5 次 × 3 组，总容量约 1237.5 kg，属于大重量低次数力量训练。",
+          "en": "Bench press 82.5 kg × 5 reps × 3 sets — about 1237.5 kg total volume, solid heavy low-rep strength work."
+        },
+        "entries": [
+          {
+            "skillName": "卧推",
+            "matchedSkillId": null,
+            "goalType": "fitness",
+            "progressType": "performance_log",
+            "fields": {
+              "exercise": "卧推",
+              "weightKg": 82.5,
+              "reps": 5,
+              "sets": 3,
+              "totalVolumeKg": 1237.5
+            },
+            "qualityRating": 4
+          }
+        ],
+        "completionSchema": {
+          "needsCompletion": true,
+          "domain": "fitness",
+          "suggestedActions": [
+            "卧推",
+            "上斜卧推",
+            "下斜卧推",
+            "飞鸟",
+            "夹胸",
+            "双杠撑臂",
+            "俯卧撑",
+            "chest press"
+          ],
+          "matchedGoalId": null,
+          "matchedModuleId": null,
+          "goalConfidence": "low",
+          "shouldCreateGoal": true,
+          "newGoalSuggestion": {
+            "name": "力量训练计划",
+            "domain": "fitness"
+          },
+          "durationOptions": [
+            15,
+            30,
+            45,
+            60
+          ],
+          "askDuration": true
+        },
+        "parserMeta": {
+          "provider": "deepseek",
+          "model": "deepseek-chat",
+          "version": "questlife-smart-capture-parser-v1",
+          "promptVersion": "questlife-capture-prompt-v1",
+          "responseSchemaVersion": "questlife.parse.response.v1"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+# Candidate hosting contains source, not local builds, private config or QA media.
+.git
+.expo
+.vercel
+node_modules
+android
+ios
+dist
+dist-native
+web-build
+reports
+artifacts
+docs
+tests
+.env*
+*.jks
+*.p8
+*.p12
+*.mobileprovision
+supabase/.temp
