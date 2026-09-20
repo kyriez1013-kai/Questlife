@@ -3,7 +3,7 @@
 > expo export --platform web
 
 Starting Metro Bundler
-Web Bundled 584ms index.ts (1287 modules)
+Web Bundled 595ms index.ts (1250 modules)
 
 › Assets (11):
 node_modules/@react-navigation/elements/lib/module/assets/back-icon-mask.0a328cd9c1afd0afe8e3b1ec5165b1b4.png (653 B)
