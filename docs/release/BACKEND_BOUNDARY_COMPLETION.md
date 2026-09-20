@@ -4,13 +4,15 @@ Date: 2026-09-20
 
 Status: IMPLEMENTED / VERIFIED_LOCAL. No deployment, live-service verification, commit, push, or real-user data access was performed.
 
+Latest service-coordination caveat: the passing test table is the prior completed snapshot. A later concurrent `CalendarSource` interface expansion temporarily blocks the Health runner and strict repository compile until Noether implements `getBlockExportStatus`, `getPendingOperations`, and `retryOperation` in `CalendarService`. The owned boundary and native PostgreSQL migration were not changed by that failure; see `PUSH_BOUNDARY_COMPLETION.md` for the post-coordination recheck status.
+
 ## Checkout And Scope
 
 - The supplied directory-plus-branch path does not exist as a directory. The verified checkout is `/Users/kyrie/Documents/Codex Questlife/QuestLife-v1`, branch `release/questlife-v1`, base HEAD `507d0a5`.
 - Read the end-to-end completion handoff, `AGENTS.md`, and `EXECUTION_RULES.md`. The explicit no-commit/no-deploy task instructions override the repository's generic commit/push rules.
 - Modified: `api/sync.ts`, `api/decision-quant.ts`, `src/adaptive-decision/ownerQuantRuntime.ts`, and its existing test.
 - Added: `api/_lib/supabaseAuth.ts`, `scripts/test-backend-auth.mjs`, and this report.
-- No edits by this task to the Quant engine/repository, Store, Sync runtime, shared schemas/contracts, configuration, lockfiles, migrations, screens, or the parent release ledger. Concurrent edits by other owners were left intact. No secrets files or untracked `docs/quant/` content were read.
+- Original Quant scope did not edit the Quant engine/repository, Store, Sync runtime, shared schemas/contracts, configuration, lockfiles, migrations, screens, or the parent release ledger. The subsequently authorized push follow-up narrowly edits auth/runtime/Settings and adds a local candidate migration; see `PUSH_BOUNDARY_COMPLETION.md`. Concurrent edits by other owners were left intact. No secrets files or untracked `docs/quant/` content were read.
 
 ## Implemented Boundary
 
@@ -47,10 +49,12 @@ Status: IMPLEMENTED / VERIFIED_LOCAL. No deployment, live-service verification, 
 | --- | --- |
 | `node scripts/test-backend-auth.mjs` | PASS: 17 scenario groups, including worker subject-header spoofing, exact five-key body and forwarded byte limit; strict compilation of the production boundary included |
 | Owner Quant provider tests through `npm run test:adaptive-decision` | PASS: snapshot privacy/consent, forged subject, as-of, receipt, malformed counts, analysis binding, correction/deletion/account/timezone invalidation, cache bounds/expiry/mutation, timeout and invalidated in-flight responses |
-| `node scripts/test-sync-v2.mjs` | PASS: 32/32 tests, deterministic in-memory transport |
-| `node node_modules/typescript/bin/tsc --noEmit` | Earlier PASS with zero errors; latest rerun FAIL after a concurrent native preview was added: `src/native/insights/__tests__/preview.tsx:2` lacks declarations for `react-dom/client` (TS7016). No boundary file errors reported. |
+| `node scripts/test-sync-v2.mjs` | Latest Health-deletion follow-up PASS: 38/38 tests, deterministic in-memory transport |
+| `node scripts/test-health-delete-boundary.mjs` | PASS: 6/6 production-runtime/local-PostgreSQL groups for explicit provider-delete tombstones, lost-ACK recovery, exact-version cleanup and hydration/conflict guards; auth/native/transport adapters are fixtures |
+| `node scripts/test-push-postgres.mjs` | Final verification PASS: 12/12 groups on disposable native PostgreSQL 18, applying both migrations under isolated local fixture roles/auth.uid. Exact owner/device isolation, signed-out denial, retirement and Health tombstone receipt replay covered. Cluster stopped/removed; no hosted Supabase contact. Full file ownership is in `PUSH_BOUNDARY_COMPLETION.md`. |
+| `npx tsc --noEmit --strict` | Latest follow-up rerun PASS with zero errors; previous unrelated preview declaration failure is resolved in the shared checkout. |
 | Scoped `git diff --check` | PASS |
-| Full `npm run test:adaptive-decision` | FAIL outside this task: `src/adaptive-decision/decisionEngine.test.ts:235` dereferences missing `withMemory.candidateActions[0]`. Boundary tests and the preceding suites passed. No decision-engine/policy changes were made by this task. |
+| Full `npm run test:adaptive-decision` | Latest follow-up rerun PASS, including its default compile. The earlier decision-engine failure is resolved in the shared checkout. No decision-engine/policy changes were made by this task. |
 
 The backend runner compiles the production endpoint, helper, client wrapper and existing Supabase module. It runs the real installed Supabase SDK's session/auth-event lifecycle. Network replies, native session persistence, and Sync journal reads are controlled fixtures. It exercises no-auth, wrong/forged tokens, UID mismatch, missing config, auth outage, malformed upstream, missing runtime/token, UTF-8 exact limits, consent, logout and account-switch races. It never contacts a live service or accesses owner records. The SDK emits its existing `processLock` deprecation warning; auth configuration was not changed to suppress it.
 
@@ -63,14 +67,13 @@ The backend runner compiles the production endpoint, helper, client wrapper and 
 3. Run real OTP/session, Supabase verification, hosted API, runtime and account A/B tests on the candidate. Verify Health consent and logout/switch behavior on devices. Remote computation, native SHA-256 fallback, deployment routing, TLS/CORS and live UI behavior were not verified here.
 4. The request receipt detects client/proxy response substitution and cache mix-ups; the parent still owns validating the upstream runtime's actual snapshot computation/cache behavior. No Quant scientific eligibility or engine behavior was changed.
 5. Screen-owned artifacts already returned before logout are outside this module's control. The parent UI/session owner must clear retained screen results/references on account changes; late wrapper results and its internal cache are guarded here.
-6. Resolve the separate decision-engine regression, native preview declaration error, and replace/remove obsolete legacy sync test expectations within their owners' scopes before claiming the full release suite is green.
+6. Decision-engine and native declaration failures from the earlier snapshot no longer reproduce in the latest runs. Replace/remove obsolete legacy sync test expectations within their owner's scope; they are not included in the passing replacement boundary tests.
 
 ## Rules Self-Check
 
-- UI additions, visual tokens, i18n keys, mobile/theme checks: not applicable; no UI changes and zero new i18n keys.
-- Store/data models/navigation/AsyncStorage writes or migrations: untouched.
+- Original Quant scope: no UI changes, zero new i18n keys, Store/data models/navigation/AsyncStorage writes or migrations untouched. Authorized push/Settings follow-up and its limitations are documented separately in `PUSH_BOUNDARY_COMPLETION.md`.
 - Timestamp rules: no local-hour conversion logic added; as-of compares instants with explicit offsets.
-- TypeScript: owned boundary passes strict compilation; final repository-wide check is blocked by the separate native preview declaration error above. Deployed web/real-device end-to-end checks: not performed, explicitly not claimed.
+- TypeScript: owned boundary and latest repository-wide strict check pass. Deployed web/real-device end-to-end checks: not performed, explicitly not claimed.
 - Commit/push/deploy: not performed, as explicitly requested. Deployment and backend services remain parent-owned.
 
 References checked: [Expo SDK 54](https://docs.expo.dev/versions/v54.0.0/) and [Supabase getUser identity verification](https://supabase.com/docs/reference/javascript/auth-getuser).

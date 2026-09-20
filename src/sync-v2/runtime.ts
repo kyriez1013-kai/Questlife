@@ -11,7 +11,8 @@ import {
 } from "./contracts";
 import { authConfigured, authService, supabaseClient } from "./supabase";
 import { getSyncDevice } from "./device";
-import { appEntities } from "./registry";
+import { retryPendingPushRetirement } from "./pushRegistry";
+import { appEntities, canonical } from "./registry";
 import { localChanges } from "./projection";
 import { supabaseTransport } from "./transport";
 import { deviceRepository } from "../platform/services";
@@ -59,13 +60,18 @@ export function getSyncEngine() {
                 const health = changes.filter(
                   (c) => c.entityType === "healthObservations",
                 );
+                const resolved = health.length ? (await readSyncState()).conflicts.filter((c) => c.entityType === "healthObservations" && c.resolution === "remote") : [];
                 if (health.length)
                   await deviceRepository.update((data) => {
                     const rows = new Map(
                       data.observations.map((row) => [row.id, row]),
                     );
+                    const pendingDeletes = new Set((data.healthDeletions ?? [])
+                      .filter((row) => !resolved.some((c) => c.entityId === row.observationId
+                        && c.local.some((m) => m.operation === "delete" && m.createdAt === row.deletedAt)))
+                      .map((row) => row.observationId));
                     health.forEach((change) => {
-                      if (change.payload)
+                      if (change.payload && !pendingDeletes.has(change.entityId))
                         rows.set(
                           change.entityId,
                           change.payload as unknown as HealthObservationV1,
@@ -91,19 +97,29 @@ export function requestSync(force = false) {
     () => {
       void getSyncEngine()
         .then(async (engine) => {
+          await retryPendingPushRetirement().catch(() => undefined);
           const state = await readSyncState();
           if (
             state.healthConsent &&
             (await authService.getUserId()) === state.ownerId
           ) {
             const device = await deviceRepository.read();
-            await engine.queueHealth(
+            const acknowledged = await engine.queueHealth(
               device.observations.map((payload) => ({
                 entityType: "healthObservations",
                 entityId: payload.id,
                 payload: payload as unknown as Payload,
               })),
+              device.healthDeletions ?? [],
             );
+            if (acknowledged.length) {
+              const exactVersions = new Set(acknowledged.map(canonical));
+              await deviceRepository.update((current) => ({
+                ...current,
+                // A later same-ID source deletion must not be cleared by an older ACK.
+                healthDeletions: (current.healthDeletions ?? []).filter((row) => !exactVersions.has(canonical(row))),
+              }), "remote_sync");
+            }
           }
           await engine.sync(force);
         })
@@ -192,13 +208,10 @@ export async function startSyncRuntime(
       }
       const device = await getSyncDevice();
       const { error } = await supabaseClient()
-        .from("questlife_sync_devices")
-        .upsert({
-          user_id: session.userId,
-          device_id: device.id,
-          platform: device.platform,
-          app_version: device.appVersion,
-          last_seen_at: new Date().toISOString(),
+        .rpc("questlife_device_touch", {
+          p_device_id: device.id,
+          p_platform: device.platform,
+          p_app_version: device.appVersion,
         });
       if (error) engine.lastError = "device_registration_failed";
       channel = supabaseClient()

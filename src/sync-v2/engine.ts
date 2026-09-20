@@ -194,21 +194,46 @@ export class SyncEngineV2 {
       state.lastSuccessAt = undefined;
     });
   }
-  async queueHealth(entities: Entity[]) {
-    if (!this.userId) return;
-    await this.transaction((state) => {
-      if (!state.healthConsent || state.ownerId !== this.userId) return;
+  async queueHealth(entities: Entity[], deletions: { observationId: string; deletedAt: string }[] = []) {
+    if (!this.userId) return [];
+    return this.transaction((state) => {
+      if (!state.healthConsent || state.ownerId !== this.userId) return [];
+      const acknowledged: typeof deletions = [];
       state.healthSeen ??= {};
       const pending = new Set(
         state.outbox
           .filter((m) => m.entityType === "healthObservations")
           .map((m) => m.entityId),
       );
+      const pendingDeletes = new Set(state.outbox.filter((m) => m.entityType === "healthObservations" && m.operation === "delete").map((m) => m.entityId));
+      const conflicted = new Set(state.conflicts.filter((c) => c.entityType === "healthObservations" && c.resolution === "pending").map((c) => c.entityId));
+      const deletedIds = new Set(deletions.map((row) => row.observationId));
       // Bound each foreground cycle. Keep full-fidelity backlog locally; no
       // destructive aggregation, truncation or all-history upload at sign-in.
       let added = 0;
+      let pendingCount = state.outbox.filter((m) => m.entityType === "healthObservations").length;
+      for (const deletion of deletions) {
+        if (added >= 100 || pendingCount >= 200) break;
+        const id = deletion.observationId;
+        const signature = canonical(["explicit_provider_delete", deletion]);
+        if (!id || id.length > 512 || /(^|:|-)(fixture|synthetic|qa|debug|demo)(:|-|$)/i.test(id)
+          || !Number.isFinite(Date.parse(deletion.deletedAt)) || pendingDeletes.has(id) || conflicted.has(id)) continue;
+        if (state.healthSeen[id] === signature) {
+          if (!pending.has(id)) acknowledged.push(deletion);
+          continue;
+        }
+        // Persist the tombstone and its dedupe marker in the same sync WAL write.
+        // A queued upsert stays ahead of its deletion; sent mutations are never rewritten.
+        const mutation = this.mutation({ entityType: "healthObservations", entityId: id, payload: { id } }, state, "delete");
+        mutation.createdAt = deletion.deletedAt;
+        state.outbox.push(mutation);
+        state.healthSeen[id] = signature;
+        pendingDeletes.add(id);
+        added++;
+        pendingCount++;
+      }
       for (const row of entities) {
-        if (added >= 100 || pending.size + added >= 200) break;
+        if (added >= 100 || pendingCount >= 200) break;
         const signature = canonical([
           row.payload.importedAt,
           row.payload.value,
@@ -216,9 +241,11 @@ export class SyncEngineV2 {
           row.payload.eventStartAt,
           row.payload.eventEndAt,
           row.payload.measurementMethod,
+          row.payload.sourceRecordId,
+          row.payload.sourceModifiedAt,
         ]);
         if (
-          pending.has(row.entityId) ||
+          deletedIds.has(row.entityId) || pending.has(row.entityId) || conflicted.has(row.entityId) ||
           state.healthSeen[row.entityId] === signature ||
           !validEntity(row.entityType, row.entityId, row.payload)
         )
@@ -226,7 +253,9 @@ export class SyncEngineV2 {
         state.outbox.push(this.mutation(row, state));
         state.healthSeen[row.entityId] = signature;
         added++;
+        pendingCount++;
       }
+      return acknowledged;
     });
   }
   private acceptRow(state: SyncState, row: RemoteRow, userId: string) {
@@ -267,7 +296,7 @@ export class SyncEngineV2 {
       return false;
     }
     state.versions[key] = row.revision;
-    if (row.entity_type === "healthObservations" && row.payload) {
+    if (row.entity_type === "healthObservations" && row.payload && !local.some((m) => m.operation === "delete")) {
       state.healthSeen ??= {};
       state.healthSeen[row.entity_id] = canonical([
         row.payload.importedAt,
@@ -276,6 +305,8 @@ export class SyncEngineV2 {
         row.payload.eventStartAt,
         row.payload.eventEndAt,
         row.payload.measurementMethod,
+        row.payload.sourceRecordId,
+        row.payload.sourceModifiedAt,
       ]);
     }
     state.pendingApply.push({
@@ -436,6 +467,10 @@ export class SyncEngineV2 {
           entityId: latest.entityId,
           payload: latest.payload ?? null,
         });
+      } else if (conflict.entityType === "healthObservations" && conflict.local.some((m) => m.operation === "delete")) {
+        // Runtime held back the remote live row while its explicit source deletion was unresolved.
+        state.pendingApply.push({ entityType: conflict.entityType, entityId: conflict.entityId,
+          payload: conflict.remote.deleted_at ? null : conflict.remote.payload });
       }
     });
   }

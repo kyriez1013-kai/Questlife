@@ -2,23 +2,28 @@ import type { CalendarDraft, CalendarSource, DeviceCalendar, ExternalCommitment,
 import { DeviceRepository } from '../deviceRepository';
 import type { ScheduleBlock } from '../../types';
 import { uniqueCommitments } from './identity';
+import { CalendarOperations } from './CalendarOperations';
+import { retainedMappings } from './durability';
 
 export interface CalendarDriver {
+  platform?: string;
   available(): Promise<boolean>; permission(request: boolean): Promise<PermissionState>;
   calendars(): Promise<DeviceCalendar[]>;
   read(ids: string[], start: string, end: string): Promise<Omit<ExternalCommitment, 'ownership' | 'lastSyncedAt'>[]>;
-  create(calendarId: string, draft: CalendarDraft): Promise<string>;
-  update(id: string, draft: CalendarDraft): Promise<void>; remove(id: string): Promise<void>; open(id: string): Promise<void>;
+  create(calendarId: string, draft: CalendarDraft, marker?: string): Promise<string>;
+  update(id: string, draft: CalendarDraft, expected?: ExternalCommitment, marker?: string): Promise<void>; remove(id: string, expected?: ExternalCommitment): Promise<void>; open(id: string): Promise<void>;
+  inspect?(id: string): Promise<CalendarDriverEvent | null>;
+  findByMarker?(calendarId: string, marker: string, draft: CalendarDraft): Promise<CalendarDriverEvent[]>;
+  operationId?(): string;
 }
-const ownedKey = (calendarId: string, id: string) => `${calendarId}:${id}`;
-function validate(draft: CalendarDraft) {
-  if (!draft.title.trim() || !Number.isFinite(Date.parse(draft.startAt)) || !Number.isFinite(Date.parse(draft.endAt)) || Date.parse(draft.endAt) <= Date.parse(draft.startAt)) throw new Error('calendar_invalid_event');
-}
+export type CalendarDriverEvent = Omit<ExternalCommitment,'ownership'|'lastSyncedAt'> & { recurring?: boolean };
 export class CalendarService implements CalendarSource {
+  private revision = 0;
+  private get operations() { return new CalendarOperations(this.driver,this.repo,this.now); }
   constructor(private driver: CalendarDriver, private repo: DeviceRepository, private now = () => new Date().toISOString()) {}
   isAvailable() { return this.driver.available(); }
-  permission() { return this.driver.permission(false); }
-  requestPermission() { return this.driver.permission(true); }
+  permission() { return this.operations.permission(false); }
+  requestPermission() { return this.operations.permission(true); }
   private async requirePermission() { if (await this.permission() !== 'granted') throw new Error('calendar_permission_required'); }
   async listCalendars() { await this.requirePermission(); return this.driver.calendars(); }
   async readEvents(ids: string[], start: string, end: string) {
@@ -26,57 +31,33 @@ export class CalendarService implements CalendarSource {
     if (!Number.isFinite(Date.parse(start)) || !Number.isFinite(Date.parse(end)) || Date.parse(end) <= Date.parse(start)) throw new Error('calendar_invalid_range');
     const { calendar } = await this.repo.read();
     const read = await this.driver.read(ids,start,end);
-    const mapped = read.map(row => ({ ...row, linkedScheduleBlockId: calendar.events.find(prior => ownedKey(prior.calendarId,prior.externalEventId) === ownedKey(row.calendarId,row.externalEventId))?.linkedScheduleBlockId, availability: row.availability ?? 'unknown' as const, ownership: calendar.ownedIds.includes(ownedKey(row.calendarId,row.externalEventId)) ? 'questlife' as const : 'external' as const, lastObservedAt: this.now(), lastSyncedAt: this.now() }));
+    if (read.some(row => !ids.includes(row.calendarId) || !row.externalEventId || !Number.isFinite(Date.parse(row.startAt)) || !Number.isFinite(Date.parse(row.endAt)) || Date.parse(row.endAt) <= Date.parse(row.startAt))) throw new Error('calendar_invalid_source_event');
+    const mapped = read.map(row => {
+      const prior = retainedMappings(calendar).find(mapping => !mapping.deleted && mapping.calendarId === row.calendarId && mapping.record.externalEventId === row.externalEventId);
+      const owned = !!prior;
+      return { ...row, linkedScheduleBlockId: owned ? prior?.linkedScheduleBlockId : undefined, availability: row.availability ?? 'unknown' as const, ownership: owned ? 'questlife' as const : 'external' as const, lastObservedAt: this.now(), lastSyncedAt: this.now() };
+    });
     return uniqueCommitments(mapped);
   }
   async sync(ids: string[], start: string, end: string) {
+    const revision = ++this.revision;
     const before=await this.repo.read();
     const events = await this.readEvents(ids,start,end);
-    await this.repo.update(data => data.calendar.connectionRevision!==before.calendar.connectionRevision ? data : ({ ...data, calendar: { ...data.calendar, connected: true, selectedIds: ids, events, lastSyncedAt: this.now(), error: undefined } }));
+    await this.repo.update(data => this.revision !== revision || data.calendar.connectionRevision!==before.calendar.connectionRevision ? data : ({ ...data, calendar: { ...data.calendar, connected: true, selectedIds: ids, events, exportMappings:retainedMappings(data.calendar).map(mapping=>({...mapping,active:!mapping.deleted && ids.includes(mapping.calendarId)})), lastSyncedAt: this.now(), error: undefined } }));
     return events;
   }
   async disconnect() {
-    await this.repo.update(data=>({...data,calendar:{...data.calendar,connectionRevision:(data.calendar.connectionRevision??0)+1,connected:false,events:[]}}));
+    this.revision++;
+    await this.repo.update(data=>({...data,calendar:{...data.calendar,connectionRevision:(data.calendar.connectionRevision??0)+1,connected:false,events:[],exportMappings:retainedMappings(data.calendar).map(mapping=>({...mapping,active:false}))}}));
   }
-  private async writable(calendarId: string) {
-    if (!(await this.listCalendars()).some(row => row.id === calendarId && row.writable)) throw new Error('calendar_not_writable');
-  }
-  async create(calendarId: string, draft: CalendarDraft, consent: { confirmed: true }) {
-    if (consent?.confirmed !== true) throw new Error('calendar_confirmation_required');
-    validate(draft); await this.writable(calendarId);
-    const externalEventId = await this.driver.create(calendarId,draft);
-    const result: ExternalCommitment = { ...draft, allDay: !!draft.allDay, id: `calendar:${calendarId}:${externalEventId}`, calendarId, externalEventId, source: 'system_calendar', ownership: 'questlife', lastSyncedAt: this.now() };
-    try { await this.repo.update(data => ({ ...data, calendar: { ...data.calendar, ownedIds: [...new Set([...data.calendar.ownedIds,ownedKey(calendarId,externalEventId)])], events: [...data.calendar.events,result] } })); }
-    catch { await this.driver.remove(externalEventId); throw new Error('calendar_local_commit_failed'); }
-    return result;
-  }
-  /** Explicit export only. Remote Schedule hydration never calls the OS writer. */
-  async createForBlock(calendarId: string, block: ScheduleBlock, consent: { confirmed: true }) {
-    if (consent?.confirmed !== true) throw new Error('calendar_confirmation_required');
-    const draft: CalendarDraft = { title: block.title, startAt: new Date(`${block.date}T${block.startTime}:00`).toISOString(), endAt: new Date(`${block.date}T${block.endTime}:00`).toISOString() };
-    const {calendar} = await this.repo.read();
-    const prior = calendar.events.find(event => event.linkedScheduleBlockId === block.id && event.calendarId === calendarId && event.ownership === 'questlife');
-    if (prior) return this.update(prior,draft,consent);
-    return this.create(calendarId,{...draft,linkedScheduleBlockId:block.id},consent);
-  }
-  private async own(record: ExternalCommitment, consent: { confirmed: true }) {
-    if (consent?.confirmed !== true) throw new Error('calendar_confirmation_required');
-    const { calendar } = await this.repo.read();
-    if (!calendar.ownedIds.includes(ownedKey(record.calendarId, record.externalEventId))) throw new Error('calendar_external_event_read_only');
-    await this.writable(record.calendarId);
-  }
-  async update(record: ExternalCommitment, draft: CalendarDraft, consent: { confirmed: true }) {
-    validate(draft); await this.own(record,consent);
-    await this.driver.update(record.externalEventId,draft);
-    const result = { ...record, ...draft, allDay: draft.allDay ?? record.allDay, lastSyncedAt: this.now() };
-    await this.repo.update(data => ({ ...data, calendar: { ...data.calendar, events: data.calendar.events.map(row => row.id === record.id ? result : row) } }));
-    return result;
-  }
-  async delete(record: ExternalCommitment, consent: { confirmed: true }) {
-    await this.own(record,consent);
-    await this.driver.remove(record.externalEventId);
-    await this.repo.update(data => ({ ...data, calendar: { ...data.calendar, ownedIds: data.calendar.ownedIds.filter(id => id !== ownedKey(record.calendarId,record.externalEventId)), events: data.calendar.events.filter(row => row.externalEventId !== record.externalEventId || row.calendarId !== record.calendarId) } }));
-  }
+  private async writing<T>(job:()=>Promise<T>) {this.revision++;try{return await job();}finally{this.revision++;}}
+  create(calendarId:string,draft:CalendarDraft,consent:{confirmed:true}) {return this.writing(()=>this.operations.create(calendarId,draft,consent));}
+  createForBlock(calendarId:string,block:ScheduleBlock,consent:{confirmed:true}) {return this.writing(()=>this.operations.createForBlock(calendarId,block,consent));}
+  update(record:ExternalCommitment,draft:CalendarDraft,consent:{confirmed:true}) {return this.writing(()=>this.operations.update(record,draft,consent));}
+  delete(record:ExternalCommitment,consent:{confirmed:true}) {return this.writing(()=>this.operations.delete(record,consent));}
+  getPendingOperations() {return this.operations.getPendingOperations();}
+  getBlockExportStatus(calendarId:string,blockId:string,currentBlock:ScheduleBlock|undefined) {return this.operations.getBlockExportStatus(calendarId,blockId,currentBlock);}
+  retryOperation(id:string,consent:{confirmed:true},currentBlock?:ScheduleBlock) {return this.writing(()=>this.operations.retryOperation(id,consent,currentBlock));}
   async open(record: ExternalCommitment) { await this.driver.open(record.externalEventId); }
 }
 
@@ -84,7 +65,7 @@ export class CalendarService implements CalendarSource {
 export function calendarFixedBlocks(events: ExternalCommitment[], date: string): ScheduleBlock[] {
   const dayStart = new Date(`${date}T00:00:00`); const dayEnd = new Date(dayStart); dayEnd.setDate(dayEnd.getDate() + 1);
   const time = (d: Date) => `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-  return events.filter(e => Date.parse(e.startAt) < dayEnd.getTime() && Date.parse(e.endAt) > dayStart.getTime()).map(e => ({
+  return events.filter(e => e.availability !== 'free' && Date.parse(e.endAt) > Date.parse(e.startAt) && Date.parse(e.startAt) < dayEnd.getTime() && Date.parse(e.endAt) > dayStart.getTime()).map(e => ({
     id: e.id, date, title: e.title, startTime: Date.parse(e.startAt) <= dayStart.getTime() ? '00:00' : time(new Date(e.startAt)), endTime: Date.parse(e.endAt) >= dayEnd.getTime() ? '24:00' : time(new Date(e.endAt)), plannedMinutes: (Math.min(Date.parse(e.endAt),dayEnd.getTime()) - Math.max(Date.parse(e.startAt),dayStart.getTime())) / 60000, taskType: 'admin', flexibility: 'fixed', rigidity: 'high', status: 'planned', placementLocked: true, createdAt: Date.parse(e.lastSyncedAt), source: 'manual',
   }));
 }

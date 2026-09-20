@@ -58,7 +58,7 @@ export const authService = new AuthService({
     if (error) throw new Error("otp_verify_failed");
   },
   async signOut() {
-    const { error } = await supabaseClient().auth.signOut({ scope: "local" });
-    if (error) throw new Error("signout_failed");
+    const { signOutWithPushRetirement } = await import('./pushRegistry');
+    await signOutWithPushRetirement();
   },
 });

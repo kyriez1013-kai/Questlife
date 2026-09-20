@@ -28,6 +28,10 @@ export class HealthCollection {
     );
   }
   async write(previous: HealthObservationV1[], next: HealthObservationV1[]) {
+    for (const write of this.writes(previous,next)) await this.storage.setItem(write.key,write.value);
+  }
+  writes(previous: HealthObservationV1[], next: HealthObservationV1[]) {
+    const writes: {key: string; value: string}[] = [];
     const before = Array.from(
       { length: BUCKETS },
       () => [] as HealthObservationV1[],
@@ -43,7 +47,8 @@ export class HealthCollection {
       after[i].sort((a, b) => a.id.localeCompare(b.id));
       const serialized = JSON.stringify(after[i]);
       if (serialized !== JSON.stringify(before[i]))
-        await this.storage.setItem(PREFIX + i, serialized);
+        writes.push({key:PREFIX+i,value:serialized});
     }
+    return writes;
   }
 }

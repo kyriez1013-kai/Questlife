@@ -27,6 +27,7 @@ import {
   type CalendarDriver,
 } from "../../src/platform/calendar/CalendarService";
 import { HealthCollection } from "../../src/platform/health/HealthCollection";
+import { applyHealthChanges } from "../../src/platform/health/changes";
 import {
   externalCommitmentIdentity,
   uniqueCommitments,
@@ -268,7 +269,11 @@ test("explicit Calendar block export retains linkage and does not duplicate on r
   });
   let creates = 0,
     updates = 0;
+  let event: any;
   const driver: CalendarDriver = {
+    operationId: randomUUID,
+    inspect: async () => event ?? null,
+    findByMarker: async (_, marker) => event?.operationMarker === marker ? [event] : [],
     available: async () => true,
     permission: async () => "granted",
     calendars: async () => [
@@ -286,12 +291,14 @@ test("explicit Calendar block export retains linkage and does not duplicate on r
         allDay: false,
       },
     ],
-    create: async () => {
+    create: async (calendarId, draft, marker) => {
       creates++;
+      event = { ...draft, id: 'observed', externalEventId: 'event', calendarId, source: 'system_calendar', allDay: false, operationMarker: marker };
       return "event";
     },
-    update: async () => {
+    update: async (_, draft, expected, marker) => {
       updates++;
+      event = { ...event, ...draft, operationMarker: marker };
     },
     remove: async () => {},
     open: async () => {},
@@ -322,7 +329,7 @@ test("explicit Calendar block export retains linkage and does not duplicate on r
   assert.equal((await repo.read()).calendar.events[0].availability, "unknown");
   await service.createForBlock("cal", block, { confirmed: true });
   assert.equal(creates, 1);
-  assert.equal(updates, 1);
+  assert.equal(updates, 0);
 });
 test("Phase 1 Health import time uses stored first availability, never current time", () => {
   const original = normalizeHealthSample({
@@ -686,6 +693,103 @@ test("Health backlog is bounded; opt-out clears queued health but not cloud reco
   await a.engine.setHealthConsent(false);
   assert.equal(a.state().outbox.length, 0);
 });
+test("explicit provider deletion queues a remote Health tombstone without inferring absence", async () => {
+  const s = new Server(), a = client(s), b = client(s, "ios:health-b");
+  const h = observation("provider-delete-record"), kept = observation("provider-kept-record");
+  const entities = [h, kept].map(payload => ({ entityType: "healthObservations" as const, entityId: payload.id, payload }));
+  await a.engine.attach("u", []); await a.engine.setHealthConsent(true);
+  await a.engine.queueHealth(entities); await a.engine.sync(true);
+  await b.engine.attach("u", []); await b.engine.sync(true);
+  const source = applyHealthChanges([h, kept], [], [{ kind: "delete", sourceRecordId: h.externalId, sourcePlatform: h.sourcePlatform, metric: h.metric }], "2026-09-20T00:00:00Z");
+  await a.engine.queueHealth([], []);
+  assert.equal(a.state().outbox.length, 0, "empty snapshots do not delete");
+  assert.deepEqual(await a.engine.queueHealth([], source.healthDeletions), []);
+  assert.equal(a.state().outbox[0].operation, "delete");
+  assert.equal(a.state().outbox[0].payload, undefined);
+  await a.engine.sync(true); await b.engine.sync(true);
+  assert.equal(s.rows.get("u" + entityKey("healthObservations", h.id))?.payload, null);
+  assert.ok(s.rows.get("u" + entityKey("healthObservations", h.id))?.deleted_at);
+  assert.equal(b.visible.has(h.id), false); assert.equal(b.visible.has(kept.id), true);
+  assert.deepEqual(await a.engine.queueHealth([], source.healthDeletions), source.healthDeletions);
+  assert.equal(a.state().outbox.length, 0, "retained explicit marker is deduplicated after ACK");
+});
+test("Health tombstone lost ACK survives restart with immutable mutation and no duplicate revision", async () => {
+  const s = new Server(), a = client(s);
+  const h = observation("provider-ack-record");
+  await a.engine.attach("u", []); await a.engine.setHealthConsent(true);
+  await a.engine.queueHealth([{entityType: "healthObservations", entityId: h.id, payload: h}]); await a.engine.sync(true);
+  const deletions = [{observationId: h.id, deletedAt: "2026-09-20T00:00:00Z"}];
+  await a.engine.queueHealth([], deletions);
+  const original = clone(a.state().outbox[0]);
+  s.loseAck = true; await a.engine.sync(true);
+  const remote = clone(s.rows.get("u" + entityKey("healthObservations", h.id))!);
+  assert.ok(remote.deleted_at); assert.equal(a.state().outbox.length, 1);
+  a.engine.detach(); a.engine = a.make(); await a.engine.attach("u", []);
+  await a.engine.queueHealth([], deletions);
+  assert.equal(a.state().outbox.length, 1);
+  assert.equal(a.state().outbox[0].mutationId, original.mutationId);
+  assert.equal(a.state().outbox[0].baseRevision, original.baseRevision);
+  await a.engine.sync(true);
+  assert.equal(a.state().outbox.length, 0);
+  assert.deepEqual(s.rows.get("u" + entityKey("healthObservations", h.id)), remote);
+  assert.deepEqual(await a.engine.queueHealth([], deletions), deletions);
+});
+test("Health source metadata-only revisions upload even when measurement value is unchanged", async () => {
+  const s = new Server(), a = client(s);
+  const h = {...observation("provider-revision-record"), sourceRecordId: "parent-1", sourceModifiedAt: "2026-09-18T00:00:00Z"};
+  await a.engine.attach("u", []); await a.engine.setHealthConsent(true);
+  await a.engine.queueHealth([{entityType: "healthObservations", entityId: h.id, payload: h}]); await a.engine.sync(true);
+  const next = {...h, sourceModifiedAt: "2026-09-19T00:00:00Z"};
+  await a.engine.queueHealth([{entityType: "healthObservations", entityId: h.id, payload: next}]);
+  assert.equal(a.state().outbox.length, 1);
+  await a.engine.sync(true);
+  assert.equal(s.rows.get("u" + entityKey("healthObservations", h.id))?.payload?.sourceModifiedAt, next.sourceModifiedAt);
+});
+test("explicit Health deletion follows pending upsert and source-update child retirement stays exact", async () => {
+  const s = new Server(), a = client(s);
+  const h = {...observation("provider-child-1"), sourceRecordId: "provider-parent"};
+  const next = {...observation("provider-child-2"), sourceRecordId: "provider-parent"};
+  await a.engine.attach("u", []); await a.engine.setHealthConsent(true);
+  await a.engine.queueHealth([{entityType: "healthObservations", entityId: h.id, payload: h}]);
+  const source = applyHealthChanges([h], [], [{kind: "upsert", sourcePlatform: h.sourcePlatform, metric: h.metric, sourceRecordId: "provider-parent", observations: [next]}], "2026-09-20T00:00:00Z");
+  assert.equal(source.healthDeletions[0].reason, "source_update");
+  await a.engine.queueHealth(source.observations.map(payload => ({entityType: "healthObservations", entityId: payload.id, payload})), source.healthDeletions);
+  assert.deepEqual(a.state().outbox.filter(m => m.entityId === h.id).map(m => m.operation), ["upsert", "delete"]);
+  await a.engine.sync(true);
+  assert.ok(s.rows.get("u" + entityKey("healthObservations", h.id))?.deleted_at);
+  assert.equal(s.rows.get("u" + entityKey("healthObservations", next.id))?.deleted_at, null);
+});
+test("explicit Health deletions respect auth, consent, owner isolation and bounded backlog", async () => {
+  const s = new Server(), a = client(s);
+  const deletions = Array.from({length: 500}, (_, i) => ({observationId: observation(`provider-bounded-${i}`).id, deletedAt: "2026-09-20T00:00:00Z"}));
+  await a.engine.queueHealth([], deletions); assert.equal(a.state().outbox.length, 0);
+  await a.engine.attach("u", []); await a.engine.queueHealth([], deletions); assert.equal(a.state().outbox.length, 0);
+  await a.engine.setHealthConsent(true);
+  await a.engine.queueHealth([], deletions); assert.equal(a.state().outbox.length, 100);
+  await a.engine.queueHealth([], deletions); assert.equal(a.state().outbox.length, 200);
+  await a.engine.queueHealth([], deletions); assert.equal(a.state().outbox.length, 200);
+  await assert.rejects(a.engine.attach("other", []), /account_switch_blocked/);
+  await a.engine.queueHealth([], deletions); assert.equal(a.state().outbox.length, 200);
+  await a.engine.setHealthConsent(false); assert.equal(a.state().outbox.length, 0);
+});
+test("Health deletion conflict remains explicit and is never silently requeued over remote winner", async () => {
+  const s = new Server(), a = client(s), b = client(s, "ios:health-conflict");
+  const h = observation("provider-conflict-record");
+  await a.engine.attach("u", []); await a.engine.setHealthConsent(true);
+  await a.engine.queueHealth([{entityType: "healthObservations", entityId: h.id, payload: h}]); await a.engine.sync(true);
+  await b.engine.attach("u", []); await b.engine.setHealthConsent(true); await b.engine.sync(true);
+  const deletions = [{observationId: h.id, deletedAt: "2026-09-20T00:00:00Z"}];
+  await a.engine.queueHealth([], deletions);
+  await b.engine.queueHealth([{entityType: "healthObservations", entityId: h.id, payload: {...h, value: 80}}]); await b.engine.sync(true);
+  await a.engine.sync(true);
+  assert.equal(a.state().conflicts.at(-1)?.resolution, "pending");
+  await a.engine.queueHealth([], deletions);
+  assert.equal(a.state().outbox.length, 0);
+  assert.equal(s.rows.get("u" + entityKey("healthObservations", h.id))?.payload?.value, 80);
+  await a.engine.resolve(a.state().conflicts.at(-1)!.id, "remote");
+  assert.deepEqual(await a.engine.queueHealth([], deletions), deletions);
+  assert.equal(a.state().outbox.length, 0, "an explicit remote conflict choice does not auto-delete again");
+});
 test("10k Health observations: one sample edit writes one bounded partition, no AppData", async () => {
   const values = new Map<string, string>();
   const writes: { key: string; bytes: number }[] = [];
@@ -807,6 +911,8 @@ test("remote ScheduleBlock reschedules device effects and tombstone cancels", as
     repo,
     service,
     planLocalNotifications(app, await repo.read(), now, "en"),
+    () => true,
+    () => now.getTime(),
   );
   assert.equal(effects.size, 1);
   app = projectAppData(app, [
@@ -820,6 +926,8 @@ test("remote ScheduleBlock reschedules device effects and tombstone cancels", as
     repo,
     service,
     planLocalNotifications(app, await repo.read(), now, "en"),
+    () => true,
+    () => now.getTime(),
   );
   assert.equal(new Date([...effects.values()][0]).getHours(), 12);
   assert.equal(effects.size, 1);
@@ -830,6 +938,8 @@ test("remote ScheduleBlock reschedules device effects and tombstone cancels", as
     repo,
     service,
     planLocalNotifications(app, await repo.read(), now, "en"),
+    () => true,
+    () => now.getTime(),
   );
   assert.equal(effects.size, 0);
   assert.ok(cancelled.includes("questlife:block:block"));
