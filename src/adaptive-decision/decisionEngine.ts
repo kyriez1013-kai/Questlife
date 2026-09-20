@@ -1,17 +1,19 @@
-import type { AppData, DecisionResult, ScheduleBlock } from '../types';
+import type { AppData, DecisionResult, ExecutionLog, ScheduleBlock } from '../types';
 import { assembleDecisionContext, type DecisionContextAnswersV1 } from './contextAssembler';
 import { generateDecisionProposals } from './decisionPolicy';
 import {
   createDecisionEpisode,
   transitionDecisionEpisode,
   type DecisionEpisodeV1,
+  type DecisionCandidateActionV1,
   type DecisionQuestionType,
 } from './decisionEpisode';
 import { buildDecisionEvidence } from './evidenceAdapter';
-import { createDecisionFollowUpPlan } from './followUp';
+import { createDecisionFollowUpPlan, decisionActionTargets, decisionExecutionAnchor, followUpDueAt } from './followUp';
 import {
   applyDecisionPlanPatch,
   decisionPlanSnapshotHash,
+  DecisionPlanPatchConflictError,
   undoDecisionPlanPatch,
 } from './planPatch';
 import { evaluateDecisionSafety } from './safetyGate';
@@ -24,55 +26,108 @@ export type DecisionEngineData = Pick<
 const NON_OWNER_ORIGINS = new Set(['SYNTHETIC', 'QA_TEST', 'DEBUG_FIXTURE']);
 const EVIDENCE_LEVEL_ORDER = ['A', 'B', 'C', 'D', 'E'] as const;
 
+function actionContext(episode: DecisionEpisodeV1, action: DecisionCandidateActionV1): string | null {
+  const targets = decisionActionTargets(episode, action);
+  if (targets.length === 0) return null;
+  return JSON.stringify({
+    kind: action.kind,
+    title: action.titleKey,
+    horizon: action.outcomeHorizon,
+    fields: [...action.outcomeFields].sort(),
+    targets: targets.map((block) => {
+      const before = action.planPatch.beforeSnapshot.find((item) => item.id === block.id);
+      return {
+        // Repeated instances may share a skill; unrelated skills or unlinked blocks cannot match.
+        skillOrBlock: block.linkedSkillId ?? block.id,
+        goals: [...new Set([block.linkedGoalId, ...(block.linkedGoalIds ?? [])].filter(Boolean))].sort(),
+        taskType: block.taskType,
+        fromMinutes: before?.plannedMinutes,
+        toMinutes: block.plannedMinutes,
+        dayOffset: before ? (Date.parse(block.date) - Date.parse(before.date)) / 86400000 : 0,
+      };
+    }).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))),
+  });
+}
+
+function eligibleHistory(
+  results: DecisionResult[], episode: DecisionEpisodeV1, executionLogs: ExecutionLog[],
+): Array<{ result: DecisionResult; episode: DecisionEpisodeV1 }> {
+  const asOf = Date.parse(episode.time.asOf);
+  return results
+    .filter((result) => !result.dataProvenance?.deleted)
+    .filter((result) => !result.dataProvenance?.availableAt || Date.parse(result.dataProvenance.availableAt) <= asOf)
+    .filter((result) => episode.subject.kind === 'demo' || !result.dataProvenance?.origin || !NON_OWNER_ORIGINS.has(result.dataProvenance.origin))
+    .map((result) => ({ result, episode: result.decisionEpisode }))
+    .filter((entry): entry is { result: DecisionResult; episode: DecisionEpisodeV1 } => Boolean(entry.episode))
+    .filter(({ episode: previous }) => {
+      if (previous.id === episode.id || previous.subject.kind !== episode.subject.kind
+        || previous.subject.subjectId !== episode.subject.subjectId
+        || previous.question.type !== episode.question.type
+        || Date.parse(previous.time.availableAt) > asOf || !Number.isFinite(Date.parse(previous.time.availableAt))
+        || !(Date.parse(previous.updatedAt) <= asOf)
+        || !['OUTCOME_RECORDED', 'CLOSED'].includes(previous.status)) return false;
+      if (episode.subject.kind === 'owner') {
+        if (previous.provenance.syntheticOnly || !previous.provenance.containsRealUserData || NON_OWNER_ORIGINS.has(previous.provenance.origin)) return false;
+        const anchor = decisionExecutionAnchor(previous, executionLogs, episode.time.asOf);
+        const selected = previous.candidateActions.find((action) => action.id === previous.selectedActionId);
+        if (!anchor || !selected) return false;
+        if (previous.targetOutcome.horizon !== selected.outcomeHorizon
+          || JSON.stringify([...previous.targetOutcome.fields].sort()) !== JSON.stringify([...selected.outcomeFields].sort())) return false;
+        let due: number;
+        try { due = Date.parse(followUpDueAt(selected, anchor.endedAt, previous.time.timezone)); }
+        catch { return false; }
+        return previous.followUpOutcomes.some((outcome) => Date.parse(outcome.recordedAt) >= due && Date.parse(outcome.recordedAt) <= asOf);
+      }
+      return previous.followUpOutcomes.some((outcome) => Date.parse(outcome.recordedAt) <= asOf);
+    })
+    .sort((left, right) => right.episode.updatedAt.localeCompare(left.episode.updatedAt));
+}
+
+function matchingAction(previous: DecisionEpisodeV1, current: DecisionEpisodeV1, action: DecisionCandidateActionV1): boolean {
+  const selected = previous.candidateActions.find((item) => item.id === previous.selectedActionId);
+  const signature = actionContext(current, action);
+  return Boolean(selected && signature && signature === actionContext(previous, selected));
+}
+
 function addHistoricalDecisionEvidence(
   packet: NonNullable<DecisionEpisodeV1['evidencePacket']>,
   results: DecisionResult[],
   episode: DecisionEpisodeV1,
+  executionLogs: ExecutionLog[],
 ): NonNullable<DecisionEpisodeV1['evidencePacket']> {
   const asOf = Date.parse(episode.time.asOf);
-  const history = results
-    .filter((result) => !result.dataProvenance?.deleted)
-    .filter((result) => !result.dataProvenance?.origin || !NON_OWNER_ORIGINS.has(result.dataProvenance.origin))
-    .map((result) => ({ result, episode: result.decisionEpisode }))
-    .filter((entry): entry is { result: DecisionResult; episode: DecisionEpisodeV1 } => Boolean(entry.episode))
-    .filter((entry) => (
-      entry.episode.id !== episode.id
-      && entry.episode.subject.kind === 'owner'
-      && entry.episode.question.type === episode.question.type
-      && !entry.episode.provenance.syntheticOnly
-      && entry.episode.provenance.containsRealUserData
-      && Date.parse(entry.episode.time.availableAt) <= asOf
-      && (entry.episode.status === 'OUTCOME_RECORDED' || entry.episode.status === 'CLOSED')
-      && entry.episode.followUpOutcomes.some((outcome) => Date.parse(outcome.recordedAt) <= asOf)
-    ))
-    .sort((left, right) => right.episode.updatedAt.localeCompare(left.episode.updatedAt))
-    .slice(0, 5);
-  if (history.length === 0) return packet;
-
-  const outcomes = history.flatMap((entry) => entry.episode.followUpOutcomes);
-  const supportCount = outcomes.filter((outcome) => (
-    outcome.usefulness === 'helpful'
-    || outcome.taskResult === 'completed'
-    || outcome.taskResult === 'partially_completed'
-  )).length;
-  const counterexampleCount = outcomes.filter((outcome) => (
-    outcome.usefulness === 'not_helpful'
-    || outcome.taskResult === 'not_completed'
-  )).length;
-  const items = [
-    ...packet.items,
-    {
-      id: 'evidence-historical-decisions',
+  const history = eligibleHistory(results, episode, executionLogs);
+  const historicalItems = episode.candidateActions.flatMap((action) => {
+    const matching = history.filter((entry) => matchingAction(entry.episode, episode, action)).slice(0, 5);
+    if (matching.length === 0) return [];
+    const outcomes = matching.flatMap((entry) => {
+      const previousAction = entry.episode.candidateActions.find((candidate) => candidate.id === entry.episode.selectedActionId)!;
+      const anchor = decisionExecutionAnchor(entry.episode, executionLogs, episode.time.asOf);
+      const earliest = anchor ? Date.parse(followUpDueAt(previousAction, anchor.endedAt, entry.episode.time.timezone)) : -Infinity;
+      return entry.episode.followUpOutcomes.filter((outcome) => Date.parse(outcome.recordedAt) >= earliest && Date.parse(outcome.recordedAt) <= asOf);
+    });
+    return [{
+      id: `evidence-historical-decisions:${action.id}`,
       category: 'historical_decision' as const,
       evidenceLevel: 'E' as const,
       labelKey: 'adaptiveEvidenceHistoricalDecision',
-      values: { count: history.length, outcomes: outcomes.length },
-      sourceIds: history.map((entry) => entry.result.id),
-      supportCount,
-      counterexampleCount,
-      limitationCodes: ['HISTORICAL_DECISIONS_ARE_NOT_CAUSAL'],
-    },
-  ];
+      values: {
+        count: matching.length, outcomes: outcomes.length,
+        helpful: outcomes.filter((outcome) => outcome.usefulness === 'helpful').length,
+        notHelpful: outcomes.filter((outcome) => outcome.usefulness === 'not_helpful').length,
+        uncertain: outcomes.filter((outcome) => outcome.usefulness === 'uncertain').length,
+        completed: outcomes.filter((outcome) => outcome.taskResult === 'completed').length,
+        partiallyCompleted: outcomes.filter((outcome) => outcome.taskResult === 'partially_completed').length,
+        notCompleted: outcomes.filter((outcome) => outcome.taskResult === 'not_completed').length,
+        stateReadings: outcomes.filter((outcome) => outcome.state != null).length,
+        fatigueReadings: outcomes.filter((outcome) => outcome.fatigue != null).length,
+      },
+      sourceIds: matching.map((entry) => entry.result.id),
+      limitationCodes: ['HISTORICAL_DECISIONS_ARE_NOT_CAUSAL', 'OUTCOME_DIMENSIONS_NOT_COMBINED', 'ACTION_MATCH_NOT_SITUATION_EQUIVALENCE'],
+    }];
+  });
+  if (historicalItems.length === 0) return packet;
+  const items = [...packet.items, ...historicalItems];
   const availableLevels = EVIDENCE_LEVEL_ORDER.filter((level) => items.some((item) => item.evidenceLevel === level));
   return {
     ...packet,
@@ -82,7 +137,7 @@ function addHistoricalDecisionEvidence(
     limitations: Array.from(new Set([...packet.limitations, 'HISTORICAL_DECISIONS_ARE_NOT_CAUSAL'])),
     sourceArtifactIds: Array.from(new Set([
       ...packet.sourceArtifactIds,
-      ...history.map((entry) => entry.result.id),
+      ...historicalItems.flatMap((item) => item.sourceIds),
     ])),
   };
 }
@@ -142,16 +197,7 @@ export function proposeDecisionEpisode(input: {
     quantProduct: input.quantProduct,
     quantAnalysis: input.quantAnalysis,
   });
-  const evidence = {
-    ...builtEvidence,
-    packet: safety.status.level === 'normal'
-      ? addHistoricalDecisionEvidence(
-          builtEvidence.packet,
-          input.data.decisionResults ?? [],
-          episode,
-        )
-      : builtEvidence.packet,
-  };
+  const evidence = builtEvidence;
   const questions = [
     ...(safety.missingQuestion ? [safety.missingQuestion] : []),
     ...assembled.missingQuestions,
@@ -215,7 +261,7 @@ export function proposeDecisionEpisode(input: {
     safety: safety.status,
     generatedAt: input.now,
   });
-  return {
+  const proposed = {
     ...transitionDecisionEpisode(episode, 'PROPOSED', input.now),
     candidateActions: candidates,
     targetOutcome: candidates[0] ? {
@@ -223,6 +269,19 @@ export function proposeDecisionEpisode(input: {
       fields: candidates[0].outcomeFields,
     } : episode.targetOutcome,
     leverage: episode.leverage ? { ...episode.leverage, decisionTimeMs: Math.max(0, Date.parse(input.now) - Date.parse(episode.createdAt)) } : undefined,
+  };
+  const packet = addHistoricalDecisionEvidence(evidence.packet, input.data.decisionResults ?? [], proposed, input.data.executionLogs);
+  return {
+    ...proposed,
+    evidencePacket: packet,
+    limitations: Array.from(new Set([...proposed.limitations, ...packet.limitations])),
+    provenance: { ...proposed.provenance, sourceIds: Array.from(new Set([...proposed.provenance.sourceIds, ...packet.sourceArtifactIds])) },
+    // Historical outcomes explain the matching option; they do not choose or re-rank it.
+    candidateActions: candidates.map((action) => {
+      const historyId = `evidence-historical-decisions:${action.id}`;
+      return packet.items.some((item) => item.id === historyId)
+        ? { ...action, evidenceItemIds: [...action.evidenceItemIds, historyId] } : action;
+    }),
   };
 }
 
@@ -248,6 +307,9 @@ export function applyAcceptedDecision(input: {
   scheduleBlocks: ScheduleBlock[];
   appliedAt: string;
 }): { episode: DecisionEpisodeV1; scheduleBlocks: ScheduleBlock[] } {
+  if ((input.episode.status === 'APPLIED' || input.episode.status === 'FOLLOW_UP_DUE') && input.episode.appliedPlanPatch) {
+    return { episode: input.episode, scheduleBlocks: input.scheduleBlocks };
+  }
   const selected = input.episode.candidateActions.find((candidate) => candidate.id === input.episode.selectedActionId);
   if (input.episode.status !== 'ACCEPTED' || !selected || !input.episode.proposedPlanPatch) {
     throw new Error('Decision must be accepted before apply.');
@@ -262,7 +324,8 @@ export function applyAcceptedDecision(input: {
       proposedPlanPatch: confirmedPatch,
       appliedPlanPatch: confirmedPatch,
       undoState: { available: true },
-      followUpPlan: createDecisionFollowUpPlan(applied.id, selected, input.appliedAt),
+      followUpPlan: applied.subject.kind === 'demo'
+        ? createDecisionFollowUpPlan(applied.id, selected, input.appliedAt) : undefined,
       leverage: applied.leverage ? {
         ...applied.leverage,
         userTaps: applied.leverage.userTaps + 1,
@@ -276,6 +339,7 @@ export function undoAppliedDecision(input: {
   episode: DecisionEpisodeV1;
   scheduleBlocks: ScheduleBlock[];
   undoneAt: string;
+  executionLogs?: ExecutionLog[];
 }): { episode: DecisionEpisodeV1; scheduleBlocks: ScheduleBlock[] } {
   if ((input.episode.status !== 'APPLIED' && input.episode.status !== 'FOLLOW_UP_DUE') || !input.episode.appliedPlanPatch) {
     return { episode: input.episode, scheduleBlocks: input.scheduleBlocks };
@@ -284,6 +348,22 @@ export function undoAppliedDecision(input: {
     return { episode: input.episode, scheduleBlocks: input.scheduleBlocks };
   }
   const scheduleBlocks = undoDecisionPlanPatch(input.scheduleBlocks, input.episode.appliedPlanPatch);
+  if (input.episode.subject.kind === 'owner' && JSON.stringify(scheduleBlocks) !== JSON.stringify(input.scheduleBlocks)) {
+    const patch = input.episode.appliedPlanPatch;
+    const changedIds = new Set(patch.operations.map((operation) => operation.blockId));
+    if ((input.executionLogs ?? []).some((log) => log.linkedScheduleBlockId && changedIds.has(log.linkedScheduleBlockId) && !log.dataProvenance?.deleted)) {
+      throw new DecisionPlanPatchConflictError('Cannot undo a plan adjustment after linked execution.');
+    }
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: input.episode.time.timezone, year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+    }).formatToParts(new Date(input.undoneAt));
+    const value = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)!.value;
+    const now = `${value('year')}-${value('month')}-${value('day')}T${value('hour')}:${value('minute')}`;
+    if (patch.operations.some((operation) => [operation.before, operation.after].some((block) => (
+      block && `${block.date}T${block.startTime}` <= now
+    )))) throw new DecisionPlanPatchConflictError('Cannot undo a started or expired schedule placement.');
+  }
   return {
     scheduleBlocks,
     episode: {
@@ -323,15 +403,12 @@ export function decisionEpisodeToResult(input: {
 export function similarCompletedEpisodes(
   results: DecisionResult[],
   episode: DecisionEpisodeV1,
+  executionLogs: ExecutionLog[] = [],
 ): DecisionEpisodeV1[] {
-  return results
-    .map((result) => result.decisionEpisode)
-    .filter((candidate): candidate is DecisionEpisodeV1 => !!candidate)
-    .filter((candidate) => (
-      candidate.id !== episode.id
-      && candidate.question.type === episode.question.type
-      && candidate.followUpOutcomes.length > 0
-      && (candidate.status === 'OUTCOME_RECORDED' || candidate.status === 'CLOSED')
-    ))
-    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  const actions = episode.selectedActionId
+    ? episode.candidateActions.filter((action) => action.id === episode.selectedActionId)
+    : episode.candidateActions;
+  return eligibleHistory(results, episode, executionLogs)
+    .filter((entry) => actions.some((action) => matchingAction(entry.episode, episode, action)))
+    .map((entry) => entry.episode);
 }

@@ -1,11 +1,12 @@
-import type { AppData, DecisionResult, ScheduleBlock, TaskType } from '../types';
-import { compileScheduleDay, scheduleTimeToMinutes } from '../utils/scheduleCompiler';
+import type { AppData, DecisionResult, ExecutionLog, ScheduleBlock, TaskType } from '../types';
+import { scheduleTimeToMinutes } from '../utils/scheduleCompiler';
 import type {
   DecisionCandidateActionV1,
   DecisionEpisodeV1,
   DecisionQuestionType,
 } from './decisionEpisode';
 import { markDecisionFollowUpDue } from './followUp';
+import { applyDecisionPlanPatch } from './planPatch';
 
 export const OWNER_DECISION_FLOW_VERSION = 'questlife.owner-decision-flow.v1' as const;
 
@@ -93,53 +94,16 @@ export function inferOwnerDecisionIntent(input: {
   };
 }
 
-function rangesOverlap(left: ScheduleBlock, right: ScheduleBlock): boolean {
-  const leftStart = scheduleTimeToMinutes(left.startTime);
-  const leftEnd = scheduleTimeToMinutes(left.endTime);
-  const rightStart = scheduleTimeToMinutes(right.startTime);
-  const rightEnd = scheduleTimeToMinutes(right.endTime);
-  if (![leftStart, leftEnd, rightStart, rightEnd].every(Number.isFinite)) return true;
-  return leftStart < rightEnd && rightStart < leftEnd;
-}
-
-function exactPlacementIsAvailable(after: ScheduleBlock, scheduleBlocks: ScheduleBlock[]): boolean {
-  const occupied = scheduleBlocks.filter((block) => (
-    block.id !== after.id
-    && block.date === after.date
-    && block.status !== 'skipped'
-  ));
-  if (after.flexibility === 'fixed' || after.placementLocked) {
-    return occupied.every((block) => !rangesOverlap(after, block));
-  }
-  const compiled = compileScheduleDay({
-    date: after.date,
-    fixedBlocks: occupied,
-    flexibleBlocks: [{
-      block: after,
-      persisted: false,
-      preferredStartTime: after.startTime,
-    }],
-    dayStartMinutes: 0,
-    dayEndMinutes: 24 * 60,
-    notBeforeMinutes: 0,
-    mode: 'replan',
-  });
-  const placement = compiled.placements.find((item) => item.candidate.block.id === after.id);
-  return Boolean(
-    placement
-    && placement.startTime === after.startTime
-    && placement.endTime === after.endTime
-    && compiled.unplaced.length === 0,
-  );
-}
-
 export function candidateHasFeasibleExactPatch(
   candidate: DecisionCandidateActionV1,
   scheduleBlocks: ScheduleBlock[],
 ): boolean {
-  return candidate.planPatch.operations.every((operation) => (
-    operation.after == null || exactPlacementIsAvailable(operation.after, scheduleBlocks)
-  ));
+  try {
+    applyDecisionPlanPatch(scheduleBlocks, candidate.planPatch);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function retainFeasibleOwnerCandidates(
@@ -170,11 +134,15 @@ export function latestOwnerDecisionEpisode(results: DecisionResult[]): DecisionE
 export function dueOwnerDecisionEpisode(
   results: DecisionResult[],
   now: string,
+  executionLogs: ExecutionLog[] = [],
 ): DecisionEpisodeV1 | null {
-  const latest = latestOwnerDecisionEpisode(results);
-  if (!latest) return null;
-  const due = markDecisionFollowUpDue(latest, now);
-  return due.status === 'FOLLOW_UP_DUE' ? due : null;
+  return results
+    .filter((result) => !result.dataProvenance?.deleted)
+    .map((result) => result.decisionEpisode)
+    .filter((episode): episode is DecisionEpisodeV1 => episode?.subject.kind === 'owner' && !episode.provenance.syntheticOnly)
+    .map((episode) => markDecisionFollowUpDue(episode, now, executionLogs))
+    .filter((episode) => episode.status === 'FOLLOW_UP_DUE')
+    .sort((left, right) => left.followUpPlan!.dueAt.localeCompare(right.followUpPlan!.dueAt))[0] ?? null;
 }
 
 export function ownerEpisodeCanResume(episode: DecisionEpisodeV1): boolean {

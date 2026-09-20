@@ -84,6 +84,42 @@ function blockStateMatches(current: ScheduleBlock | undefined, expected: Schedul
   return sameBlock(current, expected);
 }
 
+function placement(block: ScheduleBlock): { start: number; end: number } | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(block.date)) return null;
+  const day = new Date(`${block.date}T00:00:00Z`);
+  if (!Number.isFinite(day.getTime()) || day.toISOString().slice(0, 10) !== block.date) return null;
+  const clock = (value: string) => {
+    if (!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value) && value !== '24:00') return NaN;
+    const [hours, minutes] = value.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+  const start = clock(block.startTime);
+  const end = clock(block.endTime);
+  return Number.isFinite(start) && Number.isFinite(end) && start < end && start < 1440
+    ? { start, end } : null;
+}
+
+// Validate the final transaction, not each intermediate operation (which may swap slots).
+// Unchanged placements are excluded so retries and unrelated pre-existing overlaps stay untouched.
+function assertChangedPlacementsAvailable(before: ScheduleBlock[], after: ScheduleBlock[]): void {
+  const previous = new Map(before.map((block) => [block.id, block]));
+  for (const block of after) {
+    if (block.status === 'skipped') continue;
+    const old = previous.get(block.id);
+    if (old && old.status !== 'skipped' && old.date === block.date
+      && old.startTime === block.startTime && old.endTime === block.endTime) continue;
+    const range = placement(block);
+    if (!range) throw new DecisionPlanPatchConflictError(`Invalid schedule placement: ${block.id}`);
+    for (const other of after) {
+      if (other.id === block.id || other.date !== block.date || other.status === 'skipped') continue;
+      const occupied = placement(other);
+      if (!occupied || (range.start < occupied.end && occupied.start < range.end)) {
+        throw new DecisionPlanPatchConflictError(`Schedule placement conflicts: ${block.id}, ${other.id}`);
+      }
+    }
+  }
+}
+
 export function applyDecisionPlanPatch(
   currentBlocks: ScheduleBlock[],
   patch: DecisionPlanPatchV1,
@@ -101,7 +137,7 @@ export function applyDecisionPlanPatch(
     else byId.set(operation.blockId, { ...operation.after });
   });
 
-  return currentBlocks
+  const result = currentBlocks
     .filter((block) => byId.has(block.id))
     .map((block) => ({ ...byId.get(block.id)! }))
     .concat(
@@ -109,6 +145,8 @@ export function applyDecisionPlanPatch(
         .filter((block) => !currentBlocks.some((current) => current.id === block.id))
         .map((block) => ({ ...block })),
     );
+  assertChangedPlacementsAvailable(currentBlocks, result);
+  return result;
 }
 
 export function undoDecisionPlanPatch(
@@ -127,7 +165,7 @@ export function undoDecisionPlanPatch(
     else byId.set(operation.blockId, { ...operation.before });
   });
 
-  return currentBlocks
+  const result = currentBlocks
     .filter((block) => byId.has(block.id))
     .map((block) => ({ ...byId.get(block.id)! }))
     .concat(
@@ -135,6 +173,8 @@ export function undoDecisionPlanPatch(
         .filter((block) => !currentBlocks.some((current) => current.id === block.id))
         .map((block) => ({ ...block })),
     );
+  assertChangedPlacementsAvailable(currentBlocks, result);
+  return result;
 }
 
 export function scheduleBlockWithDuration(block: ScheduleBlock, minutes: number): ScheduleBlock {

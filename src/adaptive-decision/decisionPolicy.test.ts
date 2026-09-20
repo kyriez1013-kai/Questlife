@@ -119,6 +119,12 @@ const normalTraining = generateDecisionProposals({
 });
 assert.equal(normalTraining[0].kind, 'continue');
 
+const studyOnly = generateDecisionProposals({ episodeId: 'study-only', questionType: 'training_recovery', context: context([workout], { overall: 2, sleep: 480, load: 600 }), evidence, safety: normalSafety.status, generatedAt: NOW });
+assert.equal(studyOnly[0].kind, 'continue', 'generic execution duration is not physical training load');
+const shortWorkout = block('short-workout', 'Training', '18:30', 10, 'movable');
+const shortOptions = generateDecisionProposals({ episodeId: 'short', questionType: 'training_recovery', context: context([shortWorkout], { overall: 2, sleep: 300 }), evidence, safety: normalSafety.status, generatedAt: NOW });
+assert.equal(shortOptions.find((option) => option.kind === 'shorten')?.planPatch.afterSnapshot[0].plannedMinutes, 5, 'shorten never lengthens a short session');
+
 const cognitive = generateDecisionProposals({
   episodeId: 'cognitive',
   questionType: 'cognitive_adjustment',

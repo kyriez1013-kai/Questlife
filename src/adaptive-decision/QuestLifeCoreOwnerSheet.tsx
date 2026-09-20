@@ -28,6 +28,7 @@ import {
 } from './followUp';
 import {
   inferOwnerDecisionIntent,
+  dueOwnerDecisionEpisode,
   latestOwnerDecisionEpisode,
   ownerEpisodeCanResume,
   retainFeasibleOwnerCandidates,
@@ -243,13 +244,15 @@ export default function QuestLifeCoreOwnerSheet({
     }
     if (initializedVisibleRef.current) return;
     initializedVisibleRef.current = true;
-    const latest = latestOwnerDecisionEpisode(decisionResults);
+    const now = new Date().toISOString();
+    const latest = dueOwnerDecisionEpisode(decisionResults, now, data.executionLogs) ?? latestOwnerDecisionEpisode(decisionResults);
     if (latest) {
-      const due = markDecisionFollowUpDue(latest, new Date().toISOString());
+      const due = markDecisionFollowUpDue(latest, now, data.executionLogs);
+      const stored = decisionResults.find((result) => result.id === due.id)?.decisionEpisode;
+      if (due.status !== stored?.status || JSON.stringify(due.followUpPlan) !== JSON.stringify(stored?.followUpPlan)) {
+        onUpdateDecisionEpisode(due.id, due);
+      }
       if (due.status === 'FOLLOW_UP_DUE') {
-        if (due.status !== latest.status || due.followUpPlan?.status !== latest.followUpPlan?.status) {
-          onUpdateDecisionEpisode(due.id, due);
-        }
         persistedEpisodeIdsRef.current.add(due.id);
         setEpisode(due);
         setOutcome({});
@@ -275,7 +278,7 @@ export default function QuestLifeCoreOwnerSheet({
       }
     }
     startNewDecision();
-  }, [decisionResults, onUpdateDecisionEpisode, startNewDecision, visible]);
+  }, [data.executionLogs, decisionResults, onUpdateDecisionEpisode, startNewDecision, visible]);
 
   const answerQuestion = useCallback((questionId: string, value: string) => {
     if (!episode || episode.status !== 'NEEDS_INPUT') return;
@@ -343,6 +346,7 @@ export default function QuestLifeCoreOwnerSheet({
         episode,
         scheduleBlocks: data.scheduleBlocks || [],
         undoneAt: new Date().toISOString(),
+        executionLogs: data.executionLogs,
       });
       onUndoSchedulePatch(episode.appliedPlanPatch);
       persistEpisode(undone.episode);
@@ -358,7 +362,7 @@ export default function QuestLifeCoreOwnerSheet({
     } finally {
       setBusy(false);
     }
-  }, [busy, data.scheduleBlocks, episode, onUndoSchedulePatch, persistEpisode]);
+  }, [busy, data.executionLogs, data.scheduleBlocks, episode, onUndoSchedulePatch, persistEpisode]);
 
   const updateOutcome = useCallback((patch: Partial<OwnerOutcome>) => {
     setOutcome((current) => ({ ...current, ...patch }));
@@ -373,7 +377,7 @@ export default function QuestLifeCoreOwnerSheet({
       return;
     }
     try {
-      const next = recordDecisionOutcome(episode, outcome, new Date().toISOString());
+      const next = recordDecisionOutcome(episode, outcome, new Date().toISOString(), data.executionLogs);
       persistEpisode(next);
       setEpisode(next);
       setView('memory');
@@ -386,15 +390,15 @@ export default function QuestLifeCoreOwnerSheet({
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : String(caught));
     }
-  }, [copy, episode, outcome, persistEpisode]);
+  }, [copy, data.executionLogs, episode, outcome, persistEpisode]);
 
   const skipOutcome = useCallback(() => {
     if (!episode) return;
-    const next = skipDecisionFollowUp(episode, new Date().toISOString());
+    const next = skipDecisionFollowUp(episode, new Date().toISOString(), data.executionLogs);
     persistEpisode(next);
     setEpisode(next);
-    setView('memory');
-  }, [episode, persistEpisode]);
+    setView(next.status === 'CLOSED' ? 'memory' : 'decision');
+  }, [data.executionLogs, episode, persistEpisode]);
 
   const footer = useMemo(() => view === 'follow_up' ? (
     <V11StickySheetFooter

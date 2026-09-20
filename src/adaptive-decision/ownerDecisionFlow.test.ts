@@ -87,6 +87,8 @@ assert.ok(filtered.limitations.includes('INFEASIBLE_EXACT_PLAN_PATCH_EXCLUDED'))
 const dueEpisode = {
   id: 'owner-due',
   subject: { kind: 'owner' },
+  provenance: { syntheticOnly: false, containsRealUserData: true },
+  candidateActions: [],
   status: 'APPLIED',
   updatedAt: '2026-09-02T08:00:00Z',
   followUpPlan: {
@@ -107,6 +109,6 @@ assert.equal(dueOwnerDecisionEpisode([{
   headlineInsight: 'owner',
   evidenceBasis: 'mixed',
   decisionEpisode: dueEpisode,
-}], '2026-09-02T10:01:00Z')?.status, 'FOLLOW_UP_DUE');
+}], '2026-09-02T10:01:00Z'), null, 'legacy apply-timed follow-up is not due without an exact real execution');
 
 console.log('owner decision flow inference, exact placement, and follow-up: passed');

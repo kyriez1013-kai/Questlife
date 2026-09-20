@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import type { AppData, DataRecordProvenance, ScheduleBlock } from '../types';
+import type { AppData, DataRecordProvenance, ExecutionLog, ScheduleBlock } from '../types';
+import './followUp.test';
 import { DEFAULT_DATA } from '../types';
 import {
   applyAcceptedDecision,
@@ -11,6 +12,7 @@ import {
 } from './decisionEngine';
 import { markDecisionFollowUpDue, recordDecisionOutcome } from './followUp';
 import { inferOwnerDecisionIntent, retainFeasibleOwnerCandidates } from './ownerDecisionFlow';
+import { evaluateDecisionSafety } from './safetyGate';
 
 const NOW = '2026-09-02T17:00:00+08:00';
 const ZONE = 'Asia/Shanghai';
@@ -142,6 +144,9 @@ const applied = applyAcceptedDecision({
 assert.equal(applied.episode.status, 'APPLIED');
 assert.notDeepEqual(applied.scheduleBlocks, data.scheduleBlocks);
 assert.deepEqual(applied.scheduleBlocks.find((block) => block.id === fixed.id), fixed);
+assert.deepEqual(applyAcceptedDecision({ episode: applied.episode, scheduleBlocks: applied.scheduleBlocks, appliedAt: '2026-09-02T18:00:00+08:00' }), applied, 'Apply retry preserves the original application instant');
+assert.throws(() => undoAppliedDecision({ episode: applied.episode, scheduleBlocks: applied.scheduleBlocks, undoneAt: '2026-09-02T19:00:00+08:00' }), /started or expired/, 'Undo is not reversal of started behavior');
+assert.throws(() => undoAppliedDecision({ episode: applied.episode, scheduleBlocks: applied.scheduleBlocks, undoneAt: '2026-09-02T18:00:00+08:00', executionLogs: [{ ...data.executionLogs[0], linkedScheduleBlockId: training.id }] }), /linked execution/);
 
 const undone = undoAppliedDecision({
   episode: applied.episode,
@@ -156,14 +161,23 @@ const reapplied = applyAcceptedDecision({
   scheduleBlocks: undone.scheduleBlocks,
   appliedAt: '2026-09-02T17:00:06+08:00',
 });
-const due = markDecisionFollowUpDue(reapplied.episode, reapplied.episode.followUpPlan!.dueAt);
+assert.equal(reapplied.episode.followUpPlan, undefined, 'apply does not manufacture behavior or an outcome clock');
+const completedExecution: ExecutionLog = {
+  id: 'owner-completed-training', date: training.date, linkedScheduleBlockId: training.id,
+  durationMinutes: 30, source: 'timer', createdAt: '2026-09-02T19:30:00+08:00',
+  dataProvenance: {
+    ...ownerProvenance('2026-09-02T19:30:00+08:00'),
+    eventStartAt: '2026-09-02T19:00:00+08:00', eventEndAt: '2026-09-02T19:30:00+08:00',
+  },
+};
+const due = markDecisionFollowUpDue(reapplied.episode, '2026-09-02T21:30:00+08:00', [completedExecution]);
 assert.equal(due.status, 'FOLLOW_UP_DUE');
 const completed = recordDecisionOutcome(due, {
   state: 3,
   fatigue: 2,
   taskResult: 'partially_completed',
   usefulness: 'helpful',
-}, due.followUpPlan!.dueAt);
+}, due.followUpPlan!.dueAt, [completedExecution]);
 const memory = decisionEpisodeToResult({ episode: completed, headline: 'Owner decision memory' });
 assert.equal(memory.decisionEpisode?.followUpOutcomes.length, 1);
 assert.equal(memory.decisionEpisode?.leverage?.followUpCompleted, true);
@@ -178,13 +192,57 @@ const later = beginDecisionEpisode({
   timezone: ZONE,
   observationWindowStart: '2026-08-06T17:00:00+08:00',
 });
+const laterData: AppData = {
+  ...data, decisionResults: [memory], executionLogs: [...data.executionLogs, completedExecution],
+  stateCheckIns: data.stateCheckIns.map((state) => ({ ...state, timestamp: '2026-09-03T16:30:00+08:00', createdAt: '2026-09-03T16:30:00+08:00', dataProvenance: ownerProvenance('2026-09-03T16:30:00+08:00') })),
+  scheduleBlocks: data.scheduleBlocks.map((block) => ({ ...block, date: '2026-09-03' })),
+};
 const withMemory = proposeDecisionEpisode({
   episode: later,
-  data: { ...data, decisionResults: [memory] },
+  data: laterData,
   now: '2026-09-03T17:00:01+08:00',
 });
 assert.equal(withMemory.evidencePacket?.highestEvidenceLevel, 'E');
 assert.ok(withMemory.evidencePacket?.items.some((item) => item.category === 'historical_decision'));
+const historical = withMemory.evidencePacket!.items.find((item) => item.category === 'historical_decision')!;
+assert.equal(historical.supportCount, undefined, 'completion is not combined with helpfulness as support');
+assert.equal(historical.counterexampleCount, undefined, 'no aggregated success/failure tally');
+assert.equal(historical.values?.helpful, 1);
+assert.equal(historical.values?.partiallyCompleted, 1);
+assert.equal(historical.values?.stateReadings, 1);
+assert.equal(historical.values?.fatigueReadings, 1);
+assert.ok(withMemory.candidateActions[0].evidenceItemIds.includes(historical.id));
+assert.ok(withMemory.candidateActions.slice(1).every((action) => !action.evidenceItemIds.includes(historical.id)), 'an action-specific outcome is not evidence for unrelated alternatives');
+
+const proposeLater = (patch: Partial<AppData>) => proposeDecisionEpisode({ episode: later, data: { ...laterData, ...patch }, now: '2026-09-03T17:00:01+08:00' });
+const hasHistory = (result: ReturnType<typeof proposeLater>) => result.evidencePacket?.items.some((item) => item.category === 'historical_decision');
+const withoutMemory = proposeLater({ decisionResults: [] });
+assert.deepEqual(withMemory.candidateActions.map((action) => ({ kind: action.kind, patch: action.planPatch })), withoutMemory.candidateActions.map((action) => ({ kind: action.kind, patch: action.planPatch })), 'history is displayed, not falsely credited with selecting or reranking an unchanged rule proposal');
+assert.equal(hasHistory(proposeLater({ executionLogs: [] })), false, 'unlinked old outcomes cannot count');
+assert.equal(hasHistory(proposeLater({ executionLogs: [{ ...completedExecution, dataProvenance: { ...completedExecution.dataProvenance!, deleted: true } }] })), false, 'deleted execution cannot support history');
+assert.equal(hasHistory(proposeLater({ scheduleBlocks: laterData.scheduleBlocks.map((block) => ({ ...block, linkedSkillId: 'unrelated-skill' })) })), false, 'same question does not establish target similarity');
+assert.equal(hasHistory(proposeLater({ scheduleBlocks: laterData.scheduleBlocks.map((block) => ({ ...block, linkedGoalId: 'unrelated-goal' })) })), false, 'goal context must match');
+assert.equal(hasHistory(proposeLater({ scheduleBlocks: laterData.scheduleBlocks.map((block) => ({ ...block, plannedMinutes: 90 })) })), false, 'different duration is not the same action context');
+const historyWith = (patch: Partial<typeof completed>) => [{ ...memory, decisionEpisode: { ...completed, ...patch } }];
+assert.equal(hasHistory(proposeLater({ decisionResults: historyWith({ subject: { kind: 'owner', subjectId: 'different-owner' } }) })), false);
+assert.equal(hasHistory(proposeLater({ decisionResults: historyWith({ updatedAt: '2026-09-04T12:00:00+08:00' }) })), false, 'future-edited history cannot leak backward');
+assert.equal(hasHistory(proposeLater({ decisionResults: historyWith({ candidateActions: completed.candidateActions.map((action) => ({ ...action, kind: 'move' })) }) })), false, 'action mismatch');
+assert.equal(hasHistory(proposeLater({ decisionResults: historyWith({ targetOutcome: { ...completed.targetOutcome, horizon: 'next_morning' } }) })), false, 'outcome horizon mismatch');
+assert.equal(hasHistory(proposeLater({ decisionResults: historyWith({ targetOutcome: { ...completed.targetOutcome, fields: ['usefulness'] } }) })), false, 'outcome target mismatch');
+const conflictingOutcome = { ...completed.followUpOutcomes[0], state: 4, fatigue: 5, taskResult: 'completed' as const, usefulness: 'not_helpful' as const };
+const conflicting = proposeLater({ decisionResults: historyWith({ followUpOutcomes: [conflictingOutcome, { ...conflictingOutcome, id: 'future', recordedAt: '2026-09-04T12:00:00+08:00', usefulness: 'helpful' }] }) });
+const conflictingValues = conflicting.evidencePacket?.items.find((item) => item.category === 'historical_decision')?.values;
+assert.equal(conflictingValues?.completed, 1);
+assert.equal(conflictingValues?.notHelpful, 1);
+assert.equal(conflictingValues?.helpful, 0, 'future feedback cannot count');
+assert.equal(conflictingValues?.stateReadings, 1);
+assert.equal(conflictingValues?.fatigueReadings, 1);
+
+const context = proposed.contextSnapshot!;
+const symptom = { sourceType: 'context' as const, sourceId: 'old-symptom', label: 'chest pain', eligibility: 'excluded' as const };
+assert.equal(evaluateDecisionSafety({ context: { ...context, sourceRefs: [symptom] } }).status.level, 'normal', 'excluded old or fixture symptoms cannot become current symptoms');
+assert.equal(evaluateDecisionSafety({ context: { ...context, sourceRefs: [{ ...symptom, eligibility: 'eligible' }] } }).status.level, 'blocked');
+assert.equal(evaluateDecisionSafety({ questionText: 'chest pain now', context: { ...context, sourceRefs: [symptom] } }).status.level, 'blocked', 'current explicit symptoms keep the safety boundary');
 
 const unsafe = beginDecisionEpisode({
   id: 'owner-core-unsafe',

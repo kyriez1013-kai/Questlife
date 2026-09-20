@@ -39,6 +39,9 @@ export type AssembleDecisionContextResult = {
 const DAY_START_MINUTES = 7 * 60;
 const DAY_END_MINUTES = 23 * 60;
 const OWNER_INELIGIBLE_ORIGINS = new Set(['SYNTHETIC', 'QA_TEST', 'DEBUG_FIXTURE']);
+// Match the existing daily brief's 24h state and objective brief's 2-day context windows.
+const CURRENT_STATE_WINDOW_MS = 24 * 60 * 60 * 1000;
+const RECENT_CONTEXT_WINDOW_MS = 2 * CURRENT_STATE_WINDOW_MS;
 
 function parseTime(value?: string): number | undefined {
   if (!value) return undefined;
@@ -173,6 +176,11 @@ function latestEligibleState(
     .find((log) => {
       const observedAt = log.timestamp ?? log.createdAt;
       const eligibility = provenanceEligibility(log.dataProvenance, mode, log.createdAt, asOfMs);
+      const observedMs = parseTime(observedAt);
+      if (observedMs == null || observedMs < asOfMs - CURRENT_STATE_WINDOW_MS || !Number.isFinite(log.overall) || log.overall < 1 || log.overall > 5) {
+        eligibility.eligible = false;
+        eligibility.limitations.push('CURRENT_STATE_STALE_OR_INVALID');
+      }
       sourceRefs.push(sourceRef({ sourceType: 'state', sourceId: log.id, label: 'current_state', eventTime: observedAt, provenance: log.dataProvenance, eligibility }));
       const eligible = eligibility.eligible && eventIsAvailable(observedAt, asOfMs);
       if (!eligible) excludedSourceIds.push(log.id);
@@ -190,6 +198,11 @@ function eligibleContexts(
   return logs.filter((log) => {
     const observedAt = log.dataProvenance?.eventEndAt ?? log.dataProvenance?.eventStartAt ?? log.createdAt;
     const eligibility = provenanceEligibility(log.dataProvenance, mode, log.createdAt, asOfMs);
+    const observedMs = parseTime(observedAt);
+    if (observedMs == null || observedMs < asOfMs - RECENT_CONTEXT_WINDOW_MS) {
+      eligibility.eligible = false;
+      eligibility.limitations.push('CONTEXT_STALE_OR_UNDATED');
+    }
     sourceRefs.push(sourceRef({ sourceType: 'context', sourceId: log.id, label: log.label, eventTime: observedAt, provenance: log.dataProvenance, eligibility }));
     const eligible = eligibility.eligible && eventIsAvailable(observedAt, asOfMs);
     if (!eligible) excludedSourceIds.push(log.id);
@@ -303,6 +316,7 @@ export function assembleDecisionContext(input: AssembleDecisionContextInput): As
     .sort((a, b) => b.time - a.time)[0];
 
   const totalMinutes = executions.reduce((sum, log) => sum + Math.max(0, log.durationMinutes || 0), 0);
+  const training = executions.filter((log) => log.taskType === 'strength_training' || log.taskType === 'cardio_recovery');
   const qualityValues = executions.map((log) => log.qualityRating).filter((value): value is number => typeof value === 'number');
   const averageQuality = qualityValues.length > 0
     ? qualityValues.reduce((sum, value) => sum + value, 0) / qualityValues.length
@@ -348,6 +362,11 @@ export function assembleDecisionContext(input: AssembleDecisionContextInput): As
     value: totalMinutes,
     unit: 'minutes',
     sourceIds: executions.map((log) => log.id),
+  });
+  if (training.length > 0) facts.push({
+    id: 'fact-recent-training', kind: 'recent_load', label: 'recent_training_minutes',
+    value: training.reduce((sum, log) => sum + Math.max(0, log.durationMinutes || 0), 0),
+    unit: 'minutes', sourceIds: training.map((log) => log.id),
   });
   scheduleBlocks.forEach((block) => facts.push({
     id: `fact-schedule-${block.id}`,

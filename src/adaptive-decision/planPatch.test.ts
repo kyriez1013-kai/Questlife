@@ -87,4 +87,36 @@ const removed = applyDecisionPlanPatch(before, removedPatch);
 assert.equal(removed.some((item) => item.id === 'flexible'), false);
 assert.deepEqual(undoDecisionPlanPatch(removed, removedPatch), before);
 
+const tomorrowOccupied = { ...block('tomorrow-booking', 'fixed', '20:00', 60), date: '2026-09-02' };
+assert.throws(() => applyDecisionPlanPatch([...before, tomorrowOccupied], movedPatch), DecisionPlanPatchConflictError, 'final Apply must recheck tomorrow, not only the preview day');
+assert.deepEqual(before, [fixed, flexible], 'failed apply must not partially mutate input');
+
+const newBooking = block('new-booking', 'fixed', '20:30', 30);
+assert.throws(() => undoDecisionPlanPatch([...applied, newBooking], patch), DecisionPlanPatchConflictError, 'Undo cannot expand into a later booking');
+assert.equal(applied.find((item) => item.id === flexible.id)?.plannedMinutes, 25);
+
+const moved = applyDecisionPlanPatch(before, movedPatch);
+const originalSlotOccupied = block('replacement-booking', 'fixed', '20:00', 60);
+assert.throws(() => undoDecisionPlanPatch([...moved, originalSlotOccupied], movedPatch), DecisionPlanPatchConflictError, 'Undo validates the original day too');
+assert.throws(() => undoDecisionPlanPatch([...removed, originalSlotOccupied], removedPatch), DecisionPlanPatchConflictError, 'restoring a removed block is also a placement');
+
+const adjacent = { ...tomorrowOccupied, startTime: '21:00', endTime: '22:00' };
+assert.equal(applyDecisionPlanPatch([...before, adjacent], movedPatch).length, 3, 'touching endpoints are not overlap');
+assert.equal(applyDecisionPlanPatch([...before, { ...tomorrowOccupied, status: 'skipped' }], movedPatch).length, 3, 'skipped intervals are not occupied');
+assert.deepEqual(applyDecisionPlanPatch([...moved, tomorrowOccupied], movedPatch), [...moved, tomorrowOccupied], 'idempotent retry does not attempt another mutation or rewrite existing conflicts');
+assert.deepEqual(undoDecisionPlanPatch([...before, originalSlotOccupied], movedPatch), [...before, originalSlotOccupied], 'repeated Undo does not disturb later changes');
+
+const first = block('first-swap', 'movable', '10:00', 60);
+const second = block('second-swap', 'movable', '11:00', 60);
+const swapPatch = createDecisionPlanPatch({ id: 'swap', date: first.date, generatedAt: patch.generatedAt, before: [first, second], after: [{ ...first, startTime: second.startTime, endTime: second.endTime }, { ...second, startTime: first.startTime, endTime: first.endTime }] });
+const swapped = applyDecisionPlanPatch([first, second], swapPatch);
+assert.deepEqual(undoDecisionPlanPatch(swapped, swapPatch), [first, second], 'validate the final atomic swap, not occupied intermediate slots');
+const collisionPatch = createDecisionPlanPatch({ id: 'collision', date: first.date, generatedAt: patch.generatedAt, before: [first, second], after: [{ ...first, startTime: '12:00', endTime: '13:00' }, { ...second, startTime: '12:30', endTime: '13:30' }] });
+assert.throws(() => applyDecisionPlanPatch([first, second], collisionPatch), DecisionPlanPatchConflictError, 'two operations cannot overlap each other');
+
+const invalidPatch = createDecisionPlanPatch({ id: 'invalid', date: flexible.date, generatedAt: patch.generatedAt, before, after: [fixed, { ...flexible, endTime: '25:00' }] });
+assert.throws(() => applyDecisionPlanPatch(before, invalidPatch), DecisionPlanPatchConflictError, 'do not invent a cross-day placement from an invalid wall clock');
+assert.throws(() => undoDecisionPlanPatch(applied.map((item) => item.id === flexible.id ? { ...item, status: 'completed' } : item), patch), DecisionPlanPatchConflictError, 'Undo cannot erase actual completion');
+assert.throws(() => undoDecisionPlanPatch(applied.map((item) => item.id === flexible.id ? { ...item, notes: 'new owner note' } : item), patch), DecisionPlanPatchConflictError, 'Undo preserves concurrent legitimate edits');
+
 console.log('adaptive decision plan patch apply and undo: passed');

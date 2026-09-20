@@ -25,7 +25,7 @@ export function evaluateDecisionSafety(input: {
   symptomSeverityAnswer?: string;
 }): DecisionSafetyGateResult {
   const contextSymptomText = input.context.sourceRefs
-    .filter((source) => source.sourceType === 'context')
+    .filter((source) => source.sourceType === 'context' && source.eligibility !== 'excluded')
     .map((source) => source.label)
     .join(' ');
   const text = `${input.questionText ?? ''} ${contextSymptomText}`.trim();

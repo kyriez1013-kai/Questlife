@@ -156,7 +156,7 @@ assert.equal(completed.leverage?.followUpCompleted, true);
 const result = decisionEpisodeToResult({ episode: completed, headline: 'Reduced training and checked the result' });
 assert.equal(result.decisionEpisode?.id, completed.id);
 assert.equal(result.meta?.model, 'questlife.decision.policy.v1');
-assert.equal(similarCompletedEpisodes([{ ...result }], { ...completed, id: 'later-episode' }).length, 1);
+assert.equal(similarCompletedEpisodes([{ ...result }], { ...completed, id: 'later-episode', time: { ...completed.time, asOf: '2025-05-02T18:00:00Z' } }).length, 1);
 
 const appliedAgain = applyAcceptedDecision({ episode: accepted, scheduleBlocks: data.scheduleBlocks, appliedAt: '2025-05-01T18:00:03+00:00' });
 const undone = undoAppliedDecision({ episode: appliedAgain.episode, scheduleBlocks: appliedAgain.scheduleBlocks, undoneAt: '2025-05-01T18:10:00+00:00' });
@@ -230,9 +230,8 @@ const withMemory = proposeDecisionEpisode({
   answers: { 'target-flexibility': 'movable' },
   now: '2025-05-02T18:00:01+00:00',
 });
-assert.equal(withMemory.evidencePacket?.highestEvidenceLevel, 'E');
-assert.ok(withMemory.evidencePacket?.items.some((item) => item.category === 'historical_decision'));
-assert.ok(withMemory.candidateActions[0].evidenceItemIds.includes('evidence-historical-decisions'));
+assert.notEqual(withMemory.evidencePacket?.highestEvidenceLevel, 'E');
+assert.ok(!withMemory.evidencePacket?.items.some((item) => item.category === 'historical_decision'), 'legacy apply-timed outcomes without exact execution do not become personal evidence');
 
 const blockedDraft = beginDecisionEpisode({
   id: 'episode-blocked',

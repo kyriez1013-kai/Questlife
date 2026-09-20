@@ -126,12 +126,13 @@ function unchangedCandidate(input: GenerateDecisionProposalsInput, kind: 'contin
 function trainingCandidates(input: GenerateDecisionProposalsInput): DecisionCandidateActionV1[] {
   const target = primaryMovableBlock(input.context, input.questionType);
   if (!target) return [unchangedCandidate(input, 'continue')];
-  const reducedMinutes = Math.max(20, Math.min(30, Math.round(target.plannedMinutes * 0.5)));
+  const reducedMinutes = Math.max(1, Math.min(target.plannedMinutes, Math.round(target.plannedMinutes * 0.5)));
   const shortened = scheduleBlockWithDuration(target, reducedMinutes);
   const moved = scheduleBlockOnNextDay(target);
-  const lowState = (input.context.currentState?.overall ?? 3) <= 2;
+  const lowState = input.context.currentState != null && input.context.currentState.overall <= 2;
   const shortSleep = input.context.sleepMinutes != null && input.context.sleepMinutes.value < 360;
-  const elevatedLoad = (input.context.recentExecution?.totalMinutes ?? 0) >= 120;
+  const trainingMinutes = input.context.facts.find((fact) => fact.label === 'recent_training_minutes')?.value;
+  const elevatedLoad = typeof trainingMinutes === 'number' && trainingMinutes >= 120;
 
   const shorten = candidate(input, {
     kind: 'shorten',

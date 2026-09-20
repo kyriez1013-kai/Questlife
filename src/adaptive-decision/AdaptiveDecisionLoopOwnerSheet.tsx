@@ -49,6 +49,7 @@ import {
   questionTypeLabel,
 } from './presentation';
 import { recordAdaptiveDecisionTelemetry } from './telemetry';
+import { dueOwnerDecisionEpisode } from './ownerDecisionFlow';
 
 type OwnerView = 'entry' | 'question' | 'proposals' | 'preview' | 'receipt' | 'follow_up' | 'memory';
 type OwnerOutcome = Omit<DecisionFollowUpOutcomeV1, 'id' | 'recordedAt'>;
@@ -170,22 +171,24 @@ export default function AdaptiveDecisionLoopOwnerSheet({
 
   useEffect(() => {
     if (!visible) return;
-    const latest = latestOwnerEpisode(decisionResults);
+    const now = new Date().toISOString();
+    const latest = dueOwnerDecisionEpisode(decisionResults, now, data.executionLogs) ?? latestOwnerEpisode(decisionResults);
     if (!latest) {
       setEpisode(null);
       setView('entry');
       setPersistedEpisodeId(null);
       return;
     }
-    const due = markDecisionFollowUpDue(latest, new Date().toISOString());
-    if (due.status !== latest.status || due.followUpPlan?.status !== latest.followUpPlan?.status) {
+    const due = markDecisionFollowUpDue(latest, now, data.executionLogs);
+    const stored = decisionResults.find((result) => result.id === due.id)?.decisionEpisode;
+    if (due.status !== stored?.status || JSON.stringify(due.followUpPlan) !== JSON.stringify(stored?.followUpPlan)) {
       onUpdateDecisionEpisode(due.id, due);
     }
     setEpisode(due);
     setView(viewForEpisode(due));
     setPersistedEpisodeId(due.id);
     setError('');
-  }, [decisionResults, onUpdateDecisionEpisode, visible]);
+  }, [data.executionLogs, decisionResults, onUpdateDecisionEpisode, visible]);
 
   const selectedAction = episode?.candidateActions.find((candidate) => candidate.id === episode.selectedActionId);
   const selectedCopy = selectedAction ? candidateCopy(lang, selectedAction) : null;
@@ -343,6 +346,7 @@ export default function AdaptiveDecisionLoopOwnerSheet({
         episode,
         scheduleBlocks: data.scheduleBlocks,
         undoneAt: new Date().toISOString(),
+        executionLogs: data.executionLogs,
       });
       onUndoSchedulePatch(episode.appliedPlanPatch);
       persistEpisode(undone.episode);
@@ -354,7 +358,7 @@ export default function AdaptiveDecisionLoopOwnerSheet({
     } finally {
       setBusy(false);
     }
-  }, [data.scheduleBlocks, episode, onUndoSchedulePatch, persistEpisode]);
+  }, [data.executionLogs, data.scheduleBlocks, episode, onUndoSchedulePatch, persistEpisode]);
 
   const updateOutcome = useCallback((patch: Partial<OwnerOutcome>) => {
     setOutcome((current) => ({ ...current, ...patch }));
@@ -369,7 +373,7 @@ export default function AdaptiveDecisionLoopOwnerSheet({
       return;
     }
     try {
-      const next = recordDecisionOutcome(episode, outcome, new Date().toISOString());
+      const next = recordDecisionOutcome(episode, outcome, new Date().toISOString(), data.executionLogs);
       persistEpisode(next);
       setEpisode(next);
       setView('memory');
@@ -382,15 +386,15 @@ export default function AdaptiveDecisionLoopOwnerSheet({
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : String(caught));
     }
-  }, [copy, episode, outcome, persistEpisode]);
+  }, [copy, data.executionLogs, episode, outcome, persistEpisode]);
 
   const skipOutcome = useCallback(() => {
     if (!episode) return;
-    const next = skipDecisionFollowUp(episode, new Date().toISOString());
+    const next = skipDecisionFollowUp(episode, new Date().toISOString(), data.executionLogs);
     persistEpisode(next);
     setEpisode(next);
-    setView('memory');
-  }, [episode, persistEpisode]);
+    setView(next.status === 'CLOSED' ? 'memory' : viewForEpisode(next));
+  }, [data.executionLogs, episode, persistEpisode]);
 
   const footer = useMemo(() => {
     if (view === 'question') {
