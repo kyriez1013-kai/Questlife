@@ -50,14 +50,18 @@ let exportFiles=new Map();
 let exportDeletes=[];
 let exportWriteFailure=false;
 let exportSequence=0;
+let pickedBackup={canceled:true};
+let restoreCalls=[];
+let restoreFailure=false;
 const fileUri=(parent,name)=>`${typeof parent==='string'?parent:parent.uri}/${name}`;
 class ExportFile {
-  constructor(parent,name){this.uri=fileUri(parent,name);this.name=name;}
+  constructor(parent,name){this.uri=name === undefined ? parent : fileUri(parent,name);this.name=name;}
   get exists(){return exportFiles.has(this.uri);}
   get size(){return Buffer.byteLength(exportFiles.get(this.uri)?.text??'');}
   get modificationTime(){return exportFiles.get(this.uri)?.modified??null;}
   create(){if(this.exists)throw Error('TEST_FILE_EXISTS');exportFiles.set(this.uri,{text:'',modified:Date.now()});}
   write(text){exportFiles.set(this.uri,{text,modified:Date.now()});if(exportWriteFailure)throw Error('TEST_WRITE_FAILED');}
+  async text(){return exportFiles.get(this.uri)?.text??'';}
   delete(){exportDeletes.push(this.uri);exportFiles.delete(this.uri);}
 }
 class ExportDirectory {
@@ -94,6 +98,8 @@ Module._load = function(request, parent, isMain) {
   if (request === '@react-navigation/native') return { useNavigation: () => navigation, useRoute: () => route, useFocusEffect: React.useEffect };
   if (request === 'expo-constants') return constants;
   if (request === 'expo-file-system') return {File:ExportFile,Directory:ExportDirectory,Paths:{cache:'file:///TEST_CACHE'}};
+  if (request === 'expo-document-picker') return {getDocumentAsync:async()=>pickedBackup};
+  if (/\/sync-v2\/runtime$/.test(request)) return {readSyncState:async()=>({ownerId:authUserId}),restoreRecordBackup:async text=>{if(restoreFailure)throw Error('TEST_RESTORE_BLOCKED');restoreCalls.push(text);}};
   if (request === 'expo-sharing') return {isAvailableAsync:async()=>shareAvailable,shareAsync:async(...args)=>{shareCalls.push(args);if(shareHook)await shareHook();}};
   if (request === 'expo-crypto') return {randomUUID:()=>`11111111-1111-4111-8111-${String(++exportSequence).padStart(12,'0')}`};
   if (/\/store$/.test(request)) return { useStore: () => store };
@@ -108,7 +114,7 @@ Module._load = function(request, parent, isMain) {
   if (/\/analytics$/.test(request)) return { trackEvent() {} };
   if (/\/TimePickerInput$/.test(request)) return originalLoad.call(this, path.resolve(__dirname, '../components/TimePickerInput.native.tsx'), parent, isMain);
   if (/\/decisionService$/.test(request)) return { isDecisionDebugEnabled: () => false };
-  if (/\/featureFlag$/.test(request)) return { getV11ProductLanguage: lang => lang, getV11ProductThemeId: theme => theme };
+  if (/\/featureFlag$/.test(request)) return { getV11ProductLanguage: lang => lang, getV11ProductThemeId: theme => theme, isV11ProductEnabled:()=>false };
   if (/\/(GoalForm|SkillForm|AccountSyncSection|ScheduleProposalReview)$/.test(request)) return component(request.split('/').at(-1));
   if (/\/BottomSheetForm$/.test(request)) return props => props.visible ? React.createElement('Sheet', props, props.children) : null;
   if (/\/QuestPrimitives$/.test(request)) return new Proxy({}, { get: (_, name) => name === '__esModule' ? true : props => React.createElement(name, props, props.children, props.trailing) });
@@ -128,12 +134,43 @@ let tree;
 const fresh = () => { store = { data:structuredClone(DEFAULT_DATA), setSettings: patch => Object.assign(store.data.settings, patch) }; store.data.settings.language='en'; alerts=[]; navigations=[]; calendarCalls=[]; calendars=[]; permission='granted'; failCalendar=false; device.data.calendar.events=[]; device.data.notificationQuietHours=undefined; quietWrites=[]; pushToken=null; constants.easConfig.projectId='TEST_PROJECT'; rn.Platform.OS='android';
   authUserId='11111111-1111-4111-8111-111111111111'; device.data.notificationsEnabled=true; pushRegistrations=[]; pushRetirements=[]; registrationAccepted=false; retirementStatus='disabled'; pushTokenHook=undefined;
   shareCalls=[];shareHook=undefined;shareAvailable=true;exportFiles=new Map();exportDeletes=[];exportWriteFailure=false;exportSequence=0;
+  pickedBackup={canceled:true};restoreCalls=[];restoreFailure=false;
   calendarStatuses={};calendarStatusHook=undefined;calendarRetries=[];calendarOpens=[];
 };
 const render = async (file, props={}) => { await act(async () => { tree=create(React.createElement(require(file).default, props)); }); return tree; };
 const button = label => tree.root.findAll(node => node.type === 'QuestButton' && node.props.label === label)[0];
 afterEach(async () => { if(tree) await act(async () => tree.unmount()); tree=undefined; });
 
+test('backup shares a versioned file with exact record and account binding', async () => {
+  fresh(); await render('../backup/RecordBackupActions.tsx');
+  await act(async()=>button('Save restorable backup').props.onPress()); assert.equal(shareCalls.length,0);
+  await act(async()=>alerts.at(-1)[2][1].onPress());
+  const saved=JSON.parse(exportFiles.get(shareCalls[0][0]).text);
+  assert.equal(saved.format,'questlife.records.backup.v1'); assert.equal(saved.ownerId,authUserId); assert.deepEqual(saved.data,store.data);
+});
+test('first launch exposes recovery before Today can create a decision record', async () => {
+  fresh(); authUserId=null; await render('../screens/OnboardingScreen.tsx');
+  assert.equal(button('Choose backup to restore'),undefined);
+  await act(async()=>button('Backup and restore').props.onPress());
+  assert.ok(button('Choose backup to restore')); assert.equal(store.data.decisionResults.length,0);
+  assert.deepEqual(restoreCalls,[]); assert.equal(store.data.settings.onboardingCompleted,undefined);
+});
+test('cancelled backup picker never restores', async () => {
+  fresh(); await render('../backup/RecordBackupActions.tsx'); await act(async()=>button('Choose backup to restore').props.onPress());
+  assert.deepEqual(restoreCalls,[]); assert.equal(alerts.length,0);
+});
+test('backup restore validates and requires separate confirmation', async () => {
+  fresh(); const text=JSON.stringify(require('../backup/records.ts').createRecordBackup(store.data,authUserId));
+  const uri='file:///TEST_CACHE/input.json';exportFiles.set(uri,{text,modified:Date.now()});pickedBackup={canceled:false,assets:[{uri,size:Buffer.byteLength(text)}]};
+  await render('../backup/RecordBackupActions.tsx');await act(async()=>button('Choose backup to restore').props.onPress());
+  assert.equal(restoreCalls.length,0);assert.equal(button('Choose backup to restore').props.disabled,true);
+  await act(async()=>alerts.at(-1)[2][1].onPress());assert.deepEqual(restoreCalls,[text]);assert.equal(button('Choose backup to restore').props.disabled,false);
+});
+test('malformed backup does not reach confirmation or restore boundary', async () => {
+  fresh(); const uri='file:///TEST_CACHE/bad.json';exportFiles.set(uri,{text:'{}',modified:Date.now()});pickedBackup={canceled:false,assets:[{uri,size:2}]};
+  await render('../backup/RecordBackupActions.tsx');await act(async()=>button('Choose backup to restore').props.onPress());assert.equal(alerts.length,0);assert.equal(restoreCalls.length,0);
+  assert.ok(tree.root.findAll(node=>node.type==='Text'&&node.props.accessibilityRole==='alert').length);
+});
 test('calendar draft rejects blank, invalid, reversed and zero-length values', () => {
   assert.equal(validation.validCalendarDraft(initial), true);
   for(const patch of [{title:' '},{startAt:'bad'},{endAt:'bad'},{endAt:initial.startAt},{endAt:'2026-09-19T10:00:00+08:00'}]) assert.equal(validation.validCalendarDraft({...initial,...patch}),false);
@@ -507,7 +544,7 @@ test('native Settings explicitly exports a JSON file with recovery and clear lim
   assert.equal(shareCalls.length,1);assert.deepEqual(JSON.parse(exportFiles.get(shareCalls[0][0]).text),before);assert.deepEqual(store.data,before);
   assert.equal(shareCalls[0][1].mimeType,'application/json');assert.equal(shareCalls[0][1].UTI,'public.json');
   const text=tree.root.findAllByType('Text').flatMap(node=>node.children.filter(child=>typeof child==='string')).join(' ');
-  assert.match(text,/does not confirm that the destination saved it/);assert.match(text,/no JSON file import or restore/);assert.match(text,/never signs you out automatically/);
+  assert.match(text,/does not confirm that the destination saved it/);assert.match(text,/File recovery uses a file created by Backup and restore/);assert.match(text,/never signs you out automatically/);
 });
 test('cancelled native export confirmation does not share or alter records', async()=>{
   fresh();const before=structuredClone(store.data);await render('./NativeRecordActions.tsx');

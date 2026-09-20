@@ -21,3 +21,20 @@ from 32 to 23 (14 moderate, 9 high). This is not a clean security audit.
 Remaining transitive paths include Expo build tooling; the suggested forced
 SDK57 upgrade was not applied. Final candidate validation must rerun native
 build, Expo compatibility checks, typecheck and Web build on the updated lock.
+
+## Record Backup Completion (2026-09-20)
+
+- Expo DocumentPicker 14.0.8 (MIT, official SDK54) reuses the native document UI;
+  no iCloud entitlement or provider account was added. `copyToCacheDirectory`
+  supports immediate native FileSystem reads; Web reads the selected File.
+- Build-only ts-json-schema-generator 2.9.0 (MIT) derives structural validation
+  from the existing AppData types. Build-only Ajv 8.20.0 (MIT) emits a checked-in
+  standalone validator, with no eval/code generation in Hermes or the browser.
+  Regeneration drift is part of the backup tests. Installed LICENSE files were
+  inspected; Ajv notice is included in the native license surface.
+- Final serial dependency installation reports zero known npm audit findings.
+  This supersedes the earlier intermediate 23-advisory count, not an independent
+  security audit. Native compilation and real file selection remain separate gates.
+
+References: https://docs.expo.dev/versions/v54.0.0/sdk/document-picker/ and
+https://docs.expo.dev/versions/v54.0.0/sdk/filesystem/.

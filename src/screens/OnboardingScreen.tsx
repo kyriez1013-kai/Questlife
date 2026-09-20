@@ -21,6 +21,8 @@ import { DomainTemplate, DomainTemplateDomain, GoalType } from '../types';
 import { getLanguage, t } from '../i18n';
 import { trackEvent } from '../utils/analytics';
 import { getV11ProductLanguage, getV11ProductThemeId, isV11ProductEnabled } from '../v11/featureFlag';
+import RecordBackupActions from '../backup/RecordBackupActions';
+import { backupCopy } from '../backup/copy';
 
 type Step = 'language' | 'positioning' | 'mode' | 'goal' | 'preview';
 
@@ -83,6 +85,7 @@ export default function OnboardingScreen() {
   const [weeklyFrequency, setWeeklyFrequency] = useState(3);
   const [sessionLength, setSessionLength] = useState(30);
   const [error, setError] = useState('');
+  const [showRecovery, setShowRecovery] = useState(false);
 
   const selectedTemplate = useMemo(() => (
     selectedMode.domain === 'custom' ? undefined : getDomainTemplateByDomain(selectedMode.domain)
@@ -283,6 +286,10 @@ export default function OnboardingScreen() {
           ))}
         </OnboardingPanel>
         <QuestButton questTheme={questTheme} label={t(lang, 'buildMyFirstSystem')} onPress={() => setStep('mode')} />
+        <View style={{ marginTop: questTheme.spacing.md }}>
+          <QuestButton questTheme={questTheme} variant="secondary" label={backupCopy(lang, 'title')} onPress={() => setShowRecovery(value => !value)} />
+          {showRecovery ? <RecordBackupActions /> : null}
+        </View>
       </OnboardingPanel>
     );
   }

@@ -18,6 +18,7 @@ import { supabaseTransport } from "./transport";
 import { deviceRepository } from "../platform/services";
 import type { HealthObservationV1 } from "../platform/contracts";
 import type { Payload } from "./contracts";
+import { loadData } from "../storage";
 
 export const SYNC_JOURNAL_KEY = "questlife.sync.v2.journal";
 let enginePromise: Promise<SyncEngineV2> | undefined;
@@ -127,6 +128,14 @@ export function requestSync(force = false) {
     },
     force ? 0 : 750,
   );
+}
+export async function restoreRecordBackup(text: string): Promise<void> {
+  const { parseRecordBackup, backupProjections, hasRecords } = await import('../backup/records');
+  const backup = parseRecordBackup(text);
+  if (!project || !getLocalData || await authService.getUserId()) throw new Error('backup_signout_required');
+  await (await getSyncEngine()).restoreRecords(backupProjections(backup), backup.ownerId, async () => {
+    if (await authService.getUserId() || hasRecords(getLocalData!()) || hasRecords(await loadData())) throw new Error('backup_replica_not_empty');
+  });
 }
 export async function persistWithSync(
   base: AppData,

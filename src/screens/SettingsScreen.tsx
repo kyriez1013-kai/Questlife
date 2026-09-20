@@ -28,6 +28,7 @@ import { QuestCompactRow, QuestGroupedSurface, QuestSectionHeader } from '../com
 import QuestSegmentedControl from '../components/ui/QuestSegmentedControl';
 import { getV11ProductLanguage, getV11ProductThemeId, isV11PersonalTerminalEnabled } from '../v11/featureFlag';
 import AccountSyncSection from '../sync-v2/AccountSyncSection';
+import RecordBackupActions from '../backup/RecordBackupActions';
 import { downloadPersistenceSnapshot } from '../utils/persistenceTrace';
 
 const TRADINGVIEW_URL = 'https://www.tradingview.com/';
@@ -506,6 +507,7 @@ export default function SettingsScreen() {
             style={[styles.value, { color: questTheme.colors.textMuted, padding: questTheme.spacing.md }]}
           >{t(lang, exportStatus === 'started' ? 'exportLocalRecordsStarted' : 'exportLocalRecordsFailed')}</Text> : null}
           <QuestCompactRow questTheme={questTheme} divider title={t(lang, 'recordRecovery')} body={t(lang, 'recordRecoveryLimit')} />
+          <RecordBackupActions />
         </QuestGroupedSurface>
 
         {personalTerminalLegalVisible ? (

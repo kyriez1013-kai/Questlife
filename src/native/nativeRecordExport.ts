@@ -2,8 +2,9 @@ import { Directory, File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { randomUUID } from 'expo-crypto';
 import type { AppData } from '../types';
+import type { RecordBackup } from '../backup/records';
 
-export async function shareNativeRecordFile(data: AppData, dialogTitle: string): Promise<'shared' | 'unavailable'> {
+export async function shareNativeRecordFile(data: AppData | RecordBackup, dialogTitle: string): Promise<'shared' | 'unavailable'> {
   if (!await Sharing.isAvailableAsync()) return 'unavailable';
   const directory = new Directory(Paths.cache, 'questlife-record-exports');
   directory.create({ idempotent: true });

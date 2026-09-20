@@ -27,6 +27,7 @@ Module._load = function(request, parent, isMain) {
   if (/\/store$/.test(request)) return {useStore:()=>store};
   if (/\/useQuestTheme$/.test(request)) return {useQuestTheme:()=>require('../design/tokens.ts').getQuestTheme('cleanFocus')};
   if (/\/AccountSyncSection$/.test(request)) return component('AccountSyncSection');
+  if (/\/RecordBackupActions$/.test(request)) return component('RecordBackupActions');
   if (/\/analytics$/.test(request)) return {trackEvent(){}};
   if (/\/storage$/.test(request)) return {today:()=> '2026-09-20',uid:()=> 'TEST_ID'};
   if (/\/decisionService$/.test(request)) return {isDecisionAIEnabled:()=>false,isDecisionAIShadowEnabled:()=>false,isDecisionDailyBriefEnabled:()=>false};
@@ -75,6 +76,7 @@ for (const lang of ['en','zh']) test(`Settings ${lang} shows build version and t
   assert.equal(row('calendarDataSource').props.trailing.props.label,t(lang,'sourceUnavailable'));
   assert.equal(row('recordRecovery').props.body,t(lang,'recordRecoveryLimit'));
   assert.equal(tree.root.findAllByType('AccountSyncSection').length,1);
+  assert.equal(tree.root.findAllByType('RecordBackupActions').length,1);
 });
 test('missing build version is reported as unavailable rather than v0.2',async()=>{
   setup();delete constants.expoConfig.version;await render();

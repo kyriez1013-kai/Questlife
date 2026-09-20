@@ -157,6 +157,22 @@ export class SyncEngineV2 {
     this.status = "signedOut";
     this.emit();
   }
+  /** Explicit file restore into a never-bound, empty replica. Account binding is
+   * retained from the backup; remote revisions/tombstones still win at sign-in. */
+  async restoreRecords(changes: Projection[], ownerId: string | null, assertEmpty: () => Promise<void>) {
+    await this.transaction(async state => {
+      if (this.userId || state.ownerId || state.cursor || state.outbox.length || Object.keys(state.versions).length
+        || state.conflicts.length || state.quarantine.length) throw new Error('backup_replica_not_empty');
+      await assertEmpty();
+      if (this.userId) throw new Error('backup_signout_required');
+      if (changes.some(change => !change.payload || change.entityType === 'healthObservations')) throw new Error('backup_scope');
+      state.ownerId = ownerId;
+      state.pendingApply = changes;
+      // Backup drafts remain local; only eligible confirmed entities can sync.
+      for (const change of changes) if (validEntity(change.entityType, change.entityId, change.payload))
+        state.outbox.push(this.mutation({ ...change, payload: change.payload! }, state));
+    });
+  }
   async setHealthConsent(enabled: boolean) {
     await this.transaction((state) => {
       state.healthConsent = enabled;

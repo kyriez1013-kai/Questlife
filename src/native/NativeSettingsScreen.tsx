@@ -22,6 +22,7 @@ import NativeNotificationPreferences from './NativeNotificationPreferences';
 import { registerNativePushToken, syncDevicePushRegistration } from '../sync-v2/pushRegistry';
 import { authService } from '../sync-v2/supabase';
 import NativeRecordActions from './NativeRecordActions';
+import RecordBackupActions from '../backup/RecordBackupActions';
 import { workflowCopy } from './nativeWorkflowCopy';
 
 export default function NativeSettingsScreen({navigation}:{navigation:any}) {
@@ -137,6 +138,7 @@ export default function NativeSettingsScreen({navigation}:{navigation:any}) {
         <QuestSegmentedControl questTheme={q} accessibilityLabel={t(lang,'language')} value={lang} options={(['zh','en'] as const).map(value=>({value,label:t(lang,value==='zh'?'languageChinese':'languageEnglish')}))} onChange={language=>setSettings({language})}/>
       </NativeSection>
       <NativeRecordActions onOpenAccount={()=>scroll.current?.scrollTo({y:0,animated:true})}/>
+      <RecordBackupActions />
       <NativeSection title={c(lang,'privacy')}>{text(syncCopy(lang,'privacy'))}{text(syncCopy(lang,'healthNote'))}{text(syncCopy(lang,'healthOff'))}</NativeSection>
       <NativeSection title={c(lang,'about')}>{text(`QuestLife ${Constants.expoConfig?.version??''}`)}<NativeAction label={c(lang,'licenses')} onPress={()=>navigation.navigate('Licenses')}/></NativeSection>
       {error||device.error?<Text accessibilityRole="alert" style={{color:f.text.primary,paddingVertical:q.spacing.md}}>{c(lang,'syncError')}</Text>:null}

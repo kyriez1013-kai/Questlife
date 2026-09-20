@@ -17,7 +17,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.`;
 
 export const nativeDependencyNotices = [
-  { name: 'Expo FileSystem / Sharing', text: `MIT License\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\n${mitTerms}` },
+  { name: 'Expo FileSystem / Sharing / DocumentPicker', text: `MIT License\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\n${mitTerms}` },
+  { name: 'Ajv generated record validator', text: `MIT License\nCopyright (c) 2015-2021 Evgeny Poberezkin\n\n${mitTerms}` },
   { name: 'Expo Glass Effect', text: `MIT License\nCopyright (c) 2015-present 650 Industries, Inc. (aka Expo)\n\n${mitTerms}` },
   { name: 'Expo Quick Actions', text: `MIT License\nCopyright (c) 2023 Evan Bacon\n\n${mitTerms}` },
 ];
