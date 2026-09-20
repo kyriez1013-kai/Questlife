@@ -1955,11 +1955,13 @@
   -webkit-backdrop-filter: blur(10px) brightness(0.72);
 }
 
-[data-v11-rebaseline-role="overlay"][data-v11-theme="light"]
+[data-v11-rebaseline-role="overlay"]
   [data-v11-component="material-clip"][data-v11-material="glass"] {
+  /* Forms must stay readable even when a portal cannot sample the page blur. */
+  background: var(--v11-rebaseline-elevated);
   background: color-mix(
     in srgb,
-    var(--v11-rebaseline-elevated) 82%,
+    var(--v11-rebaseline-elevated) 98%,
     transparent
   );
 }

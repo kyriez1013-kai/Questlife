@@ -45,3 +45,12 @@ test('platform style adapters load their CSS instead of recursively importing th
       `${native} must remain CSS-free`);
   }
 });
+
+test('interaction sheets shield background text in both themes without relying on blur', () => {
+  const css = readFileSync('src/v11-stage2-rebaseline/v11-stage2-rebaseline.css', 'utf8');
+  const rule = css.match(/\[data-v11-rebaseline-role="overlay"\]\s+\[data-v11-component="material-clip"\]\[data-v11-material="glass"\]\s*\{([^}]+)\}/);
+  assert.ok(rule, 'shared shield must not be limited to the light theme');
+  assert.match(rule[1], /background:\s*var\(--v11-rebaseline-elevated\);/,
+    'opaque fallback for browsers without color-mix');
+  assert.match(rule[1], /var\(--v11-rebaseline-elevated\) 98%/);
+});
