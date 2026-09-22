@@ -70,16 +70,61 @@ VERIFIED_DEVICE, AWAITING_OWNER, BLOCKED. Unchecked entries remain unfinished.
   exact packaged source and is pushed; it does not imply owner acceptance.
 - iOS final-source cloud compilation is BLOCKED by the provider Free-plan quota;
   physical signing/registration is separately AWAITING_OWNER. No new charges.
-- Mac lock remains a real interaction blocker, not a verified app failure.
-  Browser focus emulation also timed out after attempting to recover the blocked
-  QA tab. After unlock, reacquire current tabs and resume exact QA cleanup before
-  creating more observations: signed-out candidate `QA SQL 学习了 40 分钟`,
-  emulator `Test` Goal, and earlier localhost:8095 QA structures. Do not infer
-  deletion from a closed tab, reinstall or HTTP success.
+- The Mac was unlocked on 2026-09-22. Browser interaction resumed; the prior
+  blanket lock blocker is superseded by the continuation evidence below.
+  Native CUA screenshots work, but its pointer dispatch reports no available
+  window even after emulator restart. This is an automation-control failure,
+  not proof of an application failure. Alternate ADB UI control was requested
+  for this isolated emulator only and has not yet been authorized.
 - New-source native/screenshots/recordings/performance and Web interaction
   acceptance remain UNVERIFIED. Existing screenshots/performance below belong to
   older explicit sources and cannot be relabelled. Do not call this product
   complete or visually accepted.
+
+### Unlocked continuation (2026-09-22)
+
+- Candidate Web actual UI on `2e1c496`: deleted the exact SQL ExecutionLog from
+  History (count became zero), then deleted its `QA SQL 学习了 40 分钟`
+  RawCapture from Capture. Refreshed: no latest record, no activity returned.
+  Deleted the QA-created unlinked SQL skill and the named
+  `QA Release Backup Verification` goal. No owner dataset was used.
+- A backup actually downloaded through Settings to
+  `~/Downloads/questlife-backup-1790068949695.json`. It confirms ownerId=null;
+  goals/modules/links/skills/actions/executionLogs/effortUnits/contributionLinks/
+  stateCheckIns/contextLogs/rawCaptures/scheduleBlocks all zero. One structural
+  category and eight system-generated daily DecisionResults remain; these are
+  not claimed removed or mistaken for observations. This is local cleanup,
+  not a new server-deletion test.
+- The exported file was selected through the real file picker on a fresh
+  `http://127.0.0.1:8097` origin. First-launch Backup opened without creating a
+  goal; restore returned to Today and survived refresh. Settings shows the
+  restored eight daily results plus two subsequently generated daily results.
+  No state/execution observation was added. Byte-for-byte re-export comparison
+  remains pending because the second export encountered a browser-control
+  timeout. This local build has the same application source but not candidate
+  account configuration, so it is not a hosted auth/restore acceptance.
+- Actual candidate Goal -> Module -> Skill creation succeeded using only a
+  disposable structure: `QA Candidate Interaction` / `QA Workflow` /
+  `QA Focus Review`. These are still present for verification of the fixes below
+  and must be deleted afterward. No real execution or state was fabricated.
+- Found and fixed `a70cdcc`: an untracked module displayed 0% and its Skill
+  repeated "No tracking". Presentation now uses the existing tracked/percent
+  result; absent progress is not coerced to zero. Four platform/language tests
+  also exercise qualitative, unconfigured time/quality/state/performance and
+  a real 25% target. No progress algorithm or stored record changes.
+- Found and fixed `8f56e02`: Web Goal "Record progress" led to Skill Detail
+  without a recording action. Both platforms now expose the same exact-skill
+  action; Web registers the existing in-app intent bus without OS notification
+  services. Today still owns the actual form and save handler. Tests cover
+  delayed mount, fresh callback, cleanup/account boundary and no direct writes.
+- Current local regression on `8f56e02`: **26/26 suites PASS**, including
+  TypeScript, Web export and dependency audit. Focused entity/intent tests:
+  **35/35 PASS**. New-source candidate/installed acceptance is pending rebuild;
+  do not relabel the preceding `2e1c496` artifact or screenshot as this source.
+- Browser console captured no errors; existing unsupported Web push listener,
+  Supabase lock deprecation and navigation-object deprecation warnings remain.
+  The isolated emulator's `Test` Goal cleanup, actual native chart, performance,
+  recording, physical Health/Calendar/notification and email OTP remain open.
 
 ### Active completeness correction (2026-09-22)
 
