@@ -34,6 +34,7 @@ import QuestInput from '../components/ui/QuestInput';
 import ActivityHistorySheet from '../components/today/ActivityHistorySheet';
 import HomeCapturePending from './HomeCapturePending';
 import { confirmAction } from '../utils/confirm';
+import { DurableSubmission } from '../utils/durableSubmission';
 import { buildFallbackEntriesFromRawText } from '../utils/captureCompletion';
 import { getV11ProductLanguage, getV11ProductThemeId, isV11TodayEnabled } from '../v11/featureFlag';
 import { getV11ThemeTokens } from '../v11/tokens';
@@ -267,7 +268,7 @@ function captureHasLiveContext(capture: RawCapture, executionLogs: { structuredD
 }
 
 export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => void }) {
-  const { data, addRawCapture, updateRawCapture, deleteRawCapture } = useStore();
+  const { data, addRawCapture, updateRawCapture, deleteRawCapture, waitForLocalWrites, retryLocalWrites } = useStore();
   const v11TodayEnabled = isV11TodayEnabled();
   const lang = v11TodayEnabled
     ? getV11ProductLanguage(getLanguage(data.settings.language ?? data.settings.preferredLanguage))
@@ -279,6 +280,8 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
 
   const [inputText, setInputText]         = useState('');
   const [isPosting, setIsPosting]         = useState(false);
+  const [postingFailed, setPostingFailed] = useState(false);
+  const captureSubmission = useRef(new DurableSubmission<{ capture: RawCapture; structured: boolean; clearInput: boolean }>());
   const [greeting, setGreeting]           = useState('');
   const [recentVisible, setRecentVisible] = useState(true);
   const [recentExpanded, setRecentExpanded] = useState(true);
@@ -525,40 +528,40 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
 
   // ── Send handler ──────────────────────────────────────────────────────────
 
-  const handleSend = useCallback(async () => {
-    const text = inputText.trim();
-    if (!text || isPosting) return;
-
+  const submitCapture = useCallback(async (text: string, source: 'text' | 'recent', parsed?: RawCapture['parsed']) => {
+    if ((!text.trim() && !captureSubmission.current.hasPending) || isPosting) return;
     setIsPosting(true);
-    setInputText('');
+    setPostingFailed(false);
+    try {
+      await captureSubmission.current.run(() => {
+        const capture = addRawCapture(text.trim());
+        startCaptureFriction(capture.id, source);
+        // Explicit entity selection remains local and never invents a measured value.
+        if (parsed) updateRawCapture(capture.id, { parseStatus: 'done', parsed });
+        return { capture, structured: !!parsed, clearInput: source === 'text' };
+      }, waitForLocalWrites, retryLocalWrites, async ({ capture, structured, clearInput }) => {
+        if (clearInput) setInputText('');
+        // Parsing is independent of persistence, but must never outrun its durable raw text.
+        if (!structured) triggerParse(capture.id, capture.text);
+      });
+    } catch {
+      setPostingFailed(true);
+    } finally {
+      setIsPosting(false);
+    }
+  }, [isPosting, addRawCapture, updateRawCapture, waitForLocalWrites, retryLocalWrites, triggerParse]);
 
-    // 1. Save locally immediately — UI completes right here
-    const capture = addRawCapture(text);
-    startCaptureFriction(capture.id, 'text');
-
-    setIsPosting(false);
-
-    // 2. Async parse — completely decoupled, failure doesn't affect saved text
-    triggerParse(capture.id, text);
-  }, [inputText, isPosting, addRawCapture, triggerParse]);
+  const handleSend = useCallback(() => submitCapture(inputText, 'text'), [inputText, submitCapture]);
 
   const handleQuickCapture = useCallback((label: string) => {
-    const text = label.trim();
-    if (!text || isPosting) return;
-    const capture = addRawCapture(text);
-    startCaptureFriction(capture.id, 'recent');
-    triggerParse(capture.id, text);
-  }, [addRawCapture, isPosting, triggerParse]);
+    if (!postingFailed) void submitCapture(label, 'recent');
+  }, [postingFailed, submitCapture]);
 
   const handleNativeSuggestion = useCallback((suggestion: QuickCaptureSuggestion) => {
-    if (isPosting) return;
+    if (postingFailed) return;
     const parsed = quickCaptureDraft(data, suggestion);
-    if (!parsed) return;
-    const capture = addRawCapture(suggestion.label);
-    startCaptureFriction(capture.id, 'recent');
-    // An explicit entity choice is already structured; no parser request or measured defaults.
-    updateRawCapture(capture.id, { parseStatus: 'done', parsed });
-  }, [data, isPosting, addRawCapture, updateRawCapture]);
+    if (parsed) void submitCapture(suggestion.label, 'recent', parsed);
+  }, [data, postingFailed, submitCapture]);
 
   // ── Retry handler ─────────────────────────────────────────────────────────
 
@@ -607,11 +610,9 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
     const fallbackEntries = buildFallbackEntriesFromRawText(capture.text);
     const entriesForConfirmation = parsedEntries.length > 0 ? parsedEntries : fallbackEntries;
     const hasTopLevelCompletion = capture.parsed?.completionSchema?.needsCompletion === true;
-    const alreadyLogged = (data.executionLogs || []).some((log) => log.structuredData?.sourceCaptureId === capture.id);
     const canShowConfirmation =
       (capture.parseStatus === 'done' || capture.parseStatus === 'failed') &&
       (entriesForConfirmation.length > 0 || hasTopLevelCompletion) &&
-      !alreadyLogged &&
       !capture.parsed?.entriesDismissed;
 
     return (
@@ -662,7 +663,7 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
           <V11TextField
             accessibilityHint={greeting || undefined}
             accessibilityLabel={t(lang, 'scPlaceholder')}
-            disabled={isPosting}
+            disabled={isPosting || postingFailed}
             multiline
             onChangeText={(value) => {
               setInputText(value);
@@ -696,8 +697,8 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
         </WebView>
         <WebView style={captureLayout.action} dataSet={{ 'v11-rebaseline-role': 'capture-action-slot' }}>
           <V11ComposerAction
-            disabled={isPosting || !inputText.trim()}
-            label={t(lang, 'scSend')}
+            disabled={isPosting || (!postingFailed && !inputText.trim())}
+            label={t(lang, postingFailed ? 'scRetry' : 'scSend')}
             loading={isPosting}
             onPress={handleSend}
             theme={v11Theme}
@@ -746,7 +747,7 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
         onSubmitEditing={handleSend}
         returnKeyType="send"
         multiline={false}
-        editable={!isPosting}
+        editable={!isPosting && !postingFailed}
         accessibilityLabel={t(lang, 'scPlaceholder')}
         accessibilityHint={greeting || undefined}
       />
@@ -755,7 +756,7 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
         variant="primary"
         icon="zap"
         onPress={handleSend}
-        disabled={isPosting || !inputText.trim()}
+        disabled={isPosting || (!postingFailed && !inputText.trim())}
         loading={isPosting}
         accessibilityLabel={t(lang, 'scSend')}
         style={styles.sendBtn}
@@ -784,6 +785,11 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
         </QuestCard>
       )}
 
+      {postingFailed ? (
+        <Text accessibilityRole="alert" style={{ color: questTheme.colors.danger, marginTop: 8 }}>
+          {t(lang, 'captureSaveRetry')}
+        </Text>
+      ) : null}
       {/* Today keeps one recent record. Full history is rendered in a separate sheet. */}
       {allCaptures.length > 0 && (
         <View style={{ marginTop: questTheme.spacing.xxs }}>

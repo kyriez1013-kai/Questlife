@@ -9,9 +9,10 @@
  * - 写入通过现有 store mutations（不新建逻辑）
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, TextInputProps } from 'react-native';
 import { useStore } from '../store';
+import { DurableSubmission } from '../utils/durableSubmission';
 import { getQuestTheme } from '../design/tokens';
 import { useQuestTheme } from '../design/useQuestTheme';
 import { getLanguage, t } from '../i18n';
@@ -69,6 +70,7 @@ function PendingChip({
   onPress,
   questTheme,
   selected,
+  disabled,
 }: {
   label: string;
   legacyStyle: any;
@@ -76,12 +78,14 @@ function PendingChip({
   onPress: () => void;
   questTheme: ReturnType<typeof getQuestTheme>;
   selected: boolean;
+  disabled?: boolean;
 }) {
   if (isV11TodayEnabled()) {
     return (
       <V11CategoricalChip
         accessibilityRole="checkbox"
         density="compact"
+        disabled={disabled}
         label={label}
         onPress={onPress}
         selected={selected}
@@ -91,7 +95,7 @@ function PendingChip({
     );
   }
   return (
-    <TouchableOpacity onPress={onPress} style={legacyStyle} activeOpacity={0.75}>
+    <TouchableOpacity disabled={disabled} onPress={onPress} style={legacyStyle} activeOpacity={0.75}>
       <Text style={legacyTextStyle}>{label}</Text>
     </TouchableOpacity>
   );
@@ -814,7 +818,7 @@ type AfterStateDeltaDraft = {
 };
 
 export default function HomeCapturePending({ captureId, entries, onDismiss, onOpenState }: Props) {
-  const { data, addCategory, addModule, addSkill, createExecutionLog, updateExecutionLog, addExistingSkillToModule } = useStore();
+  const { data, addCategory, addModule, addSkill, createExecutionLog, updateExecutionLog, addExistingSkillToModule, waitForLocalWrites, retryLocalWrites } = useStore();
   const v11TodayEnabled = isV11TodayEnabled();
   const lang = v11TodayEnabled
     ? getV11ProductLanguage(getLanguage(data.settings.language ?? data.settings.preferredLanguage))
@@ -857,7 +861,33 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
   const [afterStateDraft, setAfterStateDraft] = useState<AfterStateDeltaDraft>({});
   const [afterStateStatus, setAfterStateStatus] = useState<'idle' | 'saved' | 'skipped'>('idle');
   const [confirming, setConfirming] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
+  const [afterStateSaving, setAfterStateSaving] = useState(false);
+  const [afterStateFailed, setAfterStateFailed] = useState(false);
+  const confirmation = useRef(new DurableSubmission<{
+    savedLogs: ExecutionLog[]; frictionDomain: CaptureFrictionDomain; correctedFields: string[];
+  }>());
+  const afterStateSubmission = useRef(new DurableSubmission<'saved' | 'skipped'>());
   const [expandedRoutingRows, setExpandedRoutingRows] = useState<number[]>([]);
+
+  // Reopen feedback by stable capture lineage; an optimistic log alone is not a saved result.
+  useEffect(() => {
+    if (logged || confirmation.current.hasPending) return;
+    const savedLogs = data.executionLogs.filter(log => log.structuredData?.sourceCaptureId === captureId);
+    if (!savedLogs.length) return;
+    let current = true;
+    void waitForLocalWrites().then(() => {
+      if (!current || confirmation.current.hasPending) return;
+      setPostSaveFeedback(buildPostSaveFeedback({ savedLogs, data, lang }));
+      setSavedLogIds(savedLogs.map(log => log.id));
+      const deltas = savedLogs.map(log => log.structuredData?.afterStateDelta);
+      if (deltas.every(Boolean)) setAfterStateStatus(deltas.every(delta => (
+        typeof delta === 'object' && delta !== null && 'skipped' in delta && delta.skipped === true
+      )) ? 'skipped' : 'saved');
+      setLogged(true);
+    }).catch(() => { /* The shared persistence notice retains the original write for retry. */ });
+    return () => { current = false; };
+  }, [captureId, data, lang, logged, waitForLocalWrites]);
   const chipStyle = (selected: boolean) => [
     pendStyles.optionChip,
     v11TodayEnabled ? pendStyles.v11OptionChip : null,
@@ -903,46 +933,35 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
     }));
   };
 
-  const saveAfterStateDelta = () => {
-    const hasSelection = Object.values(afterStateDraft).some(Boolean);
-    const delta = {
-      energy: afterStateDraft.energy ?? 'unknown',
-      focus: afterStateDraft.focus ?? 'unknown',
-      mood: afterStateDraft.mood ?? 'unknown',
-      capturedAt: new Date().toISOString(),
-      skipped: false,
-    };
-    savedLogIds.forEach((logId) => {
-      const existing = data.executionLogs.find((log) => log.id === logId);
-      updateExecutionLog(logId, {
-        structuredData: {
-          ...(existing?.structuredData || {}),
-          afterStateDelta: hasSelection ? delta : { ...delta, skipped: true },
-        },
-      });
-    });
-    setAfterStateStatus(hasSelection ? 'saved' : 'skipped');
+  const persistAfterState = async (skip: boolean) => {
+    if (afterStateSaving) return;
+    setAfterStateSaving(true);
+    setAfterStateFailed(false);
+    try {
+      await afterStateSubmission.current.run(() => {
+        const skipped = skip || !Object.values(afterStateDraft).some(Boolean);
+        const delta = {
+          energy: skip ? 'unknown' as const : afterStateDraft.energy ?? 'unknown',
+          focus: skip ? 'unknown' as const : afterStateDraft.focus ?? 'unknown',
+          mood: skip ? 'unknown' as const : afterStateDraft.mood ?? 'unknown',
+          capturedAt: new Date().toISOString(),
+          skipped,
+        };
+        const logs = savedLogIds.map(id => data.executionLogs.find(log => log.id === id));
+        if (!logs.length || logs.some(log => !log)) throw new Error('Capture execution no longer exists');
+        logs.forEach(log => updateExecutionLog(log!.id, {
+          structuredData: { ...log!.structuredData, afterStateDelta: delta },
+        }));
+        return skipped ? 'skipped' : 'saved';
+      }, waitForLocalWrites, retryLocalWrites, async status => setAfterStateStatus(status));
+    } catch {
+      setAfterStateFailed(true);
+    } finally {
+      setAfterStateSaving(false);
+    }
   };
-
-  const skipAfterStateDelta = () => {
-    const skippedDelta = {
-      energy: 'unknown' as const,
-      focus: 'unknown' as const,
-      mood: 'unknown' as const,
-      capturedAt: new Date().toISOString(),
-      skipped: true,
-    };
-    savedLogIds.forEach((logId) => {
-      const existing = data.executionLogs.find((log) => log.id === logId);
-      updateExecutionLog(logId, {
-        structuredData: {
-          ...(existing?.structuredData || {}),
-          afterStateDelta: skippedDelta,
-        },
-      });
-    });
-    setAfterStateStatus('skipped');
-  };
+  const saveAfterStateDelta = () => { void persistAfterState(false); };
+  const skipAfterStateDelta = () => { void persistAfterState(true); };
 
   const setSelectedSkill = (i: number, skillName: string, skillId?: string) =>
     setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, selectedSkillName: skillName, selectedSkillId: skillId ?? null, createNew: !skillId } : e));
@@ -1235,11 +1254,14 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
     return module;
   }, [addModule, captureText, completionSchema?.matchedModuleId, data.modules, lang, resolveModule]);
 
-  const handleConfirm = useCallback(() => {
+  const handleConfirm = useCallback(async () => {
     if (confirming || logged) return;
     setConfirming(true);
+    setSaveFailed(false);
+    try {
+      await confirmation.current.run(() => {
     const date = parseTargetDate(captureText);
-    const savedLogs: ExecutionLog[] = [];
+    const savedLogs: ExecutionLog[] = data.executionLogs.filter(log => log.structuredData?.sourceCaptureId === captureId);
     const frictionCorrectedFields = new Set<string>();
     let frictionDomain: CaptureFrictionDomain = 'unknown';
 
@@ -1575,17 +1597,19 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
       savedLogs.push(savedLog);
     });
 
+        return { savedLogs, frictionDomain, correctedFields: Array.from(frictionCorrectedFields) };
+      }, waitForLocalWrites, retryLocalWrites, async ({ savedLogs, frictionDomain, correctedFields }) => {
     if (savedLogs.length > 0) {
-      if (frictionCorrectedFields.size > 0) {
+      if (correctedFields.length > 0) {
         recordCaptureFriction(captureId, 'candidate_corrected', {
           domain: frictionDomain,
-          correctedFields: Array.from(frictionCorrectedFields),
+          correctedFields,
         });
       }
       recordCaptureFriction(captureId, 'capture_confirmed', {
         domain: frictionDomain,
         candidateCount: effectiveEntries.length,
-        correctedFields: Array.from(frictionCorrectedFields),
+        correctedFields,
         tapCount: 1,
       });
       setPostSaveFeedback(buildPostSaveFeedback({ savedLogs, data, lang }));
@@ -1594,8 +1618,32 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
       setAfterStateStatus('idle');
     }
     setLogged(true);
+      });
+    } catch {
+      setSaveFailed(true);
+    } finally {
+      setConfirming(false);
+    }
   }, [confirming, logged, captureText, effectiveEntries, entryStates, captureId, data, data.categories, data.modules, data.skills, data.executionLogs, lang, questTheme.colors.primary,
-      assessmentDomainOverride, completionSchema?.domain, resolveSkill, resolveGoalForSave, resolveModuleForSave, resolveRouting, addSkill, addExistingSkillToModule, createExecutionLog, updateExecutionLog, onDismiss]);
+      assessmentDomainOverride, completionSchema?.domain, resolveSkill, resolveGoalForSave, resolveModuleForSave, resolveRouting, addSkill, addExistingSkillToModule, createExecutionLog, updateExecutionLog, onDismiss, waitForLocalWrites, retryLocalWrites]);
+
+  if (saveFailed || confirming) {
+    return (
+      <CapturePendingSurface questTheme={questTheme} status="pending">
+        {saveFailed ? <Text accessibilityRole="alert" style={{ color: questTheme.colors.danger }}>{t(lang, 'captureSaveRetry')}</Text> : null}
+        <PendingAction
+          label={t(lang, saveFailed ? 'scRetry' : 'recordSaving')}
+          loading={confirming}
+          disabled={confirming}
+          legacyStyle={pendStyles.confirmBtn}
+          legacyTextStyle={[pendStyles.confirmText, { color: questTheme.colors.primaryText }]}
+          onPress={handleConfirm}
+          questTheme={questTheme}
+          variant="primary"
+        />
+      </CapturePendingSurface>
+    );
+  }
 
   if (logged) {
     if (postSaveFeedback?.items.length) {
@@ -1677,6 +1725,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
                           onPress={() => setAfterStateValue(key, value)}
                           questTheme={questTheme}
                           selected={selected}
+                          disabled={afterStateSaving || afterStateFailed}
                         />
                       );
                     })}
@@ -1685,7 +1734,9 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
               ))}
               <View style={pendStyles.afterStateActions}>
                 <PendingAction
-                  label={t(lang, 'saveStateChange')}
+                  label={t(lang, afterStateFailed ? 'scRetry' : 'saveStateChange')}
+                  loading={afterStateSaving}
+                  disabled={afterStateSaving}
                   legacyStyle={[pendStyles.confirmBtn, { backgroundColor: questTheme.colors.primary, borderRadius: questTheme.radius.sm }]}
                   legacyTextStyle={[pendStyles.confirmText, { color: questTheme.colors.primaryText }]}
                   onPress={saveAfterStateDelta}
@@ -1694,6 +1745,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
                 />
                 <PendingAction
                   label={t(lang, 'skipStateChange')}
+                  disabled={afterStateSaving || afterStateFailed}
                   legacyStyle={pendStyles.ignoreBtn}
                   legacyTextStyle={[pendStyles.ignoreText, { color: questTheme.colors.textMuted }]}
                   onPress={skipAfterStateDelta}
@@ -1701,6 +1753,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
                   variant="secondary"
                 />
               </View>
+              {afterStateFailed ? <Text accessibilityRole="alert" style={{ color: questTheme.colors.danger }}>{t(lang, 'feedbackSaveError')}</Text> : null}
             </View>
           ) : (
             <Text style={[pendStyles.summary, { color: afterStateStatus === 'saved' ? questTheme.colors.success : questTheme.colors.textMuted }]}>
@@ -1709,6 +1762,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
           )}
           <PendingAction
             label={t(lang, 'done')}
+            disabled={afterStateSaving || afterStateFailed}
             legacyStyle={[pendStyles.confirmBtn, { backgroundColor: questTheme.colors.primary, borderRadius: questTheme.radius.sm, alignSelf: 'flex-start' }]}
             legacyTextStyle={[pendStyles.confirmText, { color: questTheme.colors.primaryText }]}
             onPress={onDismiss}

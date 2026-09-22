@@ -54,6 +54,7 @@ const { emptySyncState } = require('../../src/sync-v2/contracts.ts');
 const { SyncEngineV2 } = require('../../src/sync-v2/engine.ts');
 const { localChanges, projectAppData } = require('../../src/sync-v2/projection.ts');
 const { StoreProvider, useStore } = require('../../src/store.tsx');
+const { DurableSubmission } = require('../../src/utils/durableSubmission.ts');
 const Observer = () => { store = useStore(); return null; };
 const deferred = () => { let resolve; const promise = new Promise(done => { resolve = done; }); return { promise, resolve }; };
 async function mount() { await act(async () => { tree = create(React.createElement(StoreProvider, {}, React.createElement(Observer))); }); }
@@ -67,6 +68,17 @@ async function fresh() {
 afterEach(async () => { if (tree) await act(async () => tree.unmount()); tree = undefined; });
 const plan = { title: 'TEST plan', date: '2026-09-22', startTime: '09:00', endTime: '10:00', plannedMinutes: 60,
   taskType: 'deep_study', flexibility: 'flexible', rigidity: 'medium', status: 'planned', source: 'manual' };
+
+// Execute the actual callback body without loading every Today visual dependency.
+function homeCallback(name, bindings, screen = 'HomeScreen') {
+  const file=path.join(__dirname,`../../src/screens/${screen}.tsx`);
+  const source=ts.createSourceFile(file,fs.readFileSync(file,'utf8'),ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX);
+  const home=source.statements.find(row=>ts.isFunctionDeclaration(row)&&row.name?.text===screen);
+  const statement=home.body.statements.find(row=>ts.isVariableStatement(row)&&row.declarationList.declarations.some(declaration=>declaration.name.getText(source)===name));
+  assert.ok(statement, `Missing Home callback ${name}`);
+  const js=ts.transpileModule(statement.getText(source),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS}}).outputText;
+  return new Function('useCallback',...Object.keys(bindings),`${js}\nreturn ${name};`)(fn=>fn,...Object.values(bindings));
+}
 
 test('Store exposes pending until local disk and durable outbox acknowledge create/update/delete', async () => {
   await fresh(); gate = deferred(); let block;
@@ -184,4 +196,168 @@ test('WAL recovery cannot resurrect a later explicitly deleted entity in the UI'
   assert.equal(store.data.scheduleBlocks.length, 0);
   assert.equal(journal.outbox.length, 2);
   assert.equal(journal.outbox.at(-1).operation, 'delete');
+});
+
+test('state submission waits for ACK, coalesces taps and triggers follow-up exactly once', async () => {
+  await fresh(); gate = deferred(); const submission = new DurableSubmission(); let finished = 0, created = 0, first, second;
+  const createState = () => { created++; return store.createStateCheckIn({ date: plan.date, timestamp: `${plan.date}T10:00:00Z`, overall: 2 }); };
+  const finish = async () => { finished++; };
+  await act(async () => {
+    first = submission.run(createState, store.waitForLocalWrites, store.retryLocalWrites, finish);
+    second = submission.run(createState, store.waitForLocalWrites, store.retryLocalWrites, finish);
+  });
+  assert.equal(first, second); assert.equal(submission.hasPending, true);
+  assert.equal(created, 1); assert.equal(finished, 0); assert.equal(disk.stateCheckIns.length, 0);
+  await act(async () => { gate.resolve(); await first; });
+  assert.equal(disk.stateCheckIns.length, 1); assert.equal(finished, 1); assert.equal(submission.hasPending, false);
+});
+
+test('failed state submission retries the original observation instead of creating a second one', async () => {
+  await fresh(); failSave = true; const submission = new DurableSubmission(); let finished = 0;
+  const createState = () => store.createStateCheckIn({ date: plan.date, timestamp: `${plan.date}T10:00:00Z`, overall: 2 });
+  const finish = async () => { finished++; };
+  await act(async () => { await assert.rejects(submission.run(createState, store.waitForLocalWrites, store.retryLocalWrites, finish)); });
+  const id = store.data.stateCheckIns[0].id;
+  assert.equal(finished, 0); assert.equal(submission.hasPending, true);
+  await act(async () => { await submission.run(() => { throw Error('MUST_NOT_CREATE'); }, store.waitForLocalWrites, store.retryLocalWrites, finish); });
+  assert.equal(disk.stateCheckIns.length, 1); assert.equal(disk.stateCheckIns[0].id, id);
+  assert.equal(journal.outbox.filter(row => row.entityId === id).length, 1); assert.equal(finished, 1);
+});
+
+test('compatibility-cache failure retains the acknowledged state and only retries follow-up', async () => {
+  await fresh(); const submission = new DurableSubmission(); let attempts = 0;
+  const finish = async () => { if (++attempts === 1) throw Error('TEST_CACHE_FAILURE'); };
+  await act(async () => { await assert.rejects(submission.run(() => store.createStateCheckIn({date:plan.date,timestamp:`${plan.date}T10:00:00Z`,overall:2}),store.waitForLocalWrites,store.retryLocalWrites,finish)); });
+  const commits = commitCalls;
+  await act(async () => { await submission.run(() => { throw Error('MUST_NOT_CREATE'); }, async () => { throw Error('NO_SECOND_ACK'); }, async () => { throw Error('NO_SECOND_RETRY'); }, finish); });
+  assert.equal(commitCalls, commits); assert.equal(disk.stateCheckIns.length, 1); assert.equal(attempts, 2);
+});
+
+test('distinct Instant Read feedback values survive failed write retry and remount on the same DecisionResult', async () => {
+  await fresh(); let result;
+  await act(async () => {
+    result=store.addDecisionResult({mode:'instant_micro',trigger:'state_checkin',source:'legacy_fallback',schemaVersion:'test',headlineInsight:'TEST isolated'});
+    await store.waitForLocalWrites();
+    store.updateDecisionResultFeedback(result.id,'useful'); await store.waitForLocalWrites();
+  });
+  assert.equal(disk.decisionResults[0].userFeedback.rating,'useful');
+  failSave=true;
+  await act(async()=>{store.updateDecisionResultFeedback(result.id,'not_useful');await assert.rejects(store.waitForLocalWrites());});
+  assert.equal(disk.decisionResults[0].userFeedback.rating,'useful');
+  await act(async()=>{await store.retryLocalWrites();});
+  await act(async()=>tree.unmount());await mount();
+  assert.equal(store.data.decisionResults.length,1);assert.equal(store.data.decisionResults[0].id,result.id);
+  assert.equal(store.data.decisionResults[0].userFeedback.rating,'not_useful');
+});
+
+test('actual Today feedback callback reports saved only after durability and never closes a newer Instant Read', async () => {
+  await fresh();let result;
+  await act(async()=>{result=store.addDecisionResult({mode:'instant_micro',trigger:'state_checkin',source:'legacy_fallback',schemaVersion:'test',headlineInsight:'TEST'});await store.waitForLocalWrites();});
+  let status='idle',expanded=true,rating=null;const request={current:1};
+  const bindings={instantDecisionResultId:result.id,instantDecisionRequestRef:request,
+    instantFeedbackBusyRef:{current:false},instantFeedbackRetryRef:{current:false},
+    setInstantFeedbackStatus:value=>status=value,setInstantDecisionFeedback:value=>rating=value,setInstantReadExpanded:value=>expanded=value,
+    updateDecisionResultFeedback:(...args)=>store.updateDecisionResultFeedback(...args),waitForLocalWrites:()=>store.waitForLocalWrites(),retryLocalWrites:()=>store.retryLocalWrites()};
+  const feedback=homeCallback('markInstantDecisionFeedback',bindings);
+  gate=deferred();let pending;
+  await act(async()=>{pending=feedback('useful');});
+  assert.equal(status,'saving');assert.equal(rating,'useful');assert.equal(expanded,true);
+  await act(async()=>{gate.resolve();await pending;});gate=undefined;
+  assert.equal(status,'saved');assert.equal(expanded,false);
+  failSave=true;expanded=true;
+  await act(async()=>{await feedback('not_useful');});assert.equal(status,'error');assert.equal(expanded,true);
+  await act(async()=>{await feedback('not_useful');});assert.equal(status,'saved');assert.equal(disk.decisionResults[0].userFeedback.rating,'not_useful');
+  gate=deferred();expanded=true;
+  await act(async()=>{pending=feedback('useful');});request.current++;status='idle';
+  await act(async()=>{gate.resolve();await pending;});gate=undefined;
+  assert.equal(status,'idle');assert.equal(expanded,true);assert.equal(disk.decisionResults.length,1);
+});
+
+test('actual Today state callback with real Store emits no success or AI before ACK and retries the same observation', async()=>{
+  await fresh();const submission=new DurableSubmission();let notices=0,ai=0,cache=0;
+  const bindings={stateSubmission:{current:submission},createStateCheckIn:(...args)=>store.createStateCheckIn(...args),today:()=>plan.date,
+    timeBlockForDate:()=> 'morning',stateLabelForValue:()=> 'low',waitForLocalWrites:()=>store.waitForLocalWrites(),retryLocalWrites:()=>store.retryLocalWrites(),
+    AsyncStorage:{setItem:async()=>{cache++;}},dailyStateKey:date=>date,persistCurrentState:async()=>{},setDailyState:()=>{},trackEvent:()=>{},
+    generateInstantDecisionBrief:()=>ai++,Alert:{alert:()=>notices++},t:()=> 'TEST saved',lang:'en'};
+  const save=homeCallback('saveStateCheckIn',bindings);
+  failSave=true;
+  await act(async()=>{await assert.rejects(save(2,{focus:2},{entry:{id:'TEST_CACHE',timestamp:`${plan.date}T10:00:00Z`},average:2}));});
+  assert.equal(ai,0);assert.equal(notices,0);assert.equal(cache,0);
+  await act(async()=>{await save(4,{focus:4});});
+  assert.equal(disk.stateCheckIns.length,1);assert.equal(disk.stateCheckIns[0].overall,2);
+  assert.equal(ai,1);assert.equal(notices,1);assert.equal(cache,1);
+});
+
+test('actual Capture submit retains raw input on failed ACK and parses the original record only once after retry', async () => {
+  await fresh(); let posting=false,failed=false,input='TEST raw text',parsed=[];
+  const submission={current:new DurableSubmission()};
+  const submit=homeCallback('submitCapture',{
+    isPosting:false,captureSubmission:submission,setIsPosting:value=>posting=value,setPostingFailed:value=>failed=value,
+    setInputText:value=>input=value,addRawCapture:(...args)=>store.addRawCapture(...args),updateRawCapture:(...args)=>store.updateRawCapture(...args),
+    startCaptureFriction:()=>{},waitForLocalWrites:()=>store.waitForLocalWrites(),retryLocalWrites:()=>store.retryLocalWrites(),
+    triggerParse:(id,text)=>parsed.push({id,text}),
+  },'HomeSmartCapture');
+  failSave=true;
+  await act(async()=>{await submit(input,'text');});
+  const original=store.data.rawCaptures[0];
+  assert.equal(failed,true);assert.equal(posting,false);assert.equal(input,'TEST raw text');assert.equal(parsed.length,0);
+  await act(async()=>{await submit('TEST changed text must not replace original','text');});
+  assert.equal(failed,false);assert.equal(input,'');assert.equal(disk.rawCaptures.length,1);
+  assert.deepEqual(parsed,[{id:original.id,text:'TEST raw text'}]);
+  // Unconfirmed raw captures stay local under the existing contract: retry the failed disk write.
+  assert.equal(commitCalls,2);
+});
+
+test('actual structured quick Capture waits for both writes and never calls the parser', async () => {
+  await fresh();let parsed=0,failed=false;const submission={current:new DurableSubmission()};
+  const submit=homeCallback('submitCapture',{
+    isPosting:false,captureSubmission:submission,setIsPosting:()=>{},setPostingFailed:value=>failed=value,setInputText:()=>{throw Error('DO_NOT_CLEAR_UNRELATED_INPUT');},
+    addRawCapture:(...args)=>store.addRawCapture(...args),updateRawCapture:(...args)=>store.updateRawCapture(...args),startCaptureFriction:()=>{},
+    waitForLocalWrites:()=>store.waitForLocalWrites(),retryLocalWrites:()=>store.retryLocalWrites(),triggerParse:()=>parsed++,
+  },'HomeSmartCapture');
+  const payload={type:'study',fields:{},entries:[],insight:{zh:'',en:''},crossLinks:[],matchedSkillIds:[]};
+  gate=deferred();let pending;
+  await act(async()=>{pending=submit('TEST explicit choice','recent',payload);});
+  assert.equal(disk.rawCaptures.length,0);
+  await act(async()=>{gate.resolve();await pending;});gate=undefined;
+  assert.equal(failed,false);assert.equal(parsed,0);assert.equal(disk.rawCaptures.length,1);
+  assert.equal(disk.rawCaptures[0].parseStatus,'done');assert.deepEqual(disk.rawCaptures[0].parsed,payload);
+  assert.equal(commitCalls,2);
+});
+
+test('capture confirmation retry retains every created entity and publishes feedback only after the whole batch ACK', async()=>{
+  await fresh();const submission=new DurableSubmission();let feedback=0,created=0;
+  const createBatch=()=>{
+    created++;
+    const goal=store.addCategory({name:'TEST capture goal',emoji:''});
+    const skill=store.addSkill({name:'TEST capture skill',categoryId:goal.id,goalIds:[goal.id],progressType:'time_based',taskType:'deep_study'});
+    const capture=store.addRawCapture('TEST batch only');
+    const record=store.createExecutionLog({id:`capture-${capture.id}-0`,date:plan.date,title:'TEST batch only',linkedSkillId:skill.id,durationMinutes:7,structuredData:{sourceCaptureId:capture.id,sourceCaptureEntryIndex:0}});
+    return {goal,skill,capture,record};
+  };
+  failSave=true;
+  await act(async()=>{await assert.rejects(submission.run(createBatch,store.waitForLocalWrites,store.retryLocalWrites,async()=>{feedback++;}));});
+  assert.equal(feedback,0);const ids=[...store.data.categories,...store.data.skills,...store.data.rawCaptures,...store.data.executionLogs].map(row=>row.id);
+  await act(async()=>{await submission.run(createBatch,store.waitForLocalWrites,store.retryLocalWrites,async()=>{feedback++;});});
+  assert.equal(created,1);assert.equal(feedback,1);
+  assert.deepEqual([...disk.categories,...disk.skills,...disk.rawCaptures,...disk.executionLogs].map(row=>row.id),ids);
+  assert.equal(journal.pendingApply.length,0);
+  // Execution projection legitimately updates Goal/Skill aggregates as a second mutation.
+  assert.equal(journal.outbox.filter(row=>row.entityId===disk.executionLogs[0].id).length,1);
+});
+
+test('actual after-state callback does not claim saved before ACK and retry keeps the selected meanings', async()=>{
+  await fresh();let log;
+  await act(async()=>{log=store.createExecutionLog({id:'TEST_AFTER',date:plan.date,title:'TEST',structuredData:{sourceCaptureId:'TEST_RAW'}});await store.waitForLocalWrites();});
+  let status='idle',saving=false,failed=false;
+  const bindings={afterStateSaving:false,setAfterStateSaving:value=>saving=value,setAfterStateFailed:value=>failed=value,
+    afterStateSubmission:{current:new DurableSubmission()},afterStateDraft:{energy:'up',focus:'same',mood:'down'},savedLogIds:[log.id],data:store.data,
+    updateExecutionLog:(...args)=>store.updateExecutionLog(...args),waitForLocalWrites:()=>store.waitForLocalWrites(),retryLocalWrites:()=>store.retryLocalWrites(),setAfterStateStatus:value=>status=value};
+  const persist=homeCallback('persistAfterState',bindings,'HomeCapturePending');
+  failSave=true;await act(async()=>{await persist(false);});
+  assert.equal(status,'idle');assert.equal(failed,true);assert.equal(saving,false);
+  await act(async()=>{await persist(true);});
+  assert.equal(failed,false);assert.equal(status,'saved');assert.equal(disk.executionLogs.length,1);
+  assert.deepEqual({...disk.executionLogs[0].structuredData.afterStateDelta,capturedAt:undefined},{energy:'up',focus:'same',mood:'down',skipped:false,capturedAt:undefined});
+  await act(async()=>tree.unmount());await mount();assert.equal(store.data.executionLogs[0].structuredData.afterStateDelta.focus,'same');
 });

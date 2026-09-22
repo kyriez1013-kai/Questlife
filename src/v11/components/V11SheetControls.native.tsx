@@ -185,7 +185,7 @@ export function V11StickySheetFooter(p: Props<'V11StickySheetFooter'>) {
   return <View onLayout={event => setWidth(event.nativeEvent.layout.width)} style={{ gap: c.f.spacing.sm }}>
     {p.message ? <Text accessibilityLiveRegion="polite" style={[c.f.type.secondary, { color: p.messageStatus === 'error' ? p.theme.control.error : p.theme.text.secondary }]}>{p.message}</Text> : null}
     <View style={{ gap: c.f.spacing.sm, flexDirection: horizontal ? 'row' : 'column', alignItems: 'stretch' }}>
-      <V11SheetButton label={p.cancelLabel} onPress={p.onCancel} theme={p.theme} variant="secondary" style={{ flexGrow: 1, flexBasis: horizontal ? 0 : 'auto' }} />
+      <V11SheetButton disabled={p.cancelDisabled} label={p.cancelLabel} onPress={p.onCancel} theme={p.theme} variant="secondary" style={{ flexGrow: 1, flexBasis: horizontal ? 0 : 'auto' }} />
       <V11SheetButton label={p.saveLabel} onPress={p.onSave} disabled={p.disabled} loading={p.saving} theme={p.theme} variant="primary" style={{ flexGrow: 1, flexBasis: horizontal ? 0 : 'auto' }} />
     </View>
   </View>;

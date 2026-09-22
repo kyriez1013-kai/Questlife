@@ -567,6 +567,7 @@ export function V11SelectionRow({
 
 export function V11StickySheetFooter({
   cancelLabel,
+  cancelDisabled = false,
   disabled = false,
   message,
   messageStatus = 'default',
@@ -577,6 +578,7 @@ export function V11StickySheetFooter({
   theme,
 }: {
   cancelLabel: string;
+  cancelDisabled?: boolean;
   disabled?: boolean;
   message?: string;
   messageStatus?: ControlStatus;
@@ -600,7 +602,7 @@ export function V11StickySheetFooter({
         </WebText>
       ) : null}
       <WebView dataSet={{ 'v11-control-role': 'footer-actions' }}>
-        <V11SheetButton label={cancelLabel} onPress={onCancel} style={{ flex: 1 }} theme={theme} variant="secondary" />
+        <V11SheetButton disabled={cancelDisabled} label={cancelLabel} onPress={onCancel} style={{ flex: 1 }} theme={theme} variant="secondary" />
         <V11SheetButton disabled={disabled} label={saveLabel} loading={saving} onPress={onSave} style={{ flex: 1 }} theme={theme} variant="primary" />
       </WebView>
     </WebView>

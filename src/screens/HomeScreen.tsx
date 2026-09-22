@@ -18,6 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useStore } from '../store';
+import { DurableSubmission } from '../utils/durableSubmission';
 import { recordSourceBindings, timerRecordProvenance } from '../utils/recordSubmission';
 import { theme } from '../theme';
 import { getQuestTheme, getStateToneColor, questLayout } from '../design/tokens';
@@ -495,6 +496,8 @@ export default function HomeScreen() {
     data,
     createExecutionLog,
     waitForExecutionLog,
+    waitForLocalWrites,
+    retryLocalWrites,
     deleteExecutionLog,
     createRescueLog,
     completeRescueStep,
@@ -527,7 +530,9 @@ export default function HomeScreen() {
   const [instantReadExpanded, setInstantReadExpanded] = useState(true);
   const [instantFeedbackStatus, setInstantFeedbackStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const instantDecisionRequestRef = useRef(0);
-  const instantFeedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const instantFeedbackBusyRef = useRef(false);
+  const instantFeedbackRetryRef = useRef(false);
+  const stateSubmission = useRef(new DurableSubmission<{ checkIn: StateCheckIn; details?: Partial<StateCheckIn>; compatibility?: { entry: CurrentState; average: DailyStateValue } }>());
 
   const [dailyDecisionBrief, setDailyDecisionBrief] = useState<DecisionBriefResult | null>(null);
   const [dailyDecisionLoading, setDailyDecisionLoading] = useState(false);
@@ -740,10 +745,6 @@ export default function HomeScreen() {
     setInstantReadExpanded(!latestPersistedInstantDecision.userFeedback);
     setInstantDecisionStatus(latestPersistedInstantDecision.source === 'ai' ? 'ready' : 'fallback');
   }, [instantDecisionStatus, latestPersistedInstantDecision]);
-
-  useEffect(() => () => {
-    if (instantFeedbackTimerRef.current) clearTimeout(instantFeedbackTimerRef.current);
-  }, []);
 
   const effectiveCurrentState: CurrentState | null = latestStateCheckIn
     ? {
@@ -1359,8 +1360,9 @@ export default function HomeScreen() {
   );
 
   const persistCurrentState = useCallback(async (entry: CurrentState) => {
-    const dateStr = today();
-    const nextHistory = [entry, ...stateHistory].slice(0, 8);
+    const recorded = new Date(entry.timestamp);
+    const dateStr = `${recorded.getFullYear()}-${String(recorded.getMonth() + 1).padStart(2, '0')}-${String(recorded.getDate()).padStart(2, '0')}`;
+    const nextHistory = [entry, ...stateHistory.filter(row => row.id !== entry.id)].slice(0, 8);
     await AsyncStorage.multiSet([
       [currentStateKey(dateStr), JSON.stringify(entry)],
       [stateHistoryKey(dateStr), JSON.stringify(nextHistory)],
@@ -1405,14 +1407,13 @@ export default function HomeScreen() {
   const generateInstantDecisionBrief = useCallback((checkIn: StateCheckIn) => {
     const requestId = Date.now();
     instantDecisionRequestRef.current = requestId;
-    if (instantFeedbackTimerRef.current) clearTimeout(instantFeedbackTimerRef.current);
     setInstantDecisionStatus('loading');
     setInstantDecisionDebugError('');
     setInstantDecisionFeedback(null);
     setInstantFeedbackStatus('idle');
     setInstantDecisionResultId('');
     setInstantReadExpanded(true);
-    const dataWithCheckIn = { ...data, stateCheckIns: [...(data.stateCheckIns || []), checkIn] };
+    const dataWithCheckIn = { ...data, stateCheckIns: [...(data.stateCheckIns || []).filter(row => row.id !== checkIn.id), checkIn] };
     const payload = buildDecisionPayload(dataWithCheckIn, { mode: 'instant_micro', trigger: 'state_checkin', locale: lang });
     payload.current_state = {
       timestamp: checkIn.timestamp,
@@ -1576,15 +1577,29 @@ export default function HomeScreen() {
       });
   }, [addDecisionResult, data, lang]);
 
-  const markInstantDecisionFeedback = useCallback((feedback: 'useful' | 'not_useful') => {
+  const markInstantDecisionFeedback = useCallback(async (feedback: 'useful' | 'not_useful') => {
+    if (instantFeedbackBusyRef.current) return;
     if (!instantDecisionResultId) {
       setInstantFeedbackStatus('error');
       return;
     }
-    if (instantFeedbackTimerRef.current) clearTimeout(instantFeedbackTimerRef.current);
     setInstantDecisionFeedback(feedback);
     setInstantFeedbackStatus('saving');
-    updateDecisionResultFeedback(instantDecisionResultId, feedback);
+    instantFeedbackBusyRef.current = true;
+    const requestId = instantDecisionRequestRef.current;
+    try {
+      if (instantFeedbackRetryRef.current) await retryLocalWrites();
+      updateDecisionResultFeedback(instantDecisionResultId, feedback);
+      instantFeedbackRetryRef.current = true;
+      await waitForLocalWrites();
+      instantFeedbackRetryRef.current = false;
+      if (requestId !== instantDecisionRequestRef.current) return;
+      setInstantFeedbackStatus('saved');
+      setInstantReadExpanded(false);
+    } catch {
+      if (requestId === instantDecisionRequestRef.current) setInstantFeedbackStatus('error');
+      return;
+    } finally { instantFeedbackBusyRef.current = false; }
     try {
       if (typeof window !== 'undefined') {
         window.localStorage?.setItem('questlife_decision_ai_last_feedback', JSON.stringify({
@@ -1597,37 +1612,42 @@ export default function HomeScreen() {
     } catch {
       // DecisionResult remains the feedback source of truth; this key is compatibility-only.
     }
-    instantFeedbackTimerRef.current = setTimeout(() => {
-      setInstantFeedbackStatus('saved');
-      setInstantReadExpanded(false);
-    }, 450);
-  }, [instantDecisionResultId, updateDecisionResultFeedback]);
+  }, [instantDecisionResultId, updateDecisionResultFeedback, waitForLocalWrites, retryLocalWrites]);
 
   const markDailyDecisionFeedback = useCallback((feedback: 'useful' | 'not_useful') => {
     setDailyDecisionFeedback(feedback);
     if (dailyDecisionResultId) updateDecisionResultFeedback(dailyDecisionResultId, feedback);
   }, [dailyDecisionResultId, updateDecisionResultFeedback]);
 
-  const saveStateCheckIn = useCallback(async (overall: DailyStateValue, details?: Partial<StateCheckIn>) => {
-    const now = new Date();
-    const checkIn = createStateCheckIn({
-      date: today(),
-      timestamp: now.toISOString(),
-      timeBlock: timeBlockForDate(now),
-      overall,
-      label: stateLabelForValue(overall),
-      ...details,
+  const saveStateCheckIn = useCallback(async (overall: DailyStateValue, details?: Partial<StateCheckIn>, compatibility?: { entry: CurrentState; average: DailyStateValue }) => {
+    await stateSubmission.current.run(() => {
+      const now = new Date();
+      const checkIn = createStateCheckIn({
+        date: today(),
+        timestamp: now.toISOString(),
+        timeBlock: timeBlockForDate(now),
+        overall,
+        label: stateLabelForValue(overall),
+        ...details,
+      });
+      return { checkIn, details, compatibility };
+    }, waitForLocalWrites, retryLocalWrites, async ({ checkIn, details: savedDetails, compatibility: savedCompatibility }) => {
+      if (savedCompatibility) {
+        await AsyncStorage.setItem(dailyStateKey(checkIn.date), String(savedCompatibility.average));
+        await persistCurrentState(savedCompatibility.entry);
+        setDailyState(savedCompatibility.average);
+      }
+      trackEvent('state_checkin_saved', {
+        overall: checkIn.overall,
+        label: checkIn.label,
+        timeBlock: checkIn.timeBlock,
+        hasDetails: !!savedDetails?.energy || !!savedDetails?.focus || !!savedDetails?.mood || !!savedDetails?.physical || !!savedDetails?.stress,
+        hasContext: !!savedDetails?.context && Object.values(savedDetails.context).some(Boolean),
+      }, { page: 'today' });
+      generateInstantDecisionBrief(checkIn);
+      Alert.alert(t(lang, 'stateCheckInSaved'));
     });
-    trackEvent('state_checkin_saved', {
-      overall,
-      label: checkIn.label,
-      timeBlock: checkIn.timeBlock,
-      hasDetails: !!details?.energy || !!details?.focus || !!details?.mood || !!details?.physical || !!details?.stress,
-      hasContext: !!details?.context && Object.values(details.context).some(Boolean),
-    }, { page: 'today' });
-    generateInstantDecisionBrief(checkIn);
-    Alert.alert(t(lang, 'stateCheckInSaved'));
-  }, [createStateCheckIn, generateInstantDecisionBrief, lang]);
+  }, [createStateCheckIn, generateInstantDecisionBrief, lang, waitForLocalWrites, retryLocalWrites, persistCurrentState]);
 
   const saveStateAssessment = useCallback(async () => {
     const avg = Math.round((stateEnergy + stateFocus + stateMood) / 3) as DailyStateValue;
@@ -1640,9 +1660,6 @@ export default function HomeScreen() {
       health: stateHealth,
       note: stateNote.trim() || undefined,
     };
-    await AsyncStorage.setItem(dailyStateKey(today()), String(avg));
-    setDailyState(avg);
-    await persistCurrentState(entry);
     await saveStateCheckIn(stateOverall, {
       energy: stateEnergy,
       focus: stateFocus,
@@ -1658,9 +1675,9 @@ export default function HomeScreen() {
         socialDrain: contextSocialDrain,
       },
       note: stateNote.trim() || undefined,
-    });
+    }, { entry, average: avg });
     setStateModal(false);
-  }, [contextAfterExam, contextCaffeine, contextPostWorkout, contextSick, contextSleepQuality, contextSocialDrain, persistCurrentState, saveStateCheckIn, stateEnergy, stateFocus, stateMood, stateHealth, stateNote, stateOverall, statePhysical, stateStress]);
+  }, [contextAfterExam, contextCaffeine, contextPostWorkout, contextSick, contextSleepQuality, contextSocialDrain, saveStateCheckIn, stateEnergy, stateFocus, stateMood, stateHealth, stateNote, stateOverall, statePhysical, stateStress]);
 
   const saveV11StateAssessment = useCallback(async () => {
     if (v11StateSheetStatus === 'saving') return;
@@ -2863,7 +2880,7 @@ export default function HomeScreen() {
               label: option.label,
               toneColor: getStateToneColor(option.value, questTheme),
             }))}
-            onSelect={(value) => saveStateCheckIn(value as DailyStateValue)}
+            onSelect={(value) => { void saveStateCheckIn(value as DailyStateValue).catch(() => Alert.alert(t(lang, 'rebaselineStateSaveError'))); }}
             onOpenDetailed={openStateModal}
           />
           {instantDecisionStatus !== 'idle' ? (
@@ -3366,16 +3383,17 @@ export default function HomeScreen() {
         footer={v11TodayEnabled ? (
           <V11StickySheetFooter
             cancelLabel={t(lang, 'cancel')}
+            cancelDisabled={v11StateSheetStatus !== 'idle'}
             message={v11StateSheetStatus === 'error' ? t(lang, 'rebaselineStateSaveError') : undefined}
             messageStatus={v11StateSheetStatus === 'error' ? 'error' : 'default'}
-            onCancel={() => setStateModal(false)}
+            onCancel={() => { if (!stateSubmission.current.hasPending) setStateModal(false); }}
             onSave={saveV11StateAssessment}
             saveLabel={t(lang, v11StateSheetStatus === 'saving' ? 'rebaselineStateSaving' : 'save')}
             saving={v11StateSheetStatus === 'saving'}
             theme={v11ThemeTokens}
           />
         ) : undefined}
-        onClose={() => setStateModal(false)}
+        onClose={() => { if (!stateSubmission.current.hasPending) setStateModal(false); }}
         reducedMotion={v11EffectiveReducedMotion}
         sheet="state"
         theme={v11ThemeTokens}
@@ -3385,6 +3403,8 @@ export default function HomeScreen() {
       >
         <WebView
           dataSet={v11TodayEnabled ? { 'v11-form': 'state', 'v11-rebaseline-role': 'today-sheet-form' } : undefined}
+          pointerEvents={v11StateSheetStatus !== 'idle' ? 'none' : 'auto'}
+          importantForAccessibility={v11StateSheetStatus !== 'idle' ? 'no-hide-descendants' : 'auto'}
         >
         {!v11TodayEnabled ? <Text style={styles.h2}>{t(lang, 'detailedCheckIn')}</Text> : null}
         <Text style={[styles.stateFormHint, v11TodayEnabled ? { color: questTheme.colors.textMuted } : null]}>{t(lang, 'logStateNow')}</Text>
@@ -3609,15 +3629,16 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
+        </WebView>
+        {!v11TodayEnabled && v11StateSheetStatus === 'error' ? <Text accessibilityRole="alert">{t(lang, 'rebaselineStateSaveError')}</Text> : null}
         {!v11TodayEnabled ? <View style={{ flexDirection: 'row', gap: 10, marginTop: 18 }}>
-          <TouchableOpacity style={[styles.btn, styles.btnGhost, { flex: 1 }]} onPress={() => setStateModal(false)}>
+          <TouchableOpacity disabled={v11StateSheetStatus !== 'idle'} style={[styles.btn, styles.btnGhost, { flex: 1 }]} onPress={() => { if (!stateSubmission.current.hasPending) setStateModal(false); }}>
             <Text style={styles.btnGhostText}>{t(lang, 'cancel')}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.btn, { flex: 1, backgroundColor: accent }]} onPress={saveStateAssessment}>
+          <TouchableOpacity disabled={v11StateSheetStatus === 'saving'} style={[styles.btn, { flex: 1, backgroundColor: accent }]} onPress={saveV11StateAssessment}>
             <Text style={styles.btnText}>{t(lang, 'save')}</Text>
           </TouchableOpacity>
         </View> : null}
-        </WebView>
       </TodaySheetForm>
 
       <Modal visible={rescueOpen} animationType="slide" onRequestClose={() => setRescueOpen(false)}>
