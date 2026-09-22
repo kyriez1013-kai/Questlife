@@ -269,6 +269,29 @@ VERIFIED_DEVICE, AWAITING_OWNER, BLOCKED. Unchecked entries remain unfinished.
   collections preserved exactly; both cleanup backups have zero observations
   and derived execution records. No owner observation or neutral state added.
 
+### Exact execution-feedback entry (2026-09-22)
+
+- On actual `9555c5f` candidate UI, a signed-out disposable custom 1-minute
+  record displayed the corrected activity wording in History. This also exposed
+  another defect: Today "Review latest feedback" opened the daily decision
+  explanation instead of that execution's feedback.
+- `d74c98b` routes this existing todayCommand to the existing Activity History
+  sheet with the exact captured ExecutionLog ID. Normal History opens its list,
+  not a leftover selection. Scroll restoration, deletion, Store/AI handlers,
+  feedback values and persistence are unchanged. No second feedback model.
+- Five real component tests cover first/middle/final IDs, sorting/insertion,
+  delete target, missing record, missing feedback, back, close and reopen.
+  **5/5 PASS**. Full verifier on `d6effe7`: **27/27 suites PASS**, including
+  TypeScript, Web export and zero known dependency advisories. Final deployed
+  CTA readback and temporary record cleanup follow this checkpoint.
+- `d6effe7` adds a draft-only internal candidate publisher. Its existing signed
+  APK digest must match both local metadata and GitHub's uploaded asset digest.
+  The exact source is pinned; published releases cannot be mutated. Repeated
+  execution reused the same draft/asset, without duplicate upload. The first
+  archived artifact is `9555c5f` (historical after the CTA fix). Draft release
+  and asset access require repository write access; no public release or owner
+  Production promotion was performed.
+
 ### Active completeness correction (2026-09-22)
 
 Continued from clean `839a3b8` on `release/questlife-v1`; preserved all later

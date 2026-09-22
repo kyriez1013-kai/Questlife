@@ -3,24 +3,24 @@
 > expo export --platform web
 
 Starting Metro Bundler
-| (node:66308) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (node:67740) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 | (Use `node --trace-warnings ...` to show where the warning was created)
-| (node:66310) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (node:67743) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 | (Use `node --trace-warnings ...` to show where the warning was created)
-| (node:66313) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (node:67742) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 | (Use `node --trace-warnings ...` to show where the warning was created)
-| (node:66312) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (node:67744) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 | (Use `node --trace-warnings ...` to show where the warning was created)
-| (node:66311) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (node:67741) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 | (Use `node --trace-warnings ...` to show where the warning was created)
-| (node:66309) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (node:67745) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 | (Use `node --trace-warnings ...` to show where the warning was created)
-| (node:66314) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (node:67746) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 | (Use `node --trace-warnings ...` to show where the warning was created)
-Web ./index.ts ▓▓▓▓▓▓▓▓▓▓░░░░░░ 65.7% (114/271)
-Web ./index.ts ▓▓▓▓▓▓▓▓▓▓░░░░░░ 65.7% (621/923)
-Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 85.3% (1085/1195)
-Web Bundled 10544ms index.ts (1316 modules)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓░░░░░░ 62.7% (196/471)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓░░░░░░ 62.7% (611/890)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 97.6% (1238/1253)
+Web Bundled 10042ms index.ts (1316 modules)
 
 › Assets (11):
 node_modules/@react-navigation/elements/lib/module/assets/back-icon-mask.0a328cd9c1afd0afe8e3b1ec5165b1b4.png (653 B)
@@ -46,7 +46,7 @@ _expo/static/js/web/driver_analysis_compact-b7ba3469c5e2996a5b1069852264d186.js 
 _expo/static/js/web/forming_history_analysis_v1-e946de4b9b4af427d01cae385714f705.js (3.85 kB)
 _expo/static/js/web/forming_history_full-ad2f2df13329d9ada968894605089aea.js (11.5 kB)
 _expo/static/js/web/goal_full-7313326587921f5fc315f42057261fd2.js (27.3 kB)
-_expo/static/js/web/index-525f28005473302218dc9acd15527955.js (4.41 MB)
+_expo/static/js/web/index-f66dd47851b7465c70d573d22017222f.js (4.41 MB)
 _expo/static/js/web/InsightsV3Screen-a979478acb9b9b24e78972c5c0a18293.js (121 kB)
 _expo/static/js/web/lightweight-charts-5c4d4e1f31141aa35f787a1e5dc4d408.js (201 kB)
 _expo/static/js/web/mature_market_analysis_v1-30ea8fd82cf646f50091b7aa7cac49e7.js (1.18 MB)

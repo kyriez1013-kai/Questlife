@@ -1,16 +1,16 @@
-✔ custom activity baseline names no nonexistent skill (zh) (0.639041ms)
-✔ custom activity baseline names no nonexistent skill (en) (0.069ms)
-✔ existing linked skill preserves its baseline wording (0.063708ms)
-✔ backdated activity never compares against future or equal-time records (0.075292ms)
-✔ chooses the latest strictly earlier comparable record (0.34ms)
-✔ missing or invalid metric stays unknown (null) (0.067584ms)
-✔ missing or invalid metric stays unknown (undefined) (0.048958ms)
-✔ missing or invalid metric stays unknown () (0.039416ms)
-✔ missing or invalid metric stays unknown ( ) (0.045042ms)
-✔ missing or invalid metric stays unknown (false) (0.072417ms)
-✔ missing or invalid metric stays unknown (NaN) (0.041292ms)
-✔ missing or invalid metric stays unknown (Infinity) (0.030125ms)
-✔ numeric observations and existing strength comparison remain intact (0.095958ms)
+✔ custom activity baseline names no nonexistent skill (zh) (0.831458ms)
+✔ custom activity baseline names no nonexistent skill (en) (0.094833ms)
+✔ existing linked skill preserves its baseline wording (0.071167ms)
+✔ backdated activity never compares against future or equal-time records (0.080292ms)
+✔ chooses the latest strictly earlier comparable record (0.356708ms)
+✔ missing or invalid metric stays unknown (null) (0.070292ms)
+✔ missing or invalid metric stays unknown (undefined) (0.046792ms)
+✔ missing or invalid metric stays unknown () (0.042417ms)
+✔ missing or invalid metric stays unknown ( ) (0.052375ms)
+✔ missing or invalid metric stays unknown (false) (0.082292ms)
+✔ missing or invalid metric stays unknown (NaN) (0.045625ms)
+✔ missing or invalid metric stays unknown (Infinity) (0.031042ms)
+✔ numeric observations and existing strength comparison remain intact (0.109458ms)
 ℹ tests 13
 ℹ suites 0
 ℹ pass 13
@@ -18,4 +18,4 @@
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 176.027042
+ℹ duration_ms 181.401
