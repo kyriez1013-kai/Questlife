@@ -27,6 +27,7 @@ type Props = {
   feedbackTitle: string;
   getRecordFeedback: (id: string) => { detail: string; summary: string } | undefined;
   historyTitle: string;
+  initialRecordId?: string | null;
   loadMoreLabel: string;
   onClose: () => void;
   onDeleteRecord: (id: string) => void;
@@ -43,6 +44,7 @@ export default function V11ActivityHistorySheet({
   feedbackTitle,
   getRecordFeedback,
   historyTitle,
+  initialRecordId = null,
   loadMoreLabel,
   onClose,
   onDeleteRecord,
@@ -61,6 +63,10 @@ export default function V11ActivityHistorySheet({
     () => selectedRecord ? getRecordFeedback(selectedRecord.id) : undefined,
     [getRecordFeedback, selectedRecord],
   );
+
+  useEffect(() => {
+    if (visible) setSelectedRecordId(initialRecordId);
+  }, [initialRecordId, visible]);
 
   useEffect(() => {
     if (!visible) {

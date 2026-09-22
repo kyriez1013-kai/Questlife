@@ -548,6 +548,7 @@ export default function HomeScreen() {
   const [v11EvidenceExpanded, setV11EvidenceExpanded] = useState(false);
   const [v11CaptureOpen, setV11CaptureOpen] = useState(false);
   const [v11ActivityHistoryOpen, setV11ActivityHistoryOpen] = useState(false);
+  const [v11ActivityRecordId, setV11ActivityRecordId] = useState<string | null>(null);
   const [adaptiveDecisionOpen, setAdaptiveDecisionOpen] = useState(false);
   const v11TodayScrollRef = useRef<any>(null);
   const v11TodayScrollOffsetRef = useRef(0);
@@ -2126,6 +2127,7 @@ export default function HomeScreen() {
 
   const openV11ActivityHistory = useCallback(() => {
     rememberV11TodayScroll();
+    setV11ActivityRecordId(null);
     setV11ActivityHistoryOpen(true);
   }, [rememberV11TodayScroll]);
 
@@ -2224,8 +2226,9 @@ export default function HomeScreen() {
       return;
     }
     if (todayCommand.primaryAction === 'review_feedback') {
-      setV11EvidenceExpanded(true);
-      openV11DecisionDetails();
+      rememberV11TodayScroll();
+      setV11ActivityRecordId(latestFeedbackLog?.id ?? null);
+      setV11ActivityHistoryOpen(true);
       return;
     }
     if (todayCommand.primaryAction === 'log') {
@@ -2235,8 +2238,9 @@ export default function HomeScreen() {
     runTodayCommand(todayCommand.primaryAction);
   }, [
     openV11Capture,
-    openV11DecisionDetails,
     openV11DirectLog,
+    latestFeedbackLog?.id,
+    rememberV11TodayScroll,
     runTodayCommand,
     todayCommand.primaryAction,
   ]);
@@ -3148,6 +3152,7 @@ export default function HomeScreen() {
           feedbackTitle={t(lang, 'savedFeedbackTitle')}
           getRecordFeedback={getV11ActivityRecordFeedback}
           historyTitle={t(lang, 'activityHistory')}
+          initialRecordId={v11ActivityRecordId}
           loadMoreLabel={t(lang, 'loadMoreRecords')}
           onClose={closeV11ActivityHistory}
           onDeleteRecord={confirmDeleteTodayLog}
