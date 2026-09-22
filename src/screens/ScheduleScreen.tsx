@@ -1,6 +1,6 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useExternalCalendarBlocks } from '../platform/calendar/useExternalCalendarBlocks';
-import { Alert, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, AppState, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute } from '@react-navigation/native';
 import { useStore } from '../store';
@@ -34,12 +34,14 @@ import {
 } from '../utils/scheduleProposal';
 import { isDecisionDebugEnabled } from '../services/decisionService';
 import { getV11ProductLanguage, getV11ProductThemeId } from '../v11/featureFlag';
-import NativeScheduleFields from '../native/NativeScheduleFields';
+import NativeScheduleFields, { canMoveScheduleBlock, NativeScheduleContext, scheduleDayContext } from '../native/NativeScheduleFields';
 import NativeDateTimeField from '../native/NativeDateTimeField';
 import NativeScheduleCalendarSheet from '../native/NativeScheduleCalendarSheet';
 import { localDateValue, scheduleConflicts, scheduleMinutes, validScheduleDate } from '../native/nativeWorkflowValidation';
 import { nativeCopy } from '../platform/nativeI18n';
 import { workflowCopy } from '../native/nativeWorkflowCopy';
+import { scheduleCopy } from '../native/nativeScheduleCopy';
+import NativeDayTimeline from '../native/NativeDayTimeline';
 
 const TASK_TYPES: TaskType[] = [
   'deep_study',
@@ -137,7 +139,7 @@ function blocksOverlap(block: ScheduleBlock, all: ScheduleBlock[]) {
 }
 
 export default function ScheduleScreen() {
-  const { data, addScheduleBlock, createExecutionLog, updateScheduleBlock, deleteScheduleBlock } = useStore();
+  const { data, addScheduleBlock, createExecutionLog, waitForExecutionLog, waitForLocalWrites, retryLocalWrites, updateScheduleBlock, deleteScheduleBlock } = useStore();
   const route = useRoute<any>();
   const lang = getV11ProductLanguage(getLanguage(data.settings.language));
   const questTheme = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
@@ -149,9 +151,29 @@ export default function ScheduleScreen() {
   const [open, setOpen] = useState(false);
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
   const [calendarBlockId, setCalendarBlockId] = useState<string | null>(null);
+  const [actionBlock, setActionBlock] = useState<ScheduleBlock | null>(null);
+  const [moving, setMoving] = useState(false);
+  const [saveState, setSaveState] = useState<'idle' | 'busy' | 'failed'>('idle');
+  const saveRunning = useRef(false);
+  const pendingScheduleWrite = useRef<(() => void) | null>(null);
+  const [scheduleNotice, setScheduleNotice] = useState<string>();
+  const [logSaving, setLogSaving] = useState(false);
+  const [logFailed, setLogFailed] = useState(false);
+  const logRunning = useRef(false);
+  const pendingLog = useRef<ReturnType<typeof createExecutionLog> | null>(null);
+  const [clock, setClock] = useState(() => new Date());
+  const timelineTop = useRef(0);
+  const hourOffsets = useRef<Record<number, number>>({});
   const editSnapshot = useRef<ScheduleBlock | null>(null);
   const latestBlocks = useRef(data.scheduleBlocks);
   latestBlocks.current = data.scheduleBlocks;
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    const refresh = () => setClock(new Date());
+    const timer = setInterval(() => { if (AppState.currentState === 'active') refresh(); }, 60_000);
+    const subscription = AppState.addEventListener('change', state => { if (state === 'active') refresh(); });
+    return () => { clearInterval(timer); subscription.remove(); };
+  }, []);
 
   const [title, setTitle] = useState('');
   const [date, setDate] = useState(today());
@@ -207,29 +229,63 @@ export default function ScheduleScreen() {
     () => [...(data.scheduleBlocks || []), ...generatedBlocks, ...externalBlocks],
     [data.scheduleBlocks, generatedBlocks, externalBlocks]
   );
+  const latestAllBlocks = useRef(allBlocks);
+  latestAllBlocks.current = allBlocks;
   const dayBlocks = useMemo(
     () => allBlocks.filter((b) => b.date === selectedDate).sort((a, b) => a.startTime.localeCompare(b.startTime)),
     [allBlocks, selectedDate]
   );
   const nowInfo = useMemo(() => {
-    const now = new Date();
+    const now = Platform.OS === 'web' ? new Date() : clock;
     const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    const upcoming = Platform.OS === 'web' ? dayBlocks : dayBlocks.filter(block => block.status !== 'completed' && block.status !== 'skipped');
     const active = selectedDate === today()
-      ? dayBlocks.find((b) => minuteOfDay(b.startTime) <= nowMinutes && nowMinutes < minuteOfDay(b.endTime))
+      ? upcoming.find((b) => minuteOfDay(b.startTime) <= nowMinutes && nowMinutes < minuteOfDay(b.endTime))
       : undefined;
     const next = selectedDate === today()
-      ? dayBlocks.find((b) => minuteOfDay(b.startTime) > nowMinutes)
-      : dayBlocks[0];
+      ? upcoming.find((b) => minuteOfDay(b.startTime) > nowMinutes)
+      : upcoming[0];
     return { active, next };
-  }, [dayBlocks, selectedDate]);
+  }, [dayBlocks, selectedDate, clock]);
+  const selectedActionBlock = actionBlock ? allBlocks.find(block => block.id === actionBlock.id && block.date === actionBlock.date) : undefined;
+  const selectedSkill = data.skills.find(skill => skill.id === selectedActionBlock?.linkedSkillId);
+  const selectedLink = data.moduleSkillLinks?.find(link => link.skillId === selectedSkill?.id);
+  const selectedGoal = data.categories.find(goal => goal.id === (selectedActionBlock?.linkedGoalId ?? selectedLink?.goalId));
+  const selectedModule = data.modules?.find(module => module.id === selectedLink?.moduleId);
+  const selectedContext = [selectedGoal?.name, selectedModule ? (selectedModule.id.includes('-default') ? t(lang, 'defaultModule') : selectedModule.name) : undefined, selectedSkill?.name].filter(Boolean).join(' › ');
+  const historicalEdit = !!editSnapshot.current && ['completed', 'skipped'].includes(editSnapshot.current.status);
 
   const jumpToNow = () => {
+    if (Platform.OS !== 'web') {
+      const hour = clock.getHours();
+      setHighlightHour(hour);
+      scrollRef.current?.scrollTo({ y: timelineTop.current + (hourOffsets.current[hour] ?? 0), animated: false });
+      return;
+    }
     const hour = currentSectionHour();
     setHighlightHour(hour);
     scrollRef.current?.scrollTo({ y: 190 + HOURS.indexOf(hour) * 56, animated: true });
   };
 
+  const retryScheduleWrite = async () => {
+    if (saveRunning.current || !pendingScheduleWrite.current) return;
+    saveRunning.current = true;
+    setSaveState('busy');
+    try {
+      await retryLocalWrites();
+      await waitForLocalWrites();
+      pendingScheduleWrite.current();
+      pendingScheduleWrite.current = null;
+      setSaveState('idle');
+      setScheduleNotice(undefined);
+    } catch { setSaveState('failed'); }
+    finally { saveRunning.current = false; }
+  };
+
   const openCreateBlock = () => {
+    if (pendingScheduleWrite.current || saveRunning.current) return;
+    setSaveState('idle');
+    setMoving(false);
     editSnapshot.current = null;
     setEditingBlockId(null);
     setTitle('');
@@ -246,6 +302,10 @@ export default function ScheduleScreen() {
   };
 
   const openEditBlock = (block: ScheduleBlock) => {
+    if (pendingScheduleWrite.current || saveRunning.current) return;
+    setSaveState('idle');
+    setMoving(false);
+    setActionBlock(null);
     editSnapshot.current = block;
     setEditingBlockId(block.id);
     setTitle(block.title);
@@ -262,11 +322,16 @@ export default function ScheduleScreen() {
   };
 
   const submit = () => {
+    if (saveRunning.current) return;
+    if (pendingScheduleWrite.current) { void retryScheduleWrite(); return; }
     const native = Platform.OS !== 'web';
     const plannedMinutes = native ? scheduleMinutes(startTime, endTime) : minutesBetween(startTime, endTime);
     if (!title.trim()) { Alert.alert(t(lang, 'enterTitle')); return; }
     if (native ? !validScheduleDate(date) : !/^\d{4}-\d{2}-\d{2}$/.test(date)) { Alert.alert(t(lang, 'invalidDate')); return; }
     if (plannedMinutes <= 0) { Alert.alert(t(lang, 'invalidTimeRange')); return; }
+    if (native && historicalEdit && editSnapshot.current && (date !== editSnapshot.current.date || startTime !== editSnapshot.current.startTime || endTime !== editSnapshot.current.endTime)) {
+      Alert.alert(t(lang, 'edit'), scheduleCopy(lang, 'historical')); return;
+    }
     const input = {
       title: title.trim(),
       date,
@@ -282,24 +347,46 @@ export default function ScheduleScreen() {
       notes: notes.trim() || undefined,
       source: native && editSnapshot.current ? editSnapshot.current.source : 'manual',
     } satisfies Omit<ScheduleBlock, 'id' | 'createdAt'>;
-    const save = () => {
+    const conflicts = native ? scheduleConflicts(input, allBlocks, editingBlockId ?? undefined) : [];
+    const conflictKey = JSON.stringify(conflicts);
+    const save = async () => {
+      if (saveRunning.current) return;
       // A remote deletion/edit while this sheet is open must not be silently overwritten.
       if (native && editingBlockId && JSON.stringify(latestBlocks.current.find(block => block.id === editingBlockId)) !== JSON.stringify(editSnapshot.current)) {
         Alert.alert(t(lang, 'edit'), t(lang, 'rebaselineRecordUnavailable'));
         return;
       }
-      if (editingBlockId) {
-        updateScheduleBlock(editingBlockId, input);
-      } else {
-        addScheduleBlock(input);
+      if (native && JSON.stringify(scheduleConflicts(input, latestAllBlocks.current, editingBlockId ?? undefined)) !== conflictKey) {
+        Alert.alert(t(lang, 'scheduleOverlap'), scheduleCopy(lang, 'reviewAgain')); return;
       }
-      setOpen(false);
-      setEditingBlockId(null);
-      setSelectedDate(date);
-      setTitle('');
-      setNotes('');
+      saveRunning.current = true;
+      setSaveState('busy');
+      try {
+        if (editingBlockId) {
+          updateScheduleBlock(editingBlockId, input);
+          editSnapshot.current = { ...editSnapshot.current!, ...input };
+        } else {
+          const added = addScheduleBlock(input);
+          if (native) { editSnapshot.current = added; setEditingBlockId(added.id); }
+        }
+        const complete = () => {
+          setOpen(false);
+          setEditingBlockId(null);
+          setSelectedDate(date);
+          setTitle('');
+          setNotes('');
+        };
+        if (native) {
+          pendingScheduleWrite.current = complete;
+          await waitForLocalWrites();
+        }
+        complete();
+        pendingScheduleWrite.current = null;
+        setSaveState('idle');
+      } catch {
+        setSaveState('failed');
+      } finally { saveRunning.current = false; }
     };
-    const conflicts = native ? scheduleConflicts(input, allBlocks, editingBlockId ?? undefined) : [];
     if (conflicts.length) {
       confirmAction({ title: t(lang, 'scheduleOverlap'),
         message: conflicts.map(block => `${block.title} · ${block.startTime}-${block.endTime}`).join('\n'),
@@ -308,19 +395,41 @@ export default function ScheduleScreen() {
   };
 
   const requestDeleteBlock = (block: ScheduleBlock) => {
+    if (saveRunning.current || pendingScheduleWrite.current) return;
     confirmAction({
       title: `${t(lang, 'delete')} ${block.title}`,
       message: `${block.date} · ${block.startTime}-${block.endTime}${Platform.OS !== 'web' ? `\n\n${workflowCopy(lang, 'calendarSeparate')}` : ''}`,
       cancelText: t(lang, 'cancel'),
       confirmText: t(lang, 'delete'),
       destructive: true,
-      onConfirm: () => deleteScheduleBlock(block.id),
+      onConfirm: async () => {
+        if (saveRunning.current) return;
+        if (Platform.OS !== 'web' && JSON.stringify(latestBlocks.current.find(row => row.id === block.id)) !== JSON.stringify(block)) {
+          setScheduleNotice(scheduleCopy(lang, 'reviewAgain')); return;
+        }
+        saveRunning.current = true;
+        setSaveState('busy');
+        try {
+          deleteScheduleBlock(block.id);
+          if (Platform.OS !== 'web') {
+            pendingScheduleWrite.current = () => setActionBlock(null);
+            await waitForLocalWrites();
+            setActionBlock(null);
+            pendingScheduleWrite.current = null;
+          }
+          setSaveState('idle');
+        } catch { setSaveState('failed'); setScheduleNotice(scheduleCopy(lang, 'saveFailed')); }
+        finally { saveRunning.current = false; }
+      },
     });
   };
 
   const openLogBlock = (block: ScheduleBlock) => {
+    setActionBlock(null);
+    pendingLog.current = null;
+    setLogFailed(false);
     setLogBlock(block);
-    setLogMinutes(String(block.plannedMinutes));
+    setLogMinutes(Platform.OS === 'web' ? String(block.plannedMinutes) : '');
     setLogQuality(null);
     setLogNote('');
     setLogNewCurrentValue('');
@@ -329,7 +438,7 @@ export default function ScheduleScreen() {
     setLogPerformanceNote('');
     setLogStrengthWeight('');
     setLogStrengthReps('');
-    setLogStrengthSets('3');
+    setLogStrengthSets(Platform.OS === 'web' ? '3' : '');
     setLogStrengthRpe('');
     setLogStateValue('');
     setLogAmountAdded('');
@@ -339,10 +448,10 @@ export default function ScheduleScreen() {
     setLogChecklistIds([]);
   };
 
-  const submitLogBlock = () => {
-    if (!logBlock) return;
-    const durationMinutes = parseInt(logMinutes, 10);
-    if (!durationMinutes || durationMinutes <= 0) {
+  const submitLogBlock = async () => {
+    if (!logBlock || logRunning.current) return;
+    const durationMinutes = Platform.OS === 'web' ? parseInt(logMinutes, 10) : Number(logMinutes);
+    if (!Number.isFinite(durationMinutes) || durationMinutes <= 0) {
       Alert.alert(t(lang, 'invalidMinutes'));
       return;
     }
@@ -372,7 +481,11 @@ export default function ScheduleScreen() {
     const targetValueUpdate = metricType === 'target_value'
       ? (newCurrentValue ?? (isStrengthLog ? strengthWeight : undefined))
       : undefined;
-    createExecutionLog({
+    logRunning.current = true;
+    setLogSaving(true);
+    setLogFailed(false);
+    try {
+    const savedLog = pendingLog.current ?? createExecutionLog({
       date: logBlock.date,
       durationMinutes,
       title: logBlock.title,
@@ -437,7 +550,17 @@ export default function ScheduleScreen() {
         qualitativeText: metricType === 'qualitative' ? logQualitativeText.trim() || undefined : undefined,
       },
     });
+    if (Platform.OS !== 'web') {
+      const retry = !!pendingLog.current;
+      pendingLog.current = savedLog;
+      if (retry) await retryLocalWrites();
+      await waitForLocalWrites();
+      await waitForExecutionLog(savedLog.id);
+    }
+    pendingLog.current = null;
     setLogBlock(null);
+    } catch { setLogFailed(true); }
+    finally { logRunning.current = false; setLogSaving(false); }
   };
 
   const canApplyScheduleProposal = (proposalId: string) => {
@@ -515,6 +638,7 @@ export default function ScheduleScreen() {
         />
         {Platform.OS !== 'web' ? <NativeDateTimeField theme={questTheme} lang={lang} mode="date" label={t(lang, 'date')}
           value={new Date(`${selectedDate}T12:00:00`)} onChange={value => setSelectedDate(localDateValue(value))} /> : null}
+        {Platform.OS !== 'web' && scheduleNotice ? <Text accessibilityRole="alert" style={{ color: questTheme.colors.text, fontSize: questTheme.typography.bodySize }}>{scheduleNotice}</Text> : null}
 
         {view === 'day' ? (
           <>
@@ -577,8 +701,11 @@ export default function ScheduleScreen() {
               subtitle={dayBlocks.length === 0 ? t(lang, 'noBlocksToday') : `${dayBlocks.length} ${t(lang, 'blocks')}`}
               style={styles.scheduleSectionHeader}
             />
-            <View nativeID="v11-schedule-day-instrument" style={[styles.timelineSurface, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>
-              {selectedDate === today() && currentTimeTop() >= 0 && currentTimeTop() <= 1 ? (
+            {Platform.OS !== 'web' ? <NativeScheduleContext date={selectedDate} blocks={allBlocks} theme={questTheme} lang={lang} /> : null}
+            {Platform.OS !== 'web' ? <NativeDayTimeline blocks={dayBlocks} now={clock} isToday={selectedDate === today()} theme={questTheme} lang={lang}
+              onLayout={(y, offset) => { timelineTop.current = y; hourOffsets.current[clock.getHours()] = offset; }}
+              onSelect={block => { setScheduleNotice(undefined); setActionBlock(block); }} /> : <View nativeID="v11-schedule-day-instrument" onLayout={event => { timelineTop.current = event.nativeEvent.layout.y; }} style={[styles.timelineSurface, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>
+              {Platform.OS === 'web' && selectedDate === today() && currentTimeTop() >= 0 && currentTimeTop() <= 1 ? (
                 <View style={[styles.nowLine, { top: `${currentTimeTop() * 100}%` }]}>
                   <View style={[styles.nowDot, { backgroundColor: questTheme.colors.primary }]} />
                   <View style={[styles.nowRule, { backgroundColor: questTheme.colors.primary }]} />
@@ -586,12 +713,13 @@ export default function ScheduleScreen() {
                 </View>
               ) : null}
               {HOURS.map((hour) => {
-                const blocks = dayBlocks.filter((b) => closestSectionHour(b.startTime) === hour);
-                const highlighted = selectedDate === today() && (highlightHour ?? currentSectionHour()) === hour;
+                const blocks = dayBlocks.filter((b) => (Platform.OS === 'web' ? closestSectionHour(b.startTime) : hourOf(b.startTime)) === hour);
+                const highlighted = selectedDate === today() && (highlightHour ?? (Platform.OS === 'web' ? currentSectionHour() : clock.getHours())) === hour;
                 return (
-                  <View key={hour} style={[styles.hourRow, { borderBottomColor: questTheme.colors.border }, highlighted && { backgroundColor: questTheme.colors.primarySoft }]}>
+                  <View key={hour} onLayout={event => { hourOffsets.current[hour] = event.nativeEvent.layout.y; }} style={[styles.hourRow, { borderBottomColor: questTheme.colors.border }, highlighted && { backgroundColor: questTheme.colors.primarySoft }]}>
                     <Text style={[styles.hourLabel, { color: questTheme.colors.textMuted }]}>{hour}:00</Text>
                     <View style={styles.hourContent}>
+                      {Platform.OS !== 'web' && selectedDate === today() && hour === clock.getHours() ? <Text style={{ color: questTheme.colors.textMuted, fontSize: questTheme.typography.captionSize }}>{t(lang, 'currentTime')} · {clock.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text> : null}
                       {blocks.map((b) => {
                         const skill = b.linkedSkillId ? data.skills.find((item) => item.id === b.linkedSkillId) : undefined;
                         const link = skill ? (data.moduleSkillLinks || []).find((item) => item.skillId === skill.id) : undefined;
@@ -605,14 +733,14 @@ export default function ScheduleScreen() {
                           skill?.name,
                         ].filter(Boolean).join(' › ');
                         const persisted = data.scheduleBlocks.some((item) => item.id === b.id);
-                        const overlaps = blocksOverlap(b, dayBlocks);
+                        const overlaps = Platform.OS === 'web' ? blocksOverlap(b, dayBlocks) : b.status !== 'skipped' && scheduleConflicts(b, dayBlocks, b.id).length > 0;
                         return (
                           <View
                             key={b.id}
                             style={[
                               styles.timelineBlock,
                               {
-                                minHeight: Math.max(48, Math.min(150, (b.plannedMinutes / 60) * 56)),
+                                minHeight: Platform.OS === 'web' ? Math.max(48, Math.min(150, (b.plannedMinutes / 60) * 56)) : questLayout.controlMinHeight,
                                 backgroundColor: questTheme.colors.surfaceSoft,
                                 borderLeftColor: b.status === 'completed' ? questTheme.colors.success : questTheme.colors.primary,
                               },
@@ -622,6 +750,9 @@ export default function ScheduleScreen() {
                             <View style={[styles.blockTitleRow, Platform.OS !== 'web' && { flexWrap: 'wrap' }]}>
                               <QuestEntityIcon icon={skill?.icon} systemIcon={skill ? getSkillSemanticIcon(skill) : systemIcons.schedule} color={skill?.color} questTheme={questTheme} size="sm" />
                               <Text style={[styles.blockTitle, { color: questTheme.colors.text }]} numberOfLines={2}>{b.title}</Text>
+                              {Platform.OS !== 'web' ? <QuestButton questTheme={questTheme} variant="ghost" icon="settings" accessibilityLabel={`${scheduleCopy(lang, 'actions')}: ${b.title}`} onPress={() => { setScheduleNotice(undefined); setActionBlock(b); }} style={{ minWidth: questLayout.controlMinHeight }} /> : null}
+                            </View>
+                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: questTheme.spacing.xs }}>
                               <QuestPill
                                 questTheme={questTheme}
                                 variant={b.status === 'completed' ? 'success' : 'muted'}
@@ -632,19 +763,19 @@ export default function ScheduleScreen() {
                             <Text style={[styles.blockMeta, { color: questTheme.colors.textMuted }]}>
                               {b.startTime}-{b.endTime} · {b.plannedMinutes}m
                             </Text>
+                            {Platform.OS !== 'web' ? <Text style={{ color: questTheme.colors.textMuted, fontSize: questTheme.typography.captionSize }}>{externalBlocks.some(block => block.id === b.id) ? scheduleCopy(lang, 'external') : `${flexibilityLabel(lang, b.flexibility)} · ${persisted ? sourceLabel(lang, b.source ?? 'manual') : scheduleCopy(lang, 'generated')}`}</Text> : null}
                             <Text style={[styles.blockMeta, { color: questTheme.colors.textMuted }]} numberOfLines={2}>
                               {contextLabel || t(lang, 'manualBlock')}
                             </Text>
-                            <View style={styles.blockActionsRow}>
+                            {Platform.OS === 'web' ? <View style={styles.blockActionsRow}>
                               {Platform.OS === 'web' || !externalBlocks.some(block => block.id === b.id) ? <QuestButton questTheme={questTheme} variant="ghost" icon="play" label={t(lang, 'logProgress')} onPress={() => openLogBlock(b)} style={styles.blockAction} /> : null}
                               {persisted ? (
                                 <>
                                   <QuestButton questTheme={questTheme} variant="ghost" label={t(lang, 'edit')} onPress={() => openEditBlock(b)} style={styles.blockAction} />
                                   <QuestButton questTheme={questTheme} variant="ghost" label={t(lang, 'delete')} onPress={() => requestDeleteBlock(b)} style={styles.blockAction} />
-                                  {Platform.OS !== 'web' ? <QuestButton questTheme={questTheme} variant="ghost" icon="calendar" label={nativeCopy(lang, 'calendar')} onPress={() => setCalendarBlockId(b.id)} style={styles.blockAction} /> : null}
                                 </>
                               ) : null}
-                            </View>
+                            </View> : null}
                           </View>
                         );
                       })}
@@ -652,7 +783,7 @@ export default function ScheduleScreen() {
                   </View>
                 );
               })}
-            </View>
+            </View>}
           </>
         ) : view === 'week' ? (
           <WeekInstrument
@@ -682,12 +813,19 @@ export default function ScheduleScreen() {
         )}
       </ScrollView>
 
-      <BottomSheetForm visible={open} onClose={() => { setOpen(false); setEditingBlockId(null); }}>
+      <BottomSheetForm visible={open} onClose={() => { if (!saveRunning.current && !pendingScheduleWrite.current) { setOpen(false); setEditingBlockId(null); } }}
+        footer={Platform.OS !== 'web' ? <View style={{ gap: questTheme.spacing.sm }}>
+          {saveState === 'failed' ? <Text accessibilityRole="alert" style={{ color: questTheme.colors.text, fontSize: questTheme.typography.bodySize }}>{scheduleCopy(lang, 'saveFailed')}</Text> : null}
+          <QuestButton questTheme={questTheme} variant="primary" icon={editingBlockId ? 'check' : 'plus'} loading={saveState === 'busy'} label={saveState === 'failed' ? scheduleCopy(lang, 'retry') : editingBlockId ? t(lang, 'save') : t(lang, 'createBlock')} onPress={submit} />
+        </View> : undefined}>
+        <View pointerEvents={saveRunning.current || pendingScheduleWrite.current ? 'none' : 'auto'} importantForAccessibility={saveRunning.current || pendingScheduleWrite.current ? 'no-hide-descendants' : 'auto'}>
         <Text style={[styles.h2, { color: questTheme.colors.text }]}>{editingBlockId ? `${t(lang, 'edit')} ${t(lang, 'schedulePlan')}` : t(lang, 'addBlock')}</Text>
+        {Platform.OS !== 'web' && (historicalEdit || moving) ? <Text style={{ color: questTheme.colors.textMuted, fontSize: questTheme.typography.bodySize }}>{scheduleCopy(lang, historicalEdit ? 'historical' : 'moveReview')}</Text> : null}
         <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'title')}</Text>
         <QuestInput questTheme={questTheme} value={title} onChangeText={setTitle} placeholder={t(lang, 'scheduleTitlePlaceholder')} />
         {Platform.OS !== 'web' ? <NativeScheduleFields date={date} start={startTime} end={endTime}
-          onDate={setDate} onStart={setStartTime} onEnd={setEndTime} theme={questTheme} lang={lang} /> : <>
+          onDate={setDate} onStart={setStartTime} onEnd={setEndTime} theme={questTheme} lang={lang}
+          disabled={historicalEdit || saveState === 'busy'} blocks={allBlocks} excludeId={editingBlockId ?? undefined} externalIds={externalBlocks.map(block => block.id)} /> : <>
         <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'date')}</Text>
         <QuestInput questTheme={questTheme} value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" />
         <View style={styles.timeRow}>
@@ -702,8 +840,7 @@ export default function ScheduleScreen() {
         </View>
         </>}
         <Text style={[styles.calc, { color: questTheme.colors.textMuted }]}>{t(lang, 'planned')}: {minutesBetween(startTime, endTime)}m</Text>
-        {Platform.OS !== 'web' && scheduleConflicts({date, startTime, endTime}, allBlocks, editingBlockId ?? undefined).length > 0 ?
-          <Text accessibilityRole="alert" style={{ color: questTheme.colors.text, fontSize: questTheme.typography.bodySize }}>{t(lang, 'scheduleOverlap')}</Text> : null}
+        {Platform.OS !== 'web' ? <Text style={{ color: questTheme.colors.textMuted, fontSize: questTheme.typography.captionSize }}>{scheduleCopy(lang, 'calendarCoverage')}</Text> : null}
 
         <ChipGroup questTheme={questTheme} title={t(lang, 'taskType')} values={TASK_TYPES} labels={Object.fromEntries(TASK_TYPES.map((v) => [v, taskTypeLabel(lang, v)]))} value={taskType} onChange={(v) => v && setTaskType(v)} accent={accent} />
         <ChipGroup questTheme={questTheme} title={t(lang, 'flexibility')} values={FLEX} labels={Object.fromEntries(FLEX.map((v) => [v, flexibilityLabel(lang, v)]))} value={flexibility} onChange={(v) => v && setFlexibility(v)} accent={accent} />
@@ -716,15 +853,41 @@ export default function ScheduleScreen() {
 
         <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'notes')}</Text>
         <QuestInput questTheme={questTheme} value={notes} onChangeText={setNotes} style={{ height: 70, textAlignVertical: 'top' }} multiline />
-        <QuestButton questTheme={questTheme} variant="primary" icon={editingBlockId ? undefined : 'plus'} label={editingBlockId ? t(lang, 'save') : t(lang, 'createBlock')} onPress={submit} style={{ marginTop: 18 }} />
+        {Platform.OS === 'web' ? <QuestButton questTheme={questTheme} variant="primary" icon={editingBlockId ? undefined : 'plus'} label={editingBlockId ? t(lang, 'save') : t(lang, 'createBlock')} onPress={submit} style={{ marginTop: 18 }} /> : null}
+        </View>
       </BottomSheetForm>
+
+      {Platform.OS !== 'web' && actionBlock ? <BottomSheetForm visible onClose={() => { if (!saveRunning.current && !pendingScheduleWrite.current) setActionBlock(null); }} footer={saveState === 'failed' && pendingScheduleWrite.current ? <QuestButton questTheme={questTheme} label={scheduleCopy(lang, 'retry')} onPress={() => void retryScheduleWrite()} /> : undefined}>
+        <View style={{ gap: questTheme.spacing.sm }}>
+          <Text accessibilityRole="header" style={{ color: questTheme.colors.text, fontSize: questTheme.typography.sectionTitleSize }}>{selectedActionBlock?.title ?? actionBlock.title}</Text>
+          {scheduleNotice ? <Text accessibilityRole="alert" style={{ color: questTheme.colors.text, fontSize: questTheme.typography.bodySize }}>{scheduleNotice}</Text> : null}
+          {selectedActionBlock && !saveRunning.current && !pendingScheduleWrite.current ? <>
+            <Text style={{ color: questTheme.colors.textMuted, fontSize: questTheme.typography.bodySize }}>{selectedActionBlock.date} · {selectedActionBlock.startTime}-{selectedActionBlock.endTime} · {statusLabel(lang, selectedActionBlock.status)} · {flexibilityLabel(lang, selectedActionBlock.flexibility)}</Text>
+            {selectedContext ? <Text style={{ color: questTheme.colors.textMuted, fontSize: questTheme.typography.bodySize }}>{selectedContext}</Text> : null}
+            {selectedActionBlock.notes ? <Text style={{ color: questTheme.colors.text, fontSize: questTheme.typography.bodySize }}>{selectedActionBlock.notes}</Text> : null}
+            <NativeScheduleContext date={selectedActionBlock.date} draft={selectedActionBlock} excludeId={selectedActionBlock.id} blocks={allBlocks} theme={questTheme} lang={lang} externalIds={externalBlocks.map(block => block.id)} />
+            {externalBlocks.some(block => block.id === selectedActionBlock.id) ? <Text style={{ color: questTheme.colors.textMuted, fontSize: questTheme.typography.bodySize }}>{scheduleCopy(lang, 'external')}</Text> : <>
+              <QuestButton questTheme={questTheme} variant="primary" icon="play" label={t(lang, 'logProgress')} onPress={() => openLogBlock(selectedActionBlock)} />
+              {data.scheduleBlocks.some(block => block.id === selectedActionBlock.id) ? <>
+                <QuestButton questTheme={questTheme} variant="secondary" label={t(lang, 'edit')} onPress={() => openEditBlock(selectedActionBlock)} />
+                {canMoveScheduleBlock(selectedActionBlock) ? <QuestButton questTheme={questTheme} variant="secondary" icon="calendar" label={scheduleCopy(lang, 'move')} onPress={() => { openEditBlock(selectedActionBlock); setMoving(true); }} /> : <Text style={{ color: questTheme.colors.textMuted, fontSize: questTheme.typography.captionSize }}>{scheduleCopy(lang, ['completed', 'skipped'].includes(selectedActionBlock.status) ? 'historical' : 'locked')}</Text>}
+                <QuestButton questTheme={questTheme} variant="secondary" icon="calendar" label={nativeCopy(lang, 'calendar')} onPress={() => { setActionBlock(null); setCalendarBlockId(selectedActionBlock.id); }} />
+                <QuestButton questTheme={questTheme} variant="danger" label={t(lang, 'delete')} onPress={() => requestDeleteBlock(selectedActionBlock)} />
+              </> : <Text style={{ color: questTheme.colors.textMuted, fontSize: questTheme.typography.captionSize }}>{scheduleCopy(lang, 'generated')}</Text>}
+            </>}
+          </> : null}
+        </View>
+      </BottomSheetForm> : null}
 
       {Platform.OS !== 'web' && calendarBlockId ? <NativeScheduleCalendarSheet blockId={calendarBlockId} onClose={() => setCalendarBlockId(null)} /> : null}
 
-      <BottomSheetForm visible={!!logBlock} onClose={() => setLogBlock(null)}>
+      <BottomSheetForm visible={!!logBlock} onClose={() => { if (!logRunning.current && !pendingLog.current) setLogBlock(null); }} footer={Platform.OS !== 'web' ? <View style={{ gap: questTheme.spacing.sm }}>
+        {logFailed ? <Text accessibilityRole="alert" style={{ color: questTheme.colors.text, fontSize: questTheme.typography.bodySize }}>{scheduleCopy(lang, 'logPending')}</Text> : null}
+        <QuestButton questTheme={questTheme} loading={logSaving} label={logFailed ? scheduleCopy(lang, 'logRetry') : t(lang, 'logProgress')} onPress={() => void submitLogBlock()} />
+      </View> : undefined}>
         <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'logProgress')}</Text>
         {logBlock ? (
-          <>
+          <View pointerEvents={logSaving || (Platform.OS !== 'web' && logFailed) ? 'none' : 'auto'} accessibilityElementsHidden={logSaving}>
             <Text style={[styles.logSheetTitle, { color: questTheme.colors.text }]}>{logBlock.title}</Text>
             <Text style={[styles.blockMeta, { color: questTheme.colors.textMuted }]}>{logBlock.startTime}-{logBlock.endTime} · {taskTypeLabel(lang, logBlock.taskType)} · {statusLabel(lang, logBlock.status)}</Text>
             <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'sessionDurationOptional')}</Text>
@@ -736,7 +899,7 @@ export default function ScheduleScreen() {
                 return (
                   <TouchableOpacity
                     key={q.value}
-                    style={[styles.qualityChip, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }, on && { borderColor: accent, backgroundColor: questTheme.colors.primarySoft }]}
+                    style={[styles.qualityChip, { minHeight: questLayout.controlMinHeight, minWidth: questLayout.controlMinHeight, backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }, on && { borderColor: accent, backgroundColor: questTheme.colors.primarySoft }]}
                     onPress={() => setLogQuality(on ? null : q.value)}
                     accessibilityRole="button"
                     accessibilityLabel={qualityLabel(lang, q.value)}
@@ -873,15 +1036,15 @@ export default function ScheduleScreen() {
             })()}
             <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'notes')}</Text>
             <QuestInput questTheme={questTheme} value={logNote} onChangeText={setLogNote} style={{ height: 70, textAlignVertical: 'top' }} multiline />
-            <View style={styles.sheetActions}>
+            {Platform.OS === 'web' ? <View style={styles.sheetActions}>
               <TouchableOpacity style={[styles.saveBtn, styles.cancelBtn, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]} onPress={() => setLogBlock(null)}>
                 <Text style={[styles.cancelText, { color: questTheme.colors.text }]}>{t(lang, 'cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.saveBtn, { backgroundColor: accent, flex: 1 }]} onPress={submitLogBlock}>
                 <Text style={styles.saveText}>{t(lang, 'logProgress')}</Text>
               </TouchableOpacity>
-            </View>
-          </>
+            </View> : null}
+          </View>
         ) : null}
       </BottomSheetForm>
     </SafeAreaView>
@@ -906,6 +1069,24 @@ function WeekInstrument({ dates, blocks, selectedDate, lang, questTheme, onSelec
   });
   const maxMinutes = Math.max(60, ...rows.map((row) => row.minutes));
   const totalMinutes = rows.reduce((sum, row) => sum + row.minutes, 0);
+  if (Platform.OS !== 'web') return <View nativeID="v11-schedule-week-instrument" style={{ marginTop: questTheme.spacing.md }}>
+    <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: questTheme.spacing.sm, paddingHorizontal: questTheme.spacing.md }}>
+      <Text style={{ color: questTheme.colors.textMuted, fontSize: questTheme.typography.bodySize }}>{t(lang, 'totalPlanned')}</Text>
+      <Text style={{ color: questTheme.colors.text, fontSize: questTheme.typography.cardTitleSize }}>{(totalMinutes / 60).toFixed(1).replace(/\.0$/, '')}h</Text>
+    </View>
+    {rows.map(row => {
+      const context = scheduleDayContext(row.date, row.blocks);
+      const selected = row.date === selectedDate;
+      return <TouchableOpacity key={row.date} accessibilityRole="button" accessibilityState={{ selected }}
+        onPress={() => onSelect(row.date)} style={{ minHeight: questLayout.controlMinHeight, padding: questTheme.spacing.md, gap: questTheme.spacing.xs, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: questTheme.colors.border, backgroundColor: selected ? questTheme.colors.primarySoft : questTheme.colors.surface }}>
+        <Text style={{ color: questTheme.colors.text, fontSize: questTheme.typography.cardTitleSize, fontWeight: questTheme.typography.weightBold }}>{dateWithWeekday(row.date, lang)}</Text>
+        <Text style={{ color: questTheme.colors.textMuted, fontSize: questTheme.typography.bodySize }}>{t(lang, 'totalPlanned')}: {context.plannedMinutes} {t(lang, 'minutes')} · {row.blocks.length} {t(lang, 'blocks')}</Text>
+        <Text style={{ color: questTheme.colors.textMuted, fontSize: questTheme.typography.captionSize }}>{scheduleCopy(lang, 'free')}: {context.freeMinutes} {t(lang, 'minutes')} · {scheduleCopy(lang, 'longest')}: {context.longestMinutes} {t(lang, 'minutes')}</Text>
+        {context.conflictCount ? <Text style={{ color: questTheme.colors.text, fontSize: questTheme.typography.captionSize }}>{scheduleCopy(lang, 'conflicts')}: {context.conflictCount} {t(lang, 'blocks')}</Text> : null}
+      </TouchableOpacity>;
+    })}
+    <Text style={{ color: questTheme.colors.textMuted, fontSize: questTheme.typography.captionSize, padding: questTheme.spacing.md }}>{scheduleCopy(lang, 'window')}: 07:00-23:00 · {scheduleCopy(lang, 'calendarCoverage')}</Text>
+  </View>;
   return (
     <View nativeID="v11-schedule-week-instrument" style={[styles.weekInstrument, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}>
       <View style={styles.weekAxis}>
