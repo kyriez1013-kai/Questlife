@@ -26,7 +26,9 @@ Module._load = function(request, parent, main) {
   if (/\/storage$/.test(request)) return { uid: () => 'TEST_CRITERION', today: () => '2026-09-22' };
   if (/\/store$/.test(request)) return { useStore: () => store };
   if (/\/useQuestTheme$/.test(request)) return { useQuestTheme: () => require('../design/tokens.ts').getQuestTheme(store.data.settings.selectedThemeId) };
-  if (/\/featureFlag$/.test(request)) return { getV11ProductLanguage: x => x, getV11ProductThemeId: x => x };
+  if (/\/featureFlag$/.test(request)) return { getV11ProductLanguage: x => x, getV11ProductThemeId: x => x, isV11ProductEnabled: () => true };
+  if (/\/(AccountSyncSection|RecordBackupActions)$/.test(request)) return host(request.split('/').at(-1));
+  if (/\/NativeControls$/.test(request)) return { useNativeTheme: () => ({ type: { secondary: {} }, text: { secondary: '#626262' } }) };
   if (/\/analytics$/.test(request)) return { trackEvent() {} };
   if (/\/BottomSheetForm$/.test(request)) return props => props.visible ? React.createElement('Sheet', props, props.children, React.createElement('Footer', {}, props.footer)) : null;
   if (/\/QuestPrimitives$/.test(request)) return { QuestGroupedSurface: host('QuestGroupedSurface') };
@@ -184,4 +186,15 @@ test('Skill chart changes theme and never emits non-finite geometry for recorded
   assert.equal(tree.root.findByType('Svg').props.width,'100%');
   const q=require('../design/tokens.ts').getQuestTheme('deepWork');
   assert.ok(tree.root.findAllByType('SvgText').every(node=>node.props.fill===q.colors.textMuted));
+});
+
+for(const lang of ['zh','en']) test(`first launch opens existing account recovery without creating a goal ${lang}`,async()=>{
+  fresh(lang);await render('../screens/OnboardingScreen.tsx');
+  assert.equal(tree.root.findAllByType('AccountSyncSection').length,0);
+  const {syncCopy}=require('../sync-v2/copy.ts');
+  await act(async()=>button(syncCopy(lang,'account')).props.onPress());
+  assert.equal(tree.root.findAllByType('AccountSyncSection').length,1);
+  assert.equal(writes.length,0);assert.equal(store.data.categories.length,0);
+  await act(async()=>tree.root.findByType('Sheet').props.onClose());
+  assert.equal(tree.root.findAllByType('AccountSyncSection').length,0);
 });

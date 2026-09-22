@@ -23,6 +23,9 @@ import { trackEvent } from '../utils/analytics';
 import { getV11ProductLanguage, getV11ProductThemeId, isV11ProductEnabled } from '../v11/featureFlag';
 import RecordBackupActions from '../backup/RecordBackupActions';
 import { backupCopy } from '../backup/copy';
+import AccountSyncSection from '../sync-v2/AccountSyncSection';
+import { syncCopy } from '../sync-v2/copy';
+import NativeSettingsSheet from '../native/NativeSettingsSheet';
 
 type Step = 'language' | 'positioning' | 'mode' | 'goal' | 'preview';
 
@@ -86,6 +89,7 @@ export default function OnboardingScreen() {
   const [sessionLength, setSessionLength] = useState(30);
   const [error, setError] = useState('');
   const [showRecovery, setShowRecovery] = useState(false);
+  const [showAccount, setShowAccount] = useState(false);
 
   const selectedTemplate = useMemo(() => (
     selectedMode.domain === 'custom' ? undefined : getDomainTemplateByDomain(selectedMode.domain)
@@ -243,6 +247,9 @@ export default function OnboardingScreen() {
         <Dots />
         {children}
       </OnboardingScrollView>
+      {showAccount ? <NativeSettingsSheet lang={lang} canClose={() => true} onClose={() => setShowAccount(false)}>
+        <AccountSyncSection />
+      </NativeSettingsSheet> : null}
     </OnboardingSafeArea>
   );
 
@@ -286,6 +293,9 @@ export default function OnboardingScreen() {
           ))}
         </OnboardingPanel>
         <QuestButton questTheme={questTheme} label={t(lang, 'buildMyFirstSystem')} onPress={() => setStep('mode')} />
+        <View style={{ marginTop: questTheme.spacing.md }}>
+          <QuestButton questTheme={questTheme} variant="secondary" label={syncCopy(lang, 'account')} onPress={() => setShowAccount(true)} />
+        </View>
         <View style={{ marginTop: questTheme.spacing.md }}>
           <QuestButton questTheme={questTheme} variant="secondary" label={backupCopy(lang, 'title')} onPress={() => setShowRecovery(value => !value)} />
           {showRecovery ? <RecordBackupActions /> : null}

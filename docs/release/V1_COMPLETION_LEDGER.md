@@ -76,13 +76,16 @@ flow on an analysis-only page. Three real recent rows lead to existing Activity
 History; progress/configuration, milestones and permanent delete remain reachable
 through compact disclosures. No new record writer or progress algorithm. Native
 empty history does not render empty charts or achievement walls; SVGs fit their
-parent and chart text uses the selected theme. Nineteen entity/form component
+parent and chart text uses the selected theme. Twenty-one entity/form component
 tests pass, including navigation-only intent/no writes, recent-row bound,
-Chinese/English, both themes and finite zero-duration chart geometry. These are
-component tests, not installed acceptance.
+Chinese/English, both themes and finite zero-duration chart geometry. First launch
+now opens the existing AccountSyncSection in the same request-guarded Sheet,
+without creating a Goal or forcing a trip through Settings. Both languages have
+entry/open/close/no-write tests. These are component tests, not installed or OTP
+delivery acceptance.
 
 `9b7c3fc` Android installed successfully. iOS simulator build
-`0c6e3033-2317-4c3e-bcae-42e3fa32d08f` submitted. Cold-launch Android sample only:
+`0c6e3033-2317-4c3e-bcae-42e3fa32d08f` FINISHED. Cold-launch Android sample only:
 25 frames, P50 17ms, P95 48ms, six janky; too small and not steady-state, NOT a
 performance pass. Rebuild after the Skill correction and finish full interactions.
 
