@@ -296,9 +296,12 @@ export default function SkillDetailScreen() {
           </View>
         </View>
 
+        <View style={{ gap: questTheme.spacing.md, marginTop: questTheme.spacing.md }}>
+          <QuestButton questTheme={questTheme} label={t(lang, 'logProgressTodayAction')} onPress={() => openToday('skill_reminder')} />
+        </View>
+
         {native ? <View style={{ gap: questTheme.spacing.md, marginTop: questTheme.spacing.md }}>
           <Text style={{ color: questTheme.colors.textMuted, fontSize: questTheme.typography.bodySize }}>{formatMetricSummary(skill, lang)}</Text>
-          <QuestButton questTheme={questTheme} label={t(lang, 'logProgressTodayAction')} onPress={() => openToday('skill_reminder')} />
           <View>
             <Text style={[styles.sectionTitle, { color: questTheme.colors.text }]}>{t(lang, 'executionLogs')}</Text>
             {skillLogs.length ? executionRows(3) : <Text style={[styles.ruleMuted, { color: questTheme.colors.textMuted }]}>{t(lang, 'noSkillLogs')}</Text>}

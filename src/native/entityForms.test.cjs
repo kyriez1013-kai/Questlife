@@ -181,16 +181,21 @@ const skillDetail=async(logCount=0)=>{
   store.data.executionLogs=Array.from({length:logCount},(_,i)=>({id:`TEST_LOG_${i}`,linkedSkillId:'TEST_SKILL',date:'2026-09-22',createdAt:`2026-09-22T0${i}:00:00Z`,durationMinutes:10+i,note:`note-${i}`}));
   await render('../screens/SkillDetailScreen.tsx');
 };
-for (const lang of ['zh','en']) for (const theme of ['cleanFocus','deepWork']) test(`native Skill opens the existing Direct Log without writes ${lang}/${theme}`,async()=>{
-  fresh(lang,theme);await skillDetail();
-  assert.equal(tree.root.findAllByType('QuestCard').length,0);
-  assert.equal(tree.root.findAllByType('Svg').length,0);
+for (const platform of ['android','web']) for (const lang of ['zh','en']) for (const theme of ['cleanFocus','deepWork']) test(`Skill opens the existing Direct Log without writes ${platform}/${lang}/${theme}`,async()=>{
+  fresh(lang,theme);rn.Platform.OS=platform;await skillDetail();
+  if(platform==='android') {
+    assert.equal(tree.root.findAllByType('QuestCard').length,0);
+    assert.equal(tree.root.findAllByType('Svg').length,0);
+  }
+  assert.equal(tree.root.findAll(node=>node.type==='QuestButton'&&node.props.label===t(lang,'logProgressTodayAction')).length,1);
   await act(async()=>button(t(lang,'logProgressTodayAction')).props.onPress());
   assert.deepEqual(navigations,[['Today']]);
   assert.equal(intents.length,1);assert.equal(intents[0].kind,'skill_reminder');
   assert.equal(intents[0].entityId,'TEST_SKILL');assert.equal(intents[0].action,'OPEN');assert.equal(writes.length,0);
-  await disclose(t(lang,'skillProgressDetails'));
-  assert.equal(tree.root.findAllByType('Svg').length,0);
+  if(platform==='android') {
+    await disclose(t(lang,'skillProgressDetails'));
+    assert.equal(tree.root.findAllByType('Svg').length,0);
+  }
 });
 test('native Skill previews three actual logs and retains History and full configuration entrances',async()=>{
   fresh();await skillDetail(5);

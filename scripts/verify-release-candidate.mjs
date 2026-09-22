@@ -24,7 +24,7 @@ const suites = [
   ['android-backup-policy', node, ['--test', 'tests/native/backup-policy.test.cjs']],
   ['insights', node, ['src/native/insights/__tests__/run-tests.mjs']],
   ['workflows', node, ['--test', 'src/native/nativeWorkflows.test.cjs', 'src/native/accountSettingsBoundary.test.cjs', 'src/screens/settingsTruthfulness.test.cjs']],
-  ['native-form-settings-schedule', node, ['--test', 'src/native/entityForms.test.cjs', 'src/native/NativeSettings.test.cjs', 'tests/native/scheduleUi.test.cjs']],
+  ['native-form-settings-schedule', node, ['--test', 'src/native/entityForms.test.cjs', 'src/native/NativeSettings.test.cjs', 'tests/native/scheduleUi.test.cjs', 'tests/native/quickActionHook.test.cjs']],
   ['materials', node, ['--test', 'tests/native/material.test.cjs']],
   ['decision', 'npm', ['run', 'test:adaptive-decision']],
   ['theme', 'npm', ['run', 'test:theme']],
