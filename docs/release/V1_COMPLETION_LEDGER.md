@@ -99,14 +99,17 @@ VERIFIED_DEVICE, AWAITING_OWNER, BLOCKED. Unchecked entries remain unfinished.
   `http://127.0.0.1:8097` origin. First-launch Backup opened without creating a
   goal; restore returned to Today and survived refresh. Settings shows the
   restored eight daily results plus two subsequently generated daily results.
-  No state/execution observation was added. Byte-for-byte re-export comparison
-  remains pending because the second export encountered a browser-control
-  timeout. This local build has the same application source but not candidate
+  No state/execution observation was added. Re-export completed despite the
+  control timeout: `~/Downloads/questlife-backup-1790069216073.json`. Comparison
+  of all 16 record collections preserved every original record's exact JSON by
+  ID, including the eight daily results and original ownerId=null. The only
+  added records were two subsequently generated daily results. This is not
+  claimed as a populated observation-backup test. This local build has the same application source but not candidate
   account configuration, so it is not a hosted auth/restore acceptance.
 - Actual candidate Goal -> Module -> Skill creation succeeded using only a
   disposable structure: `QA Candidate Interaction` / `QA Workflow` /
-  `QA Focus Review`. These are still present for verification of the fixes below
-  and must be deleted afterward. No real execution or state was fabricated.
+  `QA Focus Review`. These were used for the verification below and subsequently
+  removed using normal delete controls. No owner observations were fabricated.
 - Found and fixed `a70cdcc`: an untracked module displayed 0% and its Skill
   repeated "No tracking". Presentation now uses the existing tracked/percent
   result; absent progress is not coerced to zero. Four platform/language tests
@@ -125,6 +128,51 @@ VERIFIED_DEVICE, AWAITING_OWNER, BLOCKED. Unchecked entries remain unfinished.
   Supabase lock deprecation and navigation-object deprecation warnings remain.
   The isolated emulator's `Test` Goal cleanup, actual native chart, performance,
   recording, physical Health/Calendar/notification and email OTP remain open.
+
+### Actual mutation and cleanup continuation (2026-09-22)
+
+- `cbc4585` Web candidate deployed READY as
+  `dpl_A3eeZhFCHkKwvTLkmduzNqqVFWfu`, bundle
+  `index-0dbc94b56fa3642dc6cb152b1259ab07.js`. The stable candidate alias remains
+  `https://questlife-v1-release.vercel.app`; owner Production was not promoted.
+  Eight fresh stateless API checks pass, including three live current-input
+  matched parses (2.2-2.9 seconds). These are not Store-persistence tests.
+- Same-source Android APK is `questlife-v1-cbc4585-arm64.apk`, 47,247,540 bytes,
+  SHA256 `289c436a9e1eb10d2a59b7611b7c0cc708d37c03143ab3b2db33012a4f9ca5fa`.
+  Installed APK hash matches; LAN download returns HTTP200. Native screenshot
+  control works but pointer dispatch still fails with no available window.
+  Installed interaction/recording/performance remains UNVERIFIED, not passed.
+- Actual candidate Web Goal Detail no longer shows unsupported module 0% or
+  duplicate tracking labels. Skill -> Record opens Today with the exact skill
+  and goal context. Entered 1 actual minute, skipped prediction, left quality
+  unknown, added `QA disposable direct-log verification saved`, then saved.
+  Refresh retained the exact title, minute and note in History. This was a
+  signed-out disposable candidate record, never an owner or synced observation.
+  A transient input-focus control failure did not reproduce with full-text fill
+  and sequential typing; no speculative handler rewrite was made.
+- Schedule creation (19:00-19:25), edit (20:00-20:35) and refresh preserved the
+  same QA block. The exact test ExecutionLog, ScheduleBlock, Skill, Module and
+  Goal were then deleted through their normal controls. Refresh returned Today
+  to no latest record/no schedule; History count was zero. A real Settings
+  backup, `~/Downloads/questlife-backup-1790071996022.json`, confirms ownerId=null
+  and zero goals/modules/moduleSkillLinks/skills/actions/executionLogs/
+  effortUnits/contributionLinks/rescueLogs/stateCheckIns/contextLogs/
+  patternMemory/scheduleBlocks/rawCaptures. The Uncategorized structural category
+  and 12 system-generated daily DecisionResults remain. No claim that all local
+  data or server records were deleted. Other local origins and the emulator's
+  earlier `Test` Goal still require their own cleanup.
+- Actual candidate screenshots checked: 375x667 Chinese/dark Today and State
+  sheet; canceled without saving state. English/light Insights loaded its
+  genuine zero-observation state; analyst row scrolls fully above navigation.
+  English/light Today at 393x852 has no horizontal overflow. These are browser
+  checks, not soft-keyboard or physical-device evidence.
+- Found another real small-screen regression: Goals header buttons squeezed
+  the count and hint into ellipses. `d6f05b9` stacks only that header below the
+  existing 760px content breakpoint, preserving desktop layout and both actions.
+  Local actual UI checked at 320px English/light, 375px Chinese/dark and
+  1280x900 desktop; width equals scrollWidth. Focused entity tests **41/41 PASS**;
+  TypeScript and Web export PASS. No Store/schema/handler changes. Latest
+  source packaging and hosted readback follow this checkpoint.
 
 ### Active completeness correction (2026-09-22)
 
