@@ -33,7 +33,7 @@ VERIFIED_DEVICE, AWAITING_OWNER, BLOCKED. Unchecked entries remain unfinished.
 | Real Quant runtime | VERIFIED_REMOTE (isolated fixtures) | 9 hosted checks: authentication, subject/as-of rejection, 210-observation computation, correction hash, empty-after-removal, QA exclusion and cross-subject isolation; `reports/release/quant-hosted-verification.json`; no owner data/database writes |
 | Native Today/materials/sheets | IMPLEMENTED, partial emulator verification | Standalone release opens Today S0 and State sheet; settled sheet shields background text and Cancel leaves state unrecorded. 31 component tests. Full keyboard, dark-theme and physical acceptance pending |
 | Native Goals / Schedule / Settings | IMPLEMENTED, partial emulator verification | All three tabs opened in installed release; new-goal sheet opened/canceled, Day/Week visible, empty Week reads 0h. Source permissions truthfully unrequested and account validation error visible. Full mutation/device acceptance pending |
-| Native Insights workspace | IMPLEMENTED, VERIFIED_LOCAL; installed retest pending | 27 tests in each of two timezones; real variable catalog and source/record/backup entrances remain available without observations. Six actual example loaders tested with native window. Full installed chart acceptance remains open |
+| Native Insights workspace | IMPLEMENTED, VERIFIED_LOCAL; installed retest pending | 28 tests in each of two timezones; real variable catalog and source/record/backup entrances remain available without observations. Six actual example loaders tested with native window. Duplicate bridge selections suppressed. Full installed chart acceptance remains open |
 | Health / Calendar / Notifications | IMPLEMENTED, VERIFIED_LOCAL | Explicit provider deletion/correction, durable Calendar intents/reconciliation, push registration lifecycle and quiet hours; actual source samples, OS writes and delivery require device/provider gates |
 | Shortcuts / deep links | IMPLEMENTED, VERIFIED_LOCAL | Open-only entries through existing handlers; 19 intent boundary assertions; Android Widget plugin passed 12 checks including native AAPT/Kotlin compilation; final installed-widget acceptance pending |
 | Isolated example mode | IMPLEMENTED, VERIFIED_LOCAL; partial installed check | Native example gallery and isolation notice visible. Real loader regression found/fixed; final chart readback pending unlock. No example is written to Store/outbox/OS |
@@ -131,6 +131,13 @@ forms/Settings/Schedule: 25/19/21, Store: 26, queue: 17. Rebuild the final
 same-source candidate after committing these logs. The previous `2322526`
 deployment and APK are intermediate artifacts, not this final correction.
 
+Complete regression rerun at `6b8ec6d`: all 26 suites PASS, including typecheck,
+Web export and dependency audit. The report identifies that exact source; these
+results are local checks, not installed-device, email-delivery or visual passes.
+The preceding `cf86bef` Web deployment is READY and its standalone Android APK
+was signed and installed. Both will be superseded by the same-source build
+including the chart bridge correction. No owner-production promotion occurred.
+
 The persistence correction keeps the existing whole-entity mutation semantics;
 it does not silently introduce field-level conflict merging. Failed writes keep
 their exact original ID/closure, later writes wait, and retry first recovers the
@@ -185,7 +192,8 @@ Historical entries below are evidence, not a queue to restart.
    recipient/provider configuration; the disposable password-auth test does not
    establish SMTP delivery. No email service or paid subscription was invented.
 2. Complete Apple Developer sign-in and internal distribution/device registration
-   at the waiting EAS terminal. EAS login itself is already verified.
+   when the internal iPhone build is resumed. No active waiting credential
+   terminal is assumed; EAS login itself is already verified.
 3. Physical iPhone/Android Health and notification permission and real-device
    visual/performance acceptance. These cannot be replaced by emulator results.
 4. Native high-frame-rate recording is not exposed by the current CUA tool.

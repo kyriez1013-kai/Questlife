@@ -1,20 +1,20 @@
-✔ register stays synchronous and create/update/delete run in durable ACK order (0.826459ms)
-✔ a failed head blocks following jobs without discarding them (0.841416ms)
-✔ waiters before and after failure reject promptly, including blocked IDs and waitAll (0.160667ms)
-✔ repeated retries do not duplicate an in-flight attempt and retain the original closure (0.108542ms)
-✔ registering the same pending ID is a no-op; registering its failed ID retries the same payload (0.098583ms)
-✔ registering another ID behind failure does not automatically retry the head (0.10925ms)
-✔ lost ACK recovery belongs to the same run closure and does not duplicate its durable write (0.183541ms)
-✔ a later failure cannot invalidate already successful IDs or ACK promises (0.095458ms)
-✔ waitAll captures the current tail and later writes do not postpone it (0.092083ms)
-✔ an empty waitAll resolves even when a later registration fails (0.096833ms)
-✔ a later failure does not reject a captured waitAll or extend it across ID reuse (0.094083ms)
-✔ snapshot references stay stable until pending or failed changes (0.139833ms)
-✔ reentrant listeners can register, unsubscribe and retry without overlap or recursive delivery (0.090791ms)
-✔ throwing or removed listeners cannot break persistence or later subscribers (0.134167ms)
-✔ synchronous throws and non-Error rejection values remain retryable (0.070542ms)
-✔ ignored run and ACK failures do not emit unhandled rejections for legacy callers (2.375458ms)
-✔ successful writes release tracked entries and permit reuse without a growing ACK history (5.191417ms)
+✔ register stays synchronous and create/update/delete run in durable ACK order (0.751833ms)
+✔ a failed head blocks following jobs without discarding them (0.645542ms)
+✔ waiters before and after failure reject promptly, including blocked IDs and waitAll (0.190625ms)
+✔ repeated retries do not duplicate an in-flight attempt and retain the original closure (0.128875ms)
+✔ registering the same pending ID is a no-op; registering its failed ID retries the same payload (0.106833ms)
+✔ registering another ID behind failure does not automatically retry the head (0.106584ms)
+✔ lost ACK recovery belongs to the same run closure and does not duplicate its durable write (0.122958ms)
+✔ a later failure cannot invalidate already successful IDs or ACK promises (0.0915ms)
+✔ waitAll captures the current tail and later writes do not postpone it (0.089042ms)
+✔ an empty waitAll resolves even when a later registration fails (0.097833ms)
+✔ a later failure does not reject a captured waitAll or extend it across ID reuse (0.10025ms)
+✔ snapshot references stay stable until pending or failed changes (0.1455ms)
+✔ reentrant listeners can register, unsubscribe and retry without overlap or recursive delivery (0.093084ms)
+✔ throwing or removed listeners cannot break persistence or later subscribers (0.099ms)
+✔ synchronous throws and non-Error rejection values remain retryable (0.061291ms)
+✔ ignored run and ACK failures do not emit unhandled rejections for legacy callers (2.2945ms)
+✔ successful writes release tracked entries and permit reuse without a growing ACK history (5.55025ms)
 ℹ tests 17
 ℹ suites 0
 ℹ pass 17
@@ -22,34 +22,34 @@
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 45.204542
+ℹ duration_ms 43.840125
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ parser-proposed quality is not saved as an observation without explicit user selection (34.050834ms)
+✔ parser-proposed quality is not saved as an observation without explicit user selection (34.79925ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ explicit Capture quality and clearing it persist exactly, never falling back to the model (17.673916ms)
-react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ partial strength observations never invent volume or overwrite its known baseline (4.232208ms)
-react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ Store exposes pending until local disk and durable outbox acknowledge create/update/delete (1.33925ms)
+✔ explicit Capture quality and clearing it persist exactly, never falling back to the model (18.059458ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ schedule recording without measured duration never copies the plan across refresh (1.266ms)
+✔ partial strength observations never invent volume or overwrite its known baseline (4.399708ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ explicit actual schedule duration survives write and retry without being replaced by the plan (1.263667ms)
-react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ failed journal queues later edits; retry preserves ID and exact mutation order (1.05825ms)
-react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ durable WAL recovery after create failure does not enqueue a duplicate (0.800375ms)
-react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ durable WAL recovery after update failure does not enqueue a duplicate (0.862375ms)
-react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ durable WAL recovery after delete failure does not enqueue a duplicate (0.832ms)
+✔ Store exposes pending until local disk and durable outbox acknowledge create/update/delete (1.525834ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ queued deletion is not resurrected by the preceding ACK, including mounted reload (0.828417ms)
+✔ schedule recording without measured duration never copies the plan across refresh (1.495833ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ explicit actual schedule duration survives write and retry without being replaced by the plan (1.45475ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ failed journal queues later edits; retry preserves ID and exact mutation order (0.903875ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ durable WAL recovery after create failure does not enqueue a duplicate (0.696917ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ durable WAL recovery after update failure does not enqueue a duplicate (0.842042ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ durable WAL recovery after delete failure does not enqueue a duplicate (0.718667ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ queued deletion is not resurrected by the preceding ACK, including mounted reload (0.86325ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
 [coreFlow] integrity issues detected on load [
   {
@@ -60,36 +60,36 @@ react-test-renderer is deprecated. See https://react.dev/warnings/react-test-ren
   }
 ]
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ Goal and appearance updates receive the same durable receipt and survive remount (1.109833ms)
+✔ Goal and appearance updates receive the same durable receipt and survive remount (1.202292ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ an execution retry reuses its original entity and its durable receipt (0.927167ms)
+✔ an execution retry reuses its original entity and its durable receipt (0.989125ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ WAL replay through the real Store projection cannot erase later optimistic edits (1.280166ms)
+✔ WAL replay through the real Store projection cannot erase later optimistic edits (0.788709ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ remote projection preserves a queued local edit without persisting it prematurely (1.032375ms)
+✔ remote projection preserves a queued local edit without persisting it prematurely (1.319208ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ WAL recovery cannot resurrect a later explicitly deleted entity in the UI (0.941667ms)
+✔ WAL recovery cannot resurrect a later explicitly deleted entity in the UI (0.829333ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ state submission waits for ACK, coalesces taps and triggers follow-up exactly once (1.127042ms)
+✔ state submission waits for ACK, coalesces taps and triggers follow-up exactly once (0.978292ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ failed state submission retries the original observation instead of creating a second one (0.77525ms)
+✔ failed state submission retries the original observation instead of creating a second one (0.725167ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ compatibility-cache failure retains the acknowledged state and only retries follow-up (0.682875ms)
+✔ compatibility-cache failure retains the acknowledged state and only retries follow-up (0.599792ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ distinct Instant Read feedback values survive failed write retry and remount on the same DecisionResult (1.366208ms)
+✔ distinct Instant Read feedback values survive failed write retry and remount on the same DecisionResult (1.845667ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ actual Today feedback callback reports saved only after durability and never closes a newer Instant Read (14.958334ms)
+✔ actual Today feedback callback reports saved only after durability and never closes a newer Instant Read (15.665625ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ actual Today state callback with real Store emits no success or AI before ACK and retries the same observation (10.609791ms)
+✔ actual Today state callback with real Store emits no success or AI before ACK and retries the same observation (11.195958ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ actual Capture submit retains raw input on failed ACK and parses the original record only once after retry (4.73275ms)
+✔ actual Capture submit retains raw input on failed ACK and parses the original record only once after retry (4.935375ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ actual structured quick Capture waits for both writes and never calls the parser (3.586042ms)
+✔ actual structured quick Capture waits for both writes and never calls the parser (3.321709ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ capture confirmation retry retains every created entity and publishes feedback only after the whole batch ACK (1.44525ms)
+✔ capture confirmation retry retains every created entity and publishes feedback only after the whole batch ACK (1.683125ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ actual after-state callback does not claim saved before ACK and retry keeps the selected meanings (9.322833ms)
+✔ actual after-state callback does not claim saved before ACK and retry keeps the selected meanings (9.194542ms)
 ℹ tests 26
 ℹ suites 0
 ℹ pass 26
@@ -97,4 +97,4 @@ react-test-renderer is deprecated. See https://react.dev/warnings/react-test-ren
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 416.589375
+ℹ duration_ms 420.11
