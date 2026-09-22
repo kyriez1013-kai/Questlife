@@ -138,6 +138,14 @@ durable WAL. A local error is distinct from an already-durable offline outbox.
 The in-memory pending overlay is presentation only, never a second data source.
 No owner observations or backend records were created by these tests.
 
+Native chart interaction cost: unchanged crosshair selections no longer cross
+the WebView bridge repeatedly, and selection-only renders reuse the serialized
+chart model. A 200-event same-reading test emits one selection; changed values,
+returning to a reading, and redraw still deliver their correct messages. All 28
+Insights tests pass in both timezones. This is a measured message-count reduction,
+not a new device-frame-rate result. Final performance/recording remains blocked
+by the locked Mac and physical-device access.
+
 Current source commits: `1898cb4` ordered durability/recovery, `9d37a2b` entity
 forms, `6d96e06` Settings/import request guards, `cdb6322` native Schedule,
 `5dec822` Insights cold start, `15932f8` durable Today submissions, and `b8f365f`

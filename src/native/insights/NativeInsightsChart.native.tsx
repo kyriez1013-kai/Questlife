@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { chartHtml } from '../../platform/charts/localChartAsset';
@@ -14,7 +14,7 @@ export default forwardRef<InsightsV3ChartHandle, NativeInsightsChartProps>(funct
   const [loaded, setLoaded] = useState(false); const [ready, setReady] = useState(false); const [error, setError] = useState(false);
   const [reload, setReload] = useState(0); const [selection, setSelection] = useState('');
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const signature = JSON.stringify(model); const s = insightsStyles(q);
+  const signature = useMemo(() => JSON.stringify(model), [model]); const s = insightsStyles(q);
   const send = (command: object) => view.current?.injectJavaScript(`window.questlifeChart(${JSON.stringify(command).replace(/</g, '\\u003c')});true;`);
   useImperativeHandle(ref, () => ({ fit: () => send({ type: 'fit' }), zoomIn: () => send({ type: 'zoomIn' }), zoomOut: () => send({ type: 'zoomOut' }) }));
   useEffect(() => {

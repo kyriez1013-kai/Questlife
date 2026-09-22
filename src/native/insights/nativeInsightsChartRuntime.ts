@@ -5,8 +5,13 @@ export const nativeInsightsRendererScript = String.raw`
   const hostWindow = window;
   const library = hostWindow.LightweightCharts;
   let chart;
+  let lastSelection;
   const send = (event) => {
     const payload = JSON.stringify(Object.assign({ channel: 'native-insights' }, event));
+    if (event.type === 'selection') {
+      if (payload === lastSelection) return;
+      lastSelection = payload;
+    }
     if (hostWindow.ReactNativeWebView) hostWindow.ReactNativeWebView.postMessage(payload);
     else window.parent.postMessage(payload, '*');
   };
@@ -17,6 +22,7 @@ export const nativeInsightsRendererScript = String.raw`
   };
   const draw = (m) => {
     chart?.remove();
+    lastSelection = undefined;
     chart = library.createChart(document.getElementById('chart'), {
       autoSize: true, layout: { background: { color: m.colors.background }, textColor: m.colors.text, fontSize: m.fontSize, attributionLogo: true },
       grid: { vertLines: { visible: false }, horzLines: { color: m.colors.border } },

@@ -216,6 +216,26 @@ test('literal renderer is self-contained across the Hermes/WebView boundary and 
   win.questlifeChart({ type: 'fit' }); assert.equal(fits, 2);
 });
 
+test('crosshair deduplicates identical bridge messages but preserves changed values and redraws', () => {
+  const messages: Array<{ type: string; value?: number }> = [];
+  const primary = { setData: () => {}, createPriceLine: () => {} };
+  let select: (event: object) => void = () => {};
+  const chart = { remove: () => {}, addSeries: () => primary, subscribeCrosshairMove: (callback: typeof select) => { select = callback; }, timeScale: () => ({ fitContent() {} }) };
+  const win = { LightweightCharts: { createChart: () => chart, LineSeries: {}, HistogramSeries: {}, CandlestickSeries: {} },
+    ReactNativeWebView: { postMessage: (message: string) => messages.push(JSON.parse(message)) }, questlifeChart: (_command: object) => {} };
+  runInNewContext(nativeInsightsRendererScript, { window: win, document: { getElementById: () => ({}) }, Intl, Date });
+  const model = nativeChartModel(presentation, q);
+  const event = (value: number) => ({ time: 100, seriesData: new Map([[primary, { value }]]) });
+  win.questlifeChart({ type: 'model', model });
+  for (let i = 0; i < 200; i++) select(event(2));
+  assert.equal(messages.filter(row => row.type === 'selection').length, 1);
+  select(event(3)); select(event(2));
+  assert.deepEqual(messages.filter(row => row.type === 'selection').map(row => row.value), [2, 3, 2]);
+  win.questlifeChart({ type: 'model', model }); select(event(2));
+  assert.equal(messages.filter(row => row.type === 'selection').length, 4);
+  assert.equal(messages.filter(row => row.type === 'ready').length, 2);
+});
+
 function renderEventMarkers(model: ReturnType<typeof nativeChartModel>) {
   const data: unknown[] = []; const messages: Array<{ type: string }> = [];
   let markers: Array<{ time: number; position: string; shape: string }> = [];

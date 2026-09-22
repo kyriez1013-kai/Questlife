@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import type { QuestTheme } from '../../design/tokens';
 import type { InsightsV3ChartHandle } from '../../insights-v3/InsightsV3Chart';
@@ -13,21 +13,22 @@ export type NativeInsightsChartProps = { model: NativeChartModel; q: QuestTheme;
 /** Web review of the same local document and native UI; native resolves the .native sibling. */
 export default forwardRef<InsightsV3ChartHandle, NativeInsightsChartProps>(function NativeInsightsChart({ model, q, onReadyChange }, ref) {
   const frame = useRef<HTMLIFrameElement>(null); const [loaded, setLoaded] = useState(false); const [error, setError] = useState(false); const [reload, setReload] = useState(0); const [selection, setSelection] = useState('');
-  const signature = JSON.stringify(model); const s = insightsStyles(q);
+  const signature = useMemo(() => JSON.stringify(model), [model]); const s = insightsStyles(q);
   const send = (command: object) => (frame.current?.contentWindow as unknown as { questlifeChart?: (command: object) => void } | null)?.questlifeChart?.(command);
   useImperativeHandle(ref, () => ({ fit: () => send({ type: 'fit' }), zoomIn: () => send({ type: 'zoomIn' }), zoomOut: () => send({ type: 'zoomOut' }) }));
   useEffect(() => {
     onReadyChange(false); setError(false); setSelection('');
+    const displayedModel = JSON.parse(signature);
     let timer: ReturnType<typeof setTimeout>;
     const handler = (event: MessageEvent) => {
       if (event.source !== frame.current?.contentWindow) return;
       const message = parseNativeChartEvent(event.data);
       if (message?.type === 'ready') { clearTimeout(timer); onReadyChange(true); }
       else if (message?.type === 'error') { clearTimeout(timer); setError(true); onReadyChange(false); }
-      else if (message?.type === 'selection') setSelection(selectionText(JSON.parse(signature), message));
+      else if (message?.type === 'selection') setSelection(selectionText(displayedModel, message));
     };
     window.addEventListener('message', handler);
-    if (loaded) send({ type: 'model', model: JSON.parse(signature) });
+    if (loaded) send({ type: 'model', model: displayedModel });
     timer = setTimeout(() => { setError(true); onReadyChange(false); }, 10000);
     return () => { clearTimeout(timer); window.removeEventListener('message', handler); };
   }, [loaded, signature, reload, onReadyChange]);
