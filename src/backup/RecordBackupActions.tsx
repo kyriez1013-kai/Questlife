@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { useInteractionBusyState } from '../components/AsyncInteractionBoundary';
 import { Platform, Text, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { File } from 'expo-file-system';
@@ -15,7 +16,7 @@ export default function RecordBackupActions() {
   const { data, loading } = useStore();
   const q = useQuestTheme(data.settings.selectedThemeId), lang = getLanguage(data.settings.language);
   const lock = useRef(false);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useInteractionBusyState();
   const [status, setStatus] = useState<'ready' | 'restored' | 'failed' | null>(null);
   const perform = async (job: () => Promise<'ready' | 'restored' | null>) => {
     if (lock.current || loading) return;

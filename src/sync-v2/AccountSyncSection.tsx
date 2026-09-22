@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Alert, Platform, Switch, Text, View } from "react-native";
 import { useStore } from "../store";
 import { getLanguage } from "../i18n";
@@ -19,9 +19,12 @@ import {
 import { syncCopy as c } from "./copy";
 import type { IdentitySession } from "./auth";
 import type { SyncState } from "./contracts";
+import { useInteractionBusyState } from '../components/AsyncInteractionBoundary';
 
 export default function AccountSyncSection() {
-  const { data } = useStore();
+  const { data, localPersistence } = useStore();
+  const pendingLocal = useRef(localPersistence?.pending ?? 0);
+  pendingLocal.current = localPersistence?.pending ?? 0;
   const lang = getLanguage(data.settings.language);
   const q = useQuestTheme(data.settings.selectedThemeId);
   const [session, setSession] = useState<IdentitySession | null>(null);
@@ -32,7 +35,7 @@ export default function AccountSyncSection() {
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [sent, setSent] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useInteractionBusyState();
   const [failed, setFailed] = useState(false);
   const [linkFailed, setLinkFailed] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
@@ -112,7 +115,8 @@ export default function AccountSyncSection() {
   const blocked =
     !!session && !!snapshot?.ownerId && session.userId !== snapshot.ownerId;
   const confirmClear = () => {
-    const execute = () => void run(() => clearLocalReplica(true));
+    if (pendingLocal.current) return;
+    const execute = () => { if (!pendingLocal.current) void run(() => clearLocalReplica(true)); };
     if (Platform.OS === "web") {
       if (window.confirm(c(lang, "clearWarning"))) execute();
     } else
@@ -307,6 +311,7 @@ export default function AccountSyncSection() {
                 variant="ghost"
                 disabled={
                   busy ||
+                  !!localPersistence?.pending ||
                   !!snapshot.outbox.length ||
                   snapshot.conflicts.some(
                     (item) => item.resolution === "pending",

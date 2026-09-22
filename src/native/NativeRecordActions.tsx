@@ -1,4 +1,5 @@
-import React, { useRef, useState } from 'react';
+import React, { useContext, useRef, useState } from 'react';
+import { AsyncInteractionGuard, useInteractionBusyState } from '../components/AsyncInteractionBoundary';
 import { Platform, Text } from 'react-native';
 import { useStore } from '../store';
 import { useQuestTheme } from '../design/useQuestTheme';
@@ -14,7 +15,8 @@ export default function NativeRecordActions({ onOpenAccount }: { onOpenAccount?:
   const { data, loading } = useStore();
   const q = useQuestTheme(data.settings.selectedThemeId);
   const lang = getLanguage(data.settings.language);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useInteractionBusyState();
+  const guard = useContext(AsyncInteractionGuard);
   const [status, setStatus] = useState<'idle' | 'shared' | 'cancelled' | 'unavailable' | 'error'>('idle');
   const running = useRef(false);
   const available = Platform.OS === 'android' || Platform.OS === 'ios';
@@ -43,7 +45,7 @@ export default function NativeRecordActions({ onOpenAccount }: { onOpenAccount?:
     </Text> : null}
     <Text accessibilityRole="header" style={{ color: q.colors.text, fontSize: q.typography.cardTitleSize }}>{t(lang, 'recordRecovery')}</Text>
     {note(t(lang, 'recordRecoveryLimit'))}
-    {onOpenAccount ? <QuestButton questTheme={q} variant="secondary" label={syncCopy(lang, 'account')} disabled={busy} onPress={onOpenAccount} /> : null}
+    {onOpenAccount ? <QuestButton questTheme={q} variant="secondary" label={syncCopy(lang, 'account')} disabled={busy} onPress={() => guard(onOpenAccount)} /> : null}
     <Text accessibilityRole="header" style={{ color: q.colors.text, fontSize: q.typography.cardTitleSize }}>{syncCopy(lang, 'clearLocal')}</Text>
     {note(workflowCopy(lang, 'localClearScope'))}
     {note(syncCopy(lang, 'clearLimit'))}

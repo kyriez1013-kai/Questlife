@@ -69,3 +69,8 @@ test('failed local clear displays failure without signing out',async()=>{
   setup();failClear=true;await render();await act(async()=>clearButton().props.onPress());await act(async()=>alerts[0][2][1].onPress());
   assert.ok(tree.root.findAll(node=>node.type==='Text'&&node.props.accessibilityRole==='alert').length);assert.equal(signouts,0);
 });
+test('unsaved Store writes block replica clearing even before reaching the outbox',async()=>{
+  setup();store.localPersistence={pending:1,failed:true};await render();
+  assert.equal(clearButton().props.disabled,true);
+  await act(async()=>clearButton().props.onPress());assert.equal(alerts.length,0);assert.deepEqual(clears,[]);
+});

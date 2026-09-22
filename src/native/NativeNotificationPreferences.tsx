@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useInteractionBusyState } from '../components/AsyncInteractionBoundary';
 import { Platform, Switch, Text, View } from 'react-native';
 import Constants from 'expo-constants';
 import { useStore } from '../store';
@@ -25,11 +26,11 @@ export default function NativeNotificationPreferences({ registerPushToken = regi
   const startMinute = quiet?.startMinute ?? 22 * 60;
   const endMinute = quiet?.endMinute ?? 7 * 60;
   const enabled = !!quiet && startMinute !== endMinute;
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useInteractionBusyState();
   const [error, setError] = useState(false);
   const running = useRef(false);
   const [pushStatus, setPushStatus] = useState<'idle' | 'registered' | 'error'>('idle');
-  const [pushBusy, setPushBusy] = useState(false);
+  const [pushBusy, setPushBusy] = useInteractionBusyState();
   const requestingPush = useRef(false);
   const [ownerId, setOwnerId] = useState<string | null>(null);
   const context = useRef({ active: true, revision: 0, ownerId: null as string | null, enabled: false });
