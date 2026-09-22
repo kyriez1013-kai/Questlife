@@ -1,139 +1,139 @@
 {
-  "sourceCommit": "2dfde014009ce4a84e23662562eec5c2357a894a",
-  "generatedAt": "2026-09-22T07:04:44.202Z",
+  "sourceCommit": "5e67b53b85bb3b1b55acd1aaae9ff7e576d871c7",
+  "generatedAt": "2026-09-22T07:16:40.090Z",
   "scope": "local synthetic and component checks; not device/hosted acceptance",
   "results": [
     {
       "name": "types",
       "status": "PASS",
       "exitCode": 0,
-      "ms": 6947
+      "ms": 6731
     },
     {
       "name": "platform",
       "status": "PASS",
       "exitCode": 0,
-      "ms": 894
+      "ms": 922
     },
     {
       "name": "device-services",
       "status": "PASS",
       "exitCode": 0,
-      "ms": 1531
+      "ms": 1518
     },
     {
       "name": "sync",
       "status": "PASS",
       "exitCode": 0,
-      "ms": 14482
+      "ms": 14520
     },
     {
       "name": "local-mutations",
       "status": "PASS",
       "exitCode": 0,
-      "ms": 907
+      "ms": 914
     },
     {
       "name": "record-backup",
       "status": "PASS",
       "exitCode": 0,
-      "ms": 1268
+      "ms": 1255
     },
     {
       "name": "sync-sql",
       "status": "PASS",
       "exitCode": 0,
-      "ms": 771
+      "ms": 836
     },
     {
       "name": "sync-concurrency",
       "status": "PASS",
       "exitCode": 0,
-      "ms": 3875
+      "ms": 3925
     },
     {
       "name": "push-postgres",
       "status": "PASS",
       "exitCode": 0,
-      "ms": 1332
+      "ms": 1376
     },
     {
       "name": "push-boundary",
       "status": "PASS",
       "exitCode": 0,
-      "ms": 1858
+      "ms": 1911
     },
     {
       "name": "health-delete",
       "status": "PASS",
       "exitCode": 0,
-      "ms": 1798
+      "ms": 1793
     },
     {
       "name": "auth",
       "status": "PASS",
       "exitCode": 0,
-      "ms": 1161
+      "ms": 1153
     },
     {
       "name": "auth-links",
       "status": "PASS",
       "exitCode": 0,
-      "ms": 10236
+      "ms": 10246
     },
     {
       "name": "shortcuts",
       "status": "PASS",
       "exitCode": 0,
-      "ms": 73
+      "ms": 66
     },
     {
       "name": "android-widget",
       "status": "PASS",
       "exitCode": 0,
-      "ms": 242
+      "ms": 245
     },
     {
       "name": "android-backup-policy",
       "status": "PASS",
       "exitCode": 0,
-      "ms": 95
+      "ms": 89
     },
     {
       "name": "insights",
       "status": "PASS",
       "exitCode": 0,
-      "ms": 2168
+      "ms": 2202
     },
     {
       "name": "workflows",
       "status": "PASS",
       "exitCode": 0,
-      "ms": 718
+      "ms": 728
     },
     {
       "name": "native-form-settings-schedule",
       "status": "PASS",
       "exitCode": 0,
-      "ms": 691
+      "ms": 684
     },
     {
       "name": "materials",
       "status": "PASS",
       "exitCode": 0,
-      "ms": 943
+      "ms": 946
     },
     {
       "name": "decision",
       "status": "PASS",
       "exitCode": 0,
-      "ms": 2074
+      "ms": 2123
     },
     {
       "name": "theme",
       "status": "PASS",
       "exitCode": 0,
-      "ms": 177
+      "ms": 179
     },
     {
       "name": "metro-assets",
@@ -145,19 +145,19 @@
       "name": "web-entry-boundary",
       "status": "PASS",
       "exitCode": 0,
-      "ms": 150
+      "ms": 149
     },
     {
       "name": "web",
       "status": "PASS",
       "exitCode": 0,
-      "ms": 6534
+      "ms": 17490
     },
     {
       "name": "dependency-audit",
       "status": "PASS",
       "exitCode": 0,
-      "ms": 1551
+      "ms": 1335
     }
   ]
 }
