@@ -436,7 +436,7 @@ function LegacyRecordProgressForm({
         value={minutes}
         onChangeText={onMinutesChange}
         keyboardType="number-pad"
-        placeholder="30"
+        placeholder={t(lang, 'recordActualMinutesPlaceholder')}
         returnKeyType="done"
         onSubmitEditing={Keyboard.dismiss}
         blurOnSubmit
@@ -1361,7 +1361,7 @@ function V11RecordProgressContent(props: Props) {
         ) : null}
         <View style={styles.v11FieldGroup}>
           {inputLabel(isStrength ? t(lang, 'sessionDurationOptional') : t(lang, 'actualMinutes'))}
-          <QuestInput questTheme={questTheme} value={minutes} onChangeText={props.onMinutesChange} keyboardType="number-pad" placeholder="30" returnKeyType="done" onSubmitEditing={Keyboard.dismiss} blurOnSubmit style={styles.v11Input} />
+          <QuestInput questTheme={questTheme} value={minutes} onChangeText={props.onMinutesChange} keyboardType="number-pad" placeholder={t(lang, 'recordActualMinutesPlaceholder')} returnKeyType="done" onSubmitEditing={Keyboard.dismiss} blurOnSubmit style={styles.v11Input} />
         </View>
         <View style={styles.v11FieldGroup}>
           {inputLabel(t(lang, 'optionalQuality'))}

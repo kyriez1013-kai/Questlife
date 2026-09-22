@@ -19,7 +19,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useStore } from '../store';
 import { DurableSubmission } from '../utils/durableSubmission';
-import { recordSourceBindings, timerRecordProvenance } from '../utils/recordSubmission';
+import { actualMinutesInput, initialActualMinutes, recordSourceBindings, timerRecordProvenance } from '../utils/recordSubmission';
 import { theme } from '../theme';
 import { getQuestTheme, getStateToneColor, questLayout } from '../design/tokens';
 import { useQuestTheme } from '../design/useQuestTheme';
@@ -884,7 +884,7 @@ export default function HomeScreen() {
     recordDraftId.current = preset?.timerSessionId ? `execution-${preset.timerSessionId}` : uid();
     setRecordSaveError(false);
     setRecordDraftLocked(false);
-    setMinutes(String(preset?.minutes ?? 30));
+    setMinutes(initialActualMinutes(preset));
     setPredictedMinutes(String(preset?.minutes ?? 30));
     setPredictedValue('');
     setPredictedStrengthWeight('');
@@ -1001,10 +1001,11 @@ export default function HomeScreen() {
   const submit = async () => {
     if (recordSubmitBusy.current) return;
     if (logType === 'skill' && !skillId) { Alert.alert(t(lang, 'selectOneSkill')); return; }
-    const schemaMinutes = optionalNumber(schemaValues.durationMinutes);
-    const m = parseInt(minutes, 10) || schemaMinutes || 0;
-    if (!m || m <= 0) { Alert.alert(t(lang, 'invalidMinutes')); return; }
     const { block: selectedBlock, skillId: effectiveSkillId } = recordSourceBindings(logType, skillId, scheduleBlockId, todayScheduleBlocks);
+    const selectedSkill = data.skills.find((item) => item.id === effectiveSkillId);
+    const duration = actualMinutesInput(minutes, schemaValues.durationMinutes, isStrengthPredictionSkill(selectedSkill));
+    if (!duration.valid) return;
+    const m = duration.minutes;
     if (logType === 'schedule' && !selectedBlock) { setRecordSaveError(true); return; }
     recordSubmitBusy.current = true;
     Keyboard.dismiss();
@@ -1015,7 +1016,7 @@ export default function HomeScreen() {
     const skill = data.skills.find((s) => s.id === effectiveSkillId);
     const showSavedFeedback = () => {
     // Only celebrate after the durable record ACK.
-    if (skill && skill.dailyTargetMinutes > 0) {
+    if (skill && m != null && skill.dailyTargetMinutes > 0) {
       const target = adjustTaskRecommendation(skill, effectiveCurrentState).adjustedMinutes;
       const beforeMin = skillMinutesOnDate(skill.id, todayStr, data.actions);
       const beforeDone = beforeMin >= target;
@@ -1027,7 +1028,7 @@ export default function HomeScreen() {
 
     // 小时里程碑检测: 提交后是否首次跨越 10/25/50/100/200/300h
     let triggeredAchievement = false;
-    if (skill) {
+    if (skill && m != null) {
       const beforeMin = skillTotalMinutes(skill.id, data.actions);
       const afterMin = beforeMin + m;
       const newMilestone = HOUR_MILESTONES.find(
@@ -1040,7 +1041,7 @@ export default function HomeScreen() {
     }
 
     // Streak 里程碑 (仅在没有成就横幅时显示, 避免重叠)
-    if (!triggeredAchievement && skill) {
+    if (!triggeredAchievement && skill && m != null) {
       const beforeStreak = skillStreak(skill.id, data.actions);
       const fakeAction: Action = {
         id: '__sim__',
@@ -2455,8 +2456,9 @@ export default function HomeScreen() {
   const modalPredictionSchema = getPredictionSchemaForSkill(modalSkill);
   const modalIsStrength = isStrengthPredictionSkill(modalSkill);
   const modalSchemaFields = getRecordingFieldsForSkill(modalSkill);
-  const saveDisabled = recordSaving || (logType === 'skill' && !skillId);
-  const saveDisabledReason = recordSaveError ? t(lang, 'recordSaveRetry') : recordSaving ? t(lang, 'recordSaving') : saveDisabled ? t(lang, 'selectSkillFirst') : '';
+  const recordDurationValid = actualMinutesInput(minutes, schemaValues.durationMinutes, modalIsStrength).valid;
+  const saveDisabled = recordSaving || (logType === 'skill' && !skillId) || !recordDurationValid;
+  const saveDisabledReason = recordSaveError ? t(lang, 'recordSaveRetry') : recordSaving ? t(lang, 'recordSaving') : logType === 'skill' && !skillId ? t(lang, 'selectSkillFirst') : !recordDurationValid ? t(lang, 'invalidMinutes') : '';
   const modalInputStyle = {
     backgroundColor: questTheme.colors.surfaceElevated,
     borderColor: questTheme.colors.border,
@@ -3306,7 +3308,6 @@ export default function HomeScreen() {
               const first = todayScheduleBlocks[0];
               setScheduleBlockId(first?.id ?? null);
               setSkillId(first?.linkedSkillId ?? null);
-              if (first) setMinutes(String(first.plannedMinutes));
             } else {
               setScheduleBlockId(null);
               setSkillId(value === 'custom' ? null : data.skills[0]?.id ?? null);
@@ -3331,7 +3332,6 @@ export default function HomeScreen() {
           onScheduleBlockSelect={(block) => {
             setScheduleBlockId(block.id);
             setSkillId(block.linkedSkillId ?? null);
-            setMinutes(String(block.plannedMinutes));
           }}
           onSchemaValuesChange={setSchemaValues}
           onSessionTypeChange={setSessionType}

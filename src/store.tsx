@@ -790,7 +790,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       appliedToProgress: logData.appliedToProgress ?? false,
       ...logData,
       date,
-      durationMinutes: Math.max(0, Math.round(logData.durationMinutes ?? scheduleBlock?.plannedMinutes ?? 0)),
+      // Zero is the existing unrecorded sentinel, never a copied plan duration.
+      durationMinutes: Math.max(0, Math.round(logData.durationMinutes ?? 0)),
       source,
       linkedSkillId: requestedSkillId,
       linkedGoalId: requestedGoalId,

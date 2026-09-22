@@ -125,6 +125,28 @@ test('Store exposes pending until local disk and durable outbox acknowledge crea
   assert.equal(journal.outbox.at(-1).operation, 'delete'); assert.equal(journal.outbox.at(-1).entityId, block.id);
 });
 
+test('schedule recording without measured duration never copies the plan across refresh', async () => {
+  await fresh(); let block;
+  await act(async()=>{block=store.addScheduleBlock(plan);await store.waitForLocalWrites();});
+  await act(async()=>{store.createExecutionLog({id:'TEST_UNKNOWN_TIME',date:plan.date,linkedScheduleBlockId:block.id,predictedDurationMinutes:60});await store.waitForExecutionLog('TEST_UNKNOWN_TIME');});
+  assert.equal(disk.executionLogs[0].durationMinutes,0);
+  assert.equal(disk.executionLogs[0].predictionDelta,undefined);
+  assert.ok(disk.executionLogs[0].dataProvenance.limitations.includes('DURATION_EXPLICIT_TOUCH_UNKNOWN'));
+  assert.equal(disk.scheduleBlocks.find(row=>row.id===block.id).plannedMinutes,60);
+  await act(async()=>tree.unmount());tree=undefined;await mount();
+  assert.equal(store.data.executionLogs[0].durationMinutes,0);
+});
+
+test('explicit actual schedule duration survives write and retry without being replaced by the plan', async () => {
+  await fresh(); let block;
+  await act(async()=>{block=store.addScheduleBlock(plan);await store.waitForLocalWrites();});
+  failSave=true;
+  await act(async()=>{store.createExecutionLog({id:'TEST_ACTUAL_TIME',date:plan.date,linkedScheduleBlockId:block.id,durationMinutes:17});await assert.rejects(store.waitForExecutionLog('TEST_ACTUAL_TIME'));});
+  await act(async()=>{await store.retryLocalWrites();});
+  assert.equal(disk.executionLogs.length,1);assert.equal(disk.executionLogs[0].durationMinutes,17);
+  assert.equal(disk.scheduleBlocks.find(row=>row.id===block.id).plannedMinutes,60);
+});
+
 test('failed journal queues later edits; retry preserves ID and exact mutation order', async () => {
   await fresh(); failBeforeCommit = true; let block;
   await act(async () => { block = store.addScheduleBlock(plan); await assert.rejects(store.waitForLocalWrites(), /JOURNAL/); });

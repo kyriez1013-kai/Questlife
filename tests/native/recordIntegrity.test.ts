@@ -3,11 +3,37 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { ExecutionPersistence } from '../../src/utils/executionPersistence';
 import { removeExecutionProgress } from '../../src/utils/executionDeletionProgress';
-import { recordSourceBindings, timerRecordProvenance, lockRecordDraftCallbacks } from '../../src/utils/recordSubmission';
+import { actualMinutesInput, initialActualMinutes, recordSourceBindings, timerRecordProvenance, lockRecordDraftCallbacks } from '../../src/utils/recordSubmission';
+import { calculatePredictionDelta } from '../../src/progress';
 import type { ExecutionLog, ScheduleBlock, Skill } from '../../src/types';
 
 const skill = (type = 'time_based') => ({ id: 's', totalXP: 630, completedHours: 10.5, progressType: type, metricConfig: { metricType: type, completedHours: 10.5 } } as Skill);
 const log = (patch: Partial<ExecutionLog> = {}) => ({ id: 'e', linkedSkillId: 's', appliedToProgress: true, durationMinutes: 30, source: 'manual', date: '2026-09-20', createdAt: '2026-09-20T01:00:00Z', ...patch } as ExecutionLog);
+test('manual, direct and one-tap drafts never turn planned minutes into actual time', () => {
+  for (const source of [undefined, 'manual', 'one_tap', 'schedule_block', 'quick_log']) {
+    assert.equal(initialActualMinutes({ source, minutes: 60 }), '');
+  }
+  assert.equal(initialActualMinutes(), '');
+  const source = readFileSync('src/screens/HomeScreen.tsx', 'utf8');
+  assert.match(source, /setMinutes\(initialActualMinutes\(preset\)\)/);
+  assert.doesNotMatch(source, /setMinutes\(String\((?:first|block).plannedMinutes\)\)/);
+});
+test('only finite positive timer measurements prefill actual minutes', () => {
+  assert.equal(initialActualMinutes({ source: 'timer', minutes: 17 }), '17');
+  for (const minutes of [undefined, NaN, Infinity, 0, -4]) assert.equal(initialActualMinutes({ source: 'timer', minutes }), '');
+});
+test('blank optional training time remains unknown and required manual time is not invented', () => {
+  assert.deepEqual(actualMinutesInput('', undefined, true), { valid: true, minutes: undefined });
+  assert.deepEqual(actualMinutesInput(' ', undefined, false), { valid: false, minutes: undefined });
+  assert.deepEqual(actualMinutesInput('17', undefined, false), { valid: true, minutes: 17 });
+  assert.deepEqual(actualMinutesInput('', 8, false), { valid: true, minutes: 8 });
+  for (const value of ['0', '-1', 'Infinity', '17oops', '1.5']) assert.equal(actualMinutesInput(value, 60, true).valid, false);
+});
+test('unknown stored time cannot become a negative prediction outcome', () => {
+  assert.equal(calculatePredictionDelta({ durationMinutes: 0, predictedDurationMinutes: 60 }), undefined);
+  assert.deepEqual(calculatePredictionDelta({ predictedDurationMinutes: 60, qualityRating: 4, predictedQualityRating: 3 }), { durationDeltaMinutes: undefined, qualityDelta: 1 });
+  assert.equal(calculatePredictionDelta({ durationMinutes: 17, predictedDurationMinutes: 60 })?.durationDeltaMinutes, -43);
+});
 test('pending and retry drafts cannot silently change the immutable submitted fields', () => {
   let calls = 0;
   const props = { minutes: '17', onMinutesChange: (_value: string) => { calls++; } };

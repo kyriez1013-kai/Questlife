@@ -13,6 +13,19 @@ export function recordSourceBindings(type: 'skill' | 'schedule' | 'custom', skil
   return { block, skillId: type === 'custom' ? undefined : type === 'schedule' ? block?.linkedSkillId : skillId ?? undefined };
 }
 
+/** Planned/default minutes are not measurements. Only a finished timer can prefill. */
+export function initialActualMinutes(preset?: { source?: string; minutes?: number }) {
+  return preset?.source === 'timer' && Number.isFinite(preset.minutes) && preset.minutes! > 0
+    ? String(preset.minutes) : '';
+}
+
+export function actualMinutesInput(value: string, schemaValue: unknown, optional: boolean) {
+  const entered = value.trim() || (typeof schemaValue === 'number' || typeof schemaValue === 'string' ? String(schemaValue).trim() : '');
+  if (!entered) return { valid: optional, minutes: undefined };
+  const minutes = Number(entered);
+  return { valid: Number.isFinite(minutes) && Number.isInteger(minutes) && minutes > 0, minutes };
+}
+
 export function timerRecordProvenance(startedAt: string, endedAt: string, recordedAt: string) {
   const start = Date.parse(startedAt), end = Date.parse(endedAt);
   if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) throw new Error('invalid_timer_interval');

@@ -38,9 +38,9 @@ function formatStrengthSetLine(data: { weight?: number; reps?: number; sets?: nu
 }
 
 export function calculatePredictionDelta(log: Pick<ExecutionLog,
-  'durationMinutes' | 'predictedDurationMinutes' | 'qualityRating' | 'predictedQualityRating'
->) {
-  const durationDeltaMinutes = log.durationMinutes != null && log.predictedDurationMinutes != null
+  'predictedDurationMinutes' | 'qualityRating' | 'predictedQualityRating'
+> & { durationMinutes?: number }) {
+  const durationDeltaMinutes = log.durationMinutes != null && log.durationMinutes > 0 && log.predictedDurationMinutes != null
     ? log.durationMinutes - log.predictedDurationMinutes
     : undefined;
   const qualityDelta = log.qualityRating != null && log.predictedQualityRating != null

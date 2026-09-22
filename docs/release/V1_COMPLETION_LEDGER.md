@@ -100,6 +100,16 @@ requested for the disposable record, but the browser confirm became blocked
 while Mac was locked. User was asked to resolve it. Cleanup is PENDING, not
 claimed complete, and no fake state observation was created.
 
+Actual-duration integrity correction: Direct Log and one-tap drafts no longer
+prefill planned/default minutes. Selecting another schedule changes association,
+not observed time. Only a finished timer prefills measured duration. Manual
+required-duration forms show an inline validation state; the existing optional
+strength duration can stay unknown. Store no longer substitutes linked plan
+minutes when duration is omitted; its existing zero sentinel is excluded by
+Quant ingestion and no prediction-time delta is computed for it. No schema or
+historical data rewrite. Four pure rules/integration-boundary tests plus two
+real Store/refresh/retry cases pass; local Store suite now has 25 tests.
+
 The persistence correction keeps the existing whole-entity mutation semantics;
 it does not silently introduce field-level conflict merging. Failed writes keep
 their exact original ID/closure, later writes wait, and retry first recovers the
