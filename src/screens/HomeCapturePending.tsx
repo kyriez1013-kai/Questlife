@@ -688,7 +688,8 @@ function entryWithCompletion(entry: ParsedEntry, ui: EntryUI): ParsedEntry {
     ...entry,
     skillName: ui.selectedSkillName ?? entry.skillName,
     matchedSkillId: ui.selectedSkillId !== undefined ? ui.selectedSkillId : entry.matchedSkillId,
-    qualityRating: ui.qualityRating ?? entry.qualityRating,
+    // A model-proposed quality is not an observed outcome until the user selects it.
+    qualityRating: ui.qualityRating,
     fields,
   };
 }
@@ -921,7 +922,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
     setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, durationMinutes } : e));
 
   const setQuality = (i: number, qualityRating: number) =>
-    setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, qualityRating } : e));
+    setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, qualityRating: e.qualityRating === qualityRating ? undefined : qualityRating } : e));
 
   const setRpe = (i: number, rpe: number | undefined) =>
     setEntryStates((s) => s.map((e, idx) => idx === i ? { ...e, rpe } : e));
@@ -1932,7 +1933,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
             newEntry: t(lang, 'scEntryNew'),
             noGoal: t(lang, 'noGoal'),
             noModule: t(lang, 'noModule'),
-            quality: t(lang, 'quality'),
+            quality: t(lang, 'optionalQuality'),
             reps: t(lang, 'reps'),
             rpe: t(lang, 'scRpe'),
             route: t(lang, 'routing'),

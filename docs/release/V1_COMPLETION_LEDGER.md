@@ -86,6 +86,17 @@ component tests, not installed acceptance.
 25 frames, P50 17ms, P95 48ms, six janky; too small and not steady-state, NOT a
 performance pass. Rebuild after the Skill correction and finish full interactions.
 
+Real candidate Web flow (`9b7c3fc`, signed-out isolated browser): entered
+`QA SQL 学习了 40 分钟`, actual parse returned, confirmed once, B4 remained
+visible, skipped after-state, refreshed, and opened the exact History detail.
+This exposed an unselected model-proposed quality `4/5` being written as an
+observation. Fixed confirmation to accept quality only from explicit selection;
+unselected/cleared quality remains unknown. Two additional real Store/remount
+tests pass (23 total); no historical owner values were rewritten. Delete was
+requested for the disposable record, but the browser confirm became blocked
+while Mac was locked. User was asked to resolve it. Cleanup is PENDING, not
+claimed complete, and no fake state observation was created.
+
 The persistence correction keeps the existing whole-entity mutation semantics;
 it does not silently introduce field-level conflict merging. Failed writes keep
 their exact original ID/closure, later writes wait, and retry first recovers the

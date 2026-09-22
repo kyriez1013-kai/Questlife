@@ -80,6 +80,38 @@ function homeCallback(name, bindings, screen = 'HomeScreen') {
   return new Function('useCallback',...Object.keys(bindings),`${js}\nreturn ${name};`)(fn=>fn,...Object.values(bindings));
 }
 
+function captureHelper(name) {
+  const file=path.join(__dirname,'../../src/screens/HomeCapturePending.tsx');
+  const source=ts.createSourceFile(file,fs.readFileSync(file,'utf8'),ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX);
+  const declaration=source.statements.find(row=>ts.isFunctionDeclaration(row)&&row.name?.text===name);
+  assert.ok(declaration);
+  const js=ts.transpileModule(declaration.getText(source),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS}}).outputText;
+  return new Function(`${js}\nreturn ${name};`)();
+}
+
+test('parser-proposed quality is not saved as an observation without explicit user selection',async()=>{
+  await fresh();const complete=captureHelper('entryWithCompletion');
+  const proposal={skillName:'TEST SQL',progressType:'time_based',qualityRating:4,fields:{durationMinutes:40}};
+  const original=clone(proposal);
+  const completed=complete(proposal,{include:true,createNew:true,moduleId:null});
+  assert.equal(completed.qualityRating,undefined);assert.deepEqual(proposal,original);
+  await act(async()=>{store.createExecutionLog({id:'TEST_UNRATED',date:plan.date,title:completed.skillName,durationMinutes:completed.fields.durationMinutes,qualityRating:completed.qualityRating});await store.waitForLocalWrites();});
+  assert.equal(disk.executionLogs[0].qualityRating,undefined);
+  await act(async()=>tree.unmount());tree=undefined;await mount();
+  assert.equal(store.data.executionLogs[0].qualityRating,undefined);
+});
+
+test('explicit Capture quality and clearing it persist exactly, never falling back to the model',async()=>{
+  await fresh();const complete=captureHelper('entryWithCompletion');
+  const proposal={skillName:'TEST SQL',progressType:'time_based',qualityRating:4,fields:{durationMinutes:40}};
+  let states=[{include:true,createNew:true,moduleId:null}];
+  const choose=homeCallback('setQuality',{setEntryStates:fn=>{states=fn(states);}},'HomeCapturePending');
+  choose(0,2);assert.equal(complete(proposal,states[0]).qualityRating,2);
+  await act(async()=>{store.createExecutionLog({id:'TEST_RATED',date:plan.date,title:'TEST',qualityRating:complete(proposal,states[0]).qualityRating});await store.waitForLocalWrites();});
+  assert.equal(disk.executionLogs[0].qualityRating,2);
+  choose(0,2);assert.equal(complete(proposal,states[0]).qualityRating,undefined);
+});
+
 test('Store exposes pending until local disk and durable outbox acknowledge create/update/delete', async () => {
   await fresh(); gate = deferred(); let block;
   await act(async () => { block = store.addScheduleBlock(plan); });
