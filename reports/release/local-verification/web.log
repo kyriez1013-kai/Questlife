@@ -3,24 +3,24 @@
 > expo export --platform web
 
 Starting Metro Bundler
-| (node:51399) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (node:54447) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 | (Use `node --trace-warnings ...` to show where the warning was created)
-| (node:51402) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (node:54449) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 | (Use `node --trace-warnings ...` to show where the warning was created)
-| (node:51403) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (node:54448) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 | (Use `node --trace-warnings ...` to show where the warning was created)
-| (node:51404) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (node:54453) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 | (Use `node --trace-warnings ...` to show where the warning was created)
-| (node:51400) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (node:54451) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 | (Use `node --trace-warnings ...` to show where the warning was created)
-| (node:51401) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (node:54450) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 | (Use `node --trace-warnings ...` to show where the warning was created)
-| (node:51405) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (node:54452) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 | (Use `node --trace-warnings ...` to show where the warning was created)
-Web ./index.ts ▓▓▓▓▓▓▓▓▓░░░░░░░ 59.0% (156/377)
-Web ./index.ts ▓▓▓▓▓▓▓▓▓░░░░░░░ 59.0% (641/882)
-Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 85.5% (1128/1220)
-Web Bundled 10910ms index.ts (1316 modules)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓░░░░░░ 62.7% (182/447)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓░░░░░░ 62.7% (625/880)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 83.6% (1105/1212)
+Web Bundled 10820ms index.ts (1316 modules)
 
 › Assets (11):
 node_modules/@react-navigation/elements/lib/module/assets/back-icon-mask.0a328cd9c1afd0afe8e3b1ec5165b1b4.png (653 B)

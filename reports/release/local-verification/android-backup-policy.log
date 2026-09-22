@@ -1,11 +1,12 @@
-✔ app opts out of automatic backup and delegates explicit rules to one plugin (0.553834ms)
-✔ manifest backup guard is idempotent without changing activities or permissions (0.414042ms)
-✔ generated Android 12 rules exclude every private domain for cloud and device transfer (8.938916ms)
-ℹ tests 3
+✔ app opts out of automatic backup and delegates explicit rules to one plugin (0.518333ms)
+✔ release blocks unused overlay and broad storage access without blocking sources (0.081625ms)
+✔ manifest backup guard is idempotent without changing activities or permissions (0.371875ms)
+✔ generated Android 12 rules exclude every private domain for cloud and device transfer (9.254042ms)
+ℹ tests 4
 ℹ suites 0
-ℹ pass 3
+ℹ pass 4
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 65.3735
+ℹ duration_ms 64.164625

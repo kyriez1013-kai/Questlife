@@ -152,6 +152,14 @@ No paid upgrade was performed. The preceding `cf86bef` simulator build
 acceptance or a signed physical-iPhone installer. Signing remains independently
 blocked by owner Apple credentials/device registration.
 
+Permission-hardening validation at `4f40b67`: complete 26/26 suites PASS.
+Nineteen Settings and seventeen backup-core checks retain import/export and
+source handlers; physical file-provider read/write remains unverified. Hosted
+sync on `3d9300f` passed all ten groups, including both replica directions,
+restart/ACK retry, deletion and isolation. Both temporary identities were
+deleted and each had zero remaining synced entities. No additional owner or
+signed-out browser observations were created during this validation.
+
 The persistence correction keeps the existing whole-entity mutation semantics;
 it does not silently introduce field-level conflict merging. Failed writes keep
 their exact original ID/closure, later writes wait, and retry first recovers the

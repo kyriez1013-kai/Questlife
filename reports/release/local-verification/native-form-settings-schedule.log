@@ -1,130 +1,130 @@
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ compact index, lazy details and token-sized wrapping rows (en, cleanFocus) (17.18075ms)
+✔ compact index, lazy details and token-sized wrapping rows (en, cleanFocus) (15.691459ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ compact index, lazy details and token-sized wrapping rows (en, deepWork) (5.110667ms)
+✔ compact index, lazy details and token-sized wrapping rows (en, deepWork) (7.631791ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ compact index, lazy details and token-sized wrapping rows (zh, cleanFocus) (6.488125ms)
+✔ compact index, lazy details and token-sized wrapping rows (zh, cleanFocus) (7.394875ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ compact index, lazy details and token-sized wrapping rows (zh, deepWork) (5.534459ms)
+✔ compact index, lazy details and token-sized wrapping rows (zh, deepWork) (8.172667ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ existing Insights destination lands on an explicit Sources entry without prompting or navigating (12.51625ms)
+✔ existing Insights destination lands on an explicit Sources entry without prompting or navigating (17.271083ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ health metric selection is local until explicit connect and retains OS unknown access (13.2135ms)
+✔ health metric selection is local until explicit connect and retains OS unknown access (11.576083ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ health failure keeps details mounted during work and preserves selection for retry (13.211708ms)
+✔ health failure keeps details mounted during work and preserves selection for retry (12.387458ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ denied, unavailable, permission read failure and empty calendars are distinct (17.815375ms)
+✔ denied, unavailable, permission read failure and empty calendars are distinct (14.400208ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ calendar events and pending retries are disclosed separately, with exact current block confirmation (20.361042ms)
+✔ calendar events and pending retries are disclosed separately, with exact current block confirmation (20.241583ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ notification opt-in stays explicit and disable retains remote retirement handling (13.924041ms)
+✔ notification opt-in stays explicit and disable retains remote retirement handling (14.630917ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ quiet-hour save and push registration cannot be dismissed while pending (7.619291ms)
+✔ quiet-hour save and push registration cannot be dismissed while pending (7.314208ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ account email survives parent rerender and cannot be lost during pending OTP (10.422167ms)
+✔ account email survives parent rerender and cannot be lost during pending OTP (12.511417ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ offline account is not an OS denial; health cloud consent and sign-out handlers remain separate (2.151167ms)
+✔ offline account is not an OS denial; health cloud consent and sign-out handlers remain separate (4.304875ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ unconfigured account remains local-only, without showing a pretend integration (1.443958ms)
+✔ unconfigured account remains local-only, without showing a pretend integration (2.17875ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ calendar editor is nested in the source sheet, preserves the exact write and blocks parent dismissal (2.991834ms)
+✔ calendar editor is nested in the source sheet, preserves the exact write and blocks parent dismissal (4.617792ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ appearance and language keep their existing settings actions without a navigation detour (1.430084ms)
+✔ appearance and language keep their existing settings actions without a navigation detour (1.631542ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ record sharing and backup picker keep the sheet alive until completion (4.812375ms)
+✔ record sharing and backup picker keep the sheet alive until completion (4.125917ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ record recovery reuses the existing account component (4.4265ms)
-✔ Insights import keeps both close and account navigation blocked while the file picker owns a request (16.962625ms)
+✔ record recovery reuses the existing account component (3.404667ms)
+✔ Insights import keeps both close and account navigation blocked while the file picker owns a request (15.743125ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ goal pinned footer and optional disclosure zh/cleanFocus (68.871417ms)
+✔ goal pinned footer and optional disclosure zh/cleanFocus (73.46925ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ goal pinned footer and optional disclosure zh/deepWork (9.190166ms)
+✔ goal pinned footer and optional disclosure zh/deepWork (5.698875ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ goal pinned footer and optional disclosure en/cleanFocus (3.517959ms)
+✔ goal pinned footer and optional disclosure en/cleanFocus (3.593334ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ goal pinned footer and optional disclosure en/deepWork (5.007833ms)
+✔ goal pinned footer and optional disclosure en/deepWork (4.853292ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ goal stays open until durable local receipt; repeated submit cannot duplicate (6.414792ms)
+✔ goal stays open until durable local receipt; repeated submit cannot duplicate (5.156666ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ goal failed ACK retries original queued mutation without creating a second entity (6.966083ms)
+✔ goal failed ACK retries original queued mutation without creating a second entity (5.874958ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ skill draft survives unrelated goal updates and optional disclosure toggling (50.733208ms)
+✔ skill draft survives unrelated goal updates and optional disclosure toggling (47.200959ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ removing the final goal clears parent and module; failure retry preserves exact skill payload (9.307667ms)
+✔ removing the final goal clears parent and module; failure retry preserves exact skill payload (8.752208ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ invalid skill target remains open without writes (11.633709ms)
+✔ invalid skill target remains open without writes (12.207125ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ web keeps expanded fields and one set of actions (1.196709ms)
+✔ web keeps expanded fields and one set of actions (1.22875ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ empty native Goal Detail is unframed and has no invented progress bar or percentage (60.841708ms)
+✔ empty native Goal Detail is unframed and has no invented progress bar or percentage (62.678875ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ module save retains draft and Sheet on failed ACK; retry does not create a second module (23.183125ms)
+✔ module save retains draft and Sheet on failed ACK; retry does not create a second module (22.599166ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ criterion rejects invalid numbers and preserves its identity across failed save retry (46.5075ms)
+✔ criterion rejects invalid numbers and preserves its identity across failed save retry (47.472542ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ native Skill opens the existing Direct Log without writes zh/cleanFocus (38.503708ms)
+✔ native Skill opens the existing Direct Log without writes zh/cleanFocus (38.127125ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ native Skill opens the existing Direct Log without writes zh/deepWork (6.603125ms)
+✔ native Skill opens the existing Direct Log without writes zh/deepWork (6.482ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ native Skill opens the existing Direct Log without writes en/cleanFocus (5.768833ms)
+✔ native Skill opens the existing Direct Log without writes en/cleanFocus (6.238958ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ native Skill opens the existing Direct Log without writes en/deepWork (5.754208ms)
+✔ native Skill opens the existing Direct Log without writes en/deepWork (5.357292ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ native Skill previews three actual logs and retains History and full configuration entrances (11.781334ms)
+✔ native Skill previews three actual logs and retains History and full configuration entrances (11.722875ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ Skill chart changes theme and never emits non-finite geometry for recorded zero durations (14.953833ms)
+✔ Skill chart changes theme and never emits non-finite geometry for recorded zero durations (15.003709ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ first launch opens existing account recovery without creating a goal zh (16.33775ms)
+✔ first launch opens existing account recovery without creating a goal zh (15.847042ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ first launch opens existing account recovery without creating a goal en (1.254959ms)
+✔ first launch opens existing account recovery without creating a goal en (1.352292ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ native skill library uses independent actions and stable searchable rows zh/cleanFocus (12.545875ms)
+✔ native skill library uses independent actions and stable searchable rows zh/cleanFocus (16.194ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ native skill library uses independent actions and stable searchable rows zh/deepWork (6.98875ms)
+✔ native skill library uses independent actions and stable searchable rows zh/deepWork (3.494583ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ native skill library uses independent actions and stable searchable rows en/cleanFocus (3.312417ms)
-✔ native skill library uses independent actions and stable searchable rows en/deepWork (3.174ms)
+✔ native skill library uses independent actions and stable searchable rows en/cleanFocus (3.045709ms)
+✔ native skill library uses independent actions and stable searchable rows en/deepWork (3.173417ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ capacity uses merged compiler windows, not duration sums or skipped time (2.307083ms)
-✔ move authority excludes fixed, locked, completed and skipped blocks (0.108916ms)
+✔ capacity uses merged compiler windows, not duration sums or skipped time (1.432666ms)
+✔ move authority excludes fixed, locked, completed and skipped blocks (0.110875ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ native create footer stays outside fields and waits for durable ACK (148.652375ms)
+✔ native create footer stays outside fields and waits for durable ACK (149.767125ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ failed create retries the original persistence operation without a second block (23.340542ms)
+✔ failed create retries the original persistence operation without a second block (24.406292ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ native edit preserves source, fixed authority, lock and completed status (16.80475ms)
+✔ native edit preserves source, fixed authority, lock and completed status (17.915125ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ native block actions are contextual; day rows do not repeat edit/delete controls (6.879375ms)
+✔ native block actions are contextual; day rows do not repeat edit/delete controls (7.4635ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ external constraints never expose app edit, move, delete or execution writes (6.0705ms)
+✔ external constraints never expose app edit, move, delete or execution writes (5.869833ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ move destination shows actual conflict details and requires confirmation (18.444459ms)
+✔ move destination shows actual conflict details and requires confirmation (16.422ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ confirmation rejects a remote edit or a changed conflict set (14.606792ms)
+✔ confirmation rejects a remote edit or a changed conflict set (16.611834ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ stale editor cannot overwrite a remote status transition (17.475917ms)
+✔ stale editor cannot overwrite a remote status transition (16.81375ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ delete keeps sheet and original operation on persistence failure (12.2685ms)
+✔ delete keeps sheet and original operation on persistence failure (6.169125ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ record duration starts unknown; failed record retries without recreating execution (12.122667ms)
+✔ record duration starts unknown; failed record retries without recreating execution (8.827333ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ schedule duration rejects partial numbers and explains when actual time is required (6.857083ms)
+✔ schedule duration rejects partial numbers and explains when actual time is required (7.660333ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ strength schedule records keep unentered duration and set count unknown (5.07075ms)
+✔ strength schedule records keep unentered duration and set count unknown (5.405ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ native week has seven full-width 44-point day targets and real free-time context (2.337708ms)
+✔ native week has seven full-width 44-point day targets and real free-time context (3.443417ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ early-morning blocks are not relabelled as six oclock or given proportional now overlays (1.397625ms)
-✔ timeline keeps blank time, real duration and non-overlapping minimum targets (0.218375ms)
+✔ early-morning blocks are not relabelled as six oclock or given proportional now overlays (3.696ms)
+✔ timeline keeps blank time, real duration and non-overlapping minimum targets (0.476959ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ calendar sheet pins close, names calendar and exact plan in OS-write confirmation (2.671833ms)
+✔ calendar sheet pins close, names calendar and exact plan in OS-write confirmation (4.085417ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ calendar refresh failures do not leave a writable stale status (1.351917ms)
+✔ calendar refresh failures do not leave a writable stale status (1.950625ms)
 react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
-✔ native date fields keep midnight end as 24:00 and never silently repair reversed ranges (0.743417ms)
-✔ Chinese and dark native context renders translated UI without changing stored blocks (1.050875ms)
+✔ native date fields keep midnight end as 24:00 and never silently repair reversed ranges (1.60875ms)
+✔ Chinese and dark native context renders translated UI without changing stored blocks (1.563541ms)
 ℹ tests 65
 ℹ suites 0
 ℹ pass 65
@@ -132,4 +132,4 @@ react-test-renderer is deprecated. See https://react.dev/warnings/react-test-ren
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 646.894042
+ℹ duration_ms 647.397584

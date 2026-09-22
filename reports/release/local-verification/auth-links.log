@@ -1,11 +1,11 @@
-✔ exact Web/native PKCE callbacks preserve code and flow ID (0.947167ms)
-✔ foreign origin, path, credentials, implicit tokens and unrelated links rejected (0.135584ms)
-✔ malformed, duplicated, oversized codes and error callbacks fail closed (0.256833ms)
-✔ duplicate warm/cold callback delivery exchanges once, failures propagate without tokens (0.288333ms)
-✔ native crypto bridge preserves available crypto and uses Expo SHA-256 only (8.750625ms)
-GoTrueClient@sb-callback-auth-token:0 (2.116.0) 2026-09-22T07:22:37.170Z The "lock" option is deprecated and will be removed in v3. The client now coordinates session refreshes without a lock, so most apps can drop the option. See https://github.com/supabase/supabase-js/blob/master/packages/core/auth-js/migrations/lockless-coordination.md
-✔ official Supabase SDK sends S256 and stores a verifier, not a plain challenge (21.292833ms)
-✔ native cold and warm links use the real SDK session exchange and dispose the OS listener (33.746209ms)
+✔ exact Web/native PKCE callbacks preserve code and flow ID (0.5155ms)
+✔ foreign origin, path, credentials, implicit tokens and unrelated links rejected (0.135375ms)
+✔ malformed, duplicated, oversized codes and error callbacks fail closed (0.242125ms)
+✔ duplicate warm/cold callback delivery exchanges once, failures propagate without tokens (0.264208ms)
+✔ native crypto bridge preserves available crypto and uses Expo SHA-256 only (8.082959ms)
+GoTrueClient@sb-callback-auth-token:0 (2.116.0) 2026-09-22T07:32:02.526Z The "lock" option is deprecated and will be removed in v3. The client now coordinates session refreshes without a lock, so most apps can drop the option. See https://github.com/supabase/supabase-js/blob/master/packages/core/auth-js/migrations/lockless-coordination.md
+✔ official Supabase SDK sends S256 and stores a verifier, not a plain challenge (22.170583ms)
+✔ native cold and warm links use the real SDK session exchange and dispose the OS listener (34.846917ms)
 ℹ tests 7
 ℹ suites 0
 ℹ pass 7
@@ -13,4 +13,4 @@ GoTrueClient@sb-callback-auth-token:0 (2.116.0) 2026-09-22T07:22:37.170Z The "lo
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 10209.128375
+ℹ duration_ms 10205.033333
