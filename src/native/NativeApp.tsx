@@ -27,6 +27,7 @@ import NotificationCoordinator from '../platform/notifications/NotificationCoord
 import ShortcutCoordinator from '../platform/shortcuts/ShortcutCoordinator.native';
 import {nativeCopy} from '../platform/nativeI18n';
 import OnboardingScreen from '../screens/OnboardingScreen';
+import LocalPersistenceNotice from '../components/LocalPersistenceNotice';
 
 const Tabs = createBottomTabNavigator();
 const Goals = createNativeStackNavigator();
@@ -42,7 +43,7 @@ function GoalStack() {
   </Goals.Navigator>;
 }
 function Content() {
-  const { data, loading } = useStore();
+  const { data, loading, localPersistence } = useStore();
   const theme = useQuestTheme(data.settings.selectedThemeId);
   const f = getNativeFoundation(theme);
   const lang = getLanguage(data.settings.language);
@@ -54,6 +55,8 @@ function Content() {
   if (data.settings.onboardingRestartRequested || (!data.settings.onboardingCompleted && !existing)) return <OnboardingScreen />;
   return <NavigationContainer ref={navigationRef} onReady={()=>{if(pendingToday.current){pendingToday.current=false;navigateToday();}}} linking={{prefixes:['questlife://'],filter:url=>!url.startsWith('questlife://auth/callback'),config:{screens:{Settings:{path:'settings',screens:{NativeSettings:''}}}}}} theme={{ ...DefaultTheme, colors: { ...DefaultTheme.colors, background: f.environment.canvas, card: f.environment.navigation, text: f.text.primary, border: f.border.subtle, primary: f.interaction.primary } }}>
     <StatusBar style={isDarkTheme(theme)?'light':'dark'}/><ForegroundSources/><NotificationCoordinator navigateToday={navigateToday}/><ShortcutCoordinator navigateToday={navigateToday}/>
+    <View style={{ flex: 1 }}>
+    <View style={{ paddingTop: localPersistence.failed ? insets.top : 0 }}><LocalPersistenceNotice /></View>
     <Tabs.Navigator screenOptions={{ headerShown: false, tabBarHideOnKeyboard: true, tabBarActiveTintColor: f.interaction.navigationActive, tabBarInactiveTintColor: f.interaction.navigationInactive, tabBarStyle: { backgroundColor: f.environment.navigation, height: 56 + insets.bottom, paddingBottom: insets.bottom, borderTopColor: f.border.subtle }, tabBarLabelStyle: { fontSize: 11 } }}>
       <Tabs.Screen name="Today" component={HomeScreen} options={{ tabBarLabel: t(lang,'today'), tabBarIcon: ({color}) => <QuestIcon name="home" color={color} size={20} /> }} />
       <Tabs.Screen name="Quest" component={GoalStack} options={{ tabBarLabel: t(lang,'goals'), tabBarIcon: ({color}) => <QuestIcon name="target" color={color} size={20} /> }} />
@@ -61,6 +64,7 @@ function Content() {
       <Tabs.Screen name="Insights" component={NativeInsightsScreen} options={{ tabBarLabel: t(lang,'insights'), tabBarIcon: ({color}) => <QuestIcon name="barChart" color={color} size={20} /> }} />
       <Tabs.Screen name="Settings" component={SettingsStack} options={{ tabBarLabel: t(lang,'settings'), tabBarIcon: ({color}) => <QuestIcon name="settings" color={color} size={20} /> }} />
     </Tabs.Navigator>
+    </View>
   </NavigationContainer>;
 }
 export default function NativeApp() {

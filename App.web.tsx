@@ -9,6 +9,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Text, View, ActivityIndicator, Platform, useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StoreProvider, useStore } from './src/store';
+import LocalPersistenceNotice from './src/components/LocalPersistenceNotice';
 import { getLanguage, t } from './src/i18n';
 import { getQuestTheme, questLayout } from './src/design/tokens';
 import { getQuestVisualFoundation } from './src/design/visualFoundation';
@@ -238,6 +239,7 @@ function AppContent() {
   // 老用户 / 完成 onboarding 后 → 正常 Tabs
   return (
     <RootView {...rootProps} style={rootStyle}>
+      <LocalPersistenceNotice />
       <NavigationContainer theme={navTheme}>
         <Tab.Navigator
           detachInactiveScreens={Platform.OS !== 'web'}

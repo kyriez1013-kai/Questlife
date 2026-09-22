@@ -1,7 +1,7 @@
 // 全局状态 Context
 // 持久化策略: 每次 mutation 先基于同步 ref 计算新状态, 再立即持久化.
 // React state updater 保持纯函数, 避免跨标签事件与批量更新吞掉写入.
-import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState, useCallback, useSyncExternalStore } from 'react';
 import { AppData, DEFAULT_DATA, Goal, Skill, Action, Category, UNCATEGORIZED_ID, ScheduleBlock, QuestModule, ModuleSkillLink, ExecutionLog, RescueLog, StateCheckIn, EffortUnit, ContributionLink, RawCapture, ContextLog, DecisionResult, PatternMemory, DashboardCardSize, DashboardPresetId, DashboardSurface, DashboardPreferences } from './types';
 import { loadData, persist, readPersistedDataForDebug, uid, today, hasSyncAccountBinding } from './storage';
 import { scheduleSkillReminder, cancelSkillReminder, rescheduleAllReminders } from './notifications';
@@ -9,7 +9,7 @@ import { calculateModuleProgress, calculatePredictionDelta, progressTypeForSkill
 import { trackEvent } from './utils/analytics';
 import { scheduleServerSync } from './services/syncService';
 import { getSyncEngine, persistWithSync, startSyncRuntime } from './sync-v2/runtime';
-import { ExecutionPersistence } from './utils/executionPersistence';
+import { LocalMutationPersistence } from './utils/localMutationPersistence';
 import { removeExecutionProgress } from './utils/executionDeletionProgress';
 import { projectAppData } from './sync-v2/projection';
 import { enqueueServerDeletions } from './services/syncDeletionOutbox';
@@ -24,6 +24,7 @@ import { installPersistenceDebugBridge } from './utils/persistenceTrace';
 import {
   reconcileCommittedAppData,
   reconcileExternalAppData,
+  rebaseAppDataWrite,
   shouldPersistStoreMutation,
 } from './utils/persistenceConsistency';
 import {
@@ -59,6 +60,9 @@ function queueExplicitServerDeletions(
 }
 
 interface Ctx {
+  localPersistence: Readonly<{ pending: number; failed: boolean }>;
+  waitForLocalWrites: () => Promise<void>;
+  retryLocalWrites: () => Promise<void>;
   data: AppData;
   loading: boolean;
   addGoal: (g: Omit<Goal, 'id' | 'createdAt' | 'completed' | 'skillIds'> & { skillIds?: string[] }) => Goal;
@@ -238,7 +242,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   // 标记是否已经完成首次加载, 防止 loading 阶段意外写盘把已有数据覆盖成空.
   const loadedRef = useRef(false);
-  const executionWrites = useRef(new ExecutionPersistence());
+  const localWrites = useRef(new LocalMutationPersistence());
+  const optimisticWrites = useRef(new Map<string, { base: AppData; next: AppData }>());
+  const subscribeWrites = useCallback((listener: () => void) => localWrites.current.subscribe(listener), []);
+  const readWrites = useCallback(() => localWrites.current.getSnapshot(), []);
+  const localPersistence = useSyncExternalStore(subscribeWrites, readWrites, readWrites);
   const dataRef = useRef(data);
   dataRef.current = data;
 
@@ -266,11 +274,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       // 启动后重新排所有技能提醒 (防系统清掉)
       rescheduleAllReminders(repaired.skills).catch((e) => console.warn('[notify] reschedule failed', e));
       void startSyncRuntime(() => dataRef.current, async changes => {
-        const base = dataRef.current;
+        // WAL replay must use durable data, not an optimistic copy that can
+        // already contain an unacknowledged version of this same entity.
+        const base = await loadData();
         const next = projectAppData(base, changes);
         if (next === base) return;
         const committed = await persist(next, { base, source: 'remote_sync', origin: 'remote_sync', operation: 'sync_projection' });
-        const merged = reconcileCommittedAppData(base, committed, dataRef.current);
+        let merged = reconcileCommittedAppData(base, committed, dataRef.current);
+        // Keep later unsaved edits visible while recovering an earlier write.
+        // This overlay never goes directly to disk or the remote projection.
+        for (const pending of optimisticWrites.current.values()) {
+          merged = rebaseAppDataWrite(pending.base, pending.next, merged);
+        }
         dataRef.current = merged;
         setData(merged);
       }).then(stop => { if (disposed) stop(); else cleanup = stop; }).catch(() => console.warn('[sync-v2] initialization unavailable'));
@@ -284,7 +299,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const base = dataRef.current;
     const next = fn(base);
     if (next === base) {
-      if (executionId) executionWrites.current.retry(executionId);
+      if (executionId) localWrites.current.retry(`execution:${executionId}`);
       return;
     }
 
@@ -292,14 +307,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setData(next);
     if (!shouldPersistStoreMutation(loadedRef.current)) return;
 
+    const writeId = executionId ? `execution:${executionId}` : `mutation:${uid()}`;
+    optimisticWrites.current.set(writeId, { base, next });
     let attempted = false;
     const write = async () => {
       let recovered: AppData | undefined;
-      if (attempted && executionId) {
+      if (attempted) {
         // Recover a durable WAL before retry: an ACK loss must not enqueue twice.
         await (await getSyncEngine()).recover();
         const persisted = await loadData();
-        if (persisted.executionLogs?.some(log => log.id === executionId)) recovered = persisted;
+        // Recovery may already have applied the exact delta. Avoid a second
+        // outbox mutation after a lost local ACK, including update/delete.
+        const replayed = rebaseAppDataWrite(base, next, persisted);
+        if (JSON.stringify(replayed) === JSON.stringify(persisted)) recovered = persisted;
       }
       attempted = true;
       const committed = recovered ?? await persistWithSync(base, next, source, () => persist(next, {
@@ -310,16 +330,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       operation: 'mutation',
       hydrationStatus: 'hydrated',
       }));
+      optimisticWrites.current.delete(writeId);
       setData((current) => {
         const reconciled = reconcileCommittedAppData(next, committed, current);
         dataRef.current = reconciled;
         return reconciled;
       });
     };
-    if (executionId) executionWrites.current.register(executionId, write);
-    else void write().catch(() => console.warn('[sync-v2] local persistence unavailable'));
+    localWrites.current.register(writeId, write);
   }, []);
-  const waitForExecutionLog = useCallback((id: string) => executionWrites.current.wait(id), []);
+  const waitForExecutionLog = useCallback((id: string) => localWrites.current.wait(`execution:${id}`), []);
+  const waitForLocalWrites = useCallback(() => localWrites.current.waitAll(), []);
+  const retryLocalWrites = useCallback(() => { localWrites.current.retry(); return localWrites.current.waitAll(); }, []);
 
   // Data mutations persist through mutate(); this effect only queues server sync.
   useEffect(() => {
@@ -1566,6 +1588,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       value={{
         data,
         loading,
+        localPersistence,
+        waitForLocalWrites,
+        retryLocalWrites,
         addGoal,
         updateGoal,
         deleteGoal,
