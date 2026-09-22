@@ -4,7 +4,7 @@
 // - + 大目标 → GoalForm (创建)
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -30,6 +30,8 @@ export default function GoalTreeScreen() {
   const questTheme = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const accent = questTheme.colors.primary;
   const lang = getV11ProductLanguage(getLanguage(data.settings.language));
+  const { width } = useWindowDimensions();
+  const compactHeader = width < questLayout.contentMaxWidth;
 
   const [creating, setCreating] = useState(false);
 
@@ -75,6 +77,7 @@ export default function GoalTreeScreen() {
           questTheme={questTheme}
           primary={`${data.categories.length} ${t(lang, 'quest')} · ${data.skills.length} ${t(lang, 'skillCount')}`}
           secondary={t(lang, 'questSubtitle')}
+          style={compactHeader ? { flexDirection: 'column', alignItems: 'stretch' } : undefined}
           trailing={<View style={styles.headerActions}>
             <QuestButton questTheme={questTheme} variant="ghost" icon="library" label={t(lang, 'skillLibrary')} onPress={() => nav.navigate('SkillLibrary')} />
             <QuestButton questTheme={questTheme} variant="primary" icon="plus" label={t(lang, 'addQuest')} onPress={() => setCreating(true)} />

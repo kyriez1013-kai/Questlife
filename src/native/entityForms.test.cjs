@@ -10,9 +10,10 @@ if (!runtime) throw Error('QUESTLIFE_UI_TEST_RUNTIME is required');
 const React = require(path.join(runtime, 'react'));
 const { create, act } = require(path.join(runtime, 'react-test-renderer'));
 global.IS_REACT_ACT_ENVIRONMENT = true;
-let store, writes, closed, alerts, tree, wait, retry, navigations, intents, confirmation;
+let store, writes, closed, alerts, tree, wait, retry, navigations, intents, confirmation, viewportWidth = 393;
 const host = name => props => React.createElement(name, props, props.children);
 const rn = { Platform: { OS: 'android' }, Appearance: { getColorScheme: () => 'light' }, StyleSheet: { create: value => value, hairlineWidth: 0.5 }, Keyboard: { dismiss() {} }, Alert: { alert: value => alerts.push(value) } };
+rn.useWindowDimensions = () => ({ width: viewportWidth, height: 852, scale: 1, fontScale: 1 });
 rn.FlatList = props => React.createElement('FlatList', props, props.ListHeaderComponent,
   props.data.length ? props.data.map((item, index) => React.createElement(React.Fragment, { key: props.keyExtractor(item) }, props.renderItem({ item, index }))) : props.ListEmptyComponent);
 for (const name of ['View', 'Text', 'TextInput', 'TouchableOpacity', 'Switch', 'Pressable', 'ScrollView']) rn[name] = name;
@@ -44,7 +45,7 @@ for (const extension of ['.ts', '.tsx']) require.extensions[extension] = (module
 const { DEFAULT_DATA } = require('../types.ts');
 const { t } = require('../i18n.ts');
 const fresh = (lang = 'en', theme = 'cleanFocus') => {
-  writes=[]; closed=0; alerts=[]; navigations=[]; intents=[]; confirmation=undefined; wait=async()=>{}; retry=async()=>{}; rn.Platform.OS='android';
+  writes=[]; closed=0; alerts=[]; navigations=[]; intents=[]; confirmation=undefined; wait=async()=>{}; retry=async()=>{}; rn.Platform.OS='android';viewportWidth=393;
   store={data:structuredClone(DEFAULT_DATA),waitForLocalWrites:()=>wait(),retryLocalWrites:()=>retry()};
   store.data.settings.language=lang;store.data.settings.selectedThemeId=theme;
   for (const name of ['addCategory','updateCategory','applyDomainTemplateToGoal','addSkill','updateSkill','deleteSkillFromLibrary','createSkillAndAttachToModule','addModule','updateModule','deleteModule','addExistingSkillToModule','removeSkillFromModule']) store[name]=(...args)=>{writes.push({name,args});return {id:'TEST_ENTITY'};};
@@ -54,6 +55,22 @@ const button=label=>tree.root.findAll(node=>node.type==='QuestButton'&&node.prop
 const input=label=>tree.root.findAll(node=>node.type==='QuestInput'&&node.props.accessibilityLabel===label)[0];
 const disclose=async(label)=>act(async()=>tree.root.findAll(node=>node.type==='Pressable'&&node.props.accessibilityLabel===label)[0].props.onPress());
 afterEach(async()=>{if(tree)await act(async()=>tree.unmount());tree=undefined;});
+
+for (const width of [320,375,393,1280]) for (const lang of ['zh','en']) test(`Goals header keeps summary separate from actions ${width}/${lang}`,async()=>{
+  fresh(lang);viewportWidth=width;
+  await render('../screens/GoalTreeScreen.tsx');
+  const header=tree.root.findByType('QuestContextBar');
+  assert.equal(header.props.style?.flexDirection,width<760?'column':undefined);
+  assert.ok(header.props.primary.includes(t(lang,'skillCount')));
+  assert.equal(header.props.secondary,t(lang,'questSubtitle'));
+  const actions=header.props.trailing;
+  assert.equal(actions.props.children.length,2);
+  await act(async()=>actions.props.children[0].props.onPress());
+  assert.deepEqual(navigations,[['SkillLibrary']]);
+  await act(async()=>actions.props.children[1].props.onPress());
+  assert.equal(tree.root.findByType('Sheet').props.visible,true);
+  assert.equal(writes.length,0);
+});
 
 for (const lang of ['zh','en']) for (const theme of ['cleanFocus','deepWork']) test(`goal pinned footer and optional disclosure ${lang}/${theme}`,async()=>{
   fresh(lang,theme);await render('../components/GoalForm.tsx');
