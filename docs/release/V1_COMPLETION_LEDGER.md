@@ -55,10 +55,10 @@ is reopened under the original specification, not excluded as new scope:
 | Spec | Missing / incomplete work | Current action |
 | --- | --- | --- |
 | 7-9 native product | Insights without a bundle hid workspace/source/record entrances | Implemented honest variable catalog, source/record/backup entrances; 27 tests in each timezone. New installed acceptance pending |
-| 7-8 native forms | Goal/Skill actions buried; Goal Detail retained bordered stacking and an empty 0% | Implemented native disclosures, pinned actions, stable draft and durable-save retry; unframed Goal hierarchy, no unsupported empty progress, durable module/criterion sheets; 13 component tests. Final installed acceptance pending |
+| 7-8 native forms | Goal/Skill actions buried; Goal Detail retained bordered stacking and an empty 0% | Implemented native disclosures, pinned actions, stable draft and durable-save retry; unframed Goal hierarchy, no unsupported empty progress, durable module/criterion sheets; Skill Detail opens the existing exact-skill recording flow; first-launch account recovery accessible. 21 component tests. Final installed acceptance pending |
 | 7-8 Settings | One long account/source/calendar/settings form | Implemented grouped index and focused existing components, permission/error distinctions, close guard during account/import work; 19 component tests. New installed acceptance pending |
 | 8 Schedule | Native editing and time-axis needed correction | Implemented real-duration day geometry, empty time, overlap lanes, contextual actions, exact-operation retry and historical-time protection; 19 component tests. New installed acceptance pending |
-| 8/10 Today persistence | Optimistic success was not proof of durable write; Capture confirmation unmounted before feedback | Serial local ACK/retry; raw input retained until durable, parser starts after raw ACK, confirmation/after-state/Instant Read wait for ACK, feedback reopens by capture ID. 17 queue + 21 real Store/callback tests. WAL replay uses durable base and retains later optimistic edits/deletions |
+| 8/10 Today persistence | Optimistic success was not proof of durable write; Capture confirmation unmounted before feedback | Serial local ACK/retry; raw input retained until durable, parser starts after raw ACK, confirmation/after-state/Instant Read wait for ACK, feedback reopens by capture ID. Unselected model quality remains unknown. 17 queue + 23 real Store/callback tests. WAL replay uses durable base and retains later optimistic edits/deletions |
 | 11-15 external chains | Hosted/core checks passed only for their stated boundaries | Physical data, OS delivery, email OTP and two-device UI remain open, not replaced by mocks |
 | 16-19 acceptance | Installed APK and tab-open checks are partial only | Rebuild same-source candidate, actual interactions/recordings/performance; visual acceptance remains owner's |
 
@@ -110,12 +110,21 @@ No owner observations or backend records were created by these tests.
 Current source commits: `1898cb4` ordered durability/recovery, `9d37a2b` entity
 forms, `6d96e06` Settings/import request guards, `cdb6322` native Schedule,
 `5dec822` Insights cold start, `15932f8` durable Today submissions, and `b8f365f`
-native Goal Detail/module/criterion completion. All 26 suites passed against
-`b8f365f`, including TypeScript, Web build and dependency audit (zero known findings).
-Local-mutation suite: 17 queue + 21 real Store/SyncEngine/callback tests; forms,
-Settings and Schedule: 13 + 19 + 19. Installed testing must use the next build.
+native Goal Detail/module/criterion completion; `9342bc5` Skill recording entry,
+`f8e846a` explicit-only Capture quality, `7974103` first-launch account recovery.
+All 26 suites passed against `7974103`, including TypeScript, Web build and
+dependency audit (zero known findings). Local-mutation suite: 17 queue + 23 real
+Store/SyncEngine/callback tests; forms, Settings and Schedule: 21 + 19 + 19.
+Installed testing must use the next build.
 CUA soft-key taps now enter native text; direct desktop text injection still
 does not reach the Android field. No draft was saved during that input check.
+
+Current browser interaction gate: while Mac remained locked, Direct Log, State
+and Goals navigation clicks in the second candidate tab all left the visible
+page unchanged. No console error was captured. This does not isolate an app
+regression and is not a passed interaction check. Resume after unlocking and
+resolving the first tab's disposable-record delete confirmation. Do not create
+additional test observations until this known record can be cleaned up.
 
 Continue this checkout, not the historical Web branches. Do not repeat backend
 setup. Hosted Sync verification was rerun against the isolated candidate:
