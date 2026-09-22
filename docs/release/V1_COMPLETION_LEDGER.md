@@ -33,13 +33,13 @@ VERIFIED_DEVICE, AWAITING_OWNER, BLOCKED. Unchecked entries remain unfinished.
 | Real Quant runtime | VERIFIED_REMOTE (isolated fixtures) | 9 hosted checks: authentication, subject/as-of rejection, 210-observation computation, correction hash, empty-after-removal, QA exclusion and cross-subject isolation; `reports/release/quant-hosted-verification.json`; no owner data/database writes |
 | Native Today/materials/sheets | IMPLEMENTED, partial emulator verification | Standalone release opens Today S0 and State sheet; settled sheet shields background text and Cancel leaves state unrecorded. 31 component tests. Full keyboard, dark-theme and physical acceptance pending |
 | Native Goals / Schedule / Settings | IMPLEMENTED, partial emulator verification | All three tabs opened in installed release; new-goal sheet opened/canceled, Day/Week visible, empty Week reads 0h. Source permissions truthfully unrequested and account validation error visible. Full mutation/device acceptance pending |
-| Native Insights workspace | IMPLEMENTED, VERIFIED_LOCAL; installed retest pending | 22 tests in each of two timezones. Actual release found browser-only debug-location access; `2d4f365` fixes it and tests all six real example loaders with native window. Reinstalled release; final chart visual readback interrupted by locked Mac |
+| Native Insights workspace | IMPLEMENTED, VERIFIED_LOCAL; installed retest pending | 27 tests in each of two timezones; real variable catalog and source/record/backup entrances remain available without observations. Six actual example loaders tested with native window. Full installed chart acceptance remains open |
 | Health / Calendar / Notifications | IMPLEMENTED, VERIFIED_LOCAL | Explicit provider deletion/correction, durable Calendar intents/reconciliation, push registration lifecycle and quiet hours; actual source samples, OS writes and delivery require device/provider gates |
 | Shortcuts / deep links | IMPLEMENTED, VERIFIED_LOCAL | Open-only entries through existing handlers; 19 intent boundary assertions; Android Widget plugin passed 12 checks including native AAPT/Kotlin compilation; final installed-widget acceptance pending |
 | Isolated example mode | IMPLEMENTED, VERIFIED_LOCAL; partial installed check | Native example gallery and isolation notice visible. Real loader regression found/fixed; final chart readback pending unlock. No example is written to Store/outbox/OS |
-| Standalone Android release APK | VERIFIED_LOCAL build/install; partial UI | Clean `2d4f365` standalone signed arm64 APK, 47,203,520 bytes; real account config, no Metro. Packaged backup exclusions, v2 signature and installed non-debug/non-backup flags verified |
+| Standalone Android release APK | VERIFIED_LOCAL build/install; partial UI | Clean `fc17469` standalone signed arm64 APK, 47,240,096 bytes, SHA256 `d1206f5094b997d0b5597f2f25b30a13ec74730f8261dee79dfe0f1111bc076f`; real account config, no Metro. Latest Today/Goal corrections require rebuilding |
 | Standalone iPhone installation | AWAITING_OWNER | Native simulator cloud compilation succeeded, including Widget/Shortcut and backup support. Not a physical-iPhone package; Apple signing and UDID still required. Latest build IDs are recorded below |
-| Same-version Web candidate | VERIFIED_REMOTE deployment/API and bounded UI smoke | `https://questlife-v1-release.vercel.app`; `2d4f365` deployment `dpl_5UmvnH2V9UMCrKH3dbFrm2wSvntC` READY. Bundle `index-7fe15de824160f79433928f92672276d.js`. Eight API checks; all tabs, Week 0h, Capture input/cancel and desktop record sheet verified. Not full mutation acceptance. Owner production untouched |
+| Same-version Web candidate | VERIFIED_REMOTE deployment; bounded UI smoke from earlier candidate | `https://questlife-v1-release.vercel.app`; `fc17469` deployment `dpl_3w5PXuBrdMngCCVVBNZFXXVjwXef` READY. Bundle `index-2152466737ab77295f19dee104b69136.js`. Latest Today/Goal corrections need redeployment; owner production untouched |
 | Record backup / restore | IMPLEMENTED, VERIFIED_LOCAL | Versioned exact-record backup, original account binding, structural validation and empty-replica WAL restore. First-launch and Settings entrances; 17 core and five file-action/entry groups; physical file-provider acceptance pending |
 | Native recordings/performance | PARTIAL measurement, NOT_PASSED | CUA pointer input recovered after emulator restart. Cold launch/Insights sample on API36 host-GPU emulator: 307 frames, P50 22ms, P95 42ms, 214 histogram frames above 20ms, 43 janky. Not steady-state or physical acceptance. Mac lock now blocks final interaction/recording |
 
@@ -55,18 +55,20 @@ is reopened under the original specification, not excluded as new scope:
 | Spec | Missing / incomplete work | Current action |
 | --- | --- | --- |
 | 7-9 native product | Insights without a bundle hid workspace/source/record entrances | Implemented honest variable catalog, source/record/backup entrances; 27 tests in each timezone. New installed acceptance pending |
-| 7-8 native forms | Goal/Skill actions buried; draft reset on unrelated Goal refresh | Implemented native disclosures, pinned actions, stable draft and durable-save retry; 10 component tests. New installed acceptance pending |
+| 7-8 native forms | Goal/Skill actions buried; Goal Detail retained bordered stacking and an empty 0% | Implemented native disclosures, pinned actions, stable draft and durable-save retry; unframed Goal hierarchy, no unsupported empty progress, durable module/criterion sheets; 13 component tests. Final installed acceptance pending |
 | 7-8 Settings | One long account/source/calendar/settings form | Implemented grouped index and focused existing components, permission/error distinctions, close guard during account/import work; 19 component tests. New installed acceptance pending |
 | 8 Schedule | Native editing and time-axis needed correction | Implemented real-duration day geometry, empty time, overlap lanes, contextual actions, exact-operation retry and historical-time protection; 19 component tests. New installed acceptance pending |
-| 10 persistence | Optimistic success was not proof of durable write | Implemented serial local ACK/retry for all mutations; 17 queue and 11 real Store/SyncEngine tests. WAL replay uses durable base and retains later optimistic edits/deletions |
+| 8/10 Today persistence | Optimistic success was not proof of durable write; Capture confirmation unmounted before feedback | Serial local ACK/retry; raw input retained until durable, parser starts after raw ACK, confirmation/after-state/Instant Read wait for ACK, feedback reopens by capture ID. 17 queue + 21 real Store/callback tests. WAL replay uses durable base and retains later optimistic edits/deletions |
 | 11-15 external chains | Hosted/core checks passed only for their stated boundaries | Physical data, OS delivery, email OTP and two-device UI remain open, not replaced by mocks |
 | 16-19 acceptance | Installed APK and tab-open checks are partial only | Rebuild same-source candidate, actual interactions/recordings/performance; visual acceptance remains owner's |
 
-The prior checkpoint below is historical. Mac is unlocked; emulator pointer
-input recovered after restarting the dedicated QA emulator on 2026-09-22. Do
-not treat the prior screen lock as a current engineering stop condition. The
-installed APK remains the prior `2d4f365` build until the new narrow commits are
-built and installed. Do not promote component tests to installed acceptance.
+Mac is unlocked as of the latest readback. Dedicated emulator pointer and on-screen
+keyboard taps work through CUA. Installed `fc17469`: created one disposable `Test`
+Goal through its actual form, opened Goal Detail, switched dark/English, opened
+Schedule and used Jump to Now. This QA emulator is separate from owner data; the
+temporary Goal must be removed after restart/update persistence verification.
+No state observation has been fabricated. Screenshots from this build cannot be
+used as proof of later `15932f8` / `b8f365f` changes.
 
 The persistence correction keeps the existing whole-entity mutation semantics;
 it does not silently introduce field-level conflict merging. Failed writes keep
@@ -77,23 +79,22 @@ No owner observations or backend records were created by these tests.
 
 Current source commits: `1898cb4` ordered durability/recovery, `9d37a2b` entity
 forms, `6d96e06` Settings/import request guards, `cdb6322` native Schedule,
-`5dec822` Insights cold start. The complete local verification runner passed all
-26 suites against this application source, including TypeScript and Web export.
-Local-mutation suite: 17 queue + 11 real Store/SyncEngine tests; native forms,
-Settings and Schedule: 10 + 19 + 19. Installed testing must use the next build.
+`5dec822` Insights cold start, `15932f8` durable Today submissions, and `b8f365f`
+native Goal Detail/module/criterion completion. All 26 suites passed against
+`b8f365f`, including TypeScript, Web build and dependency audit (zero known findings).
+Local-mutation suite: 17 queue + 21 real Store/SyncEngine/callback tests; forms,
+Settings and Schedule: 13 + 19 + 19. Installed testing must use the next build.
 CUA soft-key taps now enter native text; direct desktop text injection still
 does not reach the Android field. No draft was saved during that input check.
 
-Continue this checkout, not the historical Web branches. Backend, native service
-integration and worker changes are integrated; do not repeat setup. Latest
-application source is `2d4f365`. Its Android APK is installed; six actual example
-loaders now pass native-window regression tests. The dedicated emulator is on
-the example-selection flow; screenshot readback stopped because the Mac locked.
-After unlock, confirm the chart, then finish native Capture/Record/keyboard,
-theme/language, widget and steady-state performance checks using CUA. No owner
-observation has been submitted. Keep final Web and iOS build identifiers aligned
-with this source, and retain the exact external gates below. Historical entries
-are chronological evidence, not a queue to restart.
+Continue this checkout, not the historical Web branches. Do not repeat backend
+setup. Hosted Sync verification was rerun against the isolated candidate:
+10/10 groups passed and both disposable auth users were deleted (`cleanup:
+[true,true]`). iOS simulator build `24f5b7a0-faa3-4171-9dd0-e9fb78c071d5`
+FINISHED for `fc17469`; this is not a signed physical-iPhone build. After the
+final source rebuild, finish native Capture/Record/keyboard, examples, widget and
+steady-state performance checks using CUA. Keep Web/Android/iOS source aligned.
+Historical entries below are evidence, not a queue to restart.
 
 ## Human Actions (Consolidated, Live)
 
