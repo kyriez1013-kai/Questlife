@@ -15,6 +15,10 @@ import type { QuestLifeChartModelV1 } from '../../../platform/charts/contract';
 import type { OwnerQuantRuntimeArtifacts } from '../../../adaptive-decision/ownerQuantRuntime';
 import { clearInsightsV3BundleCacheForTests, loadInsightsV3InitialBundle, loadInsightsV3DetailBundle } from '../../../insights-v3/insightsV3Source';
 import { loadInsightsV3AnalysisExtension } from '../../../insights-v3/insightsV3AnalysisSource';
+import { createInsightsEntrances, filterInsightsCatalog, insightsSourceCatalog } from '../nativeInsightsCatalog';
+import { HEALTH_METRICS, type QuickActionIntent } from '../../../platform/contracts';
+import { normalizeHealthSample } from '../../../platform/health/normalization';
+import { clearPendingNotificationIntent, deliverNotificationIntent, registerNotificationHandler } from '../../../platform/notifications/intentBus';
 
 function fixture(name: string) {
   const parsed = parseQuantProductBundleV1(JSON.parse(readFileSync(`src/quant-product/fixtures/${name}.json`, 'utf8')));
@@ -26,6 +30,61 @@ const all = { kind: 'contract', key: 'ALL' } as const;
 const q = { colors: { accent: '#125599', info: '#00bbbb', textMuted: '#cccccc', neutral: '#ddaaaa', textSecondary: '#888888' }, typography: { helperSize: 12 } } as QuestTheme;
 const foundation = { environment: { canvas: '#ffffff' }, text: { secondary: '#222222' }, data: { observed: '#112233', comparison: '#554433' }, border: { subtle: '#eeeeee' } } as QuestLifeChartModelV1['presentation']['foundation'];
 const presentation: QuestLifeChartModelV1 = { version: 1, presentation: { asOf: mature.metadata.as_of, series, range: all, chartKind: 'line', foundation, lang: 'en', targetLabel: 'Synthetic fixture', showEvents: false, showRawObservations: true, showReference: false, showReferenceRange: false } };
+
+test('zero-data catalog reuses every supported Health metric without fabricating values or a Quant bundle', () => {
+  const rows = insightsSourceCatalog('en');
+  assert.deepEqual(rows.filter(row => row.source === 'health').map(row => row.id), HEALTH_METRICS.map(metric => `health:${metric}`));
+  assert.equal(new Set(rows.map(row => row.id)).size, rows.length);
+  assert.ok(rows.every(row => Object.keys(row).sort().join(',') === 'id,label,source,unit'));
+  for (const metric of HEALTH_METRICS) {
+    const entry = rows.find(row => row.id === `health:${metric}`)!;
+    const normalized = normalizeHealthSample({ metric, unit: entry.unit, value: 1, startAt: '2026-01-01T00:00:00Z', endAt: '2026-01-01T00:01:00Z', availableAt: '2026-01-01T00:01:00Z', externalId: 'synthetic-catalog-test', platform: 'healthkit' });
+    assert.ok(normalized, metric);
+    assert.equal(normalized.unit, entry.unit);
+  }
+});
+test('source catalog supports bilingual browsing, normalized search and no matches', () => {
+  for (const lang of ['zh', 'en'] as const) {
+    const rows = insightsSourceCatalog(lang);
+    assert.equal(filterInsightsCatalog(rows, '  HRV ')[0].id, 'health:hrv');
+    assert.equal(filterInsightsCatalog(rows, rows[0].label)[0].id, rows[0].id);
+    assert.equal(filterInsightsCatalog(rows, 'not-a-variable').length, 0);
+    assert.equal(filterInsightsCatalog(rows, '  ').length, rows.length);
+    assert.ok(rows.every(row => row.label.length > 0));
+  }
+});
+test('source and create-record entrances dispatch only existing navigation and OPEN intents', () => {
+  const events: unknown[] = [];
+  const actions = createInsightsEntrances({ navigate: (...args) => events.push(args) }, intent => events.push(intent));
+  actions.onOpenSources(); actions.onCreateRecord('state'); actions.onCreateRecord('activity');
+  assert.deepEqual(events, [
+    ['Settings', { screen: 'NativeSettings' }], ['Today'],
+    { action: 'OPEN', kind: 'morning_state', notificationId: 'insights:state' }, ['Today'],
+    { action: 'OPEN', kind: 'quick_capture', notificationId: 'insights:activity' },
+  ]);
+});
+test('create-record entrance opens Today through the real pending intent bus, without recording anything', () => {
+  clearPendingNotificationIntent();
+  const received: QuickActionIntent[] = [];
+  createInsightsEntrances({ navigate: () => {} }, deliverNotificationIntent).onCreateRecord('activity');
+  const stop = registerNotificationHandler(intent => received.push(intent));
+  try {
+    assert.equal(received.length, 1);
+    assert.equal(received[0].kind, 'quick_capture');
+    assert.equal(received[0].action, 'OPEN');
+    createInsightsEntrances({ navigate: () => {} }, deliverNotificationIntent).onCreateRecord('state');
+    assert.equal(received[1].kind, 'morning_state');
+  } finally { stop(); clearPendingNotificationIntent(); }
+});
+test('workspace offers owner entrances with no model and excludes them from isolated samples', () => {
+  const source = readFileSync('src/native/insights/NativeInsightsWorkspace.tsx', 'utf8');
+  assert.match(source, /!selected && !sample \? <InsightsSourceWorkspace/);
+  assert.match(source, /!sample \? <InsightsSourceWorkspace[^>]*browse=\{false\}/);
+  const experience = readFileSync('src/native/insights/NativeInsightsExperience.tsx', 'utf8');
+  assert.match(experience, /renderImport=\{\(\) => <RecordBackupActions \/>\}/);
+  assert.equal((experience.match(/await loadOwnerQuantArtifacts/g) ?? []).length, 1);
+  assert.match(experience, /onRefresh=\{\(\) => void refresh\(\)\}/);
+});
 
 test('real example loaders accept native window without browser location', async () => {
   const original = Object.getOwnPropertyDescriptor(globalThis, 'window');

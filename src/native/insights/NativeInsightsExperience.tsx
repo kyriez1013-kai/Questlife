@@ -12,8 +12,10 @@ import type { QuantAnalysisExtensionV1 } from '../../quant-product/quantAnalysis
 import { authService } from '../../sync-v2/supabase';
 import { initialInsightsLoadState, settleInsightsLoad } from './nativeInsightsPresentation';
 import NativeInsightsWorkspace from './NativeInsightsWorkspace';
+import RecordBackupActions from '../../backup/RecordBackupActions';
+import type { InsightsEntrances } from './nativeInsightsCatalog';
 
-export default function NativeInsightsExperience() {
+export default function NativeInsightsExperience(entrances: InsightsEntrances) {
   const { data } = useStore(); const device = useDeviceData(); const q = useQuestTheme(data.settings.selectedThemeId); const lang = getLanguage(data.settings.language);
   const observations = useMemo(() => withDeviceObservations(data, device.data.observations), [data, device.data.observations]);
   const snapshot = useMemo(() => JSON.stringify(buildOwnerQuantSnapshot(observations, true)), [observations]);
@@ -56,5 +58,5 @@ export default function NativeInsightsExperience() {
   };
   const exit = () => { request.current += 1; exampleRequest.current += 1; pending.current = false; setExampleBusy(false); setExample(null); setExampleError(false); setMode('owner'); };
   const bundle = mode === 'sample' ? example?.bundle ?? null : owner.result?.product ?? null;
-  return <NativeInsightsWorkspace key={`${mode}:${bundle?.metadata.subject_id ?? 'empty'}`} q={q} lang={lang} bundle={bundle} analysis={mode === 'sample' ? example?.analysis : owner.result?.analysis} state={mode === 'sample' ? { ...initialInsightsLoadState, attempted: true, busy: exampleBusy } : owner} sample={mode === 'sample'} sampleError={exampleError} deviceError={device.error} onRefresh={() => void refresh()} onSample={id => void sample(id)} onExitSample={exit} />;
+  return <NativeInsightsWorkspace {...entrances} renderImport={() => <RecordBackupActions />} key={`${mode}:${bundle?.metadata.subject_id ?? 'empty'}`} q={q} lang={lang} bundle={bundle} analysis={mode === 'sample' ? example?.analysis : owner.result?.analysis} state={mode === 'sample' ? { ...initialInsightsLoadState, attempted: true, busy: exampleBusy } : owner} sample={mode === 'sample'} sampleError={exampleError} deviceError={device.error} onRefresh={() => void refresh()} onSample={id => void sample(id)} onExitSample={exit} />;
 }

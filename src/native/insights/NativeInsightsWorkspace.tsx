@@ -21,9 +21,10 @@ import NativeInsightsChart from './NativeInsightsChart';
 import { nativeChartModel } from './nativeInsightsChartModel';
 import { comparisonBlock, comparisonInWindow, insightsFailureKind, matchingAnalysis, nativeRangeLabel, renderableKinds, type NativeInsightsLoadState } from './nativeInsightsPresentation';
 import { ni } from './nativeInsightsStrings';
+import InsightsSourceWorkspace, { type InsightsSourceWorkspaceProps } from './InsightsSourceWorkspace';
 
 type Tool = InsightsDetailKind | 'watchlist' | 'range' | 'compare' | 'indicators' | 'samples' | 'analyst';
-export type NativeInsightsWorkspaceProps = {
+export type NativeInsightsWorkspaceProps = Pick<InsightsSourceWorkspaceProps, 'onOpenSources' | 'onCreateRecord' | 'renderImport'> & {
   q: QuestTheme; lang: Lang; bundle: QuantProductBundleV1 | null; analysis?: QuantAnalysisExtensionV1 | null;
   state: NativeInsightsLoadState; sample: boolean; sampleError?: boolean; deviceError?: boolean;
   onRefresh: () => void; onSample: (id: InsightsV3FixtureId) => void; onExitSample: () => void;
@@ -35,7 +36,7 @@ const details: Array<{ kind: InsightsDetailKind; copy: InsightsV3CopyKey; icon: 
   { kind: 'similar', copy: 'similar', icon: 'calendar' }, { kind: 'recovery', copy: 'recovery', icon: 'chart' }, { kind: 'scenario', copy: 'scenario', icon: 'decision' },
 ];
 
-export default function NativeInsightsWorkspace({ q, lang, bundle, analysis, state, sample, sampleError, deviceError, onRefresh, onSample, onExitSample }: NativeInsightsWorkspaceProps) {
+export default function NativeInsightsWorkspace({ q, lang, bundle, analysis, state, sample, sampleError, deviceError, onRefresh, onSample, onExitSample, onOpenSources, onCreateRecord, renderImport }: NativeInsightsWorkspaceProps) {
   const s = insightsStyles(q); const f = useMemo(() => getQuestVisualFoundation(q), [q]);
   const model = useMemo(() => bundle ? adaptQuantProductBundleV1(bundle) : null, [bundle]);
   const validAnalysis = matchingAnalysis(bundle, analysis);
@@ -87,55 +88,56 @@ export default function NativeInsightsWorkspace({ q, lang, bundle, analysis, sta
   return <SafeAreaView edges={['top', 'left', 'right']} style={s.screen}>
     <ScrollView ref={scroll} keyboardShouldPersistTaps="handled" contentContainerStyle={s.content}>
       <View style={s.row}><Text accessibilityRole="header" style={[s.title, s.grow]}>{ni(lang, 'title')}</Text>{!sample ? <InsightButton q={q} compact icon="reset" label={ni(lang, state.attempted ? 'refresh' : 'load')} busy={state.busy} onPress={onRefresh} /> : null}</View>
-      {sample ? <QuestCard questTheme={q} variant="flat" style={{ borderRadius: q.radius.sm, gap: q.spacing.sm }}><Text accessibilityRole="header" style={s.heading}>{ni(lang, 'sample')}</Text><Text style={s.body}>{ni(lang, 'sampleBody')}</Text><InsightButton q={q} icon="open" label={ni(lang, 'sampleExit')} onPress={onExitSample} /></QuestCard> : <Text style={s.meta}>{ni(lang, 'consent')}</Text>}
+      {sample ? <View style={{ gap: q.spacing.xs }}><View style={s.row}><Text accessibilityRole="header" style={[s.heading, s.grow]}>{ni(lang, 'sample')}</Text><InsightButton q={q} compact icon="open" label={ni(lang, 'sampleExit')} onPress={onExitSample} /></View><Text style={s.meta}>{ni(lang, 'sampleBody')}</Text></View> : <Text style={s.meta}>{ni(lang, 'consent')}</Text>}
       {deviceError && !sample ? <Text accessibilityRole="alert" style={s.body}>{ni(lang, 'deviceReadError')}</Text> : null}
       {sampleError ? <Text accessibilityRole="alert" style={s.body}>{ni(lang, 'sampleError')}</Text> : null}
       {state.busy ? <View style={s.row}><ActivityIndicator color={q.colors.primary} /><Text accessibilityLiveRegion="polite" style={s.body}>{iv3(lang, 'loading')}</Text></View> : null}
       {state.failure && !sample ? <View style={{ gap: q.spacing.sm }}><Text accessibilityRole="alert" style={s.heading}>{ni(lang, failureKind)}</Text><Text style={s.body}>{ni(lang, `${failureKind}Body`)}</Text>{bundle ? <Text style={s.meta}>{ni(lang, 'retained')}</Text> : null}<InsightButton q={q} icon="reset" label={iv3(lang, 'retry')} busy={state.busy} onPress={onRefresh} /></View> : null}
-      {!bundle && !state.failure && !state.busy && !sampleError ? <InsightSection q={q} title={ni(lang, state.attempted ? 'empty' : 'idle')}><Text style={s.body}>{ni(lang, 'emptyBody')}</Text>{!sample ? <InsightButton q={q} icon="analyst" label={ni(lang, 'load')} onPress={onRefresh} /> : null}</InsightSection> : null}
+      {!bundle && !state.failure && !state.busy && !sampleError && !sample ? <View style={{ gap: q.spacing.sm }}><Text style={s.body}>{ni(lang, state.attempted ? 'empty' : 'idle')}</Text><InsightButton q={q} icon="analyst" label={ni(lang, 'load')} onPress={onRefresh} /></View> : null}
       {bundle?.metadata.staleness.state !== 'CURRENT' && bundle ? <Text style={s.meta}>{ni(lang, bundle.metadata.staleness.state === 'STALE' ? 'stale' : 'unknownFreshness')}</Text> : null}
       {analysis && !validAnalysis ? <Text accessibilityRole="alert" style={s.body}>{ni(lang, 'analysisMismatch')}</Text> : null}
 
+      {!selected && !sample ? <InsightsSourceWorkspace q={q} lang={lang} browse renderImport={renderImport} onOpenSources={onOpenSources} onCreateRecord={onCreateRecord} /> : null}
       {selected && model && raw ? <>
         <View style={s.row}><Text accessibilityRole="header" style={[s.heading, s.grow]}>{iv3(lang, 'watchlist')}</Text><InsightButton q={q} icon="watchlist" compact label={ni(lang, 'watchlistManage')} onPress={() => open('watchlist')} /></View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: q.spacing.sm, paddingBottom: q.spacing.xs }}>
           {ordered.filter(row => !hidden.includes(row.id)).map(row => <Pressable key={row.id} accessibilityRole="button" accessibilityLabel={`${instrumentLabel(lang, row)}, ${formatQuantValue(row.latest?.value, row.unit, lang)} ${unitLabel(row.unit, lang)}`} accessibilityState={{ selected: row.id === selected.id }} onPress={() => selectInstrument(row.id)} style={{ width: q.spacing.xxl * 6 }}>
-            <QuestCard questTheme={q} style={{ flex: 1, borderRadius: q.radius.sm, borderColor: selected.id === row.id ? q.colors.primary : q.colors.cardBorder, gap: q.spacing.xs }}>
-              <Text style={s.body}>{instrumentLabel(lang, row)}</Text><Text style={s.heading}>{formatQuantValue(row.latest?.value, row.unit, lang)} {unitLabel(row.unit, lang)}</Text><Text style={s.meta}>{availabilityLabel(lang, row.availability.state)}</Text>
+            <QuestCard questTheme={q} style={{ flex: 1, padding: q.spacing.sm, borderRadius: q.radius.sm, borderColor: selected.id === row.id ? q.colors.primary : q.colors.cardBorder, gap: q.spacing.xs }}>
+              <Text style={s.body}>{instrumentLabel(lang, row)}</Text><Text style={s.heading}>{formatQuantValue(row.latest?.value, row.unit, lang)} {unitLabel(row.unit, lang)}</Text>
             </QuestCard>
           </Pressable>)}
         </ScrollView>
         {!model.instruments.some(row => !hidden.includes(row.id)) ? <Text style={s.body}>{iv3(lang, 'watchlistEmpty')}</Text> : null}
-        <View style={{ gap: q.spacing.xs }}><Text accessibilityRole="header" style={s.heading}>{instrumentLabel(lang, selected)}</Text>
-          <Text selectable style={s.number}>{personal?.currentValue}<Text style={s.body}> {personal?.currentUnit}</Text></Text>
-          <Text style={s.body}>{personal?.summary}</Text>
+        <View style={{ gap: q.spacing.xs }}><View style={s.row}><Text accessibilityRole="header" style={[s.heading, s.grow]}>{instrumentLabel(lang, selected)}</Text>
+          <Text selectable style={s.heading}>{personal?.currentValue}<Text style={s.meta}> {personal?.currentUnit}</Text></Text></View>
           <Text style={s.meta}>{selected.latest ? `${formatDateTime(lang, selected.latest.observed_at, true)} · ${sourceClassLabel(lang, selected.latest.source_class)}` : availabilityLabel(lang, selected.availability.state)}</Text>
         </View>
-        <View style={s.wrap}><Text style={s.body}>{personal?.referenceLabel} · {personal?.referenceValue}</Text><Text style={s.meta}>{evidenceStageLabel(lang, selected.evidence.stage)} · {iv3(lang, 'observations', { count: selected.evidence.observation_count })}</Text></View>
         {series ? <>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: q.spacing.sm }}>
             {contractQuickRanges(series).map(item => <InsightButton key={item.key} q={q} label={nativeRangeLabel(lang, { kind: 'contract', key: item.key }, series)} selected={range.kind === 'contract' && range.key === item.key} onPress={() => applyRange({ kind: 'contract', key: item.key })} />)}
             <InsightButton q={q} icon="calendar" label={ni(lang, 'custom')} selected={range.kind !== 'contract'} onPress={() => open('range')} />
           </ScrollView>
-          <Text style={s.meta}>{nativeRangeLabel(lang, range, series)} · {ni(lang, 'rangeCount', { count: points.length })}</Text>
-          <View style={s.wrap}>{kinds.map(item => <InsightButton key={item} q={q} icon={chartIcons[item]} label={iv3(lang, chartNames[item])} selected={kind === item} disabled={!renderable.includes(item)} onPress={() => { setKindOverride(item); setReady(false); }} />)}</View>
+          <View style={s.row}><View style={s.wrap}>{kinds.map(item => <InsightButton key={item} q={q} compact icon={chartIcons[item]} label={iv3(lang, chartNames[item])} selected={kind === item} disabled={!renderable.includes(item)} onPress={() => { setKindOverride(item); setReady(false); }} />)}</View><Text style={[s.meta, s.grow]}>{iv3(lang, chartNames[kind])} · {ni(lang, 'rangeCount', { count: points.length })}</Text></View>
           {kinds.includes('candle') && !renderable.includes('candle') ? <Text style={s.meta}>{iv3(lang, 'chartCandleUnavailable')}</Text> : null}
-          {chartModel && points.length > 0 && renderable.includes(kind) ? <QuestCard questTheme={q} style={{ padding: q.spacing.sm, borderRadius: q.radius.sm }}><NativeInsightsChart ref={ref} model={chartModel} q={q} onReadyChange={onReadyChange} /></QuestCard>
+          {chartModel && points.length > 0 && renderable.includes(kind) ? <NativeInsightsChart ref={ref} model={chartModel} q={q} onReadyChange={onReadyChange} />
             : <View style={{ minHeight: q.spacing.xxl * 5, justifyContent: 'center', gap: q.spacing.sm }}><Text style={s.body}>{!points.length ? ni(lang, 'noRangePoints') : kind === 'candle' ? ni(lang, 'noRangeCandle') : ni(lang, 'noSeries')}</Text></View>}
           {points.length === 1 ? <Text style={s.meta}>{iv3(lang, 'sparsePointOnly')}</Text> : null}
           {chartModel ? <View style={{ gap: q.spacing.xs }}><View style={s.row}><View style={{ width: q.spacing.sm, height: q.spacing.sm, backgroundColor: chartModel.colors.line }} /><Text style={[s.meta, s.grow]}>{instrumentLabel(lang, selected)} · {unitLabel(selected.unit, lang)}</Text></View>{chartModel.layers.map(layer => <View key={layer.id} style={s.row}><View style={{ width: q.spacing.sm, height: q.spacing.sm, backgroundColor: layer.color }} /><Text style={[s.meta, s.grow]}>{layer.label} · {unitLabel(layer.unit, lang)}</Text></View>)}</View> : null}
-          <View style={s.wrap}>
-            <InsightButton q={q} icon="zoom-in" label={iv3(lang, 'zoomIn')} disabled={!ready || !renderable.includes(kind) || !points.length} onPress={() => ref.current?.zoomIn()} />
-            <InsightButton q={q} icon="zoom-out" label={iv3(lang, 'zoomOut')} disabled={!ready || !renderable.includes(kind) || !points.length} onPress={() => ref.current?.zoomOut()} />
-            <InsightButton q={q} icon="reset" label={ni(lang, 'fit')} disabled={!ready || !renderable.includes(kind) || !points.length} onPress={() => ref.current?.fit()} />
+          <View style={s.row}><Text style={[s.meta, s.grow]}>{nativeRangeLabel(lang, range, series)}</Text>
+            <InsightButton q={q} compact icon="zoom-in" label={iv3(lang, 'zoomIn')} disabled={!ready || !renderable.includes(kind) || !points.length} onPress={() => ref.current?.zoomIn()} />
+            <InsightButton q={q} compact icon="zoom-out" label={iv3(lang, 'zoomOut')} disabled={!ready || !renderable.includes(kind) || !points.length} onPress={() => ref.current?.zoomOut()} />
+            <InsightButton q={q} compact icon="reset" label={ni(lang, 'fit')} disabled={!ready || !renderable.includes(kind) || !points.length} onPress={() => ref.current?.fit()} />
           </View>
         </> : <Text style={s.body}>{ni(lang, 'noSeries')}</Text>}
+        <Text style={s.body}>{personal?.summary}</Text>
+        <View style={s.wrap}><Text style={s.body}>{personal?.referenceLabel} · {personal?.referenceValue}</Text><Text style={s.meta}>{evidenceStageLabel(lang, selected.evidence.stage)} · {iv3(lang, 'observations', { count: selected.evidence.observation_count })}</Text></View>
         {tools}
         <InsightSection q={q} title={iv3(lang, 'analysisTools')}>
           <View style={s.wrap}>{details.map(item => <InsightButton key={item.kind} q={q} icon={item.icon} label={iv3(lang, item.copy)} onPress={() => open(item.kind)} />)}</View>
           <View style={s.wrap}><InsightButton q={q} icon="evidence" label={iv3(lang, 'evidenceDetail')} onPress={() => open('evidence')} /><InsightButton q={q} icon="event" label={ni(lang, 'events')} onPress={() => open('events')} /></View>
           <Text style={s.meta}>{iv3(lang, 'asOf', { date: formatDateTime(lang, model.asOf, true) })}</Text>
         </InsightSection>
+        {!sample ? <InsightsSourceWorkspace q={q} lang={lang} browse={false} renderImport={renderImport} onOpenSources={onOpenSources} onCreateRecord={onCreateRecord} /> : null}
       </> : null}
       <InsightButton q={q} icon="research" label={ni(lang, 'sampleOpen')} onPress={() => open('samples')} />
     </ScrollView>
