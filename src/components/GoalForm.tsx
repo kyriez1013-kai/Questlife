@@ -1,6 +1,6 @@
 // 可复用大目标 (Category) 表单 - 创建 / 编辑共用
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, Keyboard, Platform } from 'react-native';
 import { useStore } from '../store';
 import { theme } from '../theme';
 import { Category, GoalProgressModel, GoalType } from '../types';
@@ -16,6 +16,9 @@ import { getGoalSemanticIcon } from '../design/entityIcons';
 import { getDefaultTemplateForGoalType } from '../domainTemplates';
 import { trackEvent } from '../utils/analytics';
 import { getV11ProductLanguage, getV11ProductThemeId } from '../v11/featureFlag';
+import NativeFormDisclosure from '../native/NativeFormDisclosure';
+import { useDurableFormSave } from '../native/useDurableFormSave';
+import { nativeFormCopy } from '../native/nativeFormCopy';
 
 const EMOJIS = ['🎯','🏋️','💼','📚','🎨','🧘','💻','🎸','💰','❤️','🌱','🍳','📷','🧠','✍️','🏃','🎮','🔬','🐾','✈️'];
 const GOAL_TYPES: GoalType[] = ['fitness', 'career', 'study', 'exam', 'finance', 'health', 'project', 'custom'];
@@ -28,7 +31,7 @@ export interface GoalFormProps {
 }
 
 export default function GoalForm({ visible, onClose, initial }: GoalFormProps) {
-  const { data, addCategory, updateCategory, applyDomainTemplateToGoal } = useStore();
+  const { data, addCategory, updateCategory, applyDomainTemplateToGoal, waitForLocalWrites, retryLocalWrites } = useStore();
   const questTheme = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const accent = questTheme.colors.primary;
   const lang = getV11ProductLanguage(getLanguage(data.settings.language));
@@ -41,6 +44,8 @@ export default function GoalForm({ visible, onClose, initial }: GoalFormProps) {
   const [progressModel, setProgressModel] = useState<GoalProgressModel>('criteria_weighted');
   const [customIcon, setCustomIcon] = useState(false);
   const [useTemplate, setUseTemplate] = useState(false);
+  const saveState = useDurableFormSave({ visible, wait: waitForLocalWrites, retry: retryLocalWrites, onSaved: onClose });
+  const close = () => { if (!saveState.locked) onClose(); };
 
   useEffect(() => {
     if (!visible) return;
@@ -95,6 +100,7 @@ export default function GoalForm({ visible, onClose, initial }: GoalFormProps) {
       progressModel,
       ...templatePatch,
     };
+    void saveState.save(() => {
     if (initial) {
       updateCategory(initial.id, patch);
       if (useTemplate && recommendedTemplate) {
@@ -114,17 +120,24 @@ export default function GoalForm({ visible, onClose, initial }: GoalFormProps) {
         skillCount: recommendedTemplate.defaultSkills.length,
       }, { page: 'goal_form' });
     }
-    onClose();
+    });
   };
 
+  const actions = <View style={{ flexDirection: 'row', gap: questTheme.spacing.sm }}>
+    <QuestButton questTheme={questTheme} variant="secondary" label={t(lang, 'cancel')} onPress={close} disabled={saveState.locked} style={{ flex: 1 }} />
+    <QuestButton questTheme={questTheme} variant="primary" label={saveState.status === 'error' ? nativeFormCopy(lang, 'retrySave') : initial ? t(lang, 'save') : t(lang, 'create')} onPress={submit} loading={saveState.status === 'saving'} style={{ flex: 1 }} />
+  </View>;
+
   return (
-    <BottomSheetForm visible={visible} onClose={onClose}>
+    <BottomSheetForm visible={visible} onClose={close} footer={Platform.OS !== 'web' ? <>{saveState.status === 'error' ? <Text accessibilityRole="alert" style={{ color: questTheme.colors.text, marginBottom: questTheme.spacing.sm }}>{nativeFormCopy(lang, 'saveFailed')}</Text> : null}{actions}</> : undefined}>
+      <View pointerEvents={saveState.locked ? 'none' : 'auto'} accessibilityElementsHidden={saveState.status === 'saving'}>
       <Text style={[styles.h2, { color: questTheme.colors.text }]}>{initial ? t(lang, 'edit') : t(lang, 'addQuest')}</Text>
 
       <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'name')}</Text>
       <QuestInput
         questTheme={questTheme}
         value={name} onChangeText={setName}
+        accessibilityLabel={t(lang, 'name')}
         placeholder={t(lang, 'goalNamePlaceholder')}
         returnKeyType="done" onSubmitEditing={Keyboard.dismiss} blurOnSubmit
       />
@@ -164,6 +177,7 @@ export default function GoalForm({ visible, onClose, initial }: GoalFormProps) {
         </View>
       ) : null}
 
+      <NativeFormDisclosure key={`appearance-${visible}`} q={questTheme} title={t(lang, 'icon')} summary={customIcon ? emoji : t(lang, 'autoIcon')}>
       <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'icon')}</Text>
       <View style={[styles.iconPanel, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}>
         <QuestEntityIcon
@@ -193,19 +207,23 @@ export default function GoalForm({ visible, onClose, initial }: GoalFormProps) {
           <EmojiPicker emojis={EMOJIS} value={emoji} onChange={setEmoji} />
         </View>
       ) : null}
+      </NativeFormDisclosure>
 
       <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'vision')}</Text>
       <QuestInput
         questTheme={questTheme}
         value={vision} onChangeText={setVision}
+        accessibilityLabel={t(lang, 'vision')}
         style={{ height: 72, textAlignVertical: 'top' }} multiline
         placeholder={t(lang, 'visionPlaceholder')}
       />
 
+      <NativeFormDisclosure key={`details-${visible}`} q={questTheme} title={t(lang, 'advancedSettings')} summary={[targetDate, progressModelLabel(lang, progressModel)].filter(Boolean).join(' · ')}>
       <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'targetDate')}</Text>
       <QuestInput
         questTheme={questTheme}
         value={targetDate} onChangeText={setTargetDate}
+        accessibilityLabel={t(lang, 'targetDate')}
         placeholder={t(lang, 'targetDatePlaceholder')}
         returnKeyType="done" onSubmitEditing={Keyboard.dismiss} blurOnSubmit
       />
@@ -227,14 +245,15 @@ export default function GoalForm({ visible, onClose, initial }: GoalFormProps) {
       <QuestInput
         questTheme={questTheme}
         value={desc} onChangeText={setDesc}
+        accessibilityLabel={t(lang, 'description')}
         style={{ height: 80, textAlignVertical: 'top' }} multiline
         placeholder={t(lang, 'noteOptional')}
       />
 
-      <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
-        <QuestButton questTheme={questTheme} variant="secondary" label={t(lang, 'cancel')} onPress={onClose} style={{ flex: 1 }} />
-        <QuestButton questTheme={questTheme} variant="primary" label={initial ? t(lang, 'save') : t(lang, 'create')} onPress={submit} style={{ flex: 1 }} />
+      </NativeFormDisclosure>
       </View>
+      {Platform.OS === 'web' && saveState.status === 'error' ? <Text accessibilityRole="alert" style={{ color: questTheme.colors.text }}>{nativeFormCopy(lang, 'saveFailed')}</Text> : null}
+      {Platform.OS === 'web' ? <View style={{ marginTop: questTheme.spacing.md }}>{actions}</View> : null}
     </BottomSheetForm>
   );
 }

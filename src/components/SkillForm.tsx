@@ -4,7 +4,7 @@
 // - 提交后自动调 addSkill / updateSkill, 然后 onClose
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, TextInput, Switch, Alert, Keyboard,
+  View, Text, StyleSheet, TouchableOpacity, TextInput, Switch, Alert, Keyboard, Platform,
 } from 'react-native';
 import { useStore } from '../store';
 import { theme } from '../theme';
@@ -22,6 +22,9 @@ import QuestInput from './ui/QuestInput';
 import QuestPill from './ui/QuestPill';
 import { getSkillSemanticIcon } from '../design/entityIcons';
 import { getV11ProductLanguage, getV11ProductThemeId } from '../v11/featureFlag';
+import NativeFormDisclosure from '../native/NativeFormDisclosure';
+import { useDurableFormSave } from '../native/useDurableFormSave';
+import { nativeFormCopy } from '../native/nativeFormCopy';
 
 const EMOJIS = ['🧩','💻','🎨','📚','🏃','🧘','🎸','🍳','📷','🧠','💪','🌱','✍️','🎯','🎮','🔬','🐍','📐','🎤','🏊'];
 
@@ -97,7 +100,7 @@ export interface SkillFormProps {
 }
 
 export default function SkillForm({ visible, onClose, initial, presetCategoryId, presetModuleId, linkOnCreate }: SkillFormProps) {
-  const { data, addSkill, updateSkill, createSkillAndAttachToModule } = useStore();
+  const { data, addSkill, updateSkill, createSkillAndAttachToModule, waitForLocalWrites, retryLocalWrites } = useStore();
   const lang = getV11ProductLanguage(getLanguage(data.settings.language));
   const questTheme = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const accent = questTheme.colors.primary;
@@ -153,6 +156,8 @@ export default function SkillForm({ visible, onClose, initial, presetCategoryId,
   const [remMin, setRemMin] = useState(0);
   const [customIcon, setCustomIcon] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const saveState = useDurableFormSave({ visible, wait: waitForLocalWrites, retry: retryLocalWrites, onSaved: onClose });
+  const close = () => { if (!saveState.locked) onClose(); };
 
   // 每次弹窗打开时, 按 initial 重置表单 (避免上一次的脏数据残留)
   useEffect(() => {
@@ -261,7 +266,7 @@ export default function SkillForm({ visible, onClose, initial, presetCategoryId,
       setRemMin(0);
       setCustomIcon(false);
     }
-  }, [visible, initial?.id, presetCategoryId, presetModuleId, data.categories]);
+  }, [visible, initial?.id, presetCategoryId, presetModuleId]);
 
   useEffect(() => {
     if (!customIcon) setIcon('');
@@ -351,6 +356,7 @@ export default function SkillForm({ visible, onClose, initial, presetCategoryId,
       reminderMinute: remEnabled ? remMin : undefined,
     };
 
+    void saveState.save(() => {
     if (initial) updateSkill(initial.id, payload);
     else {
       if (linkOnCreate && catId && moduleId) {
@@ -359,13 +365,26 @@ export default function SkillForm({ visible, onClose, initial, presetCategoryId,
         addSkill(payload);
       }
     }
-    onClose();
+    });
   };
 
-  return (
-    <BottomSheetForm visible={visible} onClose={onClose}>
-      <Text style={[styles.h2, { color: questTheme.colors.text }]}>{initial ? t(lang, 'editSkill') : t(lang, 'newSkill')}</Text>
+  const actions = <View style={{ flexDirection: 'row', gap: questTheme.spacing.sm }}>
+    <QuestButton questTheme={questTheme} variant="secondary" label={t(lang, 'cancel')} onPress={close} disabled={saveState.locked} style={{ flex: 1 }} />
+    <QuestButton questTheme={questTheme} variant="primary" label={saveState.status === 'error' ? nativeFormCopy(lang, 'retrySave') : initial ? t(lang, 'save') : t(lang, 'create')} onPress={submit} loading={saveState.status === 'saving'} style={{ flex: 1 }} />
+  </View>;
+  const nameField = <>
+    <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'name')}</Text>
+    <QuestInput questTheme={questTheme} value={name} onChangeText={setName} accessibilityLabel={t(lang, 'name')}
+      placeholder={t(lang, 'exampleBench')} returnKeyType="done" onSubmitEditing={Keyboard.dismiss} blurOnSubmit />
+  </>;
 
+  return (
+    <BottomSheetForm visible={visible} onClose={close} footer={Platform.OS !== 'web' ? <>{saveState.status === 'error' ? <Text accessibilityRole="alert" style={{ color: questTheme.colors.text, marginBottom: questTheme.spacing.sm }}>{nativeFormCopy(lang, 'saveFailed')}</Text> : null}{actions}</> : undefined}>
+      <View pointerEvents={saveState.locked ? 'none' : 'auto'} accessibilityElementsHidden={saveState.status === 'saving'}>
+      <Text style={[styles.h2, { color: questTheme.colors.text }]}>{initial ? t(lang, 'editSkill') : t(lang, 'newSkill')}</Text>
+      {Platform.OS !== 'web' ? nameField : null}
+      <NativeFormDisclosure key={`links-${visible}`} q={questTheme} title={t(lang, 'linkedGoals')}
+        summary={data.categories.filter(category => linkedGoalIds.includes(category.id)).map(category => category.name).join(' · ')}>
       <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'linkedGoals')}</Text>
       <View style={styles.chipsRow}>
         {data.categories.map((c) => {
@@ -373,11 +392,10 @@ export default function SkillForm({ visible, onClose, initial, presetCategoryId,
           return (
             <QuestPill
               key={c.id} onPress={() => {
-                setLinkedGoalIds((ids) => {
-                  const next = ids.includes(c.id) ? ids.filter((id) => id !== c.id) : [...ids, c.id];
-                  setCatId(next[0] ?? c.id);
-                  return next;
-                });
+                const next = linkedGoalIds.includes(c.id) ? linkedGoalIds.filter(id => id !== c.id) : [...linkedGoalIds, c.id];
+                const nextGoal = catId && next.includes(catId) ? catId : next[0] ?? null;
+                if (nextGoal !== catId) { setCatId(nextGoal); setModuleId(undefined); }
+                setLinkedGoalIds(next);
               }}
               questTheme={questTheme}
               label={c.name}
@@ -396,7 +414,7 @@ export default function SkillForm({ visible, onClose, initial, presetCategoryId,
               return (
                 <QuestPill
                   key={m.id}
-                  onPress={() => setModuleId(m.id)}
+                  onPress={() => setModuleId(on ? undefined : m.id)}
                   questTheme={questTheme}
                   label={m.name}
                   active={on}
@@ -406,33 +424,11 @@ export default function SkillForm({ visible, onClose, initial, presetCategoryId,
           </View>
         </>
       ) : null}
-
-      <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'name')}</Text>
-      <QuestInput
-        questTheme={questTheme}
-        value={name} onChangeText={setName}
-        placeholder={t(lang, 'exampleBench')}
-        returnKeyType="done" onSubmitEditing={Keyboard.dismiss} blurOnSubmit
-      />
-
+      </NativeFormDisclosure>
+      {Platform.OS === 'web' ? nameField : null}
+      <NativeFormDisclosure key={`appearance-${visible}`} q={questTheme} title={t(lang, 'icon')} summary={customIcon ? icon : t(lang, 'autoIcon')}>
       <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'color')}</Text>
       <ColorPicker colors={theme.palette} value={color} onChange={setColor} />
-
-      <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'taskType')}</Text>
-      <View style={styles.chipsRow}>
-        {TASK_TYPE_OPTIONS.map((opt) => {
-          const on = taskType === opt.value;
-          return (
-            <QuestPill
-              key={opt.value}
-              onPress={() => setTaskType(opt.value)}
-              questTheme={questTheme}
-              label={taskTypeLabel(lang, opt.value)}
-              active={on}
-            />
-          );
-        })}
-      </View>
 
       <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'icon')}</Text>
       <View style={[styles.iconPanel, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]}>
@@ -464,7 +460,14 @@ export default function SkillForm({ visible, onClose, initial, presetCategoryId,
           <EmojiPicker emojis={EMOJIS} value={icon} onChange={setIcon} />
         </View>
       ) : null}
-
+      </NativeFormDisclosure>
+      <NativeFormDisclosure key={`task-${visible}`} q={questTheme} title={t(lang, 'taskType')} summary={taskTypeLabel(lang, taskType)}>
+        <View style={styles.chipsRow}>
+          {TASK_TYPE_OPTIONS.map(option => <QuestPill key={option.value} questTheme={questTheme}
+            label={taskTypeLabel(lang, option.value)} active={taskType === option.value} onPress={() => setTaskType(option.value)} />)}
+        </View>
+      </NativeFormDisclosure>
+      <NativeFormDisclosure key={`metric-${visible}`} q={questTheme} title={t(lang, 'progressType')} summary={progressTypeLabel(lang, progressType)}>
       <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'progressType')}</Text>
       <View style={styles.chipsRow}>
         {PROGRESS_TYPE_OPTIONS.map((value) => {
@@ -644,15 +647,19 @@ export default function SkillForm({ visible, onClose, initial, presetCategoryId,
       {progressType === 'qualitative' || progressType === 'none' ? (
         <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{progressType === 'none' ? t(lang, 'metricNoTrackingDesc') : t(lang, 'noNumericProgress')}</Text>
       ) : null}
+      </NativeFormDisclosure>
 
       <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'dailyTarget')}</Text>
       <QuestInput
         questTheme={questTheme}
         value={dailyMin} onChangeText={setDailyMin} keyboardType="number-pad"
+        accessibilityLabel={t(lang, 'dailyTarget')}
         placeholder="60"
         returnKeyType="done" onSubmitEditing={Keyboard.dismiss} blurOnSubmit
       />
 
+      <NativeFormDisclosure key={`schedule-${visible}`} q={questTheme} title={t(lang, 'autoSchedule')}
+        summary={scheduleEnabled ? t(lang, 'autoSchedule') : t(lang, 'manualOnly')}>
       <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'totalTarget')}</Text>
       <QuestInput
         questTheme={questTheme}
@@ -765,11 +772,10 @@ export default function SkillForm({ visible, onClose, initial, presetCategoryId,
             onChange={(h, m) => { setRemHour(h); setRemMin(m); }} />
         </View>
       )}
-
-      <View style={{ flexDirection: 'row', gap: 10, marginTop: 18 }}>
-        <QuestButton questTheme={questTheme} variant="secondary" label={t(lang, 'cancel')} onPress={onClose} style={{ flex: 1 }} />
-        <QuestButton questTheme={questTheme} variant="primary" label={initial ? t(lang, 'save') : t(lang, 'create')} onPress={submit} style={{ flex: 1 }} />
+      </NativeFormDisclosure>
       </View>
+      {Platform.OS === 'web' && saveState.status === 'error' ? <Text accessibilityRole="alert" style={{ color: questTheme.colors.text }}>{nativeFormCopy(lang, 'saveFailed')}</Text> : null}
+      {Platform.OS === 'web' ? <View style={{ marginTop: questTheme.spacing.md }}>{actions}</View> : null}
     </BottomSheetForm>
   );
 }
@@ -784,7 +790,7 @@ const styles = StyleSheet.create({
   iconPanelTitle: { fontSize: 13, fontWeight: '900' },
   iconPanelSub: { fontSize: 11, fontWeight: '700', marginTop: 2 },
   chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 1, borderColor: theme.border, backgroundColor: theme.card },
+  chip: { minHeight: 44, minWidth: 44, justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 1, borderColor: theme.border, backgroundColor: theme.card },
   chipText: { color: theme.text, fontSize: 13 },
   sectionCard: { backgroundColor: theme.cardAlt, borderRadius: theme.radius.lg, padding: 12, marginTop: 16 },
   advancedToggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, padding: 12, borderRadius: theme.radius.md, borderWidth: 1 },
