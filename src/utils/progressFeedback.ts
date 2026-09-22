@@ -31,6 +31,7 @@ export type PostSaveFeedback = {
 };
 
 function safeNumber(value: unknown): number | undefined {
+  if (typeof value !== 'number' && (typeof value !== 'string' || !value.trim())) return undefined;
   const number = typeof value === 'number' ? value : Number(value);
   return Number.isFinite(number) ? number : undefined;
 }
@@ -81,8 +82,8 @@ function formatTimeLabel(log: ExecutionLog, lang: 'zh' | 'en') {
 
 function recordTypeFor(log: ExecutionLog): PostSaveRecordType {
   if (hasStrengthData(log) || log.metricUpdate?.metricType === 'performance_log') return 'performance';
-  if ((log.durationMinutes || 0) > 0 || log.metricUpdate?.metricType === 'time_based') return 'time';
-  if (log.qualityRating != null || log.metricUpdate?.qualityValue != null) return 'quality';
+  if ((safeNumber(log.durationMinutes) ?? 0) > 0 || log.metricUpdate?.metricType === 'time_based') return 'time';
+  if (safeNumber(log.qualityRating ?? log.metricUpdate?.qualityValue) != null) return 'quality';
   if (log.structuredData?.isCustomAction || log.structuredData?.source === 'customAction') return 'custom';
   return 'unknown';
 }
@@ -100,7 +101,7 @@ function findPreviousLog(log: ExecutionLog, data: AppData, savedIds: Set<string>
   return (data.executionLogs || [])
     .filter((candidate) => !savedIds.has(candidate.id))
     .filter((candidate) => comparableKey(candidate, data) === key)
-    .filter((candidate) => new Date(candidate.createdAt).getTime() < createdAt || candidate.id !== log.id)
+    .filter((candidate) => new Date(candidate.createdAt).getTime() < createdAt)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
 }
 
@@ -194,7 +195,8 @@ export function buildPostSaveFeedback({
       qualityRating: safeNumber(log.qualityRating ?? log.metricUpdate?.qualityValue),
       baselineStatus: previous ? 'has_history' : 'first_record',
       trend,
-      summaryKey: previous ? `progress${trend.charAt(0).toUpperCase()}${trend.slice(1)}` : 'firstRecordBaseline',
+      summaryKey: previous ? `progress${trend.charAt(0).toUpperCase()}${trend.slice(1)}`
+        : skill ? 'firstRecordBaseline' : 'firstActivityRecordBaseline',
       summaryValues: {},
       nextActionKey: nextActionKeyFor(log, trend, recordType),
       nextActionValues: {},

@@ -11,6 +11,7 @@ const suites = [
   ['device-services', node, ['scripts/test-device-services.mjs']],
   ['sync', node, ['scripts/test-sync-v2.mjs']],
   ['local-mutations', node, ['scripts/test-local-mutations.mjs']],
+  ['post-save-feedback', node, ['--test', 'tests/native/progressFeedback.test.cjs']],
   ['record-backup', node, ['scripts/test-record-backup.mjs']],
   ['sync-sql', node, ['scripts/test-sync-v2-sql.mjs']],
   ['sync-concurrency', node, ['scripts/test-sync-v2-concurrency.mjs']],
