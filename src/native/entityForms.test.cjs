@@ -10,7 +10,7 @@ if (!runtime) throw Error('QUESTLIFE_UI_TEST_RUNTIME is required');
 const React = require(path.join(runtime, 'react'));
 const { create, act } = require(path.join(runtime, 'react-test-renderer'));
 global.IS_REACT_ACT_ENVIRONMENT = true;
-let store, writes, closed, alerts, tree, wait, retry;
+let store, writes, closed, alerts, tree, wait, retry, navigations, intents;
 const host = name => props => React.createElement(name, props, props.children);
 const rn = { Platform: { OS: 'android' }, Appearance: { getColorScheme: () => 'light' }, StyleSheet: { create: value => value }, Keyboard: { dismiss() {} }, Alert: { alert: value => alerts.push(value) } };
 for (const name of ['View', 'Text', 'TextInput', 'TouchableOpacity', 'Switch', 'Pressable', 'ScrollView']) rn[name] = name;
@@ -20,7 +20,9 @@ Module._load = function(request, parent, main) {
   if (request === 'react/jsx-runtime') return require(path.join(runtime, 'react/jsx-runtime'));
   if (request === 'react-native') return rn;
   if (request === 'react-native-safe-area-context') return { SafeAreaView: 'SafeAreaView' };
-  if (request === '@react-navigation/native') return { useRoute: () => ({ params: { categoryId: 'TEST_GOAL' } }), useNavigation: () => ({ goBack() {}, navigate() {} }) };
+  if (request === '@react-navigation/native') return { useRoute: () => ({ params: { categoryId: 'TEST_GOAL', skillId: 'TEST_SKILL' } }), useNavigation: () => ({ goBack() {}, navigate: (...args) => navigations.push(args) }) };
+  if (request === 'react-native-svg') return { __esModule: true, default: 'Svg', Polyline: 'Polyline', Circle: 'Circle', Line: 'Line', Text: 'SvgText' };
+  if (/\/intentBus$/.test(request)) return { deliverNotificationIntent: value => intents.push(value) };
   if (/\/storage$/.test(request)) return { uid: () => 'TEST_CRITERION', today: () => '2026-09-22' };
   if (/\/store$/.test(request)) return { useStore: () => store };
   if (/\/useQuestTheme$/.test(request)) return { useQuestTheme: () => require('../design/tokens.ts').getQuestTheme(store.data.settings.selectedThemeId) };
@@ -28,7 +30,7 @@ Module._load = function(request, parent, main) {
   if (/\/analytics$/.test(request)) return { trackEvent() {} };
   if (/\/BottomSheetForm$/.test(request)) return props => props.visible ? React.createElement('Sheet', props, props.children, React.createElement('Footer', {}, props.footer)) : null;
   if (/\/QuestPrimitives$/.test(request)) return { QuestGroupedSurface: host('QuestGroupedSurface') };
-  if (/\/(QuestButton|QuestPill|QuestInput|QuestIcon|QuestProgressBar|QuestEntityIcon|V11RebaselineIcon|EmojiPicker|ColorPicker|TimePickerInput)$/.test(request)) return host(request.split('/').at(-1));
+  if (/\/(QuestButton|QuestPill|QuestInput|QuestIcon|QuestCard|QuestProgressBar|QuestEntityIcon|V11RebaselineIcon|EmojiPicker|ColorPicker|TimePickerInput)$/.test(request)) return host(request.split('/').at(-1));
   return original.call(this, request, parent, main);
 };
 for (const extension of ['.ts', '.tsx']) require.extensions[extension] = (module, file) => module._compile(ts.transpileModule(fs.readFileSync(file, 'utf8'), {
@@ -37,7 +39,7 @@ for (const extension of ['.ts', '.tsx']) require.extensions[extension] = (module
 const { DEFAULT_DATA } = require('../types.ts');
 const { t } = require('../i18n.ts');
 const fresh = (lang = 'en', theme = 'cleanFocus') => {
-  writes=[]; closed=0; alerts=[]; wait=async()=>{}; retry=async()=>{}; rn.Platform.OS='android';
+  writes=[]; closed=0; alerts=[]; navigations=[]; intents=[]; wait=async()=>{}; retry=async()=>{}; rn.Platform.OS='android';
   store={data:structuredClone(DEFAULT_DATA),waitForLocalWrites:()=>wait(),retryLocalWrites:()=>retry()};
   store.data.settings.language=lang;store.data.settings.selectedThemeId=theme;
   for (const name of ['addCategory','updateCategory','applyDomainTemplateToGoal','addSkill','updateSkill','createSkillAndAttachToModule','addModule','updateModule','deleteModule','addExistingSkillToModule','removeSkillFromModule']) store[name]=(...args)=>{writes.push({name,args});return {id:'TEST_ENTITY'};};
@@ -142,4 +144,44 @@ test('criterion rejects invalid numbers and preserves its identity across failed
   const saved=writes[0].args[1].outcomeCriteria[0];assert.equal(saved.currentValue,2);
   await act(async()=>button('Retry save').props.onPress());assert.equal(writes.length,1);assert.equal(saved.id,'TEST_CRITERION');
   assert.equal(tree.root.findAllByType('Sheet').length,0);
+});
+
+const skillDetail=async(logCount=0)=>{
+  store.data.skills=[{id:'TEST_SKILL',name:'TEST skill',color:'#1e6b86',dailyTargetMinutes:30,createdAt:1}];
+  store.data.executionLogs=Array.from({length:logCount},(_,i)=>({id:`TEST_LOG_${i}`,linkedSkillId:'TEST_SKILL',date:'2026-09-22',createdAt:`2026-09-22T0${i}:00:00Z`,durationMinutes:10+i,note:`note-${i}`}));
+  await render('../screens/SkillDetailScreen.tsx');
+};
+for (const lang of ['zh','en']) for (const theme of ['cleanFocus','deepWork']) test(`native Skill opens the existing Direct Log without writes ${lang}/${theme}`,async()=>{
+  fresh(lang,theme);await skillDetail();
+  assert.equal(tree.root.findAllByType('QuestCard').length,0);
+  assert.equal(tree.root.findAllByType('Svg').length,0);
+  await act(async()=>button(t(lang,'logProgressTodayAction')).props.onPress());
+  assert.deepEqual(navigations,[['Today']]);
+  assert.equal(intents.length,1);assert.equal(intents[0].kind,'skill_reminder');
+  assert.equal(intents[0].entityId,'TEST_SKILL');assert.equal(intents[0].action,'OPEN');assert.equal(writes.length,0);
+  await disclose(t(lang,'skillProgressDetails'));
+  assert.equal(tree.root.findAllByType('Svg').length,0);
+});
+test('native Skill previews three actual logs and retains History and full configuration entrances',async()=>{
+  fresh();await skillDetail(5);
+  const texts=()=>tree.root.findAllByType('Text').map(node=>node.children.filter(v=>typeof v==='string').join(''));
+  assert.equal(texts().filter(value=>/^note-/.test(value)).length,3);
+  assert.ok(texts().includes('note-4'));assert.ok(!texts().includes('note-0'));
+  await act(async()=>button(t('en','activityHistory')).props.onPress());
+  assert.equal(intents[0].kind,'end_of_day');assert.equal(writes.length,0);
+  await disclose(t('en','skillProgressDetails'));
+  assert.ok(texts().includes(t('en','executionRules')));
+  assert.equal(tree.root.findByType('Svg').props.width,'100%');
+  await disclose(t('en','dangerZone'));assert.ok(button(t('en','deleteSkillPermanently')));
+});
+test('Skill chart changes theme and never emits non-finite geometry for recorded zero durations',async()=>{
+  fresh('en','deepWork');await skillDetail();
+  store.data.actions=[{id:'TEST_A',skillIds:['TEST_SKILL'],date:'2026-09-21',minutes:0,createdAt:1},{id:'TEST_B',skillIds:['TEST_SKILL'],date:'2026-09-22',minutes:0,createdAt:2}];
+  await act(async()=>tree.update(React.createElement(require('../screens/SkillDetailScreen.tsx').default)));
+  await disclose(t('en','skillProgressDetails'));
+  await act(async()=>tree.root.findAll(node=>node.type==='TouchableOpacity'&&node.props.accessibilityRole==='tab').at(-1).props.onPress());
+  assert.ok(!/NaN|Infinity/.test(tree.root.findByType('Polyline').props.points));
+  assert.equal(tree.root.findByType('Svg').props.width,'100%');
+  const q=require('../design/tokens.ts').getQuestTheme('deepWork');
+  assert.ok(tree.root.findAllByType('SvgText').every(node=>node.props.fill===q.colors.textMuted));
 });

@@ -5,7 +5,7 @@
 // 底部 stats: 本周投入 / 平均质量 / 连续天数
 import React, { useMemo, useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -33,6 +33,8 @@ import QuestProgressBar from '../components/ui/QuestProgressBar';
 import { compareEffortToPrevious, formatEffortUnitSummary, getComparableHistory } from '../utils/effort';
 import { confirmAction } from '../utils/confirm';
 import { getV11ProductLanguage, getV11ProductThemeId } from '../v11/featureFlag';
+import NativeFormDisclosure from '../native/NativeFormDisclosure';
+import { deliverNotificationIntent } from '../platform/notifications/intentBus';
 
 type Range = 'day' | 'week' | 'month' | 'all';
 const WEEKDAY_KEYS = ['weekdaySun', 'weekdayMon', 'weekdayTue', 'weekdayWed', 'weekdayThu', 'weekdayFri', 'weekdaySat'];
@@ -78,6 +80,11 @@ function hexToRgba(hex: string, alpha: number) {
 
 type ParamList = { SkillDetail: { skillId: string } };
 
+function SkillDetailGroup(props: React.ComponentProps<typeof QuestCard>) {
+  if (Platform.OS === 'web') return <QuestCard {...props} />;
+  return <View style={[props.style, { backgroundColor: 'transparent', borderWidth: 0, borderRadius: 0, padding: 0 }]}>{props.children}</View>;
+}
+
 export default function SkillDetailScreen() {
   const route = useRoute<RouteProp<ParamList, 'SkillDetail'>>();
   const nav = useNavigation<any>();
@@ -86,6 +93,7 @@ export default function SkillDetailScreen() {
   const questTheme = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const skillId = route.params.skillId;
   const skill = data.skills.find((s) => s.id === skillId);
+  const native = Platform.OS !== 'web';
 
   const [range, setRange] = useState<Range>('week');
   const [editing, setEditing] = useState(false);
@@ -194,7 +202,7 @@ export default function SkillDetailScreen() {
     return (
       <SafeAreaView nativeID="v11-skill-detail-screen" edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
         <View style={[styles.header, { borderBottomColor: questTheme.colors.border }]}>
-          <QuestButton questTheme={questTheme} variant="ghost" icon="target" label={t(lang, 'back')} onPress={() => nav.goBack()} />
+          <QuestButton questTheme={questTheme} variant="ghost" label={t(lang, 'back')} onPress={() => nav.goBack()} />
         </View>
       </SafeAreaView>
     );
@@ -226,6 +234,21 @@ export default function SkillDetailScreen() {
       ? t(lang, 'logProgressTodayAction')
       : t(lang, 'reviewInsightsAction');
 
+  const openToday = (kind: 'skill_reminder' | 'end_of_day') => {
+    nav.navigate('Today');
+    deliverNotificationIntent({ action: 'OPEN', kind, entityId: skill.id, notificationId: `skill-detail:${skill.id}:${kind}` });
+  };
+  const executionRows = (limit: number) => skillLogs.slice(0, limit).map(log => (
+    <View key={log.id} style={[styles.logRow, { borderBottomColor: questTheme.colors.divider }]}>
+      <Text style={[styles.ruleLine, { color: questTheme.colors.text }]}>
+        {[log.date, log.durationMinutes != null ? `${log.durationMinutes} ${t(lang, 'minutes')}` : null,
+          log.qualityRating != null ? `${t(lang, 'quality')} ${log.qualityRating}/5` : null].filter(Boolean).join(' · ')}
+      </Text>
+      <Text style={[styles.ruleMuted, { color: questTheme.colors.textMuted }]}>{formatMetricUpdateSummary(log, skill, lang)}</Text>
+      {log.note ? <Text style={[styles.ruleMuted, { color: questTheme.colors.textMuted }]}>{log.note}</Text> : null}
+    </View>
+  ));
+
   const confirmDeleteSkill = () => {
     const extra = linkedLocations.length > 0
       ? `\n\n${fill(t(lang, 'linkedLocationsCount'), { count: linkedLocations.length })}`
@@ -247,8 +270,8 @@ export default function SkillDetailScreen() {
     <SafeAreaView nativeID="v11-skill-detail-screen" edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
       {/* 顶部 header */}
       <View style={[styles.header, { borderBottomColor: questTheme.colors.border }]}>
-        <QuestButton questTheme={questTheme} variant="ghost" icon="target" label={t(lang, 'back')} onPress={() => nav.goBack()} />
-        <QuestButton questTheme={questTheme} variant="secondary" icon="plus" label={t(lang, 'edit')} onPress={() => setEditing(true)} />
+        <QuestButton questTheme={questTheme} variant="ghost" label={t(lang, 'back')} onPress={() => nav.goBack()} />
+        <QuestButton questTheme={questTheme} variant="secondary" label={t(lang, 'edit')} onPress={() => setEditing(true)} />
       </View>
 
       <ScrollView contentContainerStyle={{
@@ -262,7 +285,7 @@ export default function SkillDetailScreen() {
         {/* 技能标题 */}
         <View style={styles.titleRow}>
           <QuestEntityIcon icon={skill.icon} systemIcon={getSkillSemanticIcon(skill)} color={skill.color} questTheme={questTheme} size="lg" />
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={[styles.title, { color: questTheme.colors.text }]}>{skill.name}</Text>
             {cat && (
               <View style={styles.inlineEntityRow}>
@@ -273,24 +296,41 @@ export default function SkillDetailScreen() {
           </View>
         </View>
 
+        {native ? <View style={{ gap: questTheme.spacing.md, marginTop: questTheme.spacing.md }}>
+          <Text style={{ color: questTheme.colors.textMuted, fontSize: questTheme.typography.bodySize }}>{formatMetricSummary(skill, lang)}</Text>
+          <QuestButton questTheme={questTheme} label={t(lang, 'logProgressTodayAction')} onPress={() => openToday('skill_reminder')} />
+          <View>
+            <Text style={[styles.sectionTitle, { color: questTheme.colors.text }]}>{t(lang, 'executionLogs')}</Text>
+            {skillLogs.length ? executionRows(3) : <Text style={[styles.ruleMuted, { color: questTheme.colors.textMuted }]}>{t(lang, 'noSkillLogs')}</Text>}
+            {skillLogs.length ? <QuestButton questTheme={questTheme} variant="ghost" label={t(lang, 'activityHistory')} onPress={() => openToday('end_of_day')} /> : null}
+          </View>
+          {linkedLocations.length ? <View>
+            <Text style={[styles.sectionTitle, { color: questTheme.colors.text }]}>{t(lang, 'linkedLocations')}</Text>
+            {linkedLocations.map(({ goal, module }) => <Text key={module.id} style={[styles.ruleLine, { color: questTheme.colors.textMuted }]}>{goal.name} / {module.id.includes('-default') ? t(lang, 'defaultModule') : module.name}</Text>)}
+          </View> : null}
+        </View> : null}
+
+        <NativeFormDisclosure q={questTheme} title={t(lang, 'skillProgressDetails')}>
         {compound.points.length >= 2 ? (
-        <QuestCard questTheme={questTheme} variant="data" style={styles.compoundCard} className="v11-skill-signal">
+        <SkillDetailGroup questTheme={questTheme} variant="data" style={styles.compoundCard} className="v11-skill-signal">
           <View style={styles.cardTitleRow}>
             <QuestIcon name="barChart" size={18} color={questTheme.colors.primary} />
             <Text style={[styles.sectionTitle, { color: questTheme.colors.text, marginTop: 0, marginBottom: 0 }]}>{t(lang, 'compoundCurve')}</Text>
           </View>
-          <Text style={[styles.ruleLine, { color: questTheme.colors.text }]}>
+          {!native ? <Text style={[styles.ruleLine, { color: questTheme.colors.text }]}>
             {compound.growth == null ? t(lang, 'buildingData') : `${lang === 'zh' ? '本月' : 'This month'} ${compound.growth >= 0 ? '+' : ''}${compound.growth.toFixed(0)}% · ${compound.status}`}
-          </Text>
+          </Text> : null}
           <MiniLineChart values={compound.points} color={skill.color} />
-        </QuestCard>
+        </SkillDetailGroup>
         ) : null}
 
         {/* 时间范围切换 */}
-        <View style={styles.rangeRow}>
+        {(!native || skillActions.length > 0) ? <><View style={styles.rangeRow}>
           {(['day', 'week', 'month', 'all'] as Range[]).map((r) => (
             <TouchableOpacity
               key={r}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: range === r }}
               onPress={() => setRange(r)}
               style={[styles.rangePill, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }, range === r && { backgroundColor: questTheme.colors.primary, borderColor: questTheme.colors.primary }]}
             >
@@ -302,15 +342,15 @@ export default function SkillDetailScreen() {
         </View>
 
         {/* 图表 */}
-        <QuestCard questTheme={questTheme} variant="flat" style={styles.chartCard} className="v11-skill-chart">
-          {range === 'day' && <DayView skill={skill} actions={skillActions} lang={lang} />}
-          {range === 'week' && <WeekView skill={skill} actions={skillActions} lang={lang} />}
-          {range === 'month' && <MonthView skill={skill} actions={skillActions} lang={lang} />}
-          {range === 'all' && <AllView skill={skill} actions={skillActions} lang={lang} />}
-        </QuestCard>
+        <SkillDetailGroup questTheme={questTheme} variant="flat" style={styles.chartCard} className="v11-skill-chart">
+          {range === 'day' && <DayView skill={skill} actions={skillActions} lang={lang} q={questTheme} />}
+          {range === 'week' && <WeekView skill={skill} actions={skillActions} lang={lang} q={questTheme} />}
+          {range === 'month' && <MonthView skill={skill} actions={skillActions} lang={lang} q={questTheme} />}
+          {range === 'all' && <AllView skill={skill} actions={skillActions} lang={lang} q={questTheme} />}
+        </SkillDetailGroup></> : null}
 
         <Text style={[styles.sectionTitle, { color: questTheme.colors.text }]}>{t(lang, 'executionRules')}</Text>
-        <QuestCard questTheme={questTheme} variant="flat" style={styles.ruleCard} className="v11-skill-detail-group">
+        <SkillDetailGroup questTheme={questTheme} variant="flat" style={styles.ruleCard} className="v11-skill-detail-group">
           <Text style={[styles.ruleLine, { color: questTheme.colors.text }]}>{t(lang, 'linkedGoals')}: {linkedCats.length > 0 ? linkedCats.map((c) => c.name).join(lang === 'zh' ? '、' : ', ') : t(lang, 'notSet')}</Text>
           <Text style={[styles.ruleLine, { color: questTheme.colors.text }]}>{t(lang, 'taskType')}: {taskTypeLabel(lang, taskType)}</Text>
           <Text style={[styles.ruleLine, { color: questTheme.colors.text }]}>
@@ -331,9 +371,9 @@ export default function SkillDetailScreen() {
               compress: skill.compressibility ?? profile.compressibility,
             })}
           </Text>
-        </QuestCard>
+        </SkillDetailGroup>
 
-        <Text style={[styles.sectionTitle, { color: questTheme.colors.text }]}>{t(lang, 'linkedLocations')}</Text>
+        {!native ? <><Text style={[styles.sectionTitle, { color: questTheme.colors.text }]}>{t(lang, 'linkedLocations')}</Text>
         <QuestCard questTheme={questTheme} variant="flat" style={styles.ruleCard} className="v11-skill-detail-group">
           {linkedLocations.length === 0 ? (
             <Text style={[styles.ruleMuted, { color: questTheme.colors.textMuted }]}>{t(lang, 'notLinkedToAnyGoal')}</Text>
@@ -345,9 +385,9 @@ export default function SkillDetailScreen() {
               </View>
             ))
           )}
-        </QuestCard>
+        </QuestCard></> : null}
 
-        <Text style={[styles.sectionTitle, { color: questTheme.colors.text }]}>{t(lang, 'whereSkillFits')}</Text>
+        {!native ? <><Text style={[styles.sectionTitle, { color: questTheme.colors.text }]}>{t(lang, 'whereSkillFits')}</Text>
         <QuestCard questTheme={questTheme} variant="flat" style={styles.ruleCard} className="v11-skill-detail-group">
           <Text style={[styles.ruleLine, { color: questTheme.colors.text }]}>
             {t(lang, 'linkedTo')}: {linkedLocations.length > 0
@@ -360,10 +400,10 @@ export default function SkillDetailScreen() {
           <Text style={[styles.ruleLine, { color: questTheme.colors.text }]}>{t(lang, 'scheduleStatus')}: {scheduleSummary(skill, lang)}</Text>
           <Text style={[styles.ruleLine, { color: questTheme.colors.text }]}>{t(lang, 'logsLast7Days')}: {last7LogCount}</Text>
           <Text style={[styles.ruleMuted, { color: questTheme.colors.textMuted }]}>{t(lang, 'next')}: {skillFitNext}</Text>
-        </QuestCard>
+        </QuestCard></> : null}
 
-        <Text style={[styles.sectionTitle, { color: questTheme.colors.text }]}>{t(lang, 'comparableProgress')}</Text>
-        <QuestCard questTheme={questTheme} variant="flat" style={styles.ruleCard} className="v11-skill-detail-group">
+        {(!native || comparableEffort) ? <><Text style={[styles.sectionTitle, { color: questTheme.colors.text }]}>{t(lang, 'comparableProgress')}</Text>
+        <SkillDetailGroup questTheme={questTheme} variant="flat" style={styles.ruleCard} className="v11-skill-detail-group">
           {!comparableEffort ? (
             <Text style={[styles.ruleMuted, { color: questTheme.colors.textMuted }]}>{t(lang, 'notEnoughHistory')}</Text>
           ) : (
@@ -385,9 +425,9 @@ export default function SkillDetailScreen() {
               )}
             </>
           )}
-        </QuestCard>
+        </SkillDetailGroup></> : null}
 
-        <Text style={[styles.sectionTitle, { color: questTheme.colors.text }]}>{t(lang, 'executionLogs')}</Text>
+        {!native ? <><Text style={[styles.sectionTitle, { color: questTheme.colors.text }]}>{t(lang, 'executionLogs')}</Text>
         <QuestCard questTheme={questTheme} variant="flat" style={styles.ruleCard} className="v11-skill-detail-group">
           {skillLogs.length === 0 ? (
             <Text style={[styles.ruleMuted, { color: questTheme.colors.textMuted }]}>{t(lang, 'noSkillLogs')}</Text>
@@ -410,10 +450,10 @@ export default function SkillDetailScreen() {
               </View>
             ))
           )}
-        </QuestCard>
+        </QuestCard></> : null}
 
         {/* 底部 stats */}
-        <View style={styles.statsRow}>
+        {(!native || skillActions.length > 0) ? <View style={styles.statsRow}>
           <StatCard questTheme={questTheme} label={t(lang, 'weeklyInvestment')} value={`${(weeklyMinutes / 60).toFixed(1)}h`} accent={skill.color} />
           <StatCard
             questTheme={questTheme}
@@ -425,14 +465,17 @@ export default function SkillDetailScreen() {
             accent={questTheme.colors.accent}
           />
           <StatCard questTheme={questTheme} label={t(lang, 'streak')} value={`${streak} ${t(lang, 'days')}`} accent={questTheme.colors.success} />
-        </View>
+        </View> : null}
+        </NativeFormDisclosure>
 
         {/* 成就里程碑区块 */}
+        <NativeFormDisclosure q={questTheme} title={t(lang, 'achievements')}>
+        {!native ? <>
         <View style={styles.cardTitleRow}>
           <QuestIcon name="target" size={18} color={questTheme.colors.primary} />
           <Text style={[styles.sectionTitle, { color: questTheme.colors.text }]}>{t(lang, 'achievements')}</Text>
-        </View>
-        <QuestCard questTheme={questTheme} variant="flat" style={styles.milestonesCard} className="v11-skill-detail-group">
+        </View></> : null}
+        <SkillDetailGroup questTheme={questTheme} variant="flat" style={styles.milestonesCard} className="v11-skill-detail-group">
           {milestones.map((m, idx) => (
             <View
               key={m.hours}
@@ -465,16 +508,21 @@ export default function SkillDetailScreen() {
               )}
             </View>
           ))}
-        </QuestCard>
+        </SkillDetailGroup>
+        </NativeFormDisclosure>
 
+        <NativeFormDisclosure q={questTheme} title={t(lang, 'dangerZone')}>
+        {!native ?
         <Text style={[styles.sectionTitle, { color: questTheme.colors.text }]}>{t(lang, 'dangerZone')}</Text>
-        <QuestCard questTheme={questTheme} variant="flat" style={[styles.dangerCard, { borderColor: questTheme.colors.danger }]}>
+        : null}
+        <SkillDetailGroup questTheme={questTheme} variant="flat" style={[styles.dangerCard, { borderColor: questTheme.colors.danger }]}>
           <Text style={[styles.dangerText, { color: questTheme.colors.textMuted }]}>{t(lang, 'deleteSkillPermanentBody')}</Text>
           {linkedLocations.length > 0 ? (
             <Text style={[styles.dangerText, { color: questTheme.colors.textMuted }]}>{fill(t(lang, 'linkedLocationsCount'), { count: linkedLocations.length })}</Text>
           ) : null}
           <QuestButton questTheme={questTheme} variant="danger" label={t(lang, 'deleteSkillPermanently')} onPress={confirmDeleteSkill} style={{ alignSelf: 'flex-start' }} />
-        </QuestCard>
+        </SkillDetailGroup>
+        </NativeFormDisclosure>
       </ScrollView>
 
       {/* 编辑 modal */}
@@ -486,24 +534,26 @@ export default function SkillDetailScreen() {
 // ─────────────────────────────────────────────────────────
 // 日 view: 今天每次记录的 timeline
 // ─────────────────────────────────────────────────────────
-function DayView({ skill, actions, lang }: { skill: Skill; actions: Action[]; lang: 'zh' | 'en' }) {
+type SkillChartProps = { skill: Skill; actions: Action[]; lang: 'zh' | 'en'; q: ReturnType<typeof getQuestTheme> };
+
+function DayView({ skill, actions, lang, q }: SkillChartProps) {
   const todayStr = fmtDate(new Date());
   const todayActions = actions.filter((a) => a.date === todayStr);
   if (todayActions.length === 0) {
-    return <Text style={styles.emptyChart}>{fill(t(lang, 'noSkillCheckinsToday'), { name: skill.name })}</Text>;
+    return <Text style={[styles.emptyChart, { color: q.colors.textMuted }]}>{fill(t(lang, 'noSkillCheckinsToday'), { name: skill.name })}</Text>;
   }
   return (
     <View style={{ gap: 10 }}>
-      <Text style={styles.chartTitle}>{fill(t(lang, 'checkinsTodayWithMinutes'), { minutes: todayActions.reduce((s, a) => s + a.minutes, 0) })}</Text>
+      <Text style={[styles.chartTitle, { color: q.colors.text }]}>{fill(t(lang, 'checkinsTodayWithMinutes'), { minutes: todayActions.reduce((s, a) => s + a.minutes, 0) })}</Text>
       {todayActions.map((a) => (
-        <View key={a.id} style={styles.tlRow}>
+        <View key={a.id} style={[styles.tlRow, { backgroundColor: q.colors.surfaceSoft }]}>
           <View style={[styles.tlDot, { backgroundColor: skill.color }]} />
           <View style={{ flex: 1 }}>
-            <Text style={styles.tlMain}>
+            <Text style={[styles.tlMain, { color: q.colors.text }]}>
               {fmtTime(a.createdAt)} · {a.minutes} {t(lang, 'minutes')}
               {a.quality != null ? `  ${qEmoji(a.quality)}` : ''}
             </Text>
-            {a.note ? <Text style={styles.tlNote}>{a.note}</Text> : null}
+            {a.note ? <Text style={[styles.tlNote, { color: q.colors.textMuted }]}>{a.note}</Text> : null}
           </View>
         </View>
       ))}
@@ -529,7 +579,7 @@ function MiniLineChart({ values, color }: { values: number[]; color: string }) {
   }).join(' ');
   return (
     <View style={{ alignItems: 'center', marginTop: 10 }}>
-      <Svg width={width} height={height}>
+      <Svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`}>
         <Polyline points={points} fill="none" stroke={color} strokeWidth={3} />
         {points.split(' ').map((point, index) => {
           const [x, y] = point.split(',').map(Number);
@@ -543,7 +593,7 @@ function MiniLineChart({ values, color }: { values: number[]; color: string }) {
 // ─────────────────────────────────────────────────────────
 // 周 view: 近 7 天柱图 (只统计本技能)
 // ─────────────────────────────────────────────────────────
-function WeekView({ skill, actions, lang }: { skill: Skill; actions: Action[]; lang: 'zh' | 'en' }) {
+function WeekView({ skill, actions, lang, q }: SkillChartProps) {
   const days = useMemo(() => {
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const arr: { date: string; label: string; dayNum: number; minutes: number; avgQuality: number | null }[] = [];
@@ -559,34 +609,34 @@ function WeekView({ skill, actions, lang }: { skill: Skill; actions: Action[]; l
       arr.push({ date: ds, label: t(lang, WEEKDAY_KEYS[d.getDay()]), dayNum: d.getDate(), minutes, avgQuality });
     }
     return arr;
-  }, [actions]);
+  }, [actions, lang]);
 
   const maxMin = Math.max(skill.dailyTargetMinutes, ...days.map((d) => d.minutes));
   const totalWeek = days.reduce((s, d) => s + d.minutes, 0);
 
   return (
     <View>
-      <Text style={styles.chartTitle}>{fill(t(lang, 'last7Total'), { minutes: totalWeek })}</Text>
+      <Text style={[styles.chartTitle, { color: q.colors.text }]}>{fill(t(lang, 'last7Total'), { minutes: totalWeek })}</Text>
       <View style={styles.barChartRow}>
         {days.map((d) => (
           <View key={d.date} style={styles.barCol}>
             <View style={styles.barEmojiSlot}>
               {d.avgQuality != null && <Text style={styles.barEmoji}>{emojiForAvgQuality(d.avgQuality)}</Text>}
             </View>
-            <View style={styles.barWrap}>
+            <View style={[styles.barWrap, { backgroundColor: q.colors.surfaceSoft }]}>
               <View style={[styles.barFg, {
                 // min 4px so zero-bars still show; opacity distinguishes has-data vs empty
                 height: d.minutes > 0 ? `${Math.max(4, (d.minutes / maxMin) * 100)}%` : 4,
-                backgroundColor: d.minutes >= skill.dailyTargetMinutes ? theme.success : skill.color,
+                backgroundColor: skill.color,
                 opacity: d.minutes > 0 ? 1 : 0.15,
               }]} />
             </View>
-            <Text style={styles.barLabel}>{lang === 'zh' ? `周${d.label}` : d.label}</Text>
-            <Text style={styles.barDate}>{d.dayNum}</Text>
+            <Text style={[styles.barLabel, { color: q.colors.text }]}>{lang === 'zh' ? `周${d.label}` : d.label}</Text>
+            <Text style={[styles.barDate, { color: q.colors.textMuted }]}>{d.dayNum}</Text>
           </View>
         ))}
       </View>
-      <Text style={styles.axis}>{t(lang, 'maxScale')}: {maxMin} {t(lang, 'minutes')}</Text>
+      <Text style={[styles.axis, { color: q.colors.textMuted }]}>{t(lang, 'maxScale')}: {maxMin} {t(lang, 'minutes')}</Text>
     </View>
   );
 }
@@ -595,7 +645,7 @@ function WeekView({ skill, actions, lang }: { skill: Skill; actions: Action[]; l
 // 月 view: 30 天小格热力图 (技能色, 深浅表强度)
 // 布局: 5 行 × 6 列 = 30 cells, 最近一天在右下
 // ─────────────────────────────────────────────────────────
-function MonthView({ skill, actions, lang }: { skill: Skill; actions: Action[]; lang: 'zh' | 'en' }) {
+function MonthView({ skill, actions, lang, q }: SkillChartProps) {
   const cells = useMemo(() => {
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const arr: { date: string; dayNum: number; minutes: number }[] = [];
@@ -614,24 +664,24 @@ function MonthView({ skill, actions, lang }: { skill: Skill; actions: Action[]; 
 
   return (
     <View>
-      <Text style={styles.chartTitle}>{fill(t(lang, 'last30Summary'), { days: activeDays, hours: (total / 60).toFixed(1) })}</Text>
+      <Text style={[styles.chartTitle, { color: q.colors.text }]}>{fill(t(lang, 'last30Summary'), { days: activeDays, hours: (total / 60).toFixed(1) })}</Text>
       <View style={styles.gridRow}>
         {cells.map((c) => {
           const alpha = c.minutes === 0 ? 0 : Math.max(0.18, Math.min(1, c.minutes / maxMin));
-          const bg = c.minutes === 0 ? theme.cardAlt : hexToRgba(skill.color, alpha);
+          const bg = c.minutes === 0 ? q.colors.surfaceSoft : hexToRgba(skill.color, alpha);
           return (
             <View key={c.date} style={[styles.gridCell, { backgroundColor: bg }]}>
-              <Text style={styles.gridDay}>{c.dayNum}</Text>
+              <Text style={[styles.gridDay, { color: q.colors.text }]}>{c.dayNum}</Text>
             </View>
           );
         })}
       </View>
       <View style={styles.legendRow}>
-        <Text style={styles.legendText}>{t(lang, 'less')}</Text>
+        <Text style={[styles.legendText, { color: q.colors.textMuted }]}>{t(lang, 'less')}</Text>
         {[0.2, 0.4, 0.6, 0.8, 1].map((a) => (
           <View key={a} style={[styles.legendDot, { backgroundColor: hexToRgba(skill.color, a) }]} />
         ))}
-        <Text style={styles.legendText}>{t(lang, 'more')}</Text>
+        <Text style={[styles.legendText, { color: q.colors.textMuted }]}>{t(lang, 'more')}</Text>
       </View>
     </View>
   );
@@ -640,7 +690,7 @@ function MonthView({ skill, actions, lang }: { skill: Skill; actions: Action[]; 
 // ─────────────────────────────────────────────────────────
 // 全部 view: 累计时长折线图
 // ─────────────────────────────────────────────────────────
-function AllView({ skill, actions, lang }: { skill: Skill; actions: Action[]; lang: 'zh' | 'en' }) {
+function AllView({ skill, actions, lang, q }: SkillChartProps) {
   // 按日聚合然后做累加
   const series = useMemo(() => {
     if (actions.length === 0) return [];
@@ -655,13 +705,12 @@ function AllView({ skill, actions, lang }: { skill: Skill; actions: Action[]; la
   }, [actions]);
 
   if (series.length === 0) {
-    return <Text style={styles.emptyChart}>{fill(t(lang, 'noSkillCheckinsToday'), { name: skill.name })}</Text>;
+    return <Text style={[styles.emptyChart, { color: q.colors.textMuted }]}>{fill(t(lang, 'noSkillCheckinsToday'), { name: skill.name })}</Text>;
   }
   if (series.length === 1) {
     return (
       <View>
-        <Text style={styles.chartTitle}>{fill(t(lang, 'cumulativeHours'), { hours: series[0].cumHours.toFixed(1) })}</Text>
-        <Text style={styles.emptyChart}>{t(lang, 'patternLocked')}</Text>
+        <Text style={[styles.chartTitle, { color: q.colors.text }]}>{fill(t(lang, 'cumulativeHours'), { hours: series[0].cumHours.toFixed(1) })}</Text>
       </View>
     );
   }
@@ -676,7 +725,7 @@ function AllView({ skill, actions, lang }: { skill: Skill; actions: Action[]; la
   // x: 日期均匀分布 (按索引而非真实时间间隔, 简洁)
   const points = series.map((s, i) => {
     const x = padL + (i / (series.length - 1)) * innerW;
-    const y = padT + (1 - s.cumHours / maxY) * innerH;
+    const y = padT + (1 - s.cumHours / Math.max(1, maxY)) * innerH;
     return { x, y, label: s.date, val: s.cumHours };
   });
 
@@ -691,16 +740,16 @@ function AllView({ skill, actions, lang }: { skill: Skill; actions: Action[]; la
 
   return (
     <View>
-      <Text style={styles.chartTitle}>{fill(t(lang, 'cumulativeDays'), { hours: series[series.length - 1].cumHours.toFixed(1), days: series.length })}</Text>
+      <Text style={[styles.chartTitle, { color: q.colors.text }]}>{fill(t(lang, 'cumulativeDays'), { hours: series[series.length - 1].cumHours.toFixed(1), days: series.length })}</Text>
       <View style={{ alignItems: 'center' }}>
-        <Svg width={width} height={height}>
+        <Svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`}>
           {/* y 轴: 4 条横线 */}
           {[0, 0.25, 0.5, 0.75, 1].map((f, i) => {
             const y = padT + (1 - f) * innerH;
             return (
               <React.Fragment key={i}>
-                <Line x1={padL} x2={width - padR} y1={y} y2={y} stroke={theme.border} strokeWidth={1} strokeOpacity={0.5} />
-                <SvgText x={4} y={y + 4} fontSize={10} fill={theme.textDim}>
+                <Line x1={padL} x2={width - padR} y1={y} y2={y} stroke={q.colors.divider} strokeWidth={1} strokeOpacity={0.5} />
+                <SvgText x={4} y={y + 4} fontSize={10} fill={q.colors.textMuted}>
                   {(f * maxY).toFixed(1)}
                 </SvgText>
               </React.Fragment>
@@ -715,7 +764,7 @@ function AllView({ skill, actions, lang }: { skill: Skill; actions: Action[]; la
           {/* x 轴标签 */}
           {ticks.map((t, i) => (
             <SvgText
-              key={i} x={t.x} y={height - 6} fontSize={9} fill={theme.textDim}
+              key={i} x={t.x} y={height - 6} fontSize={9} fill={q.colors.textMuted}
               textAnchor={i === 0 ? 'start' : i === ticks.length - 1 ? 'end' : 'middle'}
             >
               {t.label.slice(5)}

@@ -37,9 +37,9 @@ VERIFIED_DEVICE, AWAITING_OWNER, BLOCKED. Unchecked entries remain unfinished.
 | Health / Calendar / Notifications | IMPLEMENTED, VERIFIED_LOCAL | Explicit provider deletion/correction, durable Calendar intents/reconciliation, push registration lifecycle and quiet hours; actual source samples, OS writes and delivery require device/provider gates |
 | Shortcuts / deep links | IMPLEMENTED, VERIFIED_LOCAL | Open-only entries through existing handlers; 19 intent boundary assertions; Android Widget plugin passed 12 checks including native AAPT/Kotlin compilation; final installed-widget acceptance pending |
 | Isolated example mode | IMPLEMENTED, VERIFIED_LOCAL; partial installed check | Native example gallery and isolation notice visible. Real loader regression found/fixed; final chart readback pending unlock. No example is written to Store/outbox/OS |
-| Standalone Android release APK | VERIFIED_LOCAL build/install; partial UI | Clean `fc17469` standalone signed arm64 APK, 47,240,096 bytes, SHA256 `d1206f5094b997d0b5597f2f25b30a13ec74730f8261dee79dfe0f1111bc076f`; real account config, no Metro. Latest Today/Goal corrections require rebuilding |
+| Standalone Android release APK | VERIFIED_LOCAL build/install; partial UI | Clean `9b7c3fc` standalone signed arm64 APK, 47,246,492 bytes, SHA256 `197528a1b38036794a4278f5ab8a4ab3a82e5010a5d32723109bbbe9c26e51db`; installed over prior candidate, no Metro. New Skill Detail correction requires rebuilding; UI readback blocked by Mac lock |
 | Standalone iPhone installation | AWAITING_OWNER | Native simulator cloud compilation succeeded, including Widget/Shortcut and backup support. Not a physical-iPhone package; Apple signing and UDID still required. Latest build IDs are recorded below |
-| Same-version Web candidate | VERIFIED_REMOTE deployment; bounded UI smoke from earlier candidate | `https://questlife-v1-release.vercel.app`; `fc17469` deployment `dpl_3w5PXuBrdMngCCVVBNZFXXVjwXef` READY. Bundle `index-2152466737ab77295f19dee104b69136.js`. Latest Today/Goal corrections need redeployment; owner production untouched |
+| Same-version Web candidate | VERIFIED_REMOTE deployment; bounded UI smoke | `https://questlife-v1-release.vercel.app`; `9b7c3fc` deployment `dpl_BfLTW2QdMWcRKUsknxpU1XTi2Qpy` READY. Bundle `index-3367ba6bbb8225d2fe32744f4a54a642.js`. Eight live API checks passed, Today S0 opens; owner production untouched |
 | Record backup / restore | IMPLEMENTED, VERIFIED_LOCAL | Versioned exact-record backup, original account binding, structural validation and empty-replica WAL restore. First-launch and Settings entrances; 17 core and five file-action/entry groups; physical file-provider acceptance pending |
 | Native recordings/performance | PARTIAL measurement, NOT_PASSED | CUA pointer input recovered after emulator restart. Cold launch/Insights sample on API36 host-GPU emulator: 307 frames, P50 22ms, P95 42ms, 214 histogram frames above 20ms, 43 janky. Not steady-state or physical acceptance. Mac lock now blocks final interaction/recording |
 
@@ -62,13 +62,29 @@ is reopened under the original specification, not excluded as new scope:
 | 11-15 external chains | Hosted/core checks passed only for their stated boundaries | Physical data, OS delivery, email OTP and two-device UI remain open, not replaced by mocks |
 | 16-19 acceptance | Installed APK and tab-open checks are partial only | Rebuild same-source candidate, actual interactions/recordings/performance; visual acceptance remains owner's |
 
-Mac is unlocked as of the latest readback. Dedicated emulator pointer and on-screen
-keyboard taps work through CUA. Installed `fc17469`: created one disposable `Test`
+Mac is locked again as of the latest CUA readback. Dedicated emulator pointer and
+on-screen keyboard taps previously worked through CUA. Installed `fc17469`: created one disposable `Test`
 Goal through its actual form, opened Goal Detail, switched dark/English, opened
 Schedule and used Jump to Now. This QA emulator is separate from owner data; the
 temporary Goal must be removed after restart/update persistence verification.
 No state observation has been fabricated. Screenshots from this build cannot be
 used as proof of later `15932f8` / `b8f365f` changes.
+
+Skill Detail correction: its primary native action now opens the existing Today
+Direct Log handler with the exact Skill ID, rather than ending the Goal-to-Skill
+flow on an analysis-only page. Three real recent rows lead to existing Activity
+History; progress/configuration, milestones and permanent delete remain reachable
+through compact disclosures. No new record writer or progress algorithm. Native
+empty history does not render empty charts or achievement walls; SVGs fit their
+parent and chart text uses the selected theme. Nineteen entity/form component
+tests pass, including navigation-only intent/no writes, recent-row bound,
+Chinese/English, both themes and finite zero-duration chart geometry. These are
+component tests, not installed acceptance.
+
+`9b7c3fc` Android installed successfully. iOS simulator build
+`0c6e3033-2317-4c3e-bcae-42e3fa32d08f` submitted. Cold-launch Android sample only:
+25 frames, P50 17ms, P95 48ms, six janky; too small and not steady-state, NOT a
+performance pass. Rebuild after the Skill correction and finish full interactions.
 
 The persistence correction keeps the existing whole-entity mutation semantics;
 it does not silently introduce field-level conflict merging. Failed writes keep
