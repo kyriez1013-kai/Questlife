@@ -22,6 +22,8 @@ const rn = {
   AppState: { addEventListener: () => ({ remove() {} }) },
 };
 for (const name of ['View','Text','TextInput','Pressable','TouchableOpacity','ScrollView','Modal','KeyboardAvoidingView','Switch','ActivityIndicator']) rn[name] = name;
+rn.FlatList = props => React.createElement('FlatList', props, props.ListHeaderComponent,
+  props.data.length ? props.data.map((item, index) => React.createElement(React.Fragment, { key: props.keyExtractor(item) }, props.renderItem({ item, index }))) : props.ListEmptyComponent);
 let store;
 let alerts = [];
 let route = { params: {} };
@@ -276,9 +278,9 @@ test('native skill library searches and opens the real edit form without navigat
   await render('../screens/SkillLibraryScreen.tsx');
   await act(async()=>tree.root.findByType('QuestInput').props.onChangeText('alpha'));
   assert.equal(tree.root.findAll(node=>node.type==='TouchableOpacity' && node.props.accessibilityLabel==='TEST Beta').length,0);
-  const edit=tree.root.findAll(node=>node.type==='TouchableOpacity' && node.props.accessibilityLabel==='Edit: TEST Alpha')[0];
-  let stopped=false;await act(async()=>edit.props.onPress({stopPropagation:()=>{stopped=true;}}));
-  assert.equal(stopped,true);assert.equal(navigations.length,0);
+  const edit=tree.root.findAll(node=>node.type==='QuestButton' && node.props.accessibilityLabel==='Edit: TEST Alpha')[0];
+  await act(async()=>edit.props.onPress());
+  assert.equal(navigations.length,0);
   assert.equal(tree.root.findAllByType('SkillForm').find(node=>node.props.initial?.id==='TEST_A').props.visible,true);
 });
 test('native Settings changes actual preference actions without a web Preferences route', async () => {
