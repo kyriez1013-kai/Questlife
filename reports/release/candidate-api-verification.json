@@ -1,6 +1,6 @@
 {
   "origin": "https://questlife-v1-release.vercel.app",
-  "testedAt": "2026-09-22T10:12:48.550Z",
+  "testedAt": "2026-09-22T10:34:23.388Z",
   "scope": "Isolated stateless API inputs only. No Store, owner data or database writes; not UI confirmation or persistence acceptance.",
   "checks": [
     {
@@ -10,42 +10,43 @@
     {
       "name": "/api/sync",
       "status": 410,
-      "elapsedMs": 991
+      "elapsedMs": 1095
     },
     {
       "name": "/api/track",
       "status": 410,
-      "elapsedMs": 1309
+      "elapsedMs": 1260
     },
     {
       "name": "/api/decision-quant",
       "status": 401,
-      "elapsedMs": 1126
+      "elapsedMs": 1176
     },
     {
       "name": "/api/push-test",
       "status": 401,
-      "elapsedMs": 1250
+      "elapsedMs": 1014
     },
     {
       "name": "live_capture_parse",
       "input": "打了篮球",
       "status": 200,
-      "elapsedMs": 2848,
+      "elapsedMs": 2956,
       "currentInputMatched": true,
       "response": {
         "ok": true,
         "type": "training",
         "fields": {
-          "activity": "篮球"
+          "activity": "篮球",
+          "durationMinutes": null
         },
         "matchedSkillIds": [],
         "linkedGoalId": null,
         "insightType": "encourage",
         "crossLinks": [],
         "insight": {
-          "zh": "打篮球是不错的全身有氧运动，能锻炼心肺和协调性。",
-          "en": "Playing basketball is a great full-body cardio workout that builds endurance and coordination."
+          "zh": "打篮球是很棒的有氧+协调性训练，记得补充水分和拉伸放松。",
+          "en": "Basketball is great cardio and coordination training — remember to hydrate and stretch."
         },
         "entries": [
           {
@@ -101,7 +102,7 @@
       "name": "live_capture_parse",
       "input": "SQL 学习了 40 分钟",
       "status": 200,
-      "elapsedMs": 2235,
+      "elapsedMs": 2691,
       "currentInputMatched": true,
       "response": {
         "ok": true,
@@ -115,8 +116,8 @@
         "insightType": "skill_progress",
         "crossLinks": [],
         "insight": {
-          "zh": "你今天学习了 40 分钟 SQL，保持这个节奏，数据库技能会稳步提升。",
-          "en": "You studied SQL for 40 minutes today—keep this pace and your database skills will steadily improve."
+          "zh": "你完成了 40 分钟的 SQL 学习，保持这个节奏，数据库技能会稳步提升。",
+          "en": "You completed 40 minutes of SQL study — keep this pace and your database skills will steadily improve."
         },
         "entries": [
           {
@@ -147,7 +148,10 @@
           "matchedModuleId": null,
           "goalConfidence": "low",
           "shouldCreateGoal": true,
-          "newGoalSuggestion": null,
+          "newGoalSuggestion": {
+            "name": "SQL 学习",
+            "domain": "learning"
+          },
           "durationOptions": [
             15,
             30,
@@ -169,7 +173,7 @@
       "name": "live_capture_parse",
       "input": "卧推 82.5 kg，5 次，3 组",
       "status": 200,
-      "elapsedMs": 2830,
+      "elapsedMs": 2741,
       "currentInputMatched": true,
       "response": {
         "ok": true,
@@ -185,8 +189,8 @@
         "insightType": "skill_progress",
         "crossLinks": [],
         "insight": {
-          "zh": "卧推 82.5 kg × 5 次 × 3 组，总容量约 1237.5 kg，属于扎实的力量训练记录。",
-          "en": "Bench press 82.5 kg × 5 reps × 3 sets — about 1237.5 kg total volume, a solid strength session."
+          "zh": "卧推 82.5 kg 完成 3 组 × 5 次，总容量约 1237.5 kg，属于扎实的力量训练记录。",
+          "en": "Bench press at 82.5 kg for 3 sets of 5 reps — about 1237.5 kg total volume, a solid strength session."
         },
         "entries": [
           {
@@ -198,7 +202,8 @@
               "exercise": "卧推",
               "weightKg": 82.5,
               "reps": 5,
-              "sets": 3
+              "sets": 3,
+              "totalVolumeKg": 1237.5
             },
             "qualityRating": 4
           }
@@ -213,13 +218,17 @@
             "飞鸟",
             "夹胸",
             "双杠撑臂",
-            "俯卧撑"
+            "俯卧撑",
+            "chest press"
           ],
           "matchedGoalId": null,
           "matchedModuleId": null,
           "goalConfidence": "low",
           "shouldCreateGoal": true,
-          "newGoalSuggestion": null,
+          "newGoalSuggestion": {
+            "name": "力量训练 / 健身",
+            "domain": ""
+          },
           "durationOptions": [
             15,
             30,
