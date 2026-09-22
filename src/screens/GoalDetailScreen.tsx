@@ -36,6 +36,9 @@ import { confirmAction } from '../utils/confirm';
 import { getV11ProductLanguage, getV11ProductThemeId } from '../v11/featureFlag';
 import { formatEffortUnitSummary } from '../utils/effort';
 import { QuestGroupedSurface } from '../components/ui/QuestPrimitives';
+import NativeFormDisclosure from '../native/NativeFormDisclosure';
+import { useDurableFormSave } from '../native/useDurableFormSave';
+import { nativeFormCopy } from '../native/nativeFormCopy';
 
 type ParamList = { GoalDetail: { categoryId: string } };
 
@@ -69,7 +72,7 @@ const METRIC_TYPES: OutcomeMetricType[] = ['target_value', 'time_based', 'freque
 export default function GoalDetailScreen() {
   const nav = useNavigation<any>();
   const route = useRoute<RouteProp<ParamList, 'GoalDetail'>>();
-  const { data, updateCategory, addModule, updateModule, deleteModule, addExistingSkillToModule, removeSkillFromModule } = useStore();
+  const { data, updateCategory, addModule, updateModule, deleteModule, addExistingSkillToModule, removeSkillFromModule, waitForLocalWrites, retryLocalWrites } = useStore();
   const lang = getV11ProductLanguage(getLanguage(data.settings.language));
   const questTheme = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const categoryId = route.params.categoryId;
@@ -95,6 +98,8 @@ export default function GoalDetailScreen() {
   const [criterionWeight, setCriterionWeight] = useState('25');
   const [criterionLinkedSkillId, setCriterionLinkedSkillId] = useState<string | undefined>();
   const [criterionCompleted, setCriterionCompleted] = useState(false);
+  const moduleSave = useDurableFormSave({ visible: moduleOpen, wait: waitForLocalWrites, retry: retryLocalWrites, onSaved: () => setModuleOpen(false) });
+  const criterionSave = useDurableFormSave({ visible: criterionOpen, wait: waitForLocalWrites, retry: retryLocalWrites, onSaved: () => setCriterionOpen(false) });
 
   useEffect(() => {
     if (!cat) nav.goBack();
@@ -151,12 +156,16 @@ export default function GoalDetailScreen() {
   }, [data.contributionLinks, data.effortUnits, categoryId]);
 
   if (!cat) return null;
+  const hasProgressEvidence = criteria.length > 0 || goalExecutionLogs.length > 0 || (
+    cat.progressModel === 'manual' && cat.manualProgress != null
+  );
 
   const submitModule = () => {
     if (!moduleName.trim()) {
       Alert.alert(t(lang, 'enterModuleName'));
       return;
     }
+    void moduleSave.save(() => {
     if (editingModuleId) {
       updateModule(editingModuleId, {
         name: moduleName.trim(),
@@ -172,11 +181,7 @@ export default function GoalDetailScreen() {
         order: modules.length,
       });
     }
-    setModuleName('');
-    setModuleIcon('📁');
-    setModuleDescription('');
-    setEditingModuleId(undefined);
-    setModuleOpen(false);
+    });
   };
 
   const openCreateModule = () => {
@@ -222,6 +227,7 @@ export default function GoalDetailScreen() {
   };
 
   const closeCriterion = () => {
+    if (criterionSave.locked) return;
     setCriterionOpen(false);
     setEditingCriterionId(undefined);
   };
@@ -231,6 +237,11 @@ export default function GoalDetailScreen() {
       Alert.alert(t(lang, 'criterionTitle'));
       return;
     }
+    if ([criterionCurrent, criterionTarget, criterionWeight].some(value => value.trim() && !Number.isFinite(Number(value)))) {
+      Alert.alert(nativeFormCopy(lang, 'validNumber'));
+      return;
+    }
+    void criterionSave.save(() => {
     const nextCriterion: OutcomeCriterion = {
       id: editingCriterionId ?? uid(),
       title: criterionTitle.trim(),
@@ -247,12 +258,11 @@ export default function GoalDetailScreen() {
       ? criteria.map((criterion) => (criterion.id === editingCriterionId ? nextCriterion : criterion))
       : [...criteria, nextCriterion];
     updateCategory(cat.id, { outcomeCriteria: next });
-    closeCriterion();
+    });
   };
 
   const deleteCriterion = (criterionId: string) => {
-    updateCategory(cat.id, { outcomeCriteria: criteria.filter((criterion) => criterion.id !== criterionId) });
-    closeCriterion();
+    void criterionSave.save(() => updateCategory(cat.id, { outcomeCriteria: criteria.filter((criterion) => criterion.id !== criterionId) }));
   };
 
   const addSuggestedModules = () => {
@@ -281,8 +291,8 @@ export default function GoalDetailScreen() {
   return (
     <SafeAreaView nativeID="v11-goal-detail-screen" edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
       <View style={[styles.header, { borderBottomColor: questTheme.colors.border }]}>
-        <QuestButton questTheme={questTheme} variant="ghost" icon="target" label={t(lang, 'back')} onPress={() => nav.goBack()} />
-        <QuestButton questTheme={questTheme} variant="secondary" icon="plus" label={t(lang, 'edit')} onPress={() => setEditing(true)} />
+        <QuestButton questTheme={questTheme} variant="ghost" label={t(lang, 'back')} onPress={() => nav.goBack()} />
+        <QuestButton questTheme={questTheme} variant="secondary" label={t(lang, 'edit')} onPress={() => setEditing(true)} />
       </View>
 
       <ScrollView contentContainerStyle={{
@@ -297,18 +307,19 @@ export default function GoalDetailScreen() {
           questTheme={questTheme}
           elevated
           className="v11-goal-summary"
-          style={{
+          style={[{
             padding: questTheme.spacing.md,
             marginBottom: questTheme.spacing.md,
             borderColor: questTheme.colors.borderStrong,
-          }}
+          }, Platform.OS !== 'web' ? styles.nativeSection : {}]}
         >
           <View style={styles.titleRow}>
             <QuestEntityIcon icon={cat.emoji} systemIcon={getGoalSemanticIcon(cat)} color={cat.color} questTheme={questTheme} size="lg" />
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={[styles.title, { color: questTheme.colors.text }]}>{cat.name}</Text>
               <Text style={[styles.subline, { color: questTheme.colors.textMuted }]}>
-                {modules.length} {t(lang, 'modules')} · {linkedSkillCount} {t(lang, 'skillCount')} · {t(lang, 'goalProgress')} {goalProgress}%
+                {modules.length} {t(lang, 'modules')} · {linkedSkillCount} {t(lang, 'skillCount')}
+                {hasProgressEvidence ? ` · ${t(lang, 'goalProgress')} ${goalProgress}%` : ''}
               </Text>
             </View>
             <QuestPill questTheme={questTheme} label={goalTypeLabel(lang, cat.goalType)} variant="muted" />
@@ -323,7 +334,7 @@ export default function GoalDetailScreen() {
             </Text>
           ) : null}
 
-          <QuestProgressBar questTheme={questTheme} value={goalProgress} style={{ marginTop: questTheme.spacing.sm }} />
+          {hasProgressEvidence ? <QuestProgressBar questTheme={questTheme} value={goalProgress} style={{ marginTop: questTheme.spacing.sm }} /> : null}
 
           {goalLoopStatus ? (
             <View style={[styles.nextActionStrip, {
@@ -332,7 +343,7 @@ export default function GoalDetailScreen() {
               marginTop: questTheme.spacing.sm,
               padding: questTheme.spacing.sm,
               borderRadius: questTheme.radius.md,
-            }]}>
+            }, Platform.OS !== 'web' ? styles.nativeSection : null]}>
               <Text style={[styles.metaLabel, { color: questTheme.colors.textMuted }]}>{t(lang, 'next')}</Text>
               <Text style={[styles.loopNext, { color: questTheme.colors.primary }]}>{goalLoopStatus.nextBestAction}</Text>
             </View>
@@ -358,7 +369,7 @@ export default function GoalDetailScreen() {
             questTheme={questTheme}
             elevated
             className="v11-goal-empty-structure"
-            style={[styles.lowDataSurface, { borderColor: questTheme.colors.borderStrong }]}
+            style={[styles.lowDataSurface, { borderColor: questTheme.colors.borderStrong }, Platform.OS !== 'web' ? styles.nativeSection : {}]}
           >
             <View style={styles.lowDataHeading}>
               <QuestIcon name="folder" size={20} color={questTheme.colors.primary} />
@@ -417,7 +428,7 @@ export default function GoalDetailScreen() {
               <QuestGroupedSurface
                 questTheme={questTheme}
                 className="v11-goal-low-data"
-                style={[styles.lowDataSurface, { borderColor: questTheme.colors.border }]}
+                style={[styles.lowDataSurface, { borderColor: questTheme.colors.border }, Platform.OS !== 'web' ? styles.nativeSection : {}]}
               >
                 <Text style={[styles.lowDataTitle, { color: questTheme.colors.text }]}>
                   {goalExecutionLogs.length === 0
@@ -466,7 +477,7 @@ export default function GoalDetailScreen() {
                   </View>
                   <QuestButton questTheme={questTheme} variant="ghost" icon="plus" label={t(lang, 'addCriterion')} onPress={() => openCriterion()} />
                 </View>
-                <QuestGroupedSurface questTheme={questTheme} className="v11-goal-evidence-list">
+                <QuestGroupedSurface questTheme={questTheme} className="v11-goal-evidence-list" style={Platform.OS !== 'web' ? styles.nativeSection : {}}>
                   {criteria.map((criterion, index) => {
                     const progress = calculateOutcomeCriterionProgress(criterion, skills);
                     const linkedSkill = criterion.linkedSkillId ? skills.find((skill) => skill.id === criterion.linkedSkillId) : undefined;
@@ -502,7 +513,7 @@ export default function GoalDetailScreen() {
             {recentExecutionLogs.length > 0 ? (
               <View style={styles.evidenceSection}>
                 <Text style={[styles.evidenceTitle, { color: questTheme.colors.text }]}>{t(lang, 'recentExecution')}</Text>
-                <QuestGroupedSurface questTheme={questTheme} className="v11-goal-evidence-list">
+                <QuestGroupedSurface questTheme={questTheme} className="v11-goal-evidence-list" style={Platform.OS !== 'web' ? styles.nativeSection : {}}>
                   {recentExecutionLogs.map((log, index) => {
                     const skill = log.linkedSkillId ? skills.find((item) => item.id === log.linkedSkillId) : undefined;
                     return (
@@ -536,7 +547,7 @@ export default function GoalDetailScreen() {
                 <Text style={[styles.skillMeta, { color: questTheme.colors.textMuted, marginBottom: 8 }]}>
                   {t(lang, 'thisWeek')}: {goalEffortSummary.weeklyCount} · {t(lang, 'directContribution')} {goalEffortSummary.directCount} · {t(lang, 'indirectContribution')} {goalEffortSummary.indirectCount}
                 </Text>
-                <QuestGroupedSurface questTheme={questTheme} className="v11-goal-evidence-list">
+                <QuestGroupedSurface questTheme={questTheme} className="v11-goal-evidence-list" style={Platform.OS !== 'web' ? styles.nativeSection : {}}>
                   {goalEffortSummary.recent.map(({ link, effort }, index) => (
                     <View
                       key={link.id}
@@ -578,10 +589,17 @@ export default function GoalDetailScreen() {
         presetModuleId={skillModuleId}
         linkOnCreate
       />
-      <BottomSheetForm visible={criterionOpen} onClose={closeCriterion}>
+      <BottomSheetForm visible={criterionOpen} onClose={closeCriterion} footer={<>
+        {criterionSave.status === 'error' ? <Text accessibilityRole="alert" style={{ color: questTheme.colors.text }}>{nativeFormCopy(lang, 'saveFailed')}</Text> : null}
+        <View style={{ flexDirection: 'row', gap: questTheme.spacing.sm }}>
+          <QuestButton questTheme={questTheme} variant="secondary" label={t(lang, 'cancel')} onPress={closeCriterion} disabled={criterionSave.locked} style={{ flex: 1 }} />
+          <QuestButton questTheme={questTheme} variant="primary" label={criterionSave.status === 'error' ? nativeFormCopy(lang, 'retrySave') : t(lang, 'save')} onPress={saveCriterion} loading={criterionSave.status === 'saving'} style={{ flex: 1 }} />
+        </View>
+      </>}>
+        <View pointerEvents={criterionSave.locked ? 'none' : 'auto'} accessibilityElementsHidden={criterionSave.locked}>
         <Text style={[styles.sheetTitle, { color: questTheme.colors.text }]}>{editingCriterionId ? t(lang, 'editCriterion') : t(lang, 'addCriterion')}</Text>
         <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'criterionTitle')}</Text>
-        <QuestInput questTheme={questTheme} value={criterionTitle} onChangeText={setCriterionTitle} placeholder={t(lang, 'criterionTitle')} />
+        <QuestInput questTheme={questTheme} accessibilityLabel={t(lang, 'criterionTitle')} value={criterionTitle} onChangeText={setCriterionTitle} placeholder={t(lang, 'criterionTitle')} />
         <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'criterionDescription')}</Text>
         <QuestInput
           questTheme={questTheme}
@@ -618,6 +636,7 @@ export default function GoalDetailScreen() {
           </View>
         )}
 
+        <NativeFormDisclosure q={questTheme} title={t(lang, 'advancedSettings')}>
         <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'weight')}</Text>
         <QuestInput questTheme={questTheme} value={criterionWeight} onChangeText={setCriterionWeight} keyboardType="numeric" placeholder="25" />
 
@@ -628,12 +647,13 @@ export default function GoalDetailScreen() {
             <QuestPill key={skill.id} questTheme={questTheme} label={skill.name} active={criterionLinkedSkillId === skill.id} onPress={() => setCriterionLinkedSkillId(skill.id)} />
           ))}
         </View>
+        </NativeFormDisclosure>
 
         <View style={{ flexDirection: 'row', gap: 10, marginTop: 18 }}>
           {editingCriterionId ? (
             <QuestButton questTheme={questTheme} variant="danger" label={t(lang, 'deleteCriterion')} onPress={() => deleteCriterion(editingCriterionId)} style={{ flex: 1 }} />
           ) : null}
-          <QuestButton questTheme={questTheme} variant="primary" label={t(lang, 'save')} onPress={saveCriterion} style={{ flex: 1 }} />
+        </View>
         </View>
       </BottomSheetForm>
       <BottomSheetForm visible={!!existingModuleId} onClose={() => setExistingModuleId(undefined)}>
@@ -670,7 +690,14 @@ export default function GoalDetailScreen() {
           ))
         )}
       </BottomSheetForm>
-      <BottomSheetForm visible={moduleOpen} onClose={() => setModuleOpen(false)}>
+      <BottomSheetForm visible={moduleOpen} onClose={() => { if (!moduleSave.locked) setModuleOpen(false); }} footer={<>
+        {moduleSave.status === 'error' ? <Text accessibilityRole="alert" style={{ color: questTheme.colors.text }}>{nativeFormCopy(lang, 'saveFailed')}</Text> : null}
+        <View style={{ flexDirection: 'row', gap: questTheme.spacing.sm }}>
+          <QuestButton questTheme={questTheme} variant="secondary" label={t(lang, 'cancel')} onPress={() => setModuleOpen(false)} disabled={moduleSave.locked} style={{ flex: 1 }} />
+          <QuestButton questTheme={questTheme} variant="primary" label={moduleSave.status === 'error' ? nativeFormCopy(lang, 'retrySave') : t(lang, 'save')} onPress={submitModule} loading={moduleSave.status === 'saving'} style={{ flex: 1 }} />
+        </View>
+      </>}>
+        <View pointerEvents={moduleSave.locked ? 'none' : 'auto'} accessibilityElementsHidden={moduleSave.locked}>
         {Platform.OS !== 'web' && editingModuleId ? <View style={{ flexDirection: 'row', gap: questTheme.spacing.sm, marginBottom: questTheme.spacing.sm }}>
           {([-1, 1] as const).map(direction => {
             const index = modules.findIndex(module => module.id === editingModuleId);
@@ -686,15 +713,17 @@ export default function GoalDetailScreen() {
         </View> : null}
         <Text style={[styles.sheetTitle, { color: questTheme.colors.text }]}>{editingModuleId ? t(lang, 'editModule') : t(lang, 'createModule')}</Text>
         <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'moduleName')}</Text>
-        <QuestInput questTheme={questTheme} value={moduleName} onChangeText={setModuleName} placeholder={t(lang, 'defaultModule')} />
+        <QuestInput questTheme={questTheme} accessibilityLabel={t(lang, 'moduleName')} value={moduleName} onChangeText={setModuleName} placeholder={t(lang, 'defaultModule')} />
+        <NativeFormDisclosure q={questTheme} title={t(lang, 'moduleIcon')}>
         <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'moduleIcon')}</Text>
         <View style={styles.inlineEntityRow}>
           <QuestEntityIcon icon={moduleIcon} systemIcon={getModuleSemanticIcon({ name: moduleName })} questTheme={questTheme} />
           <QuestInput questTheme={questTheme} value={moduleIcon} onChangeText={setModuleIcon} placeholder="folder" style={{ flex: 1 }} />
         </View>
+        </NativeFormDisclosure>
         <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'description')}</Text>
         <QuestInput questTheme={questTheme} value={moduleDescription} onChangeText={setModuleDescription} style={{ height: 72, textAlignVertical: 'top' }} multiline placeholder={t(lang, 'description')} />
-        <QuestButton questTheme={questTheme} variant="primary" label={t(lang, 'save')} onPress={submitModule} style={{ marginTop: 18 }} />
+        </View>
       </BottomSheetForm>
     </SafeAreaView>
   );
@@ -727,6 +756,7 @@ function ModuleGroup({
           borderColor: questTheme.colors.borderStrong,
           borderLeftColor: questTheme.colors.primary,
         },
+        Platform.OS !== 'web' ? { ...styles.nativeSection, borderTopWidth: 1, borderTopColor: questTheme.colors.divider, paddingTop: questTheme.spacing.md } : {},
       ]}
     >
       <TouchableOpacity
@@ -740,7 +770,7 @@ function ModuleGroup({
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={[styles.moduleTitle, { color: questTheme.colors.text }]}>{displayModuleName(module, lang)}</Text>
           <Text style={[styles.moduleMeta, { color: questTheme.colors.textMuted }]}>
-            {t(lang, 'moduleProgress')} {progress}% · {skills.length} {t(lang, 'skillCount')}
+            {skills.length} {t(lang, 'skillCount')}{skills.length ? ` · ${t(lang, 'moduleProgress')} ${progress}%` : ''}
           </Text>
           {module.description ? <Text style={[styles.moduleMeta, { color: questTheme.colors.textMuted }]}>{module.description}</Text> : null}
         </View>
@@ -757,7 +787,7 @@ function ModuleGroup({
           <Text style={[styles.moduleMenuText, { color: questTheme.colors.textMuted }]}>•••</Text>
         </TouchableOpacity>
       </TouchableOpacity>
-      <QuestProgressBar questTheme={questTheme} value={progress} style={{ marginTop: questTheme.spacing.sm }} />
+      {skills.length ? <QuestProgressBar questTheme={questTheme} value={progress} style={{ marginTop: questTheme.spacing.sm }} /> : null}
 
       <View style={[styles.moduleBody, { borderLeftColor: questTheme.colors.borderStrong }]}>
         {skills.length === 0 ? (
@@ -824,6 +854,7 @@ function ModuleGroup({
 }
 
 const styles = StyleSheet.create({
+  nativeSection: { backgroundColor: 'transparent', borderWidth: 0, borderLeftWidth: 0, borderRadius: 0, paddingHorizontal: 0, overflow: 'visible' },
   safe: { flex: 1, backgroundColor: theme.bg },
   header: {
     paddingHorizontal: 12, paddingVertical: 8,

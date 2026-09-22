@@ -13,18 +13,22 @@ global.IS_REACT_ACT_ENVIRONMENT = true;
 let store, writes, closed, alerts, tree, wait, retry;
 const host = name => props => React.createElement(name, props, props.children);
 const rn = { Platform: { OS: 'android' }, Appearance: { getColorScheme: () => 'light' }, StyleSheet: { create: value => value }, Keyboard: { dismiss() {} }, Alert: { alert: value => alerts.push(value) } };
-for (const name of ['View', 'Text', 'TextInput', 'TouchableOpacity', 'Switch', 'Pressable']) rn[name] = name;
+for (const name of ['View', 'Text', 'TextInput', 'TouchableOpacity', 'Switch', 'Pressable', 'ScrollView']) rn[name] = name;
 const original = Module._load;
 Module._load = function(request, parent, main) {
   if (request === 'react') return React;
   if (request === 'react/jsx-runtime') return require(path.join(runtime, 'react/jsx-runtime'));
   if (request === 'react-native') return rn;
+  if (request === 'react-native-safe-area-context') return { SafeAreaView: 'SafeAreaView' };
+  if (request === '@react-navigation/native') return { useRoute: () => ({ params: { categoryId: 'TEST_GOAL' } }), useNavigation: () => ({ goBack() {}, navigate() {} }) };
+  if (/\/storage$/.test(request)) return { uid: () => 'TEST_CRITERION', today: () => '2026-09-22' };
   if (/\/store$/.test(request)) return { useStore: () => store };
   if (/\/useQuestTheme$/.test(request)) return { useQuestTheme: () => require('../design/tokens.ts').getQuestTheme(store.data.settings.selectedThemeId) };
   if (/\/featureFlag$/.test(request)) return { getV11ProductLanguage: x => x, getV11ProductThemeId: x => x };
   if (/\/analytics$/.test(request)) return { trackEvent() {} };
   if (/\/BottomSheetForm$/.test(request)) return props => props.visible ? React.createElement('Sheet', props, props.children, React.createElement('Footer', {}, props.footer)) : null;
-  if (/\/(QuestButton|QuestPill|QuestInput|QuestEntityIcon|V11RebaselineIcon|EmojiPicker|ColorPicker|TimePickerInput)$/.test(request)) return host(request.split('/').at(-1));
+  if (/\/QuestPrimitives$/.test(request)) return { QuestGroupedSurface: host('QuestGroupedSurface') };
+  if (/\/(QuestButton|QuestPill|QuestInput|QuestIcon|QuestProgressBar|QuestEntityIcon|V11RebaselineIcon|EmojiPicker|ColorPicker|TimePickerInput)$/.test(request)) return host(request.split('/').at(-1));
   return original.call(this, request, parent, main);
 };
 for (const extension of ['.ts', '.tsx']) require.extensions[extension] = (module, file) => module._compile(ts.transpileModule(fs.readFileSync(file, 'utf8'), {
@@ -36,7 +40,7 @@ const fresh = (lang = 'en', theme = 'cleanFocus') => {
   writes=[]; closed=0; alerts=[]; wait=async()=>{}; retry=async()=>{}; rn.Platform.OS='android';
   store={data:structuredClone(DEFAULT_DATA),waitForLocalWrites:()=>wait(),retryLocalWrites:()=>retry()};
   store.data.settings.language=lang;store.data.settings.selectedThemeId=theme;
-  for (const name of ['addCategory','updateCategory','applyDomainTemplateToGoal','addSkill','updateSkill','createSkillAndAttachToModule']) store[name]=(...args)=>{writes.push({name,args});return {id:'TEST_ENTITY'};};
+  for (const name of ['addCategory','updateCategory','applyDomainTemplateToGoal','addSkill','updateSkill','createSkillAndAttachToModule','addModule','updateModule','deleteModule','addExistingSkillToModule','removeSkillFromModule']) store[name]=(...args)=>{writes.push({name,args});return {id:'TEST_ENTITY'};};
 };
 const render=async(file,props={})=>{await act(async()=>{tree=create(React.createElement(require(file).default,{visible:true,onClose:()=>closed++,...props}));});};
 const button=label=>tree.root.findAll(node=>node.type==='QuestButton'&&node.props.label===label)[0];
@@ -102,4 +106,40 @@ test('web keeps expanded fields and one set of actions',async()=>{
   fresh();rn.Platform.OS='web';await render('../components/GoalForm.tsx');
   assert.ok(input(t('en','targetDate')));assert.equal(tree.root.findByType('Footer').findAllByType('QuestButton').length,0);
   assert.equal(tree.root.findAll(node=>node.type==='QuestButton'&&node.props.label==='Create').length,1);
+});
+
+const goalDetail=async()=>{
+  store.data.categories=[{id:'TEST_GOAL',name:'TEST goal',createdAt:1,goalType:'custom',progressModel:'criteria_weighted',outcomeCriteria:[]}];
+  await render('../screens/GoalDetailScreen.tsx');
+};
+test('empty native Goal Detail is unframed and has no invented progress bar or percentage',async()=>{
+  fresh();await goalDetail();
+  assert.equal(tree.root.findAllByType('QuestProgressBar').length,0);
+  assert.equal(tree.root.findAllByType('Text').some(node=>node.children.filter(value=>typeof value==='string'||typeof value==='number').join('').includes('0%')),false);
+  const summary=tree.root.findAll(node=>node.type==='QuestGroupedSurface'&&node.props.className==='v11-goal-summary')[0];
+  assert.equal(summary.props.style.at(-1).borderWidth,0);
+  await act(async()=>button(t('en','addModule')).props.onPress());
+  assert.equal(tree.root.findByType('Footer').findAllByType('QuestButton').length,2);
+  assert.ok(input(t('en','moduleName')));
+});
+test('module save retains draft and Sheet on failed ACK; retry does not create a second module',async()=>{
+  fresh();await goalDetail();await act(async()=>button(t('en','addModule')).props.onPress());
+  await act(async()=>input(t('en','moduleName')).props.onChangeText('TEST module'));
+  wait=async()=>{throw Error('disk');};await act(async()=>button(t('en','save')).props.onPress());
+  assert.equal(writes.length,1);assert.equal(writes[0].name,'addModule');assert.equal(writes[0].args[0].name,'TEST module');
+  await act(async()=>tree.root.findByType('Sheet').props.onClose());assert.equal(tree.root.findAllByType('Sheet').length,1);
+  let retried=0;retry=async()=>{retried++;};await act(async()=>button('Retry save').props.onPress());
+  assert.equal(writes.length,1);assert.equal(retried,1);assert.equal(tree.root.findAllByType('Sheet').length,0);
+});
+test('criterion rejects invalid numbers and preserves its identity across failed save retry',async()=>{
+  fresh();await goalDetail();await act(async()=>button(t('en','addCriterion')).props.onPress());
+  await act(async()=>input(t('en','criterionTitle')).props.onChangeText('TEST criterion'));
+  const current=()=>tree.root.findAll(node=>node.type==='QuestInput'&&node.props.placeholder==='0')[0];
+  await act(async()=>current().props.onChangeText('not a number'));await act(async()=>button(t('en','save')).props.onPress());
+  assert.equal(writes.length,0);assert.ok(alerts.length);
+  await act(async()=>current().props.onChangeText('2'));wait=async()=>{throw Error('disk');};
+  await act(async()=>button(t('en','save')).props.onPress());assert.equal(writes.length,1);
+  const saved=writes[0].args[1].outcomeCriteria[0];assert.equal(saved.currentValue,2);
+  await act(async()=>button('Retry save').props.onPress());assert.equal(writes.length,1);assert.equal(saved.id,'TEST_CRITERION');
+  assert.equal(tree.root.findAllByType('Sheet').length,0);
 });
