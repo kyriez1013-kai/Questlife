@@ -129,6 +129,31 @@ test('empty native Goal Detail is unframed and has no invented progress bar or p
   assert.equal(tree.root.findByType('Footer').findAllByType('QuestButton').length,2);
   assert.ok(input(t('en','moduleName')));
 });
+for (const platform of ['android','web']) for (const lang of ['zh','en']) test(`untracked module does not imply zero progress ${platform}/${lang}`,async()=>{
+  fresh(lang);rn.Platform.OS=platform;
+  store.data.modules=[{id:'TEST_MODULE',goalId:'TEST_GOAL',name:'TEST module'}];
+  store.data.skills=[{id:'TEST_SKILL',name:'TEST skill',totalXP:0,dailyTargetMinutes:30,progressType:'none'}];
+  store.data.moduleSkillLinks=[{id:'TEST_LINK',goalId:'TEST_GOAL',moduleId:'TEST_MODULE',skillId:'TEST_SKILL'}];
+  await goalDetail();
+  const text=()=>tree.root.findAllByType('Text').map(node=>node.children.filter(v=>typeof v==='string'||typeof v==='number').join('')).join('\n');
+  const moduleGroup=()=>tree.root.findAll(node=>node.type==='QuestGroupedSurface'&&node.props.className==='v11-module-group')[0];
+  const before=JSON.stringify(store.data);
+  assert.equal(moduleGroup().findAllByType('QuestProgressBar').length,0);
+  assert.ok(!text().includes('0%'));
+  const label=require('../i18n.ts').progressTypeLabel(lang,'none');
+  assert.ok(!text().includes(`${label} · ${label}`));
+  assert.equal(JSON.stringify(store.data),before);assert.equal(writes.length,0);
+  for (const progressType of ['qualitative','time_based','quality_score','state_based','performance_log']) {
+    store.data.skills=[{...store.data.skills[0],progressType}];
+    await act(async()=>tree.update(React.createElement(require('../screens/GoalDetailScreen.tsx').default)));
+    assert.equal(moduleGroup().findAllByType('QuestProgressBar').length,0,progressType);
+    assert.ok(!text().includes('0%'),progressType);
+  }
+  store.data.skills=[{...store.data.skills[0],progressType:'time_based',targetHours:10,completedHours:2.5}];
+  await act(async()=>tree.update(React.createElement(require('../screens/GoalDetailScreen.tsx').default)));
+  assert.equal(moduleGroup().findByType('QuestProgressBar').props.value,25);
+  assert.ok(text().includes('25%'));assert.equal(writes.length,0);
+});
 test('module save retains draft and Sheet on failed ACK; retry does not create a second module',async()=>{
   fresh();await goalDetail();await act(async()=>button(t('en','addModule')).props.onPress());
   await act(async()=>input(t('en','moduleName')).props.onChangeText('TEST module'));

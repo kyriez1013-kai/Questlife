@@ -49,9 +49,10 @@ function fill(template: string, values: Record<string, string | number>) {
 function progressSummary(skill: Skill, lang: 'zh' | 'en') {
   const type = progressTypeForSkill(skill);
   const progress = calculateSkillProgress(skill);
-  const percent = progress.percent ?? 0;
+  const percent = progress.percent;
   if (type === 'none') return progressTypeLabel(lang, type);
   if (type === 'qualitative') return t(lang, 'qualitativeReview');
+  if (!progress.tracked) return t(lang, 'notSet');
   if (type === 'curriculum') {
     const items = skill.curriculumItems ?? [];
     const done = items.filter((item) => item.completed).length;
@@ -60,7 +61,13 @@ function progressSummary(skill: Skill, lang: 'zh' | 'en') {
   if (type === 'frequency') {
     return `${fill(t(lang, 'thisWeekCount'), { done: skill.completedThisWeek ?? 0, total: skill.weeklyTargetCount ?? 0 })} · ${percent}%`;
   }
-  return `${progress.summary} · ${percent}%`;
+  return percent == null ? progress.summary : `${progress.summary} · ${percent}%`;
+}
+
+function skillProgressMeta(skill: Skill, lang: 'zh' | 'en') {
+  const label = progressTypeLabel(lang, progressTypeForSkill(skill));
+  const summary = progressSummary(skill, lang);
+  return summary === label ? label : `${label} · ${summary}`;
 }
 
 function displayModuleName(module: QuestModule, lang: 'zh' | 'en') {
@@ -682,7 +689,7 @@ export default function GoalDetailScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={[styles.skillName, { color: questTheme.colors.text }]}>{skill.name}</Text>
                 <Text style={[styles.skillMeta, { color: questTheme.colors.textMuted }]}>
-                  {progressTypeLabel(lang, progressTypeForSkill(skill))} · {progressSummary(skill, lang)} · {fill(t(lang, 'linkedCount'), { count: links.filter((link) => link.skillId === skill.id).length })}
+                  {skillProgressMeta(skill, lang)} · {fill(t(lang, 'linkedCount'), { count: links.filter((link) => link.skillId === skill.id).length })}
                 </Text>
               </View>
               <QuestIcon name="plus" size={18} color={questTheme.colors.primary} />
@@ -745,6 +752,10 @@ function ModuleGroup({
   questTheme: QuestTheme;
 }) {
   const progress = calculateModuleProgress(module, skills, links);
+  const hasTrackedProgress = skills.some(skill => {
+    const result = calculateSkillProgress(skill);
+    return result.tracked && result.percent != null;
+  });
   return (
     <QuestGroupedSurface
       questTheme={questTheme}
@@ -770,7 +781,7 @@ function ModuleGroup({
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={[styles.moduleTitle, { color: questTheme.colors.text }]}>{displayModuleName(module, lang)}</Text>
           <Text style={[styles.moduleMeta, { color: questTheme.colors.textMuted }]}>
-            {skills.length} {t(lang, 'skillCount')}{skills.length ? ` · ${t(lang, 'moduleProgress')} ${progress}%` : ''}
+            {skills.length} {t(lang, 'skillCount')}{hasTrackedProgress ? ` · ${t(lang, 'moduleProgress')} ${progress}%` : ''}
           </Text>
           {module.description ? <Text style={[styles.moduleMeta, { color: questTheme.colors.textMuted }]}>{module.description}</Text> : null}
         </View>
@@ -787,7 +798,7 @@ function ModuleGroup({
           <Text style={[styles.moduleMenuText, { color: questTheme.colors.textMuted }]}>•••</Text>
         </TouchableOpacity>
       </TouchableOpacity>
-      {skills.length ? <QuestProgressBar questTheme={questTheme} value={progress} style={{ marginTop: questTheme.spacing.sm }} /> : null}
+      {hasTrackedProgress ? <QuestProgressBar questTheme={questTheme} value={progress} style={{ marginTop: questTheme.spacing.sm }} /> : null}
 
       <View style={[styles.moduleBody, { borderLeftColor: questTheme.colors.borderStrong }]}>
         {skills.length === 0 ? (
@@ -813,13 +824,13 @@ function ModuleGroup({
               }}
               activeOpacity={0.75}
               accessibilityRole="button"
-              accessibilityLabel={`${skill.name} · ${progressTypeLabel(lang, progressTypeForSkill(skill))} · ${progressSummary(skill, lang)}`}
+              accessibilityLabel={`${skill.name} · ${skillProgressMeta(skill, lang)}`}
             >
               <QuestEntityIcon icon={skill.icon} systemIcon={getSkillSemanticIcon(skill)} color={skill.color} questTheme={questTheme} size="sm" />
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={[styles.skillName, { color: questTheme.colors.text }]}>{skill.name}</Text>
                 <Text style={[styles.skillMeta, { color: questTheme.colors.textMuted }]}>
-                  {progressTypeLabel(lang, progressTypeForSkill(skill))} · {progressSummary(skill, lang)}
+                  {skillProgressMeta(skill, lang)}
                 </Text>
               </View>
               <TouchableOpacity
