@@ -156,9 +156,35 @@ test('delete keeps sheet and original operation on persistence failure', async (
 });
 test('record duration starts unknown; failed record retries without recreating execution', async () => {
   fresh([block]); wait = async () => { throw Error('TEST disk full'); }; await render(); await actions(); await press('Log progress');
-  const duration = tree.root.findAll(node => node.type === 'QuestInput' && node.props.placeholder === '30')[0]; assert.equal(duration.props.value, '');
+  const duration = tree.root.findAll(node => node.type === 'QuestInput' && node.props.placeholder === 'Enter actual minutes')[0]; assert.equal(duration.props.value, '');
   await act(async () => duration.props.onChangeText('23')); await press('Log progress'); assert.equal(writes.length, 1); assert.equal(writes[0][1].durationMinutes, 23); assert.equal(writes[0][1].qualityRating, undefined);
   assert.ok(button('Retry saving record')); wait = async () => {}; await press('Retry saving record'); assert.equal(writes.length, 1); assert.equal(retries, 1); assert.equal(tree.root.findAllByType('Sheet').length, 0);
+});
+test('schedule duration rejects partial numbers and explains when actual time is required', async () => {
+  fresh([block]); await render(); await actions(); await press('Log progress');
+  assert.doesNotMatch(text(), /Session duration \(optional\)/);
+  for (const value of ['', '12oops', '1.5', '-1', 'Infinity']) {
+    await input('Enter actual minutes', value); await press('Log progress'); assert.equal(writes.length, 0);
+  }
+});
+test('strength schedule records keep unentered duration and set count unknown', async () => {
+  fresh([{ ...block, linkedSkillId: 'TEST_STRENGTH', taskType: 'strength_training' }]);
+  store.data.skills = [{ id: 'TEST_STRENGTH', name: 'TEST bench', taskType: 'strength_training', progressType: 'performance_log', metricConfig: { metricType: 'performance_log', performanceType: 'strength', primaryMetric: 'weight' } }];
+  await render(); await actions(); await press('Log progress');
+  assert.match(text(), /Session duration \(optional\)/);
+  const fields = tree.root.findAllByType('QuestInput');
+  const weight = fields.find(node => node.props.placeholder === 'Actual working weight');
+  const reps = fields.find(node => node.props.placeholder === 'Actual reps');
+  const sets = fields.find(node => node.props.placeholder === 'Actual sets');
+  assert.equal(sets.props.value, '');
+  await act(async () => { weight.props.onChangeText('80'); reps.props.onChangeText('5'); });
+  await press('Log progress');
+  assert.equal(writes.length, 1);
+  const record = writes[0][1];
+  assert.equal(record.durationMinutes, undefined); assert.equal(record.actualData.strength.sets, undefined);
+  assert.equal(record.metricUpdate.performanceData.strengthSets[0].sets, undefined);
+  assert.equal(record.metricUpdate.performanceData.totalVolume, undefined);
+  assert.equal(record.metricUpdate.performanceValue, 80);
 });
 test('native week has seven full-width 44-point day targets and real free-time context', async () => {
   fresh([block]); await render(); await act(async () => tree.root.findByType('QuestSegmentedControl').props.onChange('week'));

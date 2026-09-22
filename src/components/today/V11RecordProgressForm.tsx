@@ -685,7 +685,7 @@ function LegacyRecordProgressForm({
               variant="secondary"
               icon="plus"
               label={t(lang, 'addExercise')}
-              onPress={() => onExerciseEntriesChange((current) => [...current, { id: `exercise-${Date.now()}`, exerciseName: '', weight: '', sets: '3', reps: '', rpe: '', note: '' }])}
+              onPress={() => onExerciseEntriesChange((current) => [...current, { id: `exercise-${Date.now()}`, exerciseName: '', weight: '', sets: '', reps: '', rpe: '', note: '' }])}
               style={{ marginTop: 10 }}
             />
           ) : null}
@@ -758,7 +758,7 @@ function LegacyRecordProgressForm({
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'actualSets')}</Text>
-                      <QuestInput questTheme={questTheme} value={strengthSets} onChangeText={onStrengthSetsChange} keyboardType="number-pad" placeholder="3" />
+                      <QuestInput questTheme={questTheme} value={strengthSets} onChangeText={onStrengthSetsChange} keyboardType="number-pad" placeholder={t(lang, 'actualSets')} />
                     </View>
                   </View>
                 ) : null}
@@ -1418,7 +1418,7 @@ function V11RecordProgressContent(props: Props) {
                 {showAdvancedFields ? <QuestInput questTheme={questTheme} value={entry.rpe} onChangeText={(text) => props.onExerciseEntriesChange((current) => current.map((item) => item.id === entry.id ? { ...item, rpe: text } : item))} keyboardType="decimal-pad" placeholder={t(lang, 'actualRPE')} style={styles.v11Input} /> : null}
               </View>
             ))}
-            {exerciseEntries.length < 5 ? <QuestButton questTheme={questTheme} variant="secondary" icon="plus" label={t(lang, 'addExercise')} onPress={() => props.onExerciseEntriesChange((current) => [...current, { id: `exercise-${Date.now()}`, exerciseName: '', weight: '', sets: '3', reps: '', rpe: '', note: '' }])} /> : null}
+            {exerciseEntries.length < 5 ? <QuestButton questTheme={questTheme} variant="secondary" icon="plus" label={t(lang, 'addExercise')} onPress={() => props.onExerciseEntriesChange((current) => [...current, { id: `exercise-${Date.now()}`, exerciseName: '', weight: '', sets: '', reps: '', rpe: '', note: '' }])} /> : null}
           </View>
         ) : null}
 

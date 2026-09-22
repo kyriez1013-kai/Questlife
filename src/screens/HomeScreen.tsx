@@ -619,7 +619,7 @@ export default function HomeScreen() {
   const [performanceValue, setPerformanceValue] = useState('');
   const [strengthWeight, setStrengthWeight] = useState('');
   const [strengthReps, setStrengthReps] = useState('');
-  const [strengthSets, setStrengthSets] = useState('3');
+  const [strengthSets, setStrengthSets] = useState('');
   const [strengthRpe, setStrengthRpe] = useState('');
   const [stateValue, setStateValue] = useState('');
   const [amountAdded, setAmountAdded] = useState('');
@@ -903,7 +903,7 @@ export default function HomeScreen() {
     setPerformanceValue('');
     setStrengthWeight('');
     setStrengthReps('');
-    setStrengthSets('3');
+    setStrengthSets('');
     setStrengthRpe('');
     setStateValue('');
     setAmountAdded('');
@@ -922,7 +922,7 @@ export default function HomeScreen() {
       id: `exercise-${Date.now()}`,
       exerciseName: presetSkill?.name ?? '',
       weight: '',
-      sets: '3',
+      sets: '',
       reps: '',
       rpe: '',
       note: '',
@@ -1082,7 +1082,7 @@ export default function HomeScreen() {
       ? {
           weight: parsedStrengthWeight,
           reps: parsedStrengthReps,
-          sets: parsedStrengthSets ?? 1,
+          sets: parsedStrengthSets,
           rpe: parsedStrengthRpe,
         }
       : undefined;
@@ -1201,7 +1201,7 @@ export default function HomeScreen() {
         performanceData: progressType === 'performance_log' ? {
           performanceType: skill?.metricConfig?.performanceType,
           values: effectivePerformanceValue != null ? [{ metric: skill?.metricConfig?.primaryMetric ?? 'custom', value: effectivePerformanceValue, unit: skill?.metricConfig?.unit }] : undefined,
-          strengthSets: effectiveStrengthWeight != null || effectiveStrengthReps != null ? [{ weight: effectiveStrengthWeight, reps: effectiveStrengthReps, sets: effectiveStrengthSets ?? 1, rpe: effectiveStrengthRpe }] : strengthSet ? [strengthSet] : undefined,
+          strengthSets: effectiveStrengthWeight != null || effectiveStrengthReps != null ? [{ weight: effectiveStrengthWeight, reps: effectiveStrengthReps, sets: effectiveStrengthSets, rpe: effectiveStrengthRpe }] : strengthSet ? [strengthSet] : undefined,
           totalVolume: effectiveStrengthVolume ?? actualVolume,
           notes: note.trim() || undefined,
         } : undefined,
@@ -1223,7 +1223,7 @@ export default function HomeScreen() {
         performanceData: progressType === 'performance_log' ? {
           performanceType: skill?.metricConfig?.performanceType,
           values: effectivePerformanceValue != null ? [{ metric: skill?.metricConfig?.primaryMetric ?? 'custom', value: effectivePerformanceValue, unit: skill?.metricConfig?.unit }] : undefined,
-          strengthSets: effectiveStrengthWeight != null || effectiveStrengthReps != null ? [{ weight: effectiveStrengthWeight, reps: effectiveStrengthReps, sets: effectiveStrengthSets ?? 1, rpe: effectiveStrengthRpe }] : strengthSet ? [strengthSet] : undefined,
+          strengthSets: effectiveStrengthWeight != null || effectiveStrengthReps != null ? [{ weight: effectiveStrengthWeight, reps: effectiveStrengthReps, sets: effectiveStrengthSets, rpe: effectiveStrengthRpe }] : strengthSet ? [strengthSet] : undefined,
           totalVolume: effectiveStrengthVolume ?? actualVolume,
           notes: note.trim() || undefined,
         } : undefined,

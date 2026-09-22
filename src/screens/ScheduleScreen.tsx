@@ -42,6 +42,7 @@ import { nativeCopy } from '../platform/nativeI18n';
 import { workflowCopy } from '../native/nativeWorkflowCopy';
 import { scheduleCopy } from '../native/nativeScheduleCopy';
 import NativeDayTimeline from '../native/NativeDayTimeline';
+import { actualMinutesInput } from '../utils/recordSubmission';
 
 const TASK_TYPES: TaskType[] = [
   'deep_study',
@@ -195,7 +196,7 @@ export default function ScheduleScreen() {
   const [logPerformanceNote, setLogPerformanceNote] = useState('');
   const [logStrengthWeight, setLogStrengthWeight] = useState('');
   const [logStrengthReps, setLogStrengthReps] = useState('');
-  const [logStrengthSets, setLogStrengthSets] = useState('3');
+  const [logStrengthSets, setLogStrengthSets] = useState('');
   const [logStrengthRpe, setLogStrengthRpe] = useState('');
   const [logStateValue, setLogStateValue] = useState('');
   const [logAmountAdded, setLogAmountAdded] = useState('');
@@ -429,7 +430,7 @@ export default function ScheduleScreen() {
     pendingLog.current = null;
     setLogFailed(false);
     setLogBlock(block);
-    setLogMinutes(Platform.OS === 'web' ? String(block.plannedMinutes) : '');
+    setLogMinutes('');
     setLogQuality(null);
     setLogNote('');
     setLogNewCurrentValue('');
@@ -438,7 +439,7 @@ export default function ScheduleScreen() {
     setLogPerformanceNote('');
     setLogStrengthWeight('');
     setLogStrengthReps('');
-    setLogStrengthSets(Platform.OS === 'web' ? '3' : '');
+    setLogStrengthSets('');
     setLogStrengthRpe('');
     setLogStateValue('');
     setLogAmountAdded('');
@@ -450,12 +451,13 @@ export default function ScheduleScreen() {
 
   const submitLogBlock = async () => {
     if (!logBlock || logRunning.current) return;
-    const durationMinutes = Platform.OS === 'web' ? parseInt(logMinutes, 10) : Number(logMinutes);
-    if (!Number.isFinite(durationMinutes) || durationMinutes <= 0) {
+    const skill = logBlock.linkedSkillId ? data.skills.find((item) => item.id === logBlock.linkedSkillId) : undefined;
+    const duration = actualMinutesInput(logMinutes, undefined, isStrengthPredictionSkill(skill));
+    if (!duration.valid) {
       Alert.alert(t(lang, 'invalidMinutes'));
       return;
     }
-    const skill = logBlock.linkedSkillId ? data.skills.find((item) => item.id === logBlock.linkedSkillId) : undefined;
+    const durationMinutes = duration.minutes;
     const link = skill ? (data.moduleSkillLinks || []).find((item) => item.skillId === skill.id) : undefined;
     const metricType = skill ? progressTypeForSkill(skill) : 'time_based';
     const newCurrentValue = optionalNumber(logNewCurrentValue);
@@ -470,7 +472,7 @@ export default function ScheduleScreen() {
     const isStrengthLog = isStrengthPredictionSkill(skill);
     const totalVolume = strengthVolume(strengthWeight, strengthReps, strengthSets);
     const strengthSet = strengthWeight != null || strengthReps != null
-      ? { weight: strengthWeight, reps: strengthReps, sets: strengthSets ?? 1, rpe: strengthRpe }
+      ? { weight: strengthWeight, reps: strengthReps, sets: strengthSets, rpe: strengthRpe }
       : undefined;
     const performanceUnit = logPerformanceUnit.trim() || skill?.metricConfig?.unit || (isStrengthLog ? 'kg' : undefined);
     const effectivePerformanceValue = metricType === 'performance_log'
@@ -890,8 +892,8 @@ export default function ScheduleScreen() {
           <View pointerEvents={logSaving || (Platform.OS !== 'web' && logFailed) ? 'none' : 'auto'} accessibilityElementsHidden={logSaving}>
             <Text style={[styles.logSheetTitle, { color: questTheme.colors.text }]}>{logBlock.title}</Text>
             <Text style={[styles.blockMeta, { color: questTheme.colors.textMuted }]}>{logBlock.startTime}-{logBlock.endTime} · {taskTypeLabel(lang, logBlock.taskType)} · {statusLabel(lang, logBlock.status)}</Text>
-            <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'sessionDurationOptional')}</Text>
-            <QuestInput questTheme={questTheme} value={logMinutes} onChangeText={setLogMinutes} keyboardType="number-pad" placeholder="30" />
+            <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, isStrengthPredictionSkill(data.skills.find(skill => skill.id === logBlock.linkedSkillId)) ? 'sessionDurationOptional' : 'actualDuration')}</Text>
+            <QuestInput questTheme={questTheme} value={logMinutes} onChangeText={setLogMinutes} keyboardType="number-pad" placeholder={t(lang, 'recordActualMinutesPlaceholder')} />
             <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'optionalQuality')}</Text>
             <View style={styles.qualityRow}>
               {QUALITY_OPTIONS.map((q) => {

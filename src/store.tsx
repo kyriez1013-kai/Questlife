@@ -2,6 +2,7 @@
 // 持久化策略: 每次 mutation 先基于同步 ref 计算新状态, 再立即持久化.
 // React state updater 保持纯函数, 避免跨标签事件与批量更新吞掉写入.
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback, useSyncExternalStore } from 'react';
+import type { StrengthSet } from './types';
 import { AppData, DEFAULT_DATA, Goal, Skill, Action, Category, UNCATEGORIZED_ID, ScheduleBlock, QuestModule, ModuleSkillLink, ExecutionLog, RescueLog, StateCheckIn, EffortUnit, ContributionLink, RawCapture, ContextLog, DecisionResult, PatternMemory, DashboardCardSize, DashboardPresetId, DashboardSurface, DashboardPreferences } from './types';
 import { loadData, persist, readPersistedDataForDebug, uid, today, hasSyncAccountBinding } from './storage';
 import { scheduleSkillReminder, cancelSkillReminder, rescheduleAllReminders } from './notifications';
@@ -188,8 +189,12 @@ function applyExecutionLogToSkillProgress(skill: Skill, log: ExecutionLog): Skil
   }
   if (progressType === 'performance_log') {
     const data = update?.performanceData ?? legacy?.performanceData;
-    const strengthSets: NonNullable<ExecutionLog['metricUpdate']>['performanceData']['strengthSets'] = data?.strengthSets ?? [];
-    const totalVolume = data?.totalVolume ?? strengthSets.reduce((sum: number, set: any) => sum + (set.weight ?? 0) * (set.reps ?? 0) * (set.sets ?? 1), 0);
+    const strengthSets: StrengthSet[] = data?.strengthSets ?? [];
+    // A partial weight/reps observation does not establish a session set count.
+    const hasCompleteVolume = strengthSets.length > 0 && strengthSets.every(set =>
+      [set.weight, set.reps, set.sets].every(value => typeof value === 'number' && Number.isFinite(value) && value > 0));
+    const totalVolume = data?.totalVolume ?? (hasCompleteVolume
+      ? strengthSets.reduce((sum, set) => sum + set.weight! * set.reps! * set.sets!, 0) : undefined);
     const estimated1RM = data?.estimated1RM ?? strengthSets.reduce((best: number, set: any) => {
       const weight = set.weight ?? 0;
       const reps = set.reps ?? 0;
@@ -205,7 +210,7 @@ function applyExecutionLogToSkillProgress(skill: Skill, log: ExecutionLog): Skil
         metricType: progressType,
         bestValue: currentBest,
         currentBest,
-        bestVolume: Math.max(config.bestVolume ?? 0, totalVolume),
+        bestVolume: totalVolume == null ? config.bestVolume : Math.max(config.bestVolume ?? 0, totalVolume),
         bestEstimated1RM: Math.max(config.bestEstimated1RM ?? 0, estimated1RM),
       },
     };

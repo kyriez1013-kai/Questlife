@@ -22,6 +22,12 @@ test('only finite positive timer measurements prefill actual minutes', () => {
   assert.equal(initialActualMinutes({ source: 'timer', minutes: 17 }), '17');
   for (const minutes of [undefined, NaN, Infinity, 0, -4]) assert.equal(initialActualMinutes({ source: 'timer', minutes }), '');
 });
+test('actual strength draft controls never start with a predicted set count', () => {
+  const home = readFileSync('src/screens/HomeScreen.tsx', 'utf8');
+  const form = readFileSync('src/components/today/V11RecordProgressForm.tsx', 'utf8');
+  assert.doesNotMatch(home, /setStrengthSets\('3'\)|sets: '3'|sets: (?:parsedStrengthSets|effectiveStrengthSets) \?\? 1/);
+  assert.doesNotMatch(form, /sets: '3'/);
+});
 test('blank optional training time remains unknown and required manual time is not invented', () => {
   assert.deepEqual(actualMinutesInput('', undefined, true), { valid: true, minutes: undefined });
   assert.deepEqual(actualMinutesInput(' ', undefined, false), { valid: false, minutes: undefined });

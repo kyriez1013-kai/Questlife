@@ -112,6 +112,30 @@ test('explicit Capture quality and clearing it persist exactly, never falling ba
   choose(0,2);assert.equal(complete(proposal,states[0]).qualityRating,undefined);
 });
 
+test('partial strength observations never invent volume or overwrite its known baseline', async () => {
+  await fresh(); let skill;
+  await act(async () => {
+    skill = store.addSkill({name:'TEST bench', progressType:'performance_log', taskType:'strength_training', metricConfig:{metricType:'performance_log', performanceType:'strength', primaryMetric:'weight'}});
+    await store.waitForLocalWrites();
+    store.createExecutionLog({id:'TEST_UNKNOWN_SETS',date:plan.date,title:'TEST bench',linkedSkillId:skill.id,
+      metricUpdate:{metricType:'performance_log',performanceData:{strengthSets:[{weight:80,reps:5}]}}});
+    await store.waitForLocalWrites();
+  });
+  assert.equal(disk.skills.find(row=>row.id===skill.id).metricConfig.bestVolume,undefined);
+  await act(async () => {
+    store.createExecutionLog({id:'TEST_COMPLETE_SETS',date:plan.date,title:'TEST bench',linkedSkillId:skill.id,
+      metricUpdate:{metricType:'performance_log',performanceData:{strengthSets:[{weight:80,reps:5,sets:3}]}}});
+    await store.waitForLocalWrites();
+    store.createExecutionLog({id:'TEST_PARTIAL_HEAVIER',date:plan.date,title:'TEST bench',linkedSkillId:skill.id,
+      metricUpdate:{metricType:'performance_log',performanceData:{strengthSets:[{weight:90,reps:5}]}}});
+    await store.waitForLocalWrites();
+  });
+  await act(async()=>tree.unmount());tree=undefined;await mount();
+  const saved=store.data.skills.find(row=>row.id===skill.id);
+  assert.equal(saved.metricConfig.bestVolume,1200); assert.equal(saved.metricConfig.bestValue,90);
+  assert.equal(store.data.executionLogs.find(row=>row.id==='TEST_UNKNOWN_SETS').metricUpdate.performanceData.strengthSets[0].sets,undefined);
+});
+
 test('Store exposes pending until local disk and durable outbox acknowledge create/update/delete', async () => {
   await fresh(); gate = deferred(); let block;
   await act(async () => { block = store.addScheduleBlock(plan); });

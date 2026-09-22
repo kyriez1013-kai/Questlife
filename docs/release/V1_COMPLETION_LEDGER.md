@@ -118,6 +118,16 @@ cover Chinese/English and both themes (entity/form suite: 25). Web library and
 Goal/Module/Skill semantics are unchanged. Installed visual/scroll acceptance is
 still pending, not inferred from virtualization settings or component tests.
 
+Recording consistency follow-up: Schedule now applies the same strict actual-time
+rule as Today. Optional strength time is actually optional; required time is
+labelled correctly and malformed/fractional input is rejected. Manual strength
+forms no longer prefill three observed sets or replace unknown sets with one.
+Partial weight/reps measurements keep their unknown set count and cannot invent
+a best-volume value; an existing volume baseline is retained. Predictions keep
+their distinct semantics. No historical records were rewritten. Targeted
+Schedule/Store tests: 47/47; device rules: 135 in each of three timezones; types
+pass. Rebuild final candidate after this correction.
+
 The persistence correction keeps the existing whole-entity mutation semantics;
 it does not silently introduce field-level conflict merging. Failed writes keep
 their exact original ID/closure, later writes wait, and retry first recovers the
