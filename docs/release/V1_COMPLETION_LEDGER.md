@@ -22,10 +22,10 @@ VERIFIED_DEVICE, AWAITING_OWNER, BLOCKED. Unchecked entries remain unfinished.
 
 | Item | Current status | Evidence / next executable action |
 | --- | --- | --- |
-| Canonical worktree and branch | VERIFIED_LOCAL | HEAD and clean status checked 2026-09-20 |
+| Canonical worktree and branch | VERIFIED_LOCAL | Candidate source `2e1c496` on `release/questlife-v1`; checked 2026-09-22; later evidence-only commits do not change the packaged app |
 | Vercel authorization | VERIFIED_REMOTE | CLI login valid; existing questlife-alpha project discovered |
 | Isolated Supabase backend | VERIFIED_REMOTE | `gttcoocfkqwvsqfwxpyo` created; both reviewed migrations executed in SQL Editor; four RLS tables, six RPCs and Realtime publication verified. Existing production `gtlknzltzntfltgjvgxx` untouched |
-| EAS / iOS signing | AWAITING_OWNER | Login restored, project `be1ec640-8b5f-4e39-97c1-1480118e993d` created; cloud internal-build attempt reached Apple credentials prompt; no existing distribution credentials |
+| EAS / iOS signing | BLOCKED quota; AWAITING_OWNER signing | EAS authenticated; `cf86bef` simulator compilation FINISHED. Latest source submission rejected by Free iOS quota (reset 2026-10-01); no paid upgrade. Physical distribution needs Apple credentials and device registration |
 | Physical devices | AWAITING_OWNER | Dedicated API36 arm64 emulator is connected; no physical device is connected and no physical acceptance is claimed |
 | Auth and bidirectional sync | VERIFIED_REMOTE engine/HTTPS; UI/device acceptance pending | Ten hosted groups pass: real Auth/password sessions, restore, bidirectional replicas, Realtime, offline/ACK retry, deletion, isolation and authenticated Quant. Email OTP delivery and real two-device UI still pending |
 | Commit-order concurrent sync | VERIFIED_LOCAL | PostgreSQL 18, separate backend connections: 10/10; delayed lower sequence, CAS, idempotent receipt/delete and RLS; no hosted claim |
@@ -37,13 +37,49 @@ VERIFIED_DEVICE, AWAITING_OWNER, BLOCKED. Unchecked entries remain unfinished.
 | Health / Calendar / Notifications | IMPLEMENTED, VERIFIED_LOCAL | Explicit provider deletion/correction, durable Calendar intents/reconciliation, push registration lifecycle and quiet hours; actual source samples, OS writes and delivery require device/provider gates |
 | Shortcuts / deep links | IMPLEMENTED, VERIFIED_LOCAL | Open-only entries through existing handlers; 19 intent boundary assertions; Android Widget plugin passed 12 checks including native AAPT/Kotlin compilation; final installed-widget acceptance pending |
 | Isolated example mode | IMPLEMENTED, VERIFIED_LOCAL; partial installed check | Native example gallery and isolation notice visible. Real loader regression found/fixed; final chart readback pending unlock. No example is written to Store/outbox/OS |
-| Standalone Android release APK | VERIFIED_LOCAL build/install; partial UI | Clean `9b7c3fc` standalone signed arm64 APK, 47,246,492 bytes, SHA256 `197528a1b38036794a4278f5ab8a4ab3a82e5010a5d32723109bbbe9c26e51db`; installed over prior candidate, no Metro. New Skill Detail correction requires rebuilding; UI readback blocked by Mac lock |
-| Standalone iPhone installation | AWAITING_OWNER | Native simulator cloud compilation succeeded, including Widget/Shortcut and backup support. Not a physical-iPhone package; Apple signing and UDID still required. Latest build IDs are recorded below |
-| Same-version Web candidate | VERIFIED_REMOTE deployment; bounded UI smoke | `https://questlife-v1-release.vercel.app`; `9b7c3fc` deployment `dpl_BfLTW2QdMWcRKUsknxpU1XTi2Qpy` READY. Bundle `index-3367ba6bbb8225d2fe32744f4a54a642.js`. Eight live API checks passed, Today S0 opens; owner production untouched |
+| Standalone Android release APK | VERIFIED_LOCAL build/install; latest UI UNVERIFIED | Clean `2e1c496` signed arm64 APK, 47,247,340 bytes, SHA256 `165d8774198edba877a19074f08d81f09a200dc16a1342bcca4b57fc0cee91bf`; installed hash matches, embedded JS/HTTPS, no Metro, unused permissions removed. UI readback blocked by Mac lock |
+| Standalone iPhone installation | AWAITING_OWNER / BLOCKED quota | `cf86bef` simulator archive inspected, including Widget/Shortcut and backup support. Not a physical-iPhone package or final-source build. Apple signing/UDID and new build allowance remain required |
+| Same-version Web candidate | VERIFIED_REMOTE deployment/API; latest UI UNVERIFIED | `https://questlife-v1-release.vercel.app`; `2e1c496` deployment `dpl_ELNRM9sQFwaRGnSnR6BG8YhA854L` READY. Bundle `index-67a4c3be12a39037b16210fc7bdc385d.js`. Eight fresh stateless API checks passed; current UI acceptance blocked by browser/Mac interaction gate. Owner production untouched |
 | Record backup / restore | IMPLEMENTED, VERIFIED_LOCAL | Versioned exact-record backup, original account binding, structural validation and empty-replica WAL restore. First-launch and Settings entrances; 17 core and five file-action/entry groups; physical file-provider acceptance pending |
 | Native recordings/performance | PARTIAL measurement, NOT_PASSED | CUA pointer input recovered after emulator restart. Cold launch/Insights sample on API36 host-GPU emulator: 307 frames, P50 22ms, P95 42ms, 214 histogram frames above 20ms, 43 janky. Not steady-state or physical acceptance. Mac lock now blocks final interaction/recording |
 
 ## Exact Resume Checkpoint
+
+### Current installable source: `2e1c496` (2026-09-22)
+
+- `release/questlife-v1` only. Latest source is pushed; owner Production is not
+  promoted. The source preserves unknown actual duration/quality/strength sets,
+  completes native Skill recording/library entries, and reduces duplicate native
+  chart messages. No owner observation was fabricated.
+- Full local regression at application-equivalent `4f40b67`: 26/26 PASS,
+  including typecheck, Web export, source/account isolation and zero known
+  dependency advisories. `2e1c496` only adds verification documentation/logs.
+- Android `questlife-v1-2e1c496-arm64.apk` is signed and installed. Actual package
+  manifest excludes broad storage/overlay permissions, excludes all 18 private
+  backup/transfer domains, is non-debuggable and contains embedded Hermes JS.
+  The installed APK SHA256 equals the downloadable file. LAN URL returns 200:
+  `http://192.168.5.4:8096/questlife-v1-2e1c496-arm64.apk`.
+- Hosted Sync: ten real HTTPS groups pass, both disposable users removed with
+  zero remaining entities. No claim of email OTP or two-device UI acceptance.
+- Same-source Web deployment `dpl_ELNRM9sQFwaRGnSnR6BG8YhA854L` is READY at
+  `https://questlife-v1-release.vercel.app`. Actual public document returns 200
+  with `index-67a4c3be12a39037b16210fc7bdc385d.js`. Eight latest API checks pass:
+  live basketball/SQL40/bench82.5-5-3 input-matched parsing, retired anonymous
+  endpoints and authenticated Quant/push rejection. No Store/database writes
+  were made by this smoke test. Tag `v1-internal-candidate-20260922` points to the
+  exact packaged source and is pushed; it does not imply owner acceptance.
+- iOS final-source cloud compilation is BLOCKED by the provider Free-plan quota;
+  physical signing/registration is separately AWAITING_OWNER. No new charges.
+- Mac lock remains a real interaction blocker, not a verified app failure.
+  Browser focus emulation also timed out after attempting to recover the blocked
+  QA tab. After unlock, reacquire current tabs and resume exact QA cleanup before
+  creating more observations: signed-out candidate `QA SQL 学习了 40 分钟`,
+  emulator `Test` Goal, and earlier localhost:8095 QA structures. Do not infer
+  deletion from a closed tab, reinstall or HTTP success.
+- New-source native/screenshots/recordings/performance and Web interaction
+  acceptance remain UNVERIFIED. Existing screenshots/performance below belong to
+  older explicit sources and cannot be relabelled. Do not call this product
+  complete or visually accepted.
 
 ### Active completeness correction (2026-09-22)
 
@@ -144,6 +180,8 @@ record import uses the system document picker and export uses app cache plus the
 share sheet. Calendar, Health, notifications and network permissions are retained.
 Verify the merged packaged manifest after rebuilding, not only this config.
 Implementation reference: Expo SDK54 `android.blockedPermissions`.
+Official reference:
+https://docs.expo.dev/versions/v54.0.0/config/app/#blockedpermissions
 
 iOS cloud limit: the `3d9300f` submission was rejected because the current Free
 plan's iOS build allowance is exhausted (provider reports reset on 2026-10-01).
@@ -210,12 +248,16 @@ Historical entries below are evidence, not a queue to restart.
 
 ## Human Actions (Consolidated, Live)
 
+0. Unlock the Mac to resume the currently blocked browser/emulator verification
+   and exact disposable-record cleanup. This is not an app regression diagnosis.
 1. Supabase creation is complete. Email OTP delivery still needs a real permitted
    recipient/provider configuration; the disposable password-auth test does not
    establish SMTP delivery. No email service or paid subscription was invented.
 2. Complete Apple Developer sign-in and internal distribution/device registration
    when the internal iPhone build is resumed. No active waiting credential
-   terminal is assumed; EAS login itself is already verified.
+   terminal is assumed; EAS login itself is already verified. New iOS cloud
+   builds also need the free allowance reset (2026-10-01) or an explicitly
+   owner-approved plan change; no purchase was made.
 3. Physical iPhone/Android Health and notification permission and real-device
    visual/performance acceptance. These cannot be replaced by emulator results.
 4. Native high-frame-rate recording is not exposed by the current CUA tool.

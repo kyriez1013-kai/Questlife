@@ -1,26 +1,34 @@
 {
-  "path": "/Users/kyrie/Documents/Codex Questlife/QuestLife-v1/reports/release/build-output/questlife-v1-2d4f365-arm64.apk",
-  "sourceCommit": "2d4f365a1c977f751e4234be57788580005da83e",
+  "path": "/Users/kyrie/Documents/Codex Questlife/QuestLife-v1/reports/release/build-output/questlife-v1-2e1c496-arm64.apk",
+  "sourceCommit": "2e1c49610301110b219515172eecde61328e5404",
   "dirty": false,
-  "sha256": "93dc9dd37251fa218fb017deeed8c0ba7cc665e8cba9ef2da12fa6b79b0cbf88",
-  "bytes": 47203520,
+  "sha256": "165d8774198edba877a19074f08d81f09a200dc16a1342bcca4b57fc0cee91bf",
+  "bytes": 47247340,
   "architecture": "arm64-v8a",
   "developmentClient": false,
   "signing": "dedicated local internal key",
-  "generatedAt": "2026-09-20T13:49:28.364Z",
+  "generatedAt": "2026-09-22T07:35:51.978Z",
   "apiOrigin": "https://questlife-v1-release.vercel.app",
   "accountConfigured": true,
-  "verifiedAt": "2026-09-20T13:55:16.871Z",
+  "verifiedAt": "2026-09-22T07:37:28.858Z",
   "packagedManifest": {
     "allowBackup": false,
     "fullBackupContent": false,
     "debuggable": false,
-    "explicitCloudAndTransferExclusions": 18
+    "explicitCloudAndTransferExclusions": 18,
+    "unusedPermissionsRemoved": [
+      "android.permission.SYSTEM_ALERT_WINDOW",
+      "android.permission.READ_EXTERNAL_STORAGE",
+      "android.permission.WRITE_EXTERNAL_STORAGE"
+    ]
   },
   "embeddedJavaScript": true,
   "embeddedHttpsOrigin": true,
   "signatureV2": true,
   "installedOn": "QuestLife_V1_ReleaseQA API36 arm64 emulator",
   "installedAllowBackup": false,
-  "scope": "Packaged artifact and installed release inspection; UI checks tracked separately; not physical-device acceptance"
+  "installedApkHashMatches": true,
+  "downloadStatus": 200,
+  "downloadUrl": "http://192.168.5.4:8096/questlife-v1-2e1c496-arm64.apk",
+  "scope": "Packaged artifact and installed APK hash inspection only. Latest UI, restart, keyboard, file-provider and device-performance acceptance blocked by locked Mac; not physical-device acceptance"
 }

@@ -1,6 +1,9 @@
 {
+  "sourceCommit": "2e1c49610301110b219515172eecde61328e5404",
+  "deploymentId": "dpl_ELNRM9sQFwaRGnSnR6BG8YhA854L",
+  "bundle": "index-67a4c3be12a39037b16210fc7bdc385d.js",
   "origin": "https://questlife-v1-release.vercel.app",
-  "testedAt": "2026-09-22T06:28:09.512Z",
+  "testedAt": "2026-09-22T07:41:35.060Z",
   "scope": "Isolated stateless API inputs only. No Store, owner data or database writes; not UI confirmation or persistence acceptance.",
   "checks": [
     {
@@ -10,42 +13,43 @@
     {
       "name": "/api/sync",
       "status": 410,
-      "elapsedMs": 499
+      "elapsedMs": 725
     },
     {
       "name": "/api/track",
       "status": 410,
-      "elapsedMs": 980
+      "elapsedMs": 747
     },
     {
       "name": "/api/decision-quant",
       "status": 401,
-      "elapsedMs": 742
+      "elapsedMs": 512
     },
     {
       "name": "/api/push-test",
       "status": 401,
-      "elapsedMs": 730
+      "elapsedMs": 479
     },
     {
       "name": "live_capture_parse",
       "input": "打了篮球",
       "status": 200,
-      "elapsedMs": 2576,
+      "elapsedMs": 2295,
       "currentInputMatched": true,
       "response": {
         "ok": true,
         "type": "training",
         "fields": {
-          "activity": "篮球"
+          "activity": "篮球",
+          "durationMinutes": null
         },
         "matchedSkillIds": [],
         "linkedGoalId": null,
         "insightType": "encourage",
         "crossLinks": [],
         "insight": {
-          "zh": "打篮球是很好的全身有氧+爆发力训练，记录一下时长和强度会更有参考价值。",
-          "en": "Basketball is great full-body cardio and explosive training — logging duration and intensity will make it more useful."
+          "zh": "打篮球是不错的全身有氧+爆发力训练，记录一下时长和强度会更有参考价值。",
+          "en": "Basketball is a solid full-body cardio and explosive-power session — logging duration and intensity will make it more useful."
         },
         "entries": [
           {
@@ -54,9 +58,9 @@
             "goalType": "fitness",
             "progressType": "time_based",
             "fields": {
-              "activity": "篮球"
-            },
-            "qualityRating": 4
+              "activity": "篮球",
+              "durationMinutes": null
+            }
           }
         ],
         "completionSchema": {
@@ -101,7 +105,7 @@
       "name": "live_capture_parse",
       "input": "SQL 学习了 40 分钟",
       "status": 200,
-      "elapsedMs": 2530,
+      "elapsedMs": 2344,
       "currentInputMatched": true,
       "response": {
         "ok": true,
@@ -115,8 +119,8 @@
         "insightType": "skill_progress",
         "crossLinks": [],
         "insight": {
-          "zh": "你完成了 40 分钟的 SQL 学习，保持这个节奏，持续积累数据库技能。",
-          "en": "You completed 40 minutes of SQL study—keep up this pace to steadily build your database skills."
+          "zh": "你完成了 40 分钟的 SQL 学习，保持这个节奏，数据库技能会稳步提升。",
+          "en": "You logged 40 minutes of SQL study — keep this pace and your database skills will steadily improve."
         },
         "entries": [
           {
@@ -147,7 +151,10 @@
           "matchedModuleId": null,
           "goalConfidence": "low",
           "shouldCreateGoal": true,
-          "newGoalSuggestion": null,
+          "newGoalSuggestion": {
+            "name": "SQL 学习",
+            "domain": ""
+          },
           "durationOptions": [
             15,
             30,
@@ -169,7 +176,7 @@
       "name": "live_capture_parse",
       "input": "卧推 82.5 kg，5 次，3 组",
       "status": 200,
-      "elapsedMs": 3276,
+      "elapsedMs": 2659,
       "currentInputMatched": true,
       "response": {
         "ok": true,
@@ -185,8 +192,8 @@
         "insightType": "skill_progress",
         "crossLinks": [],
         "insight": {
-          "zh": "卧推 82.5 kg × 5 次 × 3 组，总容量约 1237.5 kg，属于中高强度力量训练。",
-          "en": "Bench press 82.5 kg × 5 reps × 3 sets, total volume ~1237.5 kg — solid mid-to-high intensity strength work."
+          "zh": "卧推 82.5 kg 完成 3 组 × 5 次，总容量约 1237.5 kg，属于中高强度力量训练。",
+          "en": "Bench press at 82.5 kg for 3 sets of 5 reps — about 1237.5 kg total volume, a solid mid-to-high intensity strength session."
         },
         "entries": [
           {
@@ -222,7 +229,7 @@
           "goalConfidence": "low",
           "shouldCreateGoal": true,
           "newGoalSuggestion": {
-            "name": "力量训练 / 健身",
+            "name": "力量训练 / 卧推进阶",
             "domain": "fitness"
           },
           "durationOptions": [
