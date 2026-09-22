@@ -138,6 +138,20 @@ The preceding `cf86bef` Web deployment is READY and its standalone Android APK
 was signed and installed. Both will be superseded by the same-source build
 including the chart bridge correction. No owner-production promotion occurred.
 
+Final APK inspection found unused overlay and broad external-storage permissions
+from Expo dependencies. The release config now blocks precisely these three;
+record import uses the system document picker and export uses app cache plus the
+share sheet. Calendar, Health, notifications and network permissions are retained.
+Verify the merged packaged manifest after rebuilding, not only this config.
+Implementation reference: Expo SDK54 `android.blockedPermissions`.
+
+iOS cloud limit: the `3d9300f` submission was rejected because the current Free
+plan's iOS build allowance is exhausted (provider reports reset on 2026-10-01).
+No paid upgrade was performed. The preceding `cf86bef` simulator build
+`b484aea4-4305-4748-84b5-9f58cf27dd47` FINISHED, but is not same-source final
+acceptance or a signed physical-iPhone installer. Signing remains independently
+blocked by owner Apple credentials/device registration.
+
 The persistence correction keeps the existing whole-entity mutation semantics;
 it does not silently introduce field-level conflict merging. Failed writes keep
 their exact original ID/closure, later writes wait, and retry first recovers the

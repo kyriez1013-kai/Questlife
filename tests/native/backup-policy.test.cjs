@@ -14,6 +14,19 @@ test('app opts out of automatic backup and delegates explicit rules to one plugi
   assert.equal(appConfig.plugins.filter(p => p === './plugins/with-private-device-backup').length, 1);
 });
 
+test('release blocks unused overlay and broad storage access without blocking sources', () => {
+  const blocked = appConfig.android.blockedPermissions;
+  assert.deepEqual(blocked, [
+    'android.permission.SYSTEM_ALERT_WINDOW',
+    'android.permission.READ_EXTERNAL_STORAGE',
+    'android.permission.WRITE_EXTERNAL_STORAGE',
+  ]);
+  for (const permission of appConfig.android.permissions) {
+    assert.ok(!blocked.includes(permission), `${permission} must remain requestable`);
+  }
+  assert.ok(!blocked.includes('android.permission.POST_NOTIFICATIONS'));
+});
+
 test('manifest backup guard is idempotent without changing activities or permissions', async () => {
   const config = plugin({ name:'QuestLife', slug:'QuestLife' });
   const manifest = {manifest:{$:{'xmlns:android':'http://schemas.android.com/apk/res/android'},

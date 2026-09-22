@@ -1,7 +1,7 @@
 {
-  "sourceCommit": "2dfde014009ce4a84e23662562eec5c2357a894a",
+  "sourceCommit": "3d9300f438cec77dafdebcb653c7836c1b6025fa",
   "project": "gttcoocfkqwvsqfwxpyo",
-  "testedAt": "2026-09-22T07:04:46.175Z",
+  "testedAt": "2026-09-22T07:27:49.414Z",
   "scope": "Actual hosted Supabase Auth/password sessions and Sync V2 engine/SQL over HTTPS. Disposable admin-created email-confirmed identities only. Not email OTP delivery, physical-device, or UI acceptance.",
   "checks": [
     {
@@ -47,12 +47,12 @@
   ],
   "cleanup": [
     {
-      "userId": "4572200c-31e7-4c7c-81df-140ec392fa11",
+      "userId": "7caf8057-96f3-4ccc-a79a-97c95a88ead8",
       "deleted": true,
       "remainingEntities": 0
     },
     {
-      "userId": "54003d7f-19a3-4ec3-8ca2-c5da6094f111",
+      "userId": "492cdce7-b55b-418e-916a-ba871358eca8",
       "deleted": true,
       "remainingEntities": 0
     }
