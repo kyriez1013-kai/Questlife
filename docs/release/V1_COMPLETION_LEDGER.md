@@ -22,7 +22,7 @@ VERIFIED_DEVICE, AWAITING_OWNER, BLOCKED. Unchecked entries remain unfinished.
 
 | Item | Current status | Evidence / next executable action |
 | --- | --- | --- |
-| Canonical worktree and branch | VERIFIED_LOCAL | Candidate source `e458319` on `release/questlife-v1`; checked 2026-09-22; later evidence-only commits do not change the packaged app |
+| Canonical worktree and branch | VERIFIED_LOCAL | Candidate source `fd90542` on `release/questlife-v1`; checked 2026-09-22; later evidence-only commits do not change the packaged app |
 | Vercel authorization | VERIFIED_REMOTE | CLI login valid; existing questlife-alpha project discovered |
 | Isolated Supabase backend | VERIFIED_REMOTE | `gttcoocfkqwvsqfwxpyo` created; both reviewed migrations executed in SQL Editor; four RLS tables, six RPCs and Realtime publication verified. Existing production `gtlknzltzntfltgjvgxx` untouched |
 | EAS / iOS signing | BLOCKED quota; AWAITING_OWNER signing | EAS authenticated; `cf86bef` simulator compilation FINISHED. Latest source submission rejected by Free iOS quota (reset 2026-10-01); no paid upgrade. Physical distribution needs Apple credentials and device registration |
@@ -37,15 +37,55 @@ VERIFIED_DEVICE, AWAITING_OWNER, BLOCKED. Unchecked entries remain unfinished.
 | Health / Calendar / Notifications | IMPLEMENTED, VERIFIED_LOCAL | Explicit provider deletion/correction, durable Calendar intents/reconciliation, push registration lifecycle and quiet hours; actual source samples, OS writes and delivery require device/provider gates |
 | Shortcuts / deep links | IMPLEMENTED, VERIFIED_LOCAL | Open-only entries through existing handlers; 19 intent boundary assertions; Android Widget plugin passed 12 checks including native AAPT/Kotlin compilation; final installed-widget acceptance pending |
 | Isolated example mode | IMPLEMENTED, VERIFIED_LOCAL; partial installed check | Native example gallery and isolation notice visible. Real loader regression found/fixed; final chart readback pending native pointer-control recovery. No example is written to Store/outbox/OS |
-| Standalone Android release APK | VERIFIED_LOCAL build/install; latest UI UNVERIFIED | Clean `e458319` signed arm64 APK, 47,247,600 bytes, SHA256 `a6d6612fdbdba6975fcab06762b6f45845137aa936a01390406e5808e1852fac`; installed hash matches, embedded JS/HTTPS, no Metro, unused permissions removed. Mac is unlocked; native pointer automation still fails |
+| Standalone Android release APK | VERIFIED_LOCAL build/install; latest UI UNVERIFIED | Clean `fd90542` signed arm64 APK, 47,249,100 bytes, SHA256 `8ff8a15ef666686b7d3bd8ebbe5a4217a201b113652b1ed657fd745d993c0f1b`; installed and GitHub draft asset hashes match, embedded JS/HTTPS, no Metro, unused permissions removed. Mac is unlocked; native pointer automation still fails |
 | Standalone iPhone installation | AWAITING_OWNER / BLOCKED quota | `cf86bef` simulator archive inspected, including Widget/Shortcut and backup support. Not a physical-iPhone package or final-source build. Apple signing/UDID and new build allowance remain required |
-| Same-version Web candidate | VERIFIED_REMOTE deployment/API; partial actual UI verified | `https://questlife-v1-release.vercel.app`; `e458319` deployment `dpl_DtQVCficXyfueVUec8xGrMKYoTJj` READY. Bundle `index-a27b587047f398e72ec39ceaa108a5ee.js`. Eight fresh stateless API checks passed. Five tabs, responsive Goal header, Today and cancel-only State sheet checked through actual UI; mutation/backup evidence below. Owner production untouched |
+| Same-version Web candidate | VERIFIED_REMOTE deployment/API; partial actual UI verified | `https://questlife-v1-release.vercel.app`; `fd90542` deployment `dpl_22N3JeSyVZzUPPSjXPDS5tyxFEMm` READY. Bundle `index-a58e86ef371880406da12b2502fbfc87.js`. Eight fresh stateless API checks passed. Exact execution-feedback CTA, refresh and cleanup verified; preceding five-tab/responsive/mutation/backup evidence below. Owner production untouched |
 | Record backup / restore | IMPLEMENTED, VERIFIED_LOCAL and candidate browser file flow | Versioned exact-record backup, original account binding, structural validation and empty-replica WAL restore. Real populated ExecutionLog + EffortUnit export/import/refresh/re-export preserved exact original JSON by ID; both disposable copies deleted and read back empty. Physical file-provider and account UI recovery acceptance pending |
 | Native recordings/performance | PARTIAL older measurement, NOT_PASSED | Earlier API36 host-GPU emulator sample: 307 frames, P50 22ms, P95 42ms, 214 histogram frames above 20ms, 43 janky. Not steady-state, latest-source or physical acceptance. Mac is unlocked, but native CUA pointer dispatch fails; current recording/performance remains UNVERIFIED |
 
 ## Exact Resume Checkpoint
 
-### Current installable source: `e458319` (2026-09-22)
+### Current installable source: `fd90542` (2026-09-22)
+
+- Web and signed Android use exact source `fd90542d7606bf9048fb44698b8117730a98fa7a`.
+  It includes `8a26f6b` chronological/unknown-value feedback fixes and `d74c98b`
+  exact-record Today feedback navigation. All source changes are pushed only to
+  `release/questlife-v1`. Owner Production and `main` were not promoted.
+- Web: `https://questlife-v1-release.vercel.app`, exact deployment
+  `https://questlife-v1-release-e64bpheyn-kyrie-z-s-projects.vercel.app`,
+  `dpl_22N3JeSyVZzUPPSjXPDS5tyxFEMm` READY. Browser readback confirms
+  `index-a58e86ef371880406da12b2502fbfc87.js`.
+  Latest stateless API smoke **8/8 PASS**, including current-input matched
+  basketball/SQL40/bench82.5-5-3 (2.4-2.7 seconds), 410 retired anonymous
+  endpoints and 401 authenticated endpoint guards. No Store writes in this smoke.
+- Android: `reports/release/build-output/questlife-v1-fd90542-arm64.apk`,
+  47,249,100 bytes, SHA256
+  `8ff8a15ef666686b7d3bd8ebbe5a4217a201b113652b1ed657fd745d993c0f1b`.
+  Release build, installation and signature-v2 verification PASS; the installed
+  APK hash matches. Embedded Hermes and candidate HTTPS/account configuration;
+  no Metro dependency. LAN download HTTP200:
+  `http://192.168.5.4:8096/questlife-v1-fd90542-arm64.apk`.
+- Durable internal download: unpublished GitHub draft
+  `https://github.com/kyriez1013-kai/Questlife/releases/tag/untagged-0806866655272c4c0a02`,
+  release ID `393673895`, asset ID `581256377`. Server asset digest equals the
+  local signed APK. Repository write access is required to see this draft;
+  no public release was created. Browser asset download is not claimed tested.
+- Full regression on application-equivalent `d6effe7`: **27/27 suites PASS**;
+  13 feedback helper and five History component tests included. TypeScript,
+  Web export and dependency audit PASS. `fd90542` changes verification records
+  only. Latest hosted CTA smoke below passed after final deployment.
+- Latest native UI/keyboard/recording/performance remain UNVERIFIED. Fresh CUA
+  screenshot and the exposed Raise action work, but pointer dispatch still
+  reports no available window. Do not call the Mac locked or reuse older frame
+  metrics as this candidate's result. The isolated emulator's earlier `Test`
+  Goal cleanup remains pending native interaction. Requested ADB UI control for
+  that emulator is still awaiting an affirmative reply.
+- Remaining external acceptance: physical Health/Calendar/notifications, email
+  OTP and real two-device UI, Apple signing/UDID and iOS build allowance (Free
+  quota reset 2026-10-01). Native visual quality and whole-product acceptance
+  remain open. No paid upgrade, fabricated state or owner-data mutation.
+
+### Historical installable source: `e458319` (superseded)
 
 - Candidate only: `release/questlife-v1` pushed; owner Production untouched.
   Fix commits are `a70cdcc` (honest module progress), `8f56e02` (Web exact-skill
@@ -291,6 +331,20 @@ VERIFIED_DEVICE, AWAITING_OWNER, BLOCKED. Unchecked entries remain unfinished.
   archived artifact is `9555c5f` (historical after the CTA fix). Draft release
   and asset access require repository write access; no public release or owner
   Production promotion was performed.
+- Final `fd90542` real candidate UI: refreshed the signed-out disposable record
+  `mucl0aspw6uzxb` (`QA disposable custom feedback verification`), clicked Today
+  "Review latest feedback" and reached that exact record's feedback, not daily
+  Decision Details. Back returned to History; close/reopen retained the correct
+  record. Actual 375x667 screenshot shows readable detail/feedback/delete control
+  and document width=scrollWidth=375.
+- Deleted that exact record through normal UI. History immediately became zero;
+  refresh retained no latest record and restored the normal recording action.
+  After recovering a browser-control timeout, backup actually downloaded as
+  `~/Downloads/questlife-backup-1790077393934.json`. Readback: ownerId=null;
+  executionLogs, effortUnits, contributionLinks, stateCheckIns, contextLogs,
+  rawCaptures, skills, modules and scheduleBlocks all zero. One structural
+  category and 23 system daily results remain. This proves disposable local
+  cleanup, not a new server-delete or physical-keyboard acceptance.
 
 ### Active completeness correction (2026-09-22)
 

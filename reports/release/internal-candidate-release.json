@@ -1,14 +1,14 @@
 {
-  "sourceCommit": "9555c5f05663d0b24db692922782bdcec011a498",
-  "verifiedAt": "2026-09-22T11:18:55.988Z",
+  "sourceCommit": "fd90542d7606bf9048fb44698b8117730a98fa7a",
+  "verifiedAt": "2026-09-22T11:31:17.613Z",
   "draft": true,
   "prerelease": true,
-  "releaseId": 393665470,
-  "releaseUrl": "https://github.com/kyriez1013-kai/Questlife/releases/tag/untagged-0f481bbbaef7ba25615b",
-  "assetId": 581235842,
-  "assetName": "questlife-v1-9555c5f-arm64.apk",
-  "bytes": 47247888,
-  "sha256": "f5264fcfc2257dc89d53e6204d525db35a64604dc814399033925d4ad085cf15",
+  "releaseId": 393673895,
+  "releaseUrl": "https://github.com/kyriez1013-kai/Questlife/releases/tag/untagged-0806866655272c4c0a02",
+  "assetId": 581256377,
+  "assetName": "questlife-v1-fd90542-arm64.apk",
+  "bytes": 47249100,
+  "sha256": "8ff8a15ef666686b7d3bd8ebbe5a4217a201b113652b1ed657fd745d993c0f1b",
   "requiresRepositoryWriteAccess": true,
   "scope": "Draft release only. Uploaded asset digest verified; browser download and physical install not implied."
 }
