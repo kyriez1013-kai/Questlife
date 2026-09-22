@@ -10,9 +10,11 @@ if (!runtime) throw Error('QUESTLIFE_UI_TEST_RUNTIME is required');
 const React = require(path.join(runtime, 'react'));
 const { create, act } = require(path.join(runtime, 'react-test-renderer'));
 global.IS_REACT_ACT_ENVIRONMENT = true;
-let store, writes, closed, alerts, tree, wait, retry, navigations, intents;
+let store, writes, closed, alerts, tree, wait, retry, navigations, intents, confirmation;
 const host = name => props => React.createElement(name, props, props.children);
-const rn = { Platform: { OS: 'android' }, Appearance: { getColorScheme: () => 'light' }, StyleSheet: { create: value => value }, Keyboard: { dismiss() {} }, Alert: { alert: value => alerts.push(value) } };
+const rn = { Platform: { OS: 'android' }, Appearance: { getColorScheme: () => 'light' }, StyleSheet: { create: value => value, hairlineWidth: 0.5 }, Keyboard: { dismiss() {} }, Alert: { alert: value => alerts.push(value) } };
+rn.FlatList = props => React.createElement('FlatList', props, props.ListHeaderComponent,
+  props.data.length ? props.data.map((item, index) => React.createElement(React.Fragment, { key: props.keyExtractor(item) }, props.renderItem({ item, index }))) : props.ListEmptyComponent);
 for (const name of ['View', 'Text', 'TextInput', 'TouchableOpacity', 'Switch', 'Pressable', 'ScrollView']) rn[name] = name;
 const original = Module._load;
 Module._load = function(request, parent, main) {
@@ -30,8 +32,9 @@ Module._load = function(request, parent, main) {
   if (/\/(AccountSyncSection|RecordBackupActions)$/.test(request)) return host(request.split('/').at(-1));
   if (/\/NativeControls$/.test(request)) return { useNativeTheme: () => ({ type: { secondary: {} }, text: { secondary: '#626262' } }) };
   if (/\/analytics$/.test(request)) return { trackEvent() {} };
+  if (/\/confirm$/.test(request)) return { confirmAction: value => { confirmation=value; } };
   if (/\/BottomSheetForm$/.test(request)) return props => props.visible ? React.createElement('Sheet', props, props.children, React.createElement('Footer', {}, props.footer)) : null;
-  if (/\/QuestPrimitives$/.test(request)) return { QuestGroupedSurface: host('QuestGroupedSurface') };
+  if (/\/QuestPrimitives$/.test(request)) return { QuestGroupedSurface: host('QuestGroupedSurface'), QuestContextBar: host('QuestContextBar') };
   if (/\/(QuestButton|QuestPill|QuestInput|QuestIcon|QuestCard|QuestProgressBar|QuestEntityIcon|V11RebaselineIcon|EmojiPicker|ColorPicker|TimePickerInput)$/.test(request)) return host(request.split('/').at(-1));
   return original.call(this, request, parent, main);
 };
@@ -41,10 +44,10 @@ for (const extension of ['.ts', '.tsx']) require.extensions[extension] = (module
 const { DEFAULT_DATA } = require('../types.ts');
 const { t } = require('../i18n.ts');
 const fresh = (lang = 'en', theme = 'cleanFocus') => {
-  writes=[]; closed=0; alerts=[]; navigations=[]; intents=[]; wait=async()=>{}; retry=async()=>{}; rn.Platform.OS='android';
+  writes=[]; closed=0; alerts=[]; navigations=[]; intents=[]; confirmation=undefined; wait=async()=>{}; retry=async()=>{}; rn.Platform.OS='android';
   store={data:structuredClone(DEFAULT_DATA),waitForLocalWrites:()=>wait(),retryLocalWrites:()=>retry()};
   store.data.settings.language=lang;store.data.settings.selectedThemeId=theme;
-  for (const name of ['addCategory','updateCategory','applyDomainTemplateToGoal','addSkill','updateSkill','createSkillAndAttachToModule','addModule','updateModule','deleteModule','addExistingSkillToModule','removeSkillFromModule']) store[name]=(...args)=>{writes.push({name,args});return {id:'TEST_ENTITY'};};
+  for (const name of ['addCategory','updateCategory','applyDomainTemplateToGoal','addSkill','updateSkill','deleteSkillFromLibrary','createSkillAndAttachToModule','addModule','updateModule','deleteModule','addExistingSkillToModule','removeSkillFromModule']) store[name]=(...args)=>{writes.push({name,args});return {id:'TEST_ENTITY'};};
 };
 const render=async(file,props={})=>{await act(async()=>{tree=create(React.createElement(require(file).default,{visible:true,onClose:()=>closed++,...props}));});};
 const button=label=>tree.root.findAll(node=>node.type==='QuestButton'&&node.props.label===label)[0];
@@ -197,4 +200,22 @@ for(const lang of ['zh','en']) test(`first launch opens existing account recover
   assert.equal(writes.length,0);assert.equal(store.data.categories.length,0);
   await act(async()=>tree.root.findByType('Sheet').props.onClose());
   assert.equal(tree.root.findAllByType('AccountSyncSection').length,0);
+});
+
+for (const lang of ['zh','en']) for (const theme of ['cleanFocus','deepWork']) test(`native skill library uses independent actions and stable searchable rows ${lang}/${theme}`,async()=>{
+  fresh(lang,theme);
+  store.data.skills=Array.from({length:40},(_,i)=>({id:`TEST_SKILL_${i}`,name:i===17?'TEST 中文长名称 and a long English skill title':'TEST '+i,createdAt:1,totalXP:0,dailyTargetMinutes:30,progressType:'time_based'}));
+  await render('../screens/SkillLibraryScreen.tsx');
+  const list=tree.root.findByType('FlatList');assert.equal(list.props.data.length,40);assert.equal(list.props.initialNumToRender,10);
+  assert.equal(list.props.keyExtractor(store.data.skills[17]),'TEST_SKILL_17');
+  assert.equal(tree.root.findAllByType('QuestCard').length,0);
+  for(const row of tree.root.findAllByType('TouchableOpacity')) assert.equal(row.findAllByType('QuestButton').length,0);
+  await act(async()=>input(t(lang,'searchSkills')).props.onChangeText('中文'));
+  assert.deepEqual(tree.root.findByType('FlatList').props.data.map(row=>row.id),['TEST_SKILL_17']);
+  const row=tree.root.findAll(node=>node.type==='TouchableOpacity'&&node.props.accessibilityLabel===store.data.skills[17].name)[0];
+  await act(async()=>row.props.onPress());assert.deepEqual(navigations.at(-1),['SkillDetail',{skillId:'TEST_SKILL_17'}]);
+  await act(async()=>button(t(lang,'edit')).props.onPress());assert.equal(input(t(lang,'name')).props.value,store.data.skills[17].name);
+  await act(async()=>button(t(lang,'cancel')).props.onPress());
+  await act(async()=>button(t(lang,'delete')).props.onPress());assert.equal(writes.length,0);
+  await act(async()=>confirmation.onConfirm());assert.deepEqual(writes[0],{name:'deleteSkillFromLibrary',args:['TEST_SKILL_17']});
 });

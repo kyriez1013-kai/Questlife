@@ -110,6 +110,14 @@ Quant ingestion and no prediction-time delta is computed for it. No schema or
 historical data rewrite. Four pure rules/integration-boundary tests plus two
 real Store/refresh/retry cases pass; local Store suite now has 25 tests.
 
+Native Skill Library completion: replaced the native-only bordered entity-card
+stack with a virtualized, searchable continuous list. Open, Edit and Delete have
+separate touch regions; long names wrap, IDs remain stable across search, and
+the existing create/edit/confirmed-delete flows are reused. Four component tests
+cover Chinese/English and both themes (entity/form suite: 25). Web library and
+Goal/Module/Skill semantics are unchanged. Installed visual/scroll acceptance is
+still pending, not inferred from virtualization settings or component tests.
+
 The persistence correction keeps the existing whole-entity mutation semantics;
 it does not silently introduce field-level conflict merging. Failed writes keep
 their exact original ID/closure, later writes wait, and retry first recovers the
