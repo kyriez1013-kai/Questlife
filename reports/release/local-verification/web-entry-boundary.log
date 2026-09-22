@@ -1,6 +1,6 @@
-✔ historical Insights fixtures are behind an asynchronous Web route boundary (9.568375ms)
-✔ platform style adapters load their CSS instead of recursively importing themselves (8.051541ms)
-✔ interaction sheets shield background text in both themes without relying on blur (0.925209ms)
+✔ historical Insights fixtures are behind an asynchronous Web route boundary (9.289958ms)
+✔ platform style adapters load their CSS instead of recursively importing themselves (7.827292ms)
+✔ interaction sheets shield background text in both themes without relying on blur (1.016875ms)
 ℹ tests 3
 ℹ suites 0
 ℹ pass 3
@@ -8,4 +8,4 @@
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 124.886458
+ℹ duration_ms 127.125792

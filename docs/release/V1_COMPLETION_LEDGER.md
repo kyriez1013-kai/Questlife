@@ -244,11 +244,30 @@ VERIFIED_DEVICE, AWAITING_OWNER, BLOCKED. Unchecked entries remain unfinished.
   category and system daily results remain. The disposable restore servers and
   tabs were closed; the candidate and local review server remain available.
 - Additional product gaps observed, not marked complete: custom-log B4 baseline
-  wording still calls the record a skill; existing stored Chinese structural
+  wording called the record a skill (fixed in the continuation below); existing stored Chinese structural
   entity text remains Chinese after switching language. Intermittent browser
   typing automation lost focus; successful fill/sequential checks do not prove
   physical soft-keyboard behaviour. These are recorded separately from the
   passed exact-record persistence and cleanup checks.
+
+### Chronological feedback correction (2026-09-22)
+
+- `8a26f6b` fixes three feedback defects found during real record verification:
+  custom/unlinked records no longer claim a nonexistent skill; an imported or
+  backdated record cannot compare against a later or equal-timestamp record;
+  missing, blank, boolean or non-finite numeric input stays unknown rather
+  than producing a zero-valued measurement. Selection now uses only strictly
+  earlier comparable records. Existing strength/time comparison rules and all
+  Store/API/persistence operations are unchanged.
+- Added 13 direct helper regressions covering zh/en, existing linked skills,
+  chronological selection, invalid measurements and real strength labels.
+  **13/13 PASS**. Full release verifier on clean `8a26f6b`: **27/27 suites PASS**,
+  including TypeScript, Web export, native components, sync/RLS/concurrency,
+  backups, device adapter boundaries and dependency audit. These remain local
+  synthetic/component checks, not physical-device acceptance.
+- Rechecked the populated backup files: 19 original records across 16
+  collections preserved exactly; both cleanup backups have zero observations
+  and derived execution records. No owner observation or neutral state added.
 
 ### Active completeness correction (2026-09-22)
 
