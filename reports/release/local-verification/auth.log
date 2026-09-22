@@ -16,4 +16,4 @@ PASS logout discards in-flight response and prevents later cache resurrection
 PASS account switch discards A response and cannot upload A replica for B
 PASS consent revocation while waiting discards health-derived response
 Backend auth boundary: 17 scenario groups passed (fixture network; no live services).
-GoTrueClient@sb-auth-auth-token:0 (2.116.0) 2026-09-20T13:50:28.065Z The "lock" option is deprecated and will be removed in v3. The client now coordinates session refreshes without a lock, so most apps can drop the option. See https://github.com/supabase/supabase-js/blob/master/packages/core/auth-js/migrations/lockless-coordination.md
+GoTrueClient@sb-auth-auth-token:0 (2.116.0) 2026-09-22T05:49:10.875Z The "lock" option is deprecated and will be removed in v3. The client now coordinates session refreshes without a lock, so most apps can drop the option. See https://github.com/supabase/supabase-js/blob/master/packages/core/auth-js/migrations/lockless-coordination.md

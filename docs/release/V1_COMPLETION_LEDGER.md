@@ -1,6 +1,6 @@
 # QuestLife V1 End-to-End Completion Ledger
 
-Updated: 2026-09-20. This is the single current completion checklist and resume
+Updated: 2026-09-22. This is the single current completion checklist and resume
 checkpoint for `QUESTLIFE_END_TO_END_COMPLETION.md`. Earlier phase reports are
 historical evidence, not completion claims for this candidate.
 
@@ -45,6 +45,45 @@ VERIFIED_DEVICE, AWAITING_OWNER, BLOCKED. Unchecked entries remain unfinished.
 
 ## Exact Resume Checkpoint
 
+### Active completeness correction (2026-09-22)
+
+Continued from clean `839a3b8` on `release/questlife-v1`; preserved all later
+work after the original `507d0a5`. The broad IMPLEMENTED labels above describe
+code presence, NOT completed product acceptance. The following engineering work
+is reopened under the original specification, not excluded as new scope:
+
+| Spec | Missing / incomplete work | Current action |
+| --- | --- | --- |
+| 7-9 native product | Insights without a bundle hid workspace/source/record entrances | Implemented honest variable catalog, source/record/backup entrances; 27 tests in each timezone. New installed acceptance pending |
+| 7-8 native forms | Goal/Skill actions buried; draft reset on unrelated Goal refresh | Implemented native disclosures, pinned actions, stable draft and durable-save retry; 10 component tests. New installed acceptance pending |
+| 7-8 Settings | One long account/source/calendar/settings form | Implemented grouped index and focused existing components, permission/error distinctions, close guard during account/import work; 19 component tests. New installed acceptance pending |
+| 8 Schedule | Native editing and time-axis needed correction | Implemented real-duration day geometry, empty time, overlap lanes, contextual actions, exact-operation retry and historical-time protection; 19 component tests. New installed acceptance pending |
+| 10 persistence | Optimistic success was not proof of durable write | Implemented serial local ACK/retry for all mutations; 17 queue and 11 real Store/SyncEngine tests. WAL replay uses durable base and retains later optimistic edits/deletions |
+| 11-15 external chains | Hosted/core checks passed only for their stated boundaries | Physical data, OS delivery, email OTP and two-device UI remain open, not replaced by mocks |
+| 16-19 acceptance | Installed APK and tab-open checks are partial only | Rebuild same-source candidate, actual interactions/recordings/performance; visual acceptance remains owner's |
+
+The prior checkpoint below is historical. Mac is unlocked; emulator pointer
+input recovered after restarting the dedicated QA emulator on 2026-09-22. Do
+not treat the prior screen lock as a current engineering stop condition. The
+installed APK remains the prior `2d4f365` build until the new narrow commits are
+built and installed. Do not promote component tests to installed acceptance.
+
+The persistence correction keeps the existing whole-entity mutation semantics;
+it does not silently introduce field-level conflict merging. Failed writes keep
+their exact original ID/closure, later writes wait, and retry first recovers the
+durable WAL. A local error is distinct from an already-durable offline outbox.
+The in-memory pending overlay is presentation only, never a second data source.
+No owner observations or backend records were created by these tests.
+
+Current source commits: `1898cb4` ordered durability/recovery, `9d37a2b` entity
+forms, `6d96e06` Settings/import request guards, `cdb6322` native Schedule,
+`5dec822` Insights cold start. The complete local verification runner passed all
+26 suites against this application source, including TypeScript and Web export.
+Local-mutation suite: 17 queue + 11 real Store/SyncEngine tests; native forms,
+Settings and Schedule: 10 + 19 + 19. Installed testing must use the next build.
+CUA soft-key taps now enter native text; direct desktop text injection still
+does not reach the Android field. No draft was saved during that input check.
+
 Continue this checkout, not the historical Web branches. Backend, native service
 integration and worker changes are integrated; do not repeat setup. Latest
 application source is `2d4f365`. Its Android APK is installed; six actual example
@@ -65,12 +104,11 @@ are chronological evidence, not a queue to restart.
    at the waiting EAS terminal. EAS login itself is already verified.
 3. Physical iPhone/Android Health and notification permission and real-device
    visual/performance acceptance. These cannot be replaced by emulator results.
-4. Unlock the Mac to resume CUA acceptance. The earlier `noWindowsAvailable`
-   problem recovered after emulator restart; native pointer input now works.
-   Native text entry was intercepted by the Android handwriting tutorial, and
-   clipboard paste timed out; no text-entry success is claimed. Browser backup
-   confirmation handling also timed out. Alternative ADB/UIAutomator input and
-   recording authorization remains unanswered; no alternate UI path was used.
+4. Native high-frame-rate recording is not exposed by the current CUA tool.
+   Pointer input is working after emulator restart; text input is being retested
+   on the rebuilt candidate. Alternative ADB/UIAutomator input and recording
+   authorization remains unanswered; no alternate UI path was used. Screenshots
+   or a screenshot sequence will not be called a continuous native recording.
 5. Remote push requires a candidate Firebase application / FCM v1 credential
    and Apple APNs signing. EAS credentials inspection confirmed neither is
    configured; no provider credential or paid service has been fabricated.

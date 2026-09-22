@@ -15,6 +15,7 @@ const rn = {
   Platform: { OS: 'android', select: values => values.android ?? values.default },
   StyleSheet: { create: styles => styles, hairlineWidth: 1, absoluteFillObject: {} },
   Appearance: { getColorScheme: () => 'light' },
+  useWindowDimensions: () => ({ width: 375, height: 667 }),
   Keyboard: { dismiss() {} },
   Alert: { alert: (...args) => alerts.push(args) },
   Linking: { openSettings: async () => {} },
@@ -93,6 +94,7 @@ Module._load = function(request, parent, isMain) {
   if (request === 'react') return React;
   if (request === 'react/jsx-runtime') return require(path.join(runtime, 'react/jsx-runtime'));
   if (request === 'react-native') return rn;
+  if (request === 'react-native-svg') return new Proxy({}, { get: (_, name) => name === '__esModule' ? true : String(name) });
   if (request === 'react-native-safe-area-context') return { SafeAreaView:'SafeAreaView' };
   if (request === '@react-native-community/datetimepicker') return component('DateTimePicker');
   if (request === '@react-navigation/native') return { useNavigation: () => navigation, useRoute: () => route, useFocusEffect: React.useEffect };
@@ -116,10 +118,10 @@ Module._load = function(request, parent, isMain) {
   if (/\/decisionService$/.test(request)) return { isDecisionDebugEnabled: () => false };
   if (/\/featureFlag$/.test(request)) return { getV11ProductLanguage: lang => lang, getV11ProductThemeId: theme => theme, isV11ProductEnabled:()=>false };
   if (/\/(GoalForm|SkillForm|AccountSyncSection|ScheduleProposalReview)$/.test(request)) return component(request.split('/').at(-1));
-  if (/\/BottomSheetForm$/.test(request)) return props => props.visible ? React.createElement('Sheet', props, props.children) : null;
+  if (/\/BottomSheetForm$/.test(request)) return ({footer,...props}) => props.visible ? React.createElement('Sheet', props, props.children, footer) : null;
   if (/\/QuestPrimitives$/.test(request)) return new Proxy({}, { get: (_, name) => name === '__esModule' ? true : props => React.createElement(name, props, props.children, props.trailing) });
   if (/\/Quest(Button|Input|Pill|Icon|Card|EntityIcon|SegmentedControl|ProgressBar)$/.test(request)) return component(request.split('/').at(-1));
-  if (/\/NativeControls$/.test(request)) return { NativeAction: component('NativeAction'), NativeSection: component('NativeSection'), useNativeTheme: () => ({ environment:{canvas:'test'}, text:{primary:'test',secondary:'test'}, border:{subtle:'test'} }) };
+  if (/\/NativeControls$/.test(request)) return { NativeAction: component('NativeAction'), NativeSection: component('NativeSection'), useNativeTheme: () => require('../design/nativeFoundation.ts').getNativeFoundation(require('../design/tokens.ts').getQuestTheme(store.data.settings.selectedThemeId)) };
   return originalLoad.call(this, request, parent, isMain);
 };
 for (const extension of ['.ts', '.tsx']) require.extensions[extension] = (module, filename) => {
@@ -131,7 +133,7 @@ const validation = require('./nativeWorkflowValidation.ts');
 const initial = { title:'TEST calendar', startAt:'2026-09-20T09:00:00+08:00', endAt:'2026-09-20T10:00:00+08:00', linkedScheduleBlockId:'TEST_BLOCK' };
 const block = { id:'TEST_BLOCK', title:'TEST plan', date:'2026-09-20', startTime:'09:00', endTime:'10:00', plannedMinutes:60, taskType:'deep_study', flexibility:'flexible', rigidity:'medium', status:'planned', source:'manual', createdAt:1 };
 let tree;
-const fresh = () => { store = { data:structuredClone(DEFAULT_DATA), setSettings: patch => Object.assign(store.data.settings, patch) }; store.data.settings.language='en'; alerts=[]; navigations=[]; calendarCalls=[]; calendars=[]; permission='granted'; failCalendar=false; device.data.calendar.events=[]; device.data.notificationQuietHours=undefined; quietWrites=[]; pushToken=null; constants.easConfig.projectId='TEST_PROJECT'; rn.Platform.OS='android';
+const fresh = () => { store = { data:structuredClone(DEFAULT_DATA), waitForLocalWrites:async()=>{},retryLocalWrites:async()=>{},waitForExecutionLog:async()=>{}, setSettings: patch => Object.assign(store.data.settings, patch) }; store.data.settings.language='en'; alerts=[]; navigations=[]; calendarCalls=[]; calendars=[]; permission='granted'; failCalendar=false; device.data.calendar.events=[]; device.data.notificationQuietHours=undefined; quietWrites=[]; pushToken=null; constants.easConfig.projectId='TEST_PROJECT'; rn.Platform.OS='android';
   authUserId='11111111-1111-4111-8111-111111111111'; device.data.notificationsEnabled=true; pushRegistrations=[]; pushRetirements=[]; registrationAccepted=false; retirementStatus='disabled'; pushTokenHook=undefined;
   shareCalls=[];shareHook=undefined;shareAvailable=true;exportFiles=new Map();exportDeletes=[];exportWriteFailure=false;exportSequence=0;
   pickedBackup={canceled:true};restoreCalls=[];restoreFailure=false;
@@ -139,6 +141,8 @@ const fresh = () => { store = { data:structuredClone(DEFAULT_DATA), setSettings:
 };
 const render = async (file, props={}) => { await act(async () => { tree=create(React.createElement(require(file).default, props)); }); return tree; };
 const button = label => tree.root.findAll(node => node.type === 'QuestButton' && node.props.label === label)[0];
+const openSettings = async key => act(async()=>tree.root.findAllByType(require('./NativeSettingsRow.tsx').default).find(row=>row.props.label===require('../platform/nativeI18n.ts').nativeCopy('en',key)).props.onPress());
+const openBlockActions = async () => act(async()=>tree.root.findAll(node=>node.type==='Pressable'&&node.props.accessibilityLabel===`Block actions: ${block.title}`)[0].props.onPress());
 afterEach(async () => { if(tree) await act(async () => tree.unmount()); tree=undefined; });
 
 test('backup shares a versioned file with exact record and account binding', async () => {
@@ -279,6 +283,7 @@ test('native skill library searches and opens the real edit form without navigat
 });
 test('native Settings changes actual preference actions without a web Preferences route', async () => {
   fresh();await render('./NativeSettingsScreen.tsx',{navigation});
+  await openSettings('appearanceLanguage');
   const controls=tree.root.findAllByType('QuestSegmentedControl');
   await act(async()=>controls[0].props.onChange('deepWork'));
   await act(async()=>controls[1].props.onChange('zh'));
@@ -286,7 +291,7 @@ test('native Settings changes actual preference actions without a web Preference
 });
 test('native schedule opens native date/time fields, creates without execution, and confirms conflicts', async () => {
   fresh();store.data.skills=[];store.data.scheduleBlocks=[block];const saved=[];
-  store.addScheduleBlock=value=>saved.push(value);
+  store.addScheduleBlock=value=>{saved.push(value);return {...value,id:'TEST_CREATED'};};
   store.updateScheduleBlock=()=>{};store.deleteScheduleBlock=()=>{};
   store.createExecutionLog=()=>{throw Error('Planning must not create execution');};
   await render('../screens/ScheduleScreen.tsx');
@@ -302,17 +307,21 @@ test('native schedule edits preserve completion/source and deletion requires con
   fresh();const original={...block,status:'completed',source:'skill_rule'};store.data.skills=[];store.data.scheduleBlocks=[original];const writes=[];const removed=[];
   store.updateScheduleBlock=(id,patch)=>writes.push([id,patch]);store.deleteScheduleBlock=id=>removed.push(id);
   await render('../screens/ScheduleScreen.tsx');
+  await openBlockActions();
   await act(async()=>button('Edit').props.onPress());
   const fields=tree.root.findByType(require('./NativeScheduleFields.tsx').default);
-  await act(async()=>{fields.props.onStart('11:00');fields.props.onEnd('12:30');});
+  assert.equal(fields.props.disabled,true);
+  await act(async()=>tree.root.findAllByType('QuestInput')[0].props.onChangeText('TEST revised title'));
   await act(async()=>button('Save').props.onPress());
-  assert.equal(writes[0][0],block.id);assert.equal(writes[0][1].status,'completed');assert.equal(writes[0][1].source,'skill_rule');assert.equal(writes[0][1].plannedMinutes,90);
+  assert.equal(writes[0][0],block.id);assert.equal(writes[0][1].status,'completed');assert.equal(writes[0][1].source,'skill_rule');assert.equal(writes[0][1].plannedMinutes,60);
+  await openBlockActions();
   await act(async()=>button('Delete').props.onPress());assert.equal(removed.length,0);
   await act(async()=>alerts.at(-1)[2][1].onPress());assert.deepEqual(removed,[block.id]);
 });
 test('remote schedule edit while editor is open refuses stale overwrite', async () => {
   fresh();store.data.skills=[];store.data.scheduleBlocks=[block];let writes=0;store.updateScheduleBlock=()=>writes++;
   await render('../screens/ScheduleScreen.tsx');
+  await openBlockActions();
   await act(async()=>button('Edit').props.onPress());
   store.data.scheduleBlocks=[{...block,title:'TEST remote changed'}];
   await act(async()=>tree.update(React.createElement(require('../screens/ScheduleScreen.tsx').default)));
@@ -436,6 +445,7 @@ test('failed push registration never shows remote success', async () => {
 });
 test('Settings passes the production registration callback and captures current account', async () => {
   fresh();registrationAccepted=true;pushToken='ExpoPushToken[TEST_ONLY_123]';await render('./NativeSettingsScreen.tsx',{navigation});
+  await openSettings('notifications');
   assert.equal(tree.root.findByType(require('./NativeNotificationPreferences.tsx').default).props.registerPushToken,pushRegistry.registerNativePushToken);
   await act(async()=>button('Connect this device').props.onPress());
   assert.deepEqual(pushRegistrations,[{token:pushToken,expectedUserId:authUserId}]);
@@ -477,6 +487,7 @@ test('denied OS permission retires registration without requesting a push token'
 });
 test('Settings reminder disable invokes retirement with no token', async () => {
   fresh();await render('./NativeSettingsScreen.tsx',{navigation});
+  await openSettings('notifications');
   const toggle=tree.root.findAll(node=>node.type==='Switch'&&node.props.accessibilityLabel===require('../platform/nativeI18n.ts').nativeCopy('en','enableReminders'))[0];
   await act(async()=>toggle.props.onValueChange(false));
   assert.equal(device.data.notificationsEnabled,false);
@@ -484,6 +495,7 @@ test('Settings reminder disable invokes retirement with no token', async () => {
 });
 test('failed push retirement keeps reminders disabled and exposes a Settings error', async () => {
   fresh();retirementStatus='retirement_pending';await render('./NativeSettingsScreen.tsx',{navigation});
+  await openSettings('notifications');
   const toggle=tree.root.findAll(node=>node.type==='Switch'&&node.props.accessibilityLabel===require('../platform/nativeI18n.ts').nativeCopy('en','enableReminders'))[0];
   await act(async()=>toggle.props.onValueChange(false));
   assert.equal(device.data.notificationsEnabled,false);
@@ -516,6 +528,7 @@ test('moving a schedule to a future day confirms target-day conflicts and preser
   store.updateScheduleBlock=(id,patch)=>writes.push([id,patch]);
   store.createExecutionLog=()=>{throw Error('Moving a plan must not record execution');};
   await render('../screens/ScheduleScreen.tsx');
+  await openBlockActions();
   await act(async()=>button('Edit').props.onPress());
   await act(async()=>tree.root.findByType(require('./NativeScheduleFields.tsx').default).props.onDate(future.date));
   await act(async()=>button('Save').props.onPress());
@@ -559,6 +572,7 @@ test('module skill opens detail and unlink requires confirmation without deletin
 
 test('native Settings explicitly exports a JSON file with recovery and clear limits', async()=>{
   fresh();const before=structuredClone(store.data);await render('./NativeSettingsScreen.tsx',{navigation});
+  await openSettings('settingsRecords');
   assert.ok(button('Export local records'));assert.equal(shareCalls.length,0);
   await act(async()=>button('Export local records').props.onPress());
   assert.equal(shareCalls.length,0);assert.match(alerts.at(-1)[1],/receiving app may upload/);
@@ -666,6 +680,7 @@ test('retry rechecks operation identity and surfaces failure instead of claiming
   calendarStatuses.WRITE={state:'retry',permission:'granted',operation:{id:'TEST_NEW',kind:'update'}};
   await act(async()=>alerts.at(-1)[2][1].onPress());assert.equal(calendarRetries.length,0);
   assert.ok(tree.root.findAll(node=>node.type==='Text'&&node.props.accessibilityRole==='alert').length);
+  await act(async()=>button('Refresh').props.onPress());
   failCalendar=true;await act(async()=>button('Retry confirmed calendar operation').props.onPress());await act(async()=>alerts.at(-1)[2][1].onPress());
   assert.equal(calendarRetries.length,1);assert.doesNotMatch(sheetText(),/Last confirmed write:/);
 });

@@ -1,0 +1,65 @@
+✔ register stays synchronous and create/update/delete run in durable ACK order (0.807166ms)
+✔ a failed head blocks following jobs without discarding them (0.668417ms)
+✔ waiters before and after failure reject promptly, including blocked IDs and waitAll (0.165ms)
+✔ repeated retries do not duplicate an in-flight attempt and retain the original closure (0.112792ms)
+✔ registering the same pending ID is a no-op; registering its failed ID retries the same payload (0.101833ms)
+✔ registering another ID behind failure does not automatically retry the head (0.102ms)
+✔ lost ACK recovery belongs to the same run closure and does not duplicate its durable write (0.121416ms)
+✔ a later failure cannot invalidate already successful IDs or ACK promises (0.087458ms)
+✔ waitAll captures the current tail and later writes do not postpone it (0.089458ms)
+✔ an empty waitAll resolves even when a later registration fails (0.092083ms)
+✔ a later failure does not reject a captured waitAll or extend it across ID reuse (0.088208ms)
+✔ snapshot references stay stable until pending or failed changes (0.138084ms)
+✔ reentrant listeners can register, unsubscribe and retry without overlap or recursive delivery (0.089917ms)
+✔ throwing or removed listeners cannot break persistence or later subscribers (0.414542ms)
+✔ synchronous throws and non-Error rejection values remain retryable (0.060833ms)
+✔ ignored run and ACK failures do not emit unhandled rejections for legacy callers (2.449459ms)
+✔ successful writes release tracked entries and permit reuse without a growing ACK history (5.677459ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 49.655
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ Store exposes pending until local disk and durable outbox acknowledge create/update/delete (26.07175ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ failed journal queues later edits; retry preserves ID and exact mutation order (5.801042ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ durable WAL recovery after create failure does not enqueue a duplicate (5.36175ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ durable WAL recovery after update failure does not enqueue a duplicate (3.325208ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ durable WAL recovery after delete failure does not enqueue a duplicate (2.925834ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ queued deletion is not resurrected by the preceding ACK, including mounted reload (2.673375ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+[coreFlow] integrity issues detected on load [
+  {
+    type: 'missing_progress_model',
+    severity: 'low',
+    message: 'Goal is missing progress model.',
+    entityId: 'TEST_1'
+  }
+]
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ Goal and appearance updates receive the same durable receipt and survive remount (3.609291ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ an execution retry reuses its original entity and its durable receipt (9.701167ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ WAL replay through the real Store projection cannot erase later optimistic edits (1.589167ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ remote projection preserves a queued local edit without persisting it prematurely (1.678042ms)
+✔ WAL recovery cannot resurrect a later explicitly deleted entity in the UI (2.145ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 429.513
