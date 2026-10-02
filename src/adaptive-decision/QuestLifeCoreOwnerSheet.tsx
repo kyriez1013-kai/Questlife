@@ -36,6 +36,7 @@ import {
   retainFeasibleOwnerCandidates,
 } from './ownerDecisionFlow';
 import { loadOwnerQuantArtifacts, type OwnerQuantRuntimeArtifacts } from './ownerQuantRuntime';
+import { DecisionPlanPatchConflictError } from './planPatch';
 import { adaptiveText, candidateCopy, questionTypeLabel } from './presentation';
 import { recordAdaptiveDecisionTelemetry } from './telemetry';
 
@@ -123,6 +124,7 @@ export default function QuestLifeCoreOwnerSheet({
   const [outcome, setOutcome] = useState<OwnerOutcome>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [planChanged, setPlanChanged] = useState(false);
   const generationRef = useRef(0);
   const initializedVisibleRef = useRef(false);
   const persistedEpisodeIdsRef = useRef(new Set<string>());
@@ -227,6 +229,7 @@ export default function QuestLifeCoreOwnerSheet({
     setOutcome({});
     setActiveActionId(undefined);
     setError('');
+    setPlanChanged(false);
     const now = new Date().toISOString();
     const zone = timezone();
     const intent = inferOwnerDecisionIntent({ data, now, timezone: zone });
@@ -315,6 +318,7 @@ export default function QuestLifeCoreOwnerSheet({
     if (!episode || !activeActionId || busy) return;
     setBusy(true);
     setError('');
+    setPlanChanged(false);
     const started = typeof performance !== 'undefined' ? performance.now() : Date.now();
     try {
       const accepted = episode.status === 'PROPOSED'
@@ -343,16 +347,19 @@ export default function QuestLifeCoreOwnerSheet({
         fixtureOnly: false,
       });
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
+      const conflict = caught instanceof DecisionPlanPatchConflictError;
+      setPlanChanged(conflict);
+      setError(copy(conflict ? 'adaptiveCorePlanChanged' : 'adaptiveCorePlanUpdateFailed'));
     } finally {
       setBusy(false);
     }
-  }, [activeActionId, busy, data.scheduleBlocks, episode, onApplySchedulePatch, persistEpisode]);
+  }, [activeActionId, busy, copy, data.scheduleBlocks, episode, onApplySchedulePatch, persistEpisode]);
 
   const undo = useCallback(() => {
     if (!episode?.appliedPlanPatch || busy) return;
     setBusy(true);
     setError('');
+    setPlanChanged(false);
     try {
       const undone = undoAppliedDecision({
         episode,
@@ -370,11 +377,13 @@ export default function QuestLifeCoreOwnerSheet({
         fixtureOnly: false,
       });
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
+      const conflict = caught instanceof DecisionPlanPatchConflictError;
+      setPlanChanged(conflict);
+      setError(copy(conflict ? 'adaptiveCorePlanChanged' : 'adaptiveCorePlanUpdateFailed'));
     } finally {
       setBusy(false);
     }
-  }, [busy, data.executionLogs, data.scheduleBlocks, episode, onUndoSchedulePatch, persistEpisode]);
+  }, [busy, copy, data.executionLogs, data.scheduleBlocks, episode, onUndoSchedulePatch, persistEpisode]);
 
   const updateOutcome = useCallback((patch: Partial<OwnerOutcome>) => {
     setOutcome((current) => ({ ...current, ...patch }));
@@ -456,25 +465,28 @@ export default function QuestLifeCoreOwnerSheet({
       ) : null}
 
       {episode && view === 'decision' ? (
-        <DecisionWorkspace
-          activeActionId={activeActionId}
-          answers={answers}
-          busy={busy}
-          canApply={canApply}
-          embedded
-          episode={episode}
-          error={error}
-          lang={lang}
-          onAnswer={answerQuestion}
-          onApply={apply}
-          onSelectAction={selectAction}
-          onUndo={undo}
-          reducedMotion={reducedMotion}
-          scheduleBlocks={data.scheduleBlocks || []}
-          showTopbar={false}
-          theme={theme}
-          themeMode={theme.mode}
-        />
+        <>
+          <DecisionWorkspace
+            activeActionId={activeActionId}
+            answers={answers}
+            busy={busy}
+            canApply={canApply}
+            embedded
+            episode={episode}
+            error={error}
+            lang={lang}
+            onAnswer={answerQuestion}
+            onApply={apply}
+            onSelectAction={selectAction}
+            onUndo={undo}
+            reducedMotion={reducedMotion}
+            scheduleBlocks={data.scheduleBlocks || []}
+            showTopbar={false}
+            theme={theme}
+            themeMode={theme.mode}
+          />
+          {planChanged ? <V11SheetButton label={copy('adaptiveCoreStartAnother')} onPress={startNewDecision} theme={theme} variant="secondary" /> : null}
+        </>
       ) : null}
 
       {episode && view === 'follow_up' ? (
