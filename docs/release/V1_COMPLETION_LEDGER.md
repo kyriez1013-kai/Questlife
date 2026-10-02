@@ -105,7 +105,10 @@ VERIFIED_DEVICE, AWAITING_OWNER, BLOCKED. Unchecked entries remain unfinished.
   shortcut installation and latest-source performance gates. Android emulator
   booted in this session but no operable window was exposed to desktop control;
   no new native UI claim follows from that boot. Do not re-use deleted QA
-  accounts. Preserve the untracked Quant UI contract.
+  accounts. The dedicated emulator `QuestLifeQA` user 11 was switched out and
+  removed after exact user-list verification; a second list shows only user 0.
+  This clears the isolated local QA app cache without touching the emulator's
+  main profile. Preserve the untracked Quant UI contract.
 
 ### Current functional source: `49f6d43` (2026-10-03)
 
