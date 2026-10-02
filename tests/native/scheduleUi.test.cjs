@@ -90,7 +90,7 @@ const field = () => tree.root.findByType(require(path.join(root, 'src/native/Nat
 const input = async (placeholder, value) => { await act(async () => tree.root.findAll(node => node.type === 'QuestInput' && node.props.placeholder === placeholder)[0].props.onChangeText(value)); };
 const refresh = async () => { await act(async () => tree.update(React.createElement(require(path.join(root, 'src/screens/ScheduleScreen.tsx')).default))); };
 const actions = async (title = block.title) => { await act(async () => tree.root.findAll(node => ['QuestButton', 'Pressable'].includes(node.type) && node.props.accessibilityLabel === `Block actions: ${title}`)[0].props.onPress()); };
-afterEach(async () => { if (tree) await act(async () => tree.unmount()); tree = undefined; });
+afterEach(async () => { if (tree) await act(async () => tree.unmount()); tree = undefined; delete global.window; });
 
 test('capacity uses merged compiler windows, not duration sums or skipped time', () => {
   fresh();
@@ -116,6 +116,58 @@ test('failed create retries the original persistence operation without a second 
   await act(async () => tree.root.findAllByType('QuestInput')[0].props.onChangeText('TEST new block'));
   await press('Create block'); assert.ok(button('Retry save')); assert.match(text(), /draft is still here/); assert.equal(writes.length, 1);
   wait = async () => {}; await press('Retry save'); assert.equal(retries, 1); assert.equal(writes.length, 1); assert.equal(store.data.scheduleBlocks.length, 1); assert.equal(tree.root.findAllByType('Sheet').length, 0);
+});
+test('web conflict requires explicit confirmation and cancel writes nothing', async () => {
+  fresh([block]); rn.Platform.OS = 'web';
+  const prompts = []; global.window = { confirm: body => { prompts.push(body); return false; } };
+  await render(); await press('Add block');
+  await input('Python study', 'TEST conflicting block');
+  await press('Create block');
+  assert.equal(prompts.length, 1);
+  assert.match(prompts[0], /TEST plan/);
+  assert.equal(writes.length, 0);
+  assert.equal(tree.root.findAllByType('Sheet').length, 1);
+  global.window.confirm = () => true;
+  await press('Create block');
+  assert.equal(writes.length, 1);
+  assert.equal(store.data.scheduleBlocks.length, 2);
+});
+test('web create keeps the form on persistence failure and retries without duplicate', async () => {
+  fresh(); rn.Platform.OS = 'web'; global.window = { confirm: () => true };
+  wait = async () => { throw Error('TEST disk full'); };
+  await render(); await press('Add block');
+  await input('Python study', 'TEST durable web block');
+  await press('Create block');
+  assert.equal(writes.length, 1);
+  assert.ok(button('Retry save'));
+  assert.equal(tree.root.findAllByType('Sheet').length, 1);
+  wait = async () => {};
+  await press('Retry save');
+  assert.equal(writes.length, 1);
+  assert.equal(retries, 1);
+  assert.equal(tree.root.findAllByType('Sheet').length, 0);
+});
+test('web edit preserves source and status instead of resetting the existing block', async () => {
+  fresh([{ ...block, status: 'completed', source: 'skill_rule' }]);
+  rn.Platform.OS = 'web'; global.window = { confirm: () => true };
+  await render(); await press('Edit');
+  await input('Python study', 'TEST renamed');
+  await press('Save');
+  assert.equal(writes.length, 1);
+  assert.equal(store.data.scheduleBlocks[0].status, 'completed');
+  assert.equal(store.data.scheduleBlocks[0].source, 'skill_rule');
+});
+test('web delete waits for persistence and offers retry without repeating the deletion', async () => {
+  fresh([block]); rn.Platform.OS = 'web'; global.window = { confirm: () => true };
+  wait = async () => { throw Error('TEST disk full'); };
+  await render(); await press('Delete');
+  assert.deepEqual(writes, [['delete', block.id]]);
+  assert.ok(button('Retry save'));
+  wait = async () => {};
+  await press('Retry save');
+  assert.equal(writes.length, 1);
+  assert.equal(retries, 1);
+  assert.equal(store.data.scheduleBlocks.length, 0);
 });
 test('native edit preserves source, fixed authority, lock and completed status', async () => {
   fresh([{ ...block, status: 'completed', flexibility: 'fixed', placementLocked: true, source: 'skill_rule' }]); await render(); await actions();

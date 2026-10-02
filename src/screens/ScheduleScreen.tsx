@@ -326,9 +326,9 @@ export default function ScheduleScreen() {
     if (saveRunning.current) return;
     if (pendingScheduleWrite.current) { void retryScheduleWrite(); return; }
     const native = Platform.OS !== 'web';
-    const plannedMinutes = native ? scheduleMinutes(startTime, endTime) : minutesBetween(startTime, endTime);
+    const plannedMinutes = scheduleMinutes(startTime, endTime);
     if (!title.trim()) { Alert.alert(t(lang, 'enterTitle')); return; }
-    if (native ? !validScheduleDate(date) : !/^\d{4}-\d{2}-\d{2}$/.test(date)) { Alert.alert(t(lang, 'invalidDate')); return; }
+    if (!validScheduleDate(date)) { Alert.alert(t(lang, 'invalidDate')); return; }
     if (plannedMinutes <= 0) { Alert.alert(t(lang, 'invalidTimeRange')); return; }
     if (native && historicalEdit && editSnapshot.current && (date !== editSnapshot.current.date || startTime !== editSnapshot.current.startTime || endTime !== editSnapshot.current.endTime)) {
       Alert.alert(t(lang, 'edit'), scheduleCopy(lang, 'historical')); return;
@@ -344,20 +344,20 @@ export default function ScheduleScreen() {
       rigidity,
       linkedGoalId,
       linkedSkillId,
-      status: native && editSnapshot.current ? editSnapshot.current.status : 'planned',
+      status: editSnapshot.current ? editSnapshot.current.status : 'planned',
       notes: notes.trim() || undefined,
-      source: native && editSnapshot.current ? editSnapshot.current.source : 'manual',
+      source: editSnapshot.current ? editSnapshot.current.source : 'manual',
     } satisfies Omit<ScheduleBlock, 'id' | 'createdAt'>;
-    const conflicts = native ? scheduleConflicts(input, allBlocks, editingBlockId ?? undefined) : [];
+    const conflicts = scheduleConflicts(input, allBlocks, editingBlockId ?? undefined);
     const conflictKey = JSON.stringify(conflicts);
     const save = async () => {
       if (saveRunning.current) return;
       // A remote deletion/edit while this sheet is open must not be silently overwritten.
-      if (native && editingBlockId && JSON.stringify(latestBlocks.current.find(block => block.id === editingBlockId)) !== JSON.stringify(editSnapshot.current)) {
+      if (editingBlockId && JSON.stringify(latestBlocks.current.find(block => block.id === editingBlockId)) !== JSON.stringify(editSnapshot.current)) {
         Alert.alert(t(lang, 'edit'), t(lang, 'rebaselineRecordUnavailable'));
         return;
       }
-      if (native && JSON.stringify(scheduleConflicts(input, latestAllBlocks.current, editingBlockId ?? undefined)) !== conflictKey) {
+      if (JSON.stringify(scheduleConflicts(input, latestAllBlocks.current, editingBlockId ?? undefined)) !== conflictKey) {
         Alert.alert(t(lang, 'scheduleOverlap'), scheduleCopy(lang, 'reviewAgain')); return;
       }
       saveRunning.current = true;
@@ -368,7 +368,8 @@ export default function ScheduleScreen() {
           editSnapshot.current = { ...editSnapshot.current!, ...input };
         } else {
           const added = addScheduleBlock(input);
-          if (native) { editSnapshot.current = added; setEditingBlockId(added.id); }
+          editSnapshot.current = added;
+          setEditingBlockId(added.id);
         }
         const complete = () => {
           setOpen(false);
@@ -377,10 +378,8 @@ export default function ScheduleScreen() {
           setTitle('');
           setNotes('');
         };
-        if (native) {
-          pendingScheduleWrite.current = complete;
-          await waitForLocalWrites();
-        }
+        pendingScheduleWrite.current = complete;
+        await waitForLocalWrites();
         complete();
         pendingScheduleWrite.current = null;
         setSaveState('idle');
@@ -405,19 +404,17 @@ export default function ScheduleScreen() {
       destructive: true,
       onConfirm: async () => {
         if (saveRunning.current) return;
-        if (Platform.OS !== 'web' && JSON.stringify(latestBlocks.current.find(row => row.id === block.id)) !== JSON.stringify(block)) {
+        if (JSON.stringify(latestBlocks.current.find(row => row.id === block.id)) !== JSON.stringify(block)) {
           setScheduleNotice(scheduleCopy(lang, 'reviewAgain')); return;
         }
         saveRunning.current = true;
         setSaveState('busy');
         try {
           deleteScheduleBlock(block.id);
-          if (Platform.OS !== 'web') {
-            pendingScheduleWrite.current = () => setActionBlock(null);
-            await waitForLocalWrites();
-            setActionBlock(null);
-            pendingScheduleWrite.current = null;
-          }
+          pendingScheduleWrite.current = () => setActionBlock(null);
+          await waitForLocalWrites();
+          setActionBlock(null);
+          pendingScheduleWrite.current = null;
           setSaveState('idle');
         } catch { setSaveState('failed'); setScheduleNotice(scheduleCopy(lang, 'saveFailed')); }
         finally { saveRunning.current = false; }
@@ -640,7 +637,10 @@ export default function ScheduleScreen() {
         />
         {Platform.OS !== 'web' ? <NativeDateTimeField theme={questTheme} lang={lang} mode="date" label={t(lang, 'date')}
           value={new Date(`${selectedDate}T12:00:00`)} onChange={value => setSelectedDate(localDateValue(value))} /> : null}
-        {Platform.OS !== 'web' && scheduleNotice ? <Text accessibilityRole="alert" style={{ color: questTheme.colors.text, fontSize: questTheme.typography.bodySize }}>{scheduleNotice}</Text> : null}
+        {scheduleNotice ? <View style={{ gap: questTheme.spacing.sm }}>
+          <Text accessibilityRole="alert" style={{ color: questTheme.colors.text, fontSize: questTheme.typography.bodySize }}>{scheduleNotice}</Text>
+          {pendingScheduleWrite.current && !open && !actionBlock ? <QuestButton questTheme={questTheme} label={scheduleCopy(lang, 'retry')} onPress={() => void retryScheduleWrite()} /> : null}
+        </View> : null}
 
         {view === 'day' ? (
           <>
@@ -816,10 +816,10 @@ export default function ScheduleScreen() {
       </ScrollView>
 
       <BottomSheetForm visible={open} onClose={() => { if (!saveRunning.current && !pendingScheduleWrite.current) { setOpen(false); setEditingBlockId(null); } }}
-        footer={Platform.OS !== 'web' ? <View style={{ gap: questTheme.spacing.sm }}>
+        footer={<View style={{ gap: questTheme.spacing.sm }}>
           {saveState === 'failed' ? <Text accessibilityRole="alert" style={{ color: questTheme.colors.text, fontSize: questTheme.typography.bodySize }}>{scheduleCopy(lang, 'saveFailed')}</Text> : null}
           <QuestButton questTheme={questTheme} variant="primary" icon={editingBlockId ? 'check' : 'plus'} loading={saveState === 'busy'} label={saveState === 'failed' ? scheduleCopy(lang, 'retry') : editingBlockId ? t(lang, 'save') : t(lang, 'createBlock')} onPress={submit} />
-        </View> : undefined}>
+        </View>}>
         <View pointerEvents={saveRunning.current || pendingScheduleWrite.current ? 'none' : 'auto'} importantForAccessibility={saveRunning.current || pendingScheduleWrite.current ? 'no-hide-descendants' : 'auto'}>
         <Text style={[styles.h2, { color: questTheme.colors.text }]}>{editingBlockId ? `${t(lang, 'edit')} ${t(lang, 'schedulePlan')}` : t(lang, 'addBlock')}</Text>
         {Platform.OS !== 'web' && (historicalEdit || moving) ? <Text style={{ color: questTheme.colors.textMuted, fontSize: questTheme.typography.bodySize }}>{scheduleCopy(lang, historicalEdit ? 'historical' : 'moveReview')}</Text> : null}
@@ -855,7 +855,6 @@ export default function ScheduleScreen() {
 
         <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'notes')}</Text>
         <QuestInput questTheme={questTheme} value={notes} onChangeText={setNotes} style={{ height: 70, textAlignVertical: 'top' }} multiline />
-        {Platform.OS === 'web' ? <QuestButton questTheme={questTheme} variant="primary" icon={editingBlockId ? undefined : 'plus'} label={editingBlockId ? t(lang, 'save') : t(lang, 'createBlock')} onPress={submit} style={{ marginTop: 18 }} /> : null}
         </View>
       </BottomSheetForm>
 
