@@ -58,14 +58,11 @@ import {
   isV11QuantTerminalEnabled,
 } from '../v11/featureFlag';
 import V11PersonalTerminal from './personal-terminal/V11PersonalTerminal';
-import { getPersonalTerminalFixture } from './personal-terminal/personalTerminalFixtures';
-import { buildPersonalTerminalPresentation } from './personal-terminal/personalTerminalPresentation';
-import { adaptQuantV041TerminalPayload } from './personal-terminal/quantV041Adapter';
-import { getQuantV041Fixture } from './personal-terminal/quantV041Fixtures';
-import { adaptQuantV042TerminalPayload } from './personal-terminal/quantV042Adapter';
-import { getQuantV042Fixture } from './personal-terminal/quantV042Fixtures';
-import { adaptQuantInterpretationPayload } from './personal-terminal/quantInterpretationAdapter';
-import { getQuantInterpretationFixture } from './personal-terminal/quantInterpretationFixtures';
+import {
+  buildPersonalTerminalPresentation,
+  type PersonalTerminalModel,
+} from './personal-terminal/personalTerminalPresentation';
+import type { PersonalTerminalDebugSelection } from './personal-terminal/personalTerminalDebugFixture';
 import V11QuantTerminal from './quant-terminal/V11QuantTerminal';
 import { getQuantTerminalFixture } from './quant-terminal/quantTerminalFixtures';
 import { buildQuantTerminalPresentation } from './quant-terminal/quantTerminalPresentation';
@@ -420,16 +417,30 @@ export default function V11InsightsScreen() {
   const quantInterpretationScenario = getV11QuantInterpretationScenario();
   const quantV042LifecycleId = getV11QuantV042Lifecycle();
   const quantV041LifecycleId = getV11QuantV041Lifecycle();
+  const debugFixtureKey = quantInterpretationScenario ?? quantV042LifecycleId ?? quantV041LifecycleId ?? personalTerminalFixtureId;
+  const [debugFixture, setDebugFixture] = useState<{ key: string; model: PersonalTerminalModel } | null>(null);
+  const [debugFixtureError, setDebugFixtureError] = useState<string | null>(null);
+  const [debugFixtureRetry, setDebugFixtureRetry] = useState(0);
+  useEffect(() => {
+    if (!debugFixtureKey) return;
+    let active = true;
+    setDebugFixtureError(null);
+    const selection: PersonalTerminalDebugSelection = {
+      interpretation: quantInterpretationScenario,
+      v042: quantV042LifecycleId,
+      v041: quantV041LifecycleId,
+      personal: personalTerminalFixtureId,
+    };
+    void import('./personal-terminal/personalTerminalDebugFixture').then(({ getPersonalTerminalDebugFixture }) => {
+      const model = getPersonalTerminalDebugFixture(selection);
+      if (active && model) setDebugFixture({ key: debugFixtureKey, model });
+    }).catch(() => {
+      if (active) setDebugFixtureError(debugFixtureKey);
+    });
+    return () => { active = false; };
+  }, [debugFixtureKey, debugFixtureRetry, personalTerminalFixtureId, quantInterpretationScenario, quantV041LifecycleId, quantV042LifecycleId]);
   const personalTerminalPresentation = useMemo(() => {
-    if (quantInterpretationScenario) {
-      return adaptQuantInterpretationPayload(getQuantInterpretationFixture(quantInterpretationScenario));
-    }
-    if (quantV042LifecycleId) {
-      const fixture = getQuantV042Fixture(quantV042LifecycleId);
-      return adaptQuantV042TerminalPayload(fixture.terminal, fixture.overview);
-    }
-    if (quantV041LifecycleId) return adaptQuantV041TerminalPayload(getQuantV041Fixture(quantV041LifecycleId));
-    if (personalTerminalFixtureId) return getPersonalTerminalFixture(personalTerminalFixtureId);
+    if (debugFixtureKey) return debugFixture?.key === debugFixtureKey ? debugFixture.model : null;
     return buildPersonalTerminalPresentation({
       now: new Date(),
       base: presentation,
@@ -439,7 +450,7 @@ export default function V11InsightsScreen() {
       goals: data.categories || [],
       skills: data.skills || [],
     });
-  }, [data.categories, data.patternMemory, data.skills, data.stateCheckIns, liveLogs, personalTerminalFixtureId, presentation, quantInterpretationScenario, quantV041LifecycleId, quantV042LifecycleId]);
+  }, [data.categories, data.patternMemory, data.skills, data.stateCheckIns, debugFixture, debugFixtureKey, liveLogs, presentation]);
   const selectedAdvancedMode = presentation.advanced.modes.find((mode) => mode.id === advancedModeId)
     ?? presentation.advanced.modes[0];
   const selectedStage = viewStage(
@@ -566,7 +577,7 @@ export default function V11InsightsScreen() {
           }}
           style={terminalVariables}
         >
-          <V11PersonalTerminal
+          {personalTerminalPresentation ? <V11PersonalTerminal
             language={language}
             model={personalTerminalPresentation}
             onNextAction={() => navigation.navigate('Today')}
@@ -574,7 +585,11 @@ export default function V11InsightsScreen() {
             performanceReadout={performanceReadout}
             reducedMotion={reducedMotion}
             theme={theme}
-          />
+          /> : debugFixtureError === debugFixtureKey ? (
+            <Pressable accessibilityRole="button" onPress={() => setDebugFixtureRetry((value) => value + 1)} style={{ minHeight: questLayout.controlMinHeight, padding: v11Spacing.md }}>
+              <Text style={{ color: theme.text.primary }}>{t(language, 'quantFixtureRetry')}</Text>
+            </Pressable>
+          ) : <Text style={{ color: theme.text.secondary, padding: v11Spacing.md }}>{t(language, 'quantFixtureLoading')}</Text>}
         </WebView>
         )}
       </SafeAreaView>
