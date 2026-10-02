@@ -1,6 +1,6 @@
 # QuestLife V1 End-to-End Completion Ledger
 
-Updated: 2026-09-22. This is the single current completion checklist and resume
+Updated: 2026-10-02. This is the single current completion checklist and resume
 checkpoint for `QUESTLIFE_END_TO_END_COMPLETION.md`. Earlier phase reports are
 historical evidence, not completion claims for this candidate.
 
@@ -22,28 +22,64 @@ VERIFIED_DEVICE, AWAITING_OWNER, BLOCKED. Unchecked entries remain unfinished.
 
 | Item | Current status | Evidence / next executable action |
 | --- | --- | --- |
-| Canonical worktree and branch | VERIFIED_LOCAL | Candidate source `fd90542` on `release/questlife-v1`; checked 2026-09-22; later evidence-only commits do not change the packaged app |
+| Canonical worktree and branch | VERIFIED_LOCAL | Candidate source `6f4f491` on `release/questlife-v1`; checked 2026-10-02. Untracked `QUESTLIFE_QUANT_UI_CONTRACT.md` is preserved and not part of this release batch |
 | Vercel authorization | VERIFIED_REMOTE | CLI login valid; existing questlife-alpha project discovered |
 | Isolated Supabase backend | VERIFIED_REMOTE | `gttcoocfkqwvsqfwxpyo` created; both reviewed migrations executed in SQL Editor; four RLS tables, six RPCs and Realtime publication verified. Existing production `gtlknzltzntfltgjvgxx` untouched |
 | EAS / iOS signing | BLOCKED quota; AWAITING_OWNER signing | EAS authenticated; `cf86bef` simulator compilation FINISHED. Latest source submission rejected by Free iOS quota (reset 2026-10-01); no paid upgrade. Physical distribution needs Apple credentials and device registration |
 | Physical devices | AWAITING_OWNER | Dedicated API36 arm64 emulator is connected; no physical device is connected and no physical acceptance is claimed |
-| Auth and bidirectional sync | VERIFIED_REMOTE engine/HTTPS; UI/device acceptance pending | Ten hosted groups pass: real Auth/password sessions, restore, bidirectional replicas, Realtime, offline/ACK retry, deletion, isolation and authenticated Quant. Email OTP delivery and real two-device UI still pending |
+| Auth and bidirectional sync | VERIFIED_LOCAL UI + Android emulator + candidate backend | Disposable candidate account: Web login/session, Android login, Web to Android and Android to Web create/edit/delete, refresh/realtime, exact record and derived-data removal. Android background/locked delivery is deferred until foreground; physical two-device and email delivery remain unverified |
 | Commit-order concurrent sync | VERIFIED_LOCAL | PostgreSQL 18, separate backend connections: 10/10; delayed lower sequence, CAS, idempotent receipt/delete and RLS; no hosted claim |
 | Legacy anonymous endpoint safety | IMPLEMENTED, VERIFIED_LOCAL | `/api/sync` fails closed (410); Quant verifies Supabase bearer UID; 17 backend scenario groups passed |
 | Real Quant runtime | VERIFIED_REMOTE (isolated fixtures) | 9 hosted checks: authentication, subject/as-of rejection, 210-observation computation, correction hash, empty-after-removal, QA exclusion and cross-subject isolation; `reports/release/quant-hosted-verification.json`; no owner data/database writes |
 | Native Today/materials/sheets | IMPLEMENTED, partial emulator verification | Standalone release opens Today S0 and State sheet; settled sheet shields background text and Cancel leaves state unrecorded. 31 component tests. Full keyboard, dark-theme and physical acceptance pending |
 | Native Goals / Schedule / Settings | IMPLEMENTED, partial emulator verification | All three tabs opened in installed release; new-goal sheet opened/canceled, Day/Week visible, empty Week reads 0h. Source permissions truthfully unrequested and account validation error visible. Full mutation/device acceptance pending |
-| Native Insights workspace | IMPLEMENTED, VERIFIED_LOCAL; installed retest pending | 28 tests in each of two timezones; real variable catalog and source/record/backup entrances remain available without observations. Six actual example loaders tested with native window. Duplicate bridge selections suppressed. Full installed chart acceptance remains open |
+| Native Insights workspace | VERIFIED_LOCAL Android emulator with real candidate Quant | Signed APK selected execution duration, read candidate `/api/decision-quant`, showed 7 then 9 minutes after Web edit and empty after Web delete. Web showed 6 minutes and first-observation evidence after Android edit, then empty after Android delete. Other variables and physical acceptance remain open |
 | Health / Calendar / Notifications | IMPLEMENTED, VERIFIED_LOCAL | Explicit provider deletion/correction, durable Calendar intents/reconciliation, push registration lifecycle and quiet hours; actual source samples, OS writes and delivery require device/provider gates |
 | Shortcuts / deep links | IMPLEMENTED, VERIFIED_LOCAL | Open-only entries through existing handlers; 19 intent boundary assertions; Android Widget plugin passed 12 checks including native AAPT/Kotlin compilation; final installed-widget acceptance pending |
 | Isolated example mode | IMPLEMENTED, VERIFIED_LOCAL; partial installed check | Native example gallery and isolation notice visible. Real loader regression found/fixed; final chart readback pending native pointer-control recovery. No example is written to Store/outbox/OS |
-| Standalone Android release APK | VERIFIED_LOCAL build/install; latest UI UNVERIFIED | Clean `fd90542` signed arm64 APK, 47,249,100 bytes, SHA256 `8ff8a15ef666686b7d3bd8ebbe5a4217a201b113652b1ed657fd745d993c0f1b`; installed and GitHub draft asset hashes match, embedded JS/HTTPS, no Metro, unused permissions removed. Mac is unlocked; native pointer automation still fails |
+| Standalone Android release APK | VERIFIED_LOCAL build/install and emulator UI | Signed `6f4f491` arm64 APK, SHA256 `998c65d366b65c47a2791d7272c35ff0d160caa864c4c2742ca4e7819a71f4ed`; installed in isolated Android user 11, normal UI create/edit/delete and account sync exercised. Emulator only, not physical-device acceptance |
 | Standalone iPhone installation | AWAITING_OWNER / BLOCKED quota | `cf86bef` simulator archive inspected, including Widget/Shortcut and backup support. Not a physical-iPhone package or final-source build. Apple signing/UDID and new build allowance remain required |
-| Same-version Web candidate | VERIFIED_REMOTE deployment/API; partial actual UI verified | `https://questlife-v1-release.vercel.app`; `fd90542` deployment `dpl_22N3JeSyVZzUPPSjXPDS5tyxFEMm` READY. Bundle `index-a58e86ef371880406da12b2502fbfc87.js`. Eight fresh stateless API checks passed. Exact execution-feedback CTA, refresh and cleanup verified; preceding five-tab/responsive/mutation/backup evidence below. Owner production untouched |
+| Same-version Web candidate | VERIFIED_LOCAL updated UI; candidate deployment pending | Local Web source `6f4f491` on two independent origins exercised against live candidate backend. Stable candidate URL still serves prior `fd90542` bundle until this batch deploys. Owner Production untouched |
 | Record backup / restore | IMPLEMENTED, VERIFIED_LOCAL and candidate browser file flow | Versioned exact-record backup, original account binding, structural validation and empty-replica WAL restore. Real populated ExecutionLog + EffortUnit export/import/refresh/re-export preserved exact original JSON by ID; both disposable copies deleted and read back empty. Physical file-provider and account UI recovery acceptance pending |
 | Native recordings/performance | PARTIAL older measurement, NOT_PASSED | Earlier API36 host-GPU emulator sample: 307 frames, P50 22ms, P95 42ms, 214 histogram frames above 20ms, 43 janky. Not steady-state, latest-source or physical acceptance. Mac is unlocked, but native CUA pointer dispatch fails; current recording/performance remains UNVERIFIED |
 
 ## Exact Resume Checkpoint
+
+### Current functional source: `6f4f491` (2026-10-02)
+
+- Three narrow code commits: `863ec67` existing email-code entry, `d7dc382`
+  authenticated Insights to existing Quant runtime, `6f4f491` duration-edit UI
+  with exact derived-data update. TypeScript and Web export pass. Targeted
+  duration-edit pure-function test passes 17 assertions.
+- Candidate backend ref `gttcoocfkqwvsqfwxpyo`; the local `.vercel` link was
+  corrected from old `questlife-alpha` to candidate project ID
+  `prj_fVGFV7DzxfkLqbBpSo8P7NH9oqxX` before any deployment. The old Owner
+  Production ref `gtlknzltzntfltgjvgxx` is not used for this test.
+- Disposable candidate account `a547c40e-cbe3-422e-aac0-9cdbf37447d7`
+  (test-only `@example.com` identity): Web clients at localhost:8177 and
+  localhost:8179 plus isolated Android emulator user 11. Initial email
+  delivery was not tested; an admin-generated OTP was entered through the
+  normal existing app code-verification UI.
+- Normal UI loop verified: Web created SQL execution (7 minutes), Android
+  received it and real Quant read 7; Web edited to 9, Android and Quant read 9;
+  Web deleted, Android and Quant showed no observation. Reverse loop: Android
+  created 5, Web auto-received 5; Android edited to 6, Web and candidate Quant
+  showed 6 with first-observation provenance; Android deleted, Web and Quant
+  showed no eligible observation. The Android outbox returned to 0 pending with
+  0 conflicts. This is emulator verification, not physical-device proof.
+- Earlier Smart Capture SQL execution and its linked effort/contribution,
+  plus the Web direct log and its linked entities, were tombstoned by normal UI
+  delete. The final Android record was also deleted. The disposable account
+  itself and its remaining test-only SQL skill/DecisionResults still require
+  cleanup after other isolated acceptance work.
+- Current signed standalone APK:
+  `reports/release/build-output/questlife-v1-6f4f491-arm64.apk`, SHA256
+  `998c65d366b65c47a2791d7272c35ff0d160caa864c4c2742ca4e7819a71f4ed`.
+  Local Web source is not yet on the candidate stable URL at this checkpoint.
+- Next: push this branch, deploy **only** `questlife-v1-release`, verify live
+  bundle/rollback boundary; then Schedule and decision UI flows, device-source
+  gates, and final test-account cleanup. Do not claim iOS, physical Android,
+  email OTP delivery, or final visual acceptance.
 
 ### Current installable source: `fd90542` (2026-09-22)
 
