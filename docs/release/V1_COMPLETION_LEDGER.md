@@ -37,7 +37,7 @@ VERIFIED_DEVICE, AWAITING_OWNER, BLOCKED. Unchecked entries remain unfinished.
 | Health / Calendar / Notifications | IMPLEMENTED, VERIFIED_LOCAL | Explicit provider deletion/correction, durable Calendar intents/reconciliation, push registration lifecycle and quiet hours; actual source samples, OS writes and delivery require device/provider gates |
 | Shortcuts / deep links | IMPLEMENTED, VERIFIED_LOCAL | Open-only entries through existing handlers; 19 intent boundary assertions; Android Widget plugin passed 12 checks including native AAPT/Kotlin compilation; final installed-widget acceptance pending |
 | Isolated example mode | IMPLEMENTED, VERIFIED_LOCAL; partial installed check | Native example gallery and isolation notice visible. Real loader regression found/fixed; final chart readback pending native pointer-control recovery. No example is written to Store/outbox/OS |
-| Standalone Android release APK | VERIFIED_LOCAL build/install and emulator UI | Signed `49f6d43` arm64 APK, SHA256 `e685a432691ff94ceac3d29e0fac872b2b6cab2c75fa32a613353a92b05655b7`; installed in isolated Android user 11. Normal UI showed decision review, real evidence missingness, explicit Apply and Undo for a no-op candidate; the exact DecisionResult synced to Web. Emulator only, not physical-device acceptance |
+| Standalone Android release APK | VERIFIED_LOCAL older build/install and emulator UI; newer build pending | Signed `49f6d43` arm64 APK, SHA256 `e685a432691ff94ceac3d29e0fac872b2b6cab2c75fa32a613353a92b05655b7`; it was installed in isolated Android user 11 for the native Decision check. That QA user has since been removed. Same-source `05a4405` EAS Android preview build `90f3ac65-5517-411c-877f-9811d728164e` is IN_QUEUE, not an installable artifact yet. Emulator only, not physical-device acceptance |
 | Standalone iPhone installation | AWAITING_OWNER | `75f6d77` iOS simulator build completed but was not installed or run; it cannot be installed on a physical iPhone. Physical signing/UDID and device acceptance remain required |
 | Same-version Web candidate | VERIFIED_REMOTE on `05a4405` | Candidate stable URL serves `index-13351ff00b86f60164fe0c80ddd3e7bb.js` from READY deployment `dpl_Fpn1hXhZrRb7GirD68QYtVoSEspo`. HTTP 200 and normal Today and signed-out Insights entry verified; browser console reported no errors. Full main bundle contains candidate Supabase ref and not Owner ref. This is the separate V1 candidate project; old Owner Production untouched |
 | Record backup / restore | IMPLEMENTED, VERIFIED_LOCAL and candidate browser file flow | Versioned exact-record backup, original account binding, structural validation and empty-replica WAL restore. Real populated ExecutionLog + EffortUnit export/import/refresh/re-export preserved exact original JSON by ID; both disposable copies deleted and read back empty. Physical file-provider and account UI recovery acceptance pending |
@@ -109,6 +109,13 @@ VERIFIED_DEVICE, AWAITING_OWNER, BLOCKED. Unchecked entries remain unfinished.
   removed after exact user-list verification; a second list shows only user 0.
   This clears the isolated local QA app cache without touching the emulator's
   main profile. Preserve the untracked Quant UI contract.
+- Same-source Android cloud build `90f3ac65-5517-411c-877f-9811d728164e`
+  was submitted for Git commit `05a4405` using the candidate `preview`
+  environment and existing QuestLife EAS project. Status was IN_QUEUE at last
+  check, so package installation, launch and device performance are UNVERIFIED.
+  EAS generated a new remote Android signing key; its certificate has not been
+  compared with the earlier locally signed QA APK. Do not assume in-place
+  upgrade compatibility. No paid tier or alternate project was created.
 
 ### Current functional source: `49f6d43` (2026-10-03)
 
