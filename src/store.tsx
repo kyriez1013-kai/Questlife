@@ -12,6 +12,7 @@ import { scheduleServerSync } from './services/syncService';
 import { getSyncEngine, persistWithSync, startSyncRuntime } from './sync-v2/runtime';
 import { LocalMutationPersistence } from './utils/localMutationPersistence';
 import { removeExecutionProgress } from './utils/executionDeletionProgress';
+import { applyExecutionLogPatch } from './utils/executionEdit';
 import { projectAppData } from './sync-v2/projection';
 import { enqueueServerDeletions } from './services/syncDeletionOutbox';
 import { createEffortUnitsFromExecutionLog, generateContributionLinks } from './utils/effort';
@@ -997,14 +998,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [data.moduleSkillLinks, data.skills, mutate]);
 
   const updateExecutionLog: Ctx['updateExecutionLog'] = useCallback((id, patch) => {
-    mutate((d) => ({
-      ...d,
-      // First version intentionally does not reverse/reapply progress deltas when editing logs.
-      // This avoids double-counting; future edit history can add reversible progress accounting.
-      executionLogs: (d.executionLogs || []).map((log) => (
-        log.id === id ? { ...log, ...patch, updatedAt: new Date().toISOString() } : log
-      )),
-    }));
+    mutate((d) => applyExecutionLogPatch(d, id, patch, new Date().toISOString()));
   }, [mutate]);
 
   const deleteExecutionLog: Ctx['deleteExecutionLog'] = useCallback((id) => {

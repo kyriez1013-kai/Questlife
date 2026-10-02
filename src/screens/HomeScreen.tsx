@@ -499,6 +499,7 @@ export default function HomeScreen() {
     waitForLocalWrites,
     retryLocalWrites,
     deleteExecutionLog,
+    updateExecutionLog,
     createRescueLog,
     completeRescueStep,
     completeActivationStep,
@@ -2409,10 +2410,12 @@ export default function HomeScreen() {
           path,
         ].filter(Boolean).join(' · ');
         return {
+          canEditDuration: !skill || (skill.metricConfig?.metricType ?? skill.progressType ?? 'time_based') === 'time_based',
+          durationMinutes: log.durationMinutes,
           id: log.id,
           title: [displayName, metricSummary].filter(Boolean).join(' · '),
-          metadata: measurements || log.note,
-          note: measurements ? log.note : undefined,
+          metadata: measurements || undefined,
+          note: log.note,
           time: new Date(log.createdAt).toLocaleString([], {
             month: 'short',
             day: 'numeric',
@@ -3153,9 +3156,11 @@ export default function HomeScreen() {
           getRecordFeedback={getV11ActivityRecordFeedback}
           historyTitle={t(lang, 'activityHistory')}
           initialRecordId={v11ActivityRecordId}
+          language={lang}
           loadMoreLabel={t(lang, 'loadMoreRecords')}
           onClose={closeV11ActivityHistory}
           onDeleteRecord={confirmDeleteTodayLog}
+          onUpdateRecord={updateExecutionLog}
           records={v11ActivityRecords}
           theme={v11ThemeTokens}
           visible={v11ActivityHistoryOpen}

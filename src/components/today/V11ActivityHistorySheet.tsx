@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { t, type Lang } from '../../i18n';
 import type { V11ThemeTokens } from '../../v11/tokens';
-import { V11InlineButton, V11SheetButton } from '../../v11/components/V11SheetControls';
+import { V11InlineButton, V11SheetButton, V11TextField } from '../../v11/components/V11SheetControls';
 import useV11ReducedMotion from '../../v11/useV11ReducedMotion';
 import V11RebaselineIcon from '../../v11-stage2-rebaseline/V11RebaselineIcon';
 import V11Stage2ProductionSheet from '../../v11-stage2-rebaseline/V11Stage2ProductionSheet';
@@ -12,6 +13,8 @@ const WebPressable = Pressable as any;
 const PAGE_SIZE = 20;
 
 export type V11ActivityRecord = {
+  canEditDuration: boolean;
+  durationMinutes: number;
   id: string;
   metadata?: string;
   note?: string;
@@ -28,9 +31,11 @@ type Props = {
   getRecordFeedback: (id: string) => { detail: string; summary: string } | undefined;
   historyTitle: string;
   initialRecordId?: string | null;
+  language: Lang;
   loadMoreLabel: string;
   onClose: () => void;
   onDeleteRecord: (id: string) => void;
+  onUpdateRecord: (id: string, patch: { durationMinutes?: number; note: string }) => void;
   records: V11ActivityRecord[];
   theme: V11ThemeTokens;
   visible: boolean;
@@ -45,9 +50,11 @@ export default function V11ActivityHistorySheet({
   getRecordFeedback,
   historyTitle,
   initialRecordId = null,
+  language,
   loadMoreLabel,
   onClose,
   onDeleteRecord,
+  onUpdateRecord,
   records,
   theme,
   visible,
@@ -55,6 +62,10 @@ export default function V11ActivityHistorySheet({
   const reducedMotion = useV11ReducedMotion();
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [editing, setEditing] = useState(false);
+  const [durationDraft, setDurationDraft] = useState('');
+  const [noteDraft, setNoteDraft] = useState('');
+  const [editError, setEditError] = useState(false);
   const selectedRecord = useMemo(
     () => records.find((record) => record.id === selectedRecordId),
     [records, selectedRecordId],
@@ -67,6 +78,11 @@ export default function V11ActivityHistorySheet({
   useEffect(() => {
     if (visible) setSelectedRecordId(initialRecordId);
   }, [initialRecordId, visible]);
+
+  useEffect(() => {
+    setEditing(false);
+    setEditError(false);
+  }, [selectedRecordId, visible]);
 
   useEffect(() => {
     if (!visible) {
@@ -122,7 +138,66 @@ export default function V11ActivityHistorySheet({
             </Text>
           ) : null}
 
-          {selectedFeedback ? (
+          {editing ? (
+            <View style={{ gap: 12 }}>
+              {selectedRecord.canEditDuration ? (
+                <View style={{ gap: 6 }}>
+                  <Text style={{ color: theme.text.secondary }}>{t(language, 'minutesQuestion')}</Text>
+                  <V11TextField
+                    keyboardType="number-pad"
+                    accessibilityLabel={t(language, 'minutesQuestion')}
+                    onChangeText={(value) => { setDurationDraft(value); setEditError(false); }}
+                    status={editError ? 'error' : 'default'}
+                    theme={theme}
+                    value={durationDraft}
+                  />
+                </View>
+              ) : null}
+              <View style={{ gap: 6 }}>
+                <Text style={{ color: theme.text.secondary }}>{t(language, 'noteOptional')}</Text>
+                <V11TextField
+                  accessibilityLabel={t(language, 'noteOptional')}
+                  multiline
+                  onChangeText={setNoteDraft}
+                  theme={theme}
+                  value={noteDraft}
+                />
+              </View>
+              {editError ? <Text accessibilityRole="alert" style={{ color: theme.control.error }}>{t(language, 'invalidMinutes')}</Text> : null}
+              <V11SheetButton
+                label={t(language, 'save')}
+                onPress={() => {
+                  const duration = Number(durationDraft);
+                  const durationChanged = selectedRecord.canEditDuration && duration !== selectedRecord.durationMinutes;
+                  if (durationChanged && (!Number.isSafeInteger(duration) || duration <= 0)) {
+                    setEditError(true);
+                    return;
+                  }
+                  onUpdateRecord(selectedRecord.id, {
+                    durationMinutes: durationChanged ? duration : undefined,
+                    note: noteDraft.trim(),
+                  });
+                  setEditing(false);
+                }}
+                theme={theme}
+                variant="primary"
+              />
+              <V11InlineButton label={t(language, 'cancel')} onPress={() => setEditing(false)} theme={theme} />
+            </View>
+          ) : (
+            <V11InlineButton
+              label={t(language, 'edit')}
+              onPress={() => {
+                setDurationDraft(String(selectedRecord.durationMinutes));
+                setNoteDraft(selectedRecord.note ?? '');
+                setEditError(false);
+                setEditing(true);
+              }}
+              theme={theme}
+            />
+          )}
+
+          {!editing && selectedFeedback ? (
             <WebView dataSet={{ 'v11-rebaseline-role': 'record-feedback' }}>
               <Text style={{ color: theme.text.metadata, fontSize: 10, lineHeight: 15, letterSpacing: 0.7 }}>
                 {feedbackTitle}
