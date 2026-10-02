@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 import type { Lang } from '../i18n';
 import type { AppData, DecisionResult, ScheduleBlock } from '../types';
 import {
@@ -10,7 +10,9 @@ import {
 } from '../v11/components/V11SheetControls';
 import type { V11ThemeTokens } from '../v11/tokens';
 import V11Stage2ProductionSheet from '../v11-stage2-rebaseline/V11Stage2ProductionSheet';
+import BottomSheetForm from '../components/BottomSheetForm';
 import AdaptiveDecisionWorkspace from './AdaptiveDecisionWorkspace';
+import NativeDecisionWorkspace from './NativeDecisionWorkspace';
 import {
   applyAcceptedDecision,
   beginDecisionEpisode,
@@ -39,6 +41,15 @@ import { recordAdaptiveDecisionTelemetry } from './telemetry';
 
 type OwnerOutcome = Omit<DecisionFollowUpOutcomeV1, 'id' | 'recordedAt'>;
 type CoreView = 'loading' | 'decision' | 'follow_up' | 'memory';
+
+function NativeDecisionSheet({ children, closeLabel, footer, onClose, theme, title, visible }: React.ComponentProps<typeof V11Stage2ProductionSheet>) {
+  return <BottomSheetForm visible={visible} onClose={onClose} closeAccessibilityLabel={closeLabel} footer={footer}>
+    <View style={{ gap: 18 }}>
+      <Text accessibilityRole="header" style={{ color: theme.text.primary, fontSize: 19, fontWeight: '500' }}>{title}</Text>
+      {children}
+    </View>
+  </BottomSheetForm>;
+}
 
 type Props = {
   data: AppData;
@@ -152,6 +163,7 @@ export default function QuestLifeCoreOwnerSheet({
         timezone: draft.time.timezone,
         asOf: draft.time.asOf,
       });
+      if (artifacts.status === 'unavailable') throw new Error(copy('adaptiveCoreRuntimeUnavailable'));
       const quantLatencyMs = artifactsRef.current
         ? 0
         : Math.max(0, (typeof performance !== 'undefined' ? performance.now() : Date.now()) - quantStarted);
@@ -200,11 +212,11 @@ export default function QuestLifeCoreOwnerSheet({
       });
     } catch (caught) {
       if (generation !== generationRef.current) return;
-      setError(caught instanceof Error ? caught.message : String(caught));
+      setError(copy('adaptiveCoreRuntimeUnavailable'));
     } finally {
       if (generation === generationRef.current) setBusy(false);
     }
-  }, [data, persistEpisode]);
+  }, [copy, data, persistEpisode]);
 
   const startNewDecision = useCallback(() => {
     const generation = ++generationRef.current;
@@ -421,8 +433,10 @@ export default function QuestLifeCoreOwnerSheet({
     && episode.candidateActions.some((candidate) => candidate.id === activeActionId),
   );
 
+  const DecisionSheet = Platform.OS === 'web' ? V11Stage2ProductionSheet : NativeDecisionSheet;
+  const DecisionWorkspace = Platform.OS === 'web' ? AdaptiveDecisionWorkspace : NativeDecisionWorkspace;
   return (
-    <V11Stage2ProductionSheet
+    <DecisionSheet
       closeLabel={copy('cancel')}
       footer={footer}
       minHeight={500}
@@ -437,11 +451,12 @@ export default function QuestLifeCoreOwnerSheet({
           <Text style={[styles.loadingTitle, { color: theme.text.primary }]}>{copy('adaptiveCoreLoadingTitle')}</Text>
           <Text style={[styles.meta, { color: theme.text.secondary }]}>{copy('adaptiveCoreLoadingMeta')}</Text>
           {error ? <Text accessibilityRole="alert" style={[styles.error, { color: theme.control.error }]}>{error}</Text> : null}
+          {error ? <V11SheetButton label={copy('rebaselineRetry')} onPress={startNewDecision} theme={theme} variant="secondary" /> : null}
         </View>
       ) : null}
 
       {episode && view === 'decision' ? (
-        <AdaptiveDecisionWorkspace
+        <DecisionWorkspace
           activeActionId={activeActionId}
           answers={answers}
           busy={busy}
@@ -518,7 +533,7 @@ export default function QuestLifeCoreOwnerSheet({
           <V11SheetButton label={copy('adaptiveCoreStartAnother')} onPress={startNewDecision} theme={theme} variant="secondary" />
         </View>
       ) : null}
-    </V11Stage2ProductionSheet>
+    </DecisionSheet>
   );
 }
 

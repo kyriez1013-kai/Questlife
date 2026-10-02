@@ -257,7 +257,7 @@ function buildMissingQuestions(
     });
   }
   const movableBlockExists = snapshot.schedule.blocks.some((block) => block.flexibility !== 'fixed');
-  if (!movableBlockExists && questionType !== 'overloaded_day') {
+  if (snapshot.schedule.blocks.length > 0 && !movableBlockExists && questionType !== 'overloaded_day') {
     questions.push({
       id: 'target-flexibility',
       kind: 'constraint',

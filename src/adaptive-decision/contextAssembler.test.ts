@@ -135,7 +135,7 @@ const sparse = assembleDecisionContext({
   timezone: 'Asia/Shanghai',
   mode: 'owner',
 });
-assert.equal(sparse.missingQuestions.length, 2);
+assert.deepEqual(sparse.missingQuestions.map((question) => question.id), ['current-state']);
 assert.ok(sparse.snapshot.missingness.some((item) => item.code === 'SLEEP_MISSING'));
 
 const answered = assembleDecisionContext({
@@ -148,6 +148,15 @@ const answered = assembleDecisionContext({
 });
 assert.equal(answered.missingQuestions.length, 0);
 assert.equal(answered.snapshot.currentState?.overall, 2);
+
+const unscheduled = assembleDecisionContext({
+  data: { stateCheckIns: [], contextLogs: [], executionLogs: [], scheduleBlocks: [], goals: [], categories: [], skills: [] },
+  questionType: 'custom',
+  asOf: AS_OF,
+  timezone: 'Asia/Shanghai',
+  mode: 'owner',
+});
+assert.equal(unscheduled.missingQuestions.length, 0, 'no phantom schedule constraint without a block');
 
 const stale = assembleDecisionContext({ data, questionType: 'training_recovery', asOf: '2026-09-05T18:00:00+08:00', timezone: 'Asia/Shanghai', mode: 'owner' });
 assert.equal(stale.snapshot.currentState, undefined, 'old state is not current readiness');

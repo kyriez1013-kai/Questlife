@@ -180,11 +180,11 @@ const sparseDraft = beginDecisionEpisode({
 const sparseData: DecisionEngineData = { stateCheckIns: [], contextLogs: [], executionLogs: [], scheduleBlocks: [], goals: [], categories: [], skills: [] };
 const needsInput = proposeDecisionEpisode({ episode: sparseDraft, data: sparseData, now: NOW });
 assert.equal(needsInput.status, 'NEEDS_INPUT');
-assert.equal(needsInput.missingContext.length, 2);
+assert.deepEqual(needsInput.missingContext.map((question) => question.id), ['current-state']);
 const answered = proposeDecisionEpisode({
   episode: needsInput,
   data: sparseData,
-  answers: { 'current-state': '2', 'target-flexibility': 'movable' },
+  answers: { 'current-state': '2' },
   now: '2025-05-01T18:01:00+00:00',
 });
 assert.equal(answered.status, 'PROPOSED');

@@ -6,6 +6,7 @@ export function isAdaptiveDecisionLoopOwnerEnabled(): boolean {
 }
 
 export function isQuestLifeCoreV1Enabled(): boolean {
-  if (Platform.OS !== 'web' || typeof window === 'undefined') return false;
+  if (Platform.OS !== 'web') return true;
+  if (typeof window === 'undefined') return false;
   return new URLSearchParams(window.location.search).get('questlife_core_v1') === '1';
 }
