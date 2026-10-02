@@ -14,6 +14,10 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '../store';
+import { authService } from '../sync-v2/supabase';
+import NativeInsightsExperience from '../native/insights/NativeInsightsExperience';
+import { createInsightsEntrances } from '../native/insights/nativeInsightsCatalog';
+import { deliverNotificationIntent } from '../platform/notifications/intentBus';
 import { getLanguage, t, type Lang } from '../i18n';
 import { getQuestTheme, questLayout } from '../design/tokens';
 import { useQuestTheme } from '../design/useQuestTheme';
@@ -296,6 +300,15 @@ export default function V11InsightsScreen() {
   const [detail, setDetail] = useState<V11InsightsDetailSelection>(null);
   const [terminalInspectorOpen, setTerminalInspectorOpen] = useState(false);
   const [personalTerminalSheetOpen, setPersonalTerminalSheetOpen] = useState(false);
+  const [ownerQuantOpen, setOwnerQuantOpen] = useState(false);
+  const ownerQuantChosen = useRef(false);
+  useEffect(() => {
+    let active = true;
+    void authService.getSession().then((session) => {
+      if (active && !ownerQuantChosen.current) setOwnerQuantOpen(Boolean(session));
+    }).catch(() => {});
+    return () => { active = false; };
+  }, []);
   const scrollRef = useRef<ScrollView | null>(null);
   const liveLogs = useMemo(
     () => getLiveExecutionLogs(data.executionLogs || [], { skills: data.skills }),
@@ -528,6 +541,22 @@ export default function V11InsightsScreen() {
       : null;
     return (
       <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: theme.field.background }}>
+        <View style={{ flexDirection: 'row', gap: v11Spacing.xs, paddingHorizontal: v11Spacing.md, paddingVertical: v11Spacing.xs }}>
+          {([false, true] as const).map((live) => (
+            <Pressable
+              key={String(live)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: ownerQuantOpen === live }}
+              onPress={() => { ownerQuantChosen.current = true; setOwnerQuantOpen(live); }}
+              style={{ minHeight: questLayout.controlMinHeight, justifyContent: 'center', paddingHorizontal: v11Spacing.sm, borderRadius: v11Radius.control, backgroundColor: ownerQuantOpen === live ? theme.questTheme.colors.surfaceElevated : 'transparent' }}
+            >
+              <Text style={{ color: ownerQuantOpen === live ? theme.text.primary : theme.text.secondary, ...v11Typography.body }}>
+                {t(language, live ? 'quantLiveView' : 'quantLocalView')}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+        {ownerQuantOpen ? <NativeInsightsExperience {...createInsightsEntrances(navigation, deliverNotificationIntent)} /> : (
         <WebView
           dataSet={{
             'personal-terminal-root': 'true',
@@ -547,6 +576,7 @@ export default function V11InsightsScreen() {
             theme={theme}
           />
         </WebView>
+        )}
       </SafeAreaView>
     );
   }
