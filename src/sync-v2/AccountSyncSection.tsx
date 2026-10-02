@@ -35,6 +35,7 @@ export default function AccountSyncSection() {
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [sent, setSent] = useState(false);
+  const [showCode, setShowCode] = useState(false);
   const [busy, setBusy] = useInteractionBusyState();
   const [failed, setFailed] = useState(false);
   const [linkFailed, setLinkFailed] = useState(false);
@@ -152,12 +153,21 @@ export default function AccountSyncSection() {
                     void run(async () => {
                       await authService.requestOtp(email);
                       setSent(true);
+                      setShowCode(true);
                     })
                   }
                 />
-                {sent ? (
+                {!showCode ? (
+                  <QuestButton
+                    questTheme={q}
+                    variant="secondary"
+                    label={c(lang, "useCode")}
+                    onPress={() => setShowCode(true)}
+                  />
+                ) : null}
+                {showCode ? (
                   <>
-                    {note(c(lang, "sent"))}
+                    {sent ? note(c(lang, "sent")) : null}
                     <QuestInput
                       questTheme={q}
                       value={otp}
