@@ -22,12 +22,12 @@ VERIFIED_DEVICE, AWAITING_OWNER, BLOCKED. Unchecked entries remain unfinished.
 
 | Item | Current status | Evidence / next executable action |
 | --- | --- | --- |
-| Canonical worktree and branch | VERIFIED_LOCAL | Candidate source `49f6d43` on `release/questlife-v1`; checked 2026-10-03. Untracked `QUESTLIFE_QUANT_UI_CONTRACT.md` is preserved and not part of this release batch |
+| Canonical worktree and branch | VERIFIED_LOCAL | Candidate source `75f6d77` on `release/questlife-v1`; checked 2026-10-03. Untracked `QUESTLIFE_QUANT_UI_CONTRACT.md` is preserved and not part of this release batch |
 | Vercel authorization | VERIFIED_REMOTE | CLI login valid; existing questlife-alpha project discovered |
 | Isolated Supabase backend | VERIFIED_REMOTE | `gttcoocfkqwvsqfwxpyo` created; both reviewed migrations executed in SQL Editor; four RLS tables, six RPCs and Realtime publication verified. Existing production `gtlknzltzntfltgjvgxx` untouched |
-| EAS / iOS signing | BLOCKED quota; AWAITING_OWNER signing | EAS authenticated; `cf86bef` simulator compilation FINISHED. Latest source submission rejected by Free iOS quota (reset 2026-10-01); no paid upgrade. Physical distribution needs Apple credentials and device registration |
+| EAS / iOS signing | VERIFIED_REMOTE simulator build; AWAITING_OWNER physical signing | `768a951` iOS simulator cloud build `0d0ba86d-eb07-4144-b4ea-de076d61415b` FINISHED with candidate environment. This is not installed or run in an iOS simulator, not an iPhone package, and predates `75f6d77` conflict-copy correction. Physical distribution still needs Apple credentials and device registration; no paid upgrade |
 | Physical devices | AWAITING_OWNER | Dedicated API36 arm64 emulator is connected; no physical device is connected and no physical acceptance is claimed |
-| Auth and bidirectional sync | VERIFIED_LOCAL UI + Android emulator + candidate backend | Disposable candidate account: Web login/session, Android login, Web to Android and Android to Web create/edit/delete, refresh/realtime, exact record and derived-data removal. Android background/locked delivery is deferred until foreground; physical two-device and email delivery remain unverified |
+| Auth and bidirectional sync | VERIFIED_LOCAL UI + Android emulator + candidate backend | Disposable candidate accounts: Web login/session, Android login, Web to Android and Android to Web create/edit/delete, refresh/realtime, exact record and derived-data removal. Both QA Auth users were deleted after exact ID/email match; the four sync tables have `auth.users` cascade-delete foreign keys. Android background/locked delivery is deferred until foreground; physical two-device and email delivery remain unverified |
 | Commit-order concurrent sync | VERIFIED_LOCAL | PostgreSQL 18, separate backend connections: 10/10; delayed lower sequence, CAS, idempotent receipt/delete and RLS; no hosted claim |
 | Legacy anonymous endpoint safety | IMPLEMENTED, VERIFIED_LOCAL | `/api/sync` fails closed (410); Quant verifies Supabase bearer UID; 17 backend scenario groups passed |
 | Real Quant runtime | VERIFIED_REMOTE (isolated fixtures) | 9 hosted checks: authentication, subject/as-of rejection, 210-observation computation, correction hash, empty-after-removal, QA exclusion and cross-subject isolation; `reports/release/quant-hosted-verification.json`; no owner data/database writes |
@@ -38,12 +38,58 @@ VERIFIED_DEVICE, AWAITING_OWNER, BLOCKED. Unchecked entries remain unfinished.
 | Shortcuts / deep links | IMPLEMENTED, VERIFIED_LOCAL | Open-only entries through existing handlers; 19 intent boundary assertions; Android Widget plugin passed 12 checks including native AAPT/Kotlin compilation; final installed-widget acceptance pending |
 | Isolated example mode | IMPLEMENTED, VERIFIED_LOCAL; partial installed check | Native example gallery and isolation notice visible. Real loader regression found/fixed; final chart readback pending native pointer-control recovery. No example is written to Store/outbox/OS |
 | Standalone Android release APK | VERIFIED_LOCAL build/install and emulator UI | Signed `49f6d43` arm64 APK, SHA256 `e685a432691ff94ceac3d29e0fac872b2b6cab2c75fa32a613353a92b05655b7`; installed in isolated Android user 11. Normal UI showed decision review, real evidence missingness, explicit Apply and Undo for a no-op candidate; the exact DecisionResult synced to Web. Emulator only, not physical-device acceptance |
-| Standalone iPhone installation | AWAITING_OWNER / BLOCKED quota | `cf86bef` simulator archive inspected, including Widget/Shortcut and backup support. Not a physical-iPhone package or final-source build. Apple signing/UDID and new build allowance remain required |
-| Same-version Web candidate | VERIFIED_REMOTE through `7a256c9`; latest source deployment pending | Candidate stable URL serves bundle `index-ba04b6978a60494c2e78a83b648f6cda.js` from `7a256c9`; the live candidate backend and two local Web clients were used for schedule sync. `49f6d43` Decision UI changes still need candidate deployment. Owner Production untouched |
+| Standalone iPhone installation | AWAITING_OWNER | `768a951` iOS simulator build completed but was not installed or run; it cannot be installed on a physical iPhone. Current-source simulator rebuild and physical signing/UDID are still required |
+| Same-version Web candidate | VERIFIED_REMOTE through `768a951`; latest source deployment pending | Candidate stable URL serves `index-0b91cfa8c58cbd9285e48f1166ece95c.js` from READY deployment `dpl_EcWP7p3c65HuyqoMgBpyzaA16mjf`. HTTP 200 and normal Today/Settings entry verified; bundle contains candidate Supabase ref and not Owner ref. `75f6d77` conflict-copy correction still needs deployment. Owner Production untouched |
 | Record backup / restore | IMPLEMENTED, VERIFIED_LOCAL and candidate browser file flow | Versioned exact-record backup, original account binding, structural validation and empty-replica WAL restore. Real populated ExecutionLog + EffortUnit export/import/refresh/re-export preserved exact original JSON by ID; both disposable copies deleted and read back empty. Physical file-provider and account UI recovery acceptance pending |
 | Native recordings/performance | PARTIAL older measurement, NOT_PASSED | Earlier API36 host-GPU emulator sample: 307 frames, P50 22ms, P95 42ms, 214 histogram frames above 20ms, 43 janky. Not steady-state, latest-source or physical acceptance. Mac is unlocked, but native CUA pointer dispatch fails; current recording/performance remains UNVERIFIED |
 
 ## Exact Resume Checkpoint
+
+### Current candidate closeout: `75f6d77` (2026-10-03)
+
+- Real schedule-mutating Decision test used disposable candidate Auth user
+  `89582b9f-6a76-4b7f-a56a-7fb797bddc73`, two independent Web origins and
+  the existing candidate backend. Normal Schedule UI created a movable
+  12:00-13:00 block. Normal Today Decision asked for the missing current state;
+  the answer was stored only in the disposable decision context. Its explicit
+  proposal shortened the exact block to 12:00-12:30. Apply changed the plan;
+  the other client received 30 minutes. Undo restored 60 minutes on both.
+  Re-applying and then editing the same block to 45 minutes on the other client
+  caused old Undo to be rejected; the 45-minute edit survived. No Owner state
+  observation or private record was created.
+- The rejection originally surfaced the internal block ID and raw exception.
+  `75f6d77` maps patch conflicts to localized user copy and offers a new
+  review, without changing patch safety. Local browser regression confirmed
+  the 45-minute plan remained and the new review read 12:00-12:45. TypeScript,
+  adaptive-decision tests and Web export passed. Latest-source remote deploy is
+  still pending at this checkpoint.
+- The disposable cross-client QA Auth user
+  `a547c40e-cbe3-422e-aac0-9cdbf37447d7` and the decision QA user above
+  were each deleted after exact candidate-project and email/ID checks;
+  Auth readback returned 404. Candidate sync tables use `auth.users(id) on
+  delete cascade`. Independent PostgREST row-count readback using the admin key
+  returned permission denied; do not claim a separately observed row count.
+  The second account's final test ScheduleBlock was removed by account cascade,
+  not by a confirmed normal-UI Delete, because browser automation stalled on
+  that confirmation.
+- READY candidate Web deployment `dpl_EcWP7p3c65HuyqoMgBpyzaA16mjf`
+  serves source `768a951` at `https://questlife-v1-release.vercel.app/` with
+  bundle `index-0b91cfa8c58cbd9285e48f1166ece95c.js`. Candidate backend
+  ref is present; old Owner backend ref is absent. HTTP and normal Today/
+  Settings smoke passed. A local proxy serving this deployed bundle cross-
+  origin caused Quant to fail and correctly showed Retry; this was a proxy
+  origin artifact, not a successful live-service test. The same-origin local
+  client then completed the real Decision/Quant flow above.
+- iOS simulator EAS build `0d0ba86d-eb07-4144-b4ea-de076d61415b` FINISHED
+  for tracked source `768a951`, with candidate EAS environment. Artifact:
+  `https://expo.dev/artifacts/eas/TsBqAxAG_1pPFXHOGml7Lx-s8a43SbW0mT1ZIBFu_tg.tar.gz`.
+  No local Xcode `simctl`, no iOS simulator execution and no physical iPhone
+  signing/device acceptance. This is not proof that Apple Health works.
+- Next executable work: push/deploy `75f6d77` plus this ledger, check bundle
+  boundary, rebuild latest-source iOS simulator if Free allowance permits,
+  and address remaining device permission/physical, notification delivery,
+  shortcut installation and latest-source performance gates. Do not re-use
+  deleted QA accounts. Preserve the untracked Quant UI contract.
 
 ### Current functional source: `49f6d43` (2026-10-03)
 
