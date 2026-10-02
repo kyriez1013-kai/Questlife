@@ -22,7 +22,7 @@ VERIFIED_DEVICE, AWAITING_OWNER, BLOCKED. Unchecked entries remain unfinished.
 
 | Item | Current status | Evidence / next executable action |
 | --- | --- | --- |
-| Canonical worktree and branch | VERIFIED_LOCAL | Candidate source `6f4f491` on `release/questlife-v1`; checked 2026-10-02. Untracked `QUESTLIFE_QUANT_UI_CONTRACT.md` is preserved and not part of this release batch |
+| Canonical worktree and branch | VERIFIED_LOCAL | Candidate source `49f6d43` on `release/questlife-v1`; checked 2026-10-03. Untracked `QUESTLIFE_QUANT_UI_CONTRACT.md` is preserved and not part of this release batch |
 | Vercel authorization | VERIFIED_REMOTE | CLI login valid; existing questlife-alpha project discovered |
 | Isolated Supabase backend | VERIFIED_REMOTE | `gttcoocfkqwvsqfwxpyo` created; both reviewed migrations executed in SQL Editor; four RLS tables, six RPCs and Realtime publication verified. Existing production `gtlknzltzntfltgjvgxx` untouched |
 | EAS / iOS signing | BLOCKED quota; AWAITING_OWNER signing | EAS authenticated; `cf86bef` simulator compilation FINISHED. Latest source submission rejected by Free iOS quota (reset 2026-10-01); no paid upgrade. Physical distribution needs Apple credentials and device registration |
@@ -32,18 +32,49 @@ VERIFIED_DEVICE, AWAITING_OWNER, BLOCKED. Unchecked entries remain unfinished.
 | Legacy anonymous endpoint safety | IMPLEMENTED, VERIFIED_LOCAL | `/api/sync` fails closed (410); Quant verifies Supabase bearer UID; 17 backend scenario groups passed |
 | Real Quant runtime | VERIFIED_REMOTE (isolated fixtures) | 9 hosted checks: authentication, subject/as-of rejection, 210-observation computation, correction hash, empty-after-removal, QA exclusion and cross-subject isolation; `reports/release/quant-hosted-verification.json`; no owner data/database writes |
 | Native Today/materials/sheets | IMPLEMENTED, partial emulator verification | Standalone release opens Today S0 and State sheet; settled sheet shields background text and Cancel leaves state unrecorded. 31 component tests. Full keyboard, dark-theme and physical acceptance pending |
-| Native Goals / Schedule / Settings | IMPLEMENTED, partial emulator verification | All three tabs opened in installed release; new-goal sheet opened/canceled, Day/Week visible, empty Week reads 0h. Source permissions truthfully unrequested and account validation error visible. Full mutation/device acceptance pending |
+| Native Goals / Schedule / Settings | IMPLEMENTED, partial emulator verification | Android Schedule moved a QA block to 14:00-15:00 and the Web client received the change. Web created and deleted three QA blocks; second Web client and Android converged to zero. Native Settings source entry opens and reports Health and Calendar permissions unrequested. Physical provider data, conflict cancel in a real browser, and broader native acceptance remain pending |
 | Native Insights workspace | VERIFIED_LOCAL Android emulator with real candidate Quant | Signed APK selected execution duration, read candidate `/api/decision-quant`, showed 7 then 9 minutes after Web edit and empty after Web delete. Web showed 6 minutes and first-observation evidence after Android edit, then empty after Android delete. Other variables and physical acceptance remain open |
 | Health / Calendar / Notifications | IMPLEMENTED, VERIFIED_LOCAL | Explicit provider deletion/correction, durable Calendar intents/reconciliation, push registration lifecycle and quiet hours; actual source samples, OS writes and delivery require device/provider gates |
 | Shortcuts / deep links | IMPLEMENTED, VERIFIED_LOCAL | Open-only entries through existing handlers; 19 intent boundary assertions; Android Widget plugin passed 12 checks including native AAPT/Kotlin compilation; final installed-widget acceptance pending |
 | Isolated example mode | IMPLEMENTED, VERIFIED_LOCAL; partial installed check | Native example gallery and isolation notice visible. Real loader regression found/fixed; final chart readback pending native pointer-control recovery. No example is written to Store/outbox/OS |
-| Standalone Android release APK | VERIFIED_LOCAL build/install and emulator UI | Signed `6f4f491` arm64 APK, SHA256 `998c65d366b65c47a2791d7272c35ff0d160caa864c4c2742ca4e7819a71f4ed`; installed in isolated Android user 11, normal UI create/edit/delete and account sync exercised. Emulator only, not physical-device acceptance |
+| Standalone Android release APK | VERIFIED_LOCAL build/install and emulator UI | Signed `49f6d43` arm64 APK, SHA256 `e685a432691ff94ceac3d29e0fac872b2b6cab2c75fa32a613353a92b05655b7`; installed in isolated Android user 11. Normal UI showed decision review, real evidence missingness, explicit Apply and Undo for a no-op candidate; the exact DecisionResult synced to Web. Emulator only, not physical-device acceptance |
 | Standalone iPhone installation | AWAITING_OWNER / BLOCKED quota | `cf86bef` simulator archive inspected, including Widget/Shortcut and backup support. Not a physical-iPhone package or final-source build. Apple signing/UDID and new build allowance remain required |
-| Same-version Web candidate | VERIFIED_LOCAL updated UI; candidate deployment pending | Local Web source `6f4f491` on two independent origins exercised against live candidate backend. Stable candidate URL still serves prior `fd90542` bundle until this batch deploys. Owner Production untouched |
+| Same-version Web candidate | VERIFIED_REMOTE through `7a256c9`; latest source deployment pending | Candidate stable URL serves bundle `index-ba04b6978a60494c2e78a83b648f6cda.js` from `7a256c9`; the live candidate backend and two local Web clients were used for schedule sync. `49f6d43` Decision UI changes still need candidate deployment. Owner Production untouched |
 | Record backup / restore | IMPLEMENTED, VERIFIED_LOCAL and candidate browser file flow | Versioned exact-record backup, original account binding, structural validation and empty-replica WAL restore. Real populated ExecutionLog + EffortUnit export/import/refresh/re-export preserved exact original JSON by ID; both disposable copies deleted and read back empty. Physical file-provider and account UI recovery acceptance pending |
 | Native recordings/performance | PARTIAL older measurement, NOT_PASSED | Earlier API36 host-GPU emulator sample: 307 frames, P50 22ms, P95 42ms, 214 histogram frames above 20ms, 43 janky. Not steady-state, latest-source or physical acceptance. Mac is unlocked, but native CUA pointer dispatch fails; current recording/performance remains UNVERIFIED |
 
 ## Exact Resume Checkpoint
+
+### Current functional source: `49f6d43` (2026-10-03)
+
+- Following the cross-client record/Quant loop below, `7a256c9` made Web
+  Schedule use the same overlap detection as native, recheck conflicts before
+  save, preserve edited status/source, and wait for durable create/delete.
+  Targeted Schedule component tests passed 25/25; TypeScript and Web export
+  passed. Three isolated QA blocks were created in Web; native moved one to
+  14:00-15:00; another Web client received it; all three were deleted through
+  normal UI and both Web and Android converged to zero. Browser conflict-cancel
+  interaction was not independently observed; component coverage passed.
+- `49f6d43` exposed the existing owner Decision flow in native Today without
+  changing its engine or Store. Quant service failure now displays a retryable
+  error, not a false insufficient-data state. With no schedule in the isolated
+  account, the native sheet showed the generic question and real missingness,
+  not a phantom movable appointment. Explicit no-op Apply and Undo worked;
+  after sync, Web reopened the exact DecisionResult. This does not verify a
+  schedule-mutating patch or physical-device interaction. Native decision
+  render test, adaptive-decision suite, TypeScript, and Web export passed.
+- Signed Android candidate APK:
+  `reports/release/build-output/questlife-v1-49f6d43-arm64.apk`, SHA256
+  `e685a432691ff94ceac3d29e0fac872b2b6cab2c75fa32a613353a92b05655b7`.
+  Installed in isolated emulator user 11. No Metro required. Android source
+  points to the candidate backend; this APK is not an iOS or physical-device
+  acceptance result.
+- Candidate Vercel project is `prj_fVGFV7DzxfkLqbBpSo8P7NH9oqxX`, Supabase
+  ref `gttcoocfkqwvsqfwxpyo`. Old Owner ref `gtlknzltzntfltgjvgxx` is not
+  configured in the candidate bundle. Existing untracked Quant UI contract is
+  user-owned and must remain untouched. Latest `49f6d43` push/deploy, a
+  schedule-mutating Decision Apply/Undo check, source-permission device checks,
+  QA account cleanup, and latest-source performance still remain open.
 
 ### Current functional source: `6f4f491` (2026-10-02)
 
