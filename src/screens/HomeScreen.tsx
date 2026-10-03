@@ -2338,6 +2338,11 @@ export default function HomeScreen() {
   } : undefined;
 
   const v11UtilityActions: V11IntegratedUtilityAction[] = [
+    ...((data.executionLogs || []).length > 0 ? [{
+      id: 'activity-history',
+      label: t(lang, 'activityHistory'),
+      onPress: openV11ActivityHistory,
+    }] : []),
     ...(activeSession ? [{
       id: 'finish-session',
       label: t(lang, 'finishAndRecord'),

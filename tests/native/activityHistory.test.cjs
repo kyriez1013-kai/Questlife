@@ -13,6 +13,7 @@ const original = Module._load;
 Module._load = function(request, parent, main) {
   if (request === 'react') return React;
   if (request === 'react-native') return { Pressable: 'Pressable', Text: 'Text', View: 'View' };
+  if (request.endsWith('/i18n')) return { t: (_, key) => key };
   if (request.endsWith('V11SheetControls')) return { V11InlineButton: 'InlineButton', V11SheetButton: 'SheetButton' };
   if (request.endsWith('useV11ReducedMotion')) return { __esModule: true, default: () => false };
   if (request.endsWith('V11Stage2ProductionSheet')) return { __esModule: true, default: 'Sheet' };
@@ -25,9 +26,9 @@ require.extensions['.tsx'] = (module, file) => module._compile(ts.transpileModul
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.React, esModuleInterop: true },
 }).outputText, file);
 const Sheet = require('../../src/components/today/V11ActivityHistorySheet.tsx').default;
-const records = ['first', 'middle', 'last'].map(id => ({ id, title: `Title ${id}`, note: `Note ${id}`, time: '12:00' }));
+const records = ['first', 'middle', 'last'].map(id => ({ id, title: `Title ${id}`, note: `Note ${id}`, time: '12:00', durationMinutes: 7, canEditDuration: true }));
 const base = { records, visible: true, closeLabel: 'Close', deleteLabel: 'Delete', detailTitle: 'Record', emptyLabel: 'Empty',
-  feedbackTitle: 'Feedback', historyTitle: 'History', loadMoreLabel: 'More', onClose() {}, onDeleteRecord() {},
+  feedbackTitle: 'Feedback', historyTitle: 'History', loadMoreLabel: 'More', language: 'en', onClose() {}, onDeleteRecord() {}, onUpdateRecord() {},
   getRecordFeedback: id => ({ summary: `Feedback ${id}`, detail: `Detail ${id}` }),
   theme: { text: { primary: '#fff', secondary: '#ccc', metadata: '#bbb' }, glow: { primary: '#fff' } } };
 const text = tree => JSON.stringify(tree.toJSON());
