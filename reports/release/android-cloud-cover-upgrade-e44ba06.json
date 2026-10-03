@@ -1,0 +1,21 @@
+{
+  "scope": "Isolated headless CloudQA emulator; existing device identity and journal, no seeded observation or account",
+  "from": "05a4405 cloud",
+  "to": "e44ba06 cloud",
+  "operation": "adb install -r; no uninstall, no clear-data",
+  "package": "com.kyrie.questlife",
+  "versionName": "1.0.0",
+  "versionCode": 1,
+  "certSha256": "61b030724c7ef8ab94681eb42b7033631f8c2086c78a4a79166a654e93eec5da",
+  "beforeHash": "e76b86da16398fd0567ca7263c69c53d2e41ed070bd8553034200ec507c9483f",
+  "afterHash": "e76b86da16398fd0567ca7263c69c53d2e41ed070bd8553034200ec507c9483f",
+  "rowKeys": [
+    "questlife.sync.v2.device",
+    "questlife.sync.v2.journal"
+  ],
+  "exactPreserved": true,
+  "limitations": [
+    "Existing CloudQA has no populated user records or auth session; populated-record and physical-phone upgrade remain UNVERIFIED"
+  ],
+  "testedAt": "2026-10-03T15:34:50.637Z"
+}

@@ -1,0 +1,17 @@
+{
+  "testedAt": "2026-10-03T16:11:01.895Z",
+  "device": "QuestLife_V1_ReleaseQA API36 arm64 emulator",
+  "sourceFrom": "e44ba06",
+  "sourceTo": "1f09631975ccc7341005e69e4c1c35fe11780974",
+  "install": "adb install -r local signed Release APK; no uninstall or data clear",
+  "keys": 6,
+  "beforeKeyValueHash": "e0a3fee4faa3f62a8bc77c336a75bdb4c5c0e72d21a4f80580d05195bf645036",
+  "afterKeyValueHash": "e0a3fee4faa3f62a8bc77c336a75bdb4c5c0e72d21a4f80580d05195bf645036",
+  "identical": true,
+  "existingAppData": {
+    "goals": [],
+    "executionCount": 0,
+    "stateCount": 0
+  },
+  "scope": "Before first launch: exact persistent AsyncStorage key/value preservation. No physical-device or populated execution/auth upgrade claim."
+}

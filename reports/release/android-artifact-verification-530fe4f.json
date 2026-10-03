@@ -1,0 +1,44 @@
+{
+  "applicationSource": "530fe4fe50b5f4e43e9d09b09c9b67a47bc3f621",
+  "package": "com.kyrie.questlife",
+  "versionName": "1.0.0",
+  "versionCode": 1,
+  "local": {
+    "file": "questlife-v1-530fe4f-arm64.apk",
+    "bytes": 47262668,
+    "sha256": "fc67232a14b8db76ecc84feeb11b916fcd8b9290f86cb9b6ffbb3813d7d2ff3a",
+    "v2SignatureVerified": true,
+    "certificateSha256": "d2a08d98261c601f6572c0c171810ff80530e55410cac780d3f0d928443867d6",
+    "device": "QuestLife_V1_ReleaseQA API36 arm64 emulator, not physical phone",
+    "coverInstall": "Success, no uninstall or data clear",
+    "activityLaunch": "WARM, TotalTime565ms; not time-to-usable",
+    "lanHttpStatus": 200,
+    "lanUrl": "http://192.168.5.28:8096/questlife-v1-530fe4f-arm64.apk"
+  },
+  "latestCloud": {
+    "buildId": "04c78177-4230-43e5-be13-0556c7af878d",
+    "sourceCommit": "530fe4fe50b5f4e43e9d09b09c9b67a47bc3f621",
+    "status": "FINISHED",
+    "artifactUrl": "https://expo.dev/artifacts/eas/_u6rxb52IJbbIyIjo96ncgRMHE1II4PuKNMQq36D4Rk.apk",
+    "getHttpStatus": 200,
+    "contentLength": 108192973,
+    "completeDownloadAndSignature": "UNVERIFIED: repeated Mac network timeout; partial binary not delivered"
+  },
+  "verifiedCloudHealthRecoveryVersion": {
+    "sourceCommit": "1f09631975ccc7341005e69e4c1c35fe11780974",
+    "buildId": "abdcab45-cfef-49c4-8c97-a9507307178e",
+    "artifactUrl": "https://expo.dev/artifacts/eas/fC_6BE2TnWf8fL4X2k5YZzBgeUKcpZ_1kq_gCefaR50.apk",
+    "bytes": 108192889,
+    "sha256": "9c8702f356c607069f971485ec157402f9380d533048f2c5edd81d8c544f64ef",
+    "v2SignatureVerified": true,
+    "certificateSha256": "61b030724c7ef8ab94681eb42b7033631f8c2086c78a4a79166a654e93eec5da",
+    "sameCertificateAs": ["05a4405 cloud", "e44ba06 cloud"],
+    "sameSourceLocalHermesHash": "3f0891ebb09b43099825f59bf90f530bdfbbe9740a51f1fc7b31650ba8e3f9ae"
+  },
+  "upgradeLimitations": [
+    "Cloud and local/LAN certificate families differ; they cannot cover each other.",
+    "Cloud05a4405-to-e44ba06 preserved identity/journal in empty isolated emulator only.",
+    "Locale44ba06-to-1f09631 preserved six exact AsyncStorage values before first launch, with no populated execution/auth dataset.",
+    "No Owner uninstall, data clear or physical populated-record upgrade was performed."
+  ]
+}

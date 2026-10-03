@@ -1,6 +1,6 @@
 # QuestLife V1 End-to-End Completion Ledger
 
-Updated: 2026-10-03. This is the single current completion checklist and resume
+Updated: 2026-10-04. This is the single current completion checklist and resume
 checkpoint for `QUESTLIFE_END_TO_END_COMPLETION.md`. Earlier phase reports are
 historical evidence, not completion claims for this candidate.
 
@@ -18,32 +18,139 @@ historical evidence, not completion claims for this candidate.
 ## Completion Checklist
 
 Status vocabulary: IMPLEMENTED, VERIFIED_LOCAL, VERIFIED_REMOTE,
-VERIFIED_DEVICE, AWAITING_OWNER, BLOCKED. Unchecked entries remain unfinished.
+VERIFIED_DEVICE, VERIFIED_USER_MANUAL, AWAITING_OWNER, BLOCKED. User-manual
+evidence is identified separately from agent-observed runtime evidence.
+Unchecked entries remain unfinished.
 
 | Item | Current status | Evidence / next executable action |
 | --- | --- | --- |
-| Canonical worktree and branch | VERIFIED_LOCAL | Application source `e44ba06` on `release/questlife-v1`; checked 2026-10-03. User-owned untracked `QUESTLIFE_QUANT_UI_CONTRACT.md` remains unread, unchanged and excluded from commits/uploads |
+| Canonical worktree and branch | VERIFIED_LOCAL | Application source `530fe4f` on `release/questlife-v1`; checked 2026-10-04. User-owned untracked `QUESTLIFE_QUANT_UI_CONTRACT.md` remains unread, unchanged and excluded from commits/uploads |
 | Vercel authorization | VERIFIED_REMOTE | Existing candidate project `prj_fVGFV7DzxfkLqbBpSo8P7NH9oqxX` / `questlife-v1-release`; candidate CLI deployment authorized. Old Owner project is not the deployment target |
 | Isolated Supabase backend | VERIFIED_REMOTE | `gttcoocfkqwvsqfwxpyo` created; both reviewed migrations executed in SQL Editor; four RLS tables, six RPCs and Realtime publication verified. Existing production `gtlknzltzntfltgjvgxx` untouched |
 | EAS / iOS signing | VERIFIED_REMOTE simulator build; BLOCKED local execution/signing | Existing `75f6d77` simulator archive downloaded and inspected, not executed. Mac has Command Line Tools but no Xcode or simctl; EAS reports no iOS signing credentials. Owner has no paid Apple Developer membership and explicitly declines new fees. Free Xcode personal-device testing is a separate unconfigured path, not a signed distribution or HealthKit acceptance |
 | Physical devices | AWAITING_OWNER | Dedicated API36 arm64 emulator is connected; no physical device is connected and no physical acceptance is claimed |
-| Auth and bidirectional sync | VERIFIED_LOCAL UI + Android emulator + candidate backend; real email sign-in VERIFIED_REMOTE | Prior disposable Web/Android create/edit/delete and refresh evidence retained. On 2026-10-03 the user received and used a real email link; normal candidate Settings showed the masked signed-in identity, synced status and zero outbox. Incorrect candidate Site URL/allowlist repaired and persisted. Latest post-refresh readback remains UNVERIFIED due UI-control failure. Physical two-device acceptance remains open |
+| Auth and bidirectional sync | VERIFIED_LOCAL isolated UI + Android emulator + candidate backend; real email restoration VERIFIED_USER_MANUAL | User confirmed real email sign-in, refresh, tab close/reopen and the same synced account. Separate disposable normal-client login, refresh, close/reopen, logout and different-account isolation were observed locally against candidate Supabase. QA record 7→9 minutes reached the real Quant UI and exact evidence ID. This batch's normal UI delete/local cleanup readback was interrupted, not passed; exact remote tombstones and QA identity cleanup were verified. Physical two-device acceptance remains open |
 | Commit-order concurrent sync | VERIFIED_LOCAL | PostgreSQL 18, separate backend connections: 10/10; delayed lower sequence, CAS, idempotent receipt/delete and RLS; no hosted claim |
 | Legacy anonymous endpoint safety | IMPLEMENTED, VERIFIED_LOCAL | `/api/sync` fails closed (410); Quant verifies Supabase bearer UID; 17 backend scenario groups passed |
 | Real Quant runtime | VERIFIED_REMOTE (isolated fixtures) | 9 hosted checks: authentication, subject/as-of rejection, 210-observation computation, correction hash, empty-after-removal, QA exclusion and cross-subject isolation; `reports/release/quant-hosted-verification.json`; no owner data/database writes |
 | Native Today/materials/sheets | IMPLEMENTED, partial emulator verification | Standalone release opens Today S0 and State sheet; settled sheet shields background text and Cancel leaves state unrecorded. 31 component tests. Full keyboard, dark-theme and physical acceptance pending |
 | Native Goals / Schedule / Settings | IMPLEMENTED, partial emulator verification | Android Schedule moved a QA block to 14:00-15:00 and the Web client received the change. Web created and deleted three QA blocks; second Web client and Android converged to zero. Native Settings source entry opens and reports Health and Calendar permissions unrequested. Physical provider data, conflict cancel in a real browser, and broader native acceptance remain pending |
 | Native Insights workspace | Earlier real candidate/emulator flow VERIFIED_LOCAL; current recovery IMPLEMENTED + isolated regression | Prior 7/9/empty and reverse 5/6/empty evidence retained. `7ced599` refreshes real results on account/current-record changes, foreground and tab return; stale runtime/chart responses are rejected and service failure retains Retry. Nine isolated recovery checks pass; current-source installed chart/recovery and physical acceptance remain open |
-| Health / Calendar / Notifications | IMPLEMENTED, VERIFIED_LOCAL | Explicit provider deletion/correction, durable Calendar intents/reconciliation, push registration lifecycle and quiet hours; actual source samples, OS writes and delivery require device/provider gates |
+| Health / Calendar / Notifications | IMPLEMENTED, VERIFIED_LOCAL; Android Health system-entry partial emulator verification | `1f09631` adds normal Settings permission management and recheck, without cloud consent changes. Installed Release opened the real Health Connect onboarding; no read grant or provider data acceptance is claimed. Calendar intents/reconciliation and notification lifecycle/quiet hours retain prior isolated evidence. Actual samples, OS writes and delivery remain device/provider gates |
 | Shortcuts / deep links | IMPLEMENTED, VERIFIED_LOCAL | Open-only entries through existing handlers; 19 intent boundary assertions; Android Widget plugin passed 12 checks including native AAPT/Kotlin compilation; final installed-widget acceptance pending |
 | Isolated example mode | VERIFIED_LOCAL installed Android emulator | Latest `e44ba06` normal Insights entry and isolated mature example loaded. Line/candle switch, observation evidence Sheet and close/scroll restoration operated through normal UI. No example is written to Store/outbox/OS; not personal runtime, physical-device or all-example acceptance |
-| Standalone Android release APK | Same-source local release built/cover-installed; cloud build FINISHED | `e44ba06` arm64 release with embedded Hermes/candidate HTTPS config cover-installed on the dedicated emulator without clearing data. Same-source EAS build `5b207aed-dddd-4c31-8e20-1ce65bf1256f` FINISHED; public APK returns HTTP200, 108,190,469 bytes. See current checkpoint for links and signing boundary; not physical-device acceptance |
+| Standalone Android release APK | `530fe4f` local release built/cover-installed; same-source cloud build FINISHED | Local Release is independently launched, not Metro-dependent. Cloud build `04c78177-4230-43e5-be13-0556c7af878d` completed on the exact application source. Prior cloud/local signatures and isolated cover-upgrade scopes are recorded below. Physical and populated-record upgrade acceptance is not claimed |
 | Standalone iPhone installation | AWAITING_OWNER | `75f6d77` iOS simulator build completed but was not installed or run; it cannot be installed on a physical iPhone. Physical signing/UDID and device acceptance remain required |
-| Same-version Web candidate | VERIFIED_REMOTE on `e44ba06` | READY candidate deployment `dpl_9gAhv6oKsbjz6ANAFsSwxkoNNYEB` serves `index-008ddea2e75804733806f5398a672752.js` at the existing stable alias. HTTP200; full entry contains candidate ref and not Owner ref. Actual normal Settings shows real email login and synced status. No Owner deployment was changed |
+| Same-version Web candidate | VERIFIED_REMOTE on `530fe4f`; current hosted UI smoke pending unlocked Mac | READY candidate deployment `dpl_YaXHtaSdkAu8vLN12XLuSZbAm5TZ` serves `index-9965d7d1b0bd2bf0cb1c7a44cb20eecd.js` at the existing stable alias. Actual complete bundle contains candidate ref and the new history entry, not Owner ref. Current-source isolated normal UI was verified; this deployment's full browser interaction is still UNVERIFIED. No Owner deployment was changed |
 | Record backup / restore | IMPLEMENTED, VERIFIED_LOCAL and candidate browser file flow | Versioned exact-record backup, original account binding, structural validation and empty-replica WAL restore. Real populated ExecutionLog + EffortUnit export/import/refresh/re-export preserved exact original JSON by ID; both disposable copies deleted and read back empty. Physical file-provider and account UI recovery acceptance pending |
 | Native recordings/performance | Latest partial emulator sample, NOT_PASSED | `e44ba06` loaded example candle/scroll/evidence-sheet sample: 83 frames, P50 19ms, P95 32ms, 19 histogram frames above 20ms, 14 janky. Not a full WebView/steady-state or physical benchmark. Mac locked again before keyboard and further native interaction; recordings remain UNVERIFIED |
 
 ## Exact Resume Checkpoint
+
+### Current continuation: `530fe4f` (2026-10-04)
+
+- Application commits: `1f09631` (native Health permission management/recheck)
+  and `530fe4f` (cross-day Activity History reachability), both pushed only to
+  `release/questlife-v1`. No final visual redesign, Quant change, new sync
+  architecture, schema change, Owner observation or paid membership.
+- Found and fixed an actual entry defect: with only yesterday's execution,
+  Today's latest row was empty and History had no entry. Existing L2 utilities
+  now include History when real executions exist, on both platform surfaces;
+  the existing sheet, stable IDs, edit/delete callbacks and Store ownership are
+  unchanged. Empty history does not leave a dead utility.
+- Separate normal-client QA at local origin `127.0.0.1:8098`, current exported
+  source and candidate Supabase: login A, refresh, close/reopen, logout, login B,
+  and return to A. B could not sync A's bound records, nor display A's Quant
+  result; authenticated readback returned zero cross-account rows. Admin-minted
+  one-time links were used for these disposable identities: this is not an
+  email-delivery test. The user's real candidate email/close-reopen evidence
+  remains separately VERIFIED_USER_MANUAL.
+- Normal Direct Log created a 7-minute custom execution. Real candidate Quant
+  returned one observation and the UI displayed 7 minutes, then 9 minutes after
+  a normal History edit, with evidence ID
+  `appdata:execution:muskhnlx2eo0at:duration` unchanged. Authenticated readback
+  confirmed revision 2 and the exact QA note. The local QA gateway forwarded
+  only the existing authenticated Quant request to the candidate HTTPS service;
+  it was not a substitute runtime or a production configuration change.
+- Delete confirmation stalled the browser control connection and the Mac then
+  locked. No UI-delete or local-after-delete refresh pass is recorded. Remote
+  cleanup used the existing authenticated CAS deletion RPC, scoped to this QA
+  identity and proven note/lineage: ExecutionLog `muskhnlx2eo0at` and EffortUnit
+  `effort-muskhnlx2eo0at-primary`, both revision 3, `payload=null` and real
+  `deleted_at`. Repeated identical mutation receipts matched. Remaining live
+  QA rows produced a real authenticated Quant HTTP200 / 0 eligible observations
+  (`ff1429f`), not a browser-refresh claim. Both exact QA Auth identities were
+  removed and read back 404. See `reports/release/auth-lifecycle-cleanup.json`.
+  The isolated local test-origin replica still needs normal UI cleanup/readback;
+  no Owner origin or account was cleared.
+- All 35 targeted Settings, Health recovery, History and wiring checks passed
+  together after the final application edit; typecheck/Web build passed. The older
+  History harness was updated for its existing i18n dependency and current
+  presentation props; no application handler was altered. Health's 26 focused
+  checks/typecheck/build also passed earlier in this same continuation.
+- Candidate Web: `https://questlife-v1-release.vercel.app/`; exact deployment
+  `dpl_YaXHtaSdkAu8vLN12XLuSZbAm5TZ`. Full bundle HTTP readback confirms
+  `gttcoocfkqwvsqfwxpyo`, no Owner ref, and the new History action. Only the
+  existing candidate project was deployed from a tracked-only worktree; the
+  protected untracked contract and `docs/quant/` were excluded.
+- Local latest Android: `questlife-v1-530fe4f-arm64.apk`, 47,262,668 bytes,
+  SHA256 `fc67232a14b8db76ecc84feeb11b916fcd8b9290f86cb9b6ffbb3813d7d2ff3a`.
+  Existing local certificate preserved; cover-installed on the dedicated
+  `QuestLife_V1_ReleaseQA` emulator without uninstall or clear-data. Activity
+  launch succeeded (warm Activity timing 565ms, not time-to-usable). LAN download
+  HTTP200: `http://192.168.5.28:8096/questlife-v1-530fe4f-arm64.apk`.
+- `1f09631` cloud APK was fully downloaded/verified: 108,192,889 bytes, SHA256
+  `9c8702f356c607069f971485ec157402f9380d533048f2c5edd81d8c544f64ef`;
+  certificate `61b030724c7ef8ab94681eb42b7033631f8c2086c78a4a79166a654e93eec5da`,
+  same as older cloud versions and different from local/LAN signing. Its cloud
+  and local Hermes bundles match exactly. Verified public cloud download:
+  `https://expo.dev/artifacts/eas/fC_6BE2TnWf8fL4X2k5YZzBgeUKcpZ_1kq_gCefaR50.apk`.
+  `530fe4f` cloud build `04c78177-4230-43e5-be13-0556c7af878d` finished on the
+  exact source; its public artifact returned GET HTTP200 and size 108,192,973.
+  Full download repeatedly timed out on this Mac, including through its existing
+  configured proxy. No security/network configuration was changed. Full binary
+  hash/signature verification for that newer cloud artifact is UNVERIFIED;
+  incomplete files were quarantined/removed, not offered as installers.
+  Metadata-level latest link:
+  `https://expo.dev/artifacts/eas/_u6rxb52IJbbIyIjo96ncgRMHE1II4PuKNMQq36D4Rk.apk`.
+  These are distinct versions: the verified `1f09631` cloud APK includes Health
+  recovery; latest `530fe4f` local APK also includes the History entry fix.
+- Cover-upgrade evidence is deliberately limited: old cloud→`e44ba06` retained
+  the identity/journal on an empty isolated emulator, and local `e44ba06`→
+  `1f09631` retained all six existing AsyncStorage values. Neither proves a
+  populated authenticated phone upgrade. Never uninstall the Owner app to
+  work around a cloud/local signature mismatch.
+- Performance remains NOT_PASSED / incomplete, not silently repaired. Prior
+  P95 32ms was the ReleaseQA mature-example Activity frame histogram, not a
+  component duration. Retained diagnostic rows measured buffer-dequeue P95
+  16.035ms versus UI work 0.847ms; this does not establish JS/Quant causation.
+  New full composition, WebView, keyboard and physical performance acceptance
+  were interrupted by input failure/lock. No material/animation changes were
+  made from an unproven bottleneck.
+- Mac has no `/Applications/Xcode.app` and still selects Command Line Tools.
+  The existing simulator archive has not run and is not an iPhone installer.
+  Free Xcode installation and normal Apple/attached-device steps await the user;
+  no paid membership or unsupported HealthKit/signing claim. Real Health grant,
+  Calendar writes, notification delivery, shortcut/widget and native recording
+  acceptance remain open. Resume only dependent UI steps after manual unlock.
+- Candidate non-mutating API smoke retained fail-closed semantics: retired
+  `/api/sync` HTTP410 and unauthenticated Quant HTTP401. Real authenticated
+  empty-after-delete was verified separately, not classified as insufficient
+  data on a service failure. Isolated gateway process was stopped, tracked-only
+  build/deploy worktrees removed and temporary QA login credentials removed.
+  The LAN APK server remains available. Own interrupted browser tabs 3/4 at
+  localhost8098 could not be closed while the confirmation/input connection was
+  blocked; resume their local-only cleanup after unlock. Re-start the existing
+  `/tmp/questlife-auth-lifecycle-server.mjs` only if that UI readback is needed;
+  the QA identities are gone and must not be reused.
+
+Immediate dependent resume work (not a new phase): physical/local installation
+using the matching certificate family; normal UI cleanup of the isolated test
+origin; latest hosted UI smoke; controlled installed Insights/keyboard/scroll
+performance and recording; Health read-grant/revoke/recheck and Calendar/notification
+OS flows with explicit device authorization; free Xcode installation and real
+simulator execution. Reuse earlier Web/Android, schedule and conflict-safe Undo
+evidence; do not repeat or write fake Owner observations.
 
 ### Unlocked-Mac continuation (2026-10-03)
 

@@ -1,0 +1,38 @@
+{
+  "sourceCommit": "e44ba06960fe5d5b7ac902d58c3e7be7c120602e",
+  "device": "QuestLife_V1_ReleaseQA / API36 arm64 / M4 host-GPU",
+  "mode": "release",
+  "sample": "existing unreset aggregate plus current attempted navigation; NOT a new controlled benchmark",
+  "validFrameRows": 120,
+  "frame": {
+    "p50Ms": 21.603,
+    "p95Ms": 33.658,
+    "above20ms": 98
+  },
+  "uiWork": {
+    "p50Ms": 0.236,
+    "p95Ms": 0.847,
+    "above20ms": 0
+  },
+  "renderSubmission": {
+    "p50Ms": 1.181,
+    "p95Ms": 2.258,
+    "above20ms": 1
+  },
+  "bufferDequeue": {
+    "p50Ms": 14.804,
+    "p95Ms": 16.035,
+    "above20ms": 0
+  },
+  "bufferQueue": {
+    "p50Ms": 0.072,
+    "p95Ms": 0.649,
+    "above20ms": 0
+  },
+  "limitations": [
+    "No direct JS timing or WebView renderer timing",
+    "Input control failed; no controlled before-after fix claim",
+    "Main-activity frame and GPU buffer pacing only"
+  ],
+  "testedAt": "2026-10-03T15:33:59.799Z"
+}

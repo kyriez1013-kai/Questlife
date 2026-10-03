@@ -1,0 +1,49 @@
+{
+  "sourceCommit": "530fe4fe50b5f4e43e9d09b09c9b67a47bc3f621",
+  "testedAt": "2026-10-03T16:42:40.086Z",
+  "project": "gttcoocfkqwvsqfwxpyo",
+  "runId": "61b365a0-ab5e-40d1-b0d6-6d392cc8cafa",
+  "userId": "a0d90a3d-efd0-4968-aecc-6c0e31804ee9",
+  "scope": "Existing authenticated Sync V2 RPC cleanup after normal UI confirmation was blocked. Not UI-delete or local-refresh acceptance.",
+  "deletions": [
+    {
+      "status": "applied",
+      "type": "effortUnits",
+      "id": "effort-muskhnlx2eo0at-primary",
+      "revision": 3,
+      "deletedAt": "2026-10-03T16:42:39.180772+00:00"
+    },
+    {
+      "status": "applied",
+      "type": "executionLogs",
+      "id": "muskhnlx2eo0at",
+      "revision": 3,
+      "deletedAt": "2026-10-03T16:42:39.180772+00:00"
+    }
+  ],
+  "idempotentReceipt": true,
+  "remotePayloadsNull": true,
+  "localUiDeletion": "UNVERIFIED: confirmation/CDP blocked, then Mac locked. Exact QA remote data and identities removed; local test-origin readback still requires UI.",
+  "authIdentityCleanup": "VERIFIED_REMOTE",
+  "quantAfterDeletion": {
+    "http": 200,
+    "eligibleObservations": 0,
+    "excludedObservations": 0,
+    "quantCommit": "ff1429f",
+    "sourceSnapshotHash": "b29eee27829af3de1fb9a59c66975d978d44ba0eb117f8bf60532203f2c9e98d",
+    "subjectBound": true,
+    "scope": "Authenticated API with remaining live rows from this exact QA account; not browser analysis refresh."
+  },
+  "authCleanup": [
+    {
+      "userId": "a0d90a3d-efd0-4968-aecc-6c0e31804ee9",
+      "status": "removed",
+      "readback": 404
+    },
+    {
+      "userId": "7eb99da7-8448-46fa-93d0-8f5df2c48880",
+      "status": "removed",
+      "readback": 404
+    }
+  ]
+}

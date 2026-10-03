@@ -1,0 +1,50 @@
+{
+  "sourceCommit": "530fe4fe50b5f4e43e9d09b09c9b67a47bc3f621",
+  "project": "gttcoocfkqwvsqfwxpyo",
+  "runId": "61b365a0-ab5e-40d1-b0d6-6d392cc8cafa",
+  "environment": "Current exported Web source at isolated localhost8098, candidate Supabase and live candidate Quant endpoint",
+  "scope": "Normal client interaction unless explicitly classified below. Not physical-device, hosted-current-UI or real email-delivery acceptance.",
+  "realEmailRestore": {
+    "status": "VERIFIED_USER_MANUAL",
+    "environment": "https://questlife-v1-release.vercel.app/ in the user's Chrome",
+    "evidence": "User reported sign-in, refresh, tab close/reopen and the same synced account. No private inbox, link, email or token exported."
+  },
+  "normalUi": {
+    "disposableLoginA": "PASS",
+    "refreshSameAccount": "PASS",
+    "closeAndReopenSameAccount": "PASS",
+    "logout": "PASS",
+    "differentAccountBindingBlocked": "PASS",
+    "differentAccountCannotDisplayPriorQuant": "PASS",
+    "returnToOriginalAccount": "PASS",
+    "directLog7Minutes": "PASS",
+    "refreshStoredRecord": "PASS",
+    "crossDayHistoryEntry": "PASS",
+    "historyEdit7To9": "PASS",
+    "realQuantUpdatesTo9": "PASS",
+    "sameEvidenceId": "appdata:execution:muskhnlx2eo0at:duration",
+    "uiDeleteConfirmationAndRefresh": "UNVERIFIED: browser confirmation/input stalled, followed by Mac lock"
+  },
+  "authenticatedReadback": {
+    "executionId": "muskhnlx2eo0at",
+    "updatedDurationMinutes": 9,
+    "revisionAfterEdit": 2,
+    "exactQANoteMatched": true,
+    "secondAccountLiveRows": 0,
+    "crossAccountReadRows": 0
+  },
+  "cleanup": {
+    "report": "reports/release/auth-lifecycle-cleanup.json",
+    "exactRemoteTombstones": "PASS",
+    "runtimeEmptyAfterDelete": "PASS: authenticated API; not browser readback",
+    "disposableAuthIdentitiesRemoved": "PASS: both 404",
+    "localTestOriginReadback": "UNVERIFIED",
+    "ownerRecordsModified": false
+  },
+  "screenshots": [
+    "reports/release/screenshots/auth-lifecycle/qa-refresh-session.jpg",
+    "reports/release/screenshots/auth-lifecycle/qa-account-isolation.jpg",
+    "reports/release/screenshots/auth-lifecycle/qa-real-quant-evidence.jpg",
+    "reports/release/screenshots/auth-lifecycle/qa-quant-correction-9.jpg"
+  ]
+}
