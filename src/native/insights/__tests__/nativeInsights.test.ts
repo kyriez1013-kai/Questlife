@@ -180,8 +180,16 @@ test('events use the selected interval, never all history in a custom empty rang
 });
 test('WebView message parser rejects malformed / writable / nonfinite events', () => {
   for (const value of ['{', '{}', '{"channel":"native-insights","type":"writeStore"}', '{"channel":"native-insights","type":"selection","time":null,"value":1,"rows":[]}']) assert.equal(parseNativeChartEvent(value), null);
-  assert.deepEqual(parseNativeChartEvent('{"channel":"native-insights","type":"ready"}'), { type: 'ready' });
-  assert.equal(parseNativeChartEvent({ channel: 'native-insights', type: 'selection', time: 100, value: 1, rows: [{ id: 'a', value: Infinity }] }), null);
+  assert.deepEqual(parseNativeChartEvent('{"channel":"native-insights","type":"ready","requestId":1}'), { type: 'ready', requestId: 1 });
+  assert.equal(parseNativeChartEvent({ channel: 'native-insights', requestId: 1, type: 'selection', time: 100, value: 1, rows: [{ id: 'a', value: Infinity }] }), null);
+});
+test('chart readiness, failures and selections must belong to the current render request', () => {
+  for (const type of ['ready', 'error', 'selection']) {
+    const event = { channel: 'native-insights', requestId: 1, type, time: 100, value: 2, rows: [] };
+    assert.ok(parseNativeChartEvent(event, 1));
+    assert.equal(parseNativeChartEvent(event, 2), null);
+    for (const requestId of [undefined, 0, -1, 1.5, Infinity, '1']) assert.equal(parseNativeChartEvent({ ...event, requestId }), null);
+  }
 });
 test('selection is outside the canvas and preserves zero instead of replacing it', () => {
   const result = selectionText(nativeChartModel(presentation, q), { time: 100, value: 0, rows: [] });
@@ -206,7 +214,7 @@ test('literal renderer is self-contained across the Hermes/WebView boundary and 
   const win = { LightweightCharts: { createChart: () => chart, LineSeries: {}, HistogramSeries: {}, CandlestickSeries: {} }, ReactNativeWebView: { postMessage: (message: string) => messages.push(JSON.parse(message)) }, questlifeChart: (_command: object) => {} };
   runInNewContext(nativeInsightsRendererScript, { window: win, document: { getElementById: () => ({}) }, Intl, Date });
   const result = nativeChartModel(presentation, q);
-  win.questlifeChart({ type: 'model', model: result });
+  win.questlifeChart({ type: 'model', model: result, requestId: 1 });
   assert.equal((messages.at(-1) as { type: string }).type, 'ready');
   assert.deepEqual(data[0], result.points);
   win.questlifeChart({ type: 'zoomIn' }); assert.equal(visible.to - visible.from, 7);
@@ -226,14 +234,29 @@ test('crosshair deduplicates identical bridge messages but preserves changed val
   runInNewContext(nativeInsightsRendererScript, { window: win, document: { getElementById: () => ({}) }, Intl, Date });
   const model = nativeChartModel(presentation, q);
   const event = (value: number) => ({ time: 100, seriesData: new Map([[primary, { value }]]) });
-  win.questlifeChart({ type: 'model', model });
+  win.questlifeChart({ type: 'model', model, requestId: 1 });
   for (let i = 0; i < 200; i++) select(event(2));
   assert.equal(messages.filter(row => row.type === 'selection').length, 1);
   select(event(3)); select(event(2));
   assert.deepEqual(messages.filter(row => row.type === 'selection').map(row => row.value), [2, 3, 2]);
-  win.questlifeChart({ type: 'model', model }); select(event(2));
+  win.questlifeChart({ type: 'model', model, requestId: 2 }); select(event(2));
   assert.equal(messages.filter(row => row.type === 'selection').length, 4);
   assert.equal(messages.filter(row => row.type === 'ready').length, 2);
+});
+
+test('old chart callbacks retain their request ID after a newer model has been drawn', () => {
+  const callbacks: Array<(event: object) => void> = [];
+  const messages: Array<{ type: string; requestId: number }> = [];
+  const primary = { setData() {}, createPriceLine() {} };
+  const chart = { remove() {}, addSeries: () => primary, subscribeCrosshairMove: (callback: (event: object) => void) => callbacks.push(callback), timeScale: () => ({ fitContent() {} }) };
+  const win = { LightweightCharts: { createChart: () => chart, LineSeries: {}, HistogramSeries: {}, CandlestickSeries: {} }, ReactNativeWebView: { postMessage: (value: string) => messages.push(JSON.parse(value)) }, questlifeChart: (_command: object) => {} };
+  runInNewContext(nativeInsightsRendererScript, { window: win, document: { getElementById: () => ({}) }, Intl, Date });
+  const model = nativeChartModel(presentation, q);
+  win.questlifeChart({ type: 'model', model, requestId: 1 });
+  win.questlifeChart({ type: 'model', model, requestId: 2 });
+  const event = { time: 100, seriesData: new Map([[primary, { value: 2 }]]) };
+  callbacks[0](event); assert.equal(messages.at(-1)?.requestId, 1); assert.equal(parseNativeChartEvent(messages.at(-1), 2), null);
+  callbacks[1](event); assert.equal(messages.at(-1)?.requestId, 2); assert.ok(parseNativeChartEvent(messages.at(-1), 2));
 });
 
 function renderEventMarkers(model: ReturnType<typeof nativeChartModel>) {
@@ -248,7 +271,7 @@ function renderEventMarkers(model: ReturnType<typeof nativeChartModel>) {
     ReactNativeWebView: { postMessage: (message: string) => messages.push(JSON.parse(message)) }, questlifeChart: (_command: object) => {},
   };
   runInNewContext(nativeInsightsRendererScript, { window: win, document: { getElementById: () => ({}) }, Intl, Date });
-  win.questlifeChart({ type: 'model', model });
+  win.questlifeChart({ type: 'model', model, requestId: 1 });
   assert.equal(messages.at(-1)?.type, 'ready');
   return { data, markers };
 }

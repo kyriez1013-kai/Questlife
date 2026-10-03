@@ -14,22 +14,24 @@ export type NativeInsightsChartProps = { model: NativeChartModel; q: QuestTheme;
 export default forwardRef<InsightsV3ChartHandle, NativeInsightsChartProps>(function NativeInsightsChart({ model, q, onReadyChange }, ref) {
   const frame = useRef<HTMLIFrameElement>(null); const [loaded, setLoaded] = useState(false); const [error, setError] = useState(false); const [reload, setReload] = useState(0); const [selection, setSelection] = useState('');
   const signature = useMemo(() => JSON.stringify(model), [model]); const s = insightsStyles(q);
-  const send = (command: object) => (frame.current?.contentWindow as unknown as { questlifeChart?: (command: object) => void } | null)?.questlifeChart?.(command);
+  const request = useRef(0);
+  const send = (command: object) => (frame.current?.contentWindow as unknown as { questlifeChart?: (command: object) => void } | null)?.questlifeChart?.({ requestId: request.current, ...command });
   useImperativeHandle(ref, () => ({ fit: () => send({ type: 'fit' }), zoomIn: () => send({ type: 'zoomIn' }), zoomOut: () => send({ type: 'zoomOut' }) }));
   useEffect(() => {
+    const requestId = ++request.current;
     onReadyChange(false); setError(false); setSelection('');
     const displayedModel = JSON.parse(signature);
     let timer: ReturnType<typeof setTimeout>;
     const handler = (event: MessageEvent) => {
       if (event.source !== frame.current?.contentWindow) return;
-      const message = parseNativeChartEvent(event.data);
+      const message = parseNativeChartEvent(event.data, requestId);
       if (message?.type === 'ready') { clearTimeout(timer); onReadyChange(true); }
       else if (message?.type === 'error') { clearTimeout(timer); setError(true); onReadyChange(false); }
       else if (message?.type === 'selection') setSelection(selectionText(displayedModel, message));
     };
     window.addEventListener('message', handler);
-    if (loaded) send({ type: 'model', model: displayedModel });
     timer = setTimeout(() => { setError(true); onReadyChange(false); }, 10000);
+    if (loaded) send({ type: 'model', model: displayedModel, requestId });
     return () => { clearTimeout(timer); window.removeEventListener('message', handler); };
   }, [loaded, signature, reload, onReadyChange]);
   return <View style={{ gap: q.spacing.sm }}>

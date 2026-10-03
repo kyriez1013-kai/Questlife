@@ -6,8 +6,8 @@ export const nativeInsightsRendererScript = String.raw`
   const library = hostWindow.LightweightCharts;
   let chart;
   let lastSelection;
-  const send = (event) => {
-    const payload = JSON.stringify(Object.assign({ channel: 'native-insights' }, event));
+  const send = (event, requestId) => {
+    const payload = JSON.stringify(Object.assign({ channel: 'native-insights', requestId }, event));
     if (event.type === 'selection') {
       if (payload === lastSelection) return;
       lastSelection = payload;
@@ -20,7 +20,7 @@ export const nativeInsightsRendererScript = String.raw`
     if (unit === 'binary') return value > 0 ? model.binaryYes : model.binaryNo;
     return new Intl.NumberFormat(model.lang === 'zh' ? 'zh-CN' : 'en-AU', { maximumFractionDigits: 2 }).format(value);
   };
-  const draw = (m) => {
+  const draw = (m, requestId) => {
     chart?.remove();
     lastSelection = undefined;
     chart = library.createChart(document.getElementById('chart'), {
@@ -59,14 +59,17 @@ export const nativeInsightsRendererScript = String.raw`
       const candle = row && 'open' in row ? { open: row.open, high: row.high, low: row.low, close: row.close } : undefined;
       send({ type: 'selection', time: event.time, value: row?.value ?? row?.close ?? null, candle,
         rows: tracked.flatMap(layer => { const value = event.seriesData.get(layer.api)?.value; return typeof value === 'number' ? [{ id: layer.id, value }] : []; }),
-      });
+      }, requestId);
     });
     chart.timeScale().fitContent();
-    send({ type: 'ready' });
+    send({ type: 'ready' }, requestId);
   };
   hostWindow.questlifeChart = command => {
     try {
-      if (command.type === 'model') { draw(command.model); return; }
+      if (command.type === 'model') {
+        if (!Number.isSafeInteger(command.requestId) || command.requestId < 1) return;
+        draw(command.model, command.requestId); return;
+      }
       if (!chart) return;
       const scale = chart.timeScale();
       if (command.type === 'fit') scale.fitContent();
@@ -74,7 +77,7 @@ export const nativeInsightsRendererScript = String.raw`
         const range = scale.getVisibleLogicalRange();
         if (range) { const center = (range.from + range.to) / 2; const span = Math.max(1, Math.min(100000, (range.to - range.from) * (command.type === 'zoomIn' ? 0.7 : 1.4))); scale.setVisibleLogicalRange({ from: center - span / 2, to: center + span / 2 }); }
       }
-    } catch { send({ type: 'error' }); }
+    } catch { send({ type: 'error' }, command.requestId); }
   };
 })();true;
 `;

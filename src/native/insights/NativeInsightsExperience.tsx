@@ -1,4 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AppState } from 'react-native';
+import { useIsFocused } from '@react-navigation/native';
 import { useStore } from '../../store';
 import { getLanguage } from '../../i18n';
 import { useQuestTheme } from '../../design/useQuestTheme';
@@ -23,28 +25,51 @@ export default function NativeInsightsExperience(entrances: InsightsEntrances) {
   const [example, setExample] = useState<{ bundle: QuantProductBundleV1; analysis: QuantAnalysisExtensionV1 | null } | null>(null);
   const [mode, setMode] = useState<'owner' | 'sample'>('owner'); const [exampleBusy, setExampleBusy] = useState(false); const [exampleError, setExampleError] = useState(false);
   const request = useRef(0); const exampleRequest = useRef(0); const pending = useRef(false);
-  // An in-flight result must not cross a record/scope change or a sample transition.
-  useEffect(() => { request.current += 1; pending.current = false; setOwner(initialInsightsLoadState); }, [snapshot]);
+  const latest = useRef(observations); latest.current = observations;
+  const latestSnapshot = useRef(snapshot); latestSnapshot.current = snapshot;
+  const focused = useIsFocused();
+  const [foreground, setForeground] = useState(AppState.currentState !== 'background' && AppState.currentState !== 'inactive');
+  const [userId, setUserId] = useState<string | null | undefined>(undefined);
+  const source = useRef<{ snapshot: string; userId: string | null | undefined } | null>(null);
   useEffect(() => {
-    let user: string | null | undefined;
+    let active = true; let observed = false;
+    let knownUser: string | null | undefined;
+    const observe = (id: string | null) => {
+      if (!active || knownUser === id) return;
+      knownUser = id; request.current += 1; pending.current = false;
+      setOwner(initialInsightsLoadState); setUserId(id);
+    };
     const stop = authService.subscribe(session => {
-      const next = session?.userId ?? null;
-      if (next !== user) { request.current += 1; pending.current = false; setOwner(initialInsightsLoadState); }
-      user = next;
+      observed = true;
+      observe(session?.userId ?? null);
     });
-    return () => { stop(); request.current += 1; exampleRequest.current += 1; };
+    void authService.getUserId().then(id => { if (!observed) observe(id); })
+      .catch(() => { if (!observed) observe(null); });
+    const subscription = AppState.addEventListener('change', state => {
+      if (state !== 'active') { request.current += 1; pending.current = false; }
+      setForeground(state === 'active');
+    });
+    return () => { active = false; stop(); subscription.remove(); request.current += 1; exampleRequest.current += 1; };
   }, []);
-  const refresh = async () => {
-    if (pending.current) return;
+  const refresh = useCallback(async () => {
+    if (pending.current || mode !== 'owner' || !focused || !foreground || userId === undefined) return;
     pending.current = true; const ticket = ++request.current;
     setOwner(current => ({ ...current, busy: true, failure: false }));
     try {
-      const result = await loadOwnerQuantArtifacts({ data: observations, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, asOf: new Date().toISOString() });
-      if (ticket === request.current) setOwner(current => settleInsightsLoad(current, result));
+      const result = await loadOwnerQuantArtifacts({ data: latest.current, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, asOf: new Date().toISOString() });
+      if (ticket === request.current && latestSnapshot.current === snapshot) setOwner(current => settleInsightsLoad(current, result));
     } catch {
-      if (ticket === request.current) setOwner(current => settleInsightsLoad(current, { status: 'unavailable', eligibleObservationCount: 0, excludedObservationCount: 0, cacheHit: false, limitations: ['QUANT_RUNTIME_UNAVAILABLE'] }));
+      if (ticket === request.current && latestSnapshot.current === snapshot) setOwner(current => settleInsightsLoad(current, { status: 'unavailable', eligibleObservationCount: 0, excludedObservationCount: 0, cacheHit: false, limitations: ['QUANT_RUNTIME_UNAVAILABLE'] }));
     } finally { if (ticket === request.current) pending.current = false; }
-  };
+  }, [snapshot, userId, mode, focused, foreground]);
+  useEffect(() => {
+    // Invalidate old requests immediately; only unchanged account/data may retain a prior result on failure.
+    request.current += 1; pending.current = false;
+    if (source.current?.snapshot !== snapshot || source.current.userId !== userId) setOwner(initialInsightsLoadState);
+    source.current = { snapshot, userId };
+    void refresh();
+    return () => { request.current += 1; pending.current = false; };
+  }, [snapshot, userId, refresh]);
   const sample = async (id: InsightsV3FixtureId) => {
     request.current += 1; const ticket = ++exampleRequest.current; pending.current = false;
     setOwner(current => ({ ...current, busy: false })); setMode('sample'); setExample(null); setExampleBusy(true); setExampleError(false);

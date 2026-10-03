@@ -32,12 +32,13 @@ export function nativeChartModel(model: QuestLifeChartModelV1, q: QuestTheme) {
 
 export type NativeChartModel = ReturnType<typeof nativeChartModel>;
 export type NativeChartSelection = { time: number; value: number | null; candle?: { open: number; high: number; low: number; close: number }; rows: Array<{ id: string; value: number }> };
-export type NativeChartEvent = { type: 'ready' | 'error' } | ({ type: 'selection' } & NativeChartSelection);
-export function parseNativeChartEvent(value: unknown): NativeChartEvent | null {
+export type NativeChartEvent = ({ type: 'ready' | 'error' } | ({ type: 'selection' } & NativeChartSelection)) & { requestId: number };
+export function parseNativeChartEvent(value: unknown, expectedRequestId?: number): NativeChartEvent | null {
   try {
     const row = typeof value === 'string' ? JSON.parse(value) : value;
-    if (!row || row.channel !== 'native-insights') return null;
-    if (row.type === 'ready' || row.type === 'error') return { type: row.type };
+    if (!row || row.channel !== 'native-insights' || !Number.isSafeInteger(row.requestId) || row.requestId < 1
+      || (expectedRequestId !== undefined && row.requestId !== expectedRequestId)) return null;
+    if (row.type === 'ready' || row.type === 'error') return { type: row.type, requestId: row.requestId };
     if (row.type !== 'selection' || !Number.isFinite(row.time) || !Number.isFinite(new Date(row.time * 1000).getTime()) || !(row.value === null || Number.isFinite(row.value)) || !Array.isArray(row.rows)) return null;
     if (!row.rows.every((item: { id?: unknown; value?: unknown }) => typeof item.id === 'string' && Number.isFinite(item.value))) return null;
     if (row.candle && !['open', 'high', 'low', 'close'].every(key => Number.isFinite(row.candle[key]))) return null;
