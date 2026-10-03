@@ -181,7 +181,10 @@ test('account email survives parent rerender and cannot be lost during pending O
   assert.equal(tree.root.findByType('QuestInput').props.instanceId,inputId);
   store.data.settings.language='en';await refresh();
   assert.equal(tree.root.findByType('QuestInput').props.value,'test@example.invalid');await press(syncCopy('en','request'));await close();assert.equal(tree.root.findAllByType('Sheet').length,1);
-  await act(async()=>otpJob.resolve());assert.equal(tree.root.findAllByType('QuestInput').length,2);assert.ok(text().includes(syncCopy('en','sent')));
+  await act(async()=>otpJob.resolve());assert.equal(tree.root.findAllByType('QuestInput').length,1);assert.ok(text().includes(syncCopy('en','sent')));
+  await press(syncCopy('en','useCode'));assert.equal(tree.root.findAllByType('QuestInput').length,2);
+  await act(async()=>tree.root.findAllByType('QuestInput')[1].props.onChangeText('123456'));
+  await press(syncCopy('en','verify'));assert.deepEqual(calls.at(-1),['verify','test@example.invalid','123456']);
   await close();assert.equal(tree.root.findAllByType('QuestInput').length,0);
 });
 test('offline account is not an OS denial; health cloud consent and sign-out handlers remain separate',async()=>{

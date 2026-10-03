@@ -153,10 +153,10 @@ export default function AccountSyncSection() {
                     void run(async () => {
                       await authService.requestOtp(email);
                       setSent(true);
-                      setShowCode(true);
                     })
                   }
                 />
+                {sent ? note(c(lang, "sent")) : null}
                 {!showCode ? (
                   <QuestButton
                     questTheme={q}
@@ -167,7 +167,6 @@ export default function AccountSyncSection() {
                 ) : null}
                 {showCode ? (
                   <>
-                    {sent ? note(c(lang, "sent")) : null}
                     <QuestInput
                       questTheme={q}
                       value={otp}
