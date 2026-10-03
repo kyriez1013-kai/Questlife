@@ -1,0 +1,15 @@
+{
+  "sourceCommit": "e44ba06960fe5d5b7ac902d58c3e7be7c120602e",
+  "device": "QuestLife_V1_ReleaseQA API36 arm64 emulator / host GPU",
+  "physicalDevice": false,
+  "sample": "Existing isolated mature example: native candle switch, observation Sheet open/close and outer scroll after gfxinfo reset. Not a full steady-state or WebView frame benchmark.",
+  "capturedAt": "2026-10-03T14:42:02.403Z",
+  "totalFrames": 83,
+  "jankyFrames": 14,
+  "p50Ms": 19,
+  "p95Ms": 32,
+  "histogramFramesAbove20Ms": 19,
+  "acceptance": "NOT_PASSED",
+  "runtimeErrors": "None observed in ReactNativeJS:E / AndroidRuntime:E diagnostic readback",
+  "remaining": "Real-data chart recovery, keyboard, all themes and physical recording/performance remain separate gates."
+}
