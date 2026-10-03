@@ -45,6 +45,46 @@ VERIFIED_DEVICE, AWAITING_OWNER, BLOCKED. Unchecked entries remain unfinished.
 
 ## Exact Resume Checkpoint
 
+### Unlocked-Mac continuation (2026-10-03)
+
+- Current cloud `e44ba06` APK is now fully downloaded and v2-signature verified.
+  Package `com.kyrie.questlife`, version `1.0.0` / code `1`, four ABIs, min26 /
+  target36. SHA256
+  `6c89e9f13e90ada6a43f04e4236caef68d4258c8bd1aba3ac77f851c8ec5cb73`;
+  certificate SHA256
+  `61b030724c7ef8ab94681eb42b7033631f8c2086c78a4a79166a654e93eec5da`.
+  This matches prior cloud `05a4405`, not the dedicated local key. The cloud
+  and local `e44ba06` embedded Hermes bundles are byte-identical (SHA256
+  `575a78ecccafe402dbbbab8ad9202361735809659b94e18d60cbfcca9470b929`),
+  contain candidate origin/ref and not the Owner ref. Public cloud download
+  remains the link in the prior checkpoint, now inspected rather than metadata-only.
+- Isolated headless `QuestLife_CloudQA` / API36 emulator cover-installed cloud
+  `05a4405` → `e44ba06` with `adb install -r`. No uninstall or clear-data.
+  Exact existing device identity + sync journal key/value hashes survived.
+  This emulator has no populated user records or auth session: this is not
+  populated-record, normal-UI or physical-phone upgrade acceptance.
+  `reports/release/android-cloud-cover-upgrade-e44ba06.json` records the boundary.
+- Native Settings now exposes an explicit Health permission-management entry
+  and a recheck using the existing connect/sync handlers. Android opens Health
+  Connect; iOS opens app Settings and explains where Health-app read access is
+  actually managed, retaining `read_access_unknown`. Connected retries request
+  only existing selected metrics. No new consent, source record or cloud upload.
+  Twenty-six isolated Settings/helper checks, typecheck and Web export passed;
+  new-source installed OS/provider acceptance remains UNVERIFIED until rebuilt.
+- Existing `e44ba06` gfxinfo raw frame stages were separated: 120 valid retained
+  rows, UI-work P95 0.847ms, render-submission P95 2.258ms, buffer-dequeue P95
+  16.035ms, intended-vsync→completed P95 33.658ms. This is an unreset aggregate,
+  not a controlled new benchmark. GPU/buffer pacing is measurable; a JS/Quant
+  bottleneck or performance fix is not established. No blind production
+  animation/material changes were made from these numbers.
+  `reports/release/native-frame-stage-diagnostic-e44ba06.json` preserves scope.
+- Mac UI-control input still fails after fresh binding and one tool reset
+  (`noWindowsAvailable` / native pipe closed). Screenshots can be read; input
+  cannot be used reliably. No alternate ADB/UI automation was used. Normal
+  auth refresh/close/reopen, chart interaction, keyboard, OS permission and
+  App Store/Xcode steps remain open. User was asked for normal-client readback;
+  non-UI signing, build and safe component work continued.
+
 ### Current application candidate: `e44ba06` (2026-10-03)
 
 - Continuing `release/questlife-v1`, not a replacement project. Application

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, AppState, Linking, ScrollView, Switch, Text, View } from 'react-native';
+import { Alert, AppState, Linking, Platform, ScrollView, Switch, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import Constants from 'expo-constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -26,6 +26,7 @@ import RecordBackupActions from '../backup/RecordBackupActions';
 import { workflowCopy } from './nativeWorkflowCopy';
 import NativeSettingsRow from './NativeSettingsRow';
 import NativeSettingsSheet from './NativeSettingsSheet';
+import { openHealthPermissions } from '../platform/health/openHealthPermissions';
 
 type SettingsDetail = 'appearance' | 'sources' | 'health' | 'calendar' | 'notifications' | 'account' | 'records' | 'privacy' | 'about';
 
@@ -111,6 +112,17 @@ export default function NativeSettingsScreen({navigation}:{navigation:any}) {
           <NativeAction busy={busy==='health'} disabled={!!busy||(!state.health.connected&&!metrics.length)} label={c(lang,state.health.connected?'sync':'connect')} onPress={()=>void run('health',async()=>{if(!state.health.connected)await healthSync.connect(metrics);await healthSync.sync();})}/>
           {state.health.connected?<><NativeAction label={c(lang,'resync')} disabled={!!busy} onPress={()=>void run('health',()=>healthSync.sync(true))}/><NativeAction label={c(lang,'disconnect')} disabled={!!busy} onPress={()=>void run('health',()=>healthSync.disconnect())}/></>:null}
         </View>
+        {state.health.permission!=='not_requested'||state.health.error?<>
+          {text(c(lang,Platform.OS==='ios'?'healthPermissionInstructionsIOS':'healthPermissionInstructionsAndroid'))}
+          <View style={{flexDirection:'row',flexWrap:'wrap',gap:q.spacing.sm}}>
+            <NativeAction label={c(lang,'manageHealthPermissions')} disabled={!!busy} onPress={()=>void run('health',openHealthPermissions)}/>
+            <NativeAction label={c(lang,'recheckHealthPermissions')} disabled={!!busy||(!state.health.connected&&!metrics.length)} onPress={()=>void run('health',async()=>{
+              const selected=state.health.connected?state.health.enabledMetrics:metrics;
+              await healthSync.connect(selected);
+              await healthSync.sync();
+            })}/>
+          </View>
+        </>:null}
         {text(c(lang,'healthLimits'))}
         {state.health.error?text(c(lang,'syncError')):null}
       </NativeSection>:null}

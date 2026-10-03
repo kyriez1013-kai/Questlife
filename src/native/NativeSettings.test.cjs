@@ -16,7 +16,7 @@ const InputHost=props=>{const identity=React.useRef(++inputSequence);return Reac
 const primitives={QuestGroupedSurface:host('QuestGroupedSurface'),QuestSectionHeader:host('QuestSectionHeader')};
 let store, device, tree, calls, alerts, calendars, permission, notificationPermission, readFailure;
 let identity, snapshot, syncStatus, otpJob, healthJob, writeJob, pickerJob, shareJob, pushJob, retirementStatus;
-let settingsOpened, authConfigured = true;
+let settingsOpened, healthSettingsFailed, authConfigured = true;
 const authListeners = new Set();
 const rn = { Platform: { OS:'ios', select: values => values.ios ?? values.default },
   StyleSheet: { create: styles => styles, hairlineWidth:1 }, Appearance:{getColorScheme:()=> 'light'},
@@ -61,6 +61,7 @@ Module._load = function(request,parent,isMain){
   if(/\/useQuestTheme$/.test(request))return {useQuestTheme:()=>require('../design/tokens.ts').getQuestTheme(store.data.settings.selectedThemeId)};
   if(/\/useDeviceData$/.test(request))return {useDeviceData:()=>device};
   if(/\/platform\/services$/.test(request))return services;
+  if(/\/openHealthPermissions$/.test(request))return {openHealthPermissions:async()=>{calls.push(['healthSettings']);if(healthSettingsFailed)throw Error('TEST_SETTINGS_UNAVAILABLE');}};
   if(/\/sync-v2\/supabase$/.test(request)||(request==='./supabase'&&parent?.filename.includes('/sync-v2/')))return {authService,authConfigured:()=>authConfigured,
     supabaseClient:()=>({from:()=>({select:()=>({eq:async()=>({data:[],error:null})})})})};
   if(/\/sync-v2\/runtime$/.test(request)||(request==='./runtime'&&parent?.filename.includes('/sync-v2/')))return {getSyncEngine:async()=>engine,readSyncState:async()=>snapshot,
@@ -95,7 +96,7 @@ const fresh = (language='en',theme='cleanFocus')=>{
     calendar:{connected:false,events:[],selectedIds:[],pendingOperations:[]},notificationsEnabled:false,reminderKinds:{}}};
   calls=[];alerts=[];calendars=[];permission='not_requested';notificationPermission='not_requested';readFailure=false;
   identity=null;snapshot={ownerId:null,outbox:[],conflicts:[],healthConsent:false};syncStatus='signedOut';
-  otpJob=healthJob=writeJob=pickerJob=shareJob=pushJob=undefined;retirementStatus='disabled';settingsOpened=0;authConfigured=true;
+  otpJob=healthJob=writeJob=pickerJob=shareJob=pushJob=undefined;retirementStatus='disabled';settingsOpened=0;healthSettingsFailed=false;authConfigured=true;
 };
 const deferred=()=>{let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no;});return {promise,resolve,reject};};
 const render=async()=>{await act(async()=>{tree=create(React.createElement(Screen,{navigation:{navigate:(...args)=>calls.push(['navigate',...args])}}));});};
@@ -142,6 +143,27 @@ test('health failure keeps details mounted during work and preserves selection f
   await close();assert.equal(tree.root.findAllByType('Sheet').length,1);
   await act(async()=>healthJob.reject(Error('TEST_DENIED')));assert.ok(text().includes(c('en','settingsActionError')));
   assert.equal(toggle('Steps').props.value,false);await close();assert.equal(tree.root.findAllByType('Sheet').length,0);
+});
+test('health recovery is explicit, retains metric selection and does not grant cloud consent',async()=>{
+  fresh();device.data.health.permission='denied';await render();await open('health');
+  assert.deepEqual(calls,[]);await switchValue('Steps',false);
+  await press(c('en','manageHealthPermissions'));assert.deepEqual(calls,[['healthSettings']]);
+  await press(c('en','recheckHealthPermissions'));
+  assert.equal(calls[1][0],'healthConnect');assert.equal(calls[1][1].includes('steps'),false);
+  assert.deepEqual(calls[2],['healthSync',undefined]);
+  assert.equal(calls.some(call=>call[0]==='healthConsent'||call[0]==='deviceWrite'),false);
+});
+test('connected partial-health recovery requests only the previously selected metrics',async()=>{
+  fresh('zh');device.data.health={...device.data.health,connected:true,permission:'partial',enabledMetrics:['sleep','steps'],error:'read_failed'};
+  await render();await open('health');await press(c('zh','recheckHealthPermissions'));
+  assert.deepEqual(calls,[['healthConnect',['sleep','steps']],['healthSync',undefined]]);
+  assert.ok(text().includes(c('zh','healthPermissionInstructionsIOS')));
+});
+test('health settings failure is visible and retry remains available',async()=>{
+  fresh();device.data.health.permission='read_access_unknown';healthSettingsFailed=true;await render();await open('health');
+  await press(c('en','manageHealthPermissions'));assert.ok(text().includes(c('en','settingsActionError')));
+  healthSettingsFailed=false;await press(c('en','manageHealthPermissions'));
+  assert.equal(text().includes(c('en','settingsActionError')),false);assert.equal(calls.length,2);
 });
 test('denied, unavailable, permission read failure and empty calendars are distinct',async()=>{
   fresh();permission='denied';notificationPermission='unavailable';await render();
