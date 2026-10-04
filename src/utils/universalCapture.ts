@@ -69,7 +69,7 @@ type ActionTranslation = {
   en: string;
 };
 
-const ACTION_TRANSLATIONS: ActionTranslation[] = [
+const STRENGTH_ACTION_TRANSLATIONS: ActionTranslation[] = [
   { aliases: ['bench press', '卧推'], zh: '卧推', en: 'Bench press' },
   { aliases: ['incline bench press', 'incline press', '上斜卧推'], zh: '上斜卧推', en: 'Incline bench press' },
   { aliases: ['decline bench press', '下斜卧推'], zh: '下斜卧推', en: 'Decline bench press' },
@@ -91,6 +91,19 @@ const ACTION_TRANSLATIONS: ActionTranslation[] = [
   { aliases: ['squat', '深蹲'], zh: '深蹲', en: 'Squat' },
   { aliases: ['romanian deadlift', '罗马尼亚硬拉'], zh: '罗马尼亚硬拉', en: 'Romanian deadlift' },
   { aliases: ['leg press', '腿举'], zh: '腿举', en: 'Leg press' },
+];
+
+const ACTIVITY_ACTION_TRANSLATIONS: ActionTranslation[] = [
+  { aliases: ['basketball', '篮球'], zh: '篮球', en: 'Basketball' },
+  { aliases: ['running', 'run', '跑步'], zh: '跑步', en: 'Running' },
+  { aliases: ['jogging', '慢跑'], zh: '慢跑', en: 'Jogging' },
+  { aliases: ['swimming', 'swim', '游泳'], zh: '游泳', en: 'Swimming' },
+  { aliases: ['cycling', '骑行'], zh: '骑行', en: 'Cycling' },
+];
+
+const ACTION_TRANSLATIONS: ActionTranslation[] = [
+  ...STRENGTH_ACTION_TRANSLATIONS,
+  ...ACTIVITY_ACTION_TRANSLATIONS,
   { aliases: ['practice', '练习', '刷题', '练习/刷题'], zh: '练习 / 刷题', en: 'Practice' },
   { aliases: ['project', '项目实战'], zh: '项目实战', en: 'Project work' },
   { aliases: ['debug', '调试'], zh: '调试', en: 'Debug' },
@@ -157,6 +170,19 @@ export function isConcreteExercise(entry: ParsedEntry, captureText: string): boo
   return strength.weight != null || strength.sets != null || strength.reps != null
     ? !includesAny(captureText, generic)
     : false;
+}
+
+export function isStrengthExercise(entry: ParsedEntry): boolean {
+  const name = normalized(entry.skillName);
+  if (ACTIVITY_ACTION_TRANSLATIONS.some((item) => item.aliases.some((alias) => normalized(alias) === name))) return false;
+  if (STRENGTH_ACTION_TRANSLATIONS.some((item) => item.aliases.some((alias) => normalized(alias) === name))) return true;
+  const fields = entry.fields ?? {};
+  // Fitness alone is not strength evidence; distance, duration and RPE also apply to sports.
+  return [fields.weight, fields.extraWeight, fields.reps].some((value) => (
+    value != null && value !== '' && Number.isFinite(Number(value)) && Number(value) > 0
+  )) || (Array.isArray(fields.sets) ? fields.sets.some((set) => set?.reps != null || set?.weight != null)
+    : fields.sets != null && (/^\d+\s*[x×]\s*\d+$/.test(String(fields.sets)) || Number(fields.sets) > 0))
+    || (fields.unit === 'kg' && fields.value != null && Number(fields.value) > 0);
 }
 
 export function uniqueLocalizedActions(actions: string[], lang: CaptureLanguage): Array<{ id: string; label: string; value: string }> {

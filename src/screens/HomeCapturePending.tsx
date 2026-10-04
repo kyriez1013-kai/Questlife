@@ -38,6 +38,7 @@ import {
   compactStrengthValues,
   deriveUniversalCaptureDomain,
   isConcreteExercise,
+  isStrengthExercise,
   uniqueLocalizedActions,
 } from '../utils/universalCapture';
 import {
@@ -845,7 +846,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
         createNew: entry.matchedSkillId == null,
         moduleId: null,
         selectedExerciseNames: useConcreteExercise ? [entry.skillName] : [],
-        exerciseDetails: useConcreteExercise ? {
+        exerciseDetails: useConcreteExercise && isStrengthExercise(entry) ? {
           [entry.skillName]: {
             weight: strength.weight == null ? '' : String(strength.weight),
             sets: strength.sets == null ? '' : String(strength.sets),
@@ -1312,6 +1313,9 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
           if (actionAlreadyLogged) return;
           const existingSkill = data.skills.find((skill) => normalizeName(skill.name) === normalizeName(exerciseName))
             ?? (normalizeName(exerciseName) === normalizeName(completedEntry.skillName) ? matchedSkill : undefined);
+          const strengthExercise = isStrengthExercise({ ...completedEntry, skillName: exerciseName });
+          const actionProgressType = strengthExercise ? 'performance_log' : 'time_based';
+          const actionTaskType = strengthExercise ? 'strength_training' : 'cardio_recovery';
           let actionSkillId = existingSkill?.id;
           const shouldCreateActionSkill = ui.createNew
             || (matchedSkill != null && normalizeName(exerciseName) !== normalizeName(matchedSkill.name));
@@ -1320,16 +1324,14 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
               name: exerciseName,
               color: questTheme.colors.primary,
               dailyTargetMinutes: 30,
-              progressType: 'performance_log',
-              taskType: 'strength_training',
+              progressType: actionProgressType,
+              taskType: actionTaskType,
               categoryId: selectedGoalId,
               scheduleEnabled: false,
               scheduleType: 'manual_only' as const,
               metricConfig: {
-                metricType: 'performance_log',
-                performanceType: 'strength',
-                primaryMetric: 'weight',
-                trackRPE: true,
+                metricType: actionProgressType,
+                ...(strengthExercise ? { performanceType: 'strength' as const, primaryMetric: 'weight' as const, trackRPE: true } : {}),
               },
             });
             actionSkillId = created.id;
@@ -1338,7 +1340,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
             }
           }
           if (!actionSkillId) return;
-          const detail = ui.exerciseDetails?.[exerciseName] ?? {};
+          const detail = strengthExercise ? ui.exerciseDetails?.[exerciseName] ?? {} : {};
           const weight = parseOptionalNumber(detail.weight);
           const sets = parseOptionalNumber(detail.sets);
           const reps = parseOptionalNumber(detail.reps);
@@ -1413,17 +1415,17 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
             qualityRating: completedEntry.qualityRating as any,
             source: 'manual',
             title: exerciseName,
-            taskType: 'strength_training',
-            actualData: {
+            taskType: actionTaskType,
+            actualData: strengthExercise ? {
               kind: 'strength_training',
               exerciseName,
               strength: { weight, reps, sets, volume: totalVolume, rpe },
               sets: strengthSet ? [strengthSet] : [],
               rawParsedFields: completedEntry.fields,
-            },
+            } : undefined,
             structuredData,
             dataProvenance: captureProvenance,
-            metricUpdate: {
+            metricUpdate: strengthExercise ? {
               metricType: 'performance_log',
               performanceValue: weight,
               performanceUnit: weight != null ? 'kg' : undefined,
@@ -1433,7 +1435,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
                 totalVolume,
                 sourceCaptureId: captureId,
               },
-            },
+            } : { metricType: 'time_based', minutesAdded: perActionDuration },
           });
           savedLogs.push(savedLog);
         });
@@ -1871,11 +1873,11 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
         qualityValue: ui.qualityRating ?? completedEntry.qualityRating,
         showDuration: domain === 'learning'
           || domain === 'work'
-          || (domain === 'exercise' && typeof durationValue === 'number')
+          || (domain === 'exercise' && (!isStrengthExercise(completedEntry) || typeof durationValue === 'number'))
           || (domain === 'generic' && completedEntry.progressType === 'time_based'),
         showQuality: recordable,
         exercises: domain === 'exercise'
-          ? selectedExercises.map((name) => ({
+          ? selectedExercises.filter((name) => isStrengthExercise({ ...completedEntry, skillName: name })).map((name) => ({
               name,
               weight: ui.exerciseDetails?.[name]?.weight,
               sets: ui.exerciseDetails?.[name]?.sets,
