@@ -21,6 +21,7 @@ try {
   execFileSync(join(bin,'pg_ctl'),['-D',join(root,'db'),'-l',join(root,'server.log'),'-o',`-F -h '' -k ${root} -p 56449`,'-w','start'],{env,stdio:'ignore'});started=true;
   sql(`create role anon;create role authenticated;create role service_role;create schema auth;create table auth.users(id uuid primary key);insert into auth.users values('${A}'),('${B}');`);
   sql(readFileSync(new URL('../supabase/migrations/202610050001_ai_request_budget.sql',import.meta.url),'utf8'));
+  sql(readFileSync(new URL('../supabase/migrations/202610050002_ai_budget_account_retention.sql',import.meta.url),'utf8'));
   await check('only server can claim; all client roles denied counters and direct mutations',()=>{
     for(const role of ['anon','authenticated']){
       denied(()=>claim(A,'parse',role));
@@ -63,6 +64,14 @@ try {
     sql("insert into public.questlife_ai_budget values('global',now()-interval '4 days',12);");
     claim(A);claim(A);assert.equal(sql("select units from public.questlife_ai_budget where scope='global'"),'2');
     assert.equal(sql('select count(*) from auth.users'),'2');assert.equal(sql('show listen_addresses'),'');
+  });
+  await check('Auth deletion erases only that identity accounting and retains global spent budget',()=>{
+    claim(A);claim(B,'brief');
+    for(const role of ['anon','authenticated','service_role']) denied(()=>sql(`set role ${role};select public.questlife_ai_forget_account();`));
+    sql(`delete from auth.users where id='${A}'`);
+    assert.equal(sql(`select count(*) from public.questlife_ai_budget where scope in ('user:${A}','minute:${A}')`),'0');
+    assert.equal(sql(`select units from public.questlife_ai_budget where scope='user:${B}'`),'3');
+    assert.equal(sql("select units from public.questlife_ai_budget where scope='global'"),'4');
   });
   console.log(`AI budget PostgreSQL: ${checks}/${checks} isolated groups passed; no hosted database touched.`);
 } finally {

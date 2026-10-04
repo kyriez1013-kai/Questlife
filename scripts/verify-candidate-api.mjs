@@ -10,6 +10,17 @@ const origin = process.argv[2];
 if (origin !== 'https://questlife-v1-release.vercel.app') throw new Error('Candidate origin required');
 const checks = [];
 const cleanup = [];
+const testedAt = new Date().toISOString();
+const sourceCommit = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+let failure;
+function saveReport() {
+  mkdirSync('reports/release', { recursive: true });
+  writeFileSync('reports/release/candidate-api-verification.json', JSON.stringify({
+    origin, testedAt, sourceCommit, project: 'gttcoocfkqwvsqfwxpyo',
+    scope: 'Real authenticated DeepSeek calls from an isolated disposable identity. No observation/Store writes. Auth deletion trigger owns private quota cleanup; SQL readback is separate. Global spent reservations retained. Not normal UI/physical-device acceptance.',
+    ...(failure ? { failure } : {}), checks, cleanup,
+  }, null, 2));
+}
 async function request(path, body, token) {
   const start = performance.now();
   const response = await fetch(`${origin}${path}`, {
@@ -58,6 +69,8 @@ try {
   const created = await admin.auth.admin.createUser({ email, password, email_confirm: true,
     user_metadata: { purpose: 'disposable_stateless_ai_verification' } });
   assert.equal(created.error, null); userId = created.data.user.id;
+  cleanup.push({ userId, purpose: 'disposable_stateless_ai_verification', status: 'PENDING' });
+  saveReport();
   const signed = await client.auth.signInWithPassword({ email, password });
   assert.equal(signed.error, null);
   const token = signed.data.session.access_token;
@@ -86,7 +99,7 @@ try {
     noImportedMemory: briefBody.meta?.server_pattern_count === 0 && briefBody.meta?.server_decision_count === 0,
     noServerDecisionWrite: true });
   assert.equal(brief.status, 200); assert.equal(briefBody.ok, true);
-  const own = await admin.from('questlife_sync_entities').select('*', { count: 'exact', head: true }).eq('user_id', userId);
+  const own = await client.from('questlife_sync_entities').select('*', { count: 'exact', head: true }).eq('user_id', userId);
   assert.equal(own.error, null); assert.equal(own.count, 0);
   // Fill only this disposable identity's rate bucket without another paid call.
   // Global reservations remain counted; never reset a production-wide budget.
@@ -100,27 +113,31 @@ try {
   const rejected = await request('/api/parse', { text: 'Disposable budget rejection' }, token);
   assert.equal(rejected.status, 429);
   checks.push({ name: 'hosted_atomic_quota_API_denial', status: rejected.status, result: 'PASS' });
+} catch (error) {
+  failure = { code: error.code ?? 'verification_failed', message: error.message };
+  process.exitCode = 1;
 } finally {
   if (userId) {
-    const own = await admin.from('questlife_sync_entities').select('*', { count: 'exact', head: true }).eq('user_id', userId);
-    assert.equal(own.error, null); assert.equal(own.count, 0);
-    const budgets = await admin.from('questlife_ai_budget').delete().in('scope', [`user:${userId}`, `minute:${userId}`]).select('scope');
-    assert.equal(budgets.error, null);
-    assert.equal((await admin.auth.admin.deleteUser(userId)).error, null);
-    const gone = await admin.auth.admin.getUserById(userId);
-    assert.equal(gone.error?.status, 404);
-    cleanup.push({ userId, remainingSyncEntities: own.count, deletedPrivateBudgetRows: budgets.data.length, authReadback: 404 });
-    await client.auth.signOut();
+    const entry = cleanup.find(item => item.userId === userId);
+    try {
+      const own = await client.from('questlife_sync_entities').select('*', { count: 'exact', head: true }).eq('user_id', userId);
+      entry.remainingSyncEntities = own.error ? 'UNVERIFIED' : own.count;
+      entry.syncReadError = own.error?.code;
+      // Never erase a disposable identity that unexpectedly owns observations.
+      if (own.error || own.count !== 0) throw new Error('Exact disposable identity cleanup requires zero confirmed sync entities');
+      assert.equal((await admin.auth.admin.deleteUser(userId)).error, null);
+      const gone = await admin.auth.admin.getUserById(userId);
+      assert.equal(gone.error?.status, 404);
+      Object.assign(entry, { status: 'AUTH_REMOVED', privateBudgetCleanup: 'Auth deletion trigger; SQL readback separate', authReadback: 404 });
+    } catch (error) {
+      entry.status = 'CLEANUP_REQUIRED';
+      entry.error = error.code ?? 'cleanup_failed';
+      process.exitCode = 1;
+    }
+    await client.auth.signOut().catch(() => undefined);
   }
+  saveReport();
 }
-mkdirSync('reports/release', { recursive: true });
-writeFileSync('reports/release/candidate-api-verification.json', JSON.stringify({
-  origin, testedAt: new Date().toISOString(),
-  sourceCommit: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(),
-  project: 'gttcoocfkqwvsqfwxpyo',
-  scope: 'Real authenticated DeepSeek calls from an isolated disposable identity. No observation/Store writes. Account and private quota rows cleaned; global spent reservations retained. Not normal UI/physical-device acceptance.',
-  checks, cleanup,
-}, null, 2));
 console.log(JSON.stringify(checks.map(({ response, ...check }) => ({ ...check,
   ...(response ? { ok: response.ok, error: response.error } : {}) })), null, 2));
 if (checks.some(check => check.name === 'live_capture_parse' && (check.status !== 200 || !check.response?.ok || !check.currentInputMatched))) process.exitCode = 1;
