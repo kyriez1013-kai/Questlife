@@ -225,6 +225,12 @@ Every prescription must include an actionable first step.
 If input.locale is "zh", write all user-facing string fields in Chinese. If input.locale is "en", write them in English.
 Use concrete evidence from the input whenever available: sleep, HRV, steps, state, recent execution, skill, context, after-state, or schedule.
 Mention exactly which evidence was used. If data is sparse, say what is missing and give a test action instead of pretending confidence.
+State input semantics:
+The current state UI uses subjective 1-5 ratings: 1 very bad, 2 bad, 3 average, 4 good, 5 great.
+Read overall, energy, focus, mood and physical independently. Low energy does not imply low physical or low focus; physical=4 means the user reported good physical condition, not physical depletion.
+The stress field also comes from this labelled subjective control. Report its rating without interpreting it as a validated stress-severity scale or inferring illness.
+context_flags indicate recorded context, not numerical quality. A sleepQuality flag without its numeric value does not establish poor sleep. Missing, absent and zero observations never supply a default measurement.
+These are self-reports, not objective measurements. Only compare with a personal baseline actually present in the input; one observation does not establish a trend.
 Evidence priority:
 1. Accepted personal PatternMemory in profile.confirmed_patterns.
 2. Recent personal evidence: state, context, execution, after-state, decision feedback.

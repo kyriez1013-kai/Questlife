@@ -150,6 +150,22 @@ try {
     assert.ok(!prompt.includes(OTHER));assert.ok(!prompt.includes(bearer));
     assert.ok(calls.every(c=>c.method!=='POST'||c.url.includes('rpc/questlife_ai_claim')||c.url.includes('deepseek')));
   });
+  await check('brief preserves independent state ratings and does not turn context presence into poor sleep',async()=>{
+    const current={timestamp:'2026-10-05T00:00:00Z',overall:2,energy:2,focus:4,mood:3,physical:4,stress:2};
+    const input={...minimalBrief,current_state:current,
+      state_summary:{latest:{...current,context_flags:['sleepQuality']}}};
+    assert.equal((await invoke(brief,input)).statusCode,200);
+    const messages=JSON.parse(calls.find(c=>c.url.includes('deepseek')).body).messages;
+    assert.match(messages[0].content,/1 very bad, 2 bad, 3 average, 4 good, 5 great/);
+    assert.match(messages[0].content,/physical=4 means the user reported good physical condition/);
+    assert.match(messages[0].content,/without interpreting it as a validated stress-severity scale/);
+    assert.match(messages[0].content,/sleepQuality flag without its numeric value does not establish poor sleep/);
+    assert.match(messages[0].content,/one observation does not establish a trend/);
+    const transmitted=JSON.parse(messages[1].content.split('Decision input:\n')[1]);
+    assert.deepEqual(transmitted.current_state,current);
+    assert.deepEqual(transmitted.state_summary,input.state_summary);
+    assert.equal(transmitted.current_state.sleepQuality,undefined);
+  });
   await check('complete brief including synced memory cannot exceed paid input byte budget', async()=>{
     memoryRows=[{payload:{id:'x'.repeat(10000),label:'Isolated quota fixture',status:'accepted',sampleN:1,confidence:0.1}}];
     const input={...minimalBrief,include_imported_context:true,
