@@ -67,6 +67,10 @@ Unchecked entries remain unfinished.
   `https://expo.dev/artifacts/eas/R9veV4RI2ja5i12bm9A4wXBXEKkQ0bCSpVBiws_Gzbg.apk`.
   EAS build `74a0fec6-9650-4f89-b1fc-5129422ba1f7`, 108,192,997 bytes,
   SHA256 `21bf7ee1d5dca2ac7d38773da4efb7744ea8b2f3ecba03bc4570d24f1a2a771c`.
+  Public redirect/asset rechecked HTTP200 via the Mac's already configured proxy.
+  CDN retention header expires this free build file on 2026-10-18 15:48:58 UTC;
+  this is a download retention limit, not an installed-app expiry. Keep the
+  inspected local copy; GitHub release publishing was not performed.
 - Latest local packaging source `49622b1`: 47,262,692 bytes, arm64 Release,
   SHA256 `0d1ebf328b45e72aaa52f559df04cbf3c3bea7f0a81173cd1178e5e5d388edec`.
   LAN HTTP200 at `http://192.168.5.28:8096/questlife-v1-49622b1-canonical-arm64.apk`.

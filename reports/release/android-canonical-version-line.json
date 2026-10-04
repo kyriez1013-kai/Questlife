@@ -50,6 +50,10 @@
       "packagedCandidateConfigurationVerified": true,
       "ownerRefPresent": false,
       "url": "https://expo.dev/artifacts/eas/R9veV4RI2ja5i12bm9A4wXBXEKkQ0bCSpVBiws_Gzbg.apk",
+      "publicDownloadCheckedAtUtc": "2026-10-04T16:29:40Z",
+      "publicDownloadHttpStatus": 200,
+      "freeArtifactRetentionExpiresUtc": "2026-10-18T15:48:58Z",
+      "installedApplicationExpires": false,
       "binaryVerification": "VERIFIED_LOCAL",
       "cloudBuild": "VERIFIED_REMOTE",
       "physicalInstallation": "UNVERIFIED"
