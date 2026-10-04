@@ -30,6 +30,7 @@ Object.assign(process.env, {
   SUPABASE_URL: SUPABASE, SUPABASE_ANON_KEY: PUBLIC_KEY,
   EXPO_PUBLIC_SUPABASE_URL: SUPABASE, EXPO_PUBLIC_SUPABASE_ANON_KEY: PUBLIC_KEY,
   QUESTLIFE_QUANT_RUNTIME_URL: QUANT, QUESTLIFE_QUANT_RUNTIME_TOKEN: 'runtime-test-only',
+  SUPABASE_SERVICE_ROLE_KEY: 'sb_secret_budget_test_only',
   EXPO_PUBLIC_API_ORIGIN: 'https://app.example.test',
 });
 const fixture = require(join(root, 'src/quant-product/fixtures/forming_history_full.json'));
@@ -68,6 +69,7 @@ const OTHER_TOKEN = [...tokens.keys()][1];
 let calls = [];
 let quantOverride;
 let authOverride;
+let budgetReply = () => json({ status: 'claimed' });
 let tamperReceipt = false;
 let apiHandler;
 function upstream(body) {
@@ -101,6 +103,13 @@ globalThis.fetch = async (input, init = {}) => {
     return id ? json(user(id)) : json({ error: 'invalid token' }, 401);
   }
   if (url.startsWith(`${SUPABASE}/auth/v1/logout`)) return new Response(null, { status: 204 });
+  if (url === `${SUPABASE}/rest/v1/rpc/questlife_ai_claim`) {
+    assert.equal(headers.get('apikey'), process.env.SUPABASE_SERVICE_ROLE_KEY);
+    assert.equal(headers.get('authorization'), `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`);
+    assert.deepEqual(JSON.parse(init.body), { p_user_id: UID, p_endpoint: 'quant' });
+    assert.equal(init.redirect, 'error');
+    return budgetReply();
+  }
   if (url === QUANT) {
     const body = JSON.parse(init.body);
     return quantOverride ? quantOverride(body) : json(upstream(body));
@@ -196,6 +205,26 @@ try {
       assert.equal((await invoke(apiHandler, request)).statusCode, 503);
     }
     authOverride = undefined;
+    assert.equal(countQuant(), before);
+  });
+  await check('Quant admission denial and accounting outage never start computation', async () => {
+    const before = countQuant();
+    budgetReply = () => json({ status: 'rate_limited', retry_after: 23.4 });
+    const denied = await invoke(apiHandler, request);
+    assert.equal(denied.statusCode, 429);
+    assert.equal(denied.headers['Retry-After'], '24');
+    assert.equal(denied.body.error, 'quant_rate_limited');
+    assert.equal(denied.body.product, undefined);
+    for (const reply of [() => json({}, 503), () => json({ status: 'unknown' }), () => { throw new Error('network'); }]) {
+      budgetReply = reply;
+      const result = await invoke(apiHandler, request);
+      assert.equal(result.statusCode, 503);
+      assert.equal(result.body.error, 'quant_budget_unavailable');
+    }
+    budgetReply = () => json({ status: 'claimed' });
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    assert.equal((await invoke(apiHandler, request)).statusCode, 503);
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'sb_secret_budget_test_only';
     assert.equal(countQuant(), before);
   });
   await check('UTF-8 byte limit applies to raw and parsed bodies, including exact boundary', async () => {
@@ -313,6 +342,15 @@ try {
     const mismatch = await client.loadOwnerQuantArtifacts(loadInput);
     assert.ok(mismatch.limitations.includes('QUANT_REQUEST_CONTEXT_MISMATCH'));
     tamperReceipt = false;
+  });
+  await check('normal Quant client keeps rate limits unavailable, not insufficient data', async () => {
+    client.clearOwnerQuantRuntimeCacheForTests();
+    budgetReply = () => json({ status: 'rate_limited', retry_after: 30 });
+    const result = await client.loadOwnerQuantArtifacts(loadInput);
+    assert.equal(result.status, 'unavailable');
+    assert.equal(result.product, undefined);
+    assert.ok(result.limitations.includes('QUANT_RUNTIME_HTTP_429'));
+    budgetReply = () => json({ status: 'claimed' });
   });
   async function staleDuring(change) {
     client.clearOwnerQuantRuntimeCacheForTests();

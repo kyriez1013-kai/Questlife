@@ -23,11 +23,17 @@ export async function authorizeAi(req: any, res: any, endpoint: 'parse' | 'brief
     res.status(auth.status).json({ ok: false, error: auth.error });
     return null;
   }
+  return await claimVerifiedRequestBudget(res, auth.userId, endpoint) ? auth : null;
+}
+
+/** Server-only admission after bearer/subject validation; never an analysis eligibility rule. */
+export async function claimVerifiedRequestBudget(res: any, userId: string, endpoint: 'parse' | 'brief' | 'quant') {
+  const prefix = endpoint === 'quant' ? 'quant' : 'ai';
   const url = serverUrl(process.env.SUPABASE_URL);
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {
-    res.status(503).json({ ok: false, error: 'ai_budget_unavailable' });
-    return null;
+    res.status(503).json({ ok: false, error: `${prefix}_budget_unavailable` });
+    return false;
   }
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 5000);
@@ -35,7 +41,7 @@ export async function authorizeAi(req: any, res: any, endpoint: 'parse' | 'brief
     const response = await fetch(new URL('/rest/v1/rpc/questlife_ai_claim', url), {
       method: 'POST',
       headers: { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ p_user_id: auth.userId, p_endpoint: endpoint }),
+      body: JSON.stringify({ p_user_id: userId, p_endpoint: endpoint }),
       signal: controller.signal, redirect: 'error', cache: 'no-store',
     });
     if (!response.ok) throw new Error();
@@ -44,14 +50,14 @@ export async function authorizeAi(req: any, res: any, endpoint: 'parse' | 'brief
       const retry = typeof result.retry_after === 'number' && Number.isFinite(result.retry_after)
         ? Math.min(86400, Math.max(1, Math.ceil(result.retry_after))) : 60;
       res.setHeader('Retry-After', String(retry));
-      res.status(429).json({ ok: false, error: 'ai_rate_limited', retry_after: retry });
-      return null;
+      res.status(429).json({ ok: false, error: `${prefix}_rate_limited`, retry_after: retry });
+      return false;
     }
     if (result?.status !== 'claimed') throw new Error();
-    return auth;
+    return true;
   } catch {
-    res.status(503).json({ ok: false, error: 'ai_budget_unavailable' });
-    return null;
+    res.status(503).json({ ok: false, error: `${prefix}_budget_unavailable` });
+    return false;
   } finally {
     clearTimeout(timeout);
   }

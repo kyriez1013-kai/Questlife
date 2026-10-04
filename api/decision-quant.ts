@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { Buffer } from 'node:buffer';
 import { createHash } from 'node:crypto';
 import { serverUrl, verifySupabaseBearer } from './_lib/supabaseAuth';
+import { claimVerifiedRequestBudget } from './_lib/aiBoundary';
 
 const MAX_BODY_BYTES = 1_900_000;
 const UPSTREAM_TIMEOUT_MS = 15_000;
@@ -66,6 +67,7 @@ export default async function handler(req: any, res: any) {
   if (Buffer.byteLength(runtimeBody, 'utf8') > MAX_BODY_BYTES) {
     return send(res, 413, { ok: false, error: 'payload_too_large' });
   }
+  if (!await claimVerifiedRequestBudget(res, auth.userId, 'quant')) return;
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);

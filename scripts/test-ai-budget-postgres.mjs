@@ -22,6 +22,7 @@ try {
   sql(`create role anon;create role authenticated;create role service_role;create schema auth;create table auth.users(id uuid primary key);insert into auth.users values('${A}'),('${B}');`);
   sql(readFileSync(new URL('../supabase/migrations/202610050001_ai_request_budget.sql',import.meta.url),'utf8'));
   sql(readFileSync(new URL('../supabase/migrations/202610050002_ai_budget_account_retention.sql',import.meta.url),'utf8'));
+  sql(readFileSync(new URL('../supabase/migrations/202610050003_quant_request_budget.sql',import.meta.url),'utf8'));
   await check('only server can claim; all client roles denied counters and direct mutations',()=>{
     for(const role of ['anon','authenticated']){
       denied(()=>claim(A,'parse',role));
@@ -66,12 +67,28 @@ try {
     assert.equal(sql('select count(*) from auth.users'),'2');assert.equal(sql('show listen_addresses'),'');
   });
   await check('Auth deletion erases only that identity accounting and retains global spent budget',()=>{
-    claim(A);claim(B,'brief');
+    claim(A);claim(B,'brief');claim(A,'quant');claim(B,'quant');
     for(const role of ['anon','authenticated','service_role']) denied(()=>sql(`set role ${role};select public.questlife_ai_forget_account();`));
     sql(`delete from auth.users where id='${A}'`);
     assert.equal(sql(`select count(*) from public.questlife_ai_budget where scope in ('user:${A}','minute:${A}')`),'0');
+    assert.equal(sql(`select count(*) from public.questlife_ai_budget where scope in ('quant:user:${A}','quant:minute:${A}')`),'0');
     assert.equal(sql(`select units from public.questlife_ai_budget where scope='user:${B}'`),'3');
+    assert.equal(sql(`select units from public.questlife_ai_budget where scope='quant:user:${B}'`),'1');
     assert.equal(sql("select units from public.questlife_ai_budget where scope='global'"),'4');
+    assert.equal(sql("select units from public.questlife_ai_budget where scope='quant:global'"),'2');
+  });
+  await check('Quant and model admission are independent and client roles cannot bypass either',()=>{
+    sql(`insert into auth.users values('${A}') on conflict do nothing;`);
+    for(let i=0;i<12;i++)assert.equal(claim(A,'quant').status,'claimed');
+    assert.equal(claim(A,'quant').status,'rate_limited');
+    assert.equal(claim(A,'brief').status,'claimed');
+    assert.equal(sql("select units from public.questlife_ai_budget where scope='quant:global'"),'12');
+    assert.equal(sql("select units from public.questlife_ai_budget where scope='global'"),'3');
+    for(const role of ['anon','authenticated'])denied(()=>claim(A,'quant',role));
+    sql(`update public.questlife_ai_budget set units=200 where scope='quant:user:${B}';
+      insert into public.questlife_ai_budget values('quant:user:${B}',date_trunc('day',now() at time zone 'UTC') at time zone 'UTC',200) on conflict do nothing;`);
+    assert.equal(claim(B,'quant').status,'rate_limited');
+    assert.equal(claim(B,'parse').status,'claimed');
   });
   console.log(`AI budget PostgreSQL: ${checks}/${checks} isolated groups passed; no hosted database touched.`);
 } finally {
