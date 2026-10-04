@@ -14,6 +14,12 @@ historical evidence, not completion claims for this candidate.
   are out of scope for destructive changes.
 - Candidate deployment is authorized; replacing owner production requires
   acceptance. New fees and credentials/device consent still require the owner.
+- Internal APKs and green builds are verification artifacts, not final product
+  delivery. Full functional, LLM/Quant, sync, source/permission and safety gates,
+  approved Web/native UI, and necessary physical acceptance remain in scope.
+  Final UI images come from the other Chat; no old design is silently promoted.
+  Owner Web/backend promotion and matched installers follow final acceptance,
+  with backup/rollback. No app-store submission is authorized.
 
 ## Completion Checklist
 
@@ -24,7 +30,7 @@ Unchecked entries remain unfinished.
 
 | Item | Current status | Evidence / next executable action |
 | --- | --- | --- |
-| Canonical worktree and branch | VERIFIED_LOCAL | Application/native source `ecf37b9`, packaging guard `49622b1`, on `release/questlife-v1`; checked 2026-10-05. User-owned untracked `QUESTLIFE_QUANT_UI_CONTRACT.md` remains unread, unchanged and excluded from commits/uploads |
+| Canonical worktree and branch | VERIFIED_LOCAL | Current functional/security source `f80007c` on `release/questlife-v1`; prior native artifacts remain `ecf37b9`/`49622b1` until affected-source rebuild. User-owned untracked `QUESTLIFE_QUANT_UI_CONTRACT.md` remains unread, unchanged and excluded from commits/uploads |
 | Vercel authorization | VERIFIED_REMOTE | Existing candidate project `prj_fVGFV7DzxfkLqbBpSo8P7NH9oqxX` / `questlife-v1-release`; candidate CLI deployment authorized. Old Owner project is not the deployment target |
 | Isolated Supabase backend | VERIFIED_REMOTE | `gttcoocfkqwvsqfwxpyo` created; both reviewed migrations executed in SQL Editor; four RLS tables, six RPCs and Realtime publication verified. Existing production `gtlknzltzntfltgjvgxx` untouched |
 | EAS / iOS signing | VERIFIED_REMOTE simulator build; BLOCKED local execution/signing | Same-source `ecf37b9` build `2c9fcda8-e2cb-4f3d-a7d1-dfd1ce0eb73d` downloaded and inspected: 1.0.1/build2, iPhoneSimulator, candidate services, Widget extension and App Intents. Not executed. Mac has Command Line Tools but no Xcode/simctl; no phone signing credentials. Owner declines paid membership; no new fee |
@@ -32,6 +38,9 @@ Unchecked entries remain unfinished.
 | Auth and bidirectional sync | VERIFIED_LOCAL isolated UI + Android emulator + candidate backend; real email restoration VERIFIED_USER_MANUAL | User confirmed real email sign-in, refresh, tab close/reopen and the same synced account. Separate disposable normal-client login, refresh, close/reopen, logout and different-account isolation were observed locally against candidate Supabase. QA record 7→9 minutes reached the real Quant UI and exact evidence ID. This batch's normal UI delete/local cleanup readback was interrupted, not passed; exact remote tombstones and QA identity cleanup were verified. Physical two-device acceptance remains open |
 | Commit-order concurrent sync | VERIFIED_LOCAL | PostgreSQL 18, separate backend connections: 10/10; delayed lower sequence, CAS, idempotent receipt/delete and RLS; no hosted claim |
 | Legacy anonymous endpoint safety | IMPLEMENTED, VERIFIED_LOCAL | `/api/sync` fails closed (410); Quant verifies Supabase bearer UID; 17 backend scenario groups passed |
+| Normal cloud AI and sensitive-context consent | IMPLEMENTED, VERIFIED_LOCAL; hosted/UI verification pending | Web Settings and native Account sheet now expose account-bound device-local AI consent, default off, with imported context separately off. Shared parse/brief client verifies session/replica and discards responses after account/consent changes. No imported health or provenance-ambiguous saved interpretation sent without both consent boundaries |
+| AI authorization / expense abuse | IMPLEMENTED, VERIFIED_LOCAL; candidate SQL VERIFIED_REMOTE | Paid parse/brief require remotely verified bearer. Candidate-only server budget is atomic: 12 units/user/minute, 200/user/day, 1500 global/day; parse costs1, brief3 with up to2 existing bounded provider attempts. HTTP and complete-memory prompt bytes bounded. RLS/client grants deny budget bypass. Limits are request-cost guards, not an exact currency estimate; hosted API verification pending |
+| Release safety gate | PARTIAL, NOT_PASSED | 511 reachable commits scanned with redacted Gitleaks; 11 classified non-secret identifiers/hash/translation false positives. Exact authorized private values absent from 1139 tracked files, reachable history, current Web and previous canonical Android/iOS artifacts. Restricted quant docs excluded. Sensitive Vercel values cannot be downloaded, so provider-key exact-value coverage is unavailable. Current deployment, log retention, native local data and physical privacy/permission gates remain open; no full security signoff |
 | Real Quant runtime | VERIFIED_REMOTE (isolated fixtures) | 9 hosted checks: authentication, subject/as-of rejection, 210-observation computation, correction hash, empty-after-removal, QA exclusion and cross-subject isolation; `reports/release/quant-hosted-verification.json`; no owner data/database writes |
 | Native Today/materials/sheets | IMPLEMENTED, partial emulator verification | Standalone release opens Today S0 and State sheet; settled sheet shields background text and Cancel leaves state unrecorded. 31 component tests. Full keyboard, dark-theme and physical acceptance pending |
 | Native Goals / Schedule / Settings | IMPLEMENTED, partial emulator verification | Android Schedule moved a QA block to 14:00-15:00 and the Web client received the change. Web created and deleted three QA blocks; second Web client and Android converged to zero. Native Settings source entry opens and reports Health and Calendar permissions unrequested. Physical provider data, conflict cancel in a real browser, and broader native acceptance remain pending |
@@ -46,6 +55,62 @@ Unchecked entries remain unfinished.
 | Native recordings/performance | Bottleneck fixed and background path VERIFIED_LOCAL; end-to-end NOT_PASSED | Fresh `530fe4f` ReleaseQA mature-example trace: 135 frames, P50 15ms/P95 31ms/20 above20ms/12 deadline-janky; first RNCWebView create 200.470ms on UI thread. `ecf37b9` AndroidX background startup compiled; installed `49622b1` cold trace moves provider153.228ms/native library41.165ms to `questlife-chart` background thread. Not a chart-interaction P95 comparison. Native input connection fails while screenshots remain readable; keyboard, long-list, full post-fix chart trace and recording remain UNVERIFIED |
 
 ## Exact Resume Checkpoint
+
+### Active functional and safety continuation (2026-10-05)
+
+- Starting clean source `8e3a3a3`, same release worktree and candidate backend.
+  No Owner records, final visual layout, Quant calculations or Sync V2 protocol
+  changed. Necessary ordinary AI settings/error entries are in scope now.
+- Actual gaps repaired: unauthenticated paid model proxies; legacy brief memory
+  trusting caller anonymous identity with service-role access; duplicate server
+  DecisionResult writes; debug/raw capture and provider logs; native AI limited
+  to browser-only debug switches. Brief memory now uses verified bearer/RLS on
+  existing Sync V2 projections. HomeScreen remains sole result writer.
+- `202610050001_ai_request_budget.sql` applied through normal Candidate SQL
+  Editor. Real readback: anon_can_claim=false, client_can_claim=false,
+  server_can_claim=true, rls_enabled=true. Only new accounting rows affected.
+  Server-only candidate Vercel role key added as a sensitive variable; existing
+  sensitive model values remain non-downloadable, not falsely called missing.
+- Local targeted checks: AI boundary14/14 plus Vercel compiler-mode check,
+  isolated actual PostgreSQL budget8/8,
+  existing backend auth17/17, adaptive decision scenarios, TypeScript and Web
+  build, and 120 affected native/settings/Insights tests passed.
+  Initial parent tests lacked the isolated runtime and then the new child
+  mock; harness updated, not application permission/behavior weakened.
+- Historical scan excludes protected quant documents. Confirmed false positives
+  are build/database hash metadata, the public Figma file ID, translation keys
+  and imported type names. No known genuine leak found in this scan; this is
+  not evidence that an unknown secret or private historical log cannot exist.
+- Commits `bf91989` (account-bound AI consent/auth/quota), `d4bb568` (server
+  compiler narrowing) and `f80007c` (Auth-account retention and durable QA
+  cleanup evidence) are pushed only to release. First candidate deployment
+  `dpl_3QZkvZMBWWmcdfReGUD5ZTzTydp4` ran three real DeepSeek Capture requests
+  and an empty Instant Brief successfully. Its server compiler logged two
+  narrowing errors despite READY; `d4bb568` repairs them and new deployment
+  verification is pending. Bundle: `index-32600c5a55ecf0c0c5c98f0e2e05ad7c.js`.
+- Retention migration `202610050002_ai_budget_account_retention.sql` applied
+  to candidate only. Auth delete removes exact per-account accounting keys,
+  not global spent quota or observations. Interrupted disposable identity
+  `95a19317-2fd3-4ce4-9a64-d86bea9c9d3a`: exact sync count0 before deletion,
+  Auth404 after; SQL readback sync0/accounting0/trigger1. The initial verifier
+  incorrectly attempted service-role table read denied by existing grants;
+  corrected to actual authenticated client reads, without expanding privileges.
+- Android CloudQA touch input is restored this session. Normal app drawer,
+  standalone launch, English selection and empty Today worked. No state or
+  Owner observation saved. This supersedes the earlier input-connection blocker,
+  not the pending chart/keyboard/full-performance acceptance.
+- Candidate real authenticated model UI checks, new build receipt, and
+  corrected deployment readback follow the narrow functional commits. Existing
+  Android/iOS artifacts predate this change and are not described as updated.
+  Physical source data/delivery, full installed chart P95 and final visual
+  acceptance remain unfinished. An external device gate does not stop these
+  other functional/safety repairs.
+
+Next exact work: finish corrected candidate deployment; verify real
+authenticated parse/brief and normal AI consent/retry through an isolated client;
+clean only exact disposable identities/records. Continue remaining source,
+notification, native interaction and safety gates without rewriting the product.
+Do not promote to Owner or package unchanged code merely to produce another APK.
 
 ### Current canonical version line (2026-10-05)
 
