@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync, copyFile
 import { homedir } from 'node:os';
 import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { assertCandidateEnvironment, assertCandidateBundle } from './android-bundle-contract.mjs';
 
 const repo = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const git = (...args) => execFileSync('git', args, { cwd: repo, encoding: 'utf8' }).trim();
@@ -13,6 +14,9 @@ const apiOrigin = process.env.EXPO_PUBLIC_API_ORIGIN;
 if (!apiOrigin || !/^https:\/\/[^/?#]+\/?$/.test(apiOrigin)) {
   throw new Error('Standalone candidates require EXPO_PUBLIC_API_ORIGIN pointing to the HTTPS candidate, not Metro or localhost');
 }
+const configuration = { apiOrigin, supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
+  publicKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY };
+assertCandidateEnvironment(configuration);
 const home = homedir();
 const java = process.env.JAVA_HOME ?? join(home, 'Library/QuestLifeToolchain/jdk/Contents/Home');
 const sdk = process.env.ANDROID_HOME ?? join(home, 'Library/Android/sdk');
@@ -49,8 +53,13 @@ if (createHash('sha256').update(certificate).digest('hex') !== certificateSha256
   throw new Error('Keystore certificate mismatch; refusing an incompatible APK');
 }
 run('npx', ['expo', 'prebuild', '--platform', 'android', '--no-install']);
+// Gradle does not fingerprint public environment values. Rebuild this asset
+// even when the previous native assembly's Java/Kotlin inputs are unchanged.
+run('./gradlew', [':app:createBundleReleaseJsAndAssets', '--rerun-tasks', '--console=plain', '--max-workers=4'], join(repo, 'android'));
 run('./gradlew', [':app:assembleRelease', '-PreactNativeArchitectures=arm64-v8a', '--console=plain', '--max-workers=4'], join(repo, 'android'));
 const apk = join(repo, 'android/app/build/outputs/apk/release/app-release.apk');
+const bundle = execFileSync('unzip', ['-p', apk, 'assets/index.android.bundle'], { maxBuffer: 32 * 1024 * 1024 });
+assertCandidateBundle(bundle, configuration);
 if (git('rev-parse', 'HEAD') !== sourceCommit || git('status', '--porcelain', '--untracked-files=no')) {
   throw new Error('Candidate source changed during build; do not label this APK as the new commit');
 }
@@ -64,6 +73,8 @@ const metadata = { path: destination, sourceCommit, dirty: false,
   certificateSha256, applicationId: config.android.package, versionCode: config.android.versionCode,
   versionName: config.version, generatedAt: new Date().toISOString() };
 metadata.apiOrigin = apiOrigin;
-metadata.accountConfigured = Boolean(process.env.EXPO_PUBLIC_SUPABASE_URL && process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY);
+metadata.accountConfigured = true;
+metadata.packagedConfigurationVerified = true;
+metadata.hermesSha256 = createHash('sha256').update(bundle).digest('hex');
 writeFileSync(join(output, 'android-candidate.json'), JSON.stringify(metadata, null, 2));
 console.log(JSON.stringify(metadata, null, 2));

@@ -69,6 +69,15 @@ Unchecked entries remain unfinished.
   200.470ms, Chromium initialization at 121.440ms, plus buffer-dequeue waits.
   This is an actual native/UI-thread trace, not a component or Web bundle proxy.
   Remediation and controlled post-build measurement are still in progress.
+- Actual APK-asset readback caught stale Gradle JavaScript outputs in the first
+  local `ecf37b9` assembly: its process metadata said configured, but its Hermes
+  asset lacked the candidate services. The APK was removed from the download
+  directory and quarantined, not accepted or installed. The cloud `ecf37b9`
+  asset passes real configuration checks and matches the configured `530fe4f`
+  Hermes hash. Local bundling now explicitly reruns the bundle task and checks
+  actual UTF-8/UTF-16 APK strings for the candidate origin, Supabase URL and
+  public key before publishing. It rejects Owner services and nonpublic keys.
+  A corrected local build and runtime acceptance remain pending.
 
 ### Previous continuation: `530fe4f` (2026-10-04)
 
