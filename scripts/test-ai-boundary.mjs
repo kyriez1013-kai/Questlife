@@ -100,6 +100,10 @@ async function check(name, job) { calls=[]; logs=[];budget={status:'claimed'};bu
   await job();passed++;originalLog(`PASS ${name}`); }
 try {
   console.warn=(...args)=>logs.push(args);console.error=(...args)=>logs.push(args);console.log=(...args)=>logs.push(args);
+  await check('Web uses its own API origin even with native backend environment configured', async()=>{
+    await authenticatedAiPost('/api/parse',{text:'Isolated same-origin test'});
+    assert.equal(calls.length,1);assert.equal(calls[0].url,'/api/parse');
+  });
   await check('both paid routes deny anonymous and invalid bearers before quota/model/memory', async()=>{
     for (const [handler,body] of [[parse,{text:'QA input'}],[brief,minimalBrief]]) for(const token of [null,'forged']) {
       assert.equal((await invoke(handler,body,token)).statusCode,401);
