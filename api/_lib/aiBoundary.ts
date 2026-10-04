@@ -19,7 +19,7 @@ export function readAiBody(req: any, res: any, maxBytes: number): Record<string,
 
 export async function authorizeAi(req: any, res: any, endpoint: 'parse' | 'brief') {
   const auth = await verifySupabaseBearer(req);
-  if (!auth.ok) {
+  if (auth.ok === false) {
     res.status(auth.status).json({ ok: false, error: auth.error });
     return null;
   }

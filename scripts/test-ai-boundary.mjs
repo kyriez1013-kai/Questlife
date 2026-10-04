@@ -8,6 +8,14 @@ import Module, { createRequire } from 'node:module';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const out = mkdtempSync(join(tmpdir(), 'questlife-ai-boundary-'));
+// Vercel compiles server entries without Expo's strict settings; preserve the
+// explicit discriminant narrowing under that compiler mode too.
+const serverTypes = spawnSync(process.execPath, [join(root, 'node_modules/typescript/bin/tsc'),
+  '--noEmit', '--module', 'commonjs', '--target', 'es2022', '--moduleResolution', 'node',
+  '--esModuleInterop', '--skipLibCheck', '--strictNullChecks', 'false',
+  join(root, 'api/parse.ts'), join(root, 'api/brief.ts'),
+], { cwd: root, stdio: 'inherit' });
+if (serverTypes.status !== 0) { rmSync(out, { recursive: true, force: true }); process.exit(serverTypes.status ?? 1); }
 const compiled = spawnSync(process.execPath, [join(root, 'node_modules/typescript/bin/tsc'),
   '--module', 'commonjs', '--target', 'es2022', '--moduleResolution', 'node', '--jsx', 'react-jsx',
   '--esModuleInterop', '--resolveJsonModule', '--skipLibCheck', '--strict', '--rootDir', root, '--outDir', out,
