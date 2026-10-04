@@ -553,6 +553,7 @@ export default function V11IntegratedTodaySurface({
                         <WebPressable
                           accessibilityRole="button"
                           accessibilityState={{ selected: instantRead.feedback === value }}
+                          aria-pressed={instantRead.feedback === value}
                           dataSet={{
                             'v11-rebaseline-role': 'feedback-choice',
                             'v11-selected': instantRead.feedback === value ? 'true' : 'false',

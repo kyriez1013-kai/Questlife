@@ -69,3 +69,22 @@ test('both Today platform surfaces render the same utility-action callbacks', ()
     assert.match(content, /(?:action|a)\.onPress/);
   }
 });
+
+test('Web feedback buttons expose the persisted distinct choice as pressed', () => {
+  const filename = path.join(__dirname, '../../src/v11-stage2-rebaseline/V11IntegratedTodaySurface.tsx');
+  const parsed = ts.createSourceFile(filename, fs.readFileSync(filename, 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  let pressed;
+  function inspect(node) {
+    if (ts.isJsxAttribute(node) && node.name.getText(parsed) === 'aria-pressed') {
+      pressed = node.initializer.expression;
+    }
+    ts.forEachChild(node, inspect);
+  }
+  inspect(parsed);
+  assert.ok(pressed);
+  for (const feedback of [null, 'useful', 'not_useful']) {
+    for (const value of ['useful', 'not_useful']) {
+      assert.equal(vm.runInNewContext(pressed.getText(parsed), { instantRead: { feedback }, value }), feedback === value);
+    }
+  }
+});
