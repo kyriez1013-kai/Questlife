@@ -15,6 +15,8 @@ const rn = { Platform:{OS:'web'}, Appearance:{getColorScheme:()=> 'light'}, Styl
 for (const name of ['View','Text','ScrollView','TouchableOpacity']) rn[name]=name;
 const constants = {expoConfig:{version:'TEST_BUILD_1.2.3'}};
 let store;
+let aiEnabled = false;
+const aiListeners = new Set();
 const component = name => props => React.createElement(name, props, props.children, props.trailing);
 const originalLoad = Module._load;
 Module._load = function(request, parent, isMain) {
@@ -22,7 +24,7 @@ Module._load = function(request, parent, isMain) {
   if (request === 'react/jsx-runtime') return require(path.join(runtime,'react/jsx-runtime'));
   if (request === 'react-native') return rn;
   if (request === 'react-native-safe-area-context') return {SafeAreaView:'SafeAreaView'};
-  if (request === '@react-navigation/native') return {useFocusEffect:React.useEffect};
+  if (request === '@react-navigation/native') return {useFocusEffect:callback=>React.useEffect(callback,[callback])};
   if (request === 'expo-constants') return constants;
   if (/\/store$/.test(request)) return {useStore:()=>store};
   if (/\/useQuestTheme$/.test(request)) return {useQuestTheme:()=>require('../design/tokens.ts').getQuestTheme('cleanFocus')};
@@ -31,7 +33,8 @@ Module._load = function(request, parent, isMain) {
   if (/\/RecordBackupActions$/.test(request)) return component('RecordBackupActions');
   if (/\/analytics$/.test(request)) return {trackEvent(){}};
   if (/\/storage$/.test(request)) return {today:()=> '2026-09-20',uid:()=> 'TEST_ID'};
-  if (/\/decisionService$/.test(request)) return {isDecisionAIEnabled:()=>false,isDecisionAIShadowEnabled:()=>false,isDecisionDailyBriefEnabled:()=>false};
+  if (/\/decisionService$/.test(request)) return {isDecisionAIEnabled:()=>aiEnabled,isDecisionAIShadowEnabled:()=>false,isDecisionDailyBriefEnabled:()=>aiEnabled};
+  if (/\/aiPreferences$/.test(request)) return {subscribeAiPreferences:listener=>{aiListeners.add(listener);return ()=>aiListeners.delete(listener);}};
   if (/\/featureFlag$/.test(request)) return {getV11ProductLanguage:value=>value,getV11ProductThemeId:value=>value,isV11PersonalTerminalEnabled:()=>false};
   if (/\/QuestPrimitives$/.test(request)) return {QuestCompactRow:component('QuestCompactRow'),QuestGroupedSurface:component('QuestGroupedSurface'),QuestSectionHeader:component('QuestSectionHeader')};
   if (/\/Quest(Input|Button|Pill|SegmentedControl)$/.test(request)) return component(request.split('/').at(-1));
@@ -50,6 +53,7 @@ const originalRevoke = URL.revokeObjectURL;
 const originalWindow = global.window;
 const originalDocument = global.document;
 const setup = () => {
+  aiEnabled=false;
   store={data:structuredClone(DEFAULT_DATA),loading:false};store.data.settings.language='en';
   store.data.rawCaptures=[];store.data.executionLogs=[];store.data.contextLogs=[];
   rn.Platform.OS='web';constants.expoConfig.version='TEST_BUILD_1.2.3';allowDownload=false;downloads=[];prompts=[];
@@ -83,6 +87,13 @@ for (const lang of ['en','zh']) test(`Settings ${lang} shows build version and t
 test('missing build version is reported as unavailable rather than v0.2',async()=>{
   setup();delete constants.expoConfig.version;await render();
   assert.equal(row('version').props.body,t('en','versionText'));assert.doesNotMatch(row('version').props.body,/v0\.2/);
+});
+test('ordinary AI consent changes refresh the brief status without a debug flag',async()=>{
+  setup();await render();const before=row('decisionBriefStatus').props.body;
+  await act(async()=>{aiEnabled=true;for(const listener of aiListeners)listener();});
+  assert.notEqual(row('decisionBriefStatus').props.body,before);
+  await act(async()=>{aiEnabled=false;for(const listener of aiListeners)listener();});
+  assert.equal(row('decisionBriefStatus').props.body,before);
 });
 test('cancelled local export does not read storage, download or change records',async()=>{
   setup();await render();const before=structuredClone(store.data);

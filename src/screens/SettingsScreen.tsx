@@ -1,6 +1,6 @@
 // V2: "设置" Tab
 // 提醒已移到每个技能内, 这里只保留版本号 + 本地存储说明
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Linking, Platform, View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import Constants from 'expo-constants';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -29,6 +29,7 @@ import QuestSegmentedControl from '../components/ui/QuestSegmentedControl';
 import { getV11ProductLanguage, getV11ProductThemeId, isV11PersonalTerminalEnabled } from '../v11/featureFlag';
 import AccountSyncSection from '../sync-v2/AccountSyncSection';
 import AiSettingsSection from '../services/AiSettingsSection';
+import { subscribeAiPreferences } from '../services/aiPreferences';
 import RecordBackupActions from '../backup/RecordBackupActions';
 import { downloadPersistenceSnapshot } from '../utils/persistenceTrace';
 
@@ -63,6 +64,11 @@ export default function SettingsScreen() {
     dailyBriefEnabled: isDecisionDailyBriefEnabled(),
     shadowEnabled: isDecisionAIShadowEnabled(),
   }));
+  useEffect(() => subscribeAiPreferences(() => setDecisionFlagSnapshot({
+    aiEnabled: isDecisionAIEnabled(),
+    dailyBriefEnabled: isDecisionDailyBriefEnabled(),
+    shadowEnabled: isDecisionAIShadowEnabled(),
+  })), []);
   const decisionMemorySummary = buildDecisionMemorySummary(data.decisionResults || []);
   const recentDecisionResults = compactDecisionResults(data.decisionResults || [], 5);
   const derivedPatternCandidates = useMemo(() => derivePatternCandidates(data), [data]);
@@ -101,13 +107,13 @@ export default function SettingsScreen() {
     }
   }, [lang]);
   useFocusEffect(useCallback(() => {
+    setDecisionFlagSnapshot({
+      aiEnabled: isDecisionAIEnabled(),
+      dailyBriefEnabled: isDecisionDailyBriefEnabled(),
+      shadowEnabled: isDecisionAIShadowEnabled(),
+    });
     if (decisionDebugVisible) {
       setLastDecisionFeedback(readLastDecisionFeedback());
-      setDecisionFlagSnapshot({
-        aiEnabled: isDecisionAIEnabled(),
-        dailyBriefEnabled: isDecisionDailyBriefEnabled(),
-        shadowEnabled: isDecisionAIShadowEnabled(),
-      });
     }
     return undefined;
   }, [decisionDebugVisible, readLastDecisionFeedback]));
