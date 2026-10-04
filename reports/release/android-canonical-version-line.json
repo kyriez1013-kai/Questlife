@@ -1,0 +1,160 @@
+{
+  "checkedAt": "2026-10-05",
+  "branch": "release/questlife-v1",
+  "applicationId": "com.kyrie.questlife",
+  "canonicalCertificateSha256": "61b030724c7ef8ab94681eb42b7033631f8c2086c78a4a79166a654e93eec5da",
+  "legacyLocalCertificateSha256": "d2a08d98261c601f6572c0c171810ff80530e55410cac780d3f0d928443867d6",
+  "keySource": "Existing EAS GgK2fK6JvP, authenticated credential export; private key outside repository",
+  "artifacts": [
+    {
+      "sourceCommit": "1f09631",
+      "build": "EAS cloud",
+      "versionName": "1.0.0",
+      "versionCode": 1,
+      "certificate": "canonical",
+      "bytes": 108192889,
+      "sha256": "9c8702f356c607069f971485ec157402f9380d533048f2c5edd81d8c544f64ef",
+      "binaryVerification": "VERIFIED_LOCAL"
+    },
+    {
+      "sourceCommit": "530fe4f",
+      "build": "EAS cloud",
+      "versionName": "1.0.0",
+      "versionCode": 1,
+      "certificate": "canonical",
+      "bytes": 108192973,
+      "sha256": "acc20b0a3335c618a088658ca402b32b8600c8222e2b3f97594ab08ea35f5793",
+      "binaryVerification": "VERIFIED_LOCAL"
+    },
+    {
+      "sourceCommit": "530fe4f",
+      "build": "Legacy local arm64",
+      "versionName": "1.0.0",
+      "versionCode": 1,
+      "certificate": "legacyLocal",
+      "bytes": 47262668,
+      "sha256": "fc67232a14b8db76ecc84feeb11b916fcd8b9290f86cb9b6ffbb3813d7d2ff3a",
+      "binaryVerification": "VERIFIED_LOCAL",
+      "futureBuilds": "retired; cannot cover-install canonical APK without a separately accepted data-safe migration"
+    },
+    {
+      "sourceCommit": "ecf37b908006df6506af8399ad5ee92d849e0050",
+      "build": "Canonical EAS cloud",
+      "buildId": "74a0fec6-9650-4f89-b1fc-5129422ba1f7",
+      "versionName": "1.0.1",
+      "versionCode": 2,
+      "certificate": "canonical",
+      "bytes": 108192997,
+      "sha256": "21bf7ee1d5dca2ac7d38773da4efb7744ea8b2f3ecba03bc4570d24f1a2a771c",
+      "hermesSha256": "46b42acd149321015fe60d060874ceaa5f4e9eb2c303c456190814cd2a04b39e",
+      "packagedCandidateConfigurationVerified": true,
+      "ownerRefPresent": false,
+      "url": "https://expo.dev/artifacts/eas/R9veV4RI2ja5i12bm9A4wXBXEKkQ0bCSpVBiws_Gzbg.apk",
+      "binaryVerification": "VERIFIED_LOCAL",
+      "cloudBuild": "VERIFIED_REMOTE",
+      "physicalInstallation": "UNVERIFIED"
+    },
+    {
+      "sourceCommit": "49622b1aaa921cd0ddf6a8d8e6c4662f36cd5909",
+      "applicationAndNativeSource": "ecf37b9; later commit changes packaging validation only",
+      "build": "Canonical local arm64",
+      "versionName": "1.0.1",
+      "versionCode": 2,
+      "certificate": "canonical",
+      "bytes": 47262692,
+      "sha256": "0d1ebf328b45e72aaa52f559df04cbf3c3bea7f0a81173cd1178e5e5d388edec",
+      "hermesSha256": "46b42acd149321015fe60d060874ceaa5f4e9eb2c303c456190814cd2a04b39e",
+      "packagedCandidateConfigurationVerified": true,
+      "ownerRefPresent": false,
+      "url": "http://192.168.5.28:8096/questlife-v1-49622b1-canonical-arm64.apk",
+      "urlScope": "Mac LAN address, verified HTTP200; not a public Internet download",
+      "binaryVerification": "VERIFIED_LOCAL",
+      "isolatedEmulatorInstallation": "VERIFIED_LOCAL",
+      "physicalInstallation": "UNVERIFIED"
+    }
+  ],
+  "isolatedUpgrade": {
+    "device": "QuestLife_CloudQA, emulator-5556, API36 arm64; not physical Android",
+    "from": "cloud 1f09631, code1, canonical certificate",
+    "to": "local 49622b1, code2, canonical certificate",
+    "method": "adb install -r; no uninstall or data clear",
+    "packageInstall": "VERIFIED_LOCAL",
+    "immediateFileHashesRetained": {
+      "RKStorage": "1e5a66b994b8fad36d2a8e367566f76ebc8deafc0687fdde03dd7edc52886823",
+      "SecureStoreAndPreferences": "3325d2a819fdd8062c2cdc48a09b995c9b012915bcdf88b1cf9742a7f057c793",
+      "WebViewChromiumPrefs": "ee1703315ef6445ecfdb9580c19e9b4aaf8cfe0fdb8263299014ce8062646721"
+    },
+    "scope": "Existing empty-replica files and onboarding/language survived. No populated ExecutionLog or signed-in session existed before upgrade.",
+    "populatedRecordRetention": "UNVERIFIED",
+    "signedInSessionRetention": "UNVERIFIED",
+    "independentColdTodayStartup": "VERIFIED_LOCAL",
+    "warmCaptureDeepLink": "VERIFIED_LOCAL",
+    "coldStateDeepLink": "VERIFIED_LOCAL",
+    "normalUiInputBlocker": "CUA noWindowsAvailable; screenshot/AX readback works, native clicks fail even after raising exact observed window",
+    "ownerApplicationUninstalled": false,
+    "ownerDataCleared": false
+  },
+  "packagingRegression": {
+    "badLocalArtifact": "First ecf37b9 assembly reused unconfigured Gradle Hermes despite configured build environment",
+    "disposition": "Removed from download directory, quarantined before acceptance/installation",
+    "fix": "Explicit rerun of createBundleReleaseJsAndAssets; actual APK asset verifies candidate origin, Supabase URL/public key and rejects Owner ref/nonpublic keys before publishing"
+  },
+  "iosSimulator": {
+    "sourceCommit": "ecf37b9",
+    "buildId": "2c9fcda8-e2cb-4f3d-a7d1-dfd1ce0eb73d",
+    "buildStatus": "FINISHED",
+    "versionName": "1.0.1",
+    "buildNumber": "2",
+    "platform": "iPhoneSimulator",
+    "architectures": ["x86_64", "arm64"],
+    "bytes": 21304080,
+    "sha256": "aca4c935c5c60f2cd692dfac9db2fbf623bedf365dd4e6cca229270285134fae",
+    "candidateOriginAndPublicConfigurationVerified": true,
+    "ownerRefPresent": false,
+    "widgetExtensionPresent": true,
+    "appIntentsMetadataPresent": true,
+    "executed": false,
+    "physicalIPhoneInstaller": false,
+    "blocker": "No local Xcode/simctl or phone signing/profile/device registration; paid membership explicitly declined",
+    "url": "https://expo.dev/artifacts/eas/rcy7W1GHPA1gNIVruGVmJxFR9G1QhDcRBbQBPFK5dfc.tar.gz"
+  },
+  "candidateWeb": {
+    "applicationSource": "ecf37b9",
+    "deployment": "dpl_ARJkngfoiueaF1U5Stoc42NFxD7i",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "bundle": "index-01d9e465fed74289a6ab35125533e4a3.js",
+    "sha256": "196725ce39cbdd198c3d06a56507d920fcfd515a95050ab6930646f7c560ef15",
+    "httpStatus": 200,
+    "candidateConfigurationVerified": true,
+    "ownerRefPresent": false,
+    "normalNonMutatingSmoke": ["Today", "Goals", "Schedule", "Insights", "Settings version1.0.1"],
+    "authenticatedFlowRepeated": false
+  },
+  "disposableIdentityCleanup": {
+    "userId": "fa874feb-cb34-4f2c-aeb9-54751e15f96f",
+    "runId": "26a10903-1331-4db3-a16b-ff2fb8e95aa2",
+    "authenticatedSyncedRows": 0,
+    "formalCleanupDeletionResults": [],
+    "liveRowsRemaining": 0,
+    "authDeletedReadbackStatus": 404,
+    "ownerDataTouched": false,
+    "isolatedAndroidLocalCleanup": {
+      "serial": "emulator-5556",
+      "avd": "QuestLife_CloudQA",
+      "actionAfterEvidenceCapture": "pm clear com.kyrie.questlife",
+      "result": "Success",
+      "RKStorageReadback": "ABSENT",
+      "SecureStoreReadback": "ABSENT",
+      "canonicalPackageStillInstalled": true,
+      "ownerOrReleaseQADataCleared": false
+    },
+    "olderLocalTestTab": "Closed; gateway stopped, browser storage not cleared",
+    "olderLocalOriginCleanup": "UNVERIFIED: localhost8098 retains15 DecisionResults/pending work; signed-out local-clear guard remains intact"
+  },
+  "validation": {
+    "targetedTests": { "passed": 10, "failed": 0 },
+    "typecheck": "PASS",
+    "configuredWebExport": "PASS",
+    "physicalDeviceTestsAdded": 0
+  }
+}

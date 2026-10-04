@@ -1,0 +1,57 @@
+{
+  "date": "2026-10-05",
+  "measurementStatus": "End-to-end acceptance NOT_PASSED; traced bottleneck remediation VERIFIED_LOCAL",
+  "baseline": {
+    "source": "530fe4f local Release",
+    "environment": "QuestLife_V1_ReleaseQA emulator-5554, API36 arm64, M4 hostGPU, 1080x2400; no physical phone claim",
+    "data": "Existing isolated mature example:158 total observations,30D range,25 displayed",
+    "flow": "Normal example loading,Line/candle switch,canvas drag/scroll and evidence-sheet open/close; selection/zoom/reset not fully accepted",
+    "metric": "Android gfxinfo application frame histogram, not component time, Web bundle size or time-to-usable",
+    "frames": 135,
+    "p50Ms": 15,
+    "p95Ms": 31,
+    "framesAbove20Ms": 20,
+    "frameDeadlineJanky": 12,
+    "uiThreadTrace": {
+      "firstRNCWebViewCreateMs": 200.470,
+      "chromiumInitMs": 121.440,
+      "longDoFrameMs": 263.934
+    },
+    "tracePath": "/Users/kyrie/Library/QuestLifeToolchain/performance/questlife-baseline.perfetto-trace",
+    "traceSha256": "6a1716a34efad29ebd2d4f99e54d9c67b8763cd82091f6f749b0202dc52abc7f",
+    "gfxInfoPath": "/Users/kyrie/Library/QuestLifeToolchain/performance/questlife-baseline-gfxinfo.txt",
+    "gfxInfoSha256": "bb1edf7c193b1d59daa4da189ab6fd070b8044e0b85232d189eb1949363ad02f"
+  },
+  "remediation": {
+    "applicationCommit": "ecf37b9",
+    "location": "plugins/with-chart-webview-startup.js",
+    "method": "AndroidX WebKit1.14 asynchronous startUpWebView on MIN_PRIORITY executor; shouldRunUiThreadStartUpTasks=false",
+    "dependency": "Same WebKit version already supplied by react-native-webview; no new engine or hidden WebView",
+    "releaseCompilation": "PASS",
+    "tests": "Three focused startup tests passed; total canonical packaging/startup checks10/10"
+  },
+  "installedColdStartReadback": {
+    "packagingCommit": "49622b1",
+    "environment": "QuestLife_CloudQA emulator-5556,API36 arm64,M4 hostGPU,Release",
+    "flow": "Force-stop then cold launch actual installed canonical application; no Metro",
+    "activityTotalTimeMs": 765,
+    "timeToUsable": "UNVERIFIED; Activity launch duration is not user-perceived readiness",
+    "providerLoad": { "thread": "questlife-chart", "durationMs": 153.228 },
+    "chromiumProviderClass": { "thread": "questlife-chart", "durationMs": 90.244 },
+    "nativeLibraryLoad": { "thread": "questlife-chart", "durationMs": 41.165 },
+    "tracePath": "/Users/kyrie/Library/QuestLifeToolchain/performance/questlife-canonical-coldstart.perfetto-trace",
+    "traceSha256": "d1f32e8efd862694a975445bea030a084d0ba171523c63c9fbf2d2ad4fd44bf0",
+    "traceBytes": 5866546,
+    "conclusion": "Engine/provider loading actually ran off the UI thread. This is not a post-fix full chart-composition frame benchmark."
+  },
+  "controlledPostFixChart": {
+    "status": "UNVERIFIED",
+    "p50Ms": null,
+    "p95Ms": null,
+    "framesAbove20Ms": null,
+    "blocker": "Native CUA input fails noWindowsAvailable; normal mature-example/chart/sheet/keyboard sequence cannot be completed. Screenshots remain readable.",
+    "nextAction": "Repeat same isolated mature example and normal actions on installed canonical Release,reset gfxinfo,trace startup plus steady interaction and obtain recording"
+  },
+  "physicalDevice": "UNVERIFIED; no physical Android or iPhone attached",
+  "recording": "UNVERIFIED"
+}
