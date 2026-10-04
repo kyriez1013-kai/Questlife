@@ -12,6 +12,7 @@ import { nativeCopy as c } from '../platform/nativeI18n';
 import { NativeAction, NativeSection, useNativeTheme } from './NativeControls';
 import NativeCalendarEditor from './NativeCalendarEditor';
 import AccountSyncSection from '../sync-v2/AccountSyncSection';
+import AiSettingsSection from '../services/AiSettingsSection';
 import { syncCopy } from '../sync-v2/copy';
 import { useQuestTheme } from '../design/useQuestTheme';
 import { questLayout, themeOptions } from '../design/tokens';
@@ -98,7 +99,7 @@ export default function NativeSettingsScreen({navigation}:{navigation:any}) {
         <NativeSettingsRow icon="calendar" label={c(lang,'calendar')} summary={calendarSummary} onPress={()=>setDetail('calendar')}/>
       </NativeSection>:null}
       {detail==='health'||detail==='calendar'?<NativeAction label={c(lang,'settingsBackSources')} disabled={!!busy||!!editor} onPress={()=>{if(!running.current&&!editor){setDetail('sources');setError(false);}}}/>:null}
-      {detail==='account'?<AccountSyncSection/>:null}
+      {detail==='account'?<><AccountSyncSection/><AiSettingsSection/></>:null}
       {detail==='health'?<NativeSection title={c(lang,'health')}>
         {text(c(lang,'healthPurpose'))}
         {text(c(lang,'settingsMetricNote'))}

@@ -3,6 +3,19 @@ import { GoalProgressModel, GoalType, OutcomeMetricType, ProgressType, ScheduleB
 export type Lang = 'zh' | 'en';
 
 const zh: Record<string, string> = {
+  aiCloudSettings: '云端 AI',
+  aiCloudConsentNote: '默认关闭。开启后，Capture 输入、手动状态和执行摘要会发送至 QuestLife 服务端及 DeepSeek，以生成解析和简报。原始记录仍保留，AI 不自动修改计划。',
+  aiCloudEnable: '启用解析与决策 AI',
+  aiCloudIncludeContext: '允许 AI 使用导入上下文与历史解读',
+  aiCloudContextNote: '导入上下文默认不发送。需同时开启账号的健康数据云端授权；缺乏来源的历史解读也按此规则处理。此选择仅保存在本设备并绑定当前账号。',
+  aiCloudSignInFirst: '请先在上方登录并连接本机记录，再开启云端 AI。',
+  aiCloudSaveError: '偏好未保存。检查登录和同步状态后重试。',
+  aiCaptureDisabled: '原文已保留。云端 AI 未开启，请在设置 → 账号 → 云端 AI 开启，或直接确认手动记录。',
+  aiCaptureSignIn: '原文已保留。请到设置 → 账号登录，再重试解析。',
+  aiCaptureLimited: '原文已保留。AI 请求已达限额，请稍后重试或直接确认手动记录。',
+  aiCaptureUnavailable: '原文已保留。AI 服务暂不可用，可重试或直接确认手动记录。',
+  aiCaptureTooLarge: '原文已保留。发送内容超过解析上限，请缩短内容后重试。',
+  aiCaptureAccount: '账号或授权已变化，本次结果未应用。确认账号后重试。',
   recordSaving: '正在保存记录…',
   recordSaveRetry: '保存未确认完成。已提交内容保持不变，计时仍保留，请重试。',
   today: '今日',
@@ -3082,6 +3095,19 @@ const zh: Record<string, string> = {
 };
 
 const en: Record<string, string> = {
+  aiCloudSettings: 'Cloud AI',
+  aiCloudConsentNote: 'Off by default. When enabled, Capture text, manual state and execution summaries are sent to QuestLife and DeepSeek for parsing and briefs. Original records are retained; AI never changes plans automatically.',
+  aiCloudEnable: 'Enable parsing and Decision AI',
+  aiCloudIncludeContext: 'Allow imported context and historical interpretations',
+  aiCloudContextNote: 'Imported context is excluded by default. Account health-cloud consent is also required; historical interpretations without source provenance follow the same rule. This preference stays on this device and is bound to this account.',
+  aiCloudSignInFirst: 'Sign in above and connect this replica before enabling cloud AI.',
+  aiCloudSaveError: 'Preference was not saved. Check sign-in and sync, then retry.',
+  aiCaptureDisabled: 'Original text retained. Enable Cloud AI in Settings → Account, or confirm a manual record.',
+  aiCaptureSignIn: 'Original text retained. Sign in through Settings → Account, then retry parsing.',
+  aiCaptureLimited: 'Original text retained. AI request limit reached; retry later or confirm a manual record.',
+  aiCaptureUnavailable: 'Original text retained. AI service unavailable; retry or confirm a manual record.',
+  aiCaptureTooLarge: 'Original text retained. The parsing input limit was exceeded; shorten the entry and retry.',
+  aiCaptureAccount: 'Account or consent changed; this result was not applied. Check the account, then retry.',
   recordSaving: 'Saving record…',
   recordSaveRetry: 'Save has not been confirmed. Submitted fields are kept unchanged and your timer is retained. Please retry.',
   today: 'Today',

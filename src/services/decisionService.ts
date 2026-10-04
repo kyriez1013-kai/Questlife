@@ -1,7 +1,8 @@
 import { buildLegacyDecisionBrief } from '../utils/decisionBriefFallback';
 import { DecisionBriefInput, DecisionBriefResult, DecisionService } from '../utils/decisionTypes';
-import { getAnonymousUserId } from '../utils/analytics';
-import { apiUrl } from '../platform/apiUrl';
+import { authenticatedAiPost, AiRequestError } from './authenticatedAi';
+import { aiPreferencesSnapshot } from './aiPreferences';
+import { aiBriefForCloud } from './aiBriefPrivacy';
 
 const AI_ENABLED_KEY = 'questlife_decision_ai_enabled';
 const AI_SHADOW_KEY = 'questlife_decision_ai_shadow';
@@ -32,7 +33,7 @@ function readLocalFlag(key: string) {
 }
 
 export function isDecisionAIEnabled() {
-  return readLocalFlag(AI_ENABLED_KEY);
+  return aiPreferencesSnapshot().enabled || readLocalFlag(AI_ENABLED_KEY);
 }
 
 export function isDecisionAIShadowEnabled() {
@@ -40,7 +41,7 @@ export function isDecisionAIShadowEnabled() {
 }
 
 export function isDecisionDailyBriefEnabled() {
-  return readLocalFlag(DAILY_BRIEF_ENABLED_KEY);
+  return aiPreferencesSnapshot().enabled || readLocalFlag(DAILY_BRIEF_ENABLED_KEY);
 }
 
 export function isDecisionDebugEnabled() {
@@ -62,21 +63,22 @@ export class LegacyDecisionService implements DecisionService {
 
 export class AiDecisionService implements DecisionService {
   async buildBrief(input: DecisionBriefInput): Promise<DecisionBriefResult> {
-    // anonymous_user_id 让 /api/brief 能读取服务端持久化的 Pattern/Decision Memory.
-    const anonymousUserId = await getAnonymousUserId().catch(() => undefined);
-    const response = await fetch(apiUrl('/api/brief'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(anonymousUserId ? { ...input, anonymous_user_id: anonymousUserId } : input),
-    });
-    const json = await response.json().catch(() => null);
-    if (!response.ok || !json?.ok || !json?.result) {
+    let json;
+    try {
+      const { readSyncState } = await import('../sync-v2/runtime');
+      const state = await readSyncState();
+      const prefs = aiPreferencesSnapshot();
+      const allowContext = prefs.includeImportedContext && prefs.ownerId === state.ownerId && state.healthConsent;
+      json = await authenticatedAiPost('/api/brief', aiBriefForCloud(input, allowContext));
+      if (!json?.result) throw new AiRequestError('service_unavailable');
+    } catch (error) {
+      const code = error instanceof AiRequestError ? error.code : 'service_unavailable';
       lastDecisionServiceMeta = {
         service: 'ai',
         endpointOk: false,
-        error: String(json?.error || `brief_http_${response.status}`),
+        error: code,
       };
-      throw new Error(String(json?.error || `brief_http_${response.status}`));
+      throw new AiRequestError(code);
     }
     lastDecisionServiceMeta = {
       service: 'ai',
@@ -97,16 +99,11 @@ export async function runDecisionShadowBrief(input: DecisionBriefInput) {
   try {
     const result = await new AiDecisionService().buildBrief(input);
     if (isDecisionDebugEnabled()) {
-      console.log('[decision shadow]', {
-        readiness: result.readiness,
-        headline: result.headline_insight,
-        confidence: result.confidence,
-        dataGaps: result.data_gaps,
-      });
+      console.log('[decision shadow] completed');
     }
     return result;
-  } catch (error) {
-    if (isDecisionDebugEnabled()) console.warn('[decision shadow failed]', error);
+  } catch {
+    if (isDecisionDebugEnabled()) console.warn('[decision shadow] unavailable');
     return undefined;
   }
 }

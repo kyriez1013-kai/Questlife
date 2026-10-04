@@ -119,7 +119,7 @@ Module._load = function(request, parent, isMain) {
   if (/\/TimePickerInput$/.test(request)) return originalLoad.call(this, path.resolve(__dirname, '../components/TimePickerInput.native.tsx'), parent, isMain);
   if (/\/decisionService$/.test(request)) return { isDecisionDebugEnabled: () => false };
   if (/\/featureFlag$/.test(request)) return { getV11ProductLanguage: lang => lang, getV11ProductThemeId: theme => theme, isV11ProductEnabled:()=>false };
-  if (/\/(GoalForm|SkillForm|AccountSyncSection|ScheduleProposalReview)$/.test(request)) return component(request.split('/').at(-1));
+  if (/\/(GoalForm|SkillForm|AccountSyncSection|ScheduleProposalReview|AiSettingsSection)$/.test(request)) return component(request.split('/').at(-1));
   if (/\/BottomSheetForm$/.test(request)) return ({footer,...props}) => props.visible ? React.createElement('Sheet', props, props.children, footer) : null;
   if (/\/QuestPrimitives$/.test(request)) return new Proxy({}, { get: (_, name) => name === '__esModule' ? true : props => React.createElement(name, props, props.children, props.trailing) });
   if (/\/Quest(Button|Input|Pill|Icon|Card|EntityIcon|SegmentedControl|ProgressBar)$/.test(request)) return component(request.split('/').at(-1));

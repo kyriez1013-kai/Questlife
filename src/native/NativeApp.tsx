@@ -28,6 +28,7 @@ import ShortcutCoordinator from '../platform/shortcuts/ShortcutCoordinator.nativ
 import {nativeCopy} from '../platform/nativeI18n';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import LocalPersistenceNotice from '../components/LocalPersistenceNotice';
+import { AiPreferencesCoordinator } from '../services/AiSettingsSection';
 
 const Tabs = createBottomTabNavigator();
 const Goals = createNativeStackNavigator();
@@ -54,7 +55,7 @@ function Content() {
   if (loading) return <View style={{ flex: 1, backgroundColor: f.environment.canvas, justifyContent: 'center' }}><ActivityIndicator color={f.interaction.primary} /></View>;
   if (data.settings.onboardingRestartRequested || (!data.settings.onboardingCompleted && !existing)) return <OnboardingScreen />;
   return <NavigationContainer ref={navigationRef} onReady={()=>{if(pendingToday.current){pendingToday.current=false;navigateToday();}}} linking={{prefixes:['questlife://'],filter:url=>!url.startsWith('questlife://auth/callback'),config:{screens:{Settings:{path:'settings',screens:{NativeSettings:''}}}}}} theme={{ ...DefaultTheme, colors: { ...DefaultTheme.colors, background: f.environment.canvas, card: f.environment.navigation, text: f.text.primary, border: f.border.subtle, primary: f.interaction.primary } }}>
-    <StatusBar style={isDarkTheme(theme)?'light':'dark'}/><ForegroundSources/><NotificationCoordinator navigateToday={navigateToday}/><ShortcutCoordinator navigateToday={navigateToday}/>
+    <StatusBar style={isDarkTheme(theme)?'light':'dark'}/><AiPreferencesCoordinator/><ForegroundSources/><NotificationCoordinator navigateToday={navigateToday}/><ShortcutCoordinator navigateToday={navigateToday}/>
     <View style={{ flex: 1 }}>
     <View style={{ paddingTop: localPersistence.failed ? insets.top : 0 }}><LocalPersistenceNotice /></View>
     <Tabs.Navigator screenOptions={{ headerShown: false, tabBarHideOnKeyboard: true, tabBarActiveTintColor: f.interaction.navigationActive, tabBarInactiveTintColor: f.interaction.navigationInactive, tabBarStyle: { backgroundColor: f.environment.navigation, height: 56 + insets.bottom, paddingBottom: insets.bottom, borderTopColor: f.border.subtle }, tabBarLabelStyle: { fontSize: 11 } }}>

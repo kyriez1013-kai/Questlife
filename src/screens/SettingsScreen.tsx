@@ -28,6 +28,7 @@ import { QuestCompactRow, QuestGroupedSurface, QuestSectionHeader } from '../com
 import QuestSegmentedControl from '../components/ui/QuestSegmentedControl';
 import { getV11ProductLanguage, getV11ProductThemeId, isV11PersonalTerminalEnabled } from '../v11/featureFlag';
 import AccountSyncSection from '../sync-v2/AccountSyncSection';
+import AiSettingsSection from '../services/AiSettingsSection';
 import RecordBackupActions from '../backup/RecordBackupActions';
 import { downloadPersistenceSnapshot } from '../utils/persistenceTrace';
 
@@ -292,6 +293,7 @@ export default function SettingsScreen() {
         }}
       >
         <AccountSyncSection />
+        <AiSettingsSection />
         <QuestSectionHeader
           questTheme={questTheme}
           title={t(lang, 'preferences')}

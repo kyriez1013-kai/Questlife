@@ -8,9 +8,10 @@
 
 import { z } from 'zod';
 import { sanitizePatternMemoryForPayload } from '../src/utils/patternMemory';
-import { buildDecisionMemorySummary, createDecisionResultRecord } from '../src/utils/decisionMemory';
+import { buildDecisionMemorySummary } from '../src/utils/decisionMemory';
 import type { PatternMemory, DecisionResult } from '../src/types';
-import type { DecisionBriefResult } from '../src/utils/decisionTypes';
+import { authorizeAi, readAiBody } from './_lib/aiBoundary';
+import { serverUrl } from './_lib/supabaseAuth';
 
 declare const process: any;
 
@@ -31,8 +32,7 @@ const BriefInputSchema = z
     trigger: z.enum(['morning_push', 'state_checkin', 'manual', 'debug']),
     now: z.string().min(1),
     locale: z.enum(['zh', 'en']).optional(),
-    // Optional so older deployed bundles (which do not send it) keep working;
-    // without it the server-memory path is skipped.
+    // Retired caller identity is accepted only for old clients, never used.
     anonymous_user_id: z.string().min(1).max(200).optional(),
     current_state: LooseRecord.nullable(),
     today_context: z
@@ -97,63 +97,11 @@ function parseJson(raw: string) {
 }
 
 // ---------------------------------------------------------------------------
-// Server-side Pattern/Decision Memory (persisted in Supabase, written by
-// /api/sync and by this route's post-brief write-back). When available it is
-// the source of truth for confirmed_patterns / pattern_candidates /
-// decision_memory_summary instead of the client-computed blob.
+// Sync V2 memory uses the verified account's RLS-scoped bearer. HomeScreen
+// remains the sole DecisionResult writer, including its feedback and sync.
 // ---------------------------------------------------------------------------
 
-type ServerMemoryStatus = 'applied' | 'empty' | 'unavailable' | 'skipped_no_user_id' | 'not_configured';
-
-type SupabaseConfig = { url: string; key: string };
-
-function supabaseConfig(): SupabaseConfig | null {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  return url && key ? { url: String(url).replace(/\/$/, ''), key: String(key) } : null;
-}
-
-async function supabaseSelect(config: SupabaseConfig, table: string, query: string): Promise<any[]> {
-  const response = await fetch(`${config.url}/rest/v1/${table}?${query}`, {
-    headers: { apikey: config.key, Authorization: `Bearer ${config.key}` },
-  });
-  if (!response.ok) throw new Error(`select ${table} HTTP ${response.status}`);
-  const rows = await response.json();
-  return Array.isArray(rows) ? rows : [];
-}
-
-async function supabaseUpsert(config: SupabaseConfig, table: string, rows: Array<Record<string, unknown>>) {
-  const response = await fetch(`${config.url}/rest/v1/${table}?on_conflict=anonymous_user_id,id`, {
-    method: 'POST',
-    headers: {
-      apikey: config.key,
-      Authorization: `Bearer ${config.key}`,
-      'Content-Type': 'application/json',
-      Prefer: 'resolution=merge-duplicates,return=minimal',
-    },
-    body: JSON.stringify(rows),
-  });
-  if (!response.ok) throw new Error(`upsert ${table} HTTP ${response.status}`);
-}
-
-/** Both the client record and the server write-back share createdAt
- *  (= result.generated_at), so dedupe on it and prefer the record that
- *  carries quality/userFeedback (the client-enriched copy). */
-function dedupeDecisionResults(results: DecisionResult[]): DecisionResult[] {
-  const byCreatedAt = new Map<string, DecisionResult>();
-  results.forEach((result) => {
-    const key = result.createdAt || result.id;
-    const existing = byCreatedAt.get(key);
-    if (!existing) {
-      byCreatedAt.set(key, result);
-      return;
-    }
-    const existingEnriched = !!(existing.userFeedback || existing.quality);
-    const candidateEnriched = !!(result.userFeedback || result.quality);
-    if (candidateEnriched && !existingEnriched) byCreatedAt.set(key, result);
-  });
-  return Array.from(byCreatedAt.values());
-}
+type ServerMemoryStatus = 'applied' | 'empty' | 'unavailable';
 
 type ServerMemory = {
   status: ServerMemoryStatus;
@@ -161,26 +109,36 @@ type ServerMemory = {
   decisionCount: number;
 };
 
-/** Reads persisted memory and, when present, overrides the client-provided
- *  pattern/decision fields on the model input. Falls back silently so a
- *  missing table or Supabase outage never blocks a brief. */
-async function applyServerMemory(input: BriefBody, userId: string | undefined): Promise<ServerMemory> {
-  const config = supabaseConfig();
-  if (!config) return { status: 'not_configured', patternCount: 0, decisionCount: 0 };
-  if (!userId) return { status: 'skipped_no_user_id', patternCount: 0, decisionCount: 0 };
+async function applyServerMemory(input: BriefBody, userId: string, accessToken: string): Promise<ServerMemory> {
+  const url = serverUrl(process.env.SUPABASE_URL);
+  const key = process.env.SUPABASE_ANON_KEY;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 3000);
   try {
+    if (!url || !key) throw new Error();
+    const select = async (type: 'patternMemory' | 'decisionResults', limit: number) => {
+      const query = new URLSearchParams({
+        user_id: `eq.${userId}`, entity_type: `eq.${type}`, deleted_at: 'is.null',
+        select: 'payload', order: 'client_mutated_at.desc', limit: String(limit),
+      });
+      const response = await fetch(new URL(`/rest/v1/questlife_sync_entities?${query}`, url), {
+        headers: { apikey: key, Authorization: `Bearer ${accessToken}` },
+        signal: controller.signal, redirect: 'error', cache: 'no-store',
+      });
+      if (!response.ok) throw new Error();
+      const rows = await response.json();
+      if (!Array.isArray(rows)) throw new Error();
+      return rows;
+    };
     const [patternRows, decisionRows] = await Promise.all([
-      supabaseSelect(config, 'pattern_memory', `anonymous_user_id=eq.${encodeURIComponent(userId)}&select=payload&limit=200`),
-      supabaseSelect(config, 'decision_results', `anonymous_user_id=eq.${encodeURIComponent(userId)}&select=payload&order=created_at.desc.nullslast&limit=100`),
+      select('patternMemory', 200), select('decisionResults', 100),
     ]);
     const patterns = patternRows
       .map((row) => row?.payload)
       .filter((payload): payload is PatternMemory => !!payload && typeof payload === 'object' && !!payload.id && !!payload.label);
-    const decisions = dedupeDecisionResults(
-      decisionRows
+    const decisions: DecisionResult[] = decisionRows
         .map((row) => row?.payload)
-        .filter((payload): payload is DecisionResult => !!payload && typeof payload === 'object' && !!payload.id)
-    );
+        .filter((payload): payload is DecisionResult => !!payload && typeof payload === 'object' && !!payload.id);
     if (patterns.length === 0 && decisions.length === 0) {
       return { status: 'empty', patternCount: 0, decisionCount: 0 };
     }
@@ -197,42 +155,11 @@ async function applyServerMemory(input: BriefBody, userId: string | undefined): 
       input.decision_memory_summary = buildDecisionMemorySummary(decisions);
     }
     return { status: 'applied', patternCount: patterns.length, decisionCount: decisions.length };
-  } catch (error: any) {
-    console.warn('[brief] server memory unavailable', error?.message || error);
+  } catch {
+    console.warn('[brief] server_memory_unavailable');
     return { status: 'unavailable', patternCount: 0, decisionCount: 0 };
-  }
-}
-
-/** Persists the generated brief server-side so Decision Memory accumulates
- *  even if the client never syncs. Failures are logged, never fatal. */
-async function persistDecisionResult(
-  userId: string | undefined,
-  normalized: DecisionBriefResult,
-  mode: 'instant_micro' | 'daily_brief',
-  trigger: 'morning_push' | 'state_checkin' | 'manual' | 'debug',
-  model: string,
-) {
-  const config = supabaseConfig();
-  if (!config || !userId) return;
-  try {
-    const record = createDecisionResultRecord({
-      id: `srv-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
-      result: normalized,
-      mode,
-      trigger,
-      source: 'ai',
-      meta: { service: 'ai', endpointOk: true, model },
-    });
-    await supabaseUpsert(config, 'decision_results', [{
-      anonymous_user_id: userId,
-      id: record.id,
-      created_at: record.createdAt,
-      mode: record.mode,
-      source: record.source,
-      payload: record,
-    }]);
-  } catch (error: any) {
-    console.warn('[brief] decision result write-back failed', error?.message || error);
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
@@ -378,13 +305,15 @@ async function callDeepSeek(input: BriefBody, apiKey: string, attempt: number) {
 }
 
 export default async function handler(req: any, res: any) {
+  res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return send(res, 405, { ok: false, error: 'method_not_allowed' });
   }
 
   try {
-    const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+    const body = readAiBody(req, res, 64 * 1024);
+    if (!body) return;
     const parsedInput = BriefInputSchema.safeParse(body);
     if (!parsedInput.success) {
       return send(res, 400, {
@@ -398,11 +327,20 @@ export default async function handler(req: any, res: any) {
     }
     const apiKey = process.env.DEEPSEEK_API_KEY;
     if (!apiKey) return send(res, 503, { ok: false, error: 'not_configured' });
+    const auth = await authorizeAi(req, res, 'brief');
+    if (!auth) return;
 
-    // The anonymous user id keys the persisted memory; it is stripped from
-    // the model input so it never reaches DeepSeek.
-    const { anonymous_user_id: anonymousUserId, ...modelInput } = parsedInput.data as BriefBody;
-    const serverMemory = await applyServerMemory(modelInput, anonymousUserId);
+    const { anonymous_user_id: _retiredIdentity, include_imported_context: includeContext, ...modelInput } = parsedInput.data as BriefBody;
+    // Saved interpretations can include imported health context even when their
+    // source links were lost. Read them only with the caller's explicit consent.
+    const serverMemory = includeContext === true
+      ? await applyServerMemory(modelInput, auth.userId, auth.accessToken)
+      : { status: 'empty' as const, patternCount: 0, decisionCount: 0 };
+    // Synced memory is user-authored too; bound the complete paid request, not
+    // only the HTTP body received before RLS memory was added.
+    if (Buffer.byteLength(JSON.stringify(modelInput), 'utf8') > 64 * 1024) {
+      return send(res, 413, { ok: false, error: 'request_too_large' });
+    }
 
     let lastError = 'invalid_json';
     for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -410,13 +348,6 @@ export default async function handler(req: any, res: any) {
       const parsed = parseJson(content);
       const normalized = normalizeResult(parsed);
       if (normalized && finishReason !== 'length') {
-        await persistDecisionResult(
-          anonymousUserId,
-          normalized as DecisionBriefResult,
-          modelInput.mode,
-          modelInput.trigger,
-          model,
-        );
         return send(res, 200, {
           ok: true,
           result: normalized,
@@ -433,7 +364,7 @@ export default async function handler(req: any, res: any) {
     }
     return send(res, 502, { ok: false, error: lastError });
   } catch (error: any) {
-    console.warn('[brief] failed', error?.message || error);
+    console.warn('[brief] provider_failure');
     return send(res, 500, { ok: false, error: 'brief_failed' });
   }
 }

@@ -63,6 +63,7 @@ import { DecisionQualityEvaluation, evaluateDecisionBriefQuality } from '../util
 import { DecisionPayloadAudit, auditDecisionPayload } from '../utils/decisionRealityAudit';
 import { createDecisionResultRecord, decisionResultToBrief } from '../utils/decisionMemory';
 import { createDecisionService, getLastDecisionServiceMeta, isDecisionAIEnabled, isDecisionAIShadowEnabled, isDecisionDailyBriefEnabled, isDecisionDebugEnabled, LegacyDecisionService, AiDecisionService, runDecisionShadowBrief, DecisionServiceMeta } from '../services/decisionService';
+import { AiRequestError } from '../services/authenticatedAi';
 import { normalizeScheduleProposals } from '../utils/scheduleProposal';
 import DashboardCardShell from '../components/dashboard/DashboardCardShell';
 import TodayDecisionSurface from '../components/today/TodayDecisionSurface';
@@ -1455,6 +1456,11 @@ export default function HomeScreen() {
       })
       .catch((error) => {
         if (instantDecisionRequestRef.current !== requestId) return;
+        if (error instanceof AiRequestError && ['account_changed', 'local_account_mismatch'].includes(error.code)) {
+          setInstantDecisionBrief(null);
+          setInstantDecisionStatus('error');
+          return;
+        }
         if (isDecisionDebugEnabled()) console.warn('[decision instant failed]', error);
         setInstantDecisionDebugError(String(error?.message || error));
         new LegacyDecisionService().buildBrief(payload)
@@ -1574,6 +1580,12 @@ export default function HomeScreen() {
       })
       .catch((error) => {
         if (dailyDecisionRequestRef.current !== requestId) return;
+        if (error instanceof AiRequestError && ['account_changed', 'local_account_mismatch'].includes(error.code)) {
+          dailyDecisionInFlightRef.current = false;
+          setDailyDecisionLoading(false);
+          setDailyDecisionError(error.code);
+          return;
+        }
         if (isDecisionDebugEnabled()) console.warn('[decision daily failed]', { reason, error });
         setDailyDecisionServiceMeta(getLastDecisionServiceMeta());
         useFallback(String(error?.message || error), useAI ? 'ai_failed_fallback' : 'legacy_fallback');

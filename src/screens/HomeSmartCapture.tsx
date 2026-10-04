@@ -14,7 +14,7 @@
  */
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { apiUrl } from '../platform/apiUrl';
+import { authenticatedAiPost, AiRequestError, type AiFailure } from '../services/authenticatedAi';
 import { captureLayout, nativeCapture } from '../platform/captureLayout';
 import QuickCaptureSuggestions from '../platform/QuickCaptureSuggestions';
 import { quickCaptureDraft, type QuickCaptureSuggestion } from '../platform/quickCapture';
@@ -82,24 +82,7 @@ function todayStr() {
 // ── Parse helper (client → /api/parse) ─────────────────────────────────────
 
 async function callParseAPI(body: object): Promise<any> {
-  const res = await fetch(apiUrl('/api/parse'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
-
-function shouldDebugParse(): boolean {
-  if (typeof window === 'undefined') return false;
-  try {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('debugParse') === '1' || params.get('debugParse') === 'true') return true;
-    return window.localStorage?.getItem('questlife_debug_parse') === 'true';
-  } catch {
-    return false;
-  }
+  return authenticatedAiPost('/api/parse', body);
 }
 
 function captureFrictionDomain(result: any): CaptureFrictionDomain {
@@ -144,6 +127,7 @@ function CaptureCard({
   onRetry,
   onDelete,
   expanded = false,
+  failure,
 }: {
   capture: RawCapture;
   lang: 'zh' | 'en';
@@ -151,6 +135,7 @@ function CaptureCard({
   onRetry: (id: string) => void;
   onDelete: (id: string) => void;
   expanded?: boolean;
+  failure?: AiFailure;
 }) {
   const v11TodayEnabled = isV11TodayEnabled();
   const v11Theme = getV11ThemeTokens(questTheme.id === 'cleanFocus' ? 'light' : 'dark');
@@ -208,7 +193,12 @@ function CaptureCard({
       {expanded && capture.parseStatus === 'failed' && (
         <View style={styles.statusRow}>
           <Text style={[styles.statusLabel, { color: questTheme.colors.warning }]}>
-            {t(lang, 'scParseFailed')}
+            {t(lang, failure === 'authentication_required' ? 'aiCaptureSignIn'
+              : failure === 'ai_disabled' ? 'aiCaptureDisabled'
+                : failure === 'ai_rate_limited' ? 'aiCaptureLimited'
+                  : failure === 'request_too_large' ? 'aiCaptureTooLarge'
+                    : failure === 'account_changed' || failure === 'local_account_mismatch' ? 'aiCaptureAccount'
+                      : 'aiCaptureUnavailable')}
           </Text>
           {v11TodayEnabled ? (
             <V11InlineButton label={t(lang, 'scRetry')} onPress={() => onRetry(capture.id)} theme={v11Theme} />
@@ -281,6 +271,7 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
   const [inputText, setInputText]         = useState('');
   const [isPosting, setIsPosting]         = useState(false);
   const [postingFailed, setPostingFailed] = useState(false);
+  const [parseFailures, setParseFailures] = useState<Record<string, AiFailure>>({});
   const captureSubmission = useRef(new DurableSubmission<{ capture: RawCapture; structured: boolean; clearInput: boolean }>());
   const [greeting, setGreeting]           = useState('');
   const [recentVisible, setRecentVisible] = useState(true);
@@ -345,6 +336,7 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
     captureParseRequestRef.current.set(captureId, requestId);
     const isCurrentRequest = () => captureParseRequestRef.current.get(captureId) === requestId;
     recordCaptureFriction(captureId, 'parser_started');
+    setParseFailures(current => { const next = { ...current }; delete next[captureId]; return next; });
     // 1. Recent capture history (raw, for cross-link detection)
     const history = activeCaptureHistory
       .filter((c) => c.parseStatus === 'done' && c.id !== captureId)
@@ -414,14 +406,12 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
     });
 
     try {
-      const debugParse = shouldDebugParse();
       const result = await callParseAPI({
         text: captureText,
         history,
         skillsCatalog,
         goalsSnapshot,
         skillHistory,
-        ...(debugParse ? { debugParse: true } : {}),
       });
       if (!isCurrentRequest()) return;
       if (result.ok) {
@@ -444,20 +434,6 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
             candidateCount: parsedEntries.length,
             fieldsPresent,
           });
-        }
-        if (debugParse) {
-          console.log('[parse result final]', JSON.stringify({
-            ok: result.ok,
-            completionSchema: result.completionSchema,
-            entries: Array.isArray(result.entries)
-              ? result.entries.map((entry: any) => ({
-                  skillName: entry.skillName,
-                  goalType: entry.goalType,
-                  progressType: entry.progressType,
-                  completionSchema: entry.completionSchema,
-                }))
-              : undefined,
-          }, null, 2));
         }
         const currentCapture = (data.rawCaptures || []).find((capture) => capture.id === captureId);
         const baseProvenance = currentCapture?.dataProvenance ?? buildRawCaptureProvenance(currentCapture?.createdAt);
@@ -485,8 +461,10 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
         recordCaptureFriction(captureId, 'parser_failed', { failureCode: 'parse' });
         updateRawCapture(captureId, { parseStatus: 'failed' });
       }
-    } catch {
+    } catch (error) {
       if (!isCurrentRequest()) return;
+      if (error instanceof AiRequestError && error.code === 'account_changed') return;
+      setParseFailures(current => ({ ...current, [captureId]: error instanceof AiRequestError ? error.code : 'service_unavailable' }));
       recordCaptureFriction(captureId, 'parser_failed', { failureCode: 'network' });
       updateRawCapture(captureId, { parseStatus: 'failed' });
     }
@@ -624,6 +602,7 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
           onRetry={handleRetry}
           onDelete={handleDelete}
           expanded={expanded}
+          failure={parseFailures[capture.id]}
         />
         {expanded && canShowConfirmation ? (
           <HomeCapturePending
@@ -941,6 +920,9 @@ const styles = StyleSheet.create({
   },
   statusLabel: {
     fontSize: 12,
+    flex: 1,
+    flexShrink: 1,
+    lineHeight: 18,
   },
   insightBox: {
     flexDirection: 'row',

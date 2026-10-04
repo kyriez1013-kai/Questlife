@@ -74,6 +74,7 @@ Module._load = function(request,parent,isMain){
   if(/\/BottomSheetForm$/.test(request))return host('Sheet');
   if(/\/NativeDateTimeField$/.test(request))return host('DateTimeField');
   if(/\/NativeCalendarEditor$/.test(request))return host('CalendarEditor');
+  if(/\/AiSettingsSection$/.test(request))return host('AiSettingsSection');
   if(/\/QuestInput$/.test(request))return InputHost;
   if(/\/QuestButton$/.test(request))return host('QuestButton');
   if(/\/QuestPrimitives$/.test(request))return primitives;

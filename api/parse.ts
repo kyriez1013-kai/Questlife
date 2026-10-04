@@ -8,6 +8,8 @@
  * 封装成一个函数，以后换模型只改这一处。
  */
 
+import { authorizeAi, readAiBody } from './_lib/aiBoundary';
+
 declare const process: any;
 
 const DEEPSEEK_BASE  = 'https://api.deepseek.com';
@@ -182,22 +184,27 @@ function safeParseJSON(raw: string): Record<string, any> | null {
 // ── Handler ───────────────────────────────────────────────────────────────────
 
 export default async function handler(req: any, res: any) {
+  res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return send(res, 405, { ok: false, error: 'method_not_allowed' });
   }
 
   try {
-    const body    = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {});
+    const body = readAiBody(req, res, 32 * 1024);
+    if (!body) return;
     const mode    = body?.mode === 'greeting' ? 'greeting' : 'capture';
     const text    = typeof body?.text === 'string' ? body.text.trim() : '';
-    const debugParse = body?.debugParse === true;
     const apiKey  = process.env.DEEPSEEK_API_KEY;
 
     if (!apiKey) {
       console.warn('[parse] DEEPSEEK_API_KEY not configured — graceful degradation');
       return send(res, 503, { ok: false, error: 'not_configured' });
     }
+
+    if (mode === 'capture' && !text) return send(res, 400, { ok: false, error: 'missing_text' });
+    if (text.length > 8000) return send(res, 413, { ok: false, error: 'request_too_large' });
+    if (!await authorizeAi(req, res, 'parse')) return;
 
     // ── Greeting mode ─────────────────────────────────────────────────────────
     if (mode === 'greeting') {
@@ -253,40 +260,11 @@ export default async function handler(req: any, res: any) {
     const userPrompt = `Log entry: "${text}"${historyStr}${skillsStr}${goalsStr}${histSkillStr}`;
 
     const raw    = await callDeepSeek(CAPTURE_SYSTEM, userPrompt, apiKey);
-    if (debugParse) {
-      console.log('[parse debug raw]', JSON.stringify({
-        rawPreview: raw.slice(0, 2000),
-        hasCompletionSchema: raw.includes('completionSchema'),
-        hasSuggestedActions: raw.includes('suggestedActions'),
-        hasNeedsCompletion: raw.includes('needsCompletion'),
-      }));
-    }
     const parsed = safeParseJSON(raw);
 
     if (!parsed) {
-      if (debugParse) {
-        console.log('[parse debug parsed]', JSON.stringify({
-          parsed: null,
-          reason: 'safeParseJSON returned null',
-        }));
-      }
-      console.warn('[parse] DeepSeek returned unparseable response:', raw.slice(0, 200));
+      console.warn('[parse] invalid_provider_json');
       return send(res, 422, { ok: false, error: 'parse_failed' });
-    }
-
-    if (debugParse) {
-      console.log('[parse debug parsed]', JSON.stringify({
-        keys: Object.keys(parsed),
-        topLevelCompletionSchema: parsed.completionSchema ?? null,
-        entries: Array.isArray(parsed.entries)
-          ? parsed.entries.map((e: any) => ({
-              skillName: e?.skillName,
-              goalType: e?.goalType,
-              progressType: e?.progressType,
-              completionSchema: e?.completionSchema,
-            }))
-          : undefined,
-      }));
     }
 
     const VALID_INSIGHT_TYPES = new Set(['skill_progress', 'goal_link', 'cross_link', 'encourage']);
@@ -350,27 +328,11 @@ export default async function handler(req: any, res: any) {
       },
     };
 
-    if (debugParse) {
-      console.log('[parse debug final]', JSON.stringify({
-        ok: responseBody.ok,
-        captureType: responseBody.type,
-        completionSchema: responseBody.completionSchema,
-        entriesLength: responseBody.entries.length,
-        entries: responseBody.entries.map((e: any) => ({
-          skillName: e.skillName,
-          matchedSkillId: e.matchedSkillId,
-          goalType: e.goalType,
-          progressType: e.progressType,
-          completionSchema: e.completionSchema,
-        })),
-      }));
-    }
-
     return send(res, 200, responseBody);
 
   } catch (error: any) {
     const isTimeout = error?.name === 'AbortError';
-    console.error('[parse]', isTimeout ? 'TIMEOUT' : error?.message);
+    console.error('[parse]', isTimeout ? 'timeout' : 'provider_failure');
     return send(res, isTimeout ? 408 : 500, { ok: false, error: isTimeout ? 'timeout' : 'server_error' });
   }
 }
