@@ -126,15 +126,16 @@ export type CompactStrengthValues = {
   rpe?: number;
 };
 
+function optionalNumber(value: unknown): number | undefined {
+  if (value == null || value === '' || typeof value === 'boolean') return undefined;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : undefined;
+}
+
 export function compactStrengthValues(entry: ParsedEntry): CompactStrengthValues {
   const fields: Record<string, any> = entry.fields ?? {};
-  const baseWeight = Number.isFinite(Number(fields.weight))
-    ? Number(fields.weight)
-    : Number.isFinite(Number(fields.value))
-      ? Number(fields.value)
-      : Number.isFinite(Number(fields.extraWeight))
-        ? Number(fields.extraWeight)
-        : undefined;
+  const baseWeight = optionalNumber(fields.weightKg) ?? optionalNumber(fields.weight)
+    ?? optionalNumber(fields.value) ?? optionalNumber(fields.extraWeight);
   const rawSets: any = fields.sets;
 
   if (Array.isArray(rawSets) && rawSets.length > 0) {
@@ -145,16 +146,16 @@ export function compactStrengthValues(entry: ParsedEntry): CompactStrengthValues
       weight: sameWeight && Number.isFinite(Number(first?.weight ?? baseWeight)) ? Number(first?.weight ?? baseWeight) : baseWeight,
       sets: rawSets.reduce((sum, set) => sum + Math.max(1, Math.round(Number(set?.sets ?? set?.count ?? 1))), 0),
       reps: sameReps && Number.isFinite(Number(first?.reps)) ? Number(first.reps) : undefined,
-      rpe: Number.isFinite(Number(first?.rpe ?? fields.rpe)) ? Number(first?.rpe ?? fields.rpe) : undefined,
+      rpe: optionalNumber(first?.rpe ?? fields.rpe),
     };
   }
 
   const compactMatch = typeof rawSets === 'string' ? rawSets.match(/(\d+)\s*[x×]\s*(\d+)/i) : null;
   return {
     weight: baseWeight,
-    sets: Number.isFinite(Number(fields.sets)) ? Number(fields.sets) : compactMatch ? Number(compactMatch[1]) : undefined,
-    reps: Number.isFinite(Number(fields.reps)) ? Number(fields.reps) : compactMatch ? Number(compactMatch[2]) : undefined,
-    rpe: Number.isFinite(Number(fields.rpe)) ? Number(fields.rpe) : undefined,
+    sets: optionalNumber(fields.sets) ?? (compactMatch ? Number(compactMatch[1]) : undefined),
+    reps: optionalNumber(fields.reps) ?? (compactMatch ? Number(compactMatch[2]) : undefined),
+    rpe: optionalNumber(fields.rpe),
   };
 }
 
@@ -178,7 +179,7 @@ export function isStrengthExercise(entry: ParsedEntry): boolean {
   if (STRENGTH_ACTION_TRANSLATIONS.some((item) => item.aliases.some((alias) => normalized(alias) === name))) return true;
   const fields = entry.fields ?? {};
   // Fitness alone is not strength evidence; distance, duration and RPE also apply to sports.
-  return [fields.weight, fields.extraWeight, fields.reps].some((value) => (
+  return [fields.weightKg, fields.weight, fields.extraWeight, fields.reps].some((value) => (
     value != null && value !== '' && Number.isFinite(Number(value)) && Number(value) > 0
   )) || (Array.isArray(fields.sets) ? fields.sets.some((set) => set?.reps != null || set?.weight != null)
     : fields.sets != null && (/^\d+\s*[x×]\s*\d+$/.test(String(fields.sets)) || Number(fields.sets) > 0))

@@ -585,10 +585,7 @@ function provenanceDomain(domain: string): CaptureFrictionDomain {
 }
 
 function proposedStrengthValue(entry: ParsedEntry, field: 'weight' | 'sets' | 'reps' | 'rpe') {
-  if (field === 'weight') return entry.fields.extraWeight ?? entry.fields.sets?.find((set) => set.weight != null)?.weight;
-  if (field === 'sets') return entry.fields.sets?.length;
-  if (field === 'reps') return entry.fields.sets?.find((set) => set.reps != null)?.reps;
-  return typeof entry.fields.rpe === 'number' ? entry.fields.rpe : undefined;
+  return compactStrengthValues(entry)[field];
 }
 
 function captureLogProvenance(input: {

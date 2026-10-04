@@ -25,6 +25,19 @@ test('known strength actions and explicit strength fields retain the weight-set 
   assert.equal(isStrengthExercise(entry('Custom lift', { value: 82.5, unit: 'kg' })), true);
   assert.equal(isStrengthExercise(entry('Custom lift', { sets: [{ weight: 82.5, reps: 5 }] })), true);
   assert.deepEqual(JSON.parse(JSON.stringify(compactStrengthValues(entry('卧推', { weight: 82.5, reps: 5, sets: 3 })))), { weight: 82.5, sets: 3, reps: 5 });
+  assert.deepEqual(JSON.parse(JSON.stringify(compactStrengthValues(entry('卧推', { weightKg: 82.5, reps: 5, sets: 3 })))), { weight: 82.5, sets: 3, reps: 5 });
+  assert.deepEqual(JSON.parse(JSON.stringify(compactStrengthValues(entry('Custom activity', { weight: null, rpe: null })))), {});
+});
+
+test('strength provenance handles scalar and array parser contracts without calling array methods on numbers', () => {
+  const filename = path.join(__dirname, '../../src/screens/HomeCapturePending.tsx');
+  const parsed = ts.createSourceFile(filename, fs.readFileSync(filename, 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const declaration = parsed.statements.find(item => ts.isFunctionDeclaration(item) && item.name?.text === 'proposedStrengthValue');
+  const js = ts.transpileModule(declaration.getText(parsed), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
+  const proposed = new Function('compactStrengthValues', `${js}; return proposedStrengthValue;`)(compactStrengthValues);
+  for (const fields of [{ weightKg: 82.5, reps: 5, sets: 3 }, { sets: [{ weight: 82.5, reps: 5, count: 3 }] }]) {
+    for (const [field, value] of [['weight', 82.5], ['reps', 5], ['sets', 3]]) assert.equal(proposed(entry('Bench press', fields), field), value);
+  }
 });
 
 test('unknown or incomplete exercise data does not manufacture strength values', () => {
