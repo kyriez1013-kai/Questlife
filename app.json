@@ -37,7 +37,8 @@
       "./plugins/with-questlife-ios-entries",
       "@react-native-community/datetimepicker",
       ["expo-secure-store", { "configureAndroidBackup": false }],
-      "./plugins/with-private-device-backup"
+      "./plugins/with-private-device-backup",
+      "./plugins/with-chart-webview-startup"
     ],
     "splash": {
       "image": "./assets/splash-icon.png",
