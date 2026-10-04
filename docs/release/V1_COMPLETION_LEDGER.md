@@ -47,7 +47,30 @@ Unchecked entries remain unfinished.
 
 ## Exact Resume Checkpoint
 
-### Current continuation: `530fe4f` (2026-10-04)
+### Canonical Android continuation (2026-10-04)
+
+- Canonical certificate is the existing EAS `GgK2fK6JvP` key, SHA256
+  `61b030724c7ef8ab94681eb42b7033631f8c2086c78a4a79166a654e93eec5da`.
+  Downloaded through the already authenticated EAS CLI and moved outside the
+  repository into private toolchain storage. Local builds verify the exported
+  certificate before building and refuse to create a replacement key.
+- Local and EAS release profiles now use the same committed version source:
+  `com.kyrie.questlife`, `1.0.1`, Android versionCode `2`. Explicit version bumps
+  are required for later releases. The old local certificate `d2a08d...` is
+  legacy/noncanonical and will not be used for new distributed builds.
+- The cloud `1f09631` package has the canonical certificate and versionCode 1.
+  The local `530fe4f` package has the incompatible legacy certificate and
+  versionCode 1. No cross-certificate upgrade or Owner uninstall is attempted.
+  Populated-record/session cover-upgrade remains pending the new build.
+- Current device inventory contains only an Android emulator, no physical
+  Android. XcodeBuildMCP confirms `simctl` unavailable; no physical iPhone
+  installer or simulator execution is claimed. No paid membership is purchased.
+- Fresh ReleaseQA Perfetto trace identifies first RNCWebView construction at
+  200.470ms, Chromium initialization at 121.440ms, plus buffer-dequeue waits.
+  This is an actual native/UI-thread trace, not a component or Web bundle proxy.
+  Remediation and controlled post-build measurement are still in progress.
+
+### Previous continuation: `530fe4f` (2026-10-04)
 
 - Application commits: `1f09631` (native Health permission management/recheck)
   and `530fe4f` (cross-day Activity History reachability), both pushed only to

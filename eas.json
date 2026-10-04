@@ -1,10 +1,10 @@
 {
-  "cli": { "version": ">= 16.0.0", "appVersionSource": "remote" },
+  "cli": { "version": ">= 16.0.0", "appVersionSource": "local" },
   "build": {
     "development": { "developmentClient": true, "distribution": "internal", "android": { "buildType": "apk" } },
     "development-simulator": { "extends": "development", "ios": { "simulator": true } },
-    "preview": { "distribution": "internal", "env": { "EXPO_PUBLIC_API_ORIGIN": "https://questlife-v1-release.vercel.app" }, "android": { "buildType": "apk" } },
+    "preview": { "distribution": "internal", "credentialsSource": "remote", "autoIncrement": false, "env": { "EXPO_PUBLIC_API_ORIGIN": "https://questlife-v1-release.vercel.app" }, "android": { "buildType": "apk" } },
     "preview-simulator": { "extends": "preview", "developmentClient": false, "ios": { "simulator": true } },
-    "production": { "autoIncrement": true }
+    "production": { "credentialsSource": "remote", "autoIncrement": false }
   }
 }

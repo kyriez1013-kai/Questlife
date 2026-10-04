@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from 'node:child_process';
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync, copyFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { resolve, join } from 'node:path';
@@ -17,30 +17,36 @@ const home = homedir();
 const java = process.env.JAVA_HOME ?? join(home, 'Library/QuestLifeToolchain/jdk/Contents/Home');
 const sdk = process.env.ANDROID_HOME ?? join(home, 'Library/Android/sdk');
 const signingDir = join(home, 'Library/QuestLifeToolchain/signing');
-const credentials = join(signingDir, 'questlife-internal.json');
-const keystore = join(signingDir, 'questlife-internal.jks');
+const credentials = join(signingDir, 'questlife-canonical.json');
+const keystore = join(signingDir, 'questlife-canonical.jks');
+const certificateSha256 = '61b030724c7ef8ab94681eb42b7033631f8c2086c78a4a79166a654e93eec5da';
+const config = JSON.parse(readFileSync(join(repo, 'app.json'), 'utf8')).expo;
+const eas = JSON.parse(readFileSync(join(repo, 'eas.json'), 'utf8'));
+if (config.android.package !== 'com.kyrie.questlife' || eas.cli.appVersionSource !== 'local') {
+  throw new Error('Canonical builds require the pinned package and shared committed version source');
+}
 const output = join(repo, 'reports/release/build-output');
 mkdirSync(signingDir, { recursive: true, mode: 0o700 });
 mkdirSync(output, { recursive: true });
-if (!existsSync(credentials)) {
-  if (existsSync(keystore)) throw new Error('Existing keystore without credentials; do not overwrite');
-  const password = randomBytes(32).toString('base64url');
-  writeFileSync(credentials, JSON.stringify({ alias: 'questlife-internal', password }), { mode: 0o600, flag: 'wx' });
+if (!existsSync(credentials) || !existsSync(keystore)) {
+  throw new Error('Import the existing EAS GgK2fK6JvP key into private canonical storage; never generate a replacement signing key');
 }
 chmodSync(credentials, 0o600);
 const key = JSON.parse(readFileSync(credentials, 'utf8'));
+if (key.certificateSha256 !== certificateSha256 || !key.alias || !key.storePassword || !key.keyPassword) {
+  throw new Error('Canonical signing credentials do not match the approved EAS certificate');
+}
 const env = { ...process.env, JAVA_HOME: java, ANDROID_HOME: sdk, ANDROID_SDK_ROOT: sdk,
-  QUESTLIFE_RELEASE_KEYSTORE: keystore, QUESTLIFE_RELEASE_STORE_PASSWORD: key.password,
-  QUESTLIFE_RELEASE_KEY_ALIAS: key.alias, QUESTLIFE_RELEASE_KEY_PASSWORD: key.password };
+  QUESTLIFE_RELEASE_KEYSTORE: keystore, QUESTLIFE_RELEASE_STORE_PASSWORD: key.storePassword,
+  QUESTLIFE_RELEASE_KEY_ALIAS: key.alias, QUESTLIFE_RELEASE_KEY_PASSWORD: key.keyPassword };
 function run(cmd, args, cwd = repo) {
   const result = spawnSync(cmd, args, { cwd, env, stdio: 'inherit' });
   if (result.status !== 0) throw new Error(`${cmd} failed (${result.status})`);
 }
-if (!existsSync(keystore)) {
-  run(join(java, 'bin/keytool'), ['-genkeypair', '-keystore', keystore, '-alias', key.alias,
-    '-storepass:env', 'QUESTLIFE_RELEASE_STORE_PASSWORD', '-keypass:env', 'QUESTLIFE_RELEASE_KEY_PASSWORD',
-    '-keyalg', 'RSA', '-keysize', '3072', '-validity', '10000', '-dname', 'CN=QuestLife Internal, O=QuestLife', '-noprompt']);
-  chmodSync(keystore, 0o600);
+const certificate = execFileSync(join(java, 'bin/keytool'), ['-exportcert', '-keystore', keystore,
+  '-alias', key.alias, '-storepass:env', 'QUESTLIFE_RELEASE_STORE_PASSWORD'], { env });
+if (createHash('sha256').update(certificate).digest('hex') !== certificateSha256) {
+  throw new Error('Keystore certificate mismatch; refusing an incompatible APK');
 }
 run('npx', ['expo', 'prebuild', '--platform', 'android', '--no-install']);
 run('./gradlew', [':app:assembleRelease', '-PreactNativeArchitectures=arm64-v8a', '--console=plain', '--max-workers=4'], join(repo, 'android'));
@@ -49,12 +55,14 @@ if (git('rev-parse', 'HEAD') !== sourceCommit || git('status', '--porcelain', '-
   throw new Error('Candidate source changed during build; do not label this APK as the new commit');
 }
 const commit = sourceCommit.slice(0, 7);
-const destination = join(output, `questlife-v1-${commit}-arm64.apk`);
+const destination = join(output, `questlife-v1-${commit}-canonical-arm64.apk`);
 copyFileSync(apk, destination);
 const bytes = readFileSync(destination);
 const metadata = { path: destination, sourceCommit, dirty: false,
   sha256: createHash('sha256').update(bytes).digest('hex'), bytes: bytes.length,
-  architecture: 'arm64-v8a', developmentClient: false, signing: 'dedicated local internal key', generatedAt: new Date().toISOString() };
+  architecture: 'arm64-v8a', developmentClient: false, signing: 'canonical EAS GgK2fK6JvP',
+  certificateSha256, applicationId: config.android.package, versionCode: config.android.versionCode,
+  versionName: config.version, generatedAt: new Date().toISOString() };
 metadata.apiOrigin = apiOrigin;
 metadata.accountConfigured = Boolean(process.env.EXPO_PUBLIC_SUPABASE_URL && process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY);
 writeFileSync(join(output, 'android-candidate.json'), JSON.stringify(metadata, null, 2));
