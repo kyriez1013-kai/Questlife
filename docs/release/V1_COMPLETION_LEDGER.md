@@ -30,7 +30,7 @@ Unchecked entries remain unfinished.
 
 | Item | Current status | Evidence / next executable action |
 | --- | --- | --- |
-| Canonical worktree and branch | VERIFIED_LOCAL | Current functional/security source `f80007c` on `release/questlife-v1`; prior native artifacts remain `ecf37b9`/`49622b1` until affected-source rebuild. User-owned untracked `QUESTLIFE_QUANT_UI_CONTRACT.md` remains unread, unchanged and excluded from commits/uploads |
+| Canonical worktree and branch | VERIFIED_LOCAL | Current functional/security source `0ea681b` on `release/questlife-v1`; latest internal native artifact is `b876322`, not the later Capture fixes. User-owned untracked `QUESTLIFE_QUANT_UI_CONTRACT.md` remains unread, unchanged and excluded from commits/uploads |
 | Vercel authorization | VERIFIED_REMOTE | Existing candidate project `prj_fVGFV7DzxfkLqbBpSo8P7NH9oqxX` / `questlife-v1-release`; candidate CLI deployment authorized. Old Owner project is not the deployment target |
 | Isolated Supabase backend | VERIFIED_REMOTE | `gttcoocfkqwvsqfwxpyo` created; both reviewed migrations executed in SQL Editor; four RLS tables, six RPCs and Realtime publication verified. Existing production `gtlknzltzntfltgjvgxx` untouched |
 | EAS / iOS signing | VERIFIED_REMOTE simulator build; BLOCKED local execution/signing | Same-source `ecf37b9` build `2c9fcda8-e2cb-4f3d-a7d1-dfd1ce0eb73d` downloaded and inspected: 1.0.1/build2, iPhoneSimulator, candidate services, Widget extension and App Intents. Not executed. Mac has Command Line Tools but no Xcode/simctl; no phone signing credentials. Owner declines paid membership; no new fee |
@@ -38,8 +38,8 @@ Unchecked entries remain unfinished.
 | Auth and bidirectional sync | VERIFIED_LOCAL isolated UI + Android emulator + candidate backend; real email restoration VERIFIED_USER_MANUAL | User confirmed real email sign-in, refresh, tab close/reopen and the same synced account. Separate disposable normal-client login, refresh, close/reopen, logout and different-account isolation were observed locally against candidate Supabase. QA record 7→9 minutes reached the real Quant UI and exact evidence ID. This batch's normal UI delete/local cleanup readback was interrupted, not passed; exact remote tombstones and QA identity cleanup were verified. Physical two-device acceptance remains open |
 | Commit-order concurrent sync | VERIFIED_LOCAL | PostgreSQL 18, separate backend connections: 10/10; delayed lower sequence, CAS, idempotent receipt/delete and RLS; no hosted claim |
 | Legacy anonymous endpoint safety | IMPLEMENTED, VERIFIED_LOCAL | `/api/sync` fails closed (410); Quant verifies Supabase bearer UID; 17 backend scenario groups passed |
-| Normal cloud AI and sensitive-context consent | IMPLEMENTED, VERIFIED_LOCAL; hosted/UI verification pending | Web Settings and native Account sheet now expose account-bound device-local AI consent, default off, with imported context separately off. Shared parse/brief client verifies session/replica and discards responses after account/consent changes. No imported health or provenance-ambiguous saved interpretation sent without both consent boundaries |
-| AI authorization / expense abuse | IMPLEMENTED, VERIFIED_LOCAL; candidate SQL VERIFIED_REMOTE | Paid parse/brief require remotely verified bearer. Candidate-only server budget is atomic: 12 units/user/minute, 200/user/day, 1500 global/day; parse costs1, brief3 with up to2 existing bounded provider attempts. HTTP and complete-memory prompt bytes bounded. RLS/client grants deny budget bypass. Limits are request-cost guards, not an exact currency estimate; hosted API verification pending |
+| Normal cloud AI and sensitive-context consent | IMPLEMENTED, VERIFIED_LOCAL + VERIFIED_REMOTE normal Web UI | `dbee74b` isolated normal Account sign-in, default-off consent, enable AI, real SQL Capture/confirm/refresh, real Instant Read and distinct feedback verified. Imported context and Health cloud sync stayed off. Two Web origins received the same record; not Android/device acceptance. Current Capture fixes await new deployment UI verification |
+| AI authorization / expense abuse | IMPLEMENTED, VERIFIED_LOCAL; candidate SQL + model endpoints VERIFIED_REMOTE | Paid parse/brief require remotely verified bearer. Atomic guards: 12 units/user/minute, 200/user/day, 1500 global/day; parse1, brief3. `30b7154` applies an independent Quant budget using the same private ledger. Candidate migration003 readback: anon/client=false, server=true, RLS=true, Quant scopes/cleanup=true. These are service guards, not analytical eligibility or exact currency. Quant hosted admission awaits updated deployment |
 | Release safety gate | PARTIAL, NOT_PASSED | 511 reachable commits scanned with redacted Gitleaks; 11 classified non-secret identifiers/hash/translation false positives. Exact authorized private values absent from 1139 tracked files, reachable history, current Web and previous canonical Android/iOS artifacts. Restricted quant docs excluded. Sensitive Vercel values cannot be downloaded, so provider-key exact-value coverage is unavailable. Current deployment, log retention, native local data and physical privacy/permission gates remain open; no full security signoff |
 | Real Quant runtime | VERIFIED_REMOTE (isolated fixtures) | 9 hosted checks: authentication, subject/as-of rejection, 210-observation computation, correction hash, empty-after-removal, QA exclusion and cross-subject isolation; `reports/release/quant-hosted-verification.json`; no owner data/database writes |
 | Native Today/materials/sheets | IMPLEMENTED, partial emulator verification | Standalone release opens Today S0 and State sheet; settled sheet shields background text and Cancel leaves state unrecorded. 31 component tests. Full keyboard, dark-theme and physical acceptance pending |
@@ -55,6 +55,59 @@ Unchecked entries remain unfinished.
 | Native recordings/performance | Bottleneck fixed and background path VERIFIED_LOCAL; end-to-end NOT_PASSED | Fresh `530fe4f` ReleaseQA mature-example trace: 135 frames, P50 15ms/P95 31ms/20 above20ms/12 deadline-janky; first RNCWebView create 200.470ms on UI thread. `ecf37b9` AndroidX background startup compiled; installed `49622b1` cold trace moves provider153.228ms/native library41.165ms to `questlife-chart` background thread. Not a chart-interaction P95 comparison. Native input connection fails while screenshots remain readable; keyboard, long-list, full post-fix chart trace and recording remain UNVERIFIED |
 
 ## Exact Resume Checkpoint
+
+### Normal-client AI, feedback and Capture correction (2026-10-05)
+
+- Candidate `dbee74b`, READY `dpl_8zZFxYJNtshsbBv8C8CWL5bXnK9u`, bundle
+  `index-c77a41f8a6bf7e1c57c772a33bc64c90.js`: Web now uses same-origin APIs.
+  This repairs an actual OPTIONS405 parse failure on immutable deployment URLs;
+  native still uses the pinned candidate HTTPS service. No Owner target changed.
+- Normal disposable client `df82f5ae-3ebe-4556-9f75-4002e00728ae` signed in
+  through the ordinary OTP form using a privately generated admin test OTP.
+  This is not email-delivery evidence. Existing user-confirmed email-link and
+  close/reopen session evidence remains separately scoped.
+- Real SQL40 Capture -> DeepSeek -> pending Practice -> Confirm -> refresh:
+  RawCapture `rc-muu5u1i0o3qq73`, ExecutionLog
+  `capture-rc-muu5u1i0o3qq73-0`, Skill `muu5uyj5kt8egq`, and their exact
+  EffortUnit/ContributionLink persisted. Another authenticated Web client
+  received the same SQL40. Real Live Quant displayed 40min and exact evidence
+  `appdata:execution:capture-rc-muu5u1i0o3qq73-0:duration`, with no baseline
+  manufactured from one observation. Android/physical two-client acceptance
+  has not been added by this Web test.
+- Explicitly isolated, non-neutral QA StateCheckIn `muu61sm8q5pyji` produced
+  real AI Instant Read. Useful -> refresh -> Not useful -> refresh retained
+  distinct values on the SAME `decision-1791139227057-instant`, revision2->3,
+  with one instant DecisionResult, not duplicate records. `382a475` adds Web
+  pressed accessibility state without changing handlers or persistence.
+- The original pending unsynced SQL raw was deleted only after the exact user
+  confirmation, through normal UI; refresh still showed no records. Newly
+  created isolated verification entities above remain pending separate cleanup
+  approval. Do not treat the original raw approval as authorization to delete
+  this entire account, StateCheckIn or skill. No Owner observation was written.
+- Existing stateless verifier identity `5aad1ba7-8e2d-4da2-9533-508be5ddf3aa`
+  now has real SQL readback sync0/private-account-budget0/retention-trigger1,
+  supplementing the prior Auth404.
+- Actual normal Basketball parse exposed strength-only controls. `f621df5`
+  separates concrete sports from strength evidence, keeps a custom duration
+  input, uses existing time_based/cardio_recovery values, and localizes known
+  activity labels. `0ea681b` accepts real parser weightKg/scalar sets and fixes
+  array-only provenance that could throw on save. No schema/Quant model added.
+- Latest targeted gates passed: backend auth19 groups; isolated PostgreSQL
+  budget9 groups; Capture kinds/provenance6; Today reachability/feedback5;
+  durability17 + actual Store/callback26; typecheck and Web export. Hosted
+  confirmation of new Capture source, new native build/runtime and cleanup
+  readbacks remain next actions, not passed by these local tests.
+- Mac relocked; native click/raise reports locked. Do not bypass it. Browser
+  verification and source work continue. Latest installed b876 Release has not
+  received full post-install cold-start/keyboard/chart performance acceptance.
+  Physical permissions, iOS signing/Xcode and final approved UI are still open.
+
+Next exact action: finish `0ea681b` candidate-only deployment and ordinary
+Basketball/Bench Capture verification; confirm current persisted feedback and
+Quant service admission. On explicit cleanup approval, use normal deletes for
+the exact QA lineage, verify both clients/Quant updates and remote tombstones,
+then remove the disposable identity. Resume native interaction/performance only
+after Mac unlock; do not rebuild unchanged source or promote Owner Production.
 
 ### Active functional and safety continuation (2026-10-05)
 

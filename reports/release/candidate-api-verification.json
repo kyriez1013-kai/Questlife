@@ -1,7 +1,9 @@
 {
   "origin": "https://questlife-v1-release.vercel.app",
-  "testedAt": "2026-09-22T11:34:20.587Z",
-  "scope": "Isolated stateless API inputs only. No Store, owner data or database writes; not UI confirmation or persistence acceptance.",
+  "testedAt": "2026-10-04T18:10:22.788Z",
+  "sourceCommit": "b876322414e8b9588c41dd2ab964670cb4243129",
+  "project": "gttcoocfkqwvsqfwxpyo",
+  "scope": "Real authenticated DeepSeek calls from an isolated disposable identity. No observation/Store writes. Auth deletion trigger owns private quota cleanup; SQL readback is separate. Global spent reservations retained. Not normal UI/physical-device acceptance.",
   "checks": [
     {
       "name": "public_candidate_document",
@@ -10,28 +12,42 @@
     {
       "name": "/api/sync",
       "status": 410,
-      "elapsedMs": 507
+      "elapsedMs": 493
     },
     {
       "name": "/api/track",
       "status": 410,
-      "elapsedMs": 753
+      "elapsedMs": 710
     },
     {
       "name": "/api/decision-quant",
       "status": 401,
-      "elapsedMs": 498
+      "elapsedMs": 484
     },
     {
       "name": "/api/push-test",
       "status": 401,
-      "elapsedMs": 488
+      "elapsedMs": 534
+    },
+    {
+      "name": "/api/parse",
+      "status": 401,
+      "elapsedMs": 482
+    },
+    {
+      "name": "/api/brief",
+      "status": 401,
+      "elapsedMs": 503
+    },
+    {
+      "name": "client_cannot_bypass_server_ai_budget",
+      "result": "PASS"
     },
     {
       "name": "live_capture_parse",
       "input": "打了篮球",
       "status": 200,
-      "elapsedMs": 2644,
+      "elapsedMs": 4158,
       "currentInputMatched": true,
       "response": {
         "ok": true,
@@ -45,8 +61,8 @@
         "insightType": "encourage",
         "crossLinks": [],
         "insight": {
-          "zh": "打篮球是不错的全身有氧+爆发力训练，记得补充水分和拉伸放松。",
-          "en": "Basketball is a great full-body cardio and explosive-power session — hydrate and stretch afterward."
+          "zh": "打篮球是很棒的全身有氧运动，兼顾心肺和协调性。记录一下时长，方便追踪运动量。",
+          "en": "Basketball is a great full-body cardio workout for both conditioning and coordination. Log the duration to track your volume."
         },
         "entries": [
           {
@@ -55,7 +71,7 @@
             "goalType": "fitness",
             "progressType": "time_based",
             "fields": {
-              "activity": "篮球"
+              "durationMinutes": null
             },
             "qualityRating": 4
           }
@@ -67,9 +83,9 @@
             "篮球",
             "跑步",
             "跳绳",
-            "HIIT",
             "游泳",
             "骑车",
+            "HIIT",
             "爬楼梯",
             "椭圆机"
           ],
@@ -78,8 +94,8 @@
           "goalConfidence": "low",
           "shouldCreateGoal": true,
           "newGoalSuggestion": {
-            "name": "运动健身",
-            "domain": ""
+            "name": "篮球训练",
+            "domain": "fitness"
           },
           "durationOptions": [
             15,
@@ -102,7 +118,7 @@
       "name": "live_capture_parse",
       "input": "SQL 学习了 40 分钟",
       "status": 200,
-      "elapsedMs": 2431,
+      "elapsedMs": 3909,
       "currentInputMatched": true,
       "response": {
         "ok": true,
@@ -148,7 +164,10 @@
           "matchedModuleId": null,
           "goalConfidence": "low",
           "shouldCreateGoal": true,
-          "newGoalSuggestion": null,
+          "newGoalSuggestion": {
+            "name": "SQL 学习",
+            "domain": ""
+          },
           "durationOptions": [
             15,
             30,
@@ -170,7 +189,7 @@
       "name": "live_capture_parse",
       "input": "卧推 82.5 kg，5 次，3 组",
       "status": 200,
-      "elapsedMs": 2625,
+      "elapsedMs": 3175,
       "currentInputMatched": true,
       "response": {
         "ok": true,
@@ -186,8 +205,8 @@
         "insightType": "skill_progress",
         "crossLinks": [],
         "insight": {
-          "zh": "卧推 82.5 kg 完成 3 组 × 5 次，总容量约 1237.5 kg，属于中高强度力量训练。",
-          "en": "Bench press at 82.5 kg for 3 sets of 5 reps — roughly 1237.5 kg total volume, a solid mid-to-high intensity strength session."
+          "zh": "卧推 82.5 kg 完成 3 组 × 5 次，总训练容量约 1237.5 kg，属于大重量低次数区间，适合力量突破。",
+          "en": "Bench press at 82.5 kg for 3 sets of 5 reps — total volume ~1237.5 kg, a heavy low-rep range well suited for strength progression."
         },
         "entries": [
           {
@@ -196,11 +215,9 @@
             "goalType": "fitness",
             "progressType": "performance_log",
             "fields": {
-              "exercise": "卧推",
               "weightKg": 82.5,
               "reps": 5,
-              "sets": 3,
-              "totalVolumeKg": 1237.5
+              "sets": 3
             },
             "qualityRating": 4
           }
@@ -216,7 +233,7 @@
             "夹胸",
             "双杠撑臂",
             "俯卧撑",
-            "绳索夹胸"
+            "chest press"
           ],
           "matchedGoalId": null,
           "matchedModuleId": null,
@@ -242,6 +259,30 @@
           "responseSchemaVersion": "questlife.parse.response.v1"
         }
       }
+    },
+    {
+      "name": "live_authenticated_empty_brief",
+      "status": 200,
+      "elapsedMs": 4326,
+      "ok": true,
+      "serverMemory": "empty",
+      "noImportedMemory": true,
+      "noServerDecisionWrite": true
+    },
+    {
+      "name": "hosted_atomic_quota_API_denial",
+      "status": 429,
+      "result": "PASS"
+    }
+  ],
+  "cleanup": [
+    {
+      "userId": "5aad1ba7-8e2d-4da2-9533-508be5ddf3aa",
+      "purpose": "disposable_stateless_ai_verification",
+      "status": "AUTH_REMOVED",
+      "remainingSyncEntities": 0,
+      "privateBudgetCleanup": "Auth deletion trigger; SQL readback separate",
+      "authReadback": 404
     }
   ]
 }
