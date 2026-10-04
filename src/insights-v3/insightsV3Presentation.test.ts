@@ -22,6 +22,24 @@ assert.equal(rangeLabel('en', { kind: 'contract', key: '30D' }), '30D');
 assert.equal(aggregationBucketLabel('zh', 'quant_source_points'), '原始观察');
 assert.equal(unitLabel('minutes', 'zh'), '分钟');
 
+const recordedInstrumentLabels = [
+  ['state_overall', '整体状态自评', 'Overall state (self-report)'],
+  ['state_energy', '精力自评', 'Energy (self-report)'],
+  ['state_mood', '情绪自评', 'Mood (self-report)'],
+  ['state_physical', '身体状态自评', 'Physical condition (self-report)'],
+  ['state_stress', '压力自评', 'Stress (self-report)'],
+  ['strength_weight', '训练重量', 'Training weight'],
+  ['strength_set_count', '训练组数', 'Training sets'],
+  ['strength_rep_count', '每组重复次数', 'Repetitions per set'],
+  ['strength_rpe', '训练用力程度（RPE）', 'Training exertion (RPE)'],
+] as const;
+for (const [key, zhLabel, enLabel] of recordedInstrumentLabels) {
+  assert.equal(instrumentLabel('zh', { label_key: key }), zhLabel);
+  assert.equal(instrumentLabel('en', { labelKey: key }), enLabel);
+  assert.equal(instrumentLabel('en', { labelKey: key, scope: 'SKILL' }), `Skill · ${enLabel}`);
+}
+assert.equal(instrumentLabel('en', { label_key: 'unmapped_instrument' }), 'Personal instrument');
+
 const manifest = loadRaw('manifest');
 for (const name of manifest.fixtures) {
   const bundle = load(name);
