@@ -30,8 +30,8 @@ function normalizeText(value?: string) {
   return (value || '')
     .trim()
     .toLowerCase()
-    .replace(/卧推|平板卧推|bench press|flat bench/g, 'bench_press')
     .replace(/上斜卧推|incline bench/g, 'incline_bench')
+    .replace(/平板卧推|卧推|bench press|flat bench/g, 'bench_press')
     .replace(/硬拉|deadlift/g, 'deadlift')
     .replace(/深蹲|squat/g, 'squat')
     .replace(/双杠臂屈伸|dips?/g, 'dips')
@@ -85,9 +85,8 @@ function strengthDataFromLog(log: ExecutionLog) {
   const set = log.actualData?.exercises?.[0]
     ?? log.metricUpdate?.performanceData?.strengthSets?.[0]
     ?? log.progressUpdate?.performanceData?.strengthSets?.[0]
-    ?? log.actualData?.strength
-    ?? log.predictionData?.strength;
-  const weight = safeNumber(set?.weight ?? log.actualData?.topWeight ?? log.metricUpdate?.performanceValue ?? structured.weight);
+    ?? log.actualData?.strength;
+  const weight = safeNumber(set?.weight ?? log.actualData?.topWeight ?? structured.weight);
   const sets = safeNumber(set?.sets ?? log.actualData?.sets ?? structured.sets);
   const reps = safeNumber(set?.reps ?? log.actualData?.reps ?? structured.reps);
   const rpe = safeNumber(set?.rpe ?? log.actualData?.rpe ?? structured.rpe);
@@ -160,7 +159,7 @@ export function createEffortUnitsFromExecutionLog(log: ExecutionLog, context: Ef
   };
 
   const derived: EffortUnit['derived'] = {
-    effortScore: durationMinutes != null ? Math.max(1, durationMinutes) : raw.estimatedVolume != null ? Math.round(raw.estimatedVolume / 100) : raw.count,
+    effortScore: durationMinutes != null && durationMinutes > 0 ? durationMinutes : raw.estimatedVolume != null ? Math.round(raw.estimatedVolume / 100) : raw.count,
     intensityScore: raw.rpe != null ? raw.rpe * 10 : raw.weight,
     volumeScore: raw.estimatedVolume,
     consistencyScore: raw.count,

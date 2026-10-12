@@ -27,6 +27,7 @@ import { useQuestReducedMotion } from '../design/motion';
 import { getSurfaceStyle } from '../design/surfaces';
 import { isDarkTheme } from '../design/darkSurfaceGuard';
 import { today, uid } from '../storage';
+import { currentDayStateObservations } from '../utils/stateSelection';
 import {
   skillMinutesOnDate, skillStreak, skillTotalMinutes, skillMilestones,
   Skill, Category, Action, Quality, QUALITY_OPTIONS, HOUR_MILESTONES, TaskType, ExecutionLog, StateCheckIn,
@@ -724,8 +725,8 @@ export default function HomeScreen() {
     const time = new Date(log.createdAt ?? log.date ?? 0).getTime();
     return Number.isFinite(time) && time >= contextCountCutoff;
   }).length;
-  const todayStateCheckIns = (data.stateCheckIns || []).filter((row) => row.date === todayStr);
-  const latestStateCheckIn = todayStateCheckIns.slice().sort((a, b) => b.timestamp.localeCompare(a.timestamp))[0];
+  const todayStateCheckIns = currentDayStateObservations(data.stateCheckIns || [], todayStr);
+  const latestStateCheckIn = todayStateCheckIns[0];
   const latestPersistedInstantDecision = useMemo(() => (
     (data.decisionResults || [])
       .filter((result) => {

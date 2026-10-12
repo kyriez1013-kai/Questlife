@@ -5,9 +5,10 @@ import { buildPostSaveFeedback } from './progressFeedback';
 import { DecisionBriefInput, DecisionMode, DecisionTrigger } from './decisionTypes';
 import { buildDecisionMemorySummary } from './decisionMemory';
 import { sanitizePatternMemoryForPayload } from './patternMemory';
+import { currentDayStateObservations, eligibleStateObservations, localStateDate } from './stateSelection';
 
 function dateKey(date: Date) {
-  return date.toISOString().slice(0, 10);
+  return localStateDate(date);
 }
 
 function safeCreatedAt(value?: string | number) {
@@ -16,6 +17,7 @@ function safeCreatedAt(value?: string | number) {
 }
 
 function safeNumber(value: unknown): number | undefined {
+  if (typeof value !== 'number' && (typeof value !== 'string' || !value.trim())) return undefined;
   const number = typeof value === 'number' ? value : Number(value);
   return Number.isFinite(number) ? number : undefined;
 }
@@ -31,7 +33,7 @@ function safeTime(value?: string | number) {
 
 function isWithinDays(value: string | number | undefined, now: Date, days: number) {
   const time = safeTime(value);
-  return time > 0 && time >= cutoffTime(now, days);
+  return time > 0 && time >= cutoffTime(now, days) && time <= now.getTime();
 }
 
 function compactLabel(value?: string) {
@@ -135,7 +137,7 @@ function recentContextLogs(contextLogs: ContextLog[], now: Date) {
   return (contextLogs || [])
     .filter((log) => {
       const time = new Date(log.createdAt ?? log.date ?? 0).getTime();
-      return Number.isFinite(time) && time >= cutoff;
+      return Number.isFinite(time) && time >= cutoff && time <= now.getTime();
     })
     .sort((a, b) => safeCreatedAt(b.createdAt ?? b.date).localeCompare(safeCreatedAt(a.createdAt ?? a.date)))
     .slice(0, 20)
@@ -226,9 +228,8 @@ function avg(values: Array<number | undefined>) {
 }
 
 function buildStateSummary(stateCheckIns: StateCheckIn[], now: Date) {
-  const recent = (stateCheckIns || [])
-    .filter((row) => isWithinDays(row.timestamp ?? row.createdAt ?? row.date, now, 7))
-    .sort((a, b) => (b.timestamp ?? b.createdAt ?? '').localeCompare(a.timestamp ?? a.createdAt ?? ''));
+  const recent = eligibleStateObservations(stateCheckIns, now)
+    .filter((row) => isWithinDays(row.timestamp ?? row.createdAt ?? row.date, now, 7));
   return {
     latest: recent[0] ? compactState(recent[0]) : null,
     count_7d: recent.length,
@@ -399,9 +400,7 @@ function buildSevenDayRows(logs: ExecutionLog[], data: AppData, now: Date, local
       date: key,
       log_count: dayLogs.length,
       total_duration: dayLogs.reduce((sum, log) => sum + Math.max(0, log.durationMinutes || 0), 0),
-      avg_quality: dayLogs.length > 0
-        ? Number((dayLogs.reduce((sum, log) => sum + (log.qualityRating || 0), 0) / dayLogs.length).toFixed(2))
-        : undefined,
+      avg_quality: avg(dayLogs.map((log) => log.qualityRating)),
       execution_events: executionEvents,
       state_events: stateEvents,
       context_events: contextEvents,
@@ -461,11 +460,13 @@ function buildLast28Aggregate(logs: ExecutionLog[], data: AppData, now: Date) {
 }
 
 export function buildDecisionPayload(
-  data: AppData,
+  inputData: AppData,
   options: { mode?: DecisionMode; trigger?: DecisionTrigger; now?: Date; locale?: 'zh' | 'en' } = {},
 ): DecisionBriefInput {
   const now = options.now ?? new Date();
-  const liveLogs = getLiveExecutionLogs(data.executionLogs || [], { skills: data.skills || [] });
+  const data = { ...inputData, stateCheckIns: eligibleStateObservations(inputData.stateCheckIns || [], now) };
+  const liveLogs = getLiveExecutionLogs(data.executionLogs || [], { skills: data.skills || [] })
+    .filter((log) => safeTime(log.createdAt) > 0 && safeTime(log.createdAt) <= now.getTime());
   const objectiveContextBrief = buildObjectiveContextBrief(data.contextLogs || [], now);
   const metacognition = buildMetacognitionSummary({
     executionLogs: liveLogs,
@@ -475,10 +476,8 @@ export function buildDecisionPayload(
     contextLogs: data.contextLogs || [],
     now,
   });
-  const latestState = (data.stateCheckIns || [])
-    .slice()
-    .sort((a, b) => (b.timestamp ?? b.createdAt ?? '').localeCompare(a.timestamp ?? a.createdAt ?? ''))[0];
   const today = dateKey(now);
+  const latestState = currentDayStateObservations(data.stateCheckIns || [], today, now)[0];
   const contextSummary = buildContextSummary(data.contextLogs || [], now);
   const stateSummary = buildStateSummary(data.stateCheckIns || [], now);
   const afterStateSummary = buildAfterStateSummary(liveLogs, data, now);
@@ -535,7 +534,9 @@ export function buildDecisionPayload(
       })),
       known_baselines: {
         activeDays: new Set(liveLogs.map((log) => log.date)).size,
-        avgDurationLast28: (last28Aggregate.total_duration as number) / Math.max(1, last28Aggregate.log_count as number),
+        avgDurationLast28: (last28Aggregate.log_count as number) > 0
+          ? (last28Aggregate.total_duration as number) / (last28Aggregate.log_count as number)
+          : undefined,
       },
       confirmed_patterns: [
         ...patternMemoryPayload.confirmed_patterns,

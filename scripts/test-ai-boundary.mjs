@@ -63,7 +63,7 @@ const { saveAiPreferences, aiPreferencesSnapshot } = require(join(out, 'src/serv
 const { aiBriefForCloud } = require(join(out, 'src/services/aiBriefPrivacy.js'));
 const originalFetch = globalThis.fetch;
 const originalWarn = console.warn, originalError = console.error, originalLog = console.log;
-let calls = [], logs = [], budget = { status: 'claimed' }, budgetFailure = false, modelContent, clientHook, memoryRows = [];
+let calls = [], logs = [], budget = { status: 'claimed' }, budgetFailure = false, modelContent, clientHook, memoryRows = [], decisionMemoryRows = [];
 const json = (value, status = 200) => new Response(JSON.stringify(value), { status });
 const sink = () => ({ statusCode: 0, body: null, headers: {}, setHeader(k,v) { this.headers[k]=v; },
   status(code) { this.statusCode=code;return this; }, json(body) { this.body=body;return this; } });
@@ -83,7 +83,7 @@ globalThis.fetch = async (input, init = {}) => {
     const query = new URL(url).searchParams;
     assert.equal(query.get('user_id'), `eq.${UID}`); assert.equal(query.get('deleted_at'),'is.null');
     assert.equal(headers.get('authorization'),`Bearer ${bearer}`); assert.equal(headers.get('apikey'),publicKey);
-    return json(query.get('entity_type') === 'eq.patternMemory' ? memoryRows : []);
+    return json(query.get('entity_type') === 'eq.patternMemory' ? memoryRows : decisionMemoryRows);
   }
   if (url === 'https://api.deepseek.com/chat/completions') return json({ choices: [{ message: {
     content: modelContent ?? JSON.stringify(JSON.parse(init.body).messages[0].content.includes('single-line entry')
@@ -96,7 +96,7 @@ globalThis.fetch = async (input, init = {}) => {
 };
 let passed = 0;
 async function check(name, job) { calls=[]; logs=[];budget={status:'claimed'};budgetFailure=false;modelContent=undefined;clientHook=undefined;
-  memoryRows=[];
+  memoryRows=[];decisionMemoryRows=[];
   await job();passed++;originalLog(`PASS ${name}`); }
 try {
   console.warn=(...args)=>logs.push(args);console.error=(...args)=>logs.push(args);console.log=(...args)=>logs.push(args);
@@ -124,6 +124,10 @@ try {
       const res=await invoke(handler,body);assert.equal(res.statusCode,429);assert.equal(res.headers['Retry-After'],'27');
     }
     assert.ok(calls.every(call=>!call.url.includes('deepseek')));
+  });
+  await check('invalid decision as-of is rejected before auth, quota or model', async()=>{
+    assert.equal((await invoke(brief,{...minimalBrief,now:'not-a-date'})).statusCode,400);
+    assert.equal(calls.length,0);
   });
   await check('missing or failed budget fails closed instead of unmetered inference', async()=>{
     budgetFailure=true;assert.equal((await invoke(parse,{text:'test'})).statusCode,503);
@@ -173,6 +177,22 @@ try {
     assert.ok(Buffer.byteLength(JSON.stringify(input))<64*1024);
     assert.equal((await invoke(brief,input)).statusCode,413);
     assert.ok(!calls.some(call=>call.url.includes('deepseek')));
+  });
+  await check('same persisted feedback record changes the next prompt, not model weights or outcome evidence',async()=>{
+    const result={id:'same-decision',mode:'instant_micro',trigger:'state_checkin',createdAt:'2026-10-04T12:00:00Z',
+      source:'ai',headlineInsight:'Prior judgement',schemaVersion:'1.0',confidence:0.2};
+    for(const rating of ['useful','not_useful']) {
+      calls=[];
+      decisionMemoryRows=[{payload:{...result,userFeedback:{rating,updatedAt:'2026-10-04T13:00:00Z'}}}];
+      assert.equal((await invoke(brief,{...minimalBrief,include_imported_context:true})).statusCode,200);
+      const messages=JSON.parse(calls.find(c=>c.url.includes('deepseek')).body).messages;
+      const transmitted=JSON.parse(messages[1].content.split('Decision input:\n')[1]);
+      assert.equal(transmitted.decision_memory_summary.recent_count_7d,1);
+      assert.equal(transmitted.decision_memory_summary.useful_count_7d,rating==='useful'?1:0);
+      assert.equal(transmitted.decision_memory_summary.not_useful_count_7d,rating==='not_useful'?1:0);
+      assert.match(messages[0].content,/not an execution outcome, a state change, model training/);
+      assert.ok(!calls.some(c=>c.url.includes('questlife_sync_entities')&&c.method==='POST'));
+    }
   });
   await check('client signed-out and wrong replica owner never transmit records',async()=>{
     session=null;await assert.rejects(()=>authenticatedAiPost('/api/parse',{text:'private'}),/authentication_required/);

@@ -30,7 +30,7 @@ const BriefInputSchema = z
   .object({
     mode: z.enum(['instant_micro', 'daily_brief']),
     trigger: z.enum(['morning_push', 'state_checkin', 'manual', 'debug']),
-    now: z.string().min(1),
+    now: z.string().datetime({ offset: true }),
     locale: z.enum(['zh', 'en']).optional(),
     // Retired caller identity is accepted only for old clients, never used.
     anonymous_user_id: z.string().min(1).max(200).optional(),
@@ -152,7 +152,7 @@ async function applyServerMemory(input: BriefBody, userId: string, accessToken: 
       };
     }
     if (decisions.length > 0) {
-      input.decision_memory_summary = buildDecisionMemorySummary(decisions);
+      input.decision_memory_summary = buildDecisionMemorySummary(decisions, new Date(input.now));
     }
     return { status: 'applied', patternCount: patterns.length, decisionCount: decisions.length };
   } catch {
@@ -231,6 +231,9 @@ Read overall, energy, focus, mood and physical independently. Low energy does no
 The stress field also comes from this labelled subjective control. Report its rating without interpreting it as a validated stress-severity scale or inferring illness.
 context_flags indicate recorded context, not numerical quality. A sleepQuality flag without its numeric value does not establish poor sleep. Missing, absent and zero observations never supply a default measurement.
 These are self-reports, not objective measurements. Only compare with a personal baseline actually present in the input; one observation does not establish a trend.
+current_state is the latest eligible observation for the user's current local day. If it is null, historical state_summary rows are not a current measurement; ask for an update rather than claiming today's condition.
+Execution duration is recorded time, not training load. Strength weight, reps and sets retain their distinct units and exercise identity; never pool different exercises into one personal performance baseline.
+decision_memory_summary feedback records whether a prior judgement was useful or not useful. It is context for the next response, not an execution outcome, a state change, model training or proof that a pattern is true.
 Evidence priority:
 1. Accepted personal PatternMemory in profile.confirmed_patterns.
 2. Recent personal evidence: state, context, execution, after-state, decision feedback.

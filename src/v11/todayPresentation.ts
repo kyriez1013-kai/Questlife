@@ -4,6 +4,7 @@ import type {
   TodayDecisionPresentation,
 } from '../utils/todayDecisionPresentation';
 import type { V11EvidenceStage } from './tokens';
+import { currentDayStateObservations, eligibleStateObservations } from '../utils/stateSelection';
 
 export type V11TodayReading = {
   kind: 'empty' | 'state';
@@ -36,17 +37,8 @@ export type DeriveV11EvidenceStageInput = {
   patternReferences: TodayDecisionPatternReference[];
 };
 
-function isValidStateObservation(
-  row: StateCheckIn,
-): row is StateCheckIn & { overall: number } {
-  return Number.isFinite(row.overall) && row.overall >= 1 && row.overall <= 5;
-}
-
 function currentDayStates(today: string, rows: StateCheckIn[]) {
-  return (rows || [])
-    .filter((row) => row.date === today && isValidStateObservation(row))
-    .slice()
-    .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+  return currentDayStateObservations(rows, today);
 }
 
 function isJudgementEvidenceReference(reference: TodayDecisionPatternReference) {
@@ -100,9 +92,7 @@ export function deriveV11EvidenceStage({
   const hasExplicitPatternReference = relevantReferences.some((reference) => (
     !!referencedPattern(reference, patternMemory || [])
   ));
-  const comparableStateEvidence = (stateCheckIns || [])
-    .filter(isValidStateObservation)
-    .length >= 2;
+  const comparableStateEvidence = eligibleStateObservations(stateCheckIns).length >= 2;
 
   if (hasExplicitPatternReference || comparableStateEvidence) return 'S2';
   return 'S1';

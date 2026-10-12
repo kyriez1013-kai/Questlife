@@ -144,7 +144,8 @@ export function decisionResultToBrief(result: DecisionResult): DecisionBriefResu
 function withinDays(createdAt: string, now: Date, days: number) {
   const ts = new Date(createdAt).getTime();
   if (!Number.isFinite(ts)) return false;
-  return now.getTime() - ts <= days * 24 * 60 * 60 * 1000;
+  const age = now.getTime() - ts;
+  return age >= 0 && age <= days * 24 * 60 * 60 * 1000;
 }
 
 export function buildDecisionMemorySummary(results: DecisionResult[] = [], now = new Date()): DecisionMemorySummary {

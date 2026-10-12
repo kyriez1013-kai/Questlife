@@ -2,6 +2,7 @@ import { Category, ContextLog, ExecutionLog, QuestModule, ScheduleBlock, Skill, 
 import { ObjectiveContextBrief } from './objectiveContextBrief';
 import { MetacognitionSummary } from './metacognition';
 import { TodayCommand } from './todayCommand';
+import { eligibleStateObservations } from './stateSelection';
 
 export type DailyOperatingBriefMode = 'recovery' | 'steady' | 'push' | 'restart' | 'protect_focus' | 'unknown';
 export type DailyOperatingBriefIntensity = 'very_low' | 'low' | 'normal' | 'high';
@@ -58,13 +59,8 @@ function modeLabelKey(mode: DailyOperatingBriefMode) {
 
 function newestState(stateCheckIns: StateCheckIn[], now: Date) {
   const cutoff = now.getTime() - 24 * 60 * 60 * 1000;
-  return (stateCheckIns || [])
-    .filter((row) => {
-      const time = new Date(row.timestamp ?? row.createdAt ?? row.date ?? 0).getTime();
-      return Number.isFinite(time) && time >= cutoff;
-    })
-    .slice()
-    .sort((a, b) => b.timestamp.localeCompare(a.timestamp))[0];
+  return eligibleStateObservations(stateCheckIns, now)
+    .find((row) => Date.parse(row.timestamp) >= cutoff);
 }
 
 function isLowState(state?: StateCheckIn) {
@@ -102,12 +98,12 @@ function combineConfidence(values: DailyOperatingBriefConfidence[]): DailyOperat
 
 function recentExecutionEvidence(executionLogs: ExecutionLog[], now: Date) {
   const newest = (executionLogs || [])
-    .filter((log) => log.createdAt)
+    .filter((log) => log.createdAt && Date.parse(log.createdAt) <= now.getTime())
     .slice()
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))[0];
   if (!newest) return undefined;
   const ageMs = now.getTime() - new Date(newest.createdAt).getTime();
-  return ageMs <= 24 * 60 * 60 * 1000 ? newest : undefined;
+  return ageMs >= 0 && ageMs <= 24 * 60 * 60 * 1000 ? newest : undefined;
 }
 
 function makeFallbackBrief(): DailyOperatingBrief {
