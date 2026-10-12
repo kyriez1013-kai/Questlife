@@ -1,0 +1,391 @@
+{
+  "generatedAt": "2026-10-12T08:40:52.194Z",
+  "project": "gttcoocfkqwvsqfwxpyo",
+  "identity": "df82f5ae-3ebe-4556-9f75-4002e00728ae",
+  "purpose": "disposable_normal_ai_client_verification",
+  "action": "READ_ONLY",
+  "authorization": "AWAITING_EXPLICIT_ID_SCOPE_CONFIRMATION",
+  "ownerDataRead": false,
+  "mutationPerformed": false,
+  "counts": {
+    "contributionLinks": 3,
+    "decisionResults": 33,
+    "effortUnits": 3,
+    "executionLogs": 3,
+    "rawCaptures": 3,
+    "skills": 3,
+    "stateCheckIns": 1
+  },
+  "entities": [
+    {
+      "entityType": "contributionLinks",
+      "entityId": "contrib-effort-capture-rc-muu5u1i0o3qq73-0-primary-skill-muu5uyj5kt8egq-primary_skill",
+      "revision": 1,
+      "status": "active",
+      "lineage": {
+        "executionLogId": "capture-rc-muu5u1i0o3qq73-0",
+        "effortUnitId": "effort-capture-rc-muu5u1i0o3qq73-0-primary"
+      }
+    },
+    {
+      "entityType": "contributionLinks",
+      "entityId": "contrib-effort-capture-rc-muu749nev4aq20-0-0-primary-skill-muu75brl0if0ns-primary_skill",
+      "revision": 1,
+      "status": "active",
+      "lineage": {
+        "executionLogId": "capture-rc-muu749nev4aq20-0-0",
+        "effortUnitId": "effort-capture-rc-muu749nev4aq20-0-0-primary"
+      }
+    },
+    {
+      "entityType": "contributionLinks",
+      "entityId": "contrib-effort-capture-rc-muu75ou0qo0vjy-0-0-primary-skill-muu76xq4uhst4l-primary_skill",
+      "revision": 1,
+      "status": "active",
+      "lineage": {
+        "executionLogId": "capture-rc-muu75ou0qo0vjy-0-0",
+        "effortUnitId": "effort-capture-rc-muu75ou0qo0vjy-0-0-primary"
+      }
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791137479817-daily",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791137548560-daily-fallback",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791138645557-daily",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791138645642-daily-fallback",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791138712136-daily",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791138712143-daily-fallback",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791138836596-daily",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791138865222-daily",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791138940453-daily",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791138940496-daily",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791138948421-daily",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791138948447-daily-fallback",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791139227057-instant",
+      "revision": 3,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791139284842-daily",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791139284878-daily",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791139343339-daily",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791139343369-daily",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791140802641-daily",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791140802698-daily-fallback",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791140969541-daily",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791141021955-daily",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791141207978-daily",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791141208039-daily",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791142298758-daily",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791142350844-daily",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791142359776-daily",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791143392397-daily",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791143575446-daily",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791530835358-daily",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791784917096-daily",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791784917106-daily",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791785006171-daily",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "decisionResults",
+      "entityId": "decision-1791785006187-daily",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "effortUnits",
+      "entityId": "effort-capture-rc-muu5u1i0o3qq73-0-primary",
+      "revision": 2,
+      "status": "active",
+      "lineage": {
+        "executionLogId": "capture-rc-muu5u1i0o3qq73-0",
+        "linkedSkillId": "muu5uyj5kt8egq"
+      }
+    },
+    {
+      "entityType": "effortUnits",
+      "entityId": "effort-capture-rc-muu749nev4aq20-0-0-primary",
+      "revision": 1,
+      "status": "active",
+      "lineage": {
+        "executionLogId": "capture-rc-muu749nev4aq20-0-0",
+        "linkedSkillId": "muu75brl0if0ns"
+      }
+    },
+    {
+      "entityType": "effortUnits",
+      "entityId": "effort-capture-rc-muu75ou0qo0vjy-0-0-primary",
+      "revision": 1,
+      "status": "active",
+      "lineage": {
+        "executionLogId": "capture-rc-muu75ou0qo0vjy-0-0",
+        "linkedSkillId": "muu76xq4uhst4l"
+      }
+    },
+    {
+      "entityType": "executionLogs",
+      "entityId": "capture-rc-muu5u1i0o3qq73-0",
+      "revision": 3,
+      "status": "active",
+      "lineage": {
+        "rawCaptureId": "rc-muu5u1i0o3qq73",
+        "linkedSkillId": "muu5uyj5kt8egq"
+      }
+    },
+    {
+      "entityType": "executionLogs",
+      "entityId": "capture-rc-muu749nev4aq20-0-0",
+      "revision": 2,
+      "status": "active",
+      "lineage": {
+        "rawCaptureId": "rc-muu749nev4aq20",
+        "linkedSkillId": "muu75brl0if0ns"
+      }
+    },
+    {
+      "entityType": "executionLogs",
+      "entityId": "capture-rc-muu75ou0qo0vjy-0-0",
+      "revision": 2,
+      "status": "active",
+      "lineage": {
+        "rawCaptureId": "rc-muu75ou0qo0vjy",
+        "linkedSkillId": "muu76xq4uhst4l"
+      }
+    },
+    {
+      "entityType": "rawCaptures",
+      "entityId": "rc-muu5u1i0o3qq73",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "rawCaptures",
+      "entityId": "rc-muu749nev4aq20",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "rawCaptures",
+      "entityId": "rc-muu75ou0qo0vjy",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "skills",
+      "entityId": "muu5uyj5kt8egq",
+      "revision": 3,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "skills",
+      "entityId": "muu75brl0if0ns",
+      "revision": 2,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "skills",
+      "entityId": "muu76xq4uhst4l",
+      "revision": 2,
+      "status": "active",
+      "lineage": {}
+    },
+    {
+      "entityType": "stateCheckIns",
+      "entityId": "muu61sm8q5pyji",
+      "revision": 1,
+      "status": "active",
+      "lineage": {}
+    }
+  ]
+}

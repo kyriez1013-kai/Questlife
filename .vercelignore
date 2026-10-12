@@ -11,6 +11,7 @@ web-build
 reports
 artifacts
 docs
+QUESTLIFE_QUANT_UI_CONTRACT.md
 tests
 .env*
 *.jks
