@@ -1,0 +1,38 @@
+{
+  "sourceCommit": "dba5306f863ccec551c963b50ba370a36c0bbfd0",
+  "quantCommit": "6e08674",
+  "quantRuntime": "owner-stateless-v1.3",
+  "testedAt": "2026-10-12",
+  "candidateDeployment": "dpl_v5PKqGiwTphijQbeEJjtsYaPRJDk",
+  "candidateUrl": "https://questlife-v1-release.vercel.app/",
+  "environment": "Normal candidate Web UI, Chrome disposable QA and empty IAB, not physical-device acceptance",
+  "ownerDataUsed": false,
+  "newCaptureOrStateObservationSaved": false,
+  "newRecordEditOrDelete": false,
+  "qaIdentity": "df82f5ae-3ebe-4556-9f75-4002e00728ae",
+  "login": "Existing disposable identity restored through ordinary OTP form using admin-generated test OTP. Not email delivery evidence.",
+  "results": {
+    "emptyWorkspaceActions": "PASS: variable, source, record, backup/import and isolated examples reachable",
+    "missingAccount": "PASS: explicit sign-in error and retry, not insufficient data",
+    "historicalState": "PASS: prior-week state remains historical; current Today S0/unrecorded",
+    "singleExample": "PASS: one real artifact point, no invented baseline/trend; observation details available",
+    "matureExample": "PASS: ranges, chart and evidence available; method-specific analysis eligibility retained",
+    "exampleExit": "PASS: returns to empty personal Today; sample observations not in personal history",
+    "historyImport": "PASS normal entry only; prior actual populated backup roundtrip evidence reused",
+    "liveStrength": "PASS: Bench 82.5kg,5 reps/set,3 sets named independently with exact source observation",
+    "viewport": {"width": 375, "height": 667, "documentScrollWidth": 375},
+    "consoleRuntimeErrors": 0
+  },
+  "strengthEvidenceId": "appdata:execution:capture-rc-muu75ou0qo0vjy-0-0:structured:weight",
+  "screenshots": {
+    "directory": "~/Library/QuestLifeToolchain/security/dba5306-ui",
+    "files": ["single-observation-evidence-375.jpg", "isolated-history-375.jpg", "import-entry-375.jpg", "live-bench-evidence.jpg", "current-day-not-yesterday.jpg"]
+  },
+  "limitations": [
+    "Component failure-retry checks are local test doubles, not a live simulated network outage.",
+    "No new physical Health/Calendar/Notification, iPhone, native keyboard or performance evidence.",
+    "No real-owner model conclusion, no trained feedback policy, no final visual acceptance.",
+    "Generic references were not added or substituted for personal data.",
+    "Exact49-entity cleanup list awaits separate scoped authorization; no global cleanup performed."
+  ]
+}

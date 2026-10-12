@@ -1,6 +1,6 @@
 # QuestLife V1 End-to-End Completion Ledger
 
-Updated: 2026-10-05. This is the single current completion checklist and resume
+Updated: 2026-10-12. This is the single current completion checklist and resume
 checkpoint for `QUESTLIFE_END_TO_END_COMPLETION.md`. Earlier phase reports are
 historical evidence, not completion claims for this candidate.
 
@@ -30,7 +30,7 @@ Unchecked entries remain unfinished.
 
 | Item | Current status | Evidence / next executable action |
 | --- | --- | --- |
-| Canonical worktree and branch | VERIFIED_LOCAL | Current functional/security source `464845e` on `release/questlife-v1`; latest internal native artifact is `d773efa`, not the later prompt/copy/instrument-label changes. User-owned untracked `QUESTLIFE_QUANT_UI_CONTRACT.md` remains unread, unchanged and excluded from commits/uploads |
+| Canonical worktree and branch | VERIFIED_LOCAL | Current application/native source `dba5306`, publishing-only follow-up `1adb26b`, on `release/questlife-v1`. Quant source `6e08674`, runtime owner-stateless-v1.3. User-owned untracked `QUESTLIFE_QUANT_UI_CONTRACT.md` remains unread and unchanged; clean-snapshot deployment now excludes it. An accidental earlier source upload was removed; see the current checkpoint incident record |
 | Vercel authorization | VERIFIED_REMOTE | Existing candidate project `prj_fVGFV7DzxfkLqbBpSo8P7NH9oqxX` / `questlife-v1-release`; candidate CLI deployment authorized. Old Owner project is not the deployment target |
 | Isolated Supabase backend | VERIFIED_REMOTE | `gttcoocfkqwvsqfwxpyo` created; both reviewed migrations executed in SQL Editor; four RLS tables, six RPCs and Realtime publication verified. Existing production `gtlknzltzntfltgjvgxx` untouched |
 | EAS / iOS signing | VERIFIED_REMOTE simulator build; BLOCKED local execution/signing | Same-source `ecf37b9` build `2c9fcda8-e2cb-4f3d-a7d1-dfd1ce0eb73d` downloaded and inspected: 1.0.1/build2, iPhoneSimulator, candidate services, Widget extension and App Intents. Not executed. Mac has Command Line Tools but no Xcode/simctl; no phone signing credentials. Owner declines paid membership; no new fee |
@@ -40,21 +40,140 @@ Unchecked entries remain unfinished.
 | Legacy anonymous endpoint safety | IMPLEMENTED, VERIFIED_LOCAL | `/api/sync` fails closed (410); Quant verifies Supabase bearer UID; 17 backend scenario groups passed |
 | Normal cloud AI and sensitive-context consent | IMPLEMENTED, VERIFIED_LOCAL + VERIFIED_REMOTE normal Web UI | SQL, Basketball and Bench normal Capture -> real parse -> confirm -> refresh persisted with exact lineage. Sports uses a custom duration; Bench82.5kg/5reps/3sets survives save without inventing duration or quality. Instant Useful/Not useful are distinct revisions of the same DecisionResult; selected Not useful restored in a new authenticated client. `b795854` real daily brief correctly distinguishes energy2/focus4/physical4 and missing numeric sleep evidence. Imported-context and Health cloud sync stayed off. Two Web origins, not physical devices |
 | AI authorization / expense abuse | IMPLEMENTED, VERIFIED_LOCAL + VERIFIED_REMOTE | Paid parse/brief require verified bearer. Atomic guards: 12 units/user/minute, 200/user/day, 1500 global/day; parse1, brief3. Independent Quant budget uses the same private ledger. Migration003 readback anon/client=false, server=true, RLS/Quant cleanup=true. A real QA-only minute limit caused the normal Insights error/Retry/last-result UI; retry after window reset restored real results. Latest candidate valid anonymous/forged brief and Quant requests return401; retired sync410. These are admission guards, not analytical eligibility or exact currency |
-| Release safety gate | PARTIAL, NOT_PASSED | 511 reachable commits scanned with redacted Gitleaks; 11 classified non-secret false positives. Latest464845e exact-value scan of1154 tracked files/70,959,997 history bytes/53 Web files/13 canonical d773 APK entries/95 existing iOS files found0 matches across6 authorized credential classes. Restricted quant documents excluded. Sensitive Vercel values cannot be downloaded, so provider-key exact coverage is unavailable. Unknown secrets, log retention, native local data and physical privacy/permission acceptance remain open; no full security signoff |
-| Real Quant runtime | VERIFIED_REMOTE (isolated fixtures) | 9 hosted checks: authentication, subject/as-of rejection, 210-observation computation, correction hash, empty-after-removal, QA exclusion and cross-subject isolation; `reports/release/quant-hosted-verification.json`; no owner data/database writes |
+| Release safety gate | PARTIAL, NOT_PASSED | Prior511-commit redacted Gitleaks and full70MB-history evidence retained. Current dba5306 exact-value scan covers1161 tracked files,137980 incremental-history bytes since0ff10e9,53 Web files,13 new canonical APK entries and95 existing iOS files:0 matches across6 known credential classes. No restricted quant document was read by the scanner. Auth callback query/hash is no longer retained by persistence diagnostics, including disabled-debug startup. Backup ownership/schema/credential extension and async snapshot boundaries hardened. Provider-key unknown-secret coverage, historic vendor cache/log retention, local sensitive-data and physical privacy acceptance remain open |
+| Real Quant runtime | VERIFIED_REMOTE isolated/stateless + normal QA Web | Prior9 hosted boundary checks retained. New6 hosted domain checks at source6e08674 verify exercise-scoped units/baselines, correction and removal without another exercise's residue; no DB writes. Normal candidate QA Web now displays skill-bound Bench kg/reps-per-set/sets and the exact observation ID. `reports/release/quant-domain-hosted-verification.json`; neither fixtures nor QA history are Owner results |
+| First-use and method eligibility | IMPLEMENTED, VERIFIED_LOCAL + current candidate Web | Empty personal workspace exposes record/source/import/example actions; missing login is an explicit service/account state, not insufficient data. Single example shows one point and no baseline/trend; mature example exposes ranges/evidence/tools without a global-days lock. Method-specific insufficient complete observations remain enforced. Examples are read-only and return to empty personal records. Failed example imports can be retried rather than retaining a rejected loader promise.29 component-runtime checks across Web/Android/iOS zh/en are not installed-device acceptance; original populated file roundtrip evidence is reused |
+| Domain and feedback semantics | IMPLEMENTED, VERIFIED_LOCAL + domain VERIFIED_REMOTE | Basketball17 is minutes, Bench82.5kg/5reps-per-set/3sets is separate strength data; existing estimated volume1237.5 is derived kg x repetitions, not readiness or training minutes. Predictions/generic scores are not actual kg. Current-day state excludes future/invalid/deleted/QA/synthetic/unavailable records; past observations remain historical only. Existing useful/not_useful persistence evidence retained; targeted next-request/prompt tests verify distinct feedback counts only when the existing context-consent boundary permits. No model training, causal improvement or learned policy is claimed |
 | Native Today/materials/sheets | IMPLEMENTED, partial emulator verification | Standalone release opens Today S0 and State sheet; settled sheet shields background text and Cancel leaves state unrecorded. 31 component tests. Full keyboard, dark-theme and physical acceptance pending |
 | Native Goals / Schedule / Settings | IMPLEMENTED, partial emulator verification | Android Schedule moved a QA block to 14:00-15:00 and the Web client received the change. Web created and deleted three QA blocks; second Web client and Android converged to zero. Native Settings source entry opens and reports Health and Calendar permissions unrequested. Physical provider data, conflict cancel in a real browser, and broader native acceptance remain pending |
-| Native Insights workspace | Earlier candidate/emulator flow VERIFIED_LOCAL; latest Web recovery VERIFIED_REMOTE | Prior7/9/empty and reverse5/6/empty retained. Existing account/tab/foreground recovery rejects stale results. Latest real Web current-record edit updated exact Quant evidence; actual quota rejection retained last result and Retry restored results. `464845e` names existing state and strength instruments without changing Quant numbers. Current installed native label/recovery interaction and physical acceptance remain open |
+| Native Insights workspace | Earlier emulator flow VERIFIED_LOCAL; current normal Web VERIFIED_REMOTE | Prior7/9/empty and reverse5/6/empty, service failure/last-result/Retry evidence retained. Current dba5306 shared Web/native presentation resolves exercise names locally and labels sets/reps-per-set distinctly; names are not sent to Quant and are never attached to synthetic examples. Current installed native interaction and physical acceptance remain open |
 | Health / Calendar / Notifications | IMPLEMENTED, VERIFIED_LOCAL; Android Health system-entry partial emulator verification | `1f09631` adds normal Settings permission management and recheck, without cloud consent changes. Installed Release opened the real Health Connect onboarding; no read grant or provider data acceptance is claimed. Calendar intents/reconciliation and notification lifecycle/quiet hours retain prior isolated evidence. Actual samples, OS writes and delivery remain device/provider gates |
 | Shortcuts / deep links | IMPLEMENTED, VERIFIED_LOCAL | Installed canonical Android warm `questlife://capture` opens the existing Capture sheet; cold `questlife://state` opens the existing detailed state sheet. Screenshots under `reports/release/canonical-android/`; no record saved. Earlier intent/plugin checks retained. Widget placement, notification taps and physical-device acceptance remain pending |
 | Isolated example mode | VERIFIED_LOCAL installed Android emulator | Latest `e44ba06` normal Insights entry and isolated mature example loaded. Line/candle switch, observation evidence Sheet and close/scroll restoration operated through normal UI. No example is written to Store/outbox/OS; not personal runtime, physical-device or all-example acceptance |
-| Standalone Android release APK | VERIFIED_LOCAL canonical signature/cover-install; earlier standalone runtime VERIFIED_LOCAL | Latest internal d773efa arm64 APK is1.0.1/code2,47,274,640bytes, SHA256babca17cbd15439b7b185c290b23495f997a09f6df4262fb20f1d8a2643a09db. Canonical EAS certificate unchanged. Isolated CloudQA install-r preserved four existing DB/preferences hashes and first-install time without uninstall/clear. This is not populated auth/session acceptance. Post-install d773 standalone/keyboard/chart acceptance is blocked by Mac lock; earlier496 standalone/deep-link evidence remains valid only at that source |
+| Standalone Android release APK | VERIFIED_LOCAL canonical signature/cover-install; latest interaction UNVERIFIED | dba5306 arm64 APK1.0.1/code2,47,280,660bytes, SHA25669fbf87883fd47e32f556b700a67f83c79236717e2587675219c80a2e0b284bc, canonical certificate unchanged. CloudQA install-r preserved four exact DB/preferences hashes and first-install time without uninstall/clear. Current normal click tool still fails although emulator screenshot/AX works. No populated auth/session, independent launch, keyboard, performance or physical pass is inferred. Draft internal asset and LAN HTTP200 are available, not final product acceptance |
 | Standalone iPhone installation | AWAITING_OWNER / BLOCKED signing | Latest 1.0.1/build2 simulator archive is not a physical iPhone installer. No IPA, phone installation or simulator execution claim. Xcode, normal Apple personal-team setup and attached-device consent remain missing; no membership purchase |
-| Same-version Web candidate | VERIFIED_REMOTE deployment + normal-client464845e UI | Candidate464845e READY dpl_CjPPHfeeZ6FHBNhVcGdQJfWTXeaf at the existing alias. Entry bundle index-b0784a26138dedfac87477d9e39cd30a.js; changed split common chunk SHA256a3fa6e17030d7a160dd95d1c102ad1dd8c0428b80e06ae16bc9056ee3a12cbf4 matches local bytes. Ordinary same-QA login restored3 records/state/feedback; current English and Chinese dark UI names the true metrics, weight82.5 links to its exact execution evidence. Current-source browser error log empty; deprecation/platform warnings remain. Fresh375 override failed, not a mobile pass. Native d773efa is explicitly older; no Owner promotion or matched-final-release claim |
-| Record backup / restore | IMPLEMENTED, VERIFIED_LOCAL and candidate browser file flow | Versioned exact-record backup, original account binding, structural validation and empty-replica WAL restore. Real populated ExecutionLog + EffortUnit export/import/refresh/re-export preserved exact original JSON by ID; both disposable copies deleted and read back empty. Physical file-provider and account UI recovery acceptance pending |
+| Same-version Web candidate | VERIFIED_REMOTE current normal-client UI | dba5306 READY dpl_v5PKqGiwTphijQbeEJjtsYaPRJDk, immutable9xmfy9gjw; candidate short alias explicitly promoted after rollback had disabled auto-assignment. Remote entry index-896e86fc9fcb42ef903ec0556aa52615.js, split common158b56f5de38a127651cc5ad71ec1e8b. New ordinary OTP form restored existing disposable QA; not email-delivery evidence. Current Chinese dark live strength evidence and S0 with only historic state verified.375x667 IAB has document width375, original records remain empty after sample exit. No final UI or physical acceptance; Owner Production unchanged |
+| Record backup / restore | IMPLEMENTED, VERIFIED_LOCAL; prior actual file flow retained | Exact original-account UUID/schema/record checks reject mismatched ownership and credential-bearing extensions without coercion. Native export validates a detached snapshot before asynchronous sharing; picker cache/object URL/failure cleanup preserve provider originals. Interrupted WAL restore no longer claims nothing changed.26 core +11 action +6 shared boundary checks. Earlier populated19-record exact import/export/refresh/deletion evidence reused; current375 import entry opens normally. Physical file-provider, new full installed restore and encryption/privacy acceptance remain open |
 | Native recordings/performance | Bottleneck fixed and background path VERIFIED_LOCAL; end-to-end NOT_PASSED | Fresh `530fe4f` ReleaseQA mature-example trace: 135 frames, P50 15ms/P95 31ms/20 above20ms/12 deadline-janky; first RNCWebView create 200.470ms on UI thread. `ecf37b9` AndroidX background startup compiled; installed `49622b1` cold trace moves provider153.228ms/native library41.165ms to `questlife-chart` background thread. Not a chart-interaction P95 comparison. Native input connection fails while screenshots remain readable; keyboard, long-list, full post-fix chart trace and recording remain UNVERIFIED |
 
 ## Exact Resume Checkpoint
+
+### First-use, domain correctness and safety continuation (2026-10-12)
+
+- Application commits: 049552e (eligible current state/decision inputs), 2b3d3bf
+  (snapshot-safe backups/auth diagnostic scrubbing),509a1bd (first-use retry and
+  scoped names/units),59c9e51 (bounded incremental secret scan),dba5306 (clean
+  candidate source upload/exact cleanup inventory),1adb26b (canonical draft
+  artifact publisher). No final visual reconstruction, schema, Store, Sync
+  protocol or new Quant model was introduced.
+- Quant 6e08674 fixes scope/lineage in the existing materializer/adapters; 46
+  targeted local tests passed. No Git remote is configured in that existing
+  repository, so this commit is LOCAL, not falsely reported pushed. Existing
+  authorized `questlife-quant-v1` deployment is READY:
+  dpl_epkPty76kxkvQMPDzfA9ucHsR6qz / px87bnqo7,
+  alias https://questlife-quant-v1.vercel.app, runtime owner-stateless-v1.3.
+  Six new hosted cases in reports/release/quant-domain-hosted-verification.json
+  use explicitly isolated synthetic owner-shaped request input; database
+  writes=false and Owner data=false. Individual exercise correction/removal
+  invalidates the right snapshot/series; no cross-exercise baseline pooling.
+  Existing baseline eligibility calculations and thresholds remain unchanged.
+- Current ordinary QA client is exact disposable identity
+  df82f5ae-3ebe-4556-9f75-4002e00728ae. Normal OTP entry at the new immutable
+  candidate restored existing records; this uses an admin-generated test OTP,
+  not an email-delivery claim. No new Capture or State observation was saved.
+  Today correctly stays S0/unrecorded on 10/12 instead of treating 10/5 state as
+  today's reading. Existing todayCommand remains sole executable authority.
+- Current shared Insights names Bench exercise locally, keeps82.5kg,5reps/set
+  and3sets independent, opens exact source observation
+  appdata:execution:capture-rc-muu75ou0qo0vjy-0-0:structured:weight. Existing
+  duration points 17/45 remain recorded execution time, not training load;
+  Bench has no fabricated 0-minute observation. No create/edit/delete action on
+  these records was used for this regression. Future/predicted/null/invalid state or strength
+  values no longer substitute as observed data.
+- First use: current candidate normal UI opens the full variable/source/record/
+  import/example workspace without a global-days gate. Missing login remains
+  a distinct error with Retry. Single example has no baseline/trend; mature
+  example exposes genuine artifact tools, and joint analysis retains its
+  specific complete-observation restriction. Exiting examples returns to empty
+  personal data. Imported/reference/synthetic sources are not interchangeable;
+  no new generic norm or readiness score was fabricated. Original populated
+  backup roundtrip proof is reused, not re-enacted with new QA writes.
+- Backup core 26/26, action 11/11 and shared 6/6 checks passed. Current ownership,
+  schema and credential-extension guards are stricter; sharing takes a validated
+  detached snapshot and picker failures remove only their app-owned temporary
+  copy. Partial WAL recovery is reported honestly. Auth callback query/hash is
+  scrubbed from persistence trace and old diagnostic trace even when debugging
+  is disabled. These changes do not erase business observations or sync journals.
+- Decision-input 8/8 and AI boundary 18/18 checks include exact current-record
+  selection, local midnight Schedule date,82.5 x5 x3 =1237.5 existing estimated
+  volume, no fabricated missing quality/minutes, useful versus not_useful next
+  request/prompt context and no future feedback. Existing stored feedback
+  mutation/revision/refresh proof is retained. Consent permitting feedback to
+  enter prompt context is NOT model training or a learned outcome policy.
+- First-use 29/29 component-runtime checks cover Web/Android/iOS zh/en, failure
+  retry, examples and routing. They are doubles, not device results. Full
+  Insights presentation/contract tests, typecheck and Web export passed.
+  The6 hosted domain cases are calculation/provenance evidence, not installed
+  device, real-user baseline or aesthetics acceptance.
+- Candidate publication incident: the first direct-worktree deployment
+  dpl_4WJdikHNa9VitDzhWHZmAvBVTYMB accidentally included the forbidden
+  QUANT_UI_CONTRACT filename. Its contents were never read by the agent.
+  Candidate was rolled back to dpl_CjPPHfeeZ6FHBNhVcGdQJfWTXeaf and the bad
+  deployment was removed. `.vercelignore` now explicitly excludes the contract;
+  the current deployment comes from a committed Git archive, not the worktree.
+  Current source filename listing verifies0 contract and0 docs/quant hits.
+  Vendor-internal cache/blob retention after removal is UNVERIFIED, not erased
+  by assumption. This was not a secret scan finding or an Owner deployment.
+- dba5306 candidate dpl_v5PKqGiwTphijQbeEJjtsYaPRJDk is READY with exact
+  source SHA metadata; immutable https://questlife-v1-release-9xmfy9gjw-kyrie-z-s-projects.vercel.app/.
+  Rollback disabled automatic alias assignment, so explicitly promoted this
+  ready candidate to https://questlife-v1-release.vercel.app/. Short URL now
+  returns the new 896e entry and 158b common bundle. No rebuild, main merge,
+  public app-store release or old Owner promotion occurred.
+- Internal Android dba5306 output:
+  reports/release/build-output/questlife-v1-dba5306-canonical-arm64.apk,
+  47,280,660bytes; SHA25669fbf87883fd47e32f556b700a67f83c79236717e2587675219c80a2e0b284bc.
+  Hermes90272eae2b329a6b38a26102eb44fa46d2a4412acc7a2b8dde68a79c1cb93a8b.
+  ApplicationId com.kyrie.questlife, 1.0.1/code2, canonical 61b030... certificate,
+  candidate services embedded and no Metro dependency. CloudQA/API36 arm64
+  install-r preserves four exact file hashes and first-install timestamp;
+  reports/release/android-dba5306-cover-upgrade.json. No uninstall/clear occurred.
+  CUA screenshot/AX succeeds but native clicks still fail noWindowsAvailable;
+  newest independent startup, keyboard, sheets/charts and Release performance
+  remain UNVERIFIED. User was asked only to open that isolated simulator app.
+- Internal artifact publisher now rejects wrong applicationId/signature/source
+  config and accepts only canonical filename. Existing package is stored as
+  GitHub draft410411860 / asset633255194, uploaded SHA256 matches; no release
+  was published. `reports/release/internal-candidate-release.json` records the
+  draft URL (requires repository write access; browser download unverified).
+  LAN http://192.168.5.28:8096/questlife-v1-dba5306-canonical-arm64.apk returns
+  HTTP200 / exact47,280,660bytes. LAN requires the same network and this Mac;
+  this is not a public durable final installer.
+- Current incremental exact-value secret check adds the NEW APK's13 entries
+  to1161 tracked files/137980 changed-history bytes/53 Web files/95 existing iOS
+  files;0 known-secret matches. Prior511-commit full-history/Gitleaks evidence
+  is retained. A stalled full-history repeat was stopped, and incremental scans
+  are bounded to120s; do not label that aborted repeat as passed. Authorized
+  known-value coverage is6 classes, not unknown-secret completeness. Existing
+  RLS/subject isolation/API expense ledger tests and hosted admission/error/Retry
+  proofs remain valid only in their recorded scopes; no new security signoff.
+- Cleanup is NOT authorized globally. Exact49-entity read-only list is
+  reports/release/isolated-qa-cleanup-proposal.json, candidate identity above:
+  3rawCaptures/3executionLogs/3skills/3effortUnits/3contributionLinks/
+  1stateCheckIns/33decisionResults. It includes ID/revision/explicit lineage,
+  no private health values or inferred time-neighbor links. Owner data was not
+  read. Await the separate confirmation for this exact list; do not delete later
+  autosaved/unlisted entities or infer approval from the earlier single SQL delete.
+- Remaining original functional acceptance is NOT collapsed to UI/device/perf:
+  first-use imported/passive history on physical sources, per-method qualification
+  and reference honesty; safe decision Apply/conflict-protected Undo and execution
+  follow-up/feedback; Schedule edit/move/delete/conflicts across real clients;
+  Health permission/read/recovery, Calendar OS write/reconciliation, notification
+  delivery/tap/cold launch, Widget/Shortcut; account logout/isolation and populated
+  upgrade/offline recovery on devices; complete security/privacy/export/delete/
+  rollback gates; approved native/Web UI implementation. Existing valid evidence
+  is reused; each unfinished claim remains in scope. No iPhone installer/new
+  physical pass/current end-to-end P95 or final-product completion is claimed.
 
 ### Current normal-client integration and safety evidence (2026-10-05)
 

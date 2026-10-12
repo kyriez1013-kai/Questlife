@@ -1,0 +1,53 @@
+{
+  "tested_at": "2026-10-12T09:00:01.569364+00:00",
+  "kind": "Hosted stateless domain regression; synthetic isolated input, not live personal history or device acceptance",
+  "database_writes": false,
+  "owner_data_used": false,
+  "url": "https://questlife-quant-v1.vercel.app/api/decision_artifacts",
+  "app_source_commit": "dba5306",
+  "passed": 6,
+  "results": [
+    {
+      "name": "basketball and two exercises have exact independent units and lineage",
+      "milliseconds": 1559,
+      "eligible_observations": 7,
+      "runtime_revision": "owner-stateless-v1.3",
+      "quant_source_commit": "6e08674"
+    },
+    {
+      "name": "different exercises do not pool baseline eligibility",
+      "milliseconds": 1662,
+      "eligible_observations": 8,
+      "runtime_revision": "owner-stateless-v1.3",
+      "quant_source_commit": "6e08674"
+    },
+    {
+      "name": "same-exercise history retains existing eligibility and scoped watchlist",
+      "milliseconds": 1463,
+      "eligible_observations": 21,
+      "runtime_revision": "owner-stateless-v1.3",
+      "quant_source_commit": "6e08674"
+    },
+    {
+      "name": "weight correction changes exact source snapshot and no other exercise",
+      "milliseconds": 1497,
+      "eligible_observations": 7,
+      "runtime_revision": "owner-stateless-v1.3",
+      "quant_source_commit": "6e08674"
+    },
+    {
+      "name": "removing bench removes its related analyses without squat residue",
+      "milliseconds": 1274,
+      "eligible_observations": 4,
+      "runtime_revision": "owner-stateless-v1.3",
+      "quant_source_commit": "6e08674"
+    },
+    {
+      "name": "empty snapshot retains no prior domain result",
+      "milliseconds": 1744,
+      "eligible_observations": 0,
+      "runtime_revision": "owner-stateless-v1.3",
+      "quant_source_commit": "6e08674"
+    }
+  ]
+}
