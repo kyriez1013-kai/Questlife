@@ -101,9 +101,15 @@ export function instrumentLabel(
   lang: Lang,
   instrument: (Pick<QuantProductConsumerInstrument, 'labelKey'> & Partial<Pick<QuantProductConsumerInstrument, 'scope'>>)
     | (Pick<QuantProductInstrumentV1, 'label_key'> & Partial<Pick<QuantProductInstrumentV1, 'scope'>>),
+  entityName?: string,
 ) {
   const key = 'labelKey' in instrument ? instrument.labelKey : instrument.label_key;
   const label = iv3(lang, instrumentKeys[key] || 'instrumentGeneric');
+  if (entityName?.trim()) return iv3(lang, 'namedScopedInstrument', { name: entityName.trim(), instrument: label });
+  const entityId = 'entityId' in instrument ? instrument.entityId : 'entity_id' in instrument ? instrument.entity_id : undefined;
+  if (typeof entityId === 'string' && (entityId.startsWith('record:') || entityId.startsWith('observation:'))) {
+    return iv3(lang, 'unidentifiedExerciseInstrument', { instrument: label });
+  }
   if (instrument.scope === 'GOAL') return iv3(lang, 'goalScopedInstrument', { instrument: label });
   if (instrument.scope === 'SKILL') return iv3(lang, 'skillScopedInstrument', { instrument: label });
   return label;
@@ -139,7 +145,9 @@ function timingLabel(value: number) {
   return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
 }
 
-export function unitLabel(unit: string, lang: Lang = 'en') {
+export function unitLabel(unit: string, lang: Lang = 'en', constructKey?: string) {
+  if (unit === 'count' && constructKey === 'strength.set_count') return lang === 'zh' ? '组' : 'sets';
+  if (unit === 'count' && constructKey === 'strength.rep_count') return lang === 'zh' ? '次/组' : 'reps/set';
   if (unit === 'steps') return lang === 'zh' ? '步' : 'steps';
   if (unit === 'kilometres') return 'km';
   if (unit === 'minutes') return lang === 'zh' ? '分钟' : 'min';
@@ -160,10 +168,11 @@ export function formatQuantValue(value: number | null | undefined, unit: string,
   }).format(value);
 }
 
-export function formatSignedValue(value: number | null | undefined, unit: string, lang: Lang) {
+export function formatSignedValue(value: number | null | undefined, unit: string, lang: Lang, constructKey?: string) {
   if (value == null || !Number.isFinite(value)) return '—';
   const absolute = formatQuantValue(Math.abs(value), unit, lang);
-  return `${value > 0 ? '+' : value < 0 ? '−' : ''}${absolute}${unitLabel(unit, lang) ? ` ${unitLabel(unit, lang)}` : ''}`;
+  const label = unitLabel(unit, lang, constructKey);
+  return `${value > 0 ? '+' : value < 0 ? '−' : ''}${absolute}${label ? ` ${label}` : ''}`;
 }
 
 export function formatDateTime(lang: Lang, value: string, includeTime = false) {
@@ -182,7 +191,7 @@ export function buildPersonalContext(
     || instrument.reference.kind === 'HISTORICAL_RANGE';
   const populationReference = instrument.reference.kind === 'POPULATION';
   const currentValue = formatQuantValue(instrument.latest?.value, instrument.unit, lang);
-  const currentUnit = unitLabel(instrument.unit, lang);
+  const currentUnit = unitLabel(instrument.unit, lang, instrument.constructKey);
   const referenceLabel = populationReference
     ? iv3(lang, 'populationReference')
     : personalReference
@@ -195,7 +204,7 @@ export function buildPersonalContext(
     ? iv3(lang, 'noComparison')
     : instrument.change.absolute === 0
       ? iv3(lang, 'changeFlat')
-      : formatSignedValue(instrument.change.absolute, instrument.unit === '/5' ? '' : instrument.unit, lang);
+      : formatSignedValue(instrument.change.absolute, instrument.unit === '/5' ? '' : instrument.unit, lang, instrument.constructKey);
   const evidenceValue = iv3(lang, 'observations', { count: instrument.evidence.observation_count });
   const latest = instrument.latest?.value;
   const reference = instrument.reference.value;

@@ -24,7 +24,7 @@ export function nativeChartModel(model: QuestLifeChartModelV1, q: QuestTheme) {
   }).map(row => ({ time: Math.floor(Date.parse(row.timestamp) / 1000), low: row.low, high: row.high })) : [];
   return { ...base, layers, bands, lang: p.lang, fontSize: q.typography.helperSize, referenceColor: q.colors.textMuted,
     binaryYes: formatQuantValue(1, 'binary', p.lang), binaryNo: formatQuantValue(0, 'binary', p.lang),
-    unitDisplay: unitLabel(p.series.unit, p.lang),
+    unitDisplay: unitLabel(p.series.unit, p.lang, p.series.construct_key),
     referenceLabels: { value: iv3(p.lang, 'reference'), low: iv3(p.lang, 'rangeIndicator'), high: iv3(p.lang, 'rangeIndicator') },
     events: p.showEvents ? inRangeEvents(p.series, p.range, p.asOf).map(row => ({ time: Math.floor(Date.parse(row.timestamp) / 1000), label: row.event_type })) : [],
   };

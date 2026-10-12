@@ -28,6 +28,7 @@ export type NativeInsightsWorkspaceProps = Pick<InsightsSourceWorkspaceProps, 'o
   q: QuestTheme; lang: Lang; bundle: QuantProductBundleV1 | null; analysis?: QuantAnalysisExtensionV1 | null;
   state: NativeInsightsLoadState; sample: boolean; sampleError?: boolean; deviceError?: boolean;
   onRefresh: () => void; onSample: (id: InsightsV3FixtureId) => void; onExitSample: () => void;
+  entityNames?: Record<string, string>;
 };
 const chartNames: Record<InsightsV3ChartKind, InsightsV3CopyKey> = { line: 'chartLine', candle: 'chartCandle', bar: 'chartBar', point: 'chartPoint' };
 const chartIcons: Record<InsightsV3ChartKind, PersonalTerminalIconName> = { line: 'chart', candle: 'candle', bar: 'bar', point: 'market' };
@@ -36,9 +37,11 @@ const details: Array<{ kind: InsightsDetailKind; copy: InsightsV3CopyKey; icon: 
   { kind: 'similar', copy: 'similar', icon: 'calendar' }, { kind: 'recovery', copy: 'recovery', icon: 'chart' }, { kind: 'scenario', copy: 'scenario', icon: 'decision' },
 ];
 
-export default function NativeInsightsWorkspace({ q, lang, bundle, analysis, state, sample, sampleError, deviceError, onRefresh, onSample, onExitSample, onOpenSources, onCreateRecord, renderImport }: NativeInsightsWorkspaceProps) {
+export default function NativeInsightsWorkspace({ q, lang, bundle, analysis, state, sample, sampleError, deviceError, onRefresh, onSample, onExitSample, onOpenSources, onCreateRecord, renderImport, entityNames = {} }: NativeInsightsWorkspaceProps) {
   const s = insightsStyles(q); const f = useMemo(() => getQuestVisualFoundation(q), [q]);
   const model = useMemo(() => bundle ? adaptQuantProductBundleV1(bundle) : null, [bundle]);
+  const label = (row: Parameters<typeof instrumentLabel>[1] & { entityId?: string }) => instrumentLabel(lang, row, sample ? undefined : entityNames[row.entityId ?? '']);
+  const unit = (row: { unit: string; constructKey: string }) => unitLabel(row.unit, lang, row.constructKey);
   const validAnalysis = matchingAnalysis(bundle, analysis);
   const failureKind = insightsFailureKind(state.result);
   const [selectedId, setSelectedId] = useState(''); const [hidden, setHidden] = useState<string[]>([]);
@@ -65,10 +68,10 @@ export default function NativeInsightsWorkspace({ q, lang, bundle, analysis, sta
     const row = model.instruments.find(item => item.id === id);
     if (!row || row.id === selected.id || comparisonBlock(selected, row)) return [];
     const overlap = validAnalysis?.compare_overlaps.find(item => item.target_instrument_id === selected.id && item.compare_instrument_id === id);
-    return [{ instrumentId: id, label: instrumentLabel(lang, row), matchingWindowKey: overlap?.matching_window_key ?? null, overlapCount: overlap?.overlapping_window_count ?? null, series: comparisonInWindow(series, row.series[0], range, model.asOf) }];
+    return [{ instrumentId: id, label: label(row), matchingWindowKey: overlap?.matching_window_key ?? null, overlapCount: overlap?.overlapping_window_count ?? null, series: comparisonInWindow(series, row.series[0], range, model.asOf) }];
   }) : [];
   const chartModel = series && selected && model ? nativeChartModel({ version: 1, presentation: {
-    asOf: model.asOf, series, range, chartKind: kind, foundation: f, lang, targetLabel: instrumentLabel(lang, selected), showEvents, showRawObservations: true,
+    asOf: model.asOf, series, range, chartKind: kind, foundation: f, lang, targetLabel: label(selected), showEvents, showRawObservations: true,
     showReference: showReference && series.reference.unit === series.unit, showReferenceRange: showBand && series.reference.unit === series.unit,
     comparisonSeries: comparisons,
     indicatorSeries: indicatorLayers.filter(row => indicatorIds.includes(row.indicator_id)).map(row => ({ label: iv3(lang, row.layer_kind === 'EWMA_SHORT' ? 'shortEwmaIndicator' : 'longEwmaIndicator'), series: row })),
@@ -101,14 +104,14 @@ export default function NativeInsightsWorkspace({ q, lang, bundle, analysis, sta
       {selected && model && raw ? <>
         <View style={s.row}><Text accessibilityRole="header" style={[s.heading, s.grow]}>{iv3(lang, 'watchlist')}</Text><InsightButton q={q} icon="watchlist" compact label={ni(lang, 'watchlistManage')} onPress={() => open('watchlist')} /></View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: q.spacing.sm, paddingBottom: q.spacing.xs }}>
-          {ordered.filter(row => !hidden.includes(row.id)).map(row => <Pressable key={row.id} accessibilityRole="button" accessibilityLabel={`${instrumentLabel(lang, row)}, ${formatQuantValue(row.latest?.value, row.unit, lang)} ${unitLabel(row.unit, lang)}`} accessibilityState={{ selected: row.id === selected.id }} onPress={() => selectInstrument(row.id)} style={{ width: q.spacing.xxl * 6 }}>
+          {ordered.filter(row => !hidden.includes(row.id)).map(row => <Pressable key={row.id} accessibilityRole="button" accessibilityLabel={`${label(row)}, ${formatQuantValue(row.latest?.value, row.unit, lang)} ${unit(row)}`} accessibilityState={{ selected: row.id === selected.id }} onPress={() => selectInstrument(row.id)} style={{ width: q.spacing.xxl * 6 }}>
             <QuestCard questTheme={q} style={{ flex: 1, padding: q.spacing.sm, borderRadius: q.radius.sm, borderColor: selected.id === row.id ? q.colors.primary : q.colors.cardBorder, gap: q.spacing.xs }}>
-              <Text style={s.body}>{instrumentLabel(lang, row)}</Text><Text style={s.heading}>{formatQuantValue(row.latest?.value, row.unit, lang)} {unitLabel(row.unit, lang)}</Text>
+              <Text style={s.body}>{label(row)}</Text><Text style={s.heading}>{formatQuantValue(row.latest?.value, row.unit, lang)} {unit(row)}</Text>
             </QuestCard>
           </Pressable>)}
         </ScrollView>
         {!model.instruments.some(row => !hidden.includes(row.id)) ? <Text style={s.body}>{iv3(lang, 'watchlistEmpty')}</Text> : null}
-        <View style={{ gap: q.spacing.xs }}><View style={s.row}><Text accessibilityRole="header" style={[s.heading, s.grow]}>{instrumentLabel(lang, selected)}</Text>
+        <View style={{ gap: q.spacing.xs }}><View style={s.row}><Text accessibilityRole="header" style={[s.heading, s.grow]}>{label(selected)}</Text>
           <Text selectable style={s.heading}>{personal?.currentValue}<Text style={s.meta}> {personal?.currentUnit}</Text></Text></View>
           <Text style={s.meta}>{selected.latest ? `${formatDateTime(lang, selected.latest.observed_at, true)} · ${sourceClassLabel(lang, selected.latest.source_class)}` : availabilityLabel(lang, selected.availability.state)}</Text>
         </View>
@@ -122,7 +125,7 @@ export default function NativeInsightsWorkspace({ q, lang, bundle, analysis, sta
           {chartModel && points.length > 0 && renderable.includes(kind) ? <NativeInsightsChart ref={ref} model={chartModel} q={q} onReadyChange={onReadyChange} />
             : <View style={{ minHeight: q.spacing.xxl * 5, justifyContent: 'center', gap: q.spacing.sm }}><Text style={s.body}>{!points.length ? ni(lang, 'noRangePoints') : kind === 'candle' ? ni(lang, 'noRangeCandle') : ni(lang, 'noSeries')}</Text></View>}
           {points.length === 1 ? <Text style={s.meta}>{iv3(lang, 'sparsePointOnly')}</Text> : null}
-          {chartModel ? <View style={{ gap: q.spacing.xs }}><View style={s.row}><View style={{ width: q.spacing.sm, height: q.spacing.sm, backgroundColor: chartModel.colors.line }} /><Text style={[s.meta, s.grow]}>{instrumentLabel(lang, selected)} · {unitLabel(selected.unit, lang)}</Text></View>{chartModel.layers.map(layer => <View key={layer.id} style={s.row}><View style={{ width: q.spacing.sm, height: q.spacing.sm, backgroundColor: layer.color }} /><Text style={[s.meta, s.grow]}>{layer.label} · {unitLabel(layer.unit, lang)}</Text></View>)}</View> : null}
+          {chartModel ? <View style={{ gap: q.spacing.xs }}><View style={s.row}><View style={{ width: q.spacing.sm, height: q.spacing.sm, backgroundColor: chartModel.colors.line }} /><Text style={[s.meta, s.grow]}>{label(selected)} · {unit(selected)}</Text></View>{chartModel.layers.map(layer => <View key={layer.id} style={s.row}><View style={{ width: q.spacing.sm, height: q.spacing.sm, backgroundColor: layer.color }} /><Text style={[s.meta, s.grow]}>{layer.label} · {unitLabel(layer.unit, lang)}</Text></View>)}</View> : null}
           <View style={s.row}><Text style={[s.meta, s.grow]}>{nativeRangeLabel(lang, range, series)}</Text>
             <InsightButton q={q} compact icon="zoom-in" label={iv3(lang, 'zoomIn')} disabled={!ready || !renderable.includes(kind) || !points.length} onPress={() => ref.current?.zoomIn()} />
             <InsightButton q={q} compact icon="zoom-out" label={iv3(lang, 'zoomOut')} disabled={!ready || !renderable.includes(kind) || !points.length} onPress={() => ref.current?.zoomOut()} />
@@ -144,17 +147,17 @@ export default function NativeInsightsWorkspace({ q, lang, bundle, analysis, sta
 
     {tool ? <InsightSheet q={q} title={toolTitle} closeLabel={iv3(lang, 'close')} onClose={() => setTool(null)}>
       {tool === 'samples' ? <><Text style={s.body}>{ni(lang, 'sampleBody')}</Text>{(['sparse-1', 'mature', 'drivers', 'similar', 'recovery', 'scenario'] as const).map(id => <InsightButton key={id} q={q} icon="open" busy={state.busy} label={id === 'sparse-1' ? ni(lang, 'single') : id === 'mature' ? ni(lang, 'mature') : iv3(lang, id)} onPress={() => { setTool(null); onSample(id); }} />)}</>
-        : tool === 'watchlist' && model ? <>{ordered.map(row => <View key={row.id} style={s.divider}><InsightToggle q={q} label={instrumentLabel(lang, row)} value={!hidden.includes(row.id)} onChange={enabled => { setHidden(current => enabled ? current.filter(id => id !== row.id) : [...current, row.id]); if (!enabled) setPinnedIds(current => current.filter(id => id !== row.id)); }} />
+        : tool === 'watchlist' && model ? <>{ordered.map(row => <View key={row.id} style={s.divider}><InsightToggle q={q} label={label(row)} value={!hidden.includes(row.id)} onChange={enabled => { setHidden(current => enabled ? current.filter(id => id !== row.id) : [...current, row.id]); if (!enabled) setPinnedIds(current => current.filter(id => id !== row.id)); }} />
           <View style={s.wrap}>
-            <InsightButton q={q} icon="open" compact label={`${iv3(lang, 'operationSelectInstrument')} · ${instrumentLabel(lang, row)}`} onPress={() => selectInstrument(row.id)} />
-            <InsightButton q={q} icon="pin" compact label={`${iv3(lang, pinnedIds.includes(row.id) ? 'unpinInstrument' : 'pinInstrument')} · ${instrumentLabel(lang, row)}`} selected={pinnedIds.includes(row.id)} disabled={hidden.includes(row.id) || (!pinnedIds.includes(row.id) && pinnedIds.length >= 5)} onPress={() => setPinnedIds(current => toggleInsightsV3PinnedItem(current, row.id))} />
-            <InsightButton q={q} icon="open" iconDirection="up" compact label={`${iv3(lang, 'moveInstrumentUp')} · ${instrumentLabel(lang, row)}`} disabled={order.indexOf(row.id) <= 0} onPress={() => setWatchOrder(moveInsightsV3WatchlistItem(order, row.id, -1))} />
-            <InsightButton q={q} icon="open" iconDirection="down" compact label={`${iv3(lang, 'moveInstrumentDown')} · ${instrumentLabel(lang, row)}`} disabled={order.indexOf(row.id) >= order.length - 1} onPress={() => setWatchOrder(moveInsightsV3WatchlistItem(order, row.id, 1))} />
+            <InsightButton q={q} icon="open" compact label={`${iv3(lang, 'operationSelectInstrument')} · ${label(row)}`} onPress={() => selectInstrument(row.id)} />
+            <InsightButton q={q} icon="pin" compact label={`${iv3(lang, pinnedIds.includes(row.id) ? 'unpinInstrument' : 'pinInstrument')} · ${label(row)}`} selected={pinnedIds.includes(row.id)} disabled={hidden.includes(row.id) || (!pinnedIds.includes(row.id) && pinnedIds.length >= 5)} onPress={() => setPinnedIds(current => toggleInsightsV3PinnedItem(current, row.id))} />
+            <InsightButton q={q} icon="open" iconDirection="up" compact label={`${iv3(lang, 'moveInstrumentUp')} · ${label(row)}`} disabled={order.indexOf(row.id) <= 0} onPress={() => setWatchOrder(moveInsightsV3WatchlistItem(order, row.id, -1))} />
+            <InsightButton q={q} icon="open" iconDirection="down" compact label={`${iv3(lang, 'moveInstrumentDown')} · ${label(row)}`} disabled={order.indexOf(row.id) >= order.length - 1} onPress={() => setWatchOrder(moveInsightsV3WatchlistItem(order, row.id, 1))} />
           </View></View>)}</>
           : tool === 'range' && series && model ? <InsightsRangeEditor q={q} lang={lang} series={series} asOf={model.asOf} range={range} onApply={applyRange} />
             : tool === 'compare' && selected && model ? <><Text style={s.body}>{ni(lang, 'comparisonLimit')}</Text><Text style={s.meta}>{ni(lang, 'comparisonScope')}</Text>{model.instruments.filter(row => row.id !== selected.id).map(row => {
               const blocked = comparisonBlock(selected, row); const active = compareIds.includes(row.id); const compared = comparisons.find(item => item.instrumentId === row.id);
-              return <View key={row.id} style={s.divider}><InsightToggle q={q} label={`${instrumentLabel(lang, row)} · ${unitLabel(row.unit, lang)}`} value={active} disabled={!!blocked || (!active && compareIds.length >= 3)} onChange={enabled => setCompareIds(current => enabled ? [...current, row.id] : current.filter(id => id !== row.id))} />
+              return <View key={row.id} style={s.divider}><InsightToggle q={q} label={`${label(row)} · ${unit(row)}`} value={active} disabled={!!blocked || (!active && compareIds.length >= 3)} onChange={enabled => setCompareIds(current => enabled ? [...current, row.id] : current.filter(id => id !== row.id))} />
                 {blocked ? <Text style={s.meta}>{ni(lang, blocked)}</Text> : null}{compared && !compared.series.points.length ? <Text style={s.meta}>{ni(lang, 'noComparisonPoints')}</Text> : null}
                 {compared?.overlapCount != null ? <Text style={s.meta}>{iv3(lang, 'overlapWindows', { count: compared.overlapCount })} · {compared.matchingWindowKey}</Text> : null}
               </View>;
@@ -167,8 +170,8 @@ export default function NativeInsightsWorkspace({ q, lang, bundle, analysis, sta
                 {indicatorLayers.map(row => <View key={row.indicator_id} style={s.divider}><InsightToggle q={q} label={iv3(lang, row.layer_kind === 'EWMA_SHORT' ? 'shortEwmaIndicator' : 'longEwmaIndicator')} value={indicatorIds.includes(row.indicator_id)} onChange={enabled => setIndicatorIds(current => enabled ? [...current, row.indicator_id] : current.filter(id => id !== row.indicator_id))} /><Text style={s.meta}>{ni(lang, 'method')} · {row.method} · {row.parameter_key}</Text></View>)}
                 <Text style={s.meta}>{iv3(lang, 'ewmaNotForecast')}</Text><InsightToggle q={q} label={iv3(lang, 'eventsIndicator')} value={showEvents} disabled={!series.events.length} onChange={setShowEvents} />
               </>
-                : tool === 'analyst' ? <>{selected ? <Text style={s.heading}>{instrumentLabel(lang, selected)}</Text> : null}<View style={s.wrap}><InsightButton q={q} icon="watchlist" label={iv3(lang, 'operationSelectInstrument')} onPress={() => open('watchlist')} /><InsightButton q={q} icon="calendar" label={iv3(lang, 'operationChangeRange')} onPress={() => open('range')} /><InsightButton q={q} icon="compare" label={iv3(lang, 'operationAddCompare')} onPress={() => open('compare')} /></View>{details.map(item => <InsightButton key={item.kind} q={q} icon={item.icon} label={iv3(lang, item.copy)} onPress={() => open(item.kind)} />)}</>
-                  : bundle && raw && ['history', 'evidence', 'events', 'drivers', 'similar', 'recovery', 'scenario', 'jointAnalysis'].includes(tool) ? <InsightsDetails key={`${selected?.id}:${tool}`} kind={tool as InsightsDetailKind} q={q} lang={lang} bundle={bundle} analysis={validAnalysis} instrument={raw} series={series} points={points} range={range} onJump={applyRange} onSelect={selectInstrument} />
+                : tool === 'analyst' ? <>{selected ? <Text style={s.heading}>{label(selected)}</Text> : null}<View style={s.wrap}><InsightButton q={q} icon="watchlist" label={iv3(lang, 'operationSelectInstrument')} onPress={() => open('watchlist')} /><InsightButton q={q} icon="calendar" label={iv3(lang, 'operationChangeRange')} onPress={() => open('range')} /><InsightButton q={q} icon="compare" label={iv3(lang, 'operationAddCompare')} onPress={() => open('compare')} /></View>{details.map(item => <InsightButton key={item.kind} q={q} icon={item.icon} label={iv3(lang, item.copy)} onPress={() => open(item.kind)} />)}</>
+                  : bundle && raw && ['history', 'evidence', 'events', 'drivers', 'similar', 'recovery', 'scenario', 'jointAnalysis'].includes(tool) ? <InsightsDetails key={`${selected?.id}:${tool}`} kind={tool as InsightsDetailKind} q={q} lang={lang} bundle={bundle} analysis={validAnalysis} instrument={raw} series={series} points={points} range={range} entityNames={sample ? {} : entityNames} onJump={applyRange} onSelect={selectInstrument} />
                     : <Text style={s.body}>{ni(lang, 'noSeries')}</Text>}
     </InsightSheet> : null}
   </SafeAreaView>;

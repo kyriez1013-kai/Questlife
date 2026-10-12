@@ -83,5 +83,9 @@ export default function NativeInsightsExperience(entrances: InsightsEntrances) {
   };
   const exit = () => { request.current += 1; exampleRequest.current += 1; pending.current = false; setExampleBusy(false); setExample(null); setExampleError(false); setMode('owner'); };
   const bundle = mode === 'sample' ? example?.bundle ?? null : owner.result?.product ?? null;
-  return <NativeInsightsWorkspace {...entrances} renderImport={() => <RecordBackupActions />} key={`${mode}:${bundle?.metadata.subject_id ?? 'empty'}`} q={q} lang={lang} bundle={bundle} analysis={mode === 'sample' ? example?.analysis : owner.result?.analysis} state={mode === 'sample' ? { ...initialInsightsLoadState, attempted: true, busy: exampleBusy } : owner} sample={mode === 'sample'} sampleError={exampleError} deviceError={device.error} onRefresh={() => void refresh()} onSample={id => void sample(id)} onExitSample={exit} />;
+  const entityNames = mode === 'sample' ? {} : Object.fromEntries([
+    ...data.skills.map(row => [`skill:${row.id}`, row.name]),
+    ...data.categories.map(row => [`goal:${row.id}`, row.name]),
+  ]);
+  return <NativeInsightsWorkspace {...entrances} entityNames={entityNames} renderImport={() => <RecordBackupActions />} key={`${mode}:${bundle?.metadata.subject_id ?? 'empty'}`} q={q} lang={lang} bundle={bundle} analysis={mode === 'sample' ? example?.analysis : owner.result?.analysis} state={mode === 'sample' ? { ...initialInsightsLoadState, attempted: true, busy: exampleBusy } : owner} sample={mode === 'sample'} sampleError={exampleError} deviceError={device.error} onRefresh={() => void refresh()} onSample={id => void sample(id)} onExitSample={exit} />;
 }

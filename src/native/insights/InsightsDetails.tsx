@@ -11,14 +11,14 @@ import { localDateKey, inRangeEvents } from './nativeInsightsPresentation';
 import { ni } from './nativeInsightsStrings';
 
 export type InsightsDetailKind = 'history' | 'evidence' | 'events' | 'drivers' | 'similar' | 'recovery' | 'scenario' | 'jointAnalysis';
-type Props = { q: QuestTheme; lang: Lang; bundle: QuantProductBundleV1; instrument: QuantProductInstrumentV1; series: QuantProductSeriesV1 | null; points: QuantProductSeriesV1['points']; range: InsightsV3RangeSelection; analysis: QuantAnalysisExtensionV1 | null; kind: InsightsDetailKind; onJump: (range: InsightsV3RangeSelection) => void; onSelect: (id: string) => void };
+type Props = { q: QuestTheme; lang: Lang; bundle: QuantProductBundleV1; instrument: QuantProductInstrumentV1; series: QuantProductSeriesV1 | null; points: QuantProductSeriesV1['points']; range: InsightsV3RangeSelection; analysis: QuantAnalysisExtensionV1 | null; kind: InsightsDetailKind; entityNames?: Record<string, string>; onJump: (range: InsightsV3RangeSelection) => void; onSelect: (id: string) => void };
 
-export function InsightsDetails({ q, lang, bundle, instrument, series, points, range, analysis, kind, onJump, onSelect }: Props) {
+export function InsightsDetails({ q, lang, bundle, instrument, series, points, range, analysis, kind, entityNames = {}, onJump, onSelect }: Props) {
   const s = insightsStyles(q); const [limit, setLimit] = useState(40);
-  const value = (v: number | null | undefined, unit = instrument.unit) => `${formatQuantValue(v, unit, lang)} ${unitLabel(unit, lang)}`.trim();
-  const signed = (v: number | null | undefined) => formatSignedValue(v, instrument.unit, lang);
+  const value = (v: number | null | undefined, unit = instrument.unit) => `${formatQuantValue(v, unit, lang)} ${unitLabel(unit, lang, instrument.construct_key)}`.trim();
+  const signed = (v: number | null | undefined) => formatSignedValue(v, instrument.unit, lang, instrument.construct_key);
   const date = (v: string | null) => v ? formatDateTime(lang, v, true) : ni(lang, 'none');
-  const label = (id: string) => { const row = bundle.instruments.find(item => item.instrument_id === id); return row ? instrumentLabel(lang, row) : iv3(lang, 'instrumentGeneric'); };
+  const label = (id: string) => { const row = bundle.instruments.find(item => item.instrument_id === id); return row ? instrumentLabel(lang, row, entityNames[row.entity_id]) : iv3(lang, 'instrumentGeneric'); };
   const stat = (key: string, name: string, result: string) => <InsightStat key={key} q={q} label={name} value={result} />;
   const codes = (items: string[]) => items.length ? <InsightSection q={q} title={ni(lang, 'reasonCodes')}><Text selectable style={s.meta}>{[...new Set(items)].join('\n')}</Text></InsightSection> : null;
   const missing = (counts: Record<string, number | undefined>) => Object.entries(counts).map(([key, count]) => stat(key, key, String(count)));

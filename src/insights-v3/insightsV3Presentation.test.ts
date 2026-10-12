@@ -21,6 +21,11 @@ assert.equal(rangeLabel('zh', { kind: 'contract', key: 'RECENT' }), '最近');
 assert.equal(rangeLabel('en', { kind: 'contract', key: '30D' }), '30D');
 assert.equal(aggregationBucketLabel('zh', 'quant_source_points'), '原始观察');
 assert.equal(unitLabel('minutes', 'zh'), '分钟');
+assert.equal(unitLabel('count', 'zh', 'strength.set_count'), '组');
+assert.equal(unitLabel('count', 'zh', 'strength.rep_count'), '次/组');
+assert.equal(unitLabel('count', 'en', 'strength.rep_count'), 'reps/set');
+assert.equal(instrumentLabel('zh', { label_key: 'strength_weight', scope: 'SKILL' }, '卧推'), '卧推 · 训练重量');
+assert.equal(instrumentLabel('en', { label_key: 'strength_weight', scope: 'SKILL' }, 'Squat'), 'Squat · Training weight');
 
 const recordedInstrumentLabels = [
   ['state_overall', '整体状态自评', 'Overall state (self-report)'],

@@ -62,6 +62,9 @@ export function loadInsightsV3AnalysisExtension(
     }
   })();
   cache.set(key, pending);
+  void pending.then((result) => {
+    if (!result.ok && cache.get(key) === pending) cache.delete(key);
+  });
   return pending;
 }
 

@@ -222,6 +222,10 @@ async function loadFixture(
     }
   })();
   loadCache.set(cacheKey, pending);
+  // Keep in-flight/successful loads shared, but let Retry revalidate a failed load.
+  void pending.then((result) => {
+    if (!result.ok && loadCache.get(cacheKey) === pending) loadCache.delete(cacheKey);
+  });
   return pending;
 }
 
