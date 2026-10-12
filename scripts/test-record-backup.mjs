@@ -33,16 +33,41 @@ await check('invalid nested field rejected rather than coerced', () => assert.th
 await check('duplicate IDs rejected', () => assert.throws(() => createRecordBackup({ ...original, categories: [...original.categories, ...original.categories] }, ownerId)));
 await check('QA provenance rejected', () => assert.throws(() => createRecordBackup({ ...original, settings: { ...original.settings, origin: 'QA_TEST' } }, ownerId)));
 await check('invalid owner binding rejected', () => assert.throws(() => createRecordBackup(original, 'arbitrary-owner')));
+await check('owner binding is a UUID string, never a coerced array', () => assert.throws(() => parseRecordBackup(JSON.stringify({ ...backup, ownerId: [ownerId] })), /backup_format/));
+await check('envelope rejects extra confidential fields', () => assert.throws(() => parseRecordBackup(JSON.stringify({ ...backup, credentials: { access_token: 'isolated-placeholder' } })), /backup_scope/));
+await check('export and import reject device repositories and journals', () => {
+  for (const key of ['healthObservations', 'deviceRepository', 'syncJournal', 'session']) {
+    const data = { ...original, [key]: { marker: 'isolated-private-placeholder' } };
+    assert.throws(() => createRecordBackup(data, ownerId), /backup_scope/);
+    assert.throws(() => parseRecordBackup(JSON.stringify({ ...backup, data })), /backup_scope/);
+  }
+});
+await check('nested credential fields cannot escape into a record backup', () => {
+  for (const key of ['access_token', 'refreshToken', 'api-key', 'password', 'clientSecret', 'service_role_key', 'privateKey', 'authorization']) {
+    const data = { ...original, categories: [{ ...original.categories[0], extension: { [key]: 'isolated-placeholder' } }] };
+    assert.throws(() => createRecordBackup(data, ownerId), /backup_confidential_field/);
+    assert.throws(() => parseRecordBackup(JSON.stringify({ ...backup, data })), /backup_confidential_field/);
+  }
+});
+await check('ordinary private record text and non-confidential extensions stay exact', () => {
+  const data = { ...original, categories: [{ ...original.categories[0], name: 'Remember password reset', extension: { sourceNote: 'isolated record text' } }] };
+  assert.deepEqual(createRecordBackup(data, ownerId).data, data);
+});
+await check('malformed JSON, null data and oversized UTF-8 are rejected', () => {
+  assert.throws(() => parseRecordBackup('{'));
+  assert.throws(() => parseRecordBackup(JSON.stringify({ ...backup, data: null })));
+  assert.throws(() => parseRecordBackup('"' + '\u4e2d'.repeat(7 * 1024 * 1024) + '"'), /backup_too_large/);
+});
 await check('unsafe object keys rejected', () => assert.throws(() => parseRecordBackup(JSON.stringify(backup).replace('"settings":{', '"settings":{"__proto__":{},'))));
 await check('invalid state value rejected', () => assert.throws(() => createRecordBackup({ ...original, stateCheckIns: [{ id:'state',date:'2026-09-20',timestamp:'2026-09-20T00:00:00Z',createdAt:'2026-09-20T00:00:00Z',overall:0 }] }, ownerId)));
 await check('excessive nesting rejected before schema traversal', () => { let nested = {}; for (let i = 0; i < 40; i++) nested = { nested }; assert.throws(() => createRecordBackup({ ...original, settings: nested }, ownerId)); });
 function fixture(state = emptySyncState(), remoteRows = []) {
-  let disk = structuredClone(state), data = structuredClone(DEFAULT_DATA), fail = false;
-  const adapter = { read: async () => structuredClone(disk), write: async value => { disk = structuredClone(value); },
+  let disk = structuredClone(state), data = structuredClone(DEFAULT_DATA), fail = false, writes = 0, failWrite = 0;
+  const adapter = { read: async () => structuredClone(disk), write: async value => { if (++writes === failWrite) throw new Error('controlled_journal_failure'); disk = structuredClone(value); },
     apply: async changes => { if (fail) throw new Error('controlled_write_failure'); data = projectAppData(data, changes); } };
   const transport = { push: () => { throw Error('restore must not call a server'); }, pull: async (_owner, cursor) => remoteRows.filter(row => row.change_seq > cursor) };
   const engine = new SyncEngineV2(adapter, transport, 'backup-device', randomUUID);
-  return { engine, state: () => disk, data: () => data, fail: value => { fail = value; }, restart: () => new SyncEngineV2(adapter, transport, 'backup-device', randomUUID),
+  return { engine, state: () => disk, data: () => data, fail: value => { fail = value; }, failWrite: value => { failWrite = value; }, restart: () => new SyncEngineV2(adapter, transport, 'backup-device', randomUUID),
     empty: async () => { if (hasRecords(data)) throw new Error('not_empty'); } };
 }
 await check('restore durable data plus exact account restriction without network', async () => {
@@ -63,6 +88,33 @@ await check('failed projection retains recoverable import WAL, no duplicate outb
   const f = fixture(); f.fail(true); await assert.rejects(f.engine.restoreRecords(backupProjections(backup), ownerId, f.empty));
   assert.equal(f.state().pendingApply.length, 1); f.fail(false); await f.restart().recover();
   assert.deepEqual(f.data().categories, original.categories); assert.equal(f.state().outbox.length, 1);
+});
+await check('interruption before WAL leaves the replica unchanged', async () => {
+  const f = fixture(); const before = structuredClone(f.state()); f.failWrite(1);
+  await assert.rejects(f.engine.restoreRecords(backupProjections(backup), ownerId, f.empty), /controlled_journal_failure/);
+  assert.deepEqual(f.state(), before); assert.deepEqual(f.data(), DEFAULT_DATA);
+  await f.restart().recover(); assert.deepEqual(f.state(), before);
+});
+await check('interruption after projection replays idempotently without duplicate outbox', async () => {
+  const f = fixture(); f.failWrite(2);
+  await assert.rejects(f.engine.restoreRecords(backupProjections(backup), ownerId, f.empty), /controlled_journal_failure/);
+  assert.equal(f.state().pendingApply.length, 1); assert.deepEqual(f.data().categories, original.categories);
+  await f.restart().recover(); await f.restart().recover();
+  assert.deepEqual(f.data().categories, original.categories); assert.equal(f.state().outbox.length, 1);
+  assert.equal(f.state().ownerId, ownerId); assert.deepEqual(f.state().pendingApply, []);
+});
+await check('even empty replicas with delete revisions cannot resurrect old files', async () => {
+  for (const patch of [
+    { versions: { 'categories:record-category': 2 } },
+    { cursor: 1 },
+    { outbox: [{ operation: 'delete', entityType: 'categories', entityId: 'record-category' }] },
+    { conflicts: [{ resolution: 'pending' }] },
+    { quarantine: [{ reason: 'isolated' }] },
+  ]) {
+    const f = fixture({ ...emptySyncState(), ...patch }); const before = structuredClone(f.state());
+    await assert.rejects(f.engine.restoreRecords(backupProjections(backup), ownerId, f.empty), /backup_replica_not_empty/);
+    assert.deepEqual(f.state(), before); assert.deepEqual(f.data(), DEFAULT_DATA);
+  }
 });
 await check('second restore cannot replace first', async () => {
   const f = fixture(); await f.engine.restoreRecords(backupProjections(backup), null, f.empty);

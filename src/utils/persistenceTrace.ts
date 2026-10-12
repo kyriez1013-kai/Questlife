@@ -2,6 +2,7 @@ import type { AppData } from '../types';
 
 const TRACE_SESSION_KEY = 'questlife.persistence.trace.v1';
 const MAX_TRACE_EVENTS = 240;
+const SAFE_TRACE_FLAGS = new Set(['stage0', 'stage1', 'stage2', 'stage2-rebaseline', 'stage3-insights', 'stage3-quant-terminal']);
 
 const COLLECTION_KEYS = [
   'goals',
@@ -124,9 +125,10 @@ function routeContext() {
   if (typeof window === 'undefined') return { route: 'native' };
   try {
     const query = new URLSearchParams(window.location.search);
+    const requestedFlag = query.get('questlife_v11_ui');
     return {
-      route: `${window.location.pathname}${window.location.search}`,
-      featureFlag: query.get('questlife_v11_ui') || 'legacy',
+      route: window.location.pathname,
+      featureFlag: requestedFlag && SAFE_TRACE_FLAGS.has(requestedFlag) ? requestedFlag : 'legacy',
     };
   } catch {
     return { route: 'web' };
@@ -137,7 +139,16 @@ function readTrace(): PersistenceTraceEvent[] {
   if (typeof window === 'undefined') return [];
   try {
     const raw = window.sessionStorage?.getItem(TRACE_SESSION_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    const sanitized = parsed.filter((event) => event && typeof event === 'object').map((event) => ({
+      ...event,
+      route: String(event.route ?? 'web').split(/[?#]/, 1)[0],
+      featureFlag: SAFE_TRACE_FLAGS.has(event.featureFlag) ? event.featureFlag : 'legacy',
+    }));
+    if (JSON.stringify(sanitized) !== raw) saveTrace(sanitized);
+    return sanitized;
   } catch {
     return [];
   }
@@ -213,6 +224,7 @@ export function installPersistenceDebugBridge(input: {
   getStoreData: () => AppData;
   readPersistedData: () => Promise<AppData | undefined>;
 }) {
+  readTrace();
   if (!isPersistenceDebugEnabled() || typeof window === 'undefined') return () => {};
   const target = window as typeof window & {
     __QUESTLIFE_PERSISTENCE_DEBUG__?: {

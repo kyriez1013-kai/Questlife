@@ -2,9 +2,11 @@ import { Directory, File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { randomUUID } from 'expo-crypto';
 import type { AppData } from '../types';
-import type { RecordBackup } from '../backup/records';
+import { createRecordBackup, parseRecordBackup, type RecordBackup } from '../backup/records';
 
 export async function shareNativeRecordFile(data: AppData | RecordBackup, dialogTitle: string): Promise<'shared' | 'unavailable'> {
+  const validated = 'format' in data ? parseRecordBackup(JSON.stringify(data)) : createRecordBackup(data, null).data;
+  const content = JSON.stringify(validated, null, 2);
   if (!await Sharing.isAvailableAsync()) return 'unavailable';
   const directory = new Directory(Paths.cache, 'questlife-record-exports');
   directory.create({ idempotent: true });
@@ -17,12 +19,12 @@ export async function shareNativeRecordFile(data: AppData | RecordBackup, dialog
   const file = new File(directory, `questlife-local-records-${randomUUID()}.json`);
   try {
     file.create();
-    file.write(JSON.stringify(data, null, 2));
+    file.write(content);
     if (!file.exists || file.size === 0) throw new Error('record_export_file_empty');
+    await Sharing.shareAsync(file.uri, { mimeType: 'application/json', UTI: 'public.json', dialogTitle });
   } catch (error) {
     if (file.exists) file.delete();
     throw error;
   }
-  await Sharing.shareAsync(file.uri, { mimeType: 'application/json', UTI: 'public.json', dialogTitle });
   return 'shared';
 }

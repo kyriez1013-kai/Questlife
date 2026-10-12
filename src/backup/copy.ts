@@ -9,6 +9,7 @@ const copy = {
   ready: ['文件已交给系统保存，请确认接收位置已保存。', 'The file was handed to the system. Confirm that your destination saved it.'],
   restored: ['记录已在本机恢复。云端恢复仍需登录原账号并完成同步。', 'Records restored locally. Cloud recovery still requires signing into the original account and completing sync.'],
   failed: ['操作未完成。请使用本版本生成的备份，检查本机是否为空、已退出账号以及文件是否完整；现有记录未被覆盖。', 'Operation did not complete. Use a backup from this version, check that this replica is empty and signed out, and that the file is intact. Existing records were not overwritten.'],
+  interrupted: ['恢复未确认完成，导入可能已暂存在本机。请重新打开应用并检查记录后再重试，不要清除此副本。已有账号或记录的本机请使用账号同步恢复。', 'Recovery did not confirm completion. The import may already be staged locally. Reopen and check records before retrying; do not clear this replica. For an existing account or nonempty replica, use account sync recovery.'],
   cancel: ['取消', 'Cancel'],
 } as const;
 export const backupCopy = (lang: 'zh' | 'en', key: keyof typeof copy) => copy[key][lang === 'zh' ? 0 : 1];
