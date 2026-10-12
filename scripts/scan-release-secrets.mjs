@@ -38,9 +38,15 @@ for (const path of tracked) {
     failures.push({ location: path, credentialClass: 'tracked_credential_file' });
   }
 }
-const history = execFileSync('git', ['log', '--all', '-p', '--format=commit:%H', '--', '.',
-  ':(exclude)docs/quant/**', ':(exclude)QUESTLIFE_QUANT_UI_CONTRACT.md'], { maxBuffer: 200 * 1024 * 1024 });
-inspect('all_reachable_history_excluding_restricted_documents', history); counts.historyBytes = history.length;
+const since = process.argv.find(argument => argument.startsWith('--since='))?.slice(8);
+if (since && !/^[a-f0-9]{7,40}$/.test(since)) throw new Error('invalid_history_base');
+const historyRange = since ? `${since}..HEAD` : 'all_reachable_history';
+let history;
+try {
+  history = execFileSync('git', ['log', ...(since ? [historyRange] : ['--all']), '-p', '--format=commit:%H', '--', '.',
+    ':(exclude)docs/quant/**', ':(exclude)QUESTLIFE_QUANT_UI_CONTRACT.md'], { maxBuffer: 200 * 1024 * 1024, timeout: 120000 });
+} catch { throw new Error('release_history_scan_failed'); }
+inspect(historyRange, history); counts.historyBytes = history.length;
 function directory(path, count) {
   if (!existsSync(path)) return;
   for (const entry of readdirSync(path, { withFileTypes: true })) {
@@ -50,7 +56,7 @@ function directory(path, count) {
   }
 }
 directory('dist', 'webFiles');
-const apk = process.argv[2];
+const apk = process.argv.slice(2).find(argument => !argument.startsWith('--'));
 if (apk) {
   assert.ok(apk.startsWith('reports/release/build-output/questlife-v1-'));
   const entries = execFileSync('unzip', ['-Z1', apk]).toString().trim().split('\n');
@@ -62,7 +68,8 @@ directory('reports/release/build-output/ios-simulator-ecf37b9/QuestLife.app', 'i
 mkdirSync('reports/release', { recursive: true });
 const report = {
   checkedAt: new Date().toISOString(), sourceCommit: execFileSync('git', ['rev-parse', 'HEAD']).toString().trim(),
-  scope: 'Exact locally authorized private credential values, tracked sensitive file names, reachable history, current Web and specified existing native artifacts. Restricted quant docs never read. Not a full penetration test or unknown-secret detection.',
+  scope: 'Exact locally authorized private credential values, tracked sensitive file names, specified history range, current Web and specified existing native artifacts. Restricted quant docs never read. Not a full penetration test or unknown-secret detection.',
+  historyRange,
   counts, privateCredentialClassesChecked: values.size, failures,
 };
 writeFileSync('reports/release/client-secret-exposure.json', JSON.stringify(report, null, 2));
