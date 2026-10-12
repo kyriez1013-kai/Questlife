@@ -12,7 +12,10 @@ assert.match(sourceCommit, /^[a-f0-9]{40}$/);
 assert.equal(metadata.dirty, false);
 assert.equal(metadata.developmentClient, false);
 assert.equal(metadata.apiOrigin, 'https://questlife-v1-release.vercel.app');
-const name = `questlife-v1-${sourceCommit.slice(0, 7)}-arm64.apk`;
+assert.equal(metadata.applicationId, 'com.kyrie.questlife');
+assert.equal(metadata.certificateSha256, '61b030724c7ef8ab94681eb42b7033631f8c2086c78a4a79166a654e93eec5da');
+assert.equal(metadata.packagedConfigurationVerified, true);
+const name = `questlife-v1-${sourceCommit.slice(0, 7)}-canonical-arm64.apk`;
 assert.equal(basename(metadata.path), name);
 assert.equal(resolve(metadata.path), resolve('reports/release/build-output', name));
 const bytes = readFileSync(metadata.path);
@@ -44,7 +47,7 @@ let release = releases.find(item => item.tag_name === tag);
 if (!release) release = await api('/releases', {
   tag_name: tag, target_commitish: sourceCommit, name: `QuestLife V1 internal candidate ${sourceCommit.slice(0, 7)}`,
   draft: true, prerelease: true,
-  body: `Internal review only. Not owner production or final product acceptance.\n\nSource: ${sourceCommit}\nAndroid: signed arm64 release with embedded Hermes, no Metro.\nCandidate Web: https://questlife-v1-release.vercel.app\nAPK SHA256: ${metadata.sha256}\n\nPending: latest native UI, recording/performance, physical Health/Calendar/notifications, email OTP/two-device UI, Apple signing and iOS build allowance.`,
+  body: `Internal review only. Not owner production or final product acceptance.\n\nSource: ${sourceCommit}\nAndroid: canonical signed arm64 release with embedded Hermes, no Metro.\nCandidate Web: https://questlife-v1-release.vercel.app\nAPK SHA256: ${metadata.sha256}\n\nPhysical installation, populated session upgrade, native interactions/performance and Health/Calendar/notification delivery require separate evidence. Simulator artifacts are not iPhone installers. Full function, security and approved UI acceptance remain open; this draft is not product completion.`,
 });
 assert.equal(release.draft, true, 'Refuse to alter a published release');
 assert.equal(release.prerelease, true);
