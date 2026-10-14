@@ -1,8 +1,129 @@
 # QuestLife V1 End-to-End Completion Ledger
 
-Updated: 2026-10-12. This is the single current completion checklist and resume
+Updated: 2026-10-15. This is the single current completion checklist and resume
 checkpoint for `QUESTLIFE_END_TO_END_COMPLETION.md`. Earlier phase reports are
 historical evidence, not completion claims for this candidate.
+
+## Current Override: iOS-First Delivery (2026-10-15)
+
+The owner's iOS-First Full Product Delivery instruction supersedes Android
+delivery requirements below. Native target is now **iOS only**, with Web
+retained. Historical Android evidence is preserved but is not a current gate or
+deliverable. Do not resume Android builds, emulators, widgets or QA.
+
+- Starting source was `b74072a` on `release/questlife-v1`; recoverable checkpoint
+  `5980312` precedes tracked Android retirement. Protected untracked
+  `QUESTLIFE_QUANT_UI_CONTRACT.md` and `docs/quant/` remain unread/unmodified.
+- Removed only confirmed QuestLife Android build outputs, two QA AVDs, launcher
+  apps and unusable APK residue: 12,222,369,792 allocated bytes (12.22 GB).
+  Exact paths and post-delete checks: `reports/release/ios-first/android-retirement.json`.
+  Shared global SDK/Gradle cache and the older ownership-uncertain API36 AVD are
+  retained. Historical screenshots/reports and signing assets are retained.
+- Expo targets are iOS/Web. Android-only health adapter, dependency, plugins,
+  build/publish scripts and tests are removed; shared React Native/Expo,
+  Store, Sync and Quant remain. No owner data or production was changed.
+- Official free Xcode 27.0 (27A266a) is installed. Owner explicitly accepted
+  the license; iOS 27 simulator runtime is installed and the isolated
+  `QuestLife-iOS-QA` simulator is booted. CocoaPods 1.16.2 is
+  installed in the user gem directory. Apple's Ruby 2.6 uses its compatible
+  CLT headers and dependency versions; `-rlogger` is required at runtime.
+  `scripts/run-ios-candidate.mjs` resolves the user gem path and only reads the
+  existing candidate's three public configuration values. No secret is bundled.
+- Local Personal Team configuration removes APNs entitlement by default, not
+  HealthKit. Settings explicitly distinguishes disabled remote push from local
+  reminders. Widget/Shortcut targets and HealthKit remain in the generated
+  project. Actual Personal Team profile includes HealthKit; user permission and
+  health reads remain **UNVERIFIED**. No paid membership or service was purchased.
+- Current-source Web export and iOS Hermes export pass; these are compile
+  checks, **not** native installation. CocoaPods installed 104 pods successfully.
+  Xcode 27 rejected two resource bundles declaring iOS 12.4/13.4. Commit
+  `089bfc5` adds an idempotent Podfile mod raising lower pod target versions to
+  the existing app baseline (15.1), without lowering higher requirements.
+  Regenerated Pods confirm both targets are 15.1; 12 targeted tests and tsc pass.
+- Record editing now waits for local durable acknowledgement before leaving
+  the form; failed persistence retains the original queued mutation for retry.
+  Schedule actual-result save now has the same wait/retry on Web and native.
+  Legacy proposal Apply/Undo waits for durable storage; Undo refuses later
+  edits/deletion and newly conflicting placements. No new schema or sync system.
+- Actual Chrome normal-UI check on new, signed-out local origin
+  `http://127.0.0.1:8125`: skip optional onboarding -> create one named QA
+  schedule -> record 7 minutes/quality4 -> History -> edit to9 minutes and a
+  QA-labelled note -> refresh. Today retains9 minutes and Schedule is completed.
+  This is local isolated QA, not owner data, hosted sync or physical iPhone.
+  Screenshots: `reports/release/ios-first/web-edited-record-refresh.png` and
+  `web-history-edit-375.png`; 375px document width equals viewport width.
+  These two local test entities remain at that origin pending scoped cleanup.
+- Owner completed Apple Account login, iPhone connection/trust and Developer
+  Mode. CLI confirms the physical iPhone 13 Pro (iOS 26.6.2) is connected with
+  Developer Mode enabled. No existing QuestLife native app was found on it.
+  Explicit device destination resolves the earlier generic-destination signing
+  failure. Free Personal Team has signed the Widget; current-source Release
+  build passed on source `8f23b19`, following the Expo Constants path-space fix
+  `355c5b9` and the RN bundle-script quoting fix `8f23b19`.
+  Release 1.0.1/build2 was installed and independently listed on the physical
+  device. Deep/strict signature verification passes. Main profile includes
+  HealthKit, expires 2026-10-21 17:15:52 UTC (2026-10-22 01:15:52 CST), and has
+  one registered device. The first launch was refused by iOS security with a
+  signature/entitlement/developer-trust message. Owner subsequently completed
+  developer trust and confirmed entry into the installed application:
+  **VERIFIED_USER_MANUAL for physical launch only**. Owner reports the UI is
+  inadequate; visual/product acceptance remains **NOT PASSED**. HealthKit
+  permission/read and daily-use acceptance remain **UNVERIFIED**.
+  Sanitized evidence: `reports/release/ios-first/physical-install-8f23b19.json`.
+  Embedded JS targets only the existing candidate; old Owner backend absent.
+  No owner app was uninstalled or cleared. Same-source simulator build passed,
+  but iOS 27 runtime refused launch because UIScene lifecycle is required.
+  Commit `fe6b163` adds scoped single-window scene compatibility. Its Release
+  build installed and launched successfully on the isolated iPhone 13 Pro /
+  iOS 27 simulator; language selection, Today and Capture were observed through
+  Device Hub. Physical iPhone still runs `8f23b19`, not this newer source.
+  Device Hub cannot share the physical iOS 26.6.2
+  screen (it requires iOS 27); no device OS upgrade was requested.
+
+### Safe Stop Requested by Owner (2026-10-15)
+
+- Owner explicitly deferred UI work and requested a safe stopping point. No
+  further visual redesign, phone update, push or deployment is authorized by
+  this closeout. Continue from this ledger, not from an older Web branch.
+- Simulator Capture showed a clipped input top/first line with the keyboard.
+  Native `V11TextField` now honors an explicit numeric minimum height while
+  retaining the 44-point floor and the default multiline height. The isolated
+  renderer regression passes, but post-fix visual/keyboard verification remains
+  **UNVERIFIED**. Do not call the clipping defect resolved yet.
+- Latest native source: tsc passed; 16 focused scene/Personal Team checks and
+  32 native material renderer tests passed. The final Capture-height source
+  also completed a simulator Release build (exit 0). This last build was not
+  installed or visually rechecked before stopping. Renderer tests use mocked
+  native hosts, not physical-device evidence.
+- Runtime evidence: `reports/release/ios-first/ios27-today-release.png` and
+  `ios27-capture-keyboard-before.png`. Build logs remain local at
+  `/tmp/questlife-ios-scenes-simulator.log` and
+  `/tmp/questlife-ios-capture-simulator.log`; these temporary paths are not
+  durable evidence archives.
+- Build interruption was traced to iCloud-evicted dependencies and source
+  files. Restored 890 packages from integrity-checked locked npm archives and
+  234 tracked files from unchanged index content, then reapplied the existing
+  Metro patch. No dependency version or lockfile change was introduced.
+- SECURITY FOLLOW-UP: a process diagnostic exposed an inherited model-provider
+  secret in tool output. The value is deliberately not reproduced here. Build
+  subprocesses now use an explicit environment allowlist (`fe6b163`). Secret
+  rotation/revocation remains **UNVERIFIED and required**; environment filtering
+  does not undo the exposure. Coordinate rotation without breaking other users
+  of the credential. No claim of completed incident remediation is made.
+- Remaining local QA data: the explicitly labelled schedule and associated
+  execution at signed-out localhost:8125 remain pending ID/lineage enumeration
+  and scoped cleanup authorization. Do not infer authorization to delete Owner
+  data or other test records.
+- Resume with Capture post-fix simulator verification, then scene deep-link /
+  background-resume checks before a same-identity physical upgrade. Physical
+  HealthKit reads, Calendar, notification delivery, Widget/Shortcut operation,
+  keyboard flows and Release frame-time measurements still need actual evidence.
+  No new physical-device performance result exists in this checkpoint.
+
+The checklist below retains earlier evidence. Its old Xcode/Android status rows
+are superseded by this current section. Physical installation/launch is now
+verified as scoped above; UI acceptance, device permissions, complete native
+flows, native performance and final product acceptance remain unfinished.
 
 ## Baseline and Boundaries
 

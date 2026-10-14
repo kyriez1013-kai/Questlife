@@ -1,0 +1,50 @@
+{
+  "verifiedAt": "2026-10-15",
+  "sourceCommit": "8f23b19e86735e82407793afc50cdf4183325ba8",
+  "configuration": "Release",
+  "platform": "iphoneos",
+  "bundleIdentifier": "com.kyrie.questlife",
+  "version": "1.0.1",
+  "build": "2",
+  "xcode": "27.0 (27A266a)",
+  "device": "physical iPhone 13 Pro, iOS 26.6.2",
+  "signatureVerification": "codesign --verify --deep --strict: exit 0",
+  "profile": {
+    "type": "Apple Personal Team development",
+    "expiresUTC": "2026-10-21T17:15:52.000Z",
+    "provisionedDeviceCount": 1,
+    "healthKitEntitlement": true,
+    "remotePushEntitlement": false
+  },
+  "bundle": {
+    "embeddedJavaScript": true,
+    "bytes": 8864330,
+    "sha256": "7b5fe0d9fdde94a01533387de6c54847a3609d101c895ce6de8cc6fc4e3ef150",
+    "executableSha256": "b567c3d07cf246289be2a41f3e1f20808281d5c1eb6c248aaa4b19cc29af870b",
+    "candidateApiFound": true,
+    "candidateSupabaseFound": true,
+    "oldOwnerSupabaseFound": false
+  },
+  "installation": {
+    "existingQuestLifeAppBefore": false,
+    "devicectlInstall": "success",
+    "installedVersionVerified": "1.0.1 (2)",
+    "uninstalledOrClearedData": false
+  },
+  "firstLaunch": {
+    "status": "BLOCKED",
+    "error": "FBSOpenApplicationErrorDomain Security: invalid signature, inadequate entitlements or profile not explicitly trusted by user",
+    "nextStep": "Owner checks developer trust in Settings > General > VPN & Device Management, then opens QuestLife. Do not infer which security cause is resolved until launch succeeds."
+  },
+  "subsequentLaunch": {
+    "status": "VERIFIED_USER_MANUAL",
+    "date": "2026-10-15",
+    "evidence": "Owner confirmed developer trust and successful entry into the installed app.",
+    "visualAcceptance": "NOT_PASSED: owner reports UI quality is inadequate",
+    "agentScreenObservation": "UNVERIFIED: Xcode 27 Device Hub requires iOS 27 for physical screen sharing; device runs iOS 26.6.2"
+  },
+  "healthPermissionAndRead": "UNVERIFIED",
+  "standaloneRuntime": "VERIFIED_USER_MANUAL for launch only; remaining flows UNVERIFIED",
+  "productAcceptance": "NOT_COMPLETE",
+  "privacy": "No account email, device UDID, certificate bytes, credentials or health records included."
+}
