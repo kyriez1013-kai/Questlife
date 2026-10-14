@@ -1,0 +1,95 @@
+{
+  "date": "2026-10-15",
+  "checkpoint": "5980312",
+  "deleted": [
+    {
+      "path": "/Users/kyrie/Documents/Codex Questlife/QuestLife-v1/android",
+      "allocatedBytes": 1913475072,
+      "absent": true
+    },
+    {
+      "path": "/Users/kyrie/.android/avd/QuestLife_CloudQA.avd",
+      "allocatedBytes": 3105492992,
+      "absent": true
+    },
+    {
+      "path": "/Users/kyrie/.android/avd/QuestLife_CloudQA.ini",
+      "allocatedBytes": 4096,
+      "absent": true
+    },
+    {
+      "path": "/Users/kyrie/.android/avd/QuestLife_V1_ReleaseQA.avd",
+      "allocatedBytes": 6949941248,
+      "absent": true
+    },
+    {
+      "path": "/Users/kyrie/.android/avd/QuestLife_V1_ReleaseQA.ini",
+      "allocatedBytes": 4096,
+      "absent": true
+    },
+    {
+      "path": "/Users/kyrie/Documents/Codex Questlife/QuestLife-v1/reports/release/build-output/e44ba06-eas-parts",
+      "allocatedBytes": 1904640,
+      "absent": true
+    },
+    {
+      "path": "/Users/kyrie/Documents/Codex Questlife/QuestLife-v1/reports/release/build-output/questlife-v1-d773efa-canonical-arm64.apk",
+      "allocatedBytes": 47276032,
+      "absent": true
+    },
+    {
+      "path": "/Users/kyrie/Documents/Codex Questlife/QuestLife-v1/reports/release/build-output/questlife-v1-dba5306-canonical-arm64.apk",
+      "allocatedBytes": 47284224,
+      "absent": true
+    },
+    {
+      "path": "/Users/kyrie/Documents/Codex Questlife/QuestLife-v1/reports/release/build-output/questlife-v1-e44ba06-eas.apk.download",
+      "allocatedBytes": 1507328,
+      "absent": true
+    },
+    {
+      "path": "/Users/kyrie/Documents/Codex Questlife/QuestLife-v1/reports/release/build-output/questlife-v1-ecf37b9-canonical-eas.apk",
+      "allocatedBytes": 108195840,
+      "absent": true
+    },
+    {
+      "path": "/Users/kyrie/Library/QuestLifeToolchain/QuestLife Cloud QA.app",
+      "allocatedBytes": 8192,
+      "absent": true
+    },
+    {
+      "path": "/Users/kyrie/Library/QuestLifeToolchain/QuestLife Emulator.app",
+      "allocatedBytes": 8192,
+      "absent": true
+    },
+    {
+      "path": "/Users/kyrie/Library/QuestLifeToolchain/ndk-installer-residue",
+      "allocatedBytes": 4096,
+      "absent": true
+    },
+    {
+      "path": "/Users/kyrie/Library/QuestLifeToolchain/quarantine/questlife-v1-ecf37b9-unconfigured-arm64.apk",
+      "allocatedBytes": 47263744,
+      "absent": true
+    }
+  ],
+  "retained": [
+    {
+      "path": "/Users/kyrie/Library/Android",
+      "reason": "Global SDK may be shared; no exclusive ownership proof"
+    },
+    {
+      "path": "/Users/kyrie/.gradle",
+      "reason": "Shared Gradle cache; other-project use unknown"
+    },
+    {
+      "path": "/Users/kyrie/.android/avd/QuestLife_API36.avd",
+      "reason": "Older emulator user-data ownership not established; preserve"
+    },
+    {
+      "path": "reports historical Android evidence",
+      "reason": "Evidence retained; retired, not current deliverable"
+    }
+  ],
+  "totalAllocatedBytes": 12222369792
+}

@@ -21,8 +21,6 @@ const suites = [
   ['auth', node, ['scripts/test-backend-auth.mjs']],
   ['auth-links', node, ['--test', 'scripts/test-auth-links.cjs']],
   ['shortcuts', node, ['scripts/test-shortcuts.mjs']],
-  ['android-widget', node, ['--test', 'tests/native/widget.test.cjs']],
-  ['android-backup-policy', node, ['--test', 'tests/native/backup-policy.test.cjs']],
   ['insights', node, ['src/native/insights/__tests__/run-tests.mjs']],
   ['insights-recovery', node, ['--test', 'tests/native/insightsRecovery.test.cjs']],
   ['workflows', node, ['--test', 'src/native/nativeWorkflows.test.cjs', 'src/native/accountSettingsBoundary.test.cjs', 'src/screens/settingsTruthfulness.test.cjs']],

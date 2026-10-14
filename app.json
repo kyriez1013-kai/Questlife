@@ -2,6 +2,7 @@
   "expo": {
     "name": "QuestLife",
     "slug": "QuestLife",
+    "platforms": ["ios", "web"],
     "scheme": "questlife",
     "version": "1.0.1",
     "orientation": "portrait",
@@ -30,15 +31,9 @@
           "background": false
         }
       ],
-      "react-native-health-connect",
-      "./plugins/with-health-connect-permissions",
-      "./plugins/with-internal-release-signing",
-      "./plugins/with-questlife-widget",
       "./plugins/with-questlife-ios-entries",
       "@react-native-community/datetimepicker",
-      ["expo-secure-store", { "configureAndroidBackup": false }],
-      "./plugins/with-private-device-backup",
-      "./plugins/with-chart-webview-startup"
+      "expo-secure-store"
     ],
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -52,35 +47,6 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
-    },
-    "android": {
-      "package": "com.kyrie.questlife",
-      "versionCode": 2,
-      "allowBackup": false,
-      "softwareKeyboardLayoutMode": "resize",
-      "blockedPermissions": [
-        "android.permission.SYSTEM_ALERT_WINDOW",
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE"
-      ],
-      "permissions": [
-        "android.permission.READ_CALENDAR",
-        "android.permission.WRITE_CALENDAR",
-        "android.permission.health.READ_SLEEP",
-        "android.permission.health.READ_STEPS",
-        "android.permission.health.READ_HEART_RATE",
-        "android.permission.health.READ_RESTING_HEART_RATE",
-        "android.permission.health.READ_HEART_RATE_VARIABILITY",
-        "android.permission.health.READ_EXERCISE",
-        "android.permission.health.READ_ACTIVE_CALORIES_BURNED",
-        "android.permission.health.READ_DISTANCE"
-      ],
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#101113"
-      },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
     },
     "web": {
       "favicon": "./assets/favicon.png"

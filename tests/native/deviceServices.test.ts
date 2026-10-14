@@ -122,27 +122,6 @@ test('failed storage commit leaves checkpoint retryable',async()=>{
   assert.equal((await repo.read()).health.metricCheckpoints?.steps,undefined);await sync.sync();assert.equal((await repo.read()).observations.length,1);
 });
 
-function androidSource(readRecords: (...args:any[])=>Promise<any>) {
-  const mod=loadMocked<typeof import('../../src/platform/health/HealthSource.android')>('../../src/platform/health/HealthSource.android',{'react-native-health-connect':{initialize:async()=>true,getGrantedPermissions:async()=>[{recordType:'Steps',accessType:'read'},{recordType:'SleepSession',accessType:'read'}],readRecords}});
-  return mod.createHealthSource(setup().repo);
-}
-test('Android page failure rolls back the entire metric batch',async()=>{
-  let pages=0; const s=androidSource(async()=>{if(pages++)throw new Error('TEST_PAGE');return {records:[{metadata:{id:'TEST'},startTime:raw().startAt,endTime:raw().endAt,count:10}],pageToken:'next'};});
-  const result=await s.readSince(raw().startAt,now.toISOString(),['steps']);assert.equal(result.observations.length,0);assert.deepEqual(result.completedMetrics,[]);
-});
-test('Android repeated page token terminates and cannot advance checkpoint',async()=>{
-  let calls=0;const s=androidSource(async()=>{calls++;return {records:[],pageToken:'repeat'};});
-  const result=await s.readSince(raw().startAt,now.toISOString(),['steps']);assert.equal(calls,2);assert.deepEqual(result.completedMetrics,[]);
-});
-test('Android missing source ID is an incomplete read, not silent success',async()=>{
-  const s=androidSource(async()=>({records:[{count:10,startTime:raw().startAt,endTime:raw().endAt}]}));
-  assert.deepEqual((await s.readSince(raw().startAt,now.toISOString(),['steps'])).completedMetrics,[]);
-});
-test('Android overlapping stage IDs retain longest explicit interval; awake is excluded',async()=>{
-  const s=androidSource(async()=>({records:[{metadata:{id:'S'},startTime:'2026-09-19T22:00:00Z',endTime:'2026-09-20T06:00:00Z',stages:[{stage:2,startTime:'2026-09-19T22:00:00Z',endTime:'2026-09-20T02:00:00Z'},{stage:4,startTime:'2026-09-19T22:00:00Z',endTime:'2026-09-20T00:00:00Z'},{stage:1,startTime:'2026-09-20T02:00:00Z',endTime:'2026-09-20T06:00:00Z'}]}]}));
-  const result=await s.readSince('2026-09-19T00:00:00Z',now.toISOString(),['sleep']);
-  assert.equal(healthContextView(mergeHealthObservations([],result.observations))[0].value,240);
-});
 test('iOS invalid sample rejects the batch instead of skipping it and advancing',async()=>{
   const mod=loadMocked<typeof import('../../src/platform/health/HealthSource.ios')>('../../src/platform/health/HealthSource.ios',{'@kingstinct/react-native-healthkit':{queryQuantitySamples:async()=>[{uuid:'OK',startDate:new Date(raw().startAt),endDate:new Date(raw().endAt),quantity:10},{uuid:'INVALID',startDate:new Date(raw().startAt),endDate:new Date(raw().endAt),quantity:NaN}]}});
   const result=await mod.createHealthSource(setup().repo).readSince(raw().startAt,now.toISOString(),['steps']);assert.equal(result.observations.length,0);assert.deepEqual(result.completedMetrics,[]);
@@ -260,7 +239,7 @@ test('signout cancellation failure keeps IDs but disables delivery for retry',as
 function nativeNotifications(extra:Record<string,unknown>={}) {
   const scheduled:any[]=[];const cancelled:string[]=[];const dismissed:string[]=[];
   const api={setNotificationHandler:()=>{},SchedulableTriggerInputTypes:{DAILY:'daily',DATE:'date'},scheduleNotificationAsync:async(r:unknown)=>{scheduled.push(r);return request.id;},cancelScheduledNotificationAsync:async(id:string)=>{cancelled.push(id);},dismissNotificationAsync:async(id:string)=>{dismissed.push(id);},getAllScheduledNotificationsAsync:async()=>[],getLastNotificationResponseAsync:async()=>null,getPresentedNotificationsAsync:async()=>[],clearLastNotificationResponseAsync:async()=>{},...extra};
-  const mod=loadMocked<typeof import('../../src/platform/notifications/NotificationDriver.native')>('../../src/platform/notifications/NotificationDriver.native',{'react-native':{Platform:{OS:'ios'}},'expo-notifications':api});
+  const mod=loadMocked<typeof import('../../src/platform/notifications/NotificationDriver.native')>('../../src/platform/notifications/NotificationDriver.native',{'react-native':{Platform:{OS:'ios'}},'expo-notifications':api,'expo-constants':{default:{expoConfig:{extra:{questlifeIOSRemoteNotificationsEnabled:false}}}}});
   return {...mod,scheduled,cancelled,dismissed};
 }
 test('native notification content never forwards private title or body',async()=>{

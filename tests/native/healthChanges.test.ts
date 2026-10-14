@@ -127,32 +127,6 @@ test('corrupt recovery journal never overwrites valid metadata',async()=>{
   await assert.rejects(repo.read(),/device_pending_invalid/);assert.equal(storage.values.get(DEVICE_DATA_KEY),prior);
 });
 
-function android(mocks:Record<string,unknown>){
-  return mockModule<typeof import('../../src/platform/health/HealthSource.android')>('../../src/platform/health/HealthSource.android',{'react-native-health-connect':{initialize:async()=>true,getGrantedPermissions:async()=>[{recordType:'Steps',accessType:'read'}],...mocks}}).createHealthSource(setup().repo);
-}
-const hcPage=(token:string,extra:Record<string,unknown>={})=>({upsertionChanges:[],deletionChanges:[],nextChangesToken:token,hasMore:false,changesTokenExpired:false,...extra});
-const hcRecord={metadata:{id:'TEST_PARENT',lastModifiedTime:'2026-09-19T11:00:00Z'},startTime:'2026-09-19T10:00:00Z',endTime:'2026-09-19T11:00:00Z',count:10};
-test('Android bootstrap reserves changes before snapshot and catches deletion during snapshot',async()=>{
-  const calls:string[]=[];const s=android({getChanges:async(r:{changesToken?:string})=>{calls.push(r.changesToken??'reserve');return r.changesToken?hcPage('end',{deletionChanges:[{recordId:'TEST_PARENT'}]}):hcPage('reserved');},readRecords:async()=>{calls.push('snapshot');return {records:[hcRecord]};}});
-  const {repo}=setup();await connected(repo,[],null);await new HealthSync(s,repo,()=>now).sync();assert.deepEqual(calls,['reserve','snapshot','reserved']);const d=await repo.read();assert.equal(d.observations.length,0);assert.equal(d.healthDeletions?.length,1);assert.equal(d.health.changeCursors?.steps?.token,'end');
-});
-test('Android expired token bootstraps without inferring old source deletions and reports history gap',async()=>{
-  let n=0;const s=android({getChanges:async()=>++n===1?hcPage('expired',{changesTokenExpired:true}):hcPage('fresh'),readRecords:async()=>({records:[]})});
-  const {repo}=setup();await connected(repo,[row()]);await new HealthSync(s,repo,()=>now).sync();const d=await repo.read();assert.equal(d.observations.length,1);assert.equal(d.health.changeCursors?.steps?.token,'fresh');assert.equal(d.health.error,'health_change_history_gap');
-});
-test('Android revoked permission does not query the change feed',async()=>{
-  let queried=false;const s=android({getGrantedPermissions:async()=>[],getChanges:async()=>{queried=true;return hcPage('bad');}});const result=await s.readChanges!('steps',cursor('old'),since,now.toISOString());assert.equal(queried,false);assert.equal(result.nextCursor,undefined);assert.deepEqual(result.completedMetrics,[]);
-});
-test('Android malformed changes cannot advance a token',async()=>{
-  const s=android({getChanges:async()=>hcPage('bad',{deletionChanges:[{recordId:''}]})});const result=await s.readChanges!('steps',cursor('old'),since,now.toISOString());assert.equal(result.nextCursor,undefined);
-});
-test('Android failed recovery snapshot keeps expired checkpoint retryable',async()=>{
-  let n=0;const s=android({getChanges:async()=>++n===1?hcPage('expired',{changesTokenExpired:true}):hcPage('fresh'),readRecords:async()=>{throw new Error('TEST_READ_FAILED');}});
-  assert.equal((await s.readChanges!('steps',cursor('old'),since,now.toISOString())).nextCursor,undefined);
-});
-test('Android source parent and actual provider revision survive normalization',async()=>{
-  const s=android({getChanges:async()=>hcPage('new',{upsertionChanges:[{record:hcRecord}]})});const result=await s.readChanges!('steps',cursor('old'),since,now.toISOString());assert.equal(result.observations[0].sourceRecordId,'TEST_PARENT');assert.equal(result.observations[0].sourceModifiedAt,hcRecord.metadata.lastModifiedTime);
-});
 test('HealthKit anchored query preserves its original predicate and explicit deleted UUID',async()=>{
   let options:any;const s=mockModule<typeof import('../../src/platform/health/HealthSource.ios')>('../../src/platform/health/HealthSource.ios',{'@kingstinct/react-native-healthkit':{queryQuantitySamplesWithAnchor:async(_id:string,o:unknown)=>{options=o;return {samples:[],deletedSamples:[{uuid:'TEST_PARENT'}],newAnchor:'new-anchor'};}}}).createHealthSource(setup().repo);
   const result=await s.readChanges!('steps',{sourcePlatform:'healthkit',token:'old-anchor',since},'2026-09-19T00:00:00Z',now.toISOString());assert.equal(options.anchor,'old-anchor');assert.equal(options.filter.date.startDate.toISOString(),since);assert.equal(options.filter.date.endDate,undefined);assert.equal(result.changes?.[0].kind,'delete');assert.equal(result.nextCursor?.token,'new-anchor');

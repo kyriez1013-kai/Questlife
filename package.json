@@ -5,8 +5,7 @@
   "scripts": {
     "postinstall": "node scripts/patch-metro-image-input.cjs",
     "start": "expo start",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
+    "ios": "node scripts/run-ios-candidate.mjs",
     "web": "expo start --web --port 8084",
     "build": "expo export --platform web",
     "test:theme": "node --experimental-strip-types src/design/appearance.test.ts && node --experimental-strip-types src/design/visualFoundation.static.test.ts",
@@ -46,7 +45,6 @@
     "react-dom": "19.1.0",
     "react-native": "0.81.5",
     "react-native-gesture-handler": "~2.28.0",
-    "react-native-health-connect": "4.1.3",
     "react-native-nitro-modules": "0.35.0",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
@@ -62,16 +60,6 @@
     "ajv": "8.20.0",
     "ts-json-schema-generator": "2.9.0",
     "typescript": "~5.9.2"
-  },
-  "expo": {
-    "autolinking": {
-      "android": {
-        "exclude": [
-          "@kingstinct/react-native-healthkit",
-          "react-native-nitro-modules"
-        ]
-      }
-    }
   },
   "overrides": {
     "@expo/metro-config@54.0.17": {

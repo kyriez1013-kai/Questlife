@@ -15,16 +15,11 @@ function load(platform, failure = false) {
     if (name === 'react-native') return { Platform: { OS: platform }, Linking: { openSettings: async () => {
       calls.push('app-settings'); if (failure) throw Error('settings-unavailable');
     } } };
-    assert.equal(name, 'react-native-health-connect');
-    return { openHealthConnectSettings() { calls.push('health-connect'); if (failure) throw Error('settings-unavailable'); } };
+    throw new Error(`Unexpected native dependency: ${name}`);
   } }, { filename: file });
   return { ...exports, calls };
 }
 
-test('Android opens Health Connect rather than unrelated app settings', async () => {
-  const module = load('android'); await module.openHealthPermissions();
-  assert.deepEqual(module.calls, ['health-connect']);
-});
 test('iOS opens app settings without loading Android SDK or requesting HealthKit access', async () => {
   const module = load('ios'); await module.openHealthPermissions();
   assert.deepEqual(module.calls, ['app-settings']);
@@ -34,5 +29,5 @@ test('unavailable platform rejects without opening any settings', async () => {
   assert.deepEqual(module.calls, []);
 });
 test('native settings failures propagate to the existing retry UI', async () => {
-  for (const platform of ['android', 'ios']) await assert.rejects(load(platform, true).openHealthPermissions(), /settings-unavailable/);
+  await assert.rejects(load('ios', true).openHealthPermissions(), /settings-unavailable/);
 });
