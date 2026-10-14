@@ -18,6 +18,7 @@ let store, device, tree, calls, alerts, calendars, permission, notificationPermi
 let identity, snapshot, syncStatus, otpJob, healthJob, writeJob, pickerJob, shareJob, pushJob, retirementStatus;
 let settingsOpened, healthSettingsFailed, authConfigured = true;
 const authListeners = new Set();
+const appConstants = {expoConfig:{version:'TEST',extra:{questlifeIOSRemoteNotificationsEnabled:false}},easConfig:{projectId:'TEST_PROJECT'}};
 const rn = { Platform: { OS:'ios', select: values => values.ios ?? values.default },
   StyleSheet: { create: styles => styles, hairlineWidth:1 }, Appearance:{getColorScheme:()=> 'light'},
   Alert:{alert:(...args)=>alerts.push(args)}, Linking:{openSettings:async()=>{settingsOpened++;}},
@@ -54,7 +55,7 @@ Module._load = function(request,parent,isMain){
   if(request==='react-native-safe-area-context')return {SafeAreaView:'SafeAreaView'};
   if(request==='react-native-svg')return new Proxy({}, {get:(_,key)=>key==='__esModule'?true:String(key)});
   if(request==='@react-navigation/native')return {useFocusEffect:callback=>React.useEffect(callback,[callback])};
-  if(request==='expo-constants')return {expoConfig:{version:'TEST'},easConfig:{projectId:'TEST_PROJECT'}};
+  if(request==='expo-constants')return appConstants;
   if(request==='expo-document-picker')return {getDocumentAsync:async()=>pickerJob?pickerJob.promise:{canceled:true}};
   if(request==='expo-file-system')return {File:class{get size(){return 0;}async text(){return '{}';}}};
   if(/\/store$/.test(request))return {useStore:()=>store};
@@ -98,6 +99,8 @@ const fresh = (language='en',theme='cleanFocus')=>{
   calls=[];alerts=[];calendars=[];permission='not_requested';notificationPermission='not_requested';readFailure=false;
   identity=null;snapshot={ownerId:null,outbox:[],conflicts:[],healthConsent:false};syncStatus='signedOut';
   otpJob=healthJob=writeJob=pickerJob=shareJob=pushJob=undefined;retirementStatus='disabled';settingsOpened=0;healthSettingsFailed=false;authConfigured=true;
+  appConstants.expoConfig.extra.questlifeIOSRemoteNotificationsEnabled=false;
+  appConstants.easConfig.projectId='TEST_PROJECT';
 };
 const deferred=()=>{let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no;});return {promise,resolve,reject};};
 const render=async()=>{await act(async()=>{tree=create(React.createElement(Screen,{navigation:{navigate:(...args)=>calls.push(['navigate',...args])}}));});};
@@ -191,11 +194,34 @@ test('notification opt-in stays explicit and disable retains remote retirement h
   assert.equal(calls.at(-1)[0],'pushRetire');assert.ok(text().includes(c('en','settingsActionError')));
 });
 test('quiet-hour save and push registration cannot be dismissed while pending',async()=>{
-  fresh();identity={userId:'TEST_OWNER'};device.data.notificationsEnabled=true;notificationPermission='granted';writeJob=deferred();await render();await open('notifications');
+  fresh();appConstants.expoConfig.extra.questlifeIOSRemoteNotificationsEnabled=true;identity={userId:'TEST_OWNER'};device.data.notificationsEnabled=true;notificationPermission='granted';writeJob=deferred();await render();await open('notifications');
   await switchValue(workflowCopy('en','quietHours'),true);await close();assert.equal(tree.root.findAllByType('Sheet').length,1);
   await act(async()=>writeJob.resolve());assert.deepEqual(device.data.notificationQuietHours,{startMinute:1320,endMinute:420});
   pushJob=deferred();await press(workflowCopy('en','pushRequest'));await close();assert.equal(tree.root.findAllByType('Sheet').length,1);
   await act(async()=>pushJob.resolve());assert.equal(calls.at(-1)[0],'pushRegister');await close();assert.equal(tree.root.findAllByType('Sheet').length,0);
+});
+for(const lang of ['en','zh'])for(const theme of ['cleanFocus','deepWork'])test(`local-only iOS explains disabled push and preserves reminders (${lang}, ${theme})`,async()=>{
+  fresh(lang,theme);identity={userId:'TEST_OWNER'};notificationPermission='granted';
+  await render();await open('notifications');
+  assert.ok(text().includes(workflowCopy(lang,'pushDisabledInBuild')));
+  assert.ok(!text().includes(workflowCopy(lang,'pushError')));
+  assert.equal(button(workflowCopy(lang,'pushRequest')).props.disabled,true);
+  assert.equal(toggle(c(lang,'enableReminders')).props.disabled,false);
+  await switchValue(c(lang,'enableReminders'),true);await refresh();
+  assert.equal(device.data.notificationsEnabled,true);
+  assert.equal(button(workflowCopy(lang,'pushRequest')).props.disabled,true);
+  const before=calls.length;
+  await press(workflowCopy(lang,'pushRequest'));
+  assert.equal(calls.length,before,'even a direct handler call must not request permissions or register push');
+  await switchValue(workflowCopy(lang,'quietHours'),true);
+  assert.deepEqual(device.data.notificationQuietHours,{startMinute:1320,endMinute:420});
+});
+test('missing iOS push flag is local-only even with a configured project',async()=>{
+  fresh();delete appConstants.expoConfig.extra.questlifeIOSRemoteNotificationsEnabled;
+  identity={userId:'TEST_OWNER'};device.data.notificationsEnabled=true;
+  await render();await open('notifications');
+  assert.ok(text().includes(workflowCopy('en','pushDisabledInBuild')));
+  assert.equal(button(workflowCopy('en','pushRequest')).props.disabled,true);
 });
 test('account email survives parent rerender and cannot be lost during pending OTP',async()=>{
   fresh();otpJob=deferred();await render();await open('account');const input=tree.root.findByType('QuestInput');const inputId=input.props.instanceId;

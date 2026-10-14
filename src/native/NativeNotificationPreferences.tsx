@@ -53,6 +53,7 @@ export default function NativeNotificationPreferences({ registerPushToken = regi
   }, []);
   useEffect(() => { context.current.revision++; setPushStatus('idle'); }, [device.data.notificationsEnabled]);
   const projectId = Constants.easConfig?.projectId ?? Constants.expoConfig?.extra?.eas?.projectId;
+  const remotePushEnabled = Platform.OS !== 'ios' || Constants.expoConfig?.extra?.questlifeIOSRemoteNotificationsEnabled === true;
   const save = async (start: number, end: number) => {
     if (running.current) return;
     running.current = true; setBusy(true); setError(false);
@@ -63,7 +64,7 @@ export default function NativeNotificationPreferences({ registerPushToken = regi
   const date = (minute: number) => { const value = new Date(); value.setHours(Math.floor(minute / 60), minute % 60, 0, 0); return value; };
   const minutes = (value: Date) => value.getHours() * 60 + value.getMinutes();
   const requestPush = async () => {
-    if (requestingPush.current || !projectId || !context.current.enabled || !context.current.ownerId) return;
+    if (!remotePushEnabled || requestingPush.current || !projectId || !context.current.enabled || !context.current.ownerId) return;
     const expectedUserId = context.current.ownerId;
     const revision = context.current.revision;
     const isCurrent = () => context.current.active && context.current.enabled
@@ -103,8 +104,8 @@ export default function NativeNotificationPreferences({ registerPushToken = regi
     {error ? <Text accessibilityRole="alert" style={{ color: q.colors.text }}>{c(lang, 'preferenceError')}</Text> : null}
     <Text accessibilityRole="header" style={{ color: q.colors.text, fontSize: q.typography.cardTitleSize, marginTop: q.spacing.md }}>{c(lang, 'push')}</Text>
     <Text accessibilityRole={pushStatus === 'error' ? 'alert' : undefined} style={{ color: q.colors.textMuted, fontSize: q.typography.captionSize }}>
-      {c(lang, !projectId ? 'pushUnconfigured' : pushStatus === 'error' ? 'pushError' : pushStatus === 'registered' ? 'pushRegistered' : 'pushIdle')}
+      {c(lang, !remotePushEnabled ? 'pushDisabledInBuild' : !projectId ? 'pushUnconfigured' : pushStatus === 'error' ? 'pushError' : pushStatus === 'registered' ? 'pushRegistered' : 'pushIdle')}
     </Text>
-    <QuestButton questTheme={q} variant="secondary" label={c(lang, 'pushRequest')} loading={pushBusy} disabled={!projectId || !ownerId || !device.data.notificationsEnabled} onPress={() => void requestPush()} />
+    <QuestButton questTheme={q} variant="secondary" label={c(lang, 'pushRequest')} loading={pushBusy} disabled={!remotePushEnabled || !projectId || !ownerId || !device.data.notificationsEnabled} onPress={() => void requestPush()} />
   </View>;
 }

@@ -1,4 +1,5 @@
 import * as N from 'expo-notifications';
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import type { NotificationDriver } from './NotificationService';
 import { parseNotificationIntent } from './NotificationService';
@@ -13,6 +14,8 @@ const validPushTest = (data: Record<string, unknown>) => pushTest(data)
 const responseKey = (response: N.NotificationResponse) => `${response.notification.request.identifier}:${response.notification.date}:${response.actionIdentifier}`;
 const ownedNotification = (notification: N.Notification) => notification.request.identifier.startsWith('questlife:')
   || pushTest(notification.request.content.data);
+const permissionGranted = (permission: N.NotificationPermissionsStatus) => permission.granted
+  || (Platform.OS === 'ios' && permission.ios?.status === N.IosAuthorizationStatus.PROVISIONAL);
 
 export function invalidatePushResponseGuards() { pushResponseEpoch++; }
 async function currentPushTest(data: Record<string, unknown>): Promise<boolean> {
@@ -81,13 +84,13 @@ export function createNotificationDriver(lang: 'zh'|'en'):NotificationDriver {
     permission: async request=>{
       if(request && Platform.OS === 'android') await N.setNotificationChannelAsync('questlife',{name:'QuestLife',importance:N.AndroidImportance.DEFAULT});
       const p = request ? await N.requestPermissionsAsync() : await N.getPermissionsAsync();
-      if(request && p.granted) await N.setNotificationCategoryAsync('questlife-block',[
+      if(request && permissionGranted(p)) await N.setNotificationCategoryAsync('questlife-block',[
         {identifier:'START',buttonTitle:nativeCopy(lang,'start'),options:{opensAppToForeground:true}},
         {identifier:'DONE',buttonTitle:nativeCopy(lang,'done'),options:{opensAppToForeground:true}},
         {identifier:'SNOOZE',buttonTitle:nativeCopy(lang,'snooze'),options:{opensAppToForeground:true}},
         {identifier:'SKIP',buttonTitle:nativeCopy(lang,'skip'),options:{opensAppToForeground:true}},
       ]);
-      return p.granted ? 'granted' : p.status === 'undetermined' ? 'not_requested' : 'denied';
+      return permissionGranted(p) ? 'granted' : p.status === 'undetermined' ? 'not_requested' : 'denied';
     },
     schedule: r=>N.scheduleNotificationAsync({identifier:r.id,content:{title:'QuestLife',body:nativeCopy(lang,'open'),categoryIdentifier:r.kind === 'accepted_block' ? 'questlife-block' : undefined,data:{source:'questlife',kind:r.kind,entityId:r.entityId}},trigger:r.daily?{type:N.SchedulableTriggerInputTypes.DAILY,hour:r.daily.hour,minute:r.daily.minute,channelId:'questlife'}:{type:N.SchedulableTriggerInputTypes.DATE,date:new Date(r.at),channelId:'questlife'}}),
     cancel:async id=>{await N.cancelScheduledNotificationAsync(id);await N.dismissNotificationAsync(id);},
@@ -106,6 +109,11 @@ export function createNotificationDriver(lang: 'zh'|'en'):NotificationDriver {
       void N.getLastNotificationResponseAsync().then(r=>{if(r)handle(r);}).catch(()=>undefined);
       return ()=>{active=false;subscription.remove();};
     },
-    token:async id=>{if((await N.getPermissionsAsync()).granted)return (await N.getExpoPushTokenAsync({projectId:id})).data;return null;},
+    token:async id=>{
+      // Local notification permission does not imply an APNs-capable build.
+      if (Platform.OS === 'ios' && Constants.expoConfig?.extra?.questlifeIOSRemoteNotificationsEnabled !== true) return null;
+      if(permissionGranted(await N.getPermissionsAsync()))return (await N.getExpoPushTokenAsync({projectId:id})).data;
+      return null;
+    },
   };
 }

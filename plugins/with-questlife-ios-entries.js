@@ -1,4 +1,4 @@
-const { withDangerousMod, withXcodeProject } = require('@expo/config-plugins');
+const { withBaseMod, withDangerousMod, withXcodeProject } = require('@expo/config-plugins');
 const plist = require('@expo/plist').default;
 const fs = require('node:fs/promises');
 const path = require('node:path');
@@ -150,7 +150,29 @@ function installTarget(project, bundleIdentifier) {
   return project;
 }
 
-module.exports = function withQuestLifeIOSEntries(config) {
+module.exports = function withQuestLifeIOSEntries(config, { enableRemoteNotifications = false } = {}) {
+  if (typeof enableRemoteNotifications !== 'boolean') {
+    throw new Error('QuestLife enableRemoteNotifications must be a boolean.');
+  }
+  config.extra = { ...config.extra, questlifeIOSRemoteNotificationsEnabled: enableRemoteNotifications };
+  if (!enableRemoteNotifications) {
+    // Expo Notifications adds APNs even for local reminders. Personal Teams cannot
+    // provision APNs; remove it AFTER upstream mods, without removing HealthKit.
+    for (const mod of ['entitlements', 'infoPlist']) {
+      config = withBaseMod(config, {
+        platform: 'ios', mod, isIntrospective: true,
+        async action({ modRequest: { nextMod, ...modRequest }, ...modConfig }) {
+          const result = await nextMod({ ...modConfig, modRequest });
+          if (mod === 'entitlements') delete result.modResults['aps-environment'];
+          else if (Array.isArray(result.modResults.UIBackgroundModes)) {
+            result.modResults.UIBackgroundModes = result.modResults.UIBackgroundModes.filter(mode => mode !== 'remote-notification');
+          }
+          result.ios = { ...result.ios, [mod]: result.modResults };
+          return result;
+        },
+      });
+    }
+  }
   const bundleIdentifier = configureCredentials(config);
   config = withXcodeProject(config, mod => {
     mod.modResults = installTarget(mod.modResults, bundleIdentifier);

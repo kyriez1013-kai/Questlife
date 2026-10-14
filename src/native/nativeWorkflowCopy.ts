@@ -5,6 +5,7 @@ const copy = {
   push: ['远程推送', 'Remote push'],
   pushRequest: ['连接此设备', 'Connect this device'],
   pushUnconfigured: ['当前构建未配置推送项目。', 'This build has no push project configured.'],
+  pushDisabledInBuild: ['当前构建已停用远程推送。本地提醒仍可开启，需授予通知权限。', 'Remote push is disabled in this build. Local reminders remain available with notification permission.'],
   pushTokenReady: ['已取得设备推送令牌，尚未确认远端注册。', 'Device push token obtained. Remote registration is not confirmed.'],
   pushRegistered: ['远端已确认此设备注册。尚未验证推送送达。', 'Remote registration confirmed. Push delivery has not been verified.'],
   pushError: ['推送连接未完成，请检查权限、网络与构建配置后重试。', 'Push setup did not complete. Check permissions, network and build configuration, then retry.'],
