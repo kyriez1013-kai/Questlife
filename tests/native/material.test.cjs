@@ -281,6 +281,20 @@ test('loading keeps button labels and prevents repeated activation', async () =>
   }
 });
 
+test('compact multiline composer respects its height without losing the touch minimum', async () => {
+  const e = environment();
+  const theme = e.tokens.getV11ThemeTokens('light');
+  const renderer = await render(React.createElement(e.controls.V11TextField, {
+    theme, multiline: true, style: { height: 68, minHeight: 68, maxHeight: 156 },
+  }));
+  assert.equal(flatten(hosts(renderer, 'TextInput')[0].props.style).minHeight, 68);
+  await act(async () => renderer.update(React.createElement(e.controls.V11TextField, {
+    theme, multiline: true, style: { minHeight: 10 },
+  })));
+  assert.equal(flatten(hosts(renderer, 'TextInput')[0].props.style).minHeight, 44);
+  await dispose(renderer);
+});
+
 test('footer stacks large translated actions for Dynamic Type', async () => {
   const e = environment({ fontScale: 2 });
   const renderer = await render(React.createElement(e.controls.V11StickySheetFooter, { theme: e.tokens.getV11ThemeTokens('light'), cancelLabel: 'Cancel changes', saveLabel: 'Save changes', onCancel() {}, onSave() {} }));

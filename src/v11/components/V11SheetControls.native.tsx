@@ -113,6 +113,9 @@ export function V11TextField({ disabled, status, style, theme, tone, visualState
   const c = useControls(theme, tone);
   const [focus, setFocus] = useState(false);
   const inactive = !!disabled || editable === false;
+  const requestedMinHeight = StyleSheet.flatten(style)?.minHeight;
+  const minHeight = Math.max(c.f.layout.touch, typeof requestedMinHeight === 'number'
+    ? requestedMinHeight : c.f.layout.touch * (p.multiline ? 2 : 1));
   return <TextInput
     {...p}
     accessibilityLabel={p.accessibilityLabel ?? p.placeholder}
@@ -132,7 +135,7 @@ export function V11TextField({ disabled, status, style, theme, tone, visualState
         textAlignVertical: p.multiline ? 'top' : 'center',
       },
       style,
-      { minHeight: c.f.layout.touch * (p.multiline ? 2 : 1) },
+      { minHeight },
     ]}
   />;
 }
