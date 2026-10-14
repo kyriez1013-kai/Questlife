@@ -1,4 +1,4 @@
-const { withBaseMod, withDangerousMod, withXcodeProject } = require('@expo/config-plugins');
+const { withBaseMod, withDangerousMod, withPodfile, withXcodeProject } = require('@expo/config-plugins');
 const plist = require('@expo/plist').default;
 const fs = require('node:fs/promises');
 const path = require('node:path');
@@ -174,6 +174,25 @@ module.exports = function withQuestLifeIOSEntries(config, { enableRemoteNotifica
     }
   }
   const bundleIdentifier = configureCredentials(config);
+  config = withPodfile(config, mod => {
+    const marker = '# QuestLife: align resource bundle targets with the app baseline';
+    if (mod.modResults.contents.includes(marker)) return mod;
+    const anchor = '  post_install do |installer|';
+    if (!mod.modResults.contents.includes(anchor)) throw new Error('QuestLife requires the Expo Podfile post_install hook.');
+    const hook = `${anchor}
+    ${marker}
+    minimum_ios = Gem::Version.new(podfile_properties['ios.deploymentTarget'] || '15.1')
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |configuration|
+        current = configuration.build_settings['IPHONEOS_DEPLOYMENT_TARGET']
+        if current && Gem::Version.correct?(current.to_s) && Gem::Version.new(current.to_s) < minimum_ios
+          configuration.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = minimum_ios.to_s
+        end
+      end
+    end`;
+    mod.modResults.contents = mod.modResults.contents.replace(anchor, hook);
+    return mod;
+  });
   config = withXcodeProject(config, mod => {
     mod.modResults = installTarget(mod.modResults, bundleIdentifier);
     return mod;

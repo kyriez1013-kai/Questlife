@@ -73,6 +73,17 @@ test('mistyped notification configuration fails closed', () => {
   assert.throws(() => configFor({ enableRemoteNotifications: 'false' }), /must be a boolean/);
 });
 
+test('Podfile aligns resource bundle deployment targets without lowering newer targets', async () => {
+  const input = { language: 'ruby', contents: 'target do\n  post_install do |installer|\n    react_native_post_install(installer)\n  end\nend\n' };
+  const result = await runMod(configFor(), 'podfile', input);
+  assert.match(result.modResults.contents, /installer\.pods_project\.targets\.each/);
+  assert.match(result.modResults.contents, /Gem::Version\.new\(current\.to_s\) < minimum_ios/);
+  assert.match(result.modResults.contents, /ios.deploymentTarget.*15\.1/);
+  const repeated = await runMod(configFor(), 'podfile', { ...result.modResults });
+  assert.equal(repeated.modResults.contents, result.modResults.contents);
+  await assert.rejects(runMod(configFor(), 'podfile', { language: 'ruby', contents: 'unknown template' }), /post_install hook/);
+});
+
 function loadDriver({ remote, granted = true, iosStatus = 2 } = {}) {
   const calls = [];
   const permission = { granted, status: granted ? 'granted' : 'undetermined', ios: { status: iosStatus } };
