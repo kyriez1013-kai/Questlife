@@ -3179,6 +3179,8 @@ export default function HomeScreen() {
           onClose={closeV11ActivityHistory}
           onDeleteRecord={confirmDeleteTodayLog}
           onUpdateRecord={updateExecutionLog}
+          waitForLocalWrites={waitForLocalWrites}
+          retryLocalWrites={retryLocalWrites}
           records={v11ActivityRecords}
           theme={v11ThemeTokens}
           visible={v11ActivityHistoryOpen}

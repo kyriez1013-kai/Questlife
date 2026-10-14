@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { t, type Lang } from '../../i18n';
+import { DurableSubmission } from '../../utils/durableSubmission';
 import type { V11ThemeTokens } from '../../v11/tokens';
 import { V11InlineButton, V11SheetButton, V11TextField } from '../../v11/components/V11SheetControls';
 import useV11ReducedMotion from '../../v11/useV11ReducedMotion';
@@ -36,6 +37,8 @@ type Props = {
   onClose: () => void;
   onDeleteRecord: (id: string) => void;
   onUpdateRecord: (id: string, patch: { durationMinutes?: number; note: string }) => void;
+  waitForLocalWrites: () => Promise<void>;
+  retryLocalWrites: () => Promise<void>;
   records: V11ActivityRecord[];
   theme: V11ThemeTokens;
   visible: boolean;
@@ -55,6 +58,8 @@ export default function V11ActivityHistorySheet({
   onClose,
   onDeleteRecord,
   onUpdateRecord,
+  waitForLocalWrites,
+  retryLocalWrites,
   records,
   theme,
   visible,
@@ -66,6 +71,9 @@ export default function V11ActivityHistorySheet({
   const [durationDraft, setDurationDraft] = useState('');
   const [noteDraft, setNoteDraft] = useState('');
   const [editError, setEditError] = useState(false);
+  const submission = useRef(new DurableSubmission<void>());
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'error'>('idle');
+  const locked = saveStatus !== 'idle';
   const selectedRecord = useMemo(
     () => records.find((record) => record.id === selectedRecordId),
     [records, selectedRecordId],
@@ -76,15 +84,19 @@ export default function V11ActivityHistorySheet({
   );
 
   useEffect(() => {
+    if (submission.current.hasPending) return;
     if (visible) setSelectedRecordId(initialRecordId);
   }, [initialRecordId, visible]);
 
   useEffect(() => {
+    if (submission.current.hasPending) return;
     setEditing(false);
     setEditError(false);
+    setSaveStatus('idle');
   }, [selectedRecordId, visible]);
 
   useEffect(() => {
+    if (submission.current.hasPending) return;
     if (!visible) {
       setSelectedRecordId(null);
       setVisibleCount(PAGE_SIZE);
@@ -101,7 +113,7 @@ export default function V11ActivityHistorySheet({
   return (
     <V11Stage2ProductionSheet
       closeLabel={closeLabel}
-      onClose={onClose}
+      onClose={() => { if (!submission.current.hasPending) onClose(); }}
       reducedMotion={reducedMotion}
       sheet="production"
       theme={theme}
@@ -112,7 +124,7 @@ export default function V11ActivityHistorySheet({
         <WebView dataSet={{ 'v11-rebaseline-role': 'record-detail' }}>
           <V11InlineButton
             label={historyTitle}
-            onPress={() => setSelectedRecordId(null)}
+            onPress={() => { if (!submission.current.hasPending) setSelectedRecordId(null); }}
             theme={theme}
           />
           <WebView dataSet={{ 'v11-rebaseline-role': 'record-detail-summary' }}>
@@ -144,9 +156,10 @@ export default function V11ActivityHistorySheet({
                 <View style={{ gap: 6 }}>
                   <Text style={{ color: theme.text.secondary }}>{t(language, 'minutesQuestion')}</Text>
                   <V11TextField
+                    disabled={locked}
                     keyboardType="number-pad"
                     accessibilityLabel={t(language, 'minutesQuestion')}
-                    onChangeText={(value) => { setDurationDraft(value); setEditError(false); }}
+                    onChangeText={(value) => { if (!submission.current.hasPending) { setDurationDraft(value); setEditError(false); } }}
                     status={editError ? 'error' : 'default'}
                     theme={theme}
                     value={durationDraft}
@@ -156,41 +169,53 @@ export default function V11ActivityHistorySheet({
               <View style={{ gap: 6 }}>
                 <Text style={{ color: theme.text.secondary }}>{t(language, 'noteOptional')}</Text>
                 <V11TextField
+                  disabled={locked}
                   accessibilityLabel={t(language, 'noteOptional')}
                   multiline
-                  onChangeText={setNoteDraft}
+                  onChangeText={(value) => { if (!submission.current.hasPending) setNoteDraft(value); }}
                   theme={theme}
                   value={noteDraft}
                 />
               </View>
               {editError ? <Text accessibilityRole="alert" style={{ color: theme.control.error }}>{t(language, 'invalidMinutes')}</Text> : null}
+              {saveStatus === 'error' ? <Text accessibilityRole="alert" style={{ color: theme.control.error }}>{t(language, 'captureSaveRetry')}</Text> : null}
               <V11SheetButton
-                label={t(language, 'save')}
-                onPress={() => {
+                label={t(language, saveStatus === 'saving' ? 'savingRecord' : 'save')}
+                loading={saveStatus === 'saving'}
+                onPress={async () => {
                   const duration = Number(durationDraft);
                   const durationChanged = selectedRecord.canEditDuration && duration !== selectedRecord.durationMinutes;
-                  if (durationChanged && (!Number.isSafeInteger(duration) || duration <= 0)) {
+                  if (!submission.current.hasPending && durationChanged && (!Number.isSafeInteger(duration) || duration <= 0)) {
                     setEditError(true);
                     return;
                   }
-                  onUpdateRecord(selectedRecord.id, {
-                    durationMinutes: durationChanged ? duration : undefined,
-                    note: noteDraft.trim(),
-                  });
-                  setEditing(false);
+                  setSaveStatus('saving');
+                  try {
+                    // Retry the original queued mutation, not the optimistic record now on screen.
+                    await submission.current.run(() => onUpdateRecord(selectedRecord.id, {
+                      durationMinutes: durationChanged ? duration : undefined,
+                      note: noteDraft.trim(),
+                    }), waitForLocalWrites, retryLocalWrites, async () => {});
+                    setSaveStatus('idle');
+                    setEditing(false);
+                  } catch {
+                    setSaveStatus('error');
+                  }
                 }}
                 theme={theme}
                 variant="primary"
               />
-              <V11InlineButton label={t(language, 'cancel')} onPress={() => setEditing(false)} theme={theme} />
+              <V11InlineButton label={t(language, 'cancel')} onPress={() => { if (!submission.current.hasPending) setEditing(false); }} theme={theme} />
             </View>
           ) : (
             <V11InlineButton
               label={t(language, 'edit')}
               onPress={() => {
+                if (submission.current.hasPending) return;
                 setDurationDraft(String(selectedRecord.durationMinutes));
                 setNoteDraft(selectedRecord.note ?? '');
                 setEditError(false);
+                setSaveStatus('idle');
                 setEditing(true);
               }}
               theme={theme}
@@ -213,7 +238,7 @@ export default function V11ActivityHistorySheet({
 
           <V11InlineButton
             label={deleteLabel}
-            onPress={() => onDeleteRecord(selectedRecord.id)}
+            onPress={() => { if (!submission.current.hasPending) onDeleteRecord(selectedRecord.id); }}
             theme={theme}
             tone="danger"
           />

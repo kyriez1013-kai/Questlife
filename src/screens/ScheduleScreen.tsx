@@ -205,7 +205,7 @@ export default function ScheduleScreen() {
   const [logQualitativeText, setLogQualitativeText] = useState('');
   const [logChecklistIds, setLogChecklistIds] = useState<string[]>([]);
   const [proposalStatuses, setProposalStatuses] = useState<Record<string, ScheduleProposalStatus>>({});
-  const [proposalUndo, setProposalUndo] = useState<{ proposalId: string; block: ScheduleBlock } | null>(null);
+  const [proposalUndo, setProposalUndo] = useState<{ proposalId: string; block: ScheduleBlock; appliedBlock: ScheduleBlock } | null>(null);
 
   const proposalReview = route.params?.scheduleProposalReview as {
     proposals?: ScheduleProposal[];
@@ -239,7 +239,7 @@ export default function ScheduleScreen() {
   const nowInfo = useMemo(() => {
     const now = Platform.OS === 'web' ? new Date() : clock;
     const nowMinutes = now.getHours() * 60 + now.getMinutes();
-    const upcoming = Platform.OS === 'web' ? dayBlocks : dayBlocks.filter(block => block.status !== 'completed' && block.status !== 'skipped');
+    const upcoming = dayBlocks.filter(block => block.status !== 'completed' && block.status !== 'skipped');
     const active = selectedDate === today()
       ? upcoming.find((b) => minuteOfDay(b.startTime) <= nowMinutes && nowMinutes < minuteOfDay(b.endTime))
       : undefined;
@@ -423,6 +423,7 @@ export default function ScheduleScreen() {
   };
 
   const openLogBlock = (block: ScheduleBlock) => {
+    if (logRunning.current || pendingLog.current) return;
     setActionBlock(null);
     pendingLog.current = null;
     setLogFailed(false);
@@ -450,7 +451,7 @@ export default function ScheduleScreen() {
     if (!logBlock || logRunning.current) return;
     const skill = logBlock.linkedSkillId ? data.skills.find((item) => item.id === logBlock.linkedSkillId) : undefined;
     const duration = actualMinutesInput(logMinutes, undefined, isStrengthPredictionSkill(skill));
-    if (!duration.valid) {
+    if (!pendingLog.current && !duration.valid) {
       Alert.alert(t(lang, 'invalidMinutes'));
       return;
     }
@@ -549,13 +550,11 @@ export default function ScheduleScreen() {
         qualitativeText: metricType === 'qualitative' ? logQualitativeText.trim() || undefined : undefined,
       },
     });
-    if (Platform.OS !== 'web') {
-      const retry = !!pendingLog.current;
-      pendingLog.current = savedLog;
-      if (retry) await retryLocalWrites();
-      await waitForLocalWrites();
-      await waitForExecutionLog(savedLog.id);
-    }
+    const retry = !!pendingLog.current;
+    pendingLog.current = savedLog;
+    if (retry) await retryLocalWrites();
+    await waitForLocalWrites();
+    await waitForExecutionLog(savedLog.id);
     pendingLog.current = null;
     setLogBlock(null);
     } catch { setLogFailed(true); }
@@ -563,46 +562,84 @@ export default function ScheduleScreen() {
   };
 
   const canApplyScheduleProposal = (proposalId: string) => {
+    if (saveRunning.current || pendingScheduleWrite.current) return false;
     const proposal = scheduleProposals.find((item) => item.id === proposalId);
     if (!proposal || proposal.status !== 'pending') return false;
     if (proposalReview?.qualityGrade === 'bad') return false;
     if (proposalReview?.qualityGrade === 'weak' && !isDecisionDebugEnabled()) return false;
-    const block = proposal.blockId ? data.scheduleBlocks.find((item) => item.id === proposal.blockId) : undefined;
+    const block = proposal.blockId ? latestBlocks.current.find((item) => item.id === proposal.blockId) : undefined;
     const result = buildScheduleProposalPatch(proposal, block);
     if (!result.ok) return false;
     if (proposalReview?.evidenceBasis === 'population_prior' && (!proposal.blockId || proposal.reason.length < 8)) return false;
     return true;
   };
 
-  const applyScheduleProposal = (proposalId: string) => {
+  const saveProposalWrite = async (mutate: () => void, complete: () => void) => {
+    if (saveRunning.current || pendingScheduleWrite.current) return;
+    saveRunning.current = true;
+    setSaveState('busy');
+    setScheduleNotice(undefined);
+    try {
+      mutate();
+      pendingScheduleWrite.current = complete;
+      await waitForLocalWrites();
+      complete();
+      pendingScheduleWrite.current = null;
+      setSaveState('idle');
+    } catch {
+      setSaveState('failed');
+      setScheduleNotice(scheduleCopy(lang, 'saveFailed'));
+    } finally { saveRunning.current = false; }
+  };
+
+  const applyScheduleProposal = async (proposalId: string) => {
+    if (saveRunning.current || pendingScheduleWrite.current) return;
     const proposal = scheduleProposals.find((item) => item.id === proposalId);
     if (!proposal || !canApplyScheduleProposal(proposalId)) {
       setProposalStatuses((current) => ({ ...current, [proposalId]: 'failed' }));
       return;
     }
-    const block = proposal.blockId ? data.scheduleBlocks.find((item) => item.id === proposal.blockId) : undefined;
+    const block = proposal.blockId ? latestBlocks.current.find((item) => item.id === proposal.blockId) : undefined;
     const result = buildScheduleProposalPatch(proposal, block);
     if (!result.ok || !block || !result.patch) {
       setProposalStatuses((current) => ({ ...current, [proposalId]: 'failed' }));
       return;
     }
-    setProposalUndo({ proposalId, block });
-    updateScheduleBlock(block.id, result.patch);
-    setProposalStatuses((current) => ({ ...current, [proposalId]: 'applied' }));
+    const patch = result.patch;
+    const undo = { proposalId, block: { ...block }, appliedBlock: { ...block, ...patch } };
+    await saveProposalWrite(() => updateScheduleBlock(block.id, patch), () => {
+      setProposalUndo(undo);
+      setProposalStatuses((current) => ({ ...current, [proposalId]: 'applied' }));
+    });
   };
 
   const dismissScheduleProposal = (proposalId: string) => {
+    if (saveRunning.current || pendingScheduleWrite.current) return;
     setProposalStatuses((current) => ({ ...current, [proposalId]: 'dismissed' }));
   };
 
-  const undoScheduleProposal = () => {
-    if (!proposalUndo) return;
-    updateScheduleBlock(proposalUndo.block.id, {
+  const undoScheduleProposal = async () => {
+    if (!proposalUndo || saveRunning.current || pendingScheduleWrite.current) return;
+    const current = latestBlocks.current.find(block => block.id === proposalUndo.block.id);
+    if (!current || JSON.stringify(current) !== JSON.stringify(proposalUndo.appliedBlock)) {
+      setScheduleNotice(scheduleCopy(lang, 'reviewAgain'));
+      setProposalUndo(null);
+      return;
+    }
+    const restoresPlacement = current.date !== proposalUndo.block.date
+      || current.startTime !== proposalUndo.block.startTime || current.endTime !== proposalUndo.block.endTime;
+    if (restoresPlacement && proposalUndo.block.status !== 'skipped'
+      && scheduleConflicts(proposalUndo.block, latestAllBlocks.current, proposalUndo.block.id).length) {
+      setScheduleNotice(scheduleCopy(lang, 'reviewAgain'));
+      return;
+    }
+    await saveProposalWrite(() => updateScheduleBlock(proposalUndo.block.id, {
       ...proposalUndo.block,
       notes: proposalUndo.block.notes,
+    }), () => {
+      setProposalStatuses((current) => ({ ...current, [proposalUndo.proposalId]: 'pending' }));
+      setProposalUndo(null);
     });
-    setProposalStatuses((current) => ({ ...current, [proposalUndo.proposalId]: 'pending' }));
-    setProposalUndo(null);
   };
 
   return (
@@ -670,7 +707,7 @@ export default function ScheduleScreen() {
                 title={`${t(lang, 'nextBlock')}: ${nowInfo.next?.title ?? t(lang, 'noNextBlock')}`}
                 body={nowInfo.next
                   ? `${nowInfo.next.startTime}-${nowInfo.next.endTime} · ${nowInfo.next.plannedMinutes}m`
-                  : t(lang, 'noBlocksToday')}
+                  : dayBlocks.length === 0 ? t(lang, 'noBlocksToday') : undefined}
                 leading={<QuestIcon name="calendar" size={18} color={nowInfo.next ? questTheme.colors.primary : questTheme.colors.textMuted} />}
               />
             </QuestGroupedSurface>
@@ -691,7 +728,7 @@ export default function ScheduleScreen() {
                   canApply={canApplyScheduleProposal}
                   onApply={applyScheduleProposal}
                   onDismiss={dismissScheduleProposal}
-                  canUndo={!!proposalUndo}
+                  canUndo={!!proposalUndo && saveState === 'idle'}
                   onUndo={undoScheduleProposal}
                 />
               </>
@@ -888,11 +925,11 @@ export default function ScheduleScreen() {
       </View> : undefined}>
         <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'logProgress')}</Text>
         {logBlock ? (
-          <View pointerEvents={logSaving || (Platform.OS !== 'web' && logFailed) ? 'none' : 'auto'} accessibilityElementsHidden={logSaving}>
+          <View pointerEvents={logSaving || logFailed ? 'none' : 'auto'} accessibilityElementsHidden={logSaving || logFailed}>
             <Text style={[styles.logSheetTitle, { color: questTheme.colors.text }]}>{logBlock.title}</Text>
             <Text style={[styles.blockMeta, { color: questTheme.colors.textMuted }]}>{logBlock.startTime}-{logBlock.endTime} · {taskTypeLabel(lang, logBlock.taskType)} · {statusLabel(lang, logBlock.status)}</Text>
-            <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, isStrengthPredictionSkill(data.skills.find(skill => skill.id === logBlock.linkedSkillId)) ? 'sessionDurationOptional' : 'actualDuration')}</Text>
-            <QuestInput questTheme={questTheme} value={logMinutes} onChangeText={setLogMinutes} keyboardType="number-pad" placeholder={t(lang, 'recordActualMinutesPlaceholder')} />
+            <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, isStrengthPredictionSkill(data.skills.find(skill => skill.id === logBlock.linkedSkillId)) ? 'sessionDurationOptional' : 'actualMinutes')}</Text>
+            <QuestInput editable={!logSaving && !logFailed} questTheme={questTheme} value={logMinutes} onChangeText={setLogMinutes} keyboardType="number-pad" placeholder={t(lang, 'recordActualMinutesPlaceholder')} />
             <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'optionalQuality')}</Text>
             <View style={styles.qualityRow}>
               {QUALITY_OPTIONS.map((q) => {
@@ -900,6 +937,7 @@ export default function ScheduleScreen() {
                 return (
                   <TouchableOpacity
                     key={q.value}
+                    disabled={logSaving || logFailed}
                     style={[styles.qualityChip, { minHeight: questLayout.controlMinHeight, minWidth: questLayout.controlMinHeight, backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }, on && { borderColor: accent, backgroundColor: questTheme.colors.primarySoft }]}
                     onPress={() => setLogQuality(on ? null : q.value)}
                     accessibilityRole="button"
@@ -927,12 +965,12 @@ export default function ScheduleScreen() {
                       {(skill.metricConfig?.currentValue ?? skill.currentValue ?? 0)}{skill.metricConfig?.unit ?? skill.unit ?? ''} / {(skill.metricConfig?.targetValue ?? skill.targetValue ?? 0)}{skill.metricConfig?.unit ?? skill.unit ?? ''}
                     </Text>
                     <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'newCurrentValue')}</Text>
-                    <QuestInput questTheme={questTheme} value={logNewCurrentValue} onChangeText={setLogNewCurrentValue} keyboardType="decimal-pad" placeholder={t(lang, 'newCurrentValue')} />
+                    <QuestInput editable={!logSaving && !logFailed} questTheme={questTheme} value={logNewCurrentValue} onChangeText={setLogNewCurrentValue} keyboardType="decimal-pad" placeholder={t(lang, 'newCurrentValue')} />
                     {isStrengthLog ? (
                       <View style={styles.timeRow}>
-                        <QuestInput questTheme={questTheme} value={logStrengthWeight} onChangeText={setLogStrengthWeight} keyboardType="decimal-pad" placeholder={t(lang, 'actualWorkingWeight')} style={{ flex: 1 }} />
-                        <QuestInput questTheme={questTheme} value={logStrengthReps} onChangeText={setLogStrengthReps} keyboardType="number-pad" placeholder={t(lang, 'actualReps')} style={{ flex: 1 }} />
-                        <QuestInput questTheme={questTheme} value={logStrengthSets} onChangeText={setLogStrengthSets} keyboardType="number-pad" placeholder={t(lang, 'actualSets')} style={{ flex: 1 }} />
+                        <QuestInput editable={!logSaving && !logFailed} questTheme={questTheme} value={logStrengthWeight} onChangeText={setLogStrengthWeight} keyboardType="decimal-pad" placeholder={t(lang, 'actualWorkingWeight')} style={{ flex: 1 }} />
+                        <QuestInput editable={!logSaving && !logFailed} questTheme={questTheme} value={logStrengthReps} onChangeText={setLogStrengthReps} keyboardType="number-pad" placeholder={t(lang, 'actualReps')} style={{ flex: 1 }} />
+                        <QuestInput editable={!logSaving && !logFailed} questTheme={questTheme} value={logStrengthSets} onChangeText={setLogStrengthSets} keyboardType="number-pad" placeholder={t(lang, 'actualSets')} style={{ flex: 1 }} />
                       </View>
                     ) : null}
                   </View>
@@ -948,6 +986,7 @@ export default function ScheduleScreen() {
                       return (
                         <TouchableOpacity
                           key={item.id}
+                          disabled={logSaving || logFailed}
                           style={styles.checkRow}
                           onPress={() => setLogChecklistIds((ids) => checked ? ids.filter((id) => id !== item.id) : [...ids, item.id])}
                           accessibilityRole="checkbox"
@@ -968,19 +1007,19 @@ export default function ScheduleScreen() {
                     <Text style={[styles.metricHint, { color: questTheme.colors.textMuted }]}>{isStrengthLog ? t(lang, 'actualPerformance') : t(lang, 'metricDescPerformance')}</Text>
                     {isStrengthLog ? (
                       <View style={styles.timeRow}>
-                        <QuestInput questTheme={questTheme} value={logStrengthWeight} onChangeText={setLogStrengthWeight} keyboardType="decimal-pad" placeholder={t(lang, 'actualWorkingWeight')} style={{ flex: 1 }} />
-                        <QuestInput questTheme={questTheme} value={logStrengthReps} onChangeText={setLogStrengthReps} keyboardType="number-pad" placeholder={t(lang, 'actualReps')} style={{ flex: 1 }} />
-                        <QuestInput questTheme={questTheme} value={logStrengthSets} onChangeText={setLogStrengthSets} keyboardType="number-pad" placeholder={t(lang, 'actualSets')} style={{ flex: 1 }} />
+                        <QuestInput editable={!logSaving && !logFailed} questTheme={questTheme} value={logStrengthWeight} onChangeText={setLogStrengthWeight} keyboardType="decimal-pad" placeholder={t(lang, 'actualWorkingWeight')} style={{ flex: 1 }} />
+                        <QuestInput editable={!logSaving && !logFailed} questTheme={questTheme} value={logStrengthReps} onChangeText={setLogStrengthReps} keyboardType="number-pad" placeholder={t(lang, 'actualReps')} style={{ flex: 1 }} />
+                        <QuestInput editable={!logSaving && !logFailed} questTheme={questTheme} value={logStrengthSets} onChangeText={setLogStrengthSets} keyboardType="number-pad" placeholder={t(lang, 'actualSets')} style={{ flex: 1 }} />
                       </View>
                     ) : (
                       <>
                         <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'performanceValue')}</Text>
-                        <QuestInput questTheme={questTheme} value={logPerformanceValue} onChangeText={setLogPerformanceValue} keyboardType="decimal-pad" placeholder={t(lang, 'performanceValue')} />
+                        <QuestInput editable={!logSaving && !logFailed} questTheme={questTheme} value={logPerformanceValue} onChangeText={setLogPerformanceValue} keyboardType="decimal-pad" placeholder={t(lang, 'performanceValue')} />
                       </>
                     )}
-                    <QuestInput questTheme={questTheme} value={logStrengthRpe} onChangeText={setLogStrengthRpe} keyboardType="decimal-pad" placeholder={t(lang, 'actualRPE')} />
-                    <QuestInput questTheme={questTheme} value={logPerformanceUnit} onChangeText={setLogPerformanceUnit} placeholder={skill.metricConfig?.unit ?? '%'} />
-                    <QuestInput questTheme={questTheme} value={logPerformanceNote} onChangeText={setLogPerformanceNote} style={{ height: 60, textAlignVertical: 'top' }} multiline placeholder={t(lang, 'notes')} />
+                    <QuestInput editable={!logSaving && !logFailed} questTheme={questTheme} value={logStrengthRpe} onChangeText={setLogStrengthRpe} keyboardType="decimal-pad" placeholder={t(lang, 'actualRPE')} />
+                    <QuestInput editable={!logSaving && !logFailed} questTheme={questTheme} value={logPerformanceUnit} onChangeText={setLogPerformanceUnit} placeholder={skill.metricConfig?.unit ?? '%'} />
+                    <QuestInput editable={!logSaving && !logFailed} questTheme={questTheme} value={logPerformanceNote} onChangeText={setLogPerformanceNote} style={{ height: 60, textAlignVertical: 'top' }} multiline placeholder={t(lang, 'notes')} />
                   </View>
                 );
               }
@@ -990,7 +1029,7 @@ export default function ScheduleScreen() {
                   <View>
                     <Text style={[styles.metricHint, { color: questTheme.colors.textMuted }]}>{t(lang, 'metricDescState')}</Text>
                     <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'stateMetric')}</Text>
-                    <QuestInput questTheme={questTheme} value={logStateValue} onChangeText={setLogStateValue} keyboardType="decimal-pad" placeholder={skill.metricConfig?.stateMetric ?? t(lang, 'stateMetric')} />
+                    <QuestInput editable={!logSaving && !logFailed} questTheme={questTheme} value={logStateValue} onChangeText={setLogStateValue} keyboardType="decimal-pad" placeholder={skill.metricConfig?.stateMetric ?? t(lang, 'stateMetric')} />
                   </View>
                 );
               }
@@ -1001,11 +1040,11 @@ export default function ScheduleScreen() {
                     <View style={styles.timeRow}>
                       <View style={{ flex: 1 }}>
                         <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'amountAdded')}</Text>
-                        <QuestInput questTheme={questTheme} value={logAmountAdded} onChangeText={setLogAmountAdded} keyboardType="decimal-pad" placeholder="100" />
+                        <QuestInput editable={!logSaving && !logFailed} questTheme={questTheme} value={logAmountAdded} onChangeText={setLogAmountAdded} keyboardType="decimal-pad" placeholder="100" />
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'newCurrentAmount')}</Text>
-                        <QuestInput questTheme={questTheme} value={logNewCurrentAmount} onChangeText={setLogNewCurrentAmount} keyboardType="decimal-pad" placeholder="500" />
+                        <QuestInput editable={!logSaving && !logFailed} questTheme={questTheme} value={logNewCurrentAmount} onChangeText={setLogNewCurrentAmount} keyboardType="decimal-pad" placeholder="500" />
                       </View>
                     </View>
                   </View>
@@ -1014,6 +1053,7 @@ export default function ScheduleScreen() {
               if (metricType === 'binary') {
                 return (
                   <TouchableOpacity
+                    disabled={logSaving || logFailed}
                     style={styles.checkRow}
                     onPress={() => setLogBinaryCompleted((value) => !value)}
                     accessibilityRole="checkbox"
@@ -1029,24 +1069,27 @@ export default function ScheduleScreen() {
                 return (
                   <View>
                     <Text style={[styles.metricHint, { color: questTheme.colors.textMuted }]}>{t(lang, 'metricDescQualitative')}</Text>
-                    <QuestInput questTheme={questTheme} value={logQualitativeText} onChangeText={setLogQualitativeText} style={{ height: 70, textAlignVertical: 'top' }} multiline placeholder={t(lang, 'qualitativeSummary')} />
+                    <QuestInput editable={!logSaving && !logFailed} questTheme={questTheme} value={logQualitativeText} onChangeText={setLogQualitativeText} style={{ height: 70, textAlignVertical: 'top' }} multiline placeholder={t(lang, 'qualitativeSummary')} />
                   </View>
                 );
               }
               return <Text style={[styles.metricHint, { color: questTheme.colors.textMuted }]}>{t(lang, 'noNumericProgress')}</Text>;
             })()}
             <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'notes')}</Text>
-            <QuestInput questTheme={questTheme} value={logNote} onChangeText={setLogNote} style={{ height: 70, textAlignVertical: 'top' }} multiline />
-            {Platform.OS === 'web' ? <View style={styles.sheetActions}>
-              <TouchableOpacity style={[styles.saveBtn, styles.cancelBtn, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]} onPress={() => setLogBlock(null)}>
-                <Text style={[styles.cancelText, { color: questTheme.colors.text }]}>{t(lang, 'cancel')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.saveBtn, { backgroundColor: accent, flex: 1 }]} onPress={submitLogBlock}>
-                <Text style={styles.saveText}>{t(lang, 'logProgress')}</Text>
-              </TouchableOpacity>
-            </View> : null}
+            <QuestInput editable={!logSaving && !logFailed} questTheme={questTheme} value={logNote} onChangeText={setLogNote} style={{ height: 70, textAlignVertical: 'top' }} multiline />
           </View>
         ) : null}
+        {Platform.OS === 'web' && logBlock ? <>
+            {logFailed ? <Text accessibilityRole="alert" style={{ color: questTheme.colors.text, fontSize: questTheme.typography.bodySize }}>{scheduleCopy(lang, 'logPending')}</Text> : null}
+            <View style={styles.sheetActions}>
+              <TouchableOpacity accessibilityRole="button" disabled={logSaving || logFailed} style={[styles.saveBtn, styles.cancelBtn, { backgroundColor: questTheme.colors.surfaceSoft, borderColor: questTheme.colors.border }]} onPress={() => { if (!logRunning.current && !pendingLog.current) setLogBlock(null); }}>
+                <Text style={[styles.cancelText, { color: questTheme.colors.text }]}>{t(lang, 'cancel')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity accessibilityRole="button" disabled={logSaving} accessibilityState={{ busy: logSaving, disabled: logSaving }} style={[styles.saveBtn, { backgroundColor: accent, flex: 1 }]} onPress={submitLogBlock}>
+                <Text style={styles.saveText}>{logSaving ? t(lang, 'savingRecord') : logFailed ? scheduleCopy(lang, 'logRetry') : t(lang, 'logProgress')}</Text>
+              </TouchableOpacity>
+            </View>
+        </> : null}
       </BottomSheetForm>
     </SafeAreaView>
   );

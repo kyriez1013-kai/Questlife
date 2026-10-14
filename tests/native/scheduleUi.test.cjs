@@ -12,9 +12,10 @@ const React = require(path.join(runtime, 'react'));
 const { create, act } = require(path.join(runtime, 'react-test-renderer'));
 global.IS_REACT_ACT_ENVIRONMENT = true;
 const root = path.resolve(__dirname, '../..');
-let store, tree, external, alerts, writes, wait, retry, waits, retries, calendar, device, calendarWrites, statuses, statusHook;
+let store, tree, external, alerts, writes, wait, retry, waits, retries, calendar, device, calendarWrites, statuses, statusHook, routeParams;
+let disk, journal, engine, project, diskGate, failDisk, sequence = 0;
 const rn = {
-  Platform: { OS: 'android', select: options => options.android ?? options.default },
+  Platform: { OS: 'ios', select: options => options[rn.Platform.OS] ?? options.native ?? options.default },
   StyleSheet: { create: value => value, hairlineWidth: 1 },
   Appearance: { getColorScheme: () => 'light' },
   useWindowDimensions: () => ({ width: 375, height: 667 }),
@@ -32,9 +33,33 @@ Module._load = function(request, parent, isMain) {
   if (request === 'react-native') return rn;
   if (request === 'react-native-safe-area-context') return { SafeAreaView: 'SafeAreaView' };
   if (request === '@react-native-community/datetimepicker') return component('DateTimePicker');
-  if (request === '@react-navigation/native') return { useRoute: () => ({ params: {} }) };
+  if (request === '@react-navigation/native') return { useRoute: () => ({ params: routeParams }) };
   if (/\/store$/.test(request)) return { useStore: () => store };
-  if (/\/storage$/.test(request)) return { today: () => '2026-09-22' };
+  if (/\/storage$/.test(request)) return {
+    today: () => '2026-09-22', uid: () => `TEST_${++sequence}`,
+    loadData: async () => structuredClone(disk), hasSyncAccountBinding: async () => true,
+    readPersistedDataForDebug: async () => structuredClone(disk),
+    persist: async (next, options) => {
+      if (diskGate) await diskGate.promise;
+      if (failDisk) { failDisk = false; throw Error('TEST_DISK_FULL'); }
+      disk = rebaseAppDataWrite(options.base, next, disk);
+      return structuredClone(disk);
+    },
+  };
+  if (request === './notifications') return { scheduleSkillReminder: async () => {}, cancelSkillReminder: async () => {}, rescheduleAllReminders: async () => {} };
+  if (/\/analytics$/.test(request)) return { trackEvent() {} };
+  if (/\/syncService$/.test(request)) return { scheduleServerSync() {} };
+  if (/\/syncDeletionOutbox$/.test(request)) return { enqueueServerDeletions: async () => {} };
+  if (/\/persistenceTrace$/.test(request)) return { installPersistenceDebugBridge: () => () => {} };
+  if (/\/sync-v2\/runtime$/.test(request)) return {
+    getSyncEngine: async () => engine,
+    startSyncRuntime: async (_read, apply) => { project = apply; return () => {}; },
+    persistWithSync: async (base, next, source, save) => {
+      let committed;
+      await engine.commit(localChanges(base, next, source === 'store.explicit_delete'), async () => { committed = await save(); });
+      return committed;
+    },
+  };
   if (/\/useQuestTheme$/.test(request)) return { useQuestTheme: () => require(path.join(root, 'src/design/tokens.ts')).getQuestTheme(store.data.settings.selectedThemeId) };
   if (/\/useExternalCalendarBlocks$/.test(request)) return { useExternalCalendarBlocks: () => external };
   if (/\/useDeviceData$/.test(request)) return { useDeviceData: () => device };
@@ -51,12 +76,17 @@ for (const extension of ['.ts', '.tsx']) require.extensions[extension] = (module
   module._compile(ts.transpileModule(fs.readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText, filename);
 };
 const { DEFAULT_DATA } = require(path.join(root, 'src/types.ts'));
+const { rebaseAppDataWrite } = require(path.join(root, 'src/utils/persistenceConsistency.ts'));
+const { emptySyncState } = require(path.join(root, 'src/sync-v2/contracts.ts'));
+const { SyncEngineV2 } = require(path.join(root, 'src/sync-v2/engine.ts'));
+const { localChanges } = require(path.join(root, 'src/sync-v2/projection.ts'));
+const realStore = require(path.join(root, 'src/store.tsx'));
 const { scheduleDayContext, canMoveScheduleBlock } = require(path.join(root, 'src/native/NativeScheduleFields.tsx'));
 const block = { id: 'TEST_BLOCK', title: 'TEST plan', date: '2026-09-22', startTime: '09:00', endTime: '10:00', plannedMinutes: 60, taskType: 'deep_study', flexibility: 'flexible', rigidity: 'medium', status: 'planned', source: 'manual', createdAt: 1 };
 const deferred = () => { let resolve, reject; const promise = new Promise((yes, no) => { resolve = yes; reject = no; }); return { promise, resolve, reject }; };
 function fresh(blocks = []) {
-  writes = []; alerts = []; external = []; waits = 0; retries = 0; calendarWrites = []; statuses = {}; statusHook = undefined;
-  rn.Platform.OS = 'android'; wait = async () => {}; retry = async () => {};
+  writes = []; alerts = []; external = []; waits = 0; retries = 0; calendarWrites = []; statuses = {}; statusHook = undefined; routeParams = {};
+  rn.Platform.OS = 'ios'; wait = async () => {}; retry = async () => {};
   store = {
     data: structuredClone(DEFAULT_DATA),
     addScheduleBlock(input) { const value = { ...input, id: 'TEST_CREATED', createdAt: 2 }; writes.push(['create', value]); store.data.scheduleBlocks = [...store.data.scheduleBlocks, value]; return value; },
@@ -92,6 +122,23 @@ const refresh = async () => { await act(async () => tree.update(React.createElem
 const actions = async (title = block.title) => { await act(async () => tree.root.findAll(node => ['QuestButton', 'Pressable'].includes(node.type) && node.props.accessibilityLabel === `Block actions: ${title}`)[0].props.onPress()); };
 afterEach(async () => { if (tree) await act(async () => tree.unmount()); tree = undefined; delete global.window; });
 
+// Real Store, write queue and sync journal; only the disk and native hosts are disposable doubles.
+function StoredSchedule() {
+  store = realStore.useStore();
+  return store.loading ? null : React.createElement(require(path.join(root, 'src/screens/ScheduleScreen.tsx')).default);
+}
+async function mountStoredSchedule() {
+  await act(async () => { tree = create(React.createElement(realStore.StoreProvider, {}, React.createElement(StoredSchedule))); });
+}
+async function freshStoredSchedule(platform) {
+  fresh([block]); rn.Platform.OS = platform; disk = structuredClone(store.data);
+  journal = emptySyncState(); diskGate = undefined; failDisk = false;
+  engine = new SyncEngineV2({ read: async () => structuredClone(journal), write: async value => { journal = structuredClone(value); },
+    apply: async changes => { await project(changes); } },
+  { push: async () => { throw Error('NO_NETWORK'); }, pull: async () => { throw Error('NO_NETWORK'); } }, 'TEST_DEVICE', () => `TEST_OP_${++sequence}`);
+  await mountStoredSchedule();
+}
+
 test('capacity uses merged compiler windows, not duration sums or skipped time', () => {
   fresh();
   const context = scheduleDayContext(block.date, [block, { ...block, id: 'overlap', startTime: '09:30', endTime: '11:00', plannedMinutes: 999 }, { ...block, id: 'skip', startTime: '11:00', endTime: '23:00', status: 'skipped' }, { ...block, id: 'other-day', date: '2026-09-23' }]);
@@ -102,6 +149,36 @@ test('move authority excludes fixed, locked, completed and skipped blocks', () =
   for (const patch of [{ flexibility: 'fixed' }, { placementLocked: true }, { status: 'completed' }, { status: 'skipped' }]) assert.equal(canMoveScheduleBlock({ ...block, ...patch }), false);
   assert.equal(canMoveScheduleBlock({ ...block, status: 'adjusted', flexibility: 'movable' }), true);
 });
+for (const platform of ['web', 'ios']) for (const status of ['completed', 'skipped']) {
+  test(`${platform} current and next exclude ${status} blocks without removing history`, async context => {
+    context.mock.timers.enable({ apis: ['Date'], now: new Date('2026-09-22T09:30:00') });
+    fresh([
+      { ...block, id: 'closed-current', title: 'CLOSED CURRENT', status },
+      { ...block, id: 'live-current', title: 'LIVE CURRENT', startTime: '09:15' },
+      { ...block, id: 'closed-next', title: 'CLOSED NEXT', startTime: '10:00', endTime: '11:00', status },
+      { ...block, id: 'live-next', title: 'LIVE NEXT', startTime: '11:00', endTime: '12:00', status: 'adjusted' },
+    ]);
+    rn.Platform.OS = platform;
+    const original = structuredClone(store.data.scheduleBlocks);
+    const { t } = require(path.join(root, 'src/i18n.ts'));
+    const summary = key => tree.root.findAllByType('QuestCompactRow').find(node => node.props.title.startsWith(`${t('en', key)}:`)).props.title;
+    await render();
+    assert.equal(summary('currentBlock'), `${t('en', 'currentBlock')}: LIVE CURRENT`);
+    assert.equal(summary('nextBlock'), `${t('en', 'nextBlock')}: LIVE NEXT`);
+    assert.deepEqual(store.data.scheduleBlocks, original);
+    store.data.scheduleBlocks = store.data.scheduleBlocks.map(row => ({ ...row, status }));
+    await refresh();
+    assert.equal(summary('currentBlock'), `${t('en', 'currentBlock')}: ${t('en', 'noCurrentBlock')}`);
+    assert.equal(summary('nextBlock'), `${t('en', 'nextBlock')}: ${t('en', 'noNextBlock')}`);
+    const nextRow = () => tree.root.findAllByType('QuestCompactRow').find(node => node.props.title.startsWith(`${t('en', 'nextBlock')}:`));
+    assert.equal(nextRow().props.body, undefined, 'finished records do not make the day empty');
+    assert.equal(store.data.scheduleBlocks.length, 4);
+    store.data.scheduleBlocks = [];
+    await refresh();
+    assert.equal(nextRow().props.body, t('en', 'noBlocksToday'), 'empty days retain their guidance');
+    assert.equal(writes.length, 0);
+  });
+}
 test('native create footer stays outside fields and waits for durable ACK', async () => {
   fresh(); const ack = deferred(); wait = () => ack.promise; await render(); await press('Add block');
   const title = tree.root.findAllByType('QuestInput')[0]; await act(async () => title.props.onChangeText('TEST new block'));
@@ -212,6 +289,165 @@ test('record duration starts unknown; failed record retries without recreating e
   await act(async () => duration.props.onChangeText('23')); await press('Log progress'); assert.equal(writes.length, 1); assert.equal(writes[0][1].durationMinutes, 23); assert.equal(writes[0][1].qualityRating, undefined);
   assert.ok(button('Retry saving record')); wait = async () => {}; await press('Retry saving record'); assert.equal(writes.length, 1); assert.equal(retries, 1); assert.equal(tree.root.findAllByType('Sheet').length, 0);
 });
+
+const proposal = { id: 'TEST_PROPOSAL', blockId: block.id, createdAt: '2026-09-22T08:00:00Z', action: 'move', to: '11:00', reason: 'TEST move to a free window', status: 'pending' };
+const review = () => tree.root.findByType('ScheduleProposalReview').props;
+const logButton = label => rn.Platform.OS === 'web'
+  ? tree.root.findByType('Sheet').findAllByType('TouchableOpacity').find(node => node.findAllByType('Text').some(child => typeof child.props.children === 'string' && child.props.children.toLowerCase() === label.toLowerCase()))
+  : button(label);
+
+for (const platform of ['web', 'ios']) {
+  test(`${platform} execution log keeps its sheet until both local and record receipts resolve`, async () => {
+    fresh([block]); rn.Platform.OS = platform;
+    const local = deferred(), record = deferred(); const receipts = [];
+    wait = () => local.promise;
+    store.waitForExecutionLog = id => { receipts.push(id); return record.promise; };
+    await render(); if (platform !== 'web') await actions(); await press('Log progress');
+    await input('Enter actual minutes', '23');
+    const submit = logButton('Log progress').props.onPress;
+    await act(async () => { void submit(); void submit(); tree.root.findByType('Sheet').props.onClose(); });
+    assert.equal(writes.length, 1); assert.equal(waits, 1); assert.equal(tree.root.findAllByType('Sheet').length, 1);
+    if (platform === 'web') {
+      await act(async () => logButton('Cancel').props.onPress());
+      assert.equal(tree.root.findAllByType('Sheet').length, 1);
+      assert.equal(logButton('Saving record…').props.disabled, true);
+    }
+    await act(async () => local.resolve());
+    assert.deepEqual(receipts, ['TEST_LOG']); assert.equal(tree.root.findAllByType('Sheet').length, 1);
+    await act(async () => record.resolve());
+    assert.equal(tree.root.findAllByType('Sheet').length, 0);
+  });
+
+  test(`${platform} execution log failure exposes a reachable retry and keeps the submitted record`, async () => {
+    fresh([block]); rn.Platform.OS = platform; wait = async () => { throw Error('DISK_FULL'); };
+    await render(); if (platform !== 'web') await actions(); await press('Log progress');
+    await input('Enter actual minutes', '23');
+    await act(async () => logButton('Log progress').props.onPress());
+    assert.match(text(), /Record confirmation is pending/);
+    assert.ok(tree.root.findByType('Sheet').findAllByType('QuestInput').every(node => node.props.editable === false));
+    const retryButton = logButton('Retry saving record'); assert.ok(retryButton);
+    for (let parent = retryButton.parent; parent; parent = parent.parent) assert.notEqual(parent.props.pointerEvents, 'none', 'retry cannot be inside locked fields');
+    await act(async () => tree.root.findByType('Sheet').props.onClose());
+    assert.equal(tree.root.findAllByType('Sheet').length, 1);
+    retry = async () => { throw Error('STILL_FULL'); };
+    await act(async () => retryButton.props.onPress());
+    assert.equal(writes.length, 1); assert.equal(retries, 1);
+    const ack = deferred(); retry = () => ack.promise; wait = async () => {};
+    await act(async () => { void logButton('Retry saving record').props.onPress(); });
+    assert.equal(writes.length, 1); assert.equal(tree.root.findAllByType('Sheet').length, 1);
+    await act(async () => ack.resolve());
+    assert.equal(tree.root.findAllByType('Sheet').length, 0); assert.equal(retries, 2);
+    assert.equal(writes[0][1].durationMinutes, 23);
+  });
+
+  test(`${platform} legacy Apply and Undo report success only after ACK and guard repeated actions`, async () => {
+    fresh([block]); rn.Platform.OS = platform; routeParams = { scheduleProposalReview: { proposals: [proposal], qualityGrade: 'good' } };
+    const apply = deferred(); wait = () => apply.promise; await render();
+    const initial = review();
+    await act(async () => { void initial.onApply(proposal.id); void initial.onApply(proposal.id); initial.onDismiss(proposal.id); void initial.onUndo(); });
+    assert.equal(writes.length, 1); assert.equal(waits, 1);
+    assert.equal(review().proposals[0].status, 'pending'); assert.equal(review().canUndo, false); assert.equal(review().canApply(proposal.id), false);
+    await act(async () => apply.resolve());
+    assert.equal(review().proposals[0].status, 'applied'); assert.equal(review().canUndo, true);
+    const undo = deferred(); wait = () => undo.promise;
+    const undoPress = review().onUndo;
+    await act(async () => { void undoPress(); void undoPress(); });
+    assert.equal(writes.length, 2); assert.equal(review().proposals[0].status, 'applied'); assert.equal(review().canUndo, false);
+    await act(async () => undo.resolve());
+    assert.equal(review().proposals[0].status, 'pending'); assert.equal(review().canUndo, false);
+    assert.deepEqual(store.data.scheduleBlocks[0], { ...block, notes: undefined });
+  });
+
+  test(`${platform} legacy Apply and Undo retry persistence without repeating either mutation`, async () => {
+    fresh([block]); rn.Platform.OS = platform; routeParams = { scheduleProposalReview: { proposals: [proposal], qualityGrade: 'good' } };
+    wait = async () => { throw Error('DISK_FULL'); }; await render();
+    await act(async () => review().onApply(proposal.id));
+    assert.equal(review().proposals[0].status, 'pending'); assert.equal(review().canUndo, false); assert.equal(writes.length, 1);
+    assert.ok(button('Retry save')); assert.match(text(), /Could not confirm the save/);
+    wait = async () => {}; await press('Retry save');
+    assert.equal(writes.length, 1); assert.equal(retries, 1); assert.equal(review().proposals[0].status, 'applied');
+    wait = async () => { throw Error('UNDO_DISK_FULL'); };
+    await act(async () => review().onUndo());
+    assert.equal(writes.length, 2); assert.equal(review().proposals[0].status, 'applied');
+    wait = async () => {}; await press('Retry save');
+    assert.equal(writes.length, 2); assert.equal(retries, 2); assert.equal(review().proposals[0].status, 'pending');
+  });
+
+  for (const change of ['edit', 'delete']) test(`${platform} legacy Undo refuses an intervening block ${change}`, async () => {
+    fresh([block]); rn.Platform.OS = platform; routeParams = { scheduleProposalReview: { proposals: [proposal], qualityGrade: 'good' } };
+    await render(); await act(async () => review().onApply(proposal.id));
+    const staleUndo = review().onUndo;
+    store.data.scheduleBlocks = change === 'delete' ? [] : [{ ...store.data.scheduleBlocks[0], title: 'NEWER TITLE', notes: 'NEWER NOTE', status: 'completed' }];
+    const intervening = structuredClone(store.data.scheduleBlocks); await refresh();
+    await act(async () => staleUndo());
+    assert.equal(writes.length, 1); assert.deepEqual(store.data.scheduleBlocks, intervening);
+    assert.equal(review().canUndo, false); assert.match(text(), /plan or conflicts changed/);
+  });
+
+  test(`${platform} legacy Undo checks the original slot without rejecting unrelated changes`, async () => {
+    fresh([block]); rn.Platform.OS = platform; routeParams = { scheduleProposalReview: { proposals: [proposal], qualityGrade: 'good' } };
+    await render(); await act(async () => review().onApply(proposal.id));
+    store.data.scheduleBlocks = [...store.data.scheduleBlocks, { ...block, id: 'OTHER', title: 'NEW appointment' }];
+    await refresh(); await act(async () => review().onUndo());
+    assert.equal(writes.length, 1); assert.match(text(), /plan or conflicts changed/);
+    store.data.scheduleBlocks = store.data.scheduleBlocks.map(row => row.id === 'OTHER' ? { ...row, startTime: '15:00', endTime: '16:00' } : row);
+    await refresh(); await act(async () => review().onUndo());
+    assert.equal(writes.length, 2); assert.equal(store.data.scheduleBlocks[0].startTime, '09:00');
+    assert.equal(store.data.scheduleBlocks[1].startTime, '15:00');
+  });
+
+  test(`${platform} real Store record failure/retry keeps one identity and survives provider reload`, async () => {
+    await freshStoredSchedule(platform);
+    if (platform !== 'web') await actions(); await press('Log progress'); await input('Enter actual minutes', '23');
+    diskGate = deferred(); failDisk = true;
+    await act(async () => { void logButton('Log progress').props.onPress(); });
+    assert.equal(disk.executionLogs.length, 0); assert.equal(store.data.executionLogs.length, 1);
+    const id = store.data.executionLogs[0].id;
+    assert.equal(tree.root.findAllByType('Sheet').length, 1);
+    await act(async () => diskGate.resolve()); diskGate = undefined;
+    assert.equal(disk.executionLogs.length, 0); assert.ok(logButton('Retry saving record'));
+    const queued = journal.outbox.length;
+    diskGate = deferred();
+    await act(async () => { void logButton('Retry saving record').props.onPress(); });
+    assert.equal(tree.root.findAllByType('Sheet').length, 1); assert.equal(disk.executionLogs.length, 0);
+    await act(async () => { diskGate.resolve(); await store.waitForLocalWrites(); }); diskGate = undefined;
+    assert.equal(tree.root.findAllByType('Sheet').length, 0);
+    assert.equal(journal.outbox.length, queued); assert.equal(disk.executionLogs[0].id, id);
+    assert.equal(disk.executionLogs[0].durationMinutes, 23);
+    await act(async () => tree.unmount()); tree = undefined; await mountStoredSchedule();
+    assert.equal(store.data.executionLogs.length, 1); assert.equal(store.data.executionLogs[0].id, id);
+    assert.equal(store.data.executionLogs[0].durationMinutes, 23);
+  });
+
+  test(`${platform} real Store proposal failure/retry and Undo preserve newer edits across reload`, async () => {
+    await freshStoredSchedule(platform);
+    routeParams = { scheduleProposalReview: { proposals: [proposal], qualityGrade: 'good' } };
+    await act(async () => tree.update(React.createElement(realStore.StoreProvider, {}, React.createElement(StoredSchedule))));
+    diskGate = deferred(); failDisk = true;
+    await act(async () => { void review().onApply(proposal.id); });
+    assert.equal(disk.scheduleBlocks[0].startTime, '09:00');
+    assert.equal(store.data.scheduleBlocks[0].startTime, '11:00');
+    assert.equal(review().proposals[0].status, 'pending');
+    await act(async () => diskGate.resolve()); diskGate = undefined;
+    const applyWrites = journal.outbox.length;
+    assert.equal(review().proposals[0].status, 'pending');
+    await press('Retry save');
+    assert.equal(journal.outbox.length, applyWrites); assert.equal(disk.scheduleBlocks[0].startTime, '11:00');
+    assert.equal(review().proposals[0].status, 'applied');
+    diskGate = deferred(); failDisk = true;
+    await act(async () => { void review().onUndo(); });
+    assert.equal(disk.scheduleBlocks[0].startTime, '11:00'); assert.equal(review().proposals[0].status, 'applied');
+    await act(async () => diskGate.resolve()); diskGate = undefined;
+    const undoWrites = journal.outbox.length;
+    await act(async () => { store.updateScheduleBlock(block.id, { title: 'NEWER EDIT' }); });
+    await press('Retry save');
+    assert.equal(journal.outbox.length, undoWrites + 1, 'Undo retry does not repeat the snapshot mutation over a later queued edit');
+    assert.equal(disk.scheduleBlocks[0].title, 'NEWER EDIT'); assert.equal(disk.scheduleBlocks[0].startTime, '09:00');
+    assert.equal(review().proposals[0].status, 'pending');
+    await act(async () => tree.unmount()); tree = undefined; await mountStoredSchedule();
+    assert.equal(store.data.scheduleBlocks[0].title, 'NEWER EDIT'); assert.equal(store.data.scheduleBlocks[0].startTime, '09:00');
+  });
+}
 test('schedule duration rejects partial numbers and explains when actual time is required', async () => {
   fresh([block]); await render(); await actions(); await press('Log progress');
   assert.doesNotMatch(text(), /Session duration \(optional\)/);

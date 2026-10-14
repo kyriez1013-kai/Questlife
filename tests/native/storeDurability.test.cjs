@@ -16,7 +16,12 @@ const original = Module._load;
 Module._load = function(request, parent, main) {
   if (request === 'react') return React;
   if (request === 'react/jsx-runtime') return require(path.join(runtime, 'react/jsx-runtime'));
-  if (request === 'react-native') return { Platform: { OS: 'android' }, Appearance: { getColorScheme: () => 'light' } };
+  if (request === 'react-native') return { Platform: { OS: 'android' }, Appearance: { getColorScheme: () => 'light' }, Pressable: 'Pressable', Text: 'Text', View: 'View' };
+  if (request.endsWith('V11SheetControls')) return { V11InlineButton: 'InlineButton', V11SheetButton: 'SheetButton', V11TextField: 'TextField' };
+  if (request.endsWith('useV11ReducedMotion')) return { __esModule: true, default: () => false };
+  if (request.endsWith('V11Stage2ProductionSheet')) return { __esModule: true, default: 'Sheet' };
+  if (request.endsWith('V11RebaselineIcon')) return { __esModule: true, default: 'Icon' };
+  if (request.endsWith('.styles')) return {};
   if (/\/storage$/.test(request)) return {
     loadData: async () => clone(disk), hasSyncAccountBinding: async () => true,
     uid: () => `TEST_${++sequence}`, today: () => '2026-09-22', readPersistedDataForDebug: async () => clone(disk),
@@ -147,6 +152,54 @@ test('Store exposes pending until local disk and durable outbox acknowledge crea
   await act(async () => { store.deleteScheduleBlock(block.id); await store.waitForLocalWrites(); });
   assert.equal(disk.scheduleBlocks.length, 0); assert.equal(journal.outbox.length, 3);
   assert.equal(journal.outbox.at(-1).operation, 'delete'); assert.equal(journal.outbox.at(-1).entityId, block.id);
+});
+
+test('History editor retains a failed edit until real Store retry ACK and reload preserves exactly one correction', async () => {
+  await fresh();
+  await act(async () => {
+    store.createExecutionLog({ id: 'TEST_HISTORY', date: '2026-09-22', durationMinutes: 7, note: 'Original' });
+    await store.waitForLocalWrites();
+  });
+  const History = require('../../src/components/today/V11ActivityHistorySheet.tsx').default;
+  const { t } = require('../../src/i18n.ts');
+  function Editor() {
+    const current = useStore();
+    return React.createElement(History, {
+      visible: true, initialRecordId: 'TEST_HISTORY', language: 'en', closeLabel: 'Close', deleteLabel: 'Delete',
+      detailTitle: 'Record', historyTitle: 'History', emptyLabel: 'Empty', feedbackTitle: 'Feedback', loadMoreLabel: 'More',
+      onClose() {}, onDeleteRecord: current.deleteExecutionLog, onUpdateRecord: current.updateExecutionLog,
+      waitForLocalWrites: current.waitForLocalWrites, retryLocalWrites: current.retryLocalWrites, getRecordFeedback: () => undefined,
+      records: current.data.executionLogs.map(log => ({ ...log, title: 'TEST record', time: '12:00', canEditDuration: true })),
+      theme: { text: { primary: '#111', secondary: '#555', metadata: '#777' }, glow: { primary: '#123' }, control: { error: '#900' } },
+    });
+  }
+  await act(async () => tree.update(React.createElement(StoreProvider, {}, React.createElement(Observer), React.createElement(Editor))));
+  const button = key => tree.root.findAll(node => ['InlineButton', 'SheetButton'].includes(node.type) && node.props.label === t('en', key))[0];
+  const input = key => tree.root.findAllByType('TextField').find(node => node.props.accessibilityLabel === t('en', key));
+  await act(async () => button('edit').props.onPress());
+  await act(async () => { input('minutesQuestion').props.onChangeText('19'); input('noteOptional').props.onChangeText('Corrected'); });
+  const recordWrites = () => journal.outbox.filter(operation => operation.entityId === 'TEST_HISTORY').length;
+  const before = recordWrites();
+  failSave = true;
+  await act(async () => button('save').props.onPress());
+  assert.equal(store.data.executionLogs[0].durationMinutes, 19, 'optimistic update is not a durable acknowledgment');
+  assert.equal(disk.executionLogs[0].durationMinutes, 7);
+  assert.equal(input('noteOptional').props.value, 'Corrected');
+  assert.ok(tree.root.findAllByType('Text').some(node => node.props.children === t('en', 'captureSaveRetry')));
+  assert.equal(recordWrites(), before + 1);
+  const queuedWrites = journal.outbox.length;
+  const submitted = clone(store.data.executionLogs[0]);
+  gate = deferred();
+  await act(async () => { void button('save').props.onPress(); });
+  assert.equal(button('savingRecord').props.loading, true);
+  assert.equal(disk.executionLogs[0].durationMinutes, 7);
+  await act(async () => { gate.resolve(); await store.waitForLocalWrites(); });
+  gate = undefined;
+  assert.equal(tree.root.findAllByType('TextField').length, 0);
+  assert.equal(journal.outbox.length, queuedWrites, 'retry does not enqueue a second correction');
+  assert.deepEqual(disk.executionLogs[0], submitted);
+  await act(async () => tree.unmount()); tree = undefined; await mount();
+  assert.deepEqual(store.data.executionLogs[0], submitted);
 });
 
 test('schedule recording without measured duration never copies the plan across refresh', async () => {
