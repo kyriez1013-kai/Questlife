@@ -211,6 +211,13 @@ module.exports = function withQuestLifeIOSEntries(config, { enableRemoteNotifica
   });
   config = withXcodeProject(config, mod => {
     mod.modResults = installTarget(mod.modResults, bundleIdentifier);
+    // Expo's unquoted command substitution splits workspace paths containing spaces.
+    const bundleCommand = '`"$NODE_BINARY" --print "require(\'path\').dirname(require.resolve(\'react-native/package.json\')) + \'/scripts/react-native-xcode.sh\'"`';
+    for (const [, phase] of values(mod.modResults.hash.project.objects.PBXShellScriptBuildPhase)) {
+      if (unquote(phase.name) !== 'Bundle React Native code and images') continue;
+      const script = JSON.parse(phase.shellScript);
+      phase.shellScript = JSON.stringify(script.replace(bundleCommand, '"$(' + bundleCommand.slice(1, -1) + ')"'));
+    }
     return mod;
   });
   return withDangerousMod(config, ['ios', async mod => {
