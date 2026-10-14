@@ -175,6 +175,22 @@ module.exports = function withQuestLifeIOSEntries(config, { enableRemoteNotifica
   }
   const bundleIdentifier = configureCredentials(config);
   config = withPodfile(config, mod => {
+    const marker = '# QuestLife: quote Expo Constants script paths';
+    if (mod.modResults.contents.includes(marker)) return mod;
+    const anchor = '  post_install do |installer|';
+    if (!mod.modResults.contents.includes(anchor)) throw new Error('QuestLife requires the Expo Podfile post_install hook.');
+    mod.modResults.contents = mod.modResults.contents.replace(anchor, `${anchor}
+    ${marker}
+    installer.pods_project.targets.select { |target| target.name == 'EXConstants' }.each do |target|
+      target.shell_script_build_phases.each do |phase|
+        if phase.name == '[CP-User] Generate app.config for prebuilt Constants.manifest'
+          phase.shell_script = %q{bash -l -c 'exec "$PODS_TARGET_SRCROOT/../scripts/get-app-config-ios.sh"'}
+        end
+      end
+    end`);
+    return mod;
+  });
+  config = withPodfile(config, mod => {
     const marker = '# QuestLife: align resource bundle targets with the app baseline';
     if (mod.modResults.contents.includes(marker)) return mod;
     const anchor = '  post_install do |installer|';

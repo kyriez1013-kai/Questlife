@@ -79,6 +79,8 @@ test('Podfile aligns resource bundle deployment targets without lowering newer t
   assert.match(result.modResults.contents, /installer\.pods_project\.targets\.each/);
   assert.match(result.modResults.contents, /Gem::Version\.new\(current\.to_s\) < minimum_ios/);
   assert.match(result.modResults.contents, /ios.deploymentTarget.*15\.1/);
+  assert.match(result.modResults.contents, /target.name == 'EXConstants'/);
+  assert.ok(result.modResults.contents.includes(`bash -l -c 'exec "$PODS_TARGET_SRCROOT/../scripts/get-app-config-ios.sh"'`));
   const repeated = await runMod(configFor(), 'podfile', { ...result.modResults });
   assert.equal(repeated.modResults.contents, result.modResults.contents);
   await assert.rejects(runMod(configFor(), 'podfile', { language: 'ruby', contents: 'unknown template' }), /post_install hook/);
