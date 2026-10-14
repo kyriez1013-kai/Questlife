@@ -36,7 +36,11 @@ if (Object.keys(config).some(key => !allowed.includes(key)) ||
 if (process.platform !== 'darwin') throw new Error('Local iPhone builds require macOS and Xcode.');
 const developerDir = '/Applications/Xcode.app/Contents/Developer';
 if (!existsSync(developerDir)) throw new Error('Install the free Xcode app from the Mac App Store and complete its first launch.');
-const env = { ...process.env, ...config, DEVELOPER_DIR: developerDir, EXPO_NO_DOTENV: '1' };
+// Native build subprocesses need public configuration, not inherited server keys.
+const hostEnv = Object.fromEntries([
+  'HOME', 'PATH', 'TMPDIR', 'USER', 'LOGNAME', 'SHELL', 'LANG', 'LC_ALL', 'TERM', 'CI',
+].filter(key => process.env[key] !== undefined).map(key => [key, process.env[key]]));
+const env = { ...hostEnv, ...config, DEVELOPER_DIR: developerDir, EXPO_NO_DOTENV: '1' };
 // User-installed CocoaPods must remain discoverable without changing the shell profile.
 const userGemHome = spawnSync('gem', ['environment', 'user_gemhome'], { encoding: 'utf8', env });
 if (userGemHome.status === 0 && userGemHome.stdout.trim()) {

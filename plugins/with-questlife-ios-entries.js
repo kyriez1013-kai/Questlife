@@ -151,6 +151,7 @@ function installTarget(project, bundleIdentifier) {
 }
 
 module.exports = function withQuestLifeIOSEntries(config, { enableRemoteNotifications = false } = {}) {
+  config = require('./with-questlife-ios-scenes')(config);
   if (typeof enableRemoteNotifications !== 'boolean') {
     throw new Error('QuestLife enableRemoteNotifications must be a boolean.');
   }
