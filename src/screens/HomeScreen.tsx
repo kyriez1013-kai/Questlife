@@ -707,7 +707,10 @@ export default function HomeScreen() {
   }, [activeSession]);
 
   const todayStr = today();
-  const todayLogs = (data.executionLogs || []).filter((a) => a.date === todayStr);
+  const todayLogs = useMemo(
+    () => (data.executionLogs || []).filter((a) => a.date === todayStr),
+    [data.executionLogs, todayStr],
+  );
   const todayMinutes = todayLogs.reduce((sum, a) => sum + a.durationMinutes, 0);
   const contextLocale = lang === 'zh' ? 'zh-CN' : 'en-AU';
   const todayContextPrimary = new Intl.DateTimeFormat(contextLocale, { month: 'short', day: 'numeric' }).format(new Date());
@@ -1747,12 +1750,11 @@ export default function HomeScreen() {
     return { title: t(lang, 'nextAction'), body: t(lang, 'noActiveBlockNextAction') };
   }, [todayScheduleBlocks, data.categories, data.skills, lang]);
 
-  const latestFeedbackLog = useMemo(() => {
-    const latest = todayLogs.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
-    if (!latest) return undefined;
-    const ageMs = Date.now() - new Date(latest.createdAt).getTime();
-    return ageMs <= 30 * 60 * 1000 ? latest : undefined;
-  }, [todayLogs]);
+  const latestTodayLog = displayedTodayLogs[0];
+  const latestFeedbackLog = latestTodayLog
+    && Date.now() - new Date(latestTodayLog.createdAt).getTime() <= 30 * 60 * 1000
+    ? latestTodayLog : undefined;
+  const todayCommandMinute = Math.floor(Date.now() / 60000);
 
   const todayCommand = useMemo(() => buildTodayCommand({
     data,
@@ -1762,7 +1764,7 @@ export default function HomeScreen() {
     latestFeedback: latestFeedbackLog ? { executionLogId: latestFeedbackLog.id } : undefined,
     latestState: latestStateCheckIn,
     activeSession,
-  }), [activeSession, data, latestFeedbackLog, latestStateCheckIn, todayLogs, todayScheduleBlocks]);
+  }), [activeSession, data, latestFeedbackLog, latestStateCheckIn, todayLogs, todayScheduleBlocks, todayCommandMinute]);
 
   const metacognitionSummary = useMemo(() => buildMetacognitionSummary({
     executionLogs: data.executionLogs || [],

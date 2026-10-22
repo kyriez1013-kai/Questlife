@@ -49,10 +49,24 @@ function minuteOfDay(time: string) {
 }
 
 function hasPendingCapture(data: AppData) {
-  return (data.rawCaptures || []).some((capture) => {
-    const hasGeneratedLog = (data.executionLogs || []).some((log) => (
-      log.structuredData?.sourceCaptureId === capture.id || log.id.startsWith(`capture-${capture.id}`)
-    ));
+  const captures = data.rawCaptures || [];
+  if (!captures.length) return false;
+  const logs = data.executionLogs || [];
+  const sourceCaptureIds = new Set(logs.map((log) => log.structuredData?.sourceCaptureId));
+  const logIds = logs.map((log) => log.id).sort();
+  // Preserve legacy prefix matching without rescanning every log for every capture.
+  const hasLegacyLog = (prefix: string) => {
+    let start = 0;
+    let end = logIds.length;
+    while (start < end) {
+      const middle = (start + end) >>> 1;
+      if (logIds[middle] < prefix) start = middle + 1;
+      else end = middle;
+    }
+    return logIds[start]?.startsWith(prefix) ?? false;
+  };
+  return captures.some((capture) => {
+    const hasGeneratedLog = sourceCaptureIds.has(capture.id) || hasLegacyLog(`capture-${capture.id}`);
     if (hasGeneratedLog) return false;
     if (capture.parsed?.entriesDismissed) return false;
     if (capture.parseStatus === 'pending' || capture.parseStatus === 'failed') return true;
