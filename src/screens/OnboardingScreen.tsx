@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Keyboard,
   ScrollView,
@@ -20,6 +20,11 @@ import {
 import { DomainTemplate, DomainTemplateDomain, GoalType } from '../types';
 import { getLanguage, t } from '../i18n';
 import { trackEvent } from '../utils/analytics';
+import { today } from '../storage';
+import {
+  buildFirstSuggestion, remainingAnswers, sleepToValue, stateToOverall, SLEEP_SELF_RATING_UNIT,
+  type FirstStartAnswers, type FirstStartPartial, type FocusAnswer, type SleepAnswer, type StateAnswer,
+} from '../onboarding/firstStart';
 import { getV11ProductLanguage, getV11ProductThemeId, isV11ProductEnabled } from '../v11/featureFlag';
 import RecordBackupActions from '../backup/RecordBackupActions';
 import { backupCopy } from '../backup/copy';
@@ -27,7 +32,9 @@ import AccountSyncSection from '../sync-v2/AccountSyncSection';
 import { syncCopy } from '../sync-v2/copy';
 import NativeSettingsSheet from '../native/NativeSettingsSheet';
 
-type Step = 'language' | 'positioning' | 'mode' | 'goal' | 'preview';
+// welcome → quick → suggest is the "怎么开始" path (no goal needed). mode → goal → preview is the optional goal-first path.
+// 'language' and 'positioning' are no longer reachable from the first screen (kept so the old path can be restored).
+type Step = 'language' | 'welcome' | 'quick' | 'suggest' | 'positioning' | 'mode' | 'goal' | 'preview';
 
 type StartMode = {
   domain: DomainTemplateDomain;
@@ -74,13 +81,22 @@ export default function OnboardingScreen() {
     updateSkill,
     applyDomainTemplateToGoal,
     setSettings,
+    createStateCheckIn,
+    addContextLog,
+    waitForLocalWrites,
+    retryLocalWrites,
   } = useStore();
   const questTheme = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const v11ProductEnabled = isV11ProductEnabled();
   const accent = questTheme.colors.primary;
-  const lang = getV11ProductLanguage(getLanguage(data.settings.language ?? data.settings.preferredLanguage));
+  const lang = getV11ProductLanguage(getLanguage(data.settings.language ?? data.settings.preferredLanguage ?? detectInitialLanguage()));
   const hasExistingCoreData = data.categories.length > 0 || data.skills.length > 0 || (data.executionLogs || []).length > 0;
-  const [step, setStep] = useState<Step>(data.settings.language ? 'positioning' : 'language');
+  const [step, setStep] = useState<Step>('welcome');
+  const [answers, setAnswers] = useState<FirstStartPartial>({});
+  const [startSaving, setStartSaving] = useState(false);
+  const [startFailed, setStartFailed] = useState(false);
+  // created once; a retry only re-attempts the durable write, never creates a second check-in
+  const startCreated = useRef(false);
   const [selectedMode, setSelectedMode] = useState<StartMode>(START_MODES[0]);
   const [goalName, setGoalName] = useState('');
   const [currentLevel, setCurrentLevel] = useState('');
@@ -95,15 +111,17 @@ export default function OnboardingScreen() {
     selectedMode.domain === 'custom' ? undefined : getDomainTemplateByDomain(selectedMode.domain)
   ), [selectedMode.domain]);
   const placeholder = lang === 'en' ? selectedMode.placeholderEn : selectedMode.placeholderZh;
-  const canExit = step !== 'language' || hasExistingCoreData || !!data.settings.onboardingRestartRequested;
+  const canExit = step !== 'welcome' || hasExistingCoreData || !!data.settings.onboardingRestartRequested;
 
   useEffect(() => {
     trackEvent('onboarding_started', { detectedLanguage: detectInitialLanguage() }, { page: 'onboarding' });
   }, []);
 
   const goBack = () => {
-    if (step === 'positioning') setStep('language');
-    if (step === 'mode') setStep('positioning');
+    if (step === 'quick') setStep('welcome');
+    if (step === 'suggest') setStep('quick');
+    if (step === 'positioning') setStep('welcome');
+    if (step === 'mode') setStep('welcome');
     if (step === 'goal') setStep('mode');
     if (step === 'preview') setStep('goal');
   };
@@ -128,6 +146,47 @@ export default function OnboardingScreen() {
     setSettings({ language, preferredLanguage: language });
     trackEvent('onboarding_language_selected', { language }, { page: 'onboarding' });
     setStep('positioning');
+  };
+
+  const switchLanguage = () => {
+    const next = lang === 'zh' ? 'en' : 'zh';
+    setSettings({ language: next, preferredLanguage: next });
+    trackEvent('onboarding_language_selected', { language: next }, { page: 'onboarding' });
+  };
+
+  const answerQuick = <K extends keyof FirstStartAnswers>(key: K, value: FirstStartAnswers[K]) => setAnswers((prev) => ({ ...prev, [key]: value }));
+  const quickComplete = remainingAnswers(answers) === 0;
+  const suggestion = quickComplete ? buildFirstSuggestion(answers as FirstStartAnswers, lang) : null;
+
+  /** Save the answers as a real check-in + sleep self-rating. Success is shown only after the persistence ACK. */
+  const finishQuickStart = async () => {
+    if (!quickComplete || startSaving) return;
+    setStartSaving(true);
+    setStartFailed(false);
+    try {
+      const a = answers as FirstStartAnswers;
+      if (!startCreated.current) {
+        const now = new Date();
+        const overall = stateToOverall(a.state);
+        const hour = now.getHours();
+        createStateCheckIn({
+          date: today(), timestamp: now.toISOString(), overall, energy: overall,
+          timeBlock: hour < 11 ? 'morning' : hour < 14 ? 'midday' : hour < 18 ? 'afternoon' : hour < 22 ? 'evening' : 'night',
+          label: overall === 2 ? 'low' : overall === 3 ? 'normal' : 'good',
+        });
+        addContextLog({ date: today(), type: 'sleep', label: lang === 'en' ? 'Sleep (self-rated)' : '睡眠自评', value: sleepToValue(a.sleep), unit: SLEEP_SELF_RATING_UNIT, source: 'manual' });
+        startCreated.current = true;
+      } else {
+        await retryLocalWrites();
+      }
+      await waitForLocalWrites();
+      trackEvent('onboarding_quick_start_completed', { sleep: a.sleep, state: a.state, focus: a.focus }, { page: 'onboarding' });
+      setSettings({ onboardingCompleted: true, onboardingVersion: 2, onboardingRestartRequested: false });
+    } catch {
+      setStartFailed(true);
+    } finally {
+      setStartSaving(false);
+    }
   };
 
   const selectMode = (mode: StartMode) => {
@@ -208,8 +267,8 @@ export default function OnboardingScreen() {
   };
 
   const Dots = () => {
-    const steps: Step[] = ['positioning', 'mode', 'goal', 'preview'];
-    if (step === 'language') return null;
+    const steps: Step[] = ['mode', 'goal', 'preview'];
+    if (!steps.includes(step)) return null;
     const current = Math.max(0, steps.indexOf(step));
     return (
       <View style={styles.dots}>
@@ -229,20 +288,27 @@ export default function OnboardingScreen() {
       <OnboardingScrollView
         className={v11ProductEnabled ? 'v11-onboarding-scroll' : undefined}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[styles.content, v11ProductEnabled ? styles.v11Content : null]}
+        contentContainerStyle={[styles.content, v11ProductEnabled ? styles.v11Content : null, step === 'welcome' ? styles.contentTop : null]}
         style={{ backgroundColor: questTheme.colors.background }}
       >
         <View style={styles.topRow}>
-          {step !== 'language' ? (
+          {step !== 'language' && step !== 'welcome' ? (
             <TouchableOpacity onPress={goBack} style={[styles.smallBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}>
               <Text style={[styles.smallBtnText, { color: questTheme.colors.text }]}>{t(lang, 'back')}</Text>
             </TouchableOpacity>
           ) : <View />}
-          {canExit ? (
-            <TouchableOpacity onPress={exitOnboarding} style={[styles.smallBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}>
-              <Text style={[styles.smallBtnText, { color: questTheme.colors.textMuted }]}>{t(lang, 'later')}</Text>
-            </TouchableOpacity>
-          ) : null}
+          <View style={styles.topRight}>
+            {step === 'welcome' ? (
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel={t(lang, 'fsSwitchLanguage')} testID="fs-language" onPress={switchLanguage} style={[styles.smallBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}>
+                <Text style={[styles.smallBtnText, { color: questTheme.colors.textMuted }]}>{t(lang, 'fsSwitchLanguage')}</Text>
+              </TouchableOpacity>
+            ) : null}
+            {canExit ? (
+              <TouchableOpacity onPress={exitOnboarding} style={[styles.smallBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}>
+                <Text style={[styles.smallBtnText, { color: questTheme.colors.textMuted }]}>{t(lang, 'later')}</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
         </View>
         <Dots />
         {children}
@@ -252,6 +318,80 @@ export default function OnboardingScreen() {
       </NativeSettingsSheet> : null}
     </OnboardingSafeArea>
   );
+
+  if (step === 'welcome') {
+    return shell(
+      <OnboardingPanel testID="fs-welcome" className={v11ProductEnabled ? 'v11-onboarding-panel' : undefined} style={{ marginTop: 72 }}>
+        <View style={[styles.logoMark, { backgroundColor: questTheme.colors.primarySoft, borderColor: questTheme.colors.border }]}>
+          <QuestIcon name="target" color={accent} size={30} strokeWidth={2.4} />
+        </View>
+        <Text accessibilityRole="header" style={[styles.title, styles.balanced, { color: questTheme.colors.text }]}>{t(lang, 'fsWelcomeTitle')}</Text>
+        <Text style={[styles.subtitle, { color: questTheme.colors.textMuted }]}>{t(lang, 'fsWelcomeBody')}</Text>
+        <View style={styles.actionStack}>
+          <QuestButton questTheme={questTheme} label={t(lang, 'fsStart')} onPress={() => setStep('quick')} accessibilityLabel={t(lang, 'fsStart')} />
+          <QuestButton questTheme={questTheme} variant="ghost" label={t(lang, 'fsBuildGoalFirst')} onPress={() => setStep('mode')} />
+        </View>
+        <Text style={[styles.caption, { color: questTheme.colors.textSubtle }]}>{t(lang, 'fsPrivacy')}</Text>
+        <View style={styles.linkRow}>
+          <TouchableOpacity accessibilityRole="button" onPress={() => setShowAccount(true)} style={styles.linkBtn}>
+            <Text style={[styles.linkText, { color: questTheme.colors.textMuted }]}>{syncCopy(lang, 'account')}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity accessibilityRole="button" onPress={() => setShowRecovery((value) => !value)} style={styles.linkBtn}>
+            <Text style={[styles.linkText, { color: questTheme.colors.textMuted }]}>{backupCopy(lang, 'title')}</Text>
+          </TouchableOpacity>
+        </View>
+        {showRecovery ? <RecordBackupActions /> : null}
+      </OnboardingPanel>
+    );
+  }
+
+  if (step === 'quick') {
+    const group = <K extends keyof FirstStartAnswers>(key: K, titleKey: string, options: Array<FirstStartAnswers[K]>, prefix: string) => (
+      <View style={styles.quickGroup}>
+        <Text style={[styles.quickLabel, { color: questTheme.colors.text }]}>{t(lang, titleKey)}</Text>
+        <View style={styles.pillRow}>
+          {options.map((value) => (
+            <QuestPill key={String(value)} questTheme={questTheme} label={t(lang, `${prefix}${String(value)}`)} active={answers[key] === value} onPress={() => answerQuick(key, value)} />
+          ))}
+        </View>
+      </View>
+    );
+    const left = remainingAnswers(answers);
+    return shell(
+      <OnboardingPanel testID="fs-quick" className={v11ProductEnabled ? 'v11-onboarding-panel' : undefined}>
+        <Text accessibilityRole="header" style={[styles.title, styles.balanced, { color: questTheme.colors.text }]}>{t(lang, 'fsQuickTitle')}</Text>
+        {group('sleep', 'fsQSleep', ['bad', 'ok', 'good'] as SleepAnswer[], 'fsSleep_')}
+        {group('state', 'fsQState', ['low', 'mid', 'high'] as StateAnswer[], 'fsState_')}
+        {group('focus', 'fsQFocus', ['training', 'study', 'work', 'chores', 'recover', 'other'] as FocusAnswer[], 'fsFocus_')}
+        <View style={styles.actionStack}>
+          {left > 0 ? <Text style={[styles.caption, { color: questTheme.colors.textMuted, textAlign: 'center', marginTop: 0 }]}>{t(lang, 'fsQRemaining').replace('{n}', String(left))}</Text> : null}
+          <QuestButton questTheme={questTheme} label={t(lang, 'fsSeeSuggestion')} disabled={left > 0} onPress={() => setStep('suggest')} />
+        </View>
+      </OnboardingPanel>
+    );
+  }
+
+  if (step === 'suggest' && suggestion) {
+    return shell(
+      <OnboardingPanel testID="fs-suggest" className={v11ProductEnabled ? 'v11-onboarding-panel' : undefined}>
+        <Text style={[styles.kicker, { color: questTheme.colors.textMuted }]}>{t(lang, 'fsSuggestKicker')}</Text>
+        <Text accessibilityRole="header" style={[styles.title, styles.balanced, { color: questTheme.colors.text }]}>{suggestion.title}</Text>
+        <Text style={[styles.suggestBody, { color: questTheme.colors.text }]}>{suggestion.body}</Text>
+        <View style={{ flexDirection: 'row', marginBottom: 14 }}>
+          <QuestPill questTheme={questTheme} label={t(lang, 'fsGeneralAdvice')} />
+        </View>
+        <OnboardingPanel style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>
+          <Text style={[styles.previewLine, { color: questTheme.colors.textMuted, marginBottom: 0 }]}>{t(lang, 'fsSuggestBasis')}</Text>
+        </OnboardingPanel>
+        {startFailed ? <Text accessibilityRole="alert" style={[styles.error, { color: questTheme.colors.danger, marginBottom: 12 }]}>{t(lang, 'fsSaveFailed')}</Text> : null}
+        <View style={styles.actionStack}>
+          <QuestButton questTheme={questTheme} label={startSaving ? t(lang, 'fsSaving') : startFailed ? t(lang, 'fsRetry') : t(lang, 'fsSuggestCta')} loading={startSaving} onPress={finishQuickStart} />
+        </View>
+        <Text style={[styles.caption, { color: questTheme.colors.textSubtle }]}>{t(lang, 'fsSuggestNext')}</Text>
+        <Text style={[styles.caption, { color: questTheme.colors.textSubtle, marginTop: 6 }]}>{t(lang, 'fsLaterHealth')}</Text>
+      </OnboardingPanel>
+    );
+  }
 
   if (step === 'language') {
     return shell(
@@ -433,7 +573,19 @@ const styles = StyleSheet.create({
     paddingBottom: 36,
     justifyContent: 'center',
   },
+  // welcome is a poster, not a form: anchor to the top so the language switch sits in the corner and the CTA lands in the thumb zone
+  contentTop: { justifyContent: 'flex-start' },
   v11Content: { maxWidth: 760, paddingHorizontal: 20, paddingBottom: 48 },
+  topRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  balanced: { textWrap: 'balance' } as any,
+  caption: { fontSize: 13, lineHeight: 19, marginTop: 14, textAlign: 'center' },
+  kicker: { fontSize: 12, fontWeight: '800', letterSpacing: 0.6, marginBottom: 10 },
+  suggestBody: { fontSize: 17, lineHeight: 26, fontWeight: '600', marginBottom: 14 },
+  quickGroup: { marginBottom: 20 },
+  quickLabel: { fontSize: 15, fontWeight: '800', marginBottom: 10 },
+  linkRow: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: 6 },
+  linkBtn: { minHeight: 44, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center' },
+  linkText: { fontSize: 13, fontWeight: '700', textDecorationLine: 'underline' },
   topRow: { minHeight: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   smallBtn: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 },
   smallBtnText: { fontSize: 12, fontWeight: '800' },

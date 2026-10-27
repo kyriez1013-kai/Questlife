@@ -2504,3 +2504,34 @@
     transition-duration: 0.001ms !important;
   }
 }
+
+/* ═══ Refinement pass (owner direction: keep glass/material/tokens, polish hierarchy + detail) ═══
+   Every rule below has a before/after pair in docs/frontend-v2/screenshots/refine/pairs. */
+
+/* R1 — the Capture entry's leading tile read as a broken half-arc (its fill ≈ the bar's own gradient,
+   only the top highlight showed). Give it a full ring + the elevated fill so it is a complete tile. */
+[data-v11-rebaseline-role="capture-leading"] {
+  background: var(--v11-rebaseline-neutral-elevated);
+  border: 1px solid var(--v11-rebaseline-neutral-border);
+}
+
+/* R2 — chips reserve a 12px "✓" slot on the left even when unselected, which pushed every label off-centre.
+   Mirror the slot on the right: label is optically centred, and selecting a chip causes no layout shift. */
+[data-v11-control="categorical-chip"]::after {
+  content: "";
+  flex: 0 0 12px;
+}
+
+/* R3 — the Capture sheet inherited a 420px minimum for every overlay; its content needs ~300px,
+   leaving a dead empty third. Let it fit its content (it still grows for the confirmation card). */
+[data-v11-rebaseline-role="overlay"][data-v11-sheet="capture"] > [data-v11-component="material-frame"] {
+  min-height: min(
+    300px,
+    calc(
+      100dvh
+      - env(safe-area-inset-top, 0px)
+      - var(--v11-sheet-viewport-inset-top)
+      - max(8px, env(safe-area-inset-bottom, 0px))
+    )
+  ) !important;
+}

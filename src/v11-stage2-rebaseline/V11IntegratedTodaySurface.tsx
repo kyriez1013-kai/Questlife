@@ -90,6 +90,8 @@ type Props = {
   debugPerformance: boolean;
   decision: V11TodayPresentation;
   decisionAction?: V11IntegratedUtilityAction;
+  /** plain-word replacement for the internal S0–S3 code, e.g. "还在积累" */
+  evidenceStageWord?: string;
   expanded: boolean;
   formatCopy: (copy: V11TodayPresentation['judgement']) => string;
   instantRead: InstantReadProps;
@@ -192,17 +194,17 @@ function LatestRecord({
         onPress={record?.onPress}
       >
         <WebView style={{ flex: 1, flexShrink: 1, minWidth: 0 }}>
-          <Text style={{ color: mutedColor, fontSize: 10, lineHeight: 15, letterSpacing: 0.7 }}>
+          <Text style={{ color: mutedColor, fontSize: 11, lineHeight: 16, letterSpacing: 0.6 }}>
             {labels.latestRecord}
           </Text>
           <Text
             numberOfLines={2}
-            style={{ color: record ? textColor : mutedColor, fontSize: 12.5, lineHeight: 18 }}
+            style={{ color: record ? textColor : mutedColor, fontSize: 13.5, lineHeight: 19 }}
           >
             {record?.title ?? labels.noLatestRecord}
           </Text>
           {record?.metadata ? (
-            <Text numberOfLines={1} style={{ color: mutedColor, fontSize: 10, lineHeight: 15 }}>
+            <Text numberOfLines={1} style={{ color: mutedColor, fontSize: 11, lineHeight: 16 }}>
               {record.metadata}
             </Text>
           ) : null}
@@ -234,6 +236,7 @@ export default function V11IntegratedTodaySurface({
   debugPerformance,
   decision,
   decisionAction,
+  evidenceStageWord,
   expanded,
   formatCopy,
   instantRead,
@@ -324,16 +327,16 @@ export default function V11IntegratedTodaySurface({
             </WebText>
             <WebText
               dataSet={{ 'v11-rebaseline-role': 'context-meta' }}
-              style={{ color: theme.text.secondary, ...v11Typography.metadata }}
+              style={{ color: theme.text.secondary, ...v11Typography.metadata, fontSize: 11, lineHeight: 16 }}
             >
               {contextMeta}
             </WebText>
           </WebView>
           <WebText
             dataSet={{ 'v11-rebaseline-role': 'context-stage' }}
-            style={{ color: theme.text.metadata, ...v11Typography.metadata }}
+            style={{ color: theme.text.metadata, ...v11Typography.metadata, fontSize: 11, lineHeight: 16 }}
           >
-            {labels.evidenceStage} · {decision.evidenceStage}
+            {evidenceStageWord ?? `${labels.evidenceStage} · ${decision.evidenceStage}`}
           </WebText>
         </WebView>
 
@@ -348,12 +351,12 @@ export default function V11IntegratedTodaySurface({
               <V11RebaselineIcon name="capture" size={17} color={theme.text.secondary} />
             </WebView>
             <WebView dataSet={{ 'v11-rebaseline-role': 'capture-copy' }}>
-              <Text style={{ color: theme.text.primary, fontSize: 12.5, lineHeight: 17, fontWeight: '500' }}>
+              <Text style={{ color: theme.text.primary, fontSize: 14, lineHeight: 19, fontWeight: '500' }}>
                 {labels.capture}
               </Text>
               <Text
                 numberOfLines={1}
-                style={{ color: theme.text.secondary, fontSize: 12, lineHeight: 17 }}
+                style={{ color: theme.text.secondary, fontSize: 13, lineHeight: 18 }}
               >
                 {capturePlaceholder}
               </Text>
@@ -372,7 +375,7 @@ export default function V11IntegratedTodaySurface({
 
         <WebView dataSet={{ 'v11-rebaseline-role': 'decision-group' }}>
           <WebView dataSet={{ 'v11-rebaseline-role': 'decision-copy' }}>
-            <Text style={{ color: theme.text.metadata, fontSize: 10, lineHeight: 15, letterSpacing: 0.8 }}>
+            <Text style={{ color: theme.text.metadata, fontSize: 11, lineHeight: 16, letterSpacing: 0.7 }}>
               {labels.decisionEvidence}
             </Text>
             <Text style={{ color: theme.text.primary, fontSize: 25, lineHeight: 33, fontWeight: '400' }}>
@@ -387,11 +390,11 @@ export default function V11IntegratedTodaySurface({
               >
                 <V11RebaselineIcon name="target" size={15} color={theme.text.secondary} />
                 <WebView style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={{ color: theme.text.primary, fontSize: 12.5, lineHeight: 18, fontWeight: '500' }}>
+                  <Text style={{ color: theme.text.primary, fontSize: 13.5, lineHeight: 19, fontWeight: '500' }}>
                     {decisionAction.label}
                   </Text>
                   {decisionAction.metadata ? (
-                    <Text numberOfLines={1} style={{ color: theme.text.metadata, fontSize: 10, lineHeight: 15 }}>
+                    <Text numberOfLines={1} style={{ color: theme.text.metadata, fontSize: 11, lineHeight: 16 }}>
                       {decisionAction.metadata}
                     </Text>
                   ) : null}
@@ -436,7 +439,7 @@ export default function V11IntegratedTodaySurface({
               onPress={onDirectLog}
             >
               <V11RebaselineIcon name="add" size={15} color={theme.text.secondary} />
-              <Text style={{ color: theme.text.secondary, fontSize: 12, lineHeight: 18 }}>
+              <Text style={{ color: theme.text.secondary, fontSize: 13, lineHeight: 19 }}>
                 {labels.directLog}
               </Text>
             </WebPressable>
@@ -452,7 +455,7 @@ export default function V11IntegratedTodaySurface({
             onPress={onToggleExpanded}
           >
             <WebView style={{ flex: 1, minWidth: 0 }}>
-              <Text style={{ color: theme.text.metadata, fontSize: 10, lineHeight: 15, letterSpacing: 0.7 }}>
+              <Text style={{ color: theme.text.metadata, fontSize: 11, lineHeight: 16, letterSpacing: 0.6 }}>
                 {labels.currentState}
               </Text>
               <Text numberOfLines={2} style={{ color: theme.text.primary, fontSize: 22, lineHeight: 29, fontWeight: '400' }}>
@@ -487,7 +490,7 @@ export default function V11IntegratedTodaySurface({
             onPress={onToggleExpanded}
           >
             <V11RebaselineIcon name="calendar" size={15} color={theme.glow.primary} />
-            <Text numberOfLines={2} style={{ flex: 1, flexShrink: 1, minWidth: 0, color: theme.text.secondary, fontSize: 12.5, lineHeight: 18 }}>
+            <Text numberOfLines={2} style={{ flex: 1, flexShrink: 1, minWidth: 0, color: theme.text.secondary, fontSize: 13.5, lineHeight: 19 }}>
               {labels.planPreview}
             </Text>
             <V11RebaselineIcon
@@ -513,7 +516,7 @@ export default function V11IntegratedTodaySurface({
                     <Text style={{ color: theme.text.primary, fontSize: 16, lineHeight: 22, fontWeight: '500' }}>
                       {labels.instantRead}
                     </Text>
-                    <Text numberOfLines={2} style={{ color: theme.text.secondary, fontSize: 12, lineHeight: 18 }}>
+                    <Text numberOfLines={2} style={{ color: theme.text.secondary, fontSize: 13, lineHeight: 19 }}>
                       {instantRead.feedbackStatus === 'saving'
                         ? labels.feedbackSaving
                         : instantRead.feedback
@@ -562,7 +565,7 @@ export default function V11IntegratedTodaySurface({
                           key={value}
                           onPress={() => instantRead.onFeedback(value)}
                         >
-                          <Text style={{ color: theme.text.primary, fontSize: 12, fontWeight: '500' }}>
+                          <Text style={{ color: theme.text.primary, fontSize: 13, fontWeight: '500' }}>
                             {label}
                           </Text>
                         </WebPressable>
@@ -579,7 +582,7 @@ export default function V11IntegratedTodaySurface({
                   <Text style={{ color: theme.text.primary, fontSize: 16, lineHeight: 22, fontWeight: '500' }}>
                     {labels.plan}
                   </Text>
-                  <Text style={{ color: theme.text.metadata, fontSize: 10, letterSpacing: 0.6 }}>
+                  <Text style={{ color: theme.text.metadata, fontSize: 11, letterSpacing: 0.6 }}>
                     {labels.threeItemsMaximum}
                   </Text>
                 </WebView>
@@ -594,7 +597,7 @@ export default function V11IntegratedTodaySurface({
                         {row.title}
                       </Text>
                       {row.metadata ? (
-                        <Text numberOfLines={2} style={{ color: theme.text.secondary, fontSize: 12, lineHeight: 18 }}>
+                        <Text numberOfLines={2} style={{ color: theme.text.secondary, fontSize: 13, lineHeight: 19 }}>
                           {row.metadata}
                         </Text>
                       ) : null}
@@ -607,7 +610,7 @@ export default function V11IntegratedTodaySurface({
                           dataSet={{ 'v11-rebaseline-role': 'row-action' }}
                           onPress={row.onStart}
                         >
-                          <Text style={{ color: theme.text.primary, fontSize: 12, fontWeight: '500' }}>
+                          <Text style={{ color: theme.text.primary, fontSize: 13, fontWeight: '500' }}>
                             {labels.start}
                           </Text>
                         </WebPressable>
@@ -640,7 +643,7 @@ export default function V11IntegratedTodaySurface({
                 <Text style={{ color: theme.text.primary, fontSize: 14, lineHeight: 20, fontWeight: '500' }}>
                   {labels.decisionEvidence}
                 </Text>
-                <Text numberOfLines={2} style={{ color: theme.text.secondary, fontSize: 12, lineHeight: 18 }}>
+                <Text numberOfLines={2} style={{ color: theme.text.secondary, fontSize: 13, lineHeight: 19 }}>
                   {actionReason}
                 </Text>
               </WebView>
@@ -663,7 +666,7 @@ export default function V11IntegratedTodaySurface({
                       {action.label}
                     </Text>
                     {action.metadata ? (
-                      <Text numberOfLines={1} style={{ color: theme.text.metadata, fontSize: 10, lineHeight: 15 }}>
+                      <Text numberOfLines={1} style={{ color: theme.text.metadata, fontSize: 11, lineHeight: 16 }}>
                         {action.metadata}
                       </Text>
                     ) : null}
@@ -678,7 +681,7 @@ export default function V11IntegratedTodaySurface({
               dataSet={{ 'v11-rebaseline-role': 'l2-collapse-end' }}
               onPress={onToggleExpanded}
             >
-              <Text style={{ color: theme.text.secondary, fontSize: 12, lineHeight: 18 }}>
+              <Text style={{ color: theme.text.secondary, fontSize: 13, lineHeight: 19 }}>
                 {labels.collapseDetails}
               </Text>
               <V11RebaselineIcon name="chevron-up" size={15} color={theme.text.secondary} />

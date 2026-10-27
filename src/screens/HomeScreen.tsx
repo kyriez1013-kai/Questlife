@@ -2559,6 +2559,7 @@ export default function HomeScreen() {
             contextMeta={`${todayContextWeekday} · ${t(lang, currentTimeBlock)}`}
             decision={v11TodayPresentation}
             decisionAction={adaptiveDecisionAction}
+            evidenceStageWord={t(lang, `v11EvidenceStageWord_${v11TodayPresentation.evidenceStage}`)}
             debugPerformance={getV11DebugPerformance(isDecisionDebugEnabled())}
             expanded={v11EvidenceExpanded}
             formatCopy={(copy) => copy.kind === 'text'

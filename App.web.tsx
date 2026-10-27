@@ -281,7 +281,7 @@ function AppContent() {
             },
             tabBarItemStyle: { borderRadius: questLayout.navItemRadius },
             tabBarIconStyle: { marginBottom: 0 },
-            tabBarLabelStyle: { fontSize: 10, lineHeight: 12, fontWeight: '700', marginTop: -1 },
+            tabBarLabelStyle: { fontSize: 11, lineHeight: 13, fontWeight: '700', marginTop: -1 },
           }}
         >
           <Tab.Screen name="Today" options={{ tabBarLabel: t(lang, 'today'), tabBarIcon: ({ focused, color }) => <TabIcon name="home" focused={focused} color={color} /> }}>
