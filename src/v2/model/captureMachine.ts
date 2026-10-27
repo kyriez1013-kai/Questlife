@@ -28,7 +28,7 @@ export type CaptureEvent =
   | { type: 'RAW_FAILED' }
   | { type: 'PARSED'; entries: V2Entry[]; source: CaptureSource; banner: CaptureBanner }
   | { type: 'PARSE_FAILED'; code: string }
-  | { type: 'MANUAL' }
+  | { type: 'MANUAL'; entries?: V2Entry[] }
   | { type: 'RETRY_PARSE' }
   | { type: 'EDIT'; index: number; patch: Partial<V2Entry> }
   | { type: 'REMOVE'; index: number }
@@ -61,7 +61,12 @@ export function captureReducer(state: CaptureState, ev: CaptureEvent): CaptureSt
       return state.phase === 'parsing' ? { phase: 'parse_failed', text: state.text, rawId: state.rawId, code: ev.code } : state;
     case 'MANUAL':
       return state.phase === 'parse_failed'
-        ? { phase: 'confirm', text: state.text, rawId: state.rawId, entries: [{ kind: 'action', title: '', skillId: null, durationMinutes: null, weightKg: null, sets: null, reps: null }], source: 'manual', banner: null }
+        ? {
+            phase: 'confirm', text: state.text, rawId: state.rawId, source: 'manual', banner: null,
+            entries: ev.entries && ev.entries.length > 0
+              ? ev.entries
+              : [{ kind: 'action', title: '', skillId: null, durationMinutes: null, weightKg: null, sets: null, reps: null }],
+          }
         : state;
     case 'RETRY_PARSE':
       return state.phase === 'parse_failed' ? { phase: 'parsing', text: state.text, rawId: state.rawId } : state;

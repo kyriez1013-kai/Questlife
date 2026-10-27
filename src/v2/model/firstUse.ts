@@ -22,12 +22,12 @@ export function remainingAnswers(a: FirstUsePartial): number {
 }
 
 const LIGHT: Record<FocusAnswer, string> = {
-  training: '今天只做轻量活动：快走或拉伸 10 分钟，不加重量。',
-  study: '读 10 分钟，只挑最容易的一页，读完就算完成。',
-  work: '先处理最小的一件事，10 分钟后再决定要不要继续。',
-  chores: '只做一件 10 分钟的家务，做完就停。',
-  recover: '今天以恢复为主：早点收工，晚上记一句睡前状态。',
-  other: '挑一件 10 分钟能做完的事，做完就算数。',
+  training: '今天只做轻量活动：快走或拉伸，先做 2 分钟，感觉还行再延到 10 分钟，不加重量。',
+  study: '只挑最容易的一页，先读 2 分钟；顺了再读到 10 分钟。',
+  work: '先处理最小的一件事 2 分钟，再决定要不要继续。',
+  chores: '只做一件家务的第一步，2 分钟；顺手就做到 10 分钟。',
+  recover: '今天以恢复为主：先静 2 分钟，早点收工，晚上记一句睡前状态。',
+  other: '挑一件小事，先做 2 分钟；顺了再延长。',
 };
 const NORMAL: Record<FocusAnswer, string> = {
   training: '按平时的量训练 20 分钟，做完回来记下重量和组数。',
@@ -49,7 +49,7 @@ const FOCUS: Record<FocusAnswer, string> = {
 export function buildFirstSuggestion(a: FirstUseAnswers): FirstSuggestion {
   const drained = a.energy === 'low' || (a.sleep === 'bad' && a.energy !== 'high');
   if (drained) {
-    return { title: '先做一件 10 分钟的小事', body: LIGHT[a.focus], minutes: 10, intensity: 'light', basis: 'prior' };
+    return { title: '先从 2 分钟开始', body: LIGHT[a.focus], minutes: 2, intensity: 'light', basis: 'prior' };
   }
   if (a.energy === 'high' && a.sleep !== 'bad') {
     return { title: '状态不错，做最重要的一件', body: FOCUS[a.focus], minutes: 25, intensity: 'focus', basis: 'prior' };

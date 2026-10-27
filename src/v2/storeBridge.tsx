@@ -76,6 +76,8 @@ export function useV2Actions() {
     updateRawCapture: (...a: Parameters<Store['updateRawCapture']>) => bridge.get().updateRawCapture(...a),
     deleteRawCapture: (...a: Parameters<Store['deleteRawCapture']>) => bridge.get().deleteRawCapture(...a),
     setSettings: (...a: Parameters<Store['setSettings']>) => bridge.get().setSettings(...a),
+    completeRescueStep: (...a: Parameters<Store['completeRescueStep']>) => bridge.get().completeRescueStep(...a),
+    completeActivationStep: (...a: Parameters<Store['completeActivationStep']>) => bridge.get().completeActivationStep(...a),
     createRescueLog: (...a: Parameters<Store['createRescueLog']>) => bridge.get().createRescueLog(...a),
     addContextLog: (...a: Parameters<Store['addContextLog']>) => bridge.get().addContextLog(...a),
     getState: () => bridge.get(),

@@ -43,6 +43,10 @@ assert.equal(manual.phase === 'confirm' && manual.source, 'manual');
 assert.equal(manual.phase === 'confirm' && canSave(manual.entries), false, 'blank manual entry is not saveable until named');
 assert.equal(run(manual, { type: 'SAVE' }).phase, 'confirm', 'SAVE blocked while invalid');
 assert.equal(run(manual, { type: 'EDIT', index: 0, patch: { title: '散步' } as never }, { type: 'SAVE' }).phase, 'saving');
+// "only keep the original text" = manual with a note entry, saveable in one go
+const keep = run(pf, { type: 'MANUAL', entries: [{ kind: 'note', title: '随便写' }] }, { type: 'SAVE' });
+assert.equal(keep.phase, 'saving');
+assert.equal(keep.phase === 'saving' && keep.entries[0].kind, 'note');
 
 // edit / remove / add
 let e = run(confirm, { type: 'ADD_ACTION' });

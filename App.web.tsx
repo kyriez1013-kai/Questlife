@@ -44,6 +44,9 @@ import {
 } from './src/v11/featureFlag';
 import PersistenceDebugPanel from './src/components/debug/PersistenceDebugPanel';
 import AdaptiveDecisionSurfaceScreen from './src/adaptive-decision/AdaptiveDecisionSurfaceScreen';
+import { isV2UiEnabled } from './src/v2/featureFlag';
+
+const V2App = React.lazy(() => import('./src/v2/V2App'));
 
 const InsightsV3Screen = React.lazy(() => import('./src/insights-v3/InsightsV3Screen'));
 const V11InsightsScreen = React.lazy(() => import('./src/v11-insights/V11InsightsScreen'));
@@ -356,9 +359,18 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <StoreProvider>
-        <StatusBar style="auto" />
-        <AppContent />
-        <PersistenceDebugPanel />
+        {isV2UiEnabled() ? (
+          // questlife_v2_ui: new frontend (see docs/frontend-v2). Old UI untouched: drop the param to go back.
+          <Suspense fallback={<ActivityIndicator style={{ flex: 1 }} />}>
+            <V2App />
+          </Suspense>
+        ) : (
+          <>
+            <StatusBar style="auto" />
+            <AppContent />
+            <PersistenceDebugPanel />
+          </>
+        )}
       </StoreProvider>
     </SafeAreaProvider>
   );
