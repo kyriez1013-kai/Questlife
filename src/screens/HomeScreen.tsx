@@ -54,6 +54,8 @@ import HomeSmartCapture from './HomeSmartCapture';
 import { confirmAction } from '../utils/confirm';
 import { displayEntityName } from '../utils/displayName';
 import { buildTodayCommand, TodayCommandAction } from '../utils/todayCommand';
+import { buildFirstSuggestion } from '../onboarding/firstStart';
+import { useFirstStartAnswers } from '../onboarding/useFirstStart';
 import { parseHealthContextText, ParsedHealthContext } from '../utils/healthContextParser';
 import { buildObjectiveContextBrief, ObjectiveContextBrief } from '../utils/objectiveContextBrief';
 import { buildMetacognitionSummary } from '../utils/metacognition';
@@ -712,6 +714,13 @@ export default function HomeScreen() {
     [data.executionLogs, todayStr],
   );
   const todayMinutes = todayLogs.reduce((sum, a) => sum + a.durationMinutes, 0);
+  // Day-1: repeat the first-use suggestion verbatim until the first record of the day.
+  const firstStartAnswers = useFirstStartAnswers(todayStr);
+  const firstStartDisplay = useMemo(() => {
+    if (!firstStartAnswers || todayLogs.length > 0) return undefined;
+    const suggestion = buildFirstSuggestion(firstStartAnswers, lang);
+    return { title: suggestion.title, body: suggestion.body, basis: t(lang, 'fsSuggestBasis'), tag: t(lang, 'fsGeneralAdvice') };
+  }, [firstStartAnswers, todayLogs.length, lang]);
   const contextLocale = lang === 'zh' ? 'zh-CN' : 'en-AU';
   const todayContextPrimary = new Intl.DateTimeFormat(contextLocale, { month: 'short', day: 'numeric' }).format(new Date());
   const todayContextWeekday = new Intl.DateTimeFormat(contextLocale, { weekday: 'short' }).format(new Date());
@@ -2237,6 +2246,10 @@ export default function HomeScreen() {
   }, [contextPreview, objectiveContextBrief.metrics, lang]);
 
   const runV11PrimaryCommand = useCallback(() => {
+    if (firstStartDisplay && todayCommand.primaryAction === 'create_goal') {
+      openV11Capture();
+      return;
+    }
     if (todayCommand.primaryAction === 'finish_pending_capture') {
       openV11Capture();
       return;
@@ -2253,6 +2266,7 @@ export default function HomeScreen() {
     }
     runTodayCommand(todayCommand.primaryAction);
   }, [
+    firstStartDisplay,
     openV11Capture,
     openV11DirectLog,
     latestFeedbackLog?.id,
@@ -2560,6 +2574,7 @@ export default function HomeScreen() {
             decision={v11TodayPresentation}
             decisionAction={adaptiveDecisionAction}
             evidenceStageWord={t(lang, `v11EvidenceStageWord_${v11TodayPresentation.evidenceStage}`)}
+            firstStart={firstStartDisplay}
             debugPerformance={getV11DebugPerformance(isDecisionDebugEnabled())}
             expanded={v11EvidenceExpanded}
             formatCopy={(copy) => copy.kind === 'text'

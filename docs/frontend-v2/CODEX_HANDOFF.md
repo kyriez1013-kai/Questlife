@@ -9,6 +9,7 @@
 
 ## 已完成（并有对照图，见 `06_精修记录.md`）
 Today 与 Capture 的细节精修（T1–T6、C1–C2）；首用「怎么开始」新路径（F1–F3）。现有玻璃/材质/主题/动效未动。
+第二轮 R1–R6：Today 动作优先层级、删除重复记录入口、首用玻璃化、Capture 聚焦/发送键/底部、首用建议与 Today 同源（`src/onboarding/useFirstStart.ts`）、浅/深对照总览。
 
 ## 验证命令
 ```
@@ -25,7 +26,8 @@ npm run build                         # Web 导出通过
 2. **【必须真机】** 重装 iOS 包。现状见 `01_现状地图.md` §5：物理机装的是 `8f23b19`，且免费 Personal Team 描述文件已于 2026-10-22 01:15 (CST) 过期，App 很可能已打不开。之后的 Capture 输入框高度修复（`a0c0e8e`）从未装到手机。
 3. Capture 提交后的确认卡（`HomeCapturePending`）精修：本轮未做（本地无后端走不通解析）。需要带后端或 mock 的 `/api/parse` 才能验收。
 4. 第 3 / 7 / 21 天的 Today 行为验证（S0–S3 门槛在 `src/v11/todayPresentation.ts`）：写 Playwright 脚本按日注入数据并断言「证据阶段」措辞。可与 1 并行。
-5. 推荐（需你拍板，见 READ_FIRST）：Today 标题文案的具体化。
+5. 原生检查首用玻璃卡片的回落样式（Web 才有 backdrop-filter；原生是主题 surface 色），以及 R4 聚焦样式在 iOS 上的表现（CSS 只作用于 Web）。
+6. `onDirectLog` 已不渲染；如确认不再需要，可在后续清理 prop 链（`HomeScreen` → `V11IntegratedTodaySurface`）。
 
 ## 后端缺口（我没动后端，只记录）
 - `/api/parse` 需要登录账号；本地无法验证云端解析链路与失败态。

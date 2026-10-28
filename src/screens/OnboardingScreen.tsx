@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Platform,
   Keyboard,
   ScrollView,
   StyleSheet,
@@ -25,12 +26,17 @@ import {
   buildFirstSuggestion, remainingAnswers, sleepToValue, stateToOverall, SLEEP_SELF_RATING_UNIT,
   type FirstStartAnswers, type FirstStartPartial, type FocusAnswer, type SleepAnswer, type StateAnswer,
 } from '../onboarding/firstStart';
+import { saveFirstStart } from '../onboarding/useFirstStart';
 import { getV11ProductLanguage, getV11ProductThemeId, isV11ProductEnabled } from '../v11/featureFlag';
 import RecordBackupActions from '../backup/RecordBackupActions';
 import { backupCopy } from '../backup/copy';
 import AccountSyncSection from '../sync-v2/AccountSyncSection';
 import { syncCopy } from '../sync-v2/copy';
 import NativeSettingsSheet from '../native/NativeSettingsSheet';
+import { getV11ThemeTokens } from '../v11/tokens';
+import V11GlowOrb from '../v11/components/V11GlowOrb';
+import '../v11-stage2-rebaseline/v11-stage2-rebaseline.styles';
+import { isDarkTheme } from '../design/surfaces';
 
 // welcome → quick → suggest is the "怎么开始" path (no goal needed). mode → goal → preview is the optional goal-first path.
 // 'language' and 'positioning' are no longer reachable from the first screen (kept so the old path can be restored).
@@ -180,6 +186,8 @@ export default function OnboardingScreen() {
         await retryLocalWrites();
       }
       await waitForLocalWrites();
+      // lets Today repeat this exact suggestion (same title / body / basis) for the rest of the day
+      try { await saveFirstStart({ version: 1, date: today(), answers: a }); } catch { /* advisory only */ }
       trackEvent('onboarding_quick_start_completed', { sleep: a.sleep, state: a.state, focus: a.focus }, { page: 'onboarding' });
       setSettings({ onboardingCompleted: true, onboardingVersion: 2, onboardingRestartRequested: false });
     } catch {
@@ -279,54 +287,103 @@ export default function OnboardingScreen() {
     );
   };
 
+  // Same field + glow + glass as Today (web reads the CSS variables; native keeps the plain theme surface).
+  const v11Theme = getV11ThemeTokens(isDarkTheme(questTheme) ? 'dark' : 'light');
+  const fieldVariables = {
+    '--v11-rebaseline-bg': v11Theme.field.background,
+    '--v11-rebaseline-elevated': v11Theme.questTheme.colors.surfaceElevated,
+    '--v11-rebaseline-far': v11Theme.field.far,
+    '--v11-rebaseline-grid': v11Theme.field.grid,
+    '--v11-rebaseline-middle': v11Theme.field.middle,
+    '--v11-rebaseline-near': v11Theme.field.near,
+    '--v11-rebaseline-primary': v11Theme.glow.primary,
+    '--v11-rebaseline-text': v11Theme.text.primary,
+    '--v11-rebaseline-neutral-border': v11Theme.control.neutralBorder,
+    '--v11-rebaseline-neutral-elevated': v11Theme.control.neutralElevatedSurface,
+    '--v11-rebaseline-neutral-surface': v11Theme.control.neutralSurface,
+  } as any;
+  const smallButton = (label: string, onPress: () => void, testID?: string, muted = true) => (
+    <TouchableOpacity accessibilityRole="button" accessibilityLabel={label} testID={testID} onPress={onPress}
+      style={[styles.smallBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}>
+      <Text style={[styles.smallBtnText, { color: muted ? questTheme.colors.textMuted : questTheme.colors.text }]}>{label}</Text>
+    </TouchableOpacity>
+  );
+
   const shell = (children: React.ReactNode) => (
     <OnboardingSafeArea
       className={v11ProductEnabled ? 'v11-onboarding' : undefined}
       edges={['top', 'bottom']}
-      style={[styles.safe, { backgroundColor: questTheme.colors.background }]}
+      style={[styles.safe, { backgroundColor: v11Theme.field.background }]}
     >
-      <OnboardingScrollView
-        className={v11ProductEnabled ? 'v11-onboarding-scroll' : undefined}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[styles.content, v11ProductEnabled ? styles.v11Content : null, step === 'welcome' ? styles.contentTop : null]}
-        style={{ backgroundColor: questTheme.colors.background }}
-      >
-        <View style={styles.topRow}>
-          {step !== 'language' && step !== 'welcome' ? (
-            <TouchableOpacity onPress={goBack} style={[styles.smallBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}>
-              <Text style={[styles.smallBtnText, { color: questTheme.colors.text }]}>{t(lang, 'back')}</Text>
-            </TouchableOpacity>
-          ) : <View />}
+      <OnboardingPanel dataSet={{ 'v11-rebaseline-role': 'onboarding-root' }} style={[styles.root, fieldVariables]}>
+        <OnboardingPanel dataSet={{ 'v11-rebaseline-role': 'field' }} pointerEvents="none" />
+        <V11GlowOrb stage="S1" style={{ position: 'absolute', top: 96, left: -92 }} theme={v11Theme} />
+        <V11GlowOrb stage="S1" style={{ position: 'absolute', top: 470, right: -138 }} theme={v11Theme} tone="supporting" />
+        {/* back / later (and the language switch on the first screen) stay pinned under the top safe area */}
+        <View style={styles.topBar}>
+          {step !== 'language' && step !== 'welcome' ? smallButton(t(lang, 'back'), goBack, 'fs-back', false) : <View />}
           <View style={styles.topRight}>
-            {step === 'welcome' ? (
-              <TouchableOpacity accessibilityRole="button" accessibilityLabel={t(lang, 'fsSwitchLanguage')} testID="fs-language" onPress={switchLanguage} style={[styles.smallBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}>
-                <Text style={[styles.smallBtnText, { color: questTheme.colors.textMuted }]}>{t(lang, 'fsSwitchLanguage')}</Text>
-              </TouchableOpacity>
-            ) : null}
-            {canExit ? (
-              <TouchableOpacity onPress={exitOnboarding} style={[styles.smallBtn, { borderColor: questTheme.colors.border, backgroundColor: questTheme.colors.surface }]}>
-                <Text style={[styles.smallBtnText, { color: questTheme.colors.textMuted }]}>{t(lang, 'later')}</Text>
-              </TouchableOpacity>
-            ) : null}
+            {step === 'welcome' ? smallButton(t(lang, 'fsSwitchLanguage'), switchLanguage, 'fs-language') : null}
+            {canExit ? smallButton(t(lang, 'later'), exitOnboarding, 'fs-later') : null}
           </View>
         </View>
-        <Dots />
-        {children}
-      </OnboardingScrollView>
+        <OnboardingScrollView
+          className={v11ProductEnabled ? 'v11-onboarding-scroll' : undefined}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.centerContent}
+          style={{ flex: 1 }}
+        >
+          <Dots />
+          {children}
+        </OnboardingScrollView>
+      </OnboardingPanel>
       {showAccount ? <NativeSettingsSheet lang={lang} canClose={() => true} onClose={() => setShowAccount(false)}>
         <AccountSyncSection />
       </NativeSettingsSheet> : null}
     </OnboardingSafeArea>
   );
 
+  /** Glass card: on web the CSS role supplies Today's material; native falls back to the theme surface. */
+  const card = (children: React.ReactNode, extra?: object) => (
+    <OnboardingPanel
+      dataSet={{ 'v11-rebaseline-role': 'onboarding-card' }}
+      style={[styles.glassCard, Platform.OS === 'web' ? null : { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, borderWidth: 1 }, extra]}
+    >
+      {children}
+    </OnboardingPanel>
+  );
+
+  /** Equal-height capsule chip; groups lay out as a 3-column grid so every chip is the same size. */
+  const chip = (label: string, selected: boolean, onPress: () => void, testID: string) => (
+    <OnboardingTouchable
+      key={testID}
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      accessibilityLabel={label}
+      dataSet={{ 'v11-rebaseline-role': 'onboarding-chip', 'v11-selected': selected ? 'true' : 'false' }}
+      onPress={onPress}
+      style={[styles.chip, {
+        backgroundColor: selected ? questTheme.colors.primary : Platform.OS === 'web' ? 'transparent' : questTheme.colors.surfaceSoft,
+        borderColor: selected ? questTheme.colors.primary : questTheme.colors.border,
+      }]}
+    >
+      <Text numberOfLines={1} style={[styles.chipText, { color: selected ? questTheme.colors.primaryText : questTheme.colors.text }]}>{label}</Text>
+    </OnboardingTouchable>
+  );
+
   if (step === 'welcome') {
     return shell(
-      <OnboardingPanel testID="fs-welcome" className={v11ProductEnabled ? 'v11-onboarding-panel' : undefined} style={{ marginTop: 72 }}>
-        <View style={[styles.logoMark, { backgroundColor: questTheme.colors.primarySoft, borderColor: questTheme.colors.border }]}>
-          <QuestIcon name="target" color={accent} size={30} strokeWidth={2.4} />
-        </View>
-        <Text accessibilityRole="header" style={[styles.title, styles.balanced, { color: questTheme.colors.text }]}>{t(lang, 'fsWelcomeTitle')}</Text>
-        <Text style={[styles.subtitle, { color: questTheme.colors.textMuted }]}>{t(lang, 'fsWelcomeBody')}</Text>
+      <OnboardingPanel testID="fs-welcome">
+        {card(
+          <>
+            <View style={[styles.logoMarkSmall, { backgroundColor: questTheme.colors.primarySoft, borderColor: questTheme.colors.border }]}>
+              <QuestIcon name="target" color={accent} size={24} strokeWidth={2.4} />
+            </View>
+            <Text accessibilityRole="header" style={[styles.title, styles.balanced, { color: questTheme.colors.text }]}>{t(lang, 'fsWelcomeTitle')}</Text>
+            <Text style={[styles.subtitle, styles.pretty, { color: questTheme.colors.textMuted, marginBottom: 0 }]}>{t(lang, 'fsWelcomeBody')}</Text>
+          </>,
+        )}
         <View style={styles.actionStack}>
           <QuestButton questTheme={questTheme} label={t(lang, 'fsStart')} onPress={() => setStep('quick')} accessibilityLabel={t(lang, 'fsStart')} />
           <QuestButton questTheme={questTheme} variant="ghost" label={t(lang, 'fsBuildGoalFirst')} onPress={() => setStep('mode')} />
@@ -346,25 +403,24 @@ export default function OnboardingScreen() {
   }
 
   if (step === 'quick') {
-    const group = <K extends keyof FirstStartAnswers>(key: K, titleKey: string, options: Array<FirstStartAnswers[K]>, prefix: string) => (
-      <View style={styles.quickGroup}>
+    const group = <K extends keyof FirstStartAnswers>(key: K, titleKey: string, options: Array<FirstStartAnswers[K]>, prefix: string) => card(
+      <>
         <Text style={[styles.quickLabel, { color: questTheme.colors.text }]}>{t(lang, titleKey)}</Text>
-        <View style={styles.pillRow}>
-          {options.map((value) => (
-            <QuestPill key={String(value)} questTheme={questTheme} label={t(lang, `${prefix}${String(value)}`)} active={answers[key] === value} onPress={() => answerQuick(key, value)} />
-          ))}
+        <View style={styles.chipGrid}>
+          {options.map((value) => chip(t(lang, `${prefix}${String(value)}`), answers[key] === value, () => answerQuick(key, value), `fs-${String(key)}-${String(value)}`))}
         </View>
-      </View>
+      </>,
+      { marginBottom: 10 },
     );
     const left = remainingAnswers(answers);
     return shell(
-      <OnboardingPanel testID="fs-quick" className={v11ProductEnabled ? 'v11-onboarding-panel' : undefined}>
-        <Text accessibilityRole="header" style={[styles.title, styles.balanced, { color: questTheme.colors.text }]}>{t(lang, 'fsQuickTitle')}</Text>
+      <OnboardingPanel testID="fs-quick">
+        <Text accessibilityRole="header" style={[styles.title, styles.balanced, { color: questTheme.colors.text, marginBottom: 14 }]}>{t(lang, 'fsQuickTitle')}</Text>
         {group('sleep', 'fsQSleep', ['bad', 'ok', 'good'] as SleepAnswer[], 'fsSleep_')}
         {group('state', 'fsQState', ['low', 'mid', 'high'] as StateAnswer[], 'fsState_')}
         {group('focus', 'fsQFocus', ['training', 'study', 'work', 'chores', 'recover', 'other'] as FocusAnswer[], 'fsFocus_')}
-        <View style={styles.actionStack}>
-          {left > 0 ? <Text style={[styles.caption, { color: questTheme.colors.textMuted, textAlign: 'center', marginTop: 0 }]}>{t(lang, 'fsQRemaining').replace('{n}', String(left))}</Text> : null}
+        <View style={[styles.actionStack, { marginTop: 12 }]}>
+          {left > 0 ? <Text style={[styles.caption, { color: questTheme.colors.textMuted, marginTop: 0 }]}>{t(lang, 'fsQRemaining').replace('{n}', String(left))}</Text> : null}
           <QuestButton questTheme={questTheme} label={t(lang, 'fsSeeSuggestion')} disabled={left > 0} onPress={() => setStep('suggest')} />
         </View>
       </OnboardingPanel>
@@ -373,17 +429,19 @@ export default function OnboardingScreen() {
 
   if (step === 'suggest' && suggestion) {
     return shell(
-      <OnboardingPanel testID="fs-suggest" className={v11ProductEnabled ? 'v11-onboarding-panel' : undefined}>
-        <Text style={[styles.kicker, { color: questTheme.colors.textMuted }]}>{t(lang, 'fsSuggestKicker')}</Text>
-        <Text accessibilityRole="header" style={[styles.title, styles.balanced, { color: questTheme.colors.text }]}>{suggestion.title}</Text>
-        <Text style={[styles.suggestBody, { color: questTheme.colors.text }]}>{suggestion.body}</Text>
-        <View style={{ flexDirection: 'row', marginBottom: 14 }}>
-          <QuestPill questTheme={questTheme} label={t(lang, 'fsGeneralAdvice')} />
-        </View>
-        <OnboardingPanel style={[styles.card, { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border }]}>
-          <Text style={[styles.previewLine, { color: questTheme.colors.textMuted, marginBottom: 0 }]}>{t(lang, 'fsSuggestBasis')}</Text>
-        </OnboardingPanel>
-        {startFailed ? <Text accessibilityRole="alert" style={[styles.error, { color: questTheme.colors.danger, marginBottom: 12 }]}>{t(lang, 'fsSaveFailed')}</Text> : null}
+      <OnboardingPanel testID="fs-suggest">
+        {card(
+          <>
+            <View style={styles.kickerRow}>
+              <Text style={[styles.kicker, { color: questTheme.colors.textMuted, marginBottom: 0 }]}>{t(lang, 'fsSuggestKicker')}</Text>
+              <Text style={[styles.tag, { color: questTheme.colors.textMuted, borderColor: questTheme.colors.border }]}>{t(lang, 'fsGeneralAdvice')}</Text>
+            </View>
+            <Text accessibilityRole="header" style={[styles.title, styles.balanced, { color: questTheme.colors.text }]}>{suggestion.title}</Text>
+            <Text style={[styles.suggestBody, styles.pretty, { color: questTheme.colors.text }]}>{suggestion.body}</Text>
+            <Text style={[styles.basis, { color: questTheme.colors.textMuted }]}>{t(lang, 'fsSuggestBasis')}</Text>
+          </>,
+        )}
+        {startFailed ? <Text accessibilityRole="alert" style={[styles.error, { color: questTheme.colors.danger, textAlign: 'center' }]}>{t(lang, 'fsSaveFailed')}</Text> : null}
         <View style={styles.actionStack}>
           <QuestButton questTheme={questTheme} label={startSaving ? t(lang, 'fsSaving') : startFailed ? t(lang, 'fsRetry') : t(lang, 'fsSuggestCta')} loading={startSaving} onPress={finishQuickStart} />
         </View>
@@ -577,12 +635,25 @@ const styles = StyleSheet.create({
   contentTop: { justifyContent: 'flex-start' },
   v11Content: { maxWidth: 760, paddingHorizontal: 20, paddingBottom: 48 },
   topRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  root: { flex: 1, position: 'relative', overflow: 'hidden' },
+  topBar: { zIndex: 3, minHeight: 56, paddingHorizontal: 20, paddingTop: 6, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  // vertically centred, biased upward (more room below than above) so short pages do not leave a dead band
+  centerContent: { flexGrow: 1, width: '100%', maxWidth: 560, alignSelf: 'center', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 200, justifyContent: 'center', zIndex: 2 },
+  glassCard: { borderRadius: 22, padding: 18 },
+  logoMarkSmall: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1, marginBottom: 14 },
+  chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: { height: 44, flexBasis: '31%', flexGrow: 1, borderRadius: 999, borderWidth: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 },
+  chipText: { fontSize: 15, fontWeight: '700' },
+  kickerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  tag: { fontSize: 11, fontWeight: '700', borderWidth: 1, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3, overflow: 'hidden' },
+  basis: { fontSize: 13, lineHeight: 19 },
   balanced: { textWrap: 'balance' } as any,
+  // avoids a single orphaned character on the last line (CJK has no word boundaries to wrap at)
+  pretty: { textWrap: 'pretty' } as any,
   caption: { fontSize: 13, lineHeight: 19, marginTop: 14, textAlign: 'center' },
   kicker: { fontSize: 12, fontWeight: '800', letterSpacing: 0.6, marginBottom: 10 },
-  suggestBody: { fontSize: 17, lineHeight: 26, fontWeight: '600', marginBottom: 14 },
-  quickGroup: { marginBottom: 20 },
-  quickLabel: { fontSize: 15, fontWeight: '800', marginBottom: 10 },
+  suggestBody: { fontSize: 16, lineHeight: 24, fontWeight: '600', marginBottom: 12 },
+  quickLabel: { fontSize: 15, fontWeight: '800', marginBottom: 12 },
   linkRow: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: 6 },
   linkBtn: { minHeight: 44, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center' },
   linkText: { fontSize: 13, fontWeight: '700', textDecorationLine: 'underline' },

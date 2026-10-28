@@ -92,6 +92,11 @@ type Props = {
   decisionAction?: V11IntegratedUtilityAction;
   /** plain-word replacement for the internal S0–S3 code, e.g. "还在积累" */
   evidenceStageWord?: string;
+  /**
+   * Day-1 first-start suggestion, worded exactly as on the first-use result page.
+   * Presentation only: the primary action still runs todayCommand's handler.
+   */
+  firstStart?: { title: string; body: string; basis: string; tag: string };
   expanded: boolean;
   formatCopy: (copy: V11TodayPresentation['judgement']) => string;
   instantRead: InstantReadProps;
@@ -238,6 +243,7 @@ export default function V11IntegratedTodaySurface({
   decisionAction,
   evidenceStageWord,
   expanded,
+  firstStart,
   formatCopy,
   instantRead,
   labels,
@@ -258,9 +264,9 @@ export default function V11IntegratedTodaySurface({
   const theme = getV11ThemeTokens(themeMode);
   const layer = expanded ? 'l2' : 'l1';
   const reading = decision.reading.kind === 'state' ? decision.reading.value : null;
-  const actionLabel = formatCopy(decision.actionLabel);
-  const actionReason = formatCopy(decision.actionReason);
-  const judgement = formatCopy(decision.judgement);
+  const actionLabel = firstStart?.title ?? formatCopy(decision.actionLabel);
+  const actionReason = firstStart?.body ?? formatCopy(decision.actionReason);
+  const judgement = firstStart?.basis ?? formatCopy(decision.judgement);
   const visiblePlan = planRows.slice(0, 3);
   const cssVariables = {
     '--v11-rebaseline-bg': theme.field.background,
@@ -374,11 +380,51 @@ export default function V11IntegratedTodaySurface({
         </WebView>
 
         <WebView dataSet={{ 'v11-rebaseline-role': 'decision-group' }}>
-          <WebView dataSet={{ 'v11-rebaseline-role': 'decision-copy' }}>
+          {/* Hierarchy: the next action is the largest text; the judgement is its secondary line. */}
+          <WebView dataSet={{ 'v11-rebaseline-role': 'decision-kicker' }}>
             <Text style={{ color: theme.text.metadata, fontSize: 11, lineHeight: 16, letterSpacing: 0.7 }}>
               {labels.decisionEvidence}
             </Text>
-            <Text style={{ color: theme.text.primary, fontSize: 25, lineHeight: 33, fontWeight: '400' }}>
+            {firstStart ? (
+              <WebText dataSet={{ 'v11-rebaseline-role': 'first-start-tag' }} style={{ color: theme.text.secondary, fontSize: 11, lineHeight: 16, fontWeight: '600' }}>
+                {firstStart.tag}
+              </WebText>
+            ) : null}
+          </WebView>
+
+          <WebView dataSet={{ 'v11-rebaseline-role': 'action-stack' }}>
+            <V11Pill
+              accessibilityLabel={actionLabel}
+              contentStyle={{
+                paddingVertical: 16,
+                paddingLeft: 22,
+                paddingRight: 14,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 12,
+              }}
+              height={96}
+              onPress={onPrimaryAction}
+              reducedMotion={reducedMotion}
+              stage={decision.evidenceStage}
+              theme={theme}
+            >
+              <WebView style={{ flex: 1, flexShrink: 1, minWidth: 0 }}>
+                <Text numberOfLines={2} style={{ flexShrink: 1, color: theme.text.primary, fontSize: 24, lineHeight: 31, fontWeight: '600', letterSpacing: -0.2 }}>
+                  {actionLabel}
+                </Text>
+                <Text numberOfLines={2} style={{ flexShrink: 1, color: theme.text.secondary, fontSize: 13, lineHeight: 19, marginTop: 4 }}>
+                  {actionReason}
+                </Text>
+              </WebView>
+              <WebView dataSet={{ 'v11-rebaseline-role': 'primary-action-trailing' }}>
+                <V11RebaselineIcon name="arrow" size={18} color={theme.text.primary} />
+              </WebView>
+            </V11Pill>
+          </WebView>
+
+          <WebView dataSet={{ 'v11-rebaseline-role': 'decision-copy' }}>
+            <Text style={{ color: theme.text.secondary, fontSize: 14, lineHeight: 21, fontWeight: '400' }}>
               {judgement}
             </Text>
             {decisionAction ? (
@@ -403,47 +449,7 @@ export default function V11IntegratedTodaySurface({
               </WebPressable>
             ) : null}
           </WebView>
-
-          <WebView dataSet={{ 'v11-rebaseline-role': 'action-stack' }}>
-            <V11Pill
-              accessibilityLabel={actionLabel}
-              contentStyle={{
-                paddingVertical: 12,
-                paddingLeft: 20,
-                paddingRight: 12,
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 12,
-              }}
-              height={80}
-              onPress={onPrimaryAction}
-              reducedMotion={reducedMotion}
-              stage={decision.evidenceStage}
-              theme={theme}
-            >
-              <WebView style={{ flex: 1, flexShrink: 1, minWidth: 0 }}>
-                <Text numberOfLines={2} style={{ flexShrink: 1, color: theme.text.primary, fontSize: 15, lineHeight: 20, fontWeight: '500' }}>
-                  {actionLabel}
-                </Text>
-                <Text numberOfLines={2} style={{ flexShrink: 1, color: theme.text.secondary, fontSize: 11, lineHeight: 16, marginTop: 2 }}>
-                  {actionReason}
-                </Text>
-              </WebView>
-              <WebView dataSet={{ 'v11-rebaseline-role': 'primary-action-trailing' }}>
-                <V11RebaselineIcon name="arrow" size={18} color={theme.text.primary} />
-              </WebView>
-            </V11Pill>
-            <WebPressable
-              accessibilityRole="button"
-              dataSet={{ 'v11-rebaseline-role': 'direct-log' }}
-              onPress={onDirectLog}
-            >
-              <V11RebaselineIcon name="add" size={15} color={theme.text.secondary} />
-              <Text style={{ color: theme.text.secondary, fontSize: 13, lineHeight: 19 }}>
-                {labels.directLog}
-              </Text>
-            </WebPressable>
-          </WebView>
+          {/* "做完后记录" removed: the Capture bar at the top is the single record entry. onDirectLog stays wired for callers. */}
         </WebView>
 
         <WebView dataSet={{ 'v11-rebaseline-role': 'state-summary' }}>

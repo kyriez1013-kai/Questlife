@@ -2535,3 +2535,93 @@
     )
   ) !important;
 }
+
+/* ═══ Round 2 ═══ */
+
+/* R2-1 — Today hierarchy: kicker row, then the action (hero), then the judgement as secondary line. */
+[data-v11-rebaseline-role="decision-kicker"] {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 4px;
+}
+[data-v11-rebaseline-role="first-start-tag"] {
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--v11-rebaseline-neutral-border);
+  background: color-mix(in srgb, var(--v11-rebaseline-neutral-surface) 72%, transparent);
+}
+[data-v11-rebaseline-role="production-root"] [data-v11-rebaseline-role="decision-group"] {
+  gap: 14px;
+}
+[data-v11-rebaseline-role="production-root"] [data-v11-rebaseline-role="decision-copy"] {
+  padding: 0 4px;
+}
+
+/* R2-4a — Capture input focus: no browser-style 2px blue ring + 3px halo.
+   A thin glass edge in the primary hue plus a soft inner glow, matching the glass bar on Today. */
+[data-v11-rebaseline-role="capture-input-slot"] [data-v11-control="textarea"],
+[data-v11-rebaseline-role="capture-input-slot"] [data-v11-control="text-input"] {
+  border-radius: 18px !important;
+}
+[data-v11-rebaseline-role="capture-input-slot"] [data-v11-control="textarea"][data-v11-focused="true"],
+[data-v11-rebaseline-role="capture-input-slot"] [data-v11-control="text-input"][data-v11-focused="true"] {
+  /* keep the 2px border box (the auto-grow measurement depends on it — a 1px border made the input
+     ratchet up to its 156px max); make it transparent and draw the thin edge as an inset ring */
+  border-color: transparent !important;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--v11-control-focus) 42%, var(--v11-control-border)),
+    inset 0 1px 0 color-mix(in srgb, #ffffff 22%, transparent),
+    inset 0 0 14px color-mix(in srgb, var(--v11-control-focus) 12%, transparent) !important;
+  outline: none !important;
+}
+
+/* R2-4b — send key: primary deep-blue action (same token as primary buttons), same 18px radius as the input. */
+[data-v11-rebaseline-role="capture-action-slot"] [data-v11-control="composer-action"] {
+  border-radius: 18px;
+}
+
+/* R2-4c — the sheet fits its content (round-1 R3 still left a 300px floor; with no recent records the content is ~83px). */
+[data-v11-rebaseline-role="overlay"][data-v11-sheet="capture"] > [data-v11-component="material-frame"] {
+  min-height: 0 !important;
+}
+[data-v11-rebaseline-role="overlay"][data-v11-sheet="capture"] [data-v11-rebaseline-role="production-sheet-scroll"] {
+  flex: 0 1 auto;
+}
+[data-v11-rebaseline-role="overlay"][data-v11-sheet="capture"] [data-v11-rebaseline-role="capture-composer"] {
+  padding-bottom: 20px;
+}
+
+/* R2-3 — First-use pages sit on Today's field + glow and use Today's glass material (same recipe as capture-entry). */
+[data-v11-rebaseline-role="onboarding-root"] {
+  color: var(--v11-rebaseline-text);
+  background: var(--v11-rebaseline-bg);
+}
+[data-v11-rebaseline-role="onboarding-card"] {
+  position: relative;
+  border: 1px solid var(--v11-rebaseline-neutral-border);
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--v11-rebaseline-neutral-elevated) 54%, transparent),
+      color-mix(in srgb, var(--v11-rebaseline-neutral-surface) 74%, transparent)
+    );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--v11-rebaseline-text) 12%, transparent),
+    0 10px 24px color-mix(in srgb, var(--v11-rebaseline-bg) 18%, transparent);
+  backdrop-filter: blur(16px) saturate(128%);
+  -webkit-backdrop-filter: blur(16px) saturate(128%);
+}
+[data-v11-rebaseline-role="onboarding-chip"] {
+  transition: background 120ms cubic-bezier(0.32, 0.72, 0, 1), transform 120ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+[data-v11-rebaseline-role="onboarding-chip"][data-v11-selected="false"] {
+  background: color-mix(in srgb, var(--v11-rebaseline-neutral-elevated) 70%, transparent) !important;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--v11-rebaseline-text) 9%, transparent);
+}
+[data-v11-rebaseline-role="onboarding-chip"]:active { transform: scale(0.985); }
+@media (prefers-reduced-motion: reduce) {
+  [data-v11-rebaseline-role="onboarding-chip"] { transition: none; }
+}

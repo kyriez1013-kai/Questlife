@@ -681,7 +681,7 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
             loading={isPosting}
             onPress={handleSend}
             theme={v11Theme}
-            tone="neutral"
+            tone="default"
           >
             <V11RebaselineIcon name="arrow" size={18} color={v11Theme.control.primaryActionText} />
           </V11ComposerAction>
