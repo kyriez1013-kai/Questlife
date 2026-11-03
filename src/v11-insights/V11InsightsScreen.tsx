@@ -58,6 +58,9 @@ import {
   isV11QuantTerminalEnabled,
 } from '../v11/featureFlag';
 import V11PersonalTerminal from './personal-terminal/V11PersonalTerminal';
+import StateInsightsSection from '../state-layer/StateInsightsSection';
+import { isStateLayerEnabled } from '../state-layer/featureFlag';
+import { sl } from '../state-layer/copy';
 import {
   buildPersonalTerminalPresentation,
   type PersonalTerminalModel,
@@ -298,6 +301,7 @@ export default function V11InsightsScreen() {
   const [terminalInspectorOpen, setTerminalInspectorOpen] = useState(false);
   const [personalTerminalSheetOpen, setPersonalTerminalSheetOpen] = useState(false);
   const [ownerQuantOpen, setOwnerQuantOpen] = useState(false);
+  const [stateViewOpen, setStateViewOpen] = useState(query().get('insightsView') === 'state');
   const ownerQuantChosen = useRef(false);
   useEffect(() => {
     let active = true;
@@ -557,17 +561,33 @@ export default function V11InsightsScreen() {
             <Pressable
               key={String(live)}
               accessibilityRole="button"
-              accessibilityState={{ selected: ownerQuantOpen === live }}
-              onPress={() => { ownerQuantChosen.current = true; setOwnerQuantOpen(live); }}
-              style={{ minHeight: questLayout.controlMinHeight, justifyContent: 'center', paddingHorizontal: v11Spacing.sm, borderRadius: v11Radius.control, backgroundColor: ownerQuantOpen === live ? theme.questTheme.colors.surfaceElevated : 'transparent' }}
+              accessibilityState={{ selected: !stateViewOpen && ownerQuantOpen === live }}
+              onPress={() => { ownerQuantChosen.current = true; setStateViewOpen(false); setOwnerQuantOpen(live); }}
+              style={{ minHeight: questLayout.controlMinHeight, justifyContent: 'center', paddingHorizontal: v11Spacing.sm, borderRadius: v11Radius.control, backgroundColor: !stateViewOpen && ownerQuantOpen === live ? theme.questTheme.colors.surfaceElevated : 'transparent' }}
             >
-              <Text style={{ color: ownerQuantOpen === live ? theme.text.primary : theme.text.secondary, ...v11Typography.body }}>
+              <Text style={{ color: !stateViewOpen && ownerQuantOpen === live ? theme.text.primary : theme.text.secondary, ...v11Typography.body }}>
                 {t(language, live ? 'quantLiveView' : 'quantLocalView')}
               </Text>
             </Pressable>
           ))}
+          {isStateLayerEnabled() ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ selected: stateViewOpen }}
+              onPress={() => setStateViewOpen(true)}
+              style={{ minHeight: questLayout.controlMinHeight, justifyContent: 'center', paddingHorizontal: v11Spacing.sm, borderRadius: v11Radius.control, backgroundColor: stateViewOpen ? theme.questTheme.colors.surfaceElevated : 'transparent' }}
+            >
+              <Text style={{ color: stateViewOpen ? theme.text.primary : theme.text.secondary, ...v11Typography.body }}>
+                {sl(language === 'en' ? 'en' : 'zh', 'insTitle')}
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
-        {ownerQuantOpen ? <NativeInsightsExperience {...createInsightsEntrances(navigation, deliverNotificationIntent)} /> : (
+        {stateViewOpen ? (
+          <ScrollView style={{ flex: 1 }}>
+            <StateInsightsSection lang={language === 'en' ? 'en' : 'zh'} theme={theme} />
+          </ScrollView>
+        ) : ownerQuantOpen ? <NativeInsightsExperience {...createInsightsEntrances(navigation, deliverNotificationIntent)} /> : (
         <WebView
           dataSet={{
             'personal-terminal-root': 'true',

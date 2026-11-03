@@ -15,9 +15,9 @@ const zh = {
   alternate: '备选', reorder: '重排今天', recheck: '重新签到', coinFlip: '随机选一个',
   coinFlipNote: '随机分配，用来比较两种做法对你的效果',
   chosen: '已选', chosenRandom: '随机选中',
-  noBaseline: '还没有你的基线（已有 {n} 次，满 7 次后按你的常态判断）',
+  noBaseline: '还没有你的基线（{n}/7 次）',
   personalBaseline: '按你过去 {n} 次的常态判断',
-  notUsed: '没用到：{list}',
+  notUsed: '没用到（没有数据）：{list}',
   personalCount: '做过 {n} 次', personalSummary: '对你来说：做过 {n} 次，其中 {up} 次精力回升、{down} 次紧绷下降',
   randomCount: '其中 {n} 次是随机分配',
   followUpTitle: '刚才「{action}」之后，现在怎么样？', followUpDismiss: '忽略', nextDoneQ: '下一件事做了吗？', yes: '做了', no: '没做',
@@ -28,7 +28,7 @@ const zh = {
   bdSplit: '下一步：逐条决定', bdNow: '现在做', bdSchedule: '排时间', bdDrop: '放下',
   bdPickTime: '什么时候？', bdCustomTime: '自己填 HH:MM', bdInvalidTime: '时间格式是 HH:MM，且要在现在之后',
   bdDone: '完成', bdSaved: '已记下 {n} 件：现在做 {now}，排时间 {schedule}，放下 {drop}',
-  bdNeedsChoice: '每件都选一下再完成', bdPreviewSchedule: '确认把这些放进今天的日程', bdNoSlot: '今天没有空档了，改成自己填时间',
+  bdNeedsChoice: '每件都选一下再完成', bdPreviewSchedule: '确认把这些放进今天的日程', bdNoSlot: '今天没有空档了，改成自己填时间', bdScheduled: '已放进今天的日程：{n} 件',
   // reorder
   rpTitle: '重排今天（预览）', rpNothing: '今天剩下的安排已经是这个顺序，不用动',
   rpCantFit: '今天排不开，没有重排', rpConfirm: '确认重排', rpCancel: '先不改', rpApplied: '已重排',
@@ -58,9 +58,9 @@ const en: typeof zh = {
   alternate: 'Or', reorder: 'Re-order today', recheck: 'Check in again', coinFlip: 'Pick one at random',
   coinFlipNote: 'Randomly assigned, to compare the two options for you',
   chosen: 'Picked', chosenRandom: 'Picked at random',
-  noBaseline: 'No baseline of yours yet ({n} so far; after 7 it compares with your usual)',
+  noBaseline: 'No baseline of yours yet ({n}/7)',
   personalBaseline: 'Compared with your usual over {n} check-ins',
-  notUsed: 'Not used: {list}',
+  notUsed: 'Not used (no data): {list}',
   personalCount: 'Done {n} times', personalSummary: 'For you: done {n} times; energy rose {up} times, tension fell {down} times',
   randomCount: '{n} of them randomly assigned',
   followUpTitle: 'After “{action}”, how are you now?', followUpDismiss: 'Dismiss', nextDoneQ: 'Did the next thing get done?', yes: 'Yes', no: 'No',
@@ -70,7 +70,7 @@ const en: typeof zh = {
   bdSplit: 'Next: decide each', bdNow: 'Do now', bdSchedule: 'Schedule', bdDrop: 'Drop',
   bdPickTime: 'When?', bdCustomTime: 'Type HH:MM', bdInvalidTime: 'Use HH:MM, later than now',
   bdDone: 'Done', bdSaved: 'Saved {n}: now {now}, scheduled {schedule}, dropped {drop}',
-  bdNeedsChoice: 'Choose for each item first', bdPreviewSchedule: 'Confirm adding these to today', bdNoSlot: 'No free slots left today; type a time',
+  bdNeedsChoice: 'Choose for each item first', bdPreviewSchedule: 'Confirm adding these to today', bdNoSlot: 'No free slots left today; type a time', bdScheduled: 'Added to today: {n}',
   rpTitle: 'Re-order today (preview)', rpNothing: 'The rest of today is already in this order',
   rpCantFit: 'Today does not fit; nothing re-ordered', rpConfirm: 'Confirm', rpCancel: 'Not now', rpApplied: 'Re-ordered',
   rpUndo: 'Undo', rpUndone: 'Undone; original order restored', rpUndoFailed: 'Undo failed: {reason}',
@@ -120,15 +120,15 @@ export const TYPE_MEANING: Record<Lang, Record<StateTypeOrUnclear, string>> = {
 
 export const ACTION_COPY: Record<Lang, Record<StateActionId, { title: string; body: string }>> = {
   zh: {
-    hardest_first: { title: '把今天最难的事提前到现在', body: '看一下重排预览，确认后才会改' },
+    hardest_first: { title: '把今天最难的事提前到现在', body: '先看重排预览，确认后才会改' },
     protect_time: { title: '保护这段时间', body: '接下来 25 分钟不切换、不看消息' },
-    checklist_defer_decisions: { title: '做清单式任务，重大决定推迟', body: '先清掉能一步做完的事；要拍板的留到状态平静时' },
+    checklist_defer_decisions: { title: '做清单式任务，重大决定推迟', body: '先清一步能做完的事，拍板留到平静时' },
     brisk_walk_10: { title: '10 分钟快走', body: '出去走 10 分钟，回来再决定下一件' },
-    downgrade_recover: { title: '降级任务，安排恢复', body: '把难的往后放，今晚早点睡；看一下重排预览' },
+    downgrade_recover: { title: '降级任务，安排恢复', body: '难的往后放，今晚早睡；先看重排预览' },
     rest_20: { title: '休息 20 分钟以内', body: '躺下或闭眼，定 20 分钟闹钟' },
-    brain_dump: { title: '清空脑子', body: '列出挂着的事，每件只选：现在做 / 排时间 / 放下' },
+    brain_dump: { title: '清空脑子', body: '逐件选：现在做、排时间或放下' },
     probe_5: { title: '5 分钟试探', body: '只做 5 分钟，到点再决定继续还是换' },
-    switch_env: { title: '换个环境，或换一件更想做的事', body: '换地方、换姿势，或先做一件你更愿意做的' },
+    switch_env: { title: '换个环境，或换一件更想做的事', body: '换地方、换姿势，或先做更愿意做的' },
     follow_today: { title: '先做 Today 上那一步', body: '10 分钟后再看一次状态' },
     check_again: { title: '再签一次', body: '补充两项可选信息，可能就能分清' },
   },
@@ -165,8 +165,8 @@ export const SCIENCE_LINE: Record<Lang, Record<ScienceRefId, string>> = {
 };
 
 export const SIGNAL_NAME: Record<Lang, Record<SignalId, string>> = {
-  zh: { energy: '精力', tension: '紧绷', open_loops: '挂着的事', pull: '对眼前这件事', sleep: '睡眠（没有记录）', sleep_self_rating: '睡眠自评', resting_hr: '静息心率（没有数据）', hrv: 'HRV（没有数据）', training: '昨天训练（没有记录）', schedule_load: '今天日程（没有安排）', time_block: '时段' },
-  en: { energy: 'energy', tension: 'tension', open_loops: 'things on your mind', pull: 'the task in front of you', sleep: 'sleep (not recorded)', sleep_self_rating: 'sleep self-rating', resting_hr: 'resting HR (no data)', hrv: 'HRV (no data)', training: 'yesterday’s training (not recorded)', schedule_load: 'today’s schedule (nothing planned)', time_block: 'time of day' },
+  zh: { energy: '精力', tension: '紧绷', open_loops: '挂着的事', pull: '对眼前这件事', sleep: '睡眠', sleep_self_rating: '睡眠自评', resting_hr: '静息心率', hrv: 'HRV', training: '昨天训练', schedule_load: '今天日程', time_block: '时段' },
+  en: { energy: 'energy', tension: 'tension', open_loops: 'things on your mind', pull: 'the task in front of you', sleep: 'sleep', sleep_self_rating: 'sleep self-rating', resting_hr: 'resting HR', hrv: 'HRV', training: 'yesterday’s training', schedule_load: 'today’s schedule', time_block: 'time of day' },
 };
 
 export const OPEN_LOOPS_LABEL: Record<Lang, Record<OpenLoops, string>> = {
@@ -184,4 +184,13 @@ export const DEMAND_LABEL: Record<Lang, Record<Demand, string>> = {
 export const BAND_WORD: Record<Lang, Record<Band, string>> = {
   zh: { low: '偏低', mid: '居中', high: '偏高' },
   en: { low: 'low', mid: 'mid', high: 'high' },
+};
+
+export const ENERGY_SCALE: Record<Lang, string[]> = {
+  zh: ['没电', '偏少', '一般', '还行', '很足'],
+  en: ['Drained', 'Low', 'OK', 'Good', 'Full'],
+};
+export const TENSION_SCALE: Record<Lang, string[]> = {
+  zh: ['很松', '较松', '一般', '较紧', '很紧'],
+  en: ['Loose', 'Easy', 'OK', 'Tight', 'Very tight'],
 };

@@ -29,6 +29,7 @@ import QuestSegmentedControl from '../components/ui/QuestSegmentedControl';
 import { getV11ProductLanguage, getV11ProductThemeId, isV11PersonalTerminalEnabled } from '../v11/featureFlag';
 import AccountSyncSection from '../sync-v2/AccountSyncSection';
 import AiSettingsSection from '../services/AiSettingsSection';
+import { sl } from '../state-layer/copy';
 import { subscribeAiPreferences } from '../services/aiPreferences';
 import RecordBackupActions from '../backup/RecordBackupActions';
 import { downloadPersistenceSnapshot } from '../utils/persistenceTrace';
@@ -318,6 +319,21 @@ export default function SettingsScreen() {
               onChange={(language) => setSettings({ language })}
               questTheme={questTheme}
               accessibilityLabel={t(lang, 'language')}
+              style={styles.languageRow}
+            />
+          </View>
+          <View style={[styles.settingsGroupItem, styles.settingsGroupDivider, { borderTopColor: questTheme.colors.divider }]}>
+            <Text style={[styles.label, { color: questTheme.colors.text }]}>{sl(lang, 'coinFlipSetting')}</Text>
+            <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>{sl(lang, 'coinFlipSettingHint')}</Text>
+            <QuestSegmentedControl
+              value={data.settings.stateLayerCoinFlip ? 'on' : 'off'}
+              options={[
+                { value: 'off', label: lang === 'zh' ? '关' : 'Off' },
+                { value: 'on', label: lang === 'zh' ? '开' : 'On' },
+              ]}
+              onChange={(value) => setSettings({ stateLayerCoinFlip: value === 'on' })}
+              questTheme={questTheme}
+              accessibilityLabel={sl(lang, 'coinFlipSetting')}
               style={styles.languageRow}
             />
           </View>

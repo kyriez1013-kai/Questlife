@@ -16,6 +16,7 @@ export default function V11IntegratedTodaySurface(p: Props) {
   const button = (label: string, onPress: () => void, selected = false) => <Pressable accessibilityRole="button" accessibilityState={{ selected }} onPress={onPress} style={({ pressed }) => [s.hit, { backgroundColor: selected ? theme.control.neutralSelectedSurface : pressed ? theme.control.neutralPressedSurface : 'transparent' }]}><Text style={[s.body, text]}>{label}</Text></Pressable>;
   return <View style={s.content}>
     <View style={s.row}><View style={s.grow}><Text style={[s.context, text]}>{p.contextDate}</Text><Text style={[s.meta, muted]}>{p.contextMeta}</Text></View><Text style={[s.meta, muted]}>{labels.evidenceStage} · {p.decision.evidenceStage}</Text></View>
+    {p.stateSlot}
     <View style={{ gap: 8 }}>
       <Pressable accessibilityRole="button" accessibilityLabel={p.capturePlaceholder} onPress={p.onCapture} style={({ pressed }) => [s.capture, { backgroundColor: pressed ? theme.control.neutralPressedSurface : theme.control.neutralSurface }]}>
         <V11RebaselineIcon name="capture" size={18} color={theme.text.secondary} />

@@ -112,6 +112,8 @@ type Props = {
   planRows: V11IntegratedPlanRow[];
   reducedMotion: boolean;
   stateLabel: string;
+  /** State layer v0 card, rendered above the capture bar. It never replaces the todayCommand action. */
+  stateSlot?: React.ReactNode;
   themeMode: V11ThemeMode;
   utilityActions: V11IntegratedUtilityAction[];
 };
@@ -258,6 +260,7 @@ export default function V11IntegratedTodaySurface({
   planRows,
   reducedMotion,
   stateLabel,
+  stateSlot,
   themeMode,
   utilityActions,
 }: Props) {
@@ -345,6 +348,8 @@ export default function V11IntegratedTodaySurface({
             {evidenceStageWord ?? `${labels.evidenceStage} · ${decision.evidenceStage}`}
           </WebText>
         </WebView>
+
+        {stateSlot}
 
         <WebView dataSet={{ 'v11-rebaseline-role': 'capture-group' }}>
           <WebPressable

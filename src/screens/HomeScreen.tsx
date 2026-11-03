@@ -104,6 +104,8 @@ import {
 } from '../v11/components/V11SheetControls';
 import AdaptiveDecisionLoopOwnerSheet from '../adaptive-decision/AdaptiveDecisionLoopOwnerSheet';
 import QuestLifeCoreOwnerSheet from '../adaptive-decision/QuestLifeCoreOwnerSheet';
+import StateLayerToday from '../state-layer/StateLayerToday';
+import { isStateLayerEnabled } from '../state-layer/featureFlag';
 import {
   isAdaptiveDecisionLoopOwnerEnabled,
   isQuestLifeCoreV1Enabled,
@@ -2627,6 +2629,15 @@ export default function HomeScreen() {
             planRows={v11PlanRows}
             reducedMotion={v11EffectiveReducedMotion}
             stateLabel={stateSummaryLabel}
+            stateSlot={isStateLayerEnabled() ? (
+              <StateLayerToday
+                compact={!!activeSession || todayCommand.type === 'finish_pending_capture' || todayCommand.type === 'review_feedback'}
+                lang={lang}
+                onFollowToday={runV11PrimaryCommand}
+                reducedMotion={v11EffectiveReducedMotion}
+                theme={v11ThemeTokens}
+              />
+            ) : undefined}
             themeMode={isDarkTheme(questTheme) ? 'dark' : 'light'}
             utilityActions={v11UtilityActions}
           />
