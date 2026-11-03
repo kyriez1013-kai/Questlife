@@ -30,6 +30,7 @@ import { getV11ProductLanguage, getV11ProductThemeId, isV11PersonalTerminalEnabl
 import AccountSyncSection from '../sync-v2/AccountSyncSection';
 import AiSettingsSection from '../services/AiSettingsSection';
 import { sl } from '../state-layer/copy';
+import { isStateLayerEnabled } from '../state-layer/featureFlag';
 import { subscribeAiPreferences } from '../services/aiPreferences';
 import RecordBackupActions from '../backup/RecordBackupActions';
 import { downloadPersistenceSnapshot } from '../utils/persistenceTrace';
@@ -322,6 +323,7 @@ export default function SettingsScreen() {
               style={styles.languageRow}
             />
           </View>
+          {isStateLayerEnabled() ? (
           <View style={[styles.settingsGroupItem, styles.settingsGroupDivider, { borderTopColor: questTheme.colors.divider }]}>
             <Text style={[styles.label, { color: questTheme.colors.text }]}>{sl(lang, 'coinFlipSetting')}</Text>
             <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>{sl(lang, 'coinFlipSettingHint')}</Text>
@@ -337,6 +339,7 @@ export default function SettingsScreen() {
               style={styles.languageRow}
             />
           </View>
+          ) : null}
           <View style={[styles.settingsGroupItem, styles.settingsGroupDivider, { borderTopColor: questTheme.colors.divider }]}>
             <Text style={[styles.label, { color: questTheme.colors.text }]}>{t(lang, 'interfaceTheme')}</Text>
             <Text style={[styles.value, { color: questTheme.colors.textMuted }]}>{t(lang, 'visualStyle')}</Text>

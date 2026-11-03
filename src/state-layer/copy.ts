@@ -149,14 +149,14 @@ export const ACTION_COPY: Record<Lang, Record<StateActionId, { title: string; bo
 
 export const SCIENCE_LINE: Record<Lang, Record<ScienceRefId, string>> = {
   zh: {
-    thayer1987: 'Thayer 1987：10 分钟快走后精力上升、紧张下降，约维持 2 小时（18 人随机对照）',
+    thayer1987: 'Thayer 1987：10 分钟快走后，2 小时内自评精力更高、紧张更低（18 人，组内比较）',
     masicampo2011: 'Masicampo & Baumeister 2011：给没做完的事写出具体何时做，能减少它反复冒出来',
     kurzban2013: 'Kurzban 等 2013：费力感更像「机会成本」信号，不等于能量耗尽',
     marcora2009: 'Marcora 等 2009：心理疲劳主要改变的是主观费力感，生理指标无差异',
     loy2013: 'Loy 等 2013（元分析）：单次运动能提升精力感，但疲劳感平均没变；低强度休整更稳妥',
   },
   en: {
-    thayer1987: 'Thayer 1987: a 10-minute brisk walk raised energy and lowered tension for ~2 hours (n=18, randomized)',
+    thayer1987: 'Thayer 1987: after a 10-minute brisk walk, self-rated energy was higher and tension lower over 2 hours (n=18, within-person)',
     masicampo2011: 'Masicampo & Baumeister 2011: a specific when-plan for an unfinished task reduces intrusive thoughts',
     kurzban2013: 'Kurzban et al. 2013: felt effort works like an opportunity-cost signal, not an empty tank',
     marcora2009: 'Marcora et al. 2009: mental fatigue mainly changes perceived effort; physiology did not differ',

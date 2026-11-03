@@ -1,0 +1,15 @@
+{
+ "manifest": {
+  "href": "/manifest.webmanifest",
+  "display": "standalone",
+  "start_url": "/?source=pwa",
+  "icons": 3
+ },
+ "appleMeta": [
+  "apple-mobile-web-app-capable=yes",
+  "apple-mobile-web-app-status-bar-style=default"
+ ],
+ "swController": true,
+ "offlineNotice": 1,
+ "offlineStateCard": 1
+}

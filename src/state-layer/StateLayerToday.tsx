@@ -353,7 +353,16 @@ export default function StateLayerToday({
         </WebView>
       ) : null}
 
-      <Text style={{ color: theme.text.secondary, fontSize: 13, lineHeight: 19 }}>{lines.reason}</Text>
+      <Text style={{ color: theme.text.secondary, fontSize: 13, lineHeight: 19 }}>
+        {row.stateLayer!.correction ? `${lang === 'zh' ? '规则原判' : 'Rule said'} · ` : ''}{lines.reason}
+      </Text>
+      {row.stateLayer!.correction && classification.type !== type ? (
+        <Text style={{ color: theme.text.primary, fontSize: 12.5, lineHeight: 18 }}>
+          {lang === 'zh'
+            ? `你改成了「${TYPE_NAME.zh[type]}」，之后的统计按你的改正；规则原判留作校准。`
+            : `You changed it to “${TYPE_NAME.en[type]}”; counts use your correction, the rule's call is kept for calibration.`}
+        </Text>
+      ) : null}
       {!compact ? (
         <Text style={{ color: theme.text.metadata, fontSize: 11, lineHeight: 16 }}>
           {[TYPE_MEANING[lang][type], lines.baseline, lines.notUsed].filter(Boolean).join(' · ')}

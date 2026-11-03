@@ -1,0 +1,47 @@
+{
+ "build": "production export served on 127.0.0.1:8123",
+ "viewport": "390x844",
+ "runs": [
+  {
+   "openToCardMs": 133,
+   "tapsToActionMs": 97,
+   "totalMs": 230,
+   "taps": 2,
+   "actionShown": "过载 / 规则判断"
+  },
+  {
+   "openToCardMs": 126,
+   "tapsToActionMs": 91,
+   "totalMs": 217,
+   "taps": 2,
+   "actionShown": "过载 / 规则判断"
+  },
+  {
+   "openToCardMs": 150,
+   "tapsToActionMs": 84,
+   "totalMs": 234,
+   "taps": 2,
+   "actionShown": "过载 / 规则判断"
+  },
+  {
+   "openToCardMs": 130,
+   "tapsToActionMs": 87,
+   "totalMs": 217,
+   "taps": 2,
+   "actionShown": "过载 / 规则判断"
+  },
+  {
+   "openToCardMs": 132,
+   "tapsToActionMs": 88,
+   "totalMs": 220,
+   "taps": 2,
+   "actionShown": "过载 / 规则判断"
+  }
+ ],
+ "median": {
+  "openToCardMs": 132,
+  "tapsToActionMs": 88,
+  "totalMs": 220
+ },
+ "note": "Machine time only (Playwright clicks are instant). Human reading/decision time is not measured here."
+}
