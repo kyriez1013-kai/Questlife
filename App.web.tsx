@@ -10,6 +10,7 @@ import { Text, View, ActivityIndicator, Platform, useColorScheme } from 'react-n
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StoreProvider, useStore } from './src/store';
 import LocalPersistenceNotice from './src/components/LocalPersistenceNotice';
+import OfflineNotice, { registerServiceWorker } from './src/components/OfflineNotice';
 import { AiPreferencesCoordinator } from './src/services/AiSettingsSection';
 import { getLanguage, t } from './src/i18n';
 import { getQuestTheme, questLayout } from './src/design/tokens';
@@ -244,6 +245,7 @@ function AppContent() {
   return (
     <RootView {...rootProps} style={rootStyle}>
       <LocalPersistenceNotice />
+      <OfflineNotice />
       <AiPreferencesCoordinator />
       <NavigationContainer theme={navTheme}>
         <Tab.Navigator
@@ -326,6 +328,8 @@ function AppContent() {
     </RootView>
   );
 }
+
+registerServiceWorker();
 
 export default function App() {
   if (hasAdaptiveDecisionLoopDemoRoute()) {

@@ -719,10 +719,11 @@ export default function HomeScreen() {
   // Day-1: repeat the first-use suggestion verbatim until the first record of the day.
   const firstStartAnswers = useFirstStartAnswers(todayStr);
   const firstStartDisplay = useMemo(() => {
-    if (!firstStartAnswers || todayLogs.length > 0) return undefined;
+    // The first-use general advice gives way once there is a real record or an explicit state check-in today.
+    if (!firstStartAnswers || todayLogs.length > 0 || (data.stateCheckIns || []).some((row) => row.date === todayStr && row.stateLayer && !row.dataProvenance?.deleted)) return undefined;
     const suggestion = buildFirstSuggestion(firstStartAnswers, lang);
     return { title: suggestion.title, body: suggestion.body, basis: t(lang, 'fsSuggestBasis'), tag: t(lang, 'fsGeneralAdvice') };
-  }, [firstStartAnswers, todayLogs.length, lang]);
+  }, [firstStartAnswers, todayLogs.length, lang, data.stateCheckIns, todayStr]);
   const contextLocale = lang === 'zh' ? 'zh-CN' : 'en-AU';
   const todayContextPrimary = new Intl.DateTimeFormat(contextLocale, { month: 'short', day: 'numeric' }).format(new Date());
   const todayContextWeekday = new Intl.DateTimeFormat(contextLocale, { weekday: 'short' }).format(new Date());

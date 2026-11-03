@@ -134,6 +134,8 @@ const line = reasonLine({ energy: 2, tension: 4, openLoops: 'many', signals: per
 ok(line.startsWith('精力 2、紧绷 4，挂着很多事；近两晚平均 7.6 小时，在你的常态范围内'), `zh reason line: ${line}`);
 ok(line.endsWith('→ 更像过载，不是没睡够。'), 'zh conclusion');
 ok(!/因为|诊断|导致/.test(line), 'no causal / diagnostic words');
+const selfOnly = reasonLine({ energy: 2, tension: 4, signals: selfRated, classification: { ...C(2, 4, selfRated), body: 'normal' } }, 'zh');
+ok(!selfOnly.includes('不是没睡够'), `self-rating alone never yields "not lack of sleep": ${selfOnly}`);
 const enLine = reasonLine({ energy: 2, tension: 2, signals: sig(), classification: C(2, 2, sig()) }, 'en');
 ok(enLine.includes('unclear') && enLine.includes('no body signals'), `en unclear line: ${enLine}`);
 ok(notUsedLine(C(2, 4, sig()), 'zh')!.includes('静息心率'), 'not-used line lists missing HR');

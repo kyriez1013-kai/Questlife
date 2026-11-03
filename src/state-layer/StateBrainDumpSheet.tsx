@@ -103,7 +103,7 @@ export default function StateBrainDumpSheet({
         const count = (c: BrainDumpChoice) => record.filter((r) => r.choice === c).length;
         written.current = { message: sl(lang, 'bdSaved', { n: record.length, now: count('now'), schedule: count('schedule'), drop: count('drop') }), applied };
       } else {
-        retryLocalWrites();
+        await retryLocalWrites();
       }
       await waitForLocalWrites();
       const done = written.current!;

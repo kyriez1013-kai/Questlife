@@ -133,7 +133,7 @@ export default function StateLayerToday({
   const retry = useCallback(async () => {
     if (!pendingWrite.current) return;
     setStatus('saving');
-    try { retryLocalWrites(); await pendingWrite.current(); } catch { setStatus('error'); }
+    try { await retryLocalWrites(); await pendingWrite.current(); } catch { setStatus('error'); }
   }, [retryLocalWrites]);
 
   const saveCheckIn = useCallback((answers: StateAnswers, kind: StateLayerPayload['kind'], extra: { followUpOf?: string; nextDone?: boolean } = {}) => {

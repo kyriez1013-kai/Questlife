@@ -67,9 +67,10 @@ const UNCLEAR_WHY: Record<Lang, Record<string, string>> = {
   },
 };
 
-function contrast(c: StateClassification, lang: Lang): string {
+function contrast(c: StateClassification, s: PassiveSignals, lang: Lang): string {
   const zh = lang === 'zh';
-  if (c.type === 'overload' && c.body === 'normal') return zh ? '，不是没睡够' : ', not lack of sleep';
+  // "not lack of sleep" needs measured sleep minutes; a self-rating alone is too weak to say it.
+  if (c.type === 'overload' && c.body === 'normal' && s.sleep && !s.sleep.low) return zh ? '，不是没睡够' : ', not lack of sleep';
   if (c.type === 'low_arousal' && c.body === 'normal') return zh ? '，不是燃料耗尽' : ', not an empty tank';
   if (c.type === 'low_fuel' && c.body === 'low') return zh ? '，身体账户偏低' : '; body signals are low';
   return '';
@@ -88,8 +89,8 @@ export function reasonLine(input: { energy: Scale5; tension: Scale5; openLoops?:
     return zh ? `${facts} → 说不准：${UNCLEAR_WHY.zh[c.ruleId]}。` : `${facts} → unclear: ${UNCLEAR_WHY.en[c.ruleId]}.`;
   }
   return zh
-    ? `${facts} → 更像${TYPE_NAME.zh[c.type]}${contrast(c, lang)}。`
-    : `${facts} → more like ${TYPE_NAME.en[c.type].toLowerCase()}${contrast(c, lang)}.`;
+    ? `${facts} → 更像${TYPE_NAME.zh[c.type]}${contrast(c, input.signals, lang)}。`
+    : `${facts} → more like ${TYPE_NAME.en[c.type].toLowerCase()}${contrast(c, input.signals, lang)}.`;
 }
 
 /** Signals that were not used, listed so the person knows what the call did NOT see. */
