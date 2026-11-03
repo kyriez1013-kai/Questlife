@@ -1,4 +1,5 @@
 import type { DecisionEpisodeV1 } from './adaptive-decision/decisionEpisode';
+import type { Demand, StateLayerPayload } from './state-layer/types';
 
 // QuestLife 核心数据模型
 // V2 层级: Category (大目标) → Skill (子技能) → Action (打卡)
@@ -274,6 +275,8 @@ export interface ScheduleBlock {
   status: 'planned' | 'adjusted' | 'completed' | 'skipped';
   /** Explicit user placement authority. Fixed commitments remain locked regardless. */
   placementLocked?: boolean;
+  /** State layer v0: what the block asks of you. Optional; inferred from taskType when absent. */
+  demand?: Demand;
   notes?: string;
   createdAt: number;
   source?: 'manual' | 'skill_rule';
@@ -701,6 +704,8 @@ export interface StateCheckIn {
     socialDrain?: boolean;
   };
   note?: string;
+  /** State layer v0 (energy→energy, tension→stress; the rest lives here). Absent on older rows. */
+  stateLayer?: StateLayerPayload;
   dataProvenance?: DataRecordProvenance;
   createdAt: string;
   updatedAt?: string;
@@ -831,6 +836,8 @@ export interface ContextLog {
   source?: 'manual' | 'healthkit' | 'sensor' | 'import' | 'unknown';
   note?: string;
   rawText?: string;
+  /** State layer v0: result of a "清空脑子" pass (label '清空脑子', type 'custom'). */
+  brainDump?: import('./state-layer/types').BrainDumpRecord;
   dataProvenance?: DataRecordProvenance;
 }
 
@@ -953,6 +960,8 @@ export interface AppData {
     onboardingRestartRequested?: boolean;
     firstSystemWelcomeDismissed?: boolean;
     dashboardPreferences?: DashboardPreferences;
+    /** State layer v0: offer a random pick between two reasonable actions (off by default). */
+    stateLayerCoinFlip?: boolean;
   };
 }
 
