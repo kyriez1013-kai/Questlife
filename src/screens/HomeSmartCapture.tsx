@@ -583,7 +583,7 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
     });
   }, [data.executionLogs, lang, deleteRawCapture]);
 
-  const renderCapture = (capture: RawCapture, expanded: boolean) => {
+  const renderCapture = (capture: RawCapture, expanded: boolean, historyView = false) => {
     const parsedEntries = capture.parsed?.entries ?? [];
     const fallbackEntries = buildFallbackEntriesFromRawText(capture.text);
     const entriesForConfirmation = parsedEntries.length > 0 ? parsedEntries : fallbackEntries;
@@ -592,6 +592,9 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
       (capture.parseStatus === 'done' || capture.parseStatus === 'failed') &&
       (entriesForConfirmation.length > 0 || hasTopLevelCompletion) &&
       !capture.parsed?.entriesDismissed;
+    const canReopenSavedResult = historyView && data.executionLogs.some(
+      (log) => log.structuredData?.sourceCaptureId === capture.id,
+    );
 
     return (
       <View key={capture.id}>
@@ -604,10 +607,11 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
           expanded={expanded}
           failure={parseFailures[capture.id]}
         />
-        {expanded && canShowConfirmation ? (
+        {expanded && (canShowConfirmation || canReopenSavedResult) ? (
           <HomeCapturePending
             captureId={capture.id}
             entries={entriesForConfirmation}
+            historyView={historyView}
             onOpenState={onOpenState}
             onDismiss={() => {
               recordCaptureFriction(capture.id, 'capture_abandoned');
@@ -855,7 +859,7 @@ export default function HomeSmartCapture({ onOpenState }: { onOpenState?: () => 
         loadMoreLabel={t(lang, 'loadMoreRecords')}
         emptyLabel={t(lang, 'activityHistoryEmpty')}
         onClose={() => setHistoryVisible(false)}
-        renderCapture={(capture) => renderCapture(capture, true)}
+        renderCapture={(capture) => renderCapture(capture, true, true)}
       />
     </WebView>
   );

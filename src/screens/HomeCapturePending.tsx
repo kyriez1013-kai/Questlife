@@ -808,6 +808,7 @@ type Props = {
   entries: ParsedEntry[];
   onDismiss: () => void;  // called after confirm or ignore (marks entriesDismissed)
   onOpenState?: () => void;
+  historyView?: boolean;
 };
 
 type StateDeltaValue = 'down' | 'same' | 'up' | 'unknown';
@@ -817,7 +818,7 @@ type AfterStateDeltaDraft = {
   mood?: StateDeltaValue;
 };
 
-export default function HomeCapturePending({ captureId, entries, onDismiss, onOpenState }: Props) {
+export default function HomeCapturePending({ captureId, entries, onDismiss, onOpenState, historyView = false }: Props) {
   const { data, addCategory, addModule, addSkill, createExecutionLog, updateExecutionLog, addExistingSkillToModule, waitForLocalWrites, retryLocalWrites } = useStore();
   const v11TodayEnabled = isV11TodayEnabled();
   const lang = v11TodayEnabled
@@ -1761,7 +1762,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
               {t(lang, afterStateStatus === 'saved' ? 'stateChangeSaved' : 'stateChangeSkipped')}
             </Text>
           )}
-          <PendingAction
+          {!historyView ? <PendingAction
             label={t(lang, 'done')}
             disabled={afterStateSaving || afterStateFailed}
             legacyStyle={[pendStyles.confirmBtn, { backgroundColor: questTheme.colors.primary, borderRadius: questTheme.radius.sm, alignSelf: 'flex-start' }]}
@@ -1769,7 +1770,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
             onPress={onDismiss}
             questTheme={questTheme}
             variant="primary"
-          />
+          /> : null}
         </CapturePendingSurface>
       );
     }
