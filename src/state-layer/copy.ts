@@ -33,7 +33,7 @@ const zh = {
   rpTitle: '重排今天（预览）', rpNothing: '今天剩下的安排已经是这个顺序，不用动',
   rpCantFit: '今天排不开，没有重排', rpConfirm: '确认重排', rpCancel: '先不改', rpApplied: '已重排',
   rpUndo: '撤销', rpUndone: '已撤销，恢复成原来的顺序', rpUndoFailed: '撤销失败：{reason}',
-  rpInferred: '推断', rpFixedKept: '固定的安排不动', rpApplyFailed: '没改成：{reason}',
+  rpInferred: '推断', rpFixedKept: '固定的安排不动', rpApplyFailed: '调整尚未保存：{reason}',
   rpOrderBasis: '按「{type}」的顺序：{order}',
   close: '关闭', cancel: '取消',
   // insights
@@ -74,7 +74,7 @@ const en: typeof zh = {
   rpTitle: 'Re-order today (preview)', rpNothing: 'The rest of today is already in this order',
   rpCantFit: 'Today does not fit; nothing re-ordered', rpConfirm: 'Confirm', rpCancel: 'Not now', rpApplied: 'Re-ordered',
   rpUndo: 'Undo', rpUndone: 'Undone; original order restored', rpUndoFailed: 'Undo failed: {reason}',
-  rpInferred: 'inferred', rpFixedKept: 'Fixed items stay put', rpApplyFailed: 'Not changed: {reason}',
+  rpInferred: 'inferred', rpFixedKept: 'Fixed items stay put', rpApplyFailed: 'Adjustment not saved: {reason}',
   rpOrderBasis: 'Order for “{type}”: {order}',
   close: 'Close', cancel: 'Cancel',
   insTitle: 'State', insRange30: '30 days', insRange90: '90 days',
