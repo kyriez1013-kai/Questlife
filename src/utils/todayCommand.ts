@@ -98,7 +98,7 @@ export function buildTodayCommand({
     return {
       type: 'finish_pending_capture',
       titleKey: 'finishCurrentCapture',
-      reasonKey: 'basedOnYourLatestRecord',
+      reasonKey: 'pendingCaptureReason',
       primaryAction: 'finish_pending_capture',
       secondaryActions: ['log'],
       confidence: 'high',

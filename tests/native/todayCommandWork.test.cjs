@@ -119,6 +119,7 @@ test('input preserves the decision cache, while feedback expiry and clock change
   const data = { executionLogs: [{ id: 'qa-now', date: '2026-10-21', createdAt: new Date(clock - 29 * 60000 - 59500).toISOString() }] };
   const context = {
     data, todayStr: '2026-10-21', activeSession: null, latestStateCheckIn: undefined,
+    localPersistence: { pending: 0, failed: false },
     todayScheduleBlocks: [], result: undefined,
     Date: class extends Date {
       constructor(...args) { super(...(args.length ? args : [clock])); }

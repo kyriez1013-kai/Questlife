@@ -19,6 +19,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useStore } from '../store';
 import { DurableSubmission } from '../utils/durableSubmission';
+import { nativeFormCopy } from '../native/nativeFormCopy';
 import { actualMinutesInput, initialActualMinutes, recordSourceBindings, timerRecordProvenance } from '../utils/recordSubmission';
 import { theme } from '../theme';
 import { getQuestTheme, getStateToneColor, questLayout } from '../design/tokens';
@@ -504,6 +505,7 @@ export default function HomeScreen() {
     waitForExecutionLog,
     waitForLocalWrites,
     retryLocalWrites,
+    localPersistence,
     deleteExecutionLog,
     updateExecutionLog,
     createRescueLog,
@@ -1763,7 +1765,7 @@ export default function HomeScreen() {
   }, [todayScheduleBlocks, data.categories, data.skills, lang]);
 
   const latestTodayLog = displayedTodayLogs[0];
-  const latestFeedbackLog = latestTodayLog
+  const latestFeedbackLog = localPersistence.pending === 0 && !localPersistence.failed && latestTodayLog
     && Date.now() - new Date(latestTodayLog.createdAt).getTime() <= 30 * 60 * 1000
     ? latestTodayLog : undefined;
   const todayCommandMinute = Math.floor(Date.now() / 60000);
@@ -2396,6 +2398,9 @@ export default function HomeScreen() {
   ];
 
   const v11LatestRecord = useMemo<V11IntegratedLatestRecord | undefined>(() => {
+    const persistenceNotice = localPersistence.failed
+      ? nativeFormCopy(lang, 'failed')
+      : localPersistence.pending > 0 ? nativeFormCopy(lang, 'pending') : undefined;
     const execution = recentExecutionItems[0];
     const latestCapture = (data.rawCaptures || [])
       .slice()
@@ -2408,21 +2413,21 @@ export default function HomeScreen() {
 
     if (execution && executionTime >= captureTime) {
       return {
-        accessibilityLabel: `${t(lang, 'rebaselineLatestRecordLabel')} ${execution.title}`,
+        accessibilityLabel: [t(lang, 'rebaselineLatestRecordLabel'), execution.title, persistenceNotice].filter(Boolean).join(' '),
         title: execution.title,
-        metadata: [execution.meta, execution.detail].filter(Boolean).join(' · '),
+        metadata: persistenceNotice ?? [execution.meta, execution.detail].filter(Boolean).join(' · '),
         onPress: openV11ActivityHistory,
         onDelete: () => confirmDeleteTodayLog(execution.id),
       };
     }
     if (!latestCapture) return undefined;
     return {
-      accessibilityLabel: `${t(lang, 'rebaselineLatestRecordLabel')} ${latestCapture.text}`,
+      accessibilityLabel: [t(lang, 'rebaselineLatestRecordLabel'), latestCapture.text, persistenceNotice].filter(Boolean).join(' '),
       title: latestCapture.text,
-      metadata: new Date(latestCapture.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      metadata: persistenceNotice ?? new Date(latestCapture.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       onPress: openV11Capture,
     };
-  }, [confirmDeleteTodayLog, data.executionLogs, data.rawCaptures, lang, openV11ActivityHistory, openV11Capture, recentExecutionItems]);
+  }, [confirmDeleteTodayLog, data.executionLogs, data.rawCaptures, lang, localPersistence, openV11ActivityHistory, openV11Capture, recentExecutionItems]);
 
   const v11ActivityRecords = useMemo<V11ActivityRecord[]>(() => (
     (data.executionLogs || [])
