@@ -53,7 +53,7 @@ Source handoffs: `docs/frontend-v2/CODEX_HANDOFF.md`,
 4. Continue into normal Insights evidence reachability and existing Health
    preview gaps; never substitute examples for personal data.
 
-## Verified candidate changes, 04:55 Sydney
+## Verified candidate changes, 05:02 Sydney
 
 - `526c9ec`: PWA preserves the last usable HTML shell on network/503/non-HTML
   failures; does not delete other applications' caches. Before: 4/6 tests failed;
@@ -86,6 +86,13 @@ Source handoffs: `docs/frontend-v2/CODEX_HANDOFF.md`,
   One local state is retained; no horizontal overflow/page errors. Latest
   typecheck, existing Insights V3 tests and web export passed. No hosted service
   or device acceptance is implied.
+- `230564a`: local fallback Capture now records rule provenance instead of falsely
+  claiming model-originated fields. Both exercise and ordinary confirmation paths
+  are covered; 2 failing tests -> 5 passed, existing activity-kind tests 6 passed,
+  existing provenance 19 assertions passed. Normal local UI SQL 40-minute capture
+  -> explicit confirmation -> reload retains exactly one log, 40 minutes, raw ID
+  lineage and `questlife-local` parser metadata. No historical records migrated.
+  Typecheck and web export pass. This commit is LOCAL ONLY, not yet in Preview.
 
 Other targeted regressions passed: 22 Today/History/brain-dump tests; 74 existing
 Store durability/Schedule UI tests (in-memory Store and SyncEngine, NOT devices);
@@ -95,9 +102,10 @@ they were corrected in the QA harness, not by weakening application assertions.
 
 ## Exact next work
 
-1. Publish only a unique PREVIEW in the existing candidate project, after checking
-   source exclusions. Do not promote, alias or copy production environment values.
-   Preview presently has no configured backend: show this limitation honestly.
+1. Continue Capture activity-domain validation (basketball duration vs bench
+   weight/reps/sets), history/detail/delete, and more first-use paths. Reuse existing
+   evidence; isolate data in disposable browser contexts. Latest local Capture
+   provenance fix needs inclusion in the next meaningful Preview batch.
 2. Continue normal Capture confirmation/failure and Insights examples/real-service
    unavailable navigation checks. Preserve example isolation. Evaluate the five
    main workspaces and document concrete user-visible gaps, not just screenshots.
@@ -118,6 +126,21 @@ they were corrected in the QA harness, not by weakening application assertions.
   environment metadata targets are production-only; no preview secrets/config
   were copied or read. A unique preview in this project cannot be described as
   live AI/account acceptance. Preserve all current production aliases.
+- Unique Preview deployed via authorized CLI from `6d64725`, without pushing Git:
+  `https://questlife-v1-release-oo0be1vsj-kyrie-z-s-projects.vercel.app`.
+  ID `dpl_4q5yHsK2qpCDgn9bEihJkddJAUJB`, READY, NOT production.
+  This is a local-data interaction candidate, not a configured cloud deployment.
+- Normal isolated Chromium first-use, all five tabs, state-save -> chart -> English
+  -> refresh passed remotely at 393x852 light and 375x667 dark. No page errors or
+  horizontal overflow. Screenshots prefixed `preview-` in the external QA folder.
+  Latest browser harness waits for the lazy Insights screen before screenshot.
+- Direct unauthenticated probes: parse 503 `not_configured`; retired sync 410
+  `legacy_sync_retired`; malformed Quant request 400 `invalid_request`. These are
+  exact fail-closed responses, NOT proof of configured auth/RLS/provider execution.
+  Initial harness incorrectly expected 401 for every endpoint; failure retained.
+- MCP share tool was denied by its connection scopes. Authorized CLI's equivalent
+  endpoint created a deployment-only 23-hour share link; global protection remains
+  enabled. Access URL is in external `preview-access.json` (not committed).
 
 ## Local review entry
 
@@ -126,19 +149,22 @@ they were corrected in the QA harness, not by weakening application assertions.
 - All `/api/*` requests deliberately return 503 locally. Settings correctly says
   account service is unconfigured. This is a LOCAL review, not a hosted/live-AI
   or cross-client sync acceptance.
-- Latest export: main `index-59240f881ae1ce0732b11e7fbf2780e6.js`, Insights chunk
+- Latest local export: main `index-723da4f40275ad9c7d835aca8858e2d8.js`, Insights chunk
   `V11InsightsScreen-78ee7fef00772910fadd3cd5c5241676.js`.
 - `browser-workspaces-results.json`, `browser-plan-375-light-results.json`,
   `browser-plan-1280-dark-results.json`, `browser-brain-dump-results.json`, and
   `browser-offline-results.json` contain current isolated browser evidence.
 - No tests used saved browser profiles, Owner records, credentials or health data.
 - Main checkout still has its original five tracked modifications; source checkout
-  `/Users/kyrie/dev/questlife-frontend-v2` remains clean. No push or deployment.
+  `/Users/kyrie/dev/questlife-frontend-v2` remains clean. No push or production
+  deployment; only the explicitly isolated Preview above was created.
 
 ## Runtime and evidence
 
 - Reuse same-lock source dependencies through a temporary `node_modules` link
   to `/Users/kyrie/dev/questlife-frontend-v2/node_modules`; do not edit dependencies.
+  The created symlink is removed at the end of a run to keep Git status clean;
+  recreate only that link when needed. Never remove its source directory.
 - Isolated Playwright runtime exists at `/Users/kyrie/dev/pw/node_modules`.
 - Logs/probes/screenshots: `/Users/kyrie/dev/questlife-review-20261105/`.
 - Run bounded commands with that directory's `run.mjs`. It disables dotenv and
