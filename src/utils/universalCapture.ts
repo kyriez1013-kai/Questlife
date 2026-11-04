@@ -101,6 +101,23 @@ const ACTIVITY_ACTION_TRANSLATIONS: ActionTranslation[] = [
   { aliases: ['cycling', '骑行'], zh: '骑行', en: 'Cycling' },
 ];
 
+export function matchCaptureExercise(rawText: string): { name: string; strength: boolean } | undefined {
+  const text = rawText.toLowerCase();
+  const aliases = [...STRENGTH_ACTION_TRANSLATIONS, ...ACTIVITY_ACTION_TRANSLATIONS]
+    .flatMap(item => item.aliases.map(alias => ({ item, alias })))
+    .sort((a, b) => b.alias.length - a.alias.length);
+  const match = aliases.find(({ alias }) => {
+    if (/[\u4e00-\u9fff]/.test(alias)) return text.includes(alias);
+    const escaped = alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`\\b${escaped}\\b`, 'i').test(text);
+  });
+  if (!match) return undefined;
+  return {
+    name: match.item[/[\u4e00-\u9fff]/.test(match.alias) ? 'zh' : 'en'],
+    strength: STRENGTH_ACTION_TRANSLATIONS.includes(match.item),
+  };
+}
+
 const ACTION_TRANSLATIONS: ActionTranslation[] = [
   ...STRENGTH_ACTION_TRANSLATIONS,
   ...ACTIVITY_ACTION_TRANSLATIONS,

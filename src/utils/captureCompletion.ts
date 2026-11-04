@@ -1,4 +1,6 @@
 import { Category, ParsedEntry, QuestModule, Skill } from '../types';
+import { parseDurationMinutes, parseStrength } from '../v2/model/localParse';
+import { compactStrengthValues, matchCaptureExercise } from './universalCapture';
 
 export type CompletionDomain = 'fitness' | 'learning' | 'reading' | 'project' | 'schedule' | 'state' | 'food' | 'unknown';
 export type CompletionMissingField =
@@ -63,15 +65,6 @@ function hasAny(text: string, words: string[]): boolean {
   return words.some((word) => text.includes(normalize(word)));
 }
 
-function parseDuration(rawText: string): number | undefined {
-  const text = String(rawText ?? '').toLowerCase();
-  const minute = text.match(/(\d+(?:\.\d+)?)\s*(?:分钟|分|min|mins|minutes|m)/i);
-  if (minute) return Math.max(1, Math.round(Number(minute[1])));
-  const hour = text.match(/(\d+(?:\.\d+)?)\s*(?:小时|h|hr|hrs|hour|hours)/i);
-  if (hour) return Math.max(1, Math.round(Number(hour[1]) * 60));
-  return undefined;
-}
-
 function inferDomain(rawText: string, entry?: ParsedEntry): CompletionDomain {
   const text = normalize(`${rawText} ${entry?.skillName ?? ''} ${entry?.fields?.note ?? ''}`);
   if (hasAny(text, ['巧克力', '吃了', '喝了', '食物', 'food', 'chocolate', 'snack'])) return 'food';
@@ -79,6 +72,7 @@ function inferDomain(rawText: string, entry?: ParsedEntry): CompletionDomain {
   if (hasAny(text, ['读了', '阅读', '箴言', '圣经', 'chapter', 'book', 'reading'])) return 'reading';
   if (hasAny(text, ['sql', 'python', 'excel', 'tableau', '学习', '学了', '做了python', 'coding', 'debug'])) return 'learning';
   if (hasAny(text, ['项目', 'feature', 'bug', 'app', 'project'])) return 'project';
+  if (matchCaptureExercise(`${rawText} ${entry?.skillName ?? ''}`)) return 'fitness';
   if (hasAny(text, ['练胸', '练背', '练腿', '卧推', '深蹲', '硬拉', '划船', '引体', 'dips', 'bench', 'squat', 'deadlift', 'workout'])) return 'fitness';
   if (entry?.goalType === 'fitness' || entry?.progressType === 'performance_log') return 'fitness';
   if (entry?.goalType === 'study' || entry?.progressType === 'time_based') return 'learning';
@@ -86,6 +80,7 @@ function inferDomain(rawText: string, entry?: ParsedEntry): CompletionDomain {
 }
 
 function commonExerciseSuggestions(rawText: string, skills: Skill[]): CompletionSuggestion[] {
+  if (matchCaptureExercise(rawText)?.strength === false) return [];
   const text = normalize(rawText);
   const group = hasAny(text, ['背', 'pull', 'back'])
     ? ['划船', '引体向上', '高位下拉', '面拉', '硬拉']
@@ -171,9 +166,10 @@ export function assessCaptureCompletion(
     if (entry.qualityRating == null) missing.add('quality');
     if (entry.progressType === 'performance_log' && !vague) {
       const sets = expandSetsLike(fields);
-      if (!sets.some((set) => set.weight != null)) missing.add('weight');
-      if (!sets.some((set) => set.reps != null)) missing.add('reps');
-      if (sets.length === 0) missing.add('sets');
+      const strength = compactStrengthValues(entry);
+      if (strength.weight == null && !sets.some((set) => set.weight != null)) missing.add('weight');
+      if (strength.reps == null && !sets.some((set) => set.reps != null)) missing.add('reps');
+      if (strength.sets == null && sets.length === 0) missing.add('sets');
     }
     missing.add('extraExercises');
   } else if (domain === 'learning' || domain === 'project') {
@@ -221,7 +217,7 @@ function expandSetsLike(fields: Record<string, any>): { weight?: number; reps?: 
 
 export function buildFallbackEntriesFromRawText(rawText: string): ParsedEntry[] {
   const domain = inferDomain(rawText);
-  const durationMinutes = parseDuration(rawText);
+  const durationMinutes = parseDurationMinutes(rawText) ?? undefined;
   const text = normalize(rawText);
   if (domain === 'state') {
     return [{ skillName: 'state_checkin_candidate', matchedSkillId: null, goalType: 'custom', progressType: 'none', fields: { note: rawText, nonRecordable: true, domain } }];
@@ -230,12 +226,27 @@ export function buildFallbackEntriesFromRawText(rawText: string): ParsedEntry[] 
     return [{ skillName: 'food_life_factor_candidate', matchedSkillId: null, goalType: 'custom', progressType: 'none', fields: { note: rawText, nonRecordable: true, domain } }];
   }
   if (domain === 'fitness') {
-    const skillName = hasAny(text, ['背', 'pull', 'back']) ? '练背'
+    const exercise = matchCaptureExercise(rawText);
+    const skillName = exercise?.name ?? (hasAny(text, ['背', 'pull', 'back']) ? '练背'
       : hasAny(text, ['腿', 'legs']) ? '练腿'
         : hasAny(text, ['肩', 'shoulder']) ? '练肩'
           : hasAny(text, ['卧推', 'bench']) ? '卧推'
-            : '练胸';
-    return [{ skillName, matchedSkillId: null, goalType: 'fitness', progressType: 'performance_log', fields: { durationMinutes } }];
+            : hasAny(text, ['练胸']) ? '练胸'
+              : /[\u4e00-\u9fff]/.test(rawText) ? '训练' : 'Workout');
+    const strength = exercise?.strength === false ? undefined : parseStrength(rawText);
+    const strengthSets = strength?.sets != null && strength.sets > 0
+      ? [{ weight: strength.weightKg ?? undefined, reps: strength.reps ?? undefined, count: strength.sets }]
+      : undefined;
+    return [{
+      skillName, matchedSkillId: null, goalType: 'fitness',
+      progressType: exercise?.strength === false ? 'time_based' : 'performance_log',
+      fields: {
+        durationMinutes,
+        ...(strength?.weightKg != null ? { weightKg: strength.weightKg } : {}),
+        ...(strengthSets ? { sets: strengthSets } : {}),
+        ...(strength?.reps != null ? { reps: strength.reps } : {}),
+      },
+    }];
   }
   if (domain === 'learning' || domain === 'project') {
     const skillName = hasAny(text, ['sql']) ? 'SQL' : hasAny(text, ['python']) ? 'Python' : domain === 'project' ? 'Project Work' : 'Learning';

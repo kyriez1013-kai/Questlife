@@ -38,12 +38,14 @@ export function parseDurationMinutes(text: string): number | null {
 }
 
 export function parseStrength(text: string): { weightKg: number | null; sets: number | null; reps: number | null } {
-  const w = text.match(/(\d+(?:\.\d+)?)\s*(?:kg|KG|公斤|千克)/);
+  const w = text.match(/(\d+(?:\.\d+)?)\s*(?:kg|公斤|千克)/i);
   const sr = text.match(/(\d+)\s*[x×*]\s*(\d+)/i) ?? text.match(/(\d+)\s*组\D{0,4}?(\d+)\s*(?:次|个|下)/);
+  const sets = text.match(/(\d+)\s*(?:组|sets?\b)/i);
+  const reps = text.match(/(\d+)\s*(?:次|下|reps?\b)/i);
   return {
     weightKg: w ? Number(w[1]) : null,
-    sets: sr ? Number(sr[1]) : null,
-    reps: sr ? Number(sr[2]) : null,
+    sets: sets ? Number(sets[1]) : sr ? Number(sr[1]) : null,
+    reps: reps ? Number(reps[1]) : sr ? Number(sr[2]) : null,
   };
 }
 
