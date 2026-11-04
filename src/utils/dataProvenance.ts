@@ -8,6 +8,7 @@ import type {
   DataRecordProvenance,
   ExecutionLog,
   ParsedEntry,
+  RawCapture,
   StateCheckIn,
 } from '../types';
 
@@ -271,8 +272,14 @@ export function buildConfirmedCaptureProvenance(input: {
   fieldOrigins: Record<string, DataFieldOrigin>;
 }): DataRecordProvenance {
   const corrections = input.corrections || [];
+  const localRule = input.parser?.provider === 'questlife-local';
+  const fieldOrigins = localRule
+    ? Object.fromEntries(Object.entries(input.fieldOrigins).map(([field, origin]) => [
+      field, origin === 'model_proposed_owner_confirmed' ? 'rule_derived' : origin,
+    ])) as Record<string, DataFieldOrigin>
+    : input.fieldOrigins;
   return buildDataProvenance({
-    origin: 'OWNER_CONFIRMED_AI_PARSE',
+    origin: localRule ? 'OWNER_OBSERVED' : 'OWNER_CONFIRMED_AI_PARSE',
     confirmation: corrections.length > 0 ? 'USER_CORRECTED' : 'USER_CONFIRMED',
     captureMethod: 'smart_capture_text',
     recordedAt: input.recordedAt,
@@ -285,9 +292,20 @@ export function buildConfirmedCaptureProvenance(input: {
       entryKey: input.entryKey,
     },
     corrections,
-    fieldOrigins: input.fieldOrigins,
+    fieldOrigins,
     limitations: ['EVENT_TIME_PRECISION_DAY_ONLY'],
   });
+}
+
+/** The composer supplies rule entries only when the stored response has none. */
+export function captureConfirmationParser(
+  capture: Pick<RawCapture, 'parsed'> | undefined,
+  hasConfirmationEntries: boolean,
+): DataParserMetadata | undefined {
+  if (capture && hasConfirmationEntries && !capture.parsed?.entries?.length) {
+    return { provider: 'questlife-local', version: 'capture-fallback-v1' };
+  }
+  return capture?.parsed?.parserMeta;
 }
 
 export function withDecisionFeedbackProvenance(

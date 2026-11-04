@@ -44,6 +44,7 @@ import {
 import {
   buildConfirmedCaptureProvenance,
   captureCandidateCorrections,
+  captureConfirmationParser,
 } from '../utils/dataProvenance';
 import {
   recordCaptureFriction,
@@ -1371,7 +1372,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
             captureId,
             entryIndex: i,
             entryKey: actionKey,
-            parser: capture?.parsed?.parserMeta,
+            parser: captureConfirmationParser(capture, entries.length > 0),
             proposed: entry,
             confirmed: completedEntry,
             title: exerciseName,
@@ -1536,7 +1537,7 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
         captureId,
         entryIndex: i,
         entryKey: sourceKey,
-        parser: capture?.parsed?.parserMeta,
+        parser: captureConfirmationParser(capture, entries.length > 0),
         proposed: entry,
         confirmed: completedEntry,
         title: completedEntry.skillName,
