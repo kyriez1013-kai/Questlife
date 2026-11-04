@@ -53,7 +53,7 @@ Source handoffs: `docs/frontend-v2/CODEX_HANDOFF.md`,
 4. Continue into normal Insights evidence reachability and existing Health
    preview gaps; never substitute examples for personal data.
 
-## Verified candidate changes, 05:02 Sydney
+## Verified candidate changes, 05:16 Sydney
 
 - `526c9ec`: PWA preserves the last usable HTML shell on network/503/non-HTML
   failures; does not delete other applications' caches. Before: 4/6 tests failed;
@@ -93,6 +93,33 @@ Source handoffs: `docs/frontend-v2/CODEX_HANDOFF.md`,
   -> explicit confirmation -> reload retains exactly one log, 40 minutes, raw ID
   lineage and `questlife-local` parser metadata. No historical records migrated.
   Typecheck and web export pass. This commit is LOCAL ONLY, not yet in Preview.
+- `1702ce3`: local Capture fallback preserves activity identity and explicit
+  measurements. Reproduced through the normal UI: basketball had no confirmation
+  path; bench 82.5 kg / 5 reps / 3 sets opened three empty fields. Seven initial
+  regression tests failed before changes. The existing exercise alias catalog and
+  local duration/strength parsers are reused, not a second parser or schema.
+  Basketball now opens an editable duration confirmation with no invented time
+  or unrelated chest-exercise suggestions; bench retains the explicit units and
+  quantities. Compound hours/minutes are summed; metres and zero are not silently
+  converted to positive minutes. Unknown weight is not inferred from pounds.
+  Nine new cases plus existing activity/provenance tests total 20 passing;
+  existing History/Today-history tests 13 passing; V2 suite, typecheck, and web
+  export pass. Intermediate type-shape, array-compatibility, compact-unit and test
+  harness failures were retained in the logs and corrected before committing.
+- Normal isolated browser flow at 375x667 light, 393x852 dark and 1280x900 dark:
+  create basketball -> enter custom 42 min -> confirm -> refresh; bench
+  82.5 kg / 5 reps / 3 sets -> confirm -> refresh; SQL 40 min -> confirm -> refresh.
+  Each produces exactly one local execution with its own raw-capture ID. Bench
+  retains 1237.5 kg-repetitions total volume and no fabricated duration; basketball
+  is time-based/cardio, not strength. All are locally confirmed rule/owner
+  provenance, NOT a successful live AI parse. No execution is created before
+  explicit confirmation.
+  History first/middle/last rows retain their corresponding contents. Explicitly
+  deleting the middle bench capture AND its linked log removes those two IDs;
+  the other two logs remain byte-equivalent after refresh. English reopen,
+  horizontal bounds, reachable inputs above the sticky footer (375/1280), and
+  browser runtime errors were checked. All disposable browser contexts closed.
+  No cloud writes or remote delete acceptance is implied. This batch is LOCAL ONLY.
 
 Other targeted regressions passed: 22 Today/History/brain-dump tests; 74 existing
 Store durability/Schedule UI tests (in-memory Store and SyncEngine, NOT devices);
@@ -102,13 +129,16 @@ they were corrected in the QA harness, not by weakening application assertions.
 
 ## Exact next work
 
-1. Continue Capture activity-domain validation (basketball duration vs bench
-   weight/reps/sets), history/detail/delete, and more first-use paths. Reuse existing
-   evidence; isolate data in disposable browser contexts. Latest local Capture
-   provenance fix needs inclusion in the next meaningful Preview batch.
-2. Continue normal Capture confirmation/failure and Insights examples/real-service
-   unavailable navigation checks. Preserve example isolation. Evaluate the five
-   main workspaces and document concrete user-visible gaps, not just screenshots.
+1. Continue normal Capture confirmation-save failure/retry and per-record state
+   feedback persistence. The 42-minute basketball / 82.5 kg bench / SQL capture
+   domain and local delete/refresh loop is now covered; do not rerun it without
+   a relevant change. The local provenance and domain commits need inclusion in
+   the next meaningful isolated Preview batch; current Preview is still 6d64725.
+2. Check Insights examples/real-service unavailable navigation and remaining
+   first-use paths. Preserve example isolation. Evaluate concrete normal-entry
+   gaps, not a new whole-product audit. History currently still displays the
+   raw parse-failure/retry message next to a successfully manually saved result;
+   assess this wording/state interaction without masking the service failure.
 3. No physical iPhone, hosted account or model-provider checks were performed.
 
 ## Preview access update
@@ -153,11 +183,20 @@ they were corrected in the QA harness, not by weakening application assertions.
 - All `/api/*` requests deliberately return 503 locally. Settings correctly says
   account service is unconfigured. This is a LOCAL review, not a hosted/live-AI
   or cross-client sync acceptance.
-- Latest local export: main `index-723da4f40275ad9c7d835aca8858e2d8.js`, Insights chunk
-  `V11InsightsScreen-78ee7fef00772910fadd3cd5c5241676.js`.
+- Latest local export: main `index-b87fe53fbca19cd8edd4b500e3d7434b.js`, Insights chunk
+  `V11InsightsScreen-2ac4481636545a129cc1866d0780bfc3.js`.
 - `browser-workspaces-results.json`, `browser-plan-375-light-results.json`,
   `browser-plan-1280-dark-results.json`, `browser-brain-dump-results.json`, and
   `browser-offline-results.json` contain current isolated browser evidence.
+- New Capture evidence: `browser-capture-confirmations-{375-light,393-dark,1280-dark}.json`,
+  `375-capture-basketball-before.png`, `375-capture-bench-before.png`, and
+  `{375,393,1280}-capture-*-confirmation-*.png`, `*-capture-history-after-delete-*.png`.
+  Full commands/status/output are the timestamped `capture-*` logs. The browser
+  harness initially expected owner_entered instead of existing owner_corrected
+  for a newly supplied duration, and used a legacy delete label; the assertions
+  were aligned to actual existing semantics/controls, not product logic changed
+  to satisfy them. History renderer tests require the already installed external
+  `QUESTLIFE_UI_TEST_RUNTIME`; the first omitted-runtime failure is retained.
 - No tests used saved browser profiles, Owner records, credentials or health data.
 - Main checkout still has its original five tracked modifications; source checkout
   `/Users/kyrie/dev/questlife-frontend-v2` remains clean. No push or production
