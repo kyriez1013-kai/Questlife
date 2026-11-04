@@ -2775,14 +2775,18 @@
   pointer-events: none;
 }
 
-[data-personal-terminal-role="chart-empty-state"] span:first-child {
+[data-personal-terminal-role="chart-empty-state"] > span:first-child {
   font-size: 15px;
   line-height: 21px;
 }
 
-[data-personal-terminal-role="chart-empty-state"] span:last-child {
+[data-personal-terminal-role="chart-empty-state"] > span:nth-child(2) {
   font-size: 10px;
   line-height: 16px;
+}
+
+[data-personal-terminal-role="chart-empty-state"] [role="button"] {
+  pointer-events: auto;
 }
 
 [data-personal-terminal-role="evidence-rail"] {

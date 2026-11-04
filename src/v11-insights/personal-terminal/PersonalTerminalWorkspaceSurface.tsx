@@ -70,6 +70,7 @@ import {
   readPersonalTerminalPreferences,
   removeWatchlistItem,
   reorderWatchlist,
+  resolvePersonalTerminalReferenceTime,
   togglePinnedItem,
   writePersonalTerminalPreferences,
 } from './personalTerminalWorkspace';
@@ -423,12 +424,7 @@ export default function PersonalTerminalWorkspaceSurface({
     || model.series.find((series) => series.id === preferences.defaultSeriesId)
     || model.series[0];
   const activeEntity = model.entities.find((entity) => entity.id === activeSeries?.entityId) || model.entities[0];
-  const now = useMemo(() => {
-    if (!model.range.end) return new Date();
-    const exact = new Date(model.range.end);
-    if (Number.isFinite(exact.getTime())) return exact;
-    return new Date(`${model.range.end.slice(0, 10)}T23:59:59.000`);
-  }, [model.range.end]);
+  const now = useMemo(() => resolvePersonalTerminalReferenceTime(model), [model.range.end, model.series]);
   const activeViewData = useMemo(() => activeSeries && activePane
     ? buildPersonalTerminalRangeViewData(activeSeries, activePane.range, now, activePane.candleSource)
     : null, [activePane, activeSeries, now]);
@@ -965,6 +961,7 @@ export default function PersonalTerminalWorkspaceSurface({
                         language={language}
                         onCrosshair={(selection) => syncCrosshair(pane.id, selection)}
                         onInteraction={measureChartInteraction}
+                        onRecordObservation={onNextAction}
                         onSelectEvent={openEventInspector}
                         onSelectSelection={(selection) => setSheet({ kind: 'observation', selection })}
                         onVisibleRangeChange={(range) => syncVisibleRange(pane.id, range)}

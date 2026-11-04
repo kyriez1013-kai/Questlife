@@ -12,6 +12,31 @@ import {
 
 export const PERSONAL_TERMINAL_PREFERENCES_KEY = 'questlife_v11_personal_terminal_preferences_v1';
 
+export function resolvePersonalTerminalReferenceTime(
+  model: Pick<PersonalTerminalModel, 'range' | 'series'>,
+  fallback = new Date(),
+): Date {
+  const end = model.range.end;
+  if (!end) return fallback;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(end)) {
+    // Local presentation ranges truncate ISO observations to a day label. Use
+    // the actual last reading, not UTC midnight (which excludes that reading).
+    let latest = Number.NEGATIVE_INFINITY;
+    for (const series of model.series) {
+      for (const observation of series.observations) {
+        if (observation.timestamp.slice(0, 10) !== end) continue;
+        const timestamp = Date.parse(observation.timestamp);
+        if (Number.isFinite(timestamp)) latest = Math.max(latest, timestamp);
+      }
+    }
+    if (Number.isFinite(latest)) return new Date(latest);
+    const dateEnd = new Date(`${end}T23:59:59.999`);
+    return Number.isFinite(dateEnd.getTime()) ? dateEnd : fallback;
+  }
+  const exact = new Date(end);
+  return Number.isFinite(exact.getTime()) ? exact : fallback;
+}
+
 export function personalTerminalPreferenceNamespace(
   model: Pick<PersonalTerminalModel, 'dataMode' | 'fixture' | 'lifecycleScenario' | 'interpretationScenario'>,
 ) {

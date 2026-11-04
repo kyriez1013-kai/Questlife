@@ -10,6 +10,7 @@ import { Pressable, Text, View } from 'react-native';
 import type { Lang } from '../../i18n';
 import { t } from '../../i18n';
 import type { V11ThemeTokens } from '../../v11/tokens';
+import { V11SheetButton } from '../../v11/components/V11SheetControls';
 import type {
   PersonalTerminalCandle,
   PersonalTerminalChartKind,
@@ -43,7 +44,8 @@ export type PersonalTerminalChartHandle = {
 };
 
 function chartTime(value: string) {
-  const normalized = value.length <= 10 ? `${value}T00:00:00.000Z` : value;
+  // Presentation day buckets are local calendar dates, not midnight UTC.
+  const normalized = value.length <= 10 ? `${value}T00:00:00.000` : value;
   return Math.round(new Date(normalized).getTime() / 1000) as any;
 }
 
@@ -133,6 +135,7 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
   language: Lang;
   onCrosshair: (selection: PersonalTerminalChartSelection | null) => void;
   onInteraction?: () => void;
+  onRecordObservation?: () => void;
   onVisibleRangeChange?: (range: { from: string; to: string } | null) => void;
   onSelectEvent: (event: PersonalTerminalEvent) => void;
   onSelectSelection: (selection: PersonalTerminalChartSelection) => void;
@@ -152,6 +155,7 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
   language,
   onCrosshair,
   onInteraction,
+  onRecordObservation,
   onVisibleRangeChange,
   onSelectEvent,
   onSelectSelection,
@@ -593,8 +597,14 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
       />
       {!viewData.line.length ? (
         <WebView dataSet={{ 'personal-terminal-role': 'chart-empty-state' }}>
-          <Text style={{ color: theme.text.primary }}>{t(language, 'personalTerminalEmptyChartTitle')}</Text>
-          <Text style={{ color: theme.text.secondary }}>{t(language, 'personalTerminalEmptyChartBody')}</Text>
+          <Text style={{ color: theme.text.primary }}>{t(language, series.observations.length ? 'personalTerminalEmptyRangeTitle' : 'personalTerminalEmptyChartTitle')}</Text>
+          <Text style={{ color: theme.text.secondary }}>{t(language, series.observations.length ? 'personalTerminalEmptyRangeBody' : 'personalTerminalEmptyChartBody')}</Text>
+          {onRecordObservation ? <V11SheetButton
+            label={t(language, 'personalTerminalRecordObservation')}
+            onPress={onRecordObservation}
+            theme={theme}
+            variant="secondary"
+          /> : null}
         </WebView>
       ) : null}
       {baselineBand ? <WebView dataSet={{ 'personal-terminal-role': 'baseline-band' }} style={{ top: baselineBand.top, height: baselineBand.height }} /> : null}

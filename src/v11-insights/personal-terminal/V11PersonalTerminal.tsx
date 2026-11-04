@@ -34,7 +34,7 @@ import {
   buildPersonalTerminalViewData,
 } from './personalTerminalPresentation';
 import { resolvePersonalTerminalDisplayChange } from './personalTerminalValueMath';
-import { personalTerminalPreferenceNamespace } from './personalTerminalWorkspace';
+import { personalTerminalPreferenceNamespace, resolvePersonalTerminalReferenceTime } from './personalTerminalWorkspace';
 import './personal-terminal.styles';
 
 const WebView = View as any;
@@ -390,7 +390,7 @@ function initialIndicators() {
 function initialTimeframe(model: PersonalTerminalModel, series?: PersonalTerminalSeries) {
   if (!series) return '30D';
   const requested = query().get('quantTimeframe') as PersonalTerminalTimeframe | null;
-  const available = availableTimeframes(series, new Date(model.range.end ? `${model.range.end}T23:59:59.000` : Date.now()));
+  const available = availableTimeframes(series, resolvePersonalTerminalReferenceTime(model));
   if (requested && available.includes(requested)) return requested;
   if (series.defaultTimeframe && available.includes(series.defaultTimeframe)) return series.defaultTimeframe;
   if (model.fixture === 'historical' && available.includes('1Y')) return '1Y';
@@ -732,7 +732,7 @@ export function V11PersonalTerminalLegacy({
   const visibleSeriesRows = scope === 'market' && activeDomain !== 'overview'
     ? seriesRows.filter((row) => seriesDomain(row) === activeDomain)
     : seriesRows;
-  const now = useMemo(() => new Date(model.range.end ? `${model.range.end}T23:59:59.000` : Date.now()), [model.range.end]);
+  const now = useMemo(() => resolvePersonalTerminalReferenceTime(model), [model.range.end, model.series]);
   const available = useMemo(() => series ? availableTimeframes(series, now) : [] as PersonalTerminalTimeframe[], [now, series]);
   const viewData = useMemo(() => series ? buildPersonalTerminalViewData(series, timeframe, now) : null, [now, series, timeframe]);
   const comparisonRows = useMemo(() => (
@@ -1163,6 +1163,7 @@ export function V11PersonalTerminalLegacy({
                   language={language}
                   onCrosshair={handleCrosshair}
                   onInteraction={handleChartRange}
+                  onRecordObservation={onNextAction}
                   onSelectEvent={handleEvent}
                   onSelectSelection={handleChartSelection}
                   rangeSelection={rangeSelection}

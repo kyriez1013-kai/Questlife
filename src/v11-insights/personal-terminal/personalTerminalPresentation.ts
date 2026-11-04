@@ -734,8 +734,11 @@ function startForTimeframe(now: Date, timeframe: PersonalTerminalTimeframe) {
 
 function bucketKey(timestamp: string, timeframe: PersonalTerminalTimeframe) {
   const value = new Date(timestamp);
-  if (timeframe === '1D') return `${timestamp.slice(0, 13)}:00:00.000`;
-  if (timeframe === '7D' || timeframe === '1M') return timestamp.slice(0, 10);
+  if (timeframe === '1D') {
+    value.setUTCMinutes(0, 0, 0);
+    return value.toISOString();
+  }
+  if (timeframe === '7D' || timeframe === '1M') return localDate(value);
   if (timeframe === '3M') {
     const day = new Date(value);
     day.setDate(day.getDate() - ((day.getDay() + 6) % 7));
