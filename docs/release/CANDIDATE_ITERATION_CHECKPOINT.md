@@ -53,7 +53,7 @@ Source handoffs: `docs/frontend-v2/CODEX_HANDOFF.md`,
 4. Continue into normal Insights evidence reachability and existing Health
    preview gaps; never substitute examples for personal data.
 
-## Verified candidate changes, 05:16 Sydney
+## Verified candidate changes, 05:45 Sydney
 
 - `526c9ec`: PWA preserves the last usable HTML shell on network/503/non-HTML
   failures; does not delete other applications' caches. Before: 4/6 tests failed;
@@ -120,6 +120,29 @@ Source handoffs: `docs/frontend-v2/CODEX_HANDOFF.md`,
   horizontal bounds, reachable inputs above the sticky footer (375/1280), and
   browser runtime errors were checked. All disposable browser contexts closed.
   No cloud writes or remote delete acceptance is implied. This batch is LOCAL ONLY.
+- `8b89e35`: completing Capture no longer hides its saved execution/state feedback
+  from Activity History. Reproduced after waiting for `entriesDismissed` to persist
+  and then refreshing: the existing history callback omitted the saved-result
+  component. Five of six new render-path tests failed before the fix; all six now
+  pass. History uses exact `structuredData.sourceCaptureId` lineage to reopen the
+  existing saved-result UI. Recent Capture still collapses after Done. Ignored,
+  deleted and unrelated records do not acquire another record's feedback. History
+  uses its existing close control, not a nonfunctional duplicate Done action.
+  No Store, schema, parser, Quant or persistence semantics changed.
+- In the same batch, existing confirmation and after-state ACK handling were
+  verified through normal UI with isolated storage failures: failed confirmation
+  produces retry and no durable execution; retry saves exactly one log with the
+  same capture lineage. Failed after-state save keeps persisted feedback absent;
+  retry stores energy up / focus down / mood same on the same execution ID. Done
+  -> refresh -> History -> close/reopen retains it without another execution.
+  These ACK behaviors already existed; do not describe them as new fixes.
+  Passed in Chromium at 375x667 light, 393x852 dark and 1280x900 dark. English
+  reload/history/close and unchanged saved record additionally passed at 375x667.
+  The final screenshots wait for sheet animation completion and scroll the saved
+  state marker into view; initial screenshots captured the transition too early.
+  No horizontal overflow or page errors observed in these local scenarios.
+  Targeted Capture/History/Today-history regression: 39/39 passed; typecheck and
+  web export passed. This batch is LOCAL ONLY, not in the hosted Preview.
 
 Other targeted regressions passed: 22 Today/History/brain-dump tests; 74 existing
 Store durability/Schedule UI tests (in-memory Store and SyncEngine, NOT devices);
@@ -129,16 +152,22 @@ they were corrected in the QA harness, not by weakening application assertions.
 
 ## Exact next work
 
-1. Continue normal Capture confirmation-save failure/retry and per-record state
-   feedback persistence. The 42-minute basketball / 82.5 kg bench / SQL capture
-   domain and local delete/refresh loop is now covered; do not rerun it without
-   a relevant change. The local provenance and domain commits need inclusion in
-   the next meaningful isolated Preview batch; current Preview is still 6d64725.
+1. Normal Capture confirmation/after-state write failure and retry, refresh, and
+   saved feedback reopening are now covered. Do not rerun the same scenarios
+   without a relevant change. The local provenance/domain/history fixes need
+   inclusion in the next meaningful isolated Preview batch; hosted Preview is
+   still 6d64725. Before any publication, recheck target metadata and isolation.
 2. Check Insights examples/real-service unavailable navigation and remaining
    first-use paths. Preserve example isolation. Evaluate concrete normal-entry
    gaps, not a new whole-product audit. History currently still displays the
    raw parse-failure/retry message next to a successfully manually saved result;
    assess this wording/state interaction without masking the service failure.
+   A first-record result also says "Progress signal created"; audit its exact
+   evidence claim in that narrow flow, not the Quant system. Fault-injection
+   screenshots show the underlying Today optimistic summary saying "latest saved
+   record" while the confirmation reports a failed write. This separate summary
+   boundary has NOT been fixed by the history-access change; reproduce it before
+   changing it. Do not claim all app surfaces now wait for durable ACK.
 3. No physical iPhone, hosted account or model-provider checks were performed.
 
 ## Preview access update
@@ -183,7 +212,7 @@ they were corrected in the QA harness, not by weakening application assertions.
 - All `/api/*` requests deliberately return 503 locally. Settings correctly says
   account service is unconfigured. This is a LOCAL review, not a hosted/live-AI
   or cross-client sync acceptance.
-- Latest local export: main `index-b87fe53fbca19cd8edd4b500e3d7434b.js`, Insights chunk
+- Latest local export: main `index-7ec6131665c40a22f3c58e37be4bf53e.js`, Insights chunk
   `V11InsightsScreen-2ac4481636545a129cc1866d0780bfc3.js`.
 - `browser-workspaces-results.json`, `browser-plan-375-light-results.json`,
   `browser-plan-1280-dark-results.json`, `browser-brain-dump-results.json`, and
@@ -197,6 +226,19 @@ they were corrected in the QA harness, not by weakening application assertions.
   were aligned to actual existing semantics/controls, not product logic changed
   to satisfy them. History renderer tests require the already installed external
   `QUESTLIFE_UI_TEST_RUNTIME`; the first omitted-runtime failure is retained.
+- New history/ACK evidence: `browser-capture-feedback-{375-light,393-dark,1280-dark}-after.json`
+  and `{375,393,1280}-capture-feedback-after-history-reopen-*.png`;
+  `375-capture-feedback-after-history-english-light.png`.
+  Before reproduction: `2026-11-04T18-36-24-660Z-capture-feedback-before-settled.log`;
+  failing render tests: `2026-11-04T18-38-02-373Z-capture-history-feedback-red.log`;
+  green tests: `2026-11-04T18-38-56-643Z-capture-history-feedback-green.log`;
+  39-test regression: `2026-11-04T18-39-45-747Z-capture-feedback-regression.log`;
+  typecheck/build: timestamped `capture-feedback-types` / `capture-feedback-build`;
+  visual checks: `capture-feedback-after-visible-{375,393,1280}` and
+  `capture-feedback-english-375` logs. Initial QA guessed labels/control roles
+  and once refreshed before Done was persisted; those harness errors were
+  corrected, retained, and not counted as product failures. JSON trace files are
+  supplemental; the log exit status is the acceptance result.
 - No tests used saved browser profiles, Owner records, credentials or health data.
 - Main checkout still has its original five tracked modifications; source checkout
   `/Users/kyrie/dev/questlife-frontend-v2` remains clean. No push or production
