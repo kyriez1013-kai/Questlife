@@ -53,7 +53,7 @@ Source handoffs: `docs/frontend-v2/CODEX_HANDOFF.md`,
 4. Continue into normal Insights evidence reachability and existing Health
    preview gaps; never substitute examples for personal data.
 
-## Verified candidate changes, 05:45 Sydney
+## Verified candidate changes, 06:16 Sydney
 
 - `526c9ec`: PWA preserves the last usable HTML shell on network/503/non-HTML
   failures; does not delete other applications' caches. Before: 4/6 tests failed;
@@ -92,7 +92,7 @@ Source handoffs: `docs/frontend-v2/CODEX_HANDOFF.md`,
   existing provenance 19 assertions passed. Normal local UI SQL 40-minute capture
   -> explicit confirmation -> reload retains exactly one log, 40 minutes, raw ID
   lineage and `questlife-local` parser metadata. No historical records migrated.
-  Typecheck and web export pass. This commit is LOCAL ONLY, not yet in Preview.
+  Typecheck and web export pass. Included in the newer 7da5969 Preview below.
 - `1702ce3`: local Capture fallback preserves activity identity and explicit
   measurements. Reproduced through the normal UI: basketball had no confirmation
   path; bench 82.5 kg / 5 reps / 3 sets opened three empty fields. Seven initial
@@ -119,7 +119,8 @@ Source handoffs: `docs/frontend-v2/CODEX_HANDOFF.md`,
   the other two logs remain byte-equivalent after refresh. English reopen,
   horizontal bounds, reachable inputs above the sticky footer (375/1280), and
   browser runtime errors were checked. All disposable browser contexts closed.
-  No cloud writes or remote delete acceptance is implied. This batch is LOCAL ONLY.
+  No cloud writes or remote delete acceptance is implied. Included in the newer
+  7da5969 Preview; the domain/delete checks above were local browser verification.
 - `8b89e35`: completing Capture no longer hides its saved execution/state feedback
   from Activity History. Reproduced after waiting for `entriesDismissed` to persist
   and then refreshing: the existing history callback omitted the saved-result
@@ -142,7 +143,37 @@ Source handoffs: `docs/frontend-v2/CODEX_HANDOFF.md`,
   state marker into view; initial screenshots captured the transition too early.
   No horizontal overflow or page errors observed in these local scenarios.
   Targeted Capture/History/Today-history regression: 39/39 passed; typecheck and
-  web export passed. This batch is LOCAL ONLY, not in the hosted Preview.
+  web export passed. Included in the newer 7da5969 Preview; the history checks
+  above were local browser verification.
+- `7da5969`: Today now distinguishes optimistic records from acknowledged local
+  writes. Reproduced in the normal Capture flow with injected disk failure: the
+  confirmation said not saved, but the underlying Today command still offered
+  saved feedback and the summary showed progress without a durability warning.
+  Four new tests failed before the fix. HomeScreen now consumes the existing
+  `localPersistence` snapshot: saved-feedback selection waits for no pending or
+  failed writes, and the latest-record metadata/accessibility label shows the
+  existing pending/failed copy. Retry remains the existing shared retry action.
+  The conservative barrier is global, not a new per-record receipt system; a
+  different unresolved local mutation can temporarily suppress the feedback CTA.
+  A durable offline record remains usable without waiting for cloud delivery.
+  No Store, Sync, Quant, schema, command priority or layout rewrite.
+  Two more failing language cases reproduced pending Capture wrongly saying
+  "latest saved record and feedback"; its reason now asks for confirmation.
+- Final targeted tests: 31 passed, including the real local-write queue lifecycle,
+  seven new presentation cases, Today cache/reference/expiry and History cases.
+  Typecheck and web export passed. Existing react-test-renderer deprecation and
+  Metro color-environment warnings remain; no lint script exists, so lint was
+  not claimed. The initial harness forgot to transpile a generic and then used
+  an old JS target for Map/Set iteration. Its stuck test was terminated after
+  34 seconds and corrected to ES2022; the failure log is preserved.
+  Browser reproduction failed before the fix; after it, normal pending Capture
+  -> confirmation -> failed write -> close sheet -> visible unsaved summary ->
+  shared retry -> one acknowledged log -> refresh passes locally and on the new
+  Preview. Preview matrix: 375x667 light/zh, 393x852 dark/zh, 1280x900 dark/en.
+  Theme/language were actually selected and persisted in Settings, not only URL
+  overrides. No horizontal overflow or page errors in this flow. A prior English
+  locator error and debug-vs-stored-language mismatch are retained as QA harness
+  failures, not product failures. Screenshots cover pending, failed and saved.
 
 Other targeted regressions passed: 22 Today/History/brain-dump tests; 74 existing
 Store durability/Schedule UI tests (in-memory Store and SyncEngine, NOT devices);
@@ -154,24 +185,41 @@ they were corrected in the QA harness, not by weakening application assertions.
 
 1. Normal Capture confirmation/after-state write failure and retry, refresh, and
    saved feedback reopening are now covered. Do not rerun the same scenarios
-   without a relevant change. The local provenance/domain/history fixes need
-   inclusion in the next meaningful isolated Preview batch; hosted Preview is
-   still 6d64725. Before any publication, recheck target metadata and isolation.
+   without a relevant change. The local provenance/domain/history fixes are
+   now included in Preview 7da5969 below. Before any further publication, recheck
+   target metadata and isolation. Do not re-run these unchanged paths merely to
+   increase test counts.
 2. Check Insights examples/real-service unavailable navigation and remaining
    first-use paths. Preserve example isolation. Evaluate concrete normal-entry
    gaps, not a new whole-product audit. History currently still displays the
    raw parse-failure/retry message next to a successfully manually saved result;
    assess this wording/state interaction without masking the service failure.
    A first-record result also says "Progress signal created"; audit its exact
-   evidence claim in that narrow flow, not the Quant system. Fault-injection
-   screenshots show the underlying Today optimistic summary saying "latest saved
-   record" while the confirmation reports a failed write. This separate summary
-   boundary has NOT been fixed by the history-access change; reproduce it before
-   changing it. Do not claim all app surfaces now wait for durable ACK.
+   evidence claim in that narrow flow, not the Quant system. The Today summary and
+   feedback-selection contradiction is now fixed in 7da5969, but this is not proof
+   that all app surfaces or analytics exclude every optimistic mutation. Preserve
+   that narrower boundary; do not claim app-wide atomicity or hosted persistence.
 3. No physical iPhone, hosted account or model-provider checks were performed.
 
 ## Preview access update
 
+- Latest isolated Preview, code commit `7da5969e9743d7432ae5abac6cc0a23dd8e7903c`:
+  `https://questlife-v1-release-anzhevk50-kyrie-z-s-projects.vercel.app`.
+  Deployment `dpl_6RNRMF5SseJAuPKwtr2mCwmMPqJw`, target preview, READY. Created
+  with an explicit project/scope/preview target, no Git push. It includes all
+  earlier local Capture fixes. Main bundle served and verified in browsers:
+  `index-1ccc4a400c4e4ac401fcc5be662e53e2.js`. Build/export is NOT acceptance.
+  Target was re-inspected, and env metadata (names/targets only) again showed
+  production-only variables. No environment values copied/read or settings
+  changed. Isolated manual Capture is usable, but `/api/parse` still returns
+  503 `not_configured`; no live AI/account/remote-save claim is made.
+  A deployment-only 23-hour share link is in external
+  `/Users/kyrie/dev/questlife-review-20261105/preview-access-durability.json`;
+  expires 2026-11-06 05:12:28 Sydney (2026-11-05 18:12:28 UTC). Project-wide
+  protection stays enabled. Old preview/access evidence below is retained.
+  After deployment, protected release alias still resolves to
+  `dpl_v5PKqGiwTphijQbeEJjtsYaPRJDk`; ky11ai.com and alpha aliases still resolve to
+  `dpl_8ccd7PRNezzkAwHJiKUrkAJGJPzq`. No formal aliases changed.
 - Vercel MCP env metadata request returns 403; do not retry it unchanged.
 - Authorized Vercel CLI `whoami` works. Safe CLI metadata fallback succeeded,
   printing names/targets only, never values. In `questlife-alpha` it lists only
@@ -212,7 +260,7 @@ they were corrected in the QA harness, not by weakening application assertions.
 - All `/api/*` requests deliberately return 503 locally. Settings correctly says
   account service is unconfigured. This is a LOCAL review, not a hosted/live-AI
   or cross-client sync acceptance.
-- Latest local export: main `index-7ec6131665c40a22f3c58e37be4bf53e.js`, Insights chunk
+- Latest local export: main `index-815546ef230a4d481450d1852f0967f3.js`, Insights chunk
   `V11InsightsScreen-2ac4481636545a129cc1866d0780bfc3.js`.
 - `browser-workspaces-results.json`, `browser-plan-375-light-results.json`,
   `browser-plan-1280-dark-results.json`, `browser-brain-dump-results.json`, and
@@ -239,10 +287,22 @@ they were corrected in the QA harness, not by weakening application assertions.
   and once refreshed before Done was persisted; those harness errors were
   corrected, retained, and not counted as product failures. JSON trace files are
   supplemental; the log exit status is the acceptance result.
+- Latest durability evidence: `browser-today-durability-after-*-*.json` (local),
+  `preview-7da5969-browser-today-durability-after-*-*.json` (remote), and matching
+  `*-today-durability-after-{pending-confirmation,failed,acknowledged}-*.png`.
+  Exact pre-fix browser log: `2026-11-04T19-05-45-176Z-today-durability-browser-red.log`.
+  Pre-fix selectors: `2026-11-04T19-04-57-297Z-today-durability-red-transpiled.log`;
+  pending-copy red: `2026-11-04T19-08-45-457Z-today-pending-copy-red.log`;
+  final 31 tests: `2026-11-04T19-09-00-559Z-today-durability-final-regression.log`.
+  Typecheck/build use `today-durability-final-types` / `today-durability-final-build`.
+  Preview checks use `today-durability-preview-{375,393,1280}` logs; protected
+  aliases use `protected-release-after` / `protected-owner-after`. Installed CLI
+  rejects `--project` on inspect/env commands; the retained failed attempts were
+  followed by documented positional inspect and existing safe metadata helper.
 - No tests used saved browser profiles, Owner records, credentials or health data.
 - Main checkout still has its original five tracked modifications; source checkout
   `/Users/kyrie/dev/questlife-frontend-v2` remains clean. No push or production
-  deployment; only the explicitly isolated Preview above was created.
+  deployment; only the explicitly isolated Previews above were created.
 
 ## Runtime and evidence
 
