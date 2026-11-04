@@ -57,13 +57,13 @@ const UNCLEAR_WHY: Record<Lang, Record<string, string>> = {
     'unclear.conflict_pull_body': '「想做但做不动」和身体信号对不上',
     'unclear.missing_body': '没有身体信号，分不清是真累还是不想做',
     'unclear.mid_e_high_t': '紧绷偏高但精力居中，补一下「挂着的事」就能分清',
-    'unclear.in_range': '都在你的常态范围内，没有明显信号',
+    'unclear.in_range': '现有信号还不能区分出一种明确状态',
   },
   en: {
     'unclear.conflict_pull_body': '“want to but can’t” does not match your body signals',
     'unclear.missing_body': 'no body signals, so real tiredness vs not wanting to can’t be told apart',
     'unclear.mid_e_high_t': 'tension is high but energy is mid; adding “things on your mind” would tell',
-    'unclear.in_range': 'everything is within your usual range',
+    'unclear.in_range': 'the available signals do not distinguish a clear state',
   },
 };
 
