@@ -45,16 +45,25 @@ export default function StateBrainDumpSheet({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [failedOnce, setFailedOnce] = useState(false);
+  const inFlight = useRef(false);
+  const written = useRef<{ message: string; applied?: AppliedPlan } | null>(null);
+  const locked = busy || written.current !== null;
   const now = new Date();
   const date = localYmd(now);
   const blocks = data.scheduleBlocks || [];
 
   const reset = () => { setText(''); setItems(null); setError(null); setBusy(false); setFailedOnce(false); };
-  const close = () => { reset(); onClose(); };
+  const close = () => {
+    if (inFlight.current || written.current) return;
+    reset(); onClose();
+  };
 
   const timeOf = (d: Draft) => d.time ?? (d.custom && validClock(d.custom) ? d.custom : undefined);
   const takenExcept = (index: number) => (items ?? []).flatMap((d, i) => (i !== index && d.choice === 'schedule' && timeOf(d) ? [timeOf(d)!] : []));
-  const update = (index: number, patch: Partial<Draft>) => setItems((list) => (list ?? []).map((d, i) => (i === index ? { ...d, ...patch } : d)));
+  const update = (index: number, patch: Partial<Draft>) => {
+    if (inFlight.current || written.current) return;
+    setItems((list) => (list ?? []).map((d, i) => (i === index ? { ...d, ...patch } : d)));
+  };
 
   const problems = useMemo(() => (items ?? []).map((d, i) => {
     if (!d.choice) return 'choice';
@@ -66,13 +75,13 @@ export default function StateBrainDumpSheet({
   }), [items, blocks, date]);
 
   // Writes happen once; a failed ACK is retried with retryLocalWrites (never re-created).
-  const written = useRef<{ message: string; applied?: AppliedPlan } | null>(null);
   const finish = async () => {
-    if (!items) return;
+    if (!items || inFlight.current) return;
     if (!written.current) {
       if (problems.some((p) => p === 'choice')) { setError(sl(lang, 'bdNeedsChoice')); return; }
       if (problems.some((p) => p === 'time')) { setError(sl(lang, 'bdInvalidTime')); return; }
     }
+    inFlight.current = true;
     setBusy(true);
     setError(null);
     try {
@@ -113,6 +122,8 @@ export default function StateBrainDumpSheet({
     } catch (e) {
       setFailedOnce(true);
       setError(`${sl(lang, 'saveFailed')}：${errorReason(e)}`);
+    } finally {
+      inFlight.current = false;
       setBusy(false);
     }
   };
@@ -124,11 +135,14 @@ export default function StateBrainDumpSheet({
       footer={(
         <V11StickySheetFooter
           cancelLabel={listStep ? (lang === 'zh' ? '上一步' : 'Back') : sl(lang, 'cancel')}
-          cancelDisabled={busy}
+          cancelDisabled={locked}
           disabled={busy || (!listStep && !splitBrainDump(text).length)}
           message={error ?? undefined}
           messageStatus={error ? 'error' : 'default'}
-          onCancel={() => (listStep ? setItems(null) : close())}
+          onCancel={() => {
+            if (inFlight.current || written.current) return;
+            if (listStep) setItems(null); else close();
+          }}
           onSave={() => {
             if (!listStep) { setItems(splitBrainDump(text).map((t) => ({ text: t }))); return; }
             void finish();
@@ -157,6 +171,7 @@ export default function StateBrainDumpSheet({
               <WebView dataSet={{ 'sl-role': 'dump-item' }} key={`${i}-${d.text}`}>
                 <Text style={{ color: theme.text.primary, fontSize: 14.5, lineHeight: 20, fontWeight: '500' }}>{d.text}</Text>
                 <V11SegmentedSelector<BrainDumpChoice>
+                  disabled={locked}
                   onChange={(choice) => update(i, { choice, ...(choice !== 'schedule' ? { time: undefined, custom: undefined } : {}) })}
                   options={[
                     { value: 'now', label: sl(lang, 'bdNow') },
@@ -172,9 +187,10 @@ export default function StateBrainDumpSheet({
                       {slots.length ? `${sl(lang, 'bdPickTime')}（${MINUTES} ${lang === 'zh' ? '分钟' : 'min'}）` : sl(lang, 'bdNoSlot')}
                     </Text>
                     {slots.map((slot) => (
-                      <V11CategoricalChip accessibilityRole="radio" density="compact" key={slot} label={slot} onPress={() => update(i, { time: d.time === slot ? undefined : slot, custom: undefined })} selected={d.time === slot} theme={theme} />
+                      <V11CategoricalChip accessibilityRole="radio" density="compact" disabled={locked} key={slot} label={slot} onPress={() => update(i, { time: d.time === slot ? undefined : slot, custom: undefined })} selected={d.time === slot} theme={theme} />
                     ))}
                     <V11TextField
+                      disabled={locked}
                       onChangeText={(custom) => update(i, { custom, time: undefined })}
                       placeholder={sl(lang, 'bdCustomTime')}
                       status={problems[i] === 'time' && d.custom ? 'error' : 'default'}
