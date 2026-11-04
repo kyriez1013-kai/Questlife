@@ -25,8 +25,8 @@ Project: `questlife-alpha`, `prj_d6GHMLCs8rR2pUDENVlqS6GDa3xJ`.
 - `questlife-v1-candidate.vercel.app` points to older `dpl_91FCmwp8gN4hktZjaAYCukLQa6uS`.
 - Release branch preview alias points to `dpl_GZ8McEkq5ewHamKnp4hGf1tx2nLW`,
   commit `b74072a`, not this new source.
-- Historical `questlife-v1-release.vercel.app` was not in this account's alias
-  response. Its current ownership/configuration remains UNVERIFIED.
+- A later explicit CLI alias lookup resolved `questlife-v1-release.vercel.app`
+  to `dpl_v5PKqGiwTphijQbeEJjtsYaPRJDk` in the release project. It was not changed.
 - No aliases or deployment settings changed. Do not publish until candidate
   data isolation and deployment configuration have been established.
 
@@ -141,6 +141,10 @@ they were corrected in the QA harness, not by weakening application assertions.
 - MCP share tool was denied by its connection scopes. Authorized CLI's equivalent
   endpoint created a deployment-only 23-hour share link; global protection remains
   enabled. Access URL is in external `preview-access.json` (not committed).
+- Post-deployment alias verification: `ky11ai.com` and
+  `questlife-alpha-orpin.vercel.app` still point to
+  `dpl_8ccd7PRNezzkAwHJiKUrkAJGJPzq`; the release stable alias still points to
+  `dpl_v5PKqGiwTphijQbeEJjtsYaPRJDk`. Neither was switched to this preview.
 
 ## Local review entry
 
