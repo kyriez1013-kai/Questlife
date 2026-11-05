@@ -9,6 +9,8 @@ import { theme } from '../theme';
 import { ModuleSkillLink, OutcomeCriterion, OutcomeMetricType, QuestModule, Skill } from '../types';
 import GoalForm from '../components/GoalForm';
 import SkillForm from '../components/SkillForm';
+import GoalWorkingHeader from '../v5/GoalWorkingHeader';
+import { demandLabel } from '../v5/copy';
 import BottomSheetForm from '../components/BottomSheetForm';
 import { getLanguage, goalTypeLabel, metricTypeLabel, progressModelLabel, progressTypeLabel, t } from '../i18n';
 import {
@@ -325,8 +327,7 @@ export default function GoalDetailScreen() {
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={[styles.title, { color: questTheme.colors.text }]}>{cat.name}</Text>
               <Text style={[styles.subline, { color: questTheme.colors.textMuted }]}>
-                {modules.length} {t(lang, 'modules')} · {linkedSkillCount} {t(lang, 'skillCount')}
-                {hasProgressEvidence ? ` · ${t(lang, 'goalProgress')} ${goalProgress}%` : ''}
+                {goalExecutionLogs.length} {t(lang, 'recentExecution')} · {goalExecutionLogs.reduce((n,l)=>n+(l.durationMinutes||0),0)} {t(lang, 'minutes')}
               </Text>
             </View>
             <QuestPill questTheme={questTheme} label={goalTypeLabel(lang, cat.goalType)} variant="muted" />
@@ -364,6 +365,7 @@ export default function GoalDetailScreen() {
           </View>
         </QuestGroupedSurface>
 
+        {Platform.OS==='web'?<GoalWorkingHeader goal={cat} lang={lang} onEditCriterion={id=>openCriterion(criteria.find(c=>c.id===id))} onLibrary={()=>nav.navigate('SkillLibrary')}/>:null}
         <View style={styles.sectionHeader}>
           <Text style={[styles.h2, { color: questTheme.colors.text }]}>{t(lang, 'modules')}</Text>
           {modules.length > 0 ? (
@@ -475,7 +477,7 @@ export default function GoalDetailScreen() {
               ) : null}
             </View>
 
-            {criteria.length > 0 ? (
+            {criteria.length > 0 && Platform.OS!=='web' ? (
               <View style={styles.evidenceSection}>
                 <View style={styles.evidenceHeadingRow}>
                   <View>
@@ -484,7 +486,7 @@ export default function GoalDetailScreen() {
                   </View>
                   <QuestButton questTheme={questTheme} variant="ghost" icon="plus" label={t(lang, 'addCriterion')} onPress={() => openCriterion()} />
                 </View>
-                <QuestGroupedSurface questTheme={questTheme} className="v11-goal-evidence-list" style={Platform.OS !== 'web' ? styles.nativeSection : {}}>
+                <QuestGroupedSurface questTheme={questTheme} className="v11-goal-evidence-list" style={styles.nativeSection}>
                   {criteria.map((criterion, index) => {
                     const progress = calculateOutcomeCriterionProgress(criterion, skills);
                     const linkedSkill = criterion.linkedSkillId ? skills.find((skill) => skill.id === criterion.linkedSkillId) : undefined;
@@ -689,7 +691,7 @@ export default function GoalDetailScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={[styles.skillName, { color: questTheme.colors.text }]}>{skill.name}</Text>
                 <Text style={[styles.skillMeta, { color: questTheme.colors.textMuted }]}>
-                  {skillProgressMeta(skill, lang)} · {fill(t(lang, 'linkedCount'), { count: links.filter((link) => link.skillId === skill.id).length })}
+                  {skillProgressMeta(skill, lang)} · {demandLabel(lang, skill.requiredState)} · {fill(t(lang, 'linkedCount'), { count: links.filter((link) => link.skillId === skill.id).length })}
                 </Text>
               </View>
               <QuestIcon name="plus" size={18} color={questTheme.colors.primary} />
@@ -824,13 +826,13 @@ function ModuleGroup({
               }}
               activeOpacity={0.75}
               accessibilityRole="button"
-              accessibilityLabel={`${skill.name} · ${skillProgressMeta(skill, lang)}`}
+              accessibilityLabel={`${skill.name} · ${skillProgressMeta(skill, lang)} · ${demandLabel(lang, skill.requiredState)}`}
             >
               <QuestEntityIcon icon={skill.icon} systemIcon={getSkillSemanticIcon(skill)} color={skill.color} questTheme={questTheme} size="sm" />
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={[styles.skillName, { color: questTheme.colors.text }]}>{skill.name}</Text>
                 <Text style={[styles.skillMeta, { color: questTheme.colors.textMuted }]}>
-                  {skillProgressMeta(skill, lang)}
+                  {skillProgressMeta(skill, lang)} · {demandLabel(lang, skill.requiredState)}
                 </Text>
               </View>
               <TouchableOpacity

@@ -4,7 +4,7 @@
 // - + 大目标 → GoalForm (创建)
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -23,6 +23,8 @@ import QuestEmptyState from '../components/ui/QuestEmptyState';
 import QuestEntityIcon from '../components/ui/QuestEntityIcon';
 import { confirmAction } from '../utils/confirm';
 import { QuestContextBar } from '../components/ui/QuestPrimitives';
+import V5GoalsSurface from '../v5/GoalsSurface';
+import { isDarkTheme } from '../design/surfaces';
 
 export default function GoalTreeScreen() {
   const { data, deleteCategory } = useStore();
@@ -73,7 +75,7 @@ export default function GoalTreeScreen() {
           alignSelf: 'center',
         }}
       >
-        <QuestContextBar
+        {Platform.OS==='web' && new URLSearchParams(window.location.search).get('v5_ui')!=='0' ? <V5GoalsSurface data={data} lang={lang} dark={isDarkTheme(questTheme)} onAdd={()=>setCreating(true)} onOpen={goDetail} onLibrary={()=>nav.navigate('SkillLibrary')} onDelete={askDelete}/> : <><QuestContextBar
           questTheme={questTheme}
           primary={`${data.categories.length} ${t(lang, 'quest')} · ${data.skills.length} ${t(lang, 'skillCount')}`}
           secondary={t(lang, 'questSubtitle')}
@@ -129,7 +131,7 @@ export default function GoalTreeScreen() {
               </QuestCard>
             </TouchableOpacity>
           );
-        })}
+        })}</>}
       </ScrollView>
 
       {/* 仅用于创建; 编辑在 GoalDetailScreen 内 */}

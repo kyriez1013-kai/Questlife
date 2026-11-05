@@ -1,0 +1,2 @@
+const fs=require('node:fs');const path=require('node:path');const ts=require('typescript');
+module.exports=function load(name){const file=path.resolve(name);const mod={exports:{}};const req=p=>p.startsWith('.')?load(path.resolve(path.dirname(file),p)+(/\.[cm]?[jt]sx?$/.test(p)?'':'.ts')):require(p);new Function('module','exports','require',ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,esModuleInterop:true}}).outputText)(mod,mod.exports,req);return mod.exports;};

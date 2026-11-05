@@ -25,6 +25,8 @@ import { getV11ProductLanguage, getV11ProductThemeId } from '../v11/featureFlag'
 import NativeFormDisclosure from '../native/NativeFormDisclosure';
 import { useDurableFormSave } from '../native/useDurableFormSave';
 import { nativeFormCopy } from '../native/nativeFormCopy';
+import { demandLabel, v5t } from '../v5/copy';
+import { suggestedRequiredState } from '../v5/goalPresentation';
 
 const EMOJIS = ['🧩','💻','🎨','📚','🏃','🧘','🎸','🍳','📷','🧠','💪','🌱','✍️','🎯','🎮','🔬','🐍','📐','🎤','🏊'];
 
@@ -115,6 +117,7 @@ export default function SkillForm({ visible, onClose, initial, presetCategoryId,
   const [moduleId, setModuleId] = useState<string | undefined>();
   const [linkedGoalIds, setLinkedGoalIds] = useState<string[]>([]);
   const [taskType, setTaskType] = useState<TaskType>('deep_study');
+  const [requiredState, setRequiredState] = useState<Skill['requiredState']>('unknown');
   const [progressType, setProgressType] = useState<ProgressType>('time_based');
   const [currentValue, setCurrentValue] = useState('');
   const [targetValue, setTargetValue] = useState('');
@@ -173,6 +176,7 @@ export default function SkillForm({ visible, onClose, initial, presetCategoryId,
       setModuleId(initial.moduleId ?? presetModuleId);
       setLinkedGoalIds(initial.linkedGoalIds ?? (initial.categoryId ? [initial.categoryId] : []));
       setTaskType(initial.taskType ?? inferTaskType(initial.name));
+      setRequiredState(initial.requiredState ?? 'unknown');
       const metric = initial.metricConfig;
       setProgressType(metric?.metricType ?? initial.progressType ?? (/卧推|硬拉|深蹲|bench|deadlift|squat/i.test(initial.name) ? 'performance_log' : 'time_based'));
       setCurrentValue((metric?.currentValue ?? initial.currentValue) != null ? String(metric?.currentValue ?? initial.currentValue) : '');
@@ -224,6 +228,7 @@ export default function SkillForm({ visible, onClose, initial, presetCategoryId,
       setModuleId(presetModuleId);
       setLinkedGoalIds(presetCategoryId ? [presetCategoryId] : []);
       setTaskType('deep_study');
+      setRequiredState('unknown');
       setProgressType('time_based');
       setCurrentValue('');
       setTargetValue('');
@@ -328,6 +333,7 @@ export default function SkillForm({ visible, onClose, initial, presetCategoryId,
       moduleId,
       linkedGoalIds: linkedGoalIds.length > 0 ? linkedGoalIds : undefined,
       taskType,
+      requiredState,
       progressType,
       metricConfig,
       currentValue: cv,
@@ -461,6 +467,11 @@ export default function SkillForm({ visible, onClose, initial, presetCategoryId,
         </View>
       ) : null}
       </NativeFormDisclosure>
+      <View style={{gap:8,marginVertical:12}}>
+        <Text style={{color:questTheme.colors.text}}>{v5t(lang,'required')}</Text>
+        <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>{(['unknown','deep_focus','light','physical','recovery','social'] as const).map(value=><TouchableOpacity key={value} accessibilityRole="radio" accessibilityState={{selected:requiredState===value}} onPress={()=>setRequiredState(value)} style={{minHeight:44,padding:12,borderRadius:12,backgroundColor:requiredState===value?questTheme.colors.surfaceElevated:questTheme.colors.surfaceSoft,borderWidth:1,borderColor:requiredState===value?questTheme.colors.primary:questTheme.colors.border}}><Text style={{color:questTheme.colors.text}}>{demandLabel(lang,value)}</Text></TouchableOpacity>)}</View>
+        {requiredState==='unknown'?<QuestButton questTheme={questTheme} variant="ghost" label={`${lang==='zh'?'采用建议':'Use suggestion'}: ${demandLabel(lang,suggestedRequiredState(name.trim()?inferTaskType(name):taskType))}`} onPress={()=>setRequiredState(suggestedRequiredState(name.trim()?inferTaskType(name):taskType))}/>:null}
+      </View>
       <NativeFormDisclosure key={`task-${visible}`} q={questTheme} title={t(lang, 'taskType')} summary={taskTypeLabel(lang, taskType)}>
         <View style={styles.chipsRow}>
           {TASK_TYPE_OPTIONS.map(option => <QuestPill key={option.value} questTheme={questTheme}

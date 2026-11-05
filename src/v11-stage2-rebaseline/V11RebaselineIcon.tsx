@@ -21,6 +21,7 @@ export type V11RebaselineIconName =
   | 'insights'
   | 'settings'
   | 'target'
+  | 'search'
   | 'update';
 
 type Props = {
@@ -44,6 +45,7 @@ export default function V11RebaselineIcon({
 
   return (
     <Svg height={size} viewBox="0 0 20 20" width={size}>
+      {name === 'search' ? <><Circle {...line} cx="8.5" cy="8.5" r="5.5"/><Line {...line} x1="12.5" y1="12.5" x2="17" y2="17"/></> : null}
       {name === 'home' ? (
         <>
           <Path {...line} d="M3 9.2 10 3l7 6.2" />
