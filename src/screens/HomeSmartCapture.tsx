@@ -201,7 +201,7 @@ function CaptureCard({
                       : 'aiCaptureUnavailable')}
           </Text>
           {v11TodayEnabled ? (
-            <V11InlineButton label={t(lang, 'scRetry')} onPress={() => onRetry(capture.id)} theme={v11Theme} />
+            <V11InlineButton label={t(lang, 'scRetryParse')} onPress={() => onRetry(capture.id)} theme={v11Theme} />
           ) : (
             <TouchableOpacity
               onPress={() => onRetry(capture.id)}
@@ -209,7 +209,7 @@ function CaptureCard({
               activeOpacity={0.7}
             >
               <Text style={[styles.retryBtnText, { color: questTheme.colors.primary }]}>
-                {t(lang, 'scRetry')}
+                {t(lang, 'scRetryParse')}
               </Text>
             </TouchableOpacity>
           )}

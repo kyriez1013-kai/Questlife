@@ -244,18 +244,52 @@ they were corrected in the QA harness, not by weakening application assertions.
    local UI evidence, and the automatic-refresh disclosure mismatch is corrected.
    Do not mistake that for a configured service/health-upload check. Do not rerun
    the same missing-config path just to increase counts. The next bounded batch
-   can address Capture result/history wording below; no cloud policy change or
-   replacement runtime is authorized by the disclosure correction.
-   Evaluate concrete normal-entry
-   gaps, not a new whole-product audit. History currently still displays the
-   raw parse-failure/retry message next to a successfully manually saved result;
-   assess this wording/state interaction without masking the service failure.
-   A first-record result also says "Progress signal created"; audit its exact
-   evidence claim in that narrow flow, not the Quant system. The Today summary and
+   now proceed beyond the Capture result wording fixed in the batch below; no
+   cloud policy change or replacement runtime is authorized by the disclosure
+   correction. Evaluate concrete normal-entry gaps, not a new whole-product
+   audit. Saved-result metadata still uses the future-tense "Will record to"
+   and exposes the untranslated key "duration" in Chinese. Reproduce that narrow
+   metadata path before a correction; do not change record routing or invent a
+   goal link. The Today summary and
    feedback-selection contradiction is now fixed in 7da5969, but this is not proof
    that all app surfaces or analytics exclude every optimistic mutation. Preserve
    that narrower boundary; do not claim app-wide atomicity or hosted persistence.
 3. No physical iPhone, hosted account or model-provider checks were performed.
+
+## Capture result clarification, 14:07 Sydney
+
+- Local-only follow-up after the bea7e06 Preview. Normal fresh-browser Capture
+  -> confirm -> Done -> refresh -> Activity History reproduced an unsupported
+  first-record "Progress signal created" claim and an AI failure banner asking
+  for another manual confirmation beside the already confirmed result.
+- Copy now states only "Record saved". AI disabled/limited/unavailable messages
+  remain explicit but no longer request another manual confirmation; their retry
+  button says "Retry AI parsing", distinct from durable-save Retry. Authorization,
+  input-size and account-change errors remain distinct. Only i18n and the two
+  existing retry labels changed; no handler, Store, schema, Quant, routing or
+  layout changes. One new i18n key, provided in both languages.
+- Render/copy regressions: 12 failed and 2 passed before; all 14 now pass.
+  With existing History binding/edit and Today durability tests: 35/35 passed.
+  Typecheck, web export and diff whitespace check passed. Existing renderer/Metro
+  warnings remain; no lint script exists. No full unrelated suite rerun.
+- Local normal UI checks passed in Chromium at 375x667 light, 393x852 dark,
+  1280x900 dark, zh then en: first record confirmation -> Done -> refresh ->
+  History -> retry failed AI parsing -> close/reopen in English -> retry again.
+  Exactly the same execution ID and byte-equivalent execution array remained;
+  no duplicate confirmation button or progress-signal claim. No page errors or
+  horizontal overflow in these paths. Screenshots inspected for mobile wrapping.
+  These are local rule/manual saves and failed-service retries, NOT live AI,
+  cloud persistence, physical-device or commercial acceptance.
+- External logs: `2026-11-05T03-03-55-217Z-capture-result-language-red.log`,
+  `2026-11-05T03-04-41-606Z-capture-result-browser-red.log`,
+  `2026-11-05T03-05-14-246Z-capture-result-language-green.log`,
+  `2026-11-05T03-05-14-576Z-capture-result-types.log`,
+  `2026-11-05T03-05-25-370Z-capture-result-export.log`, and
+  `capture-result-browser-{375,393,1280}` logs. Results/screenshots:
+  `browser-capture-result-after-*.json`, `{375,393,1280}-capture-result-after-history-{zh,en}-*.png`.
+- Hosted review remains bea7e06; no new deployment, push or alias change in this
+  batch. Main/source checkouts were not edited. The five main tracked changes
+  and protected untracked contract remain untouched.
 
 ## Preview access update
 
@@ -350,8 +384,8 @@ they were corrected in the QA harness, not by weakening application assertions.
 - All `/api/*` requests deliberately return 503 locally. Settings correctly says
   account service is unconfigured. This is a LOCAL review, not a hosted/live-AI
   or cross-client sync acceptance.
-- Latest local export: main `index-815546ef230a4d481450d1852f0967f3.js`, Insights chunk
-  `V11InsightsScreen-f7131852d03dd17dc3c568803dc080ea.js` (disclosure correction).
+- Latest local export: main `index-cea4287276efca320824764ff3b21f23.js`, Insights chunk
+  `V11InsightsScreen-f7131852d03dd17dc3c568803dc080ea.js` (Capture result clarification).
 - `browser-workspaces-results.json`, `browser-plan-375-light-results.json`,
   `browser-plan-1280-dark-results.json`, `browser-brain-dump-results.json`, and
   `browser-offline-results.json` contain current isolated browser evidence.
