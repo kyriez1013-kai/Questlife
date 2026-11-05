@@ -33,6 +33,8 @@ import { sl } from '../state-layer/copy';
 import { isStateLayerEnabled } from '../state-layer/featureFlag';
 import { subscribeAiPreferences } from '../services/aiPreferences';
 import RecordBackupActions from '../backup/RecordBackupActions';
+import ShortcutSettings from '../v5/ShortcutSettings';
+import { isDarkTheme } from '../design/surfaces';
 import { downloadPersistenceSnapshot } from '../utils/persistenceTrace';
 
 const TRADINGVIEW_URL = 'https://www.tradingview.com/';
@@ -301,6 +303,7 @@ export default function SettingsScreen() {
         }}
       >
         <AccountSyncSection />
+        {Platform.OS==='web'?<ShortcutSettings lang={lang} dark={isDarkTheme(questTheme)}/>:null}
         <AiSettingsSection />
         <QuestSectionHeader
           questTheme={questTheme}

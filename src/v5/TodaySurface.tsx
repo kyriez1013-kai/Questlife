@@ -33,7 +33,8 @@ export default function V5TodaySurface(p:Props) {
   const {data,updateStateCheckIn,waitForLocalWrites,retryLocalWrites}=useStore();
   const now=new Date(); const date=localYmd(now);
   const row=latestStateLayerRow(data.stateCheckIns||[],date); const state=row&&effectiveType(row);
-  const pending=pendingFollowUp(data.stateCheckIns||[],now,followUpDue);
+  const requested=typeof window!=='undefined'?new URLSearchParams(window.location.search).get('followup'):null;
+  const pending=pendingFollowUp(requested?(data.stateCheckIns||[]).filter(r=>r.id===requested):data.stateCheckIns||[],now,followUpDue);
   const plan=useStateLayerPlan();
   const [reorder,setReorder]=useState(false); const [brain,setBrain]=useState(false);
   const [applied,setApplied]=useState<AppliedPlan|null>(null);
@@ -86,6 +87,7 @@ export default function V5TodaySurface(p:Props) {
       <div className="v5-main-title"><div className="v5-icon-tile"><QuestIcon name={p.active?'play':advice?'brain':'target'} size={28} color="currentColor"/></div><div className="v5-title-copy"><h1 title={title}>{[...title].length>(p.lang==='zh'?14:64)?[...title].slice(0,p.lang==='zh'?13:63).join('')+'…':title}</h1><div className="v5-meta">{[goal?.name,module?.name].filter(Boolean).join(' / ')}</div></div>{(elapsed??p.command.plannedMinutes)!=null?<div className="v5-minutes v5-muted"><strong>{elapsed??(advice?.kind==='probe_5'?5:p.command.plannedMinutes)}</strong><span className="v5-meta">{v5t(p.lang,'minutes')}</span></div>:null}</div>
       <p>{advice&&advice.kind!=='probe_5'?v5t(p.lang,'confirmPlan'):p.command.primaryAction==='create_goal'?v5t(p.lang,'firstReason'):[...p.reason].slice(0,p.lang==='zh'?24:100).join('')}</p>
       <span className="v5-tag">{v5t(p.lang,'rule')}</span>
+      {row?.stateLayer?.choice&&!pending?<a className="v5-link v5-meta" href={`shortcuts://run-shortcut?name=${encodeURIComponent('QL回访提醒')}&input=text&text=${encodeURIComponent(`${window.location.origin}/?followup=${encodeURIComponent(row.id)}`)}`}>{p.lang==='zh'?'25 分钟后提醒回访':'Remind me in 25 minutes'}</a>:null}
       <div className="v5-actions">
         <button className="v5-button" disabled={busy} onClick={p.active?p.onFinish:advice&&advice.kind!=='probe_5'?adjust:advice?.kind==='probe_5'?()=>void act(()=>markChoice('probe_5'),p.onPrimary):p.onPrimary}>{p.active?v5t(p.lang,'finish'):advice?v5t(p.lang,advice.kind==='probe_5'?'start':'adjust'):p.command.primaryAction==='create_goal'?v5t(p.lang,'record'):t(p.lang,p.command.primaryAction==='start'?'start':p.command.primaryAction==='finish_pending_capture'?'confirm':p.command.primaryAction==='review_feedback'?'viewDetails':p.command.primaryAction==='rescue'?'rescue':'logProgress')}</button>
         {!p.active?<button className="v5-button secondary" disabled={busy} onClick={advice?original:p.onLog}>{v5t(p.lang,advice?'original':'log')}</button>:null}

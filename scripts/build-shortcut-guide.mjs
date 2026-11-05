@@ -1,0 +1,6 @@
+import {readFileSync,writeFileSync} from 'node:fs';
+const escape=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const lines=readFileSync(new URL('../docs/watch/快捷指令设置.md',import.meta.url),'utf8').split('\n');
+const body=lines.map(line=>{const h=/^(#{1,3}) (.*)$/.exec(line);if(h)return `<h${h[1].length}>${escape(h[2])}</h${h[1].length}>`;return line?`<p>${escape(line).replace(/`([^`]+)`/g,'<code>$1</code>')}</p>`:'';}).join('\n');
+writeFileSync(new URL('../public/shortcuts.html',import.meta.url),`<!doctype html><html lang="zh"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>QuestLife 快捷指令设置</title><style>body{font:16px/1.8 system-ui;margin:0;background:#f1f5f7;color:#14243a}main{max-width:760px;padding:24px;margin:auto}h1{font-size:26px}h2{font-size:20px;margin-top:40px}code{overflow-wrap:anywhere;font-size:14px}a{color:#0861b9;display:inline-block;min-height:44px}p{overflow-wrap:anywhere}@media(prefers-color-scheme:dark){body{background:#172737;color:#edf5fc}a{color:#9acfff}}</style><main><a href="/?v5_section=shortcuts">返回 QuestLife 个人页</a>${body}</main></html>`);
+console.log('Generated public/shortcuts.html from the committed setup guide');

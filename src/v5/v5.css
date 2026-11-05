@@ -96,6 +96,11 @@
 .v5-goal-menu { margin:0 16px 4px; }
 .v5-goal-menu summary { min-height:44px;display:flex;align-items:center;justify-content:flex-end;cursor:pointer; }
 .v5-search { min-height:44px;width:100%;padding:10px;border:1px solid var(--v5-line);border-radius:14px;background:var(--v5-fill); }
+.v5-shortcuts { padding:20px;margin:20px 0;font:400 14px/1.5 system-ui,sans-serif; }
+.v5-shortcuts h2 { font-size:18px;margin:0 0 8px; }
+.v5-shortcuts label { display:flex;align-items:center;min-height:44px;gap:8px; }
+.v5-shortcuts input[type=checkbox] { width:24px;height:24px; }
+.v5-shortcuts a { display:inline-flex;align-items:center; }
 .v5-empty { padding:24px 4px;color:var(--v5-muted); }
 .v5-empty h2 { font-size:20px; }
 .v5-detail-criteria { background:transparent;margin:8px 0 24px; }

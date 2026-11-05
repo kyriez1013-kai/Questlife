@@ -803,6 +803,8 @@ export interface CompletionSchema {
 }
 
 export interface RawCapture {
+  /** Explicit inbox origin: pending raw text, never a confirmed execution. */
+  shortcutInbox?: boolean;
   id: string;
   text: string;            // 用户原文，一字不改，永久保留
   createdAt: string;       // ISO，本地时间
@@ -827,6 +829,7 @@ export interface RawCapture {
 }
 
 export interface ContextLog {
+  shortcutCalendar?: { events: import('./platform/contracts').ExternalCommitment[]; syncedAt:string; timezoneOffset:number };
   id: string;
   date?: string;
   createdAt?: string;

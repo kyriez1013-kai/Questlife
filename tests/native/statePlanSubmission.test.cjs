@@ -57,6 +57,16 @@ async function render(sheet = false) {
 }
 afterEach(async () => { if (tree) await act(async () => tree.unmount()); tree = null; });
 
+const calendar=(start,end)=>[{date:'2026-11-05',shortcutCalendar:{syncedAt:'2026-11-05T08:00:00',events:[{id:'shortcut-calendar:isolated',title:'Unavailable',calendarId:'isolated',externalEventId:'isolated',ownership:'external',availability:'busy',startAt:`2026-11-05T${start}:00`,endAt:`2026-11-05T${end}:00`,lastSyncedAt:'2026-11-05T08:00:00'}]}}];
+test('new synced calendar occupancy after preview blocks Apply without persisting external blocks',async()=>{
+  await render();const p=patch();store.data={...store.data,contextLogs:calendar('21:00','22:00')};await act(async()=>tree.update(React.createElement(Probe)));
+  await assert.rejects(hook.confirmAndApply({patch:p,headline:'QA',ruleId:'qa'}));assert.equal(applyCount,0);assert.equal(store.data.scheduleBlocks.length,2);
+});
+test('Undo checks newly synced occupancy as well as internal edits',async()=>{
+  await render();const result=await hook.confirmAndApply({patch:patch(),headline:'QA',ruleId:'qa'});store.data={...store.data,contextLogs:calendar('20:00','21:00')};await act(async()=>tree.update(React.createElement(Probe)));
+  await assert.rejects(hook.undo(result));assert.equal(undoCount,0);
+});
+
 test('Apply ACK retry retains the same episode and never reapplies the schedule', async () => {
   await render(); const input = { patch: patch(), headline: 'QA', ruleId: 'qa' };
   wait = async () => { throw Error('ACK_MISSING'); };

@@ -1,0 +1,76 @@
+<!doctype html><html lang="zh"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>QuestLife 快捷指令设置</title><style>body{font:16px/1.8 system-ui;margin:0;background:#f1f5f7;color:#14243a}main{max-width:760px;padding:24px;margin:auto}h1{font-size:26px}h2{font-size:20px;margin-top:40px}code{overflow-wrap:anywhere;font-size:14px}a{color:#0861b9;display:inline-block;min-height:44px}p{overflow-wrap:anywhere}@media(prefers-color-scheme:dark){body{background:#172737;color:#edf5fc}a{color:#9acfff}}</style><main><a href="/?v5_section=shortcuts">返回 QuestLife 个人页</a><h1>QuestLife 五个快捷指令</h1>
+
+<p>适用候选站点：https://questlife-v1-release.vercel.app/ 。先在同账号「个人」登录并生成个人令牌。此文件不包含令牌；不要把令牌放在 URL、截图、聊天或共享快捷指令里。</p>
+
+<h2>先完成一次服务准备</h2>
+
+<p>本轮没有执行线上 migration。由用户在候选 Supabase <code>gttcoocfkqwvsqfwxpyo</code> 的 SQL Editor 审阅并执行 <code>supabase/migrations/202611050001_shortcut_inbox.sql</code>，不是旧 Owner 项目。它依赖已存在的 SyncV2 migration；以事务执行，结构不符会全部中止。之后回到「个人 → 手表与快捷指令 → 生成个人令牌」。令牌只显示一次；重新生成立即使旧令牌失效，五个快捷指令需要一起更新。撤销不删除原有记录。</p>
+
+<p>所有请求发到 <code>https://questlife-v1-release.vercel.app/api/inbox</code>，方法 POST，JSON 请求体。请求头 <code>Authorization</code> 的值为 <code>Bearer </code> 加个人令牌（空格必需）；另加 <code>Content-Type: application/json</code>。这是只写权限，不能用它读取账号。上限每分钟 30 次、每天 1000 次，每次最多 100 个样本/事件、128 KiB，不调用 AI；Capture 在 App 内确认前不算执行记录。</p>
+
+<h2>每个发送动作的公共部分</h2>
+
+<p>在 iPhone「快捷指令 → + → 添加操作」建立下列操作。iOS 的本地化名称可能略有区别，用搜索框搜括号内英文名称。</p>
+
+<p>1. 添加「生成 UUID」（Generate UUID），设变量 <code>requestId</code>。每个新批次生成一次；网络失败重试同一请求时保留原 UUID 和完整请求体，不重新抽取数据。</p>
+<p>2. 添加「当前日期」，再「格式化日期」，自定 <code>yyyy-MM-dd'T'HH:mm:ssXXX</code>，设 <code>at</code>。不要用没有时区的文本。</p>
+<p>3. 对同一个日期再格式化为 <code>Z</code>，例如 <code>+1100</code>。用「匹配文本」分出符号、前两位小时、后两位分钟，用「计算」得到带符号的分钟数：<code>11*60+0=660</code>；负号则乘 -1。保存数字 <code>timezoneOffset</code>。不要固定写 660，夏令时和旅行会改变它。</p>
+<p>4. 添加「字典」（Dictionary），按下方各快捷指令填字段；数字选 Number，列表选 Array，嵌套字段选 Dictionary，不把整个 JSON 拼成未转义文本。</p>
+<p>5. 添加「获取 URL 内容」（Get Contents of URL），展开选项，POST / Headers 如上，Request Body 选 JSON，使用字典字段。添加「获取字典值」读取返回的 <code>ok</code>。只有 <code>true</code> 才显示「已接收」通知。</p>
+<p>6. 返回 <code>401</code>：更新令牌；<code>403</code>：在个人页同意健康同步；<code>409</code>：刷新 App 后重试回访；<code>429</code>：稍后重试，保留同一请求；<code>503</code> 或网络失败：不要显示保存成功。App 的账号同步后才能看到服务器收到的数据。</p>
+
+<h2>1. QL签到</h2>
+
+<p>1. 重命名快捷指令为 <code>QL签到</code>。</p>
+<p>2. 添加「从菜单中选取」：标题「现在精力？」；五项「1 没电、2 偏低、3 一般、4 有劲、5 很足」。每个分支放对应的「数字」，菜单结果设为 <code>energy</code>。</p>
+<p>3. 再添加「从菜单中选取」：标题「现在紧绷？」；五项「1 很松、2 较松、3 一般、4 较紧、5 很紧」，结果设数字 <code>tension</code>。</p>
+<p>4. 添加公共部分，字典字段：<code>kind</code> 文本 <code>state</code>；<code>requestId</code>、<code>at</code>、<code>timezoneOffset</code>；<code>energy</code> 和 <code>tension</code> 用上面的数字变量。</p>
+<p>5. 快捷指令详情中开启「在 Apple Watch 上显示」。在手表「快捷指令」中运行，或编辑支持快捷指令复杂功能的表盘，选择 <code>QL签到</code>。首次网络/运行权限在设备上确认。</p>
+<p>6. 回到 App、同账号完成同步；Today 状态条显示该签到。来源存为 <code>watch_shortcut</code>，不会凭空附带 Health 数据。</p>
+
+<h2>2. QL清空</h2>
+
+<p>1. 新建并命名 <code>QL清空</code>，添加「听写文本」（Dictate Text），语言按实际使用选择，停止听写选择停顿后。</p>
+<p>2. 公共部分字典：<code>kind: capture</code>；<code>requestId</code>、<code>at</code>、<code>timezoneOffset</code>；<code>text</code> 取听写结果。空文本不发送。</p>
+<p>3. 收到确认后，在 App 的 Capture 待确认入口继续解析、修改和确认。API 不替你推断时长，不自动创建 ExecutionLog，也不绕过现有 AI 预算或确认。</p>
+<p>4. 可开启「在 Apple Watch 上显示」。听写可用性、联网和权限必须在真机验证。</p>
+
+<h2>3. QL回访提醒</h2>
+
+<p>1. 新建 <code>QL回访提醒</code>，接收快捷指令输入类型「文本」。不需要个人令牌，也不发 API。</p>
+<p>2. 添加「当前日期 → 调整日期」，加 25 分钟。</p>
+<p>3. 添加「添加新提醒事项」，标题「QuestLife：现在精力怎么样？」；提醒日期用调整后的日期；备注/URL 填「快捷指令输入」。选择你同步到手表的提醒事项列表。</p>
+<p>4. App 选择调节动作后，点「25 分钟后提醒」会通过 <code>shortcuts://run-shortcut?name=QL回访提醒&amp;input=text&amp;text=...</code> 传入包含当前签到 ID 的回访链接。</p>
+<p>5. 提醒到达后打开链接，在 App 五档选精力；保存到该签到的 choice.energyFollowUp。未传链接时不要造默认签到 ID，应停止并提示从 App 发起。提醒是否出现在表盘由系统通知设置决定。</p>
+
+<h2>4. QL健康同步</h2>
+
+<p>先在 App「个人 → Apple 健康 → 同意云同步」明确开启。关闭后新写入会拒绝；删除按钮只删除 shortcut 来源，不影响 HealthKit 原件或其他来源。</p>
+
+<p>1. 新建 <code>QL健康同步</code>；「当前日期 → 调整日期」减 2 天。</p>
+<p>2. 添加「查找健康样本」（Find Health Samples），开始日期在两天前至现在。四种类型分四个批次处理：睡眠分析、步数、静息心率、心率变异性 SDNN。首次在系统授权页只授权你愿意提供的类型。</p>
+<p>3. 先选择一个明确来源设备/App（例如 Apple Watch），不混加手机和手表累计步数。睡眠只选「睡眠/核心/深度/REM」实际睡眠区段，排除「卧床」和「清醒」；不要把类别枚举数字当分钟。</p>
+<p>4. 「重复每一项」，用「获取健康样本详细信息」读取开始/结束日期、来源、数值。日期均格式化为上面的 ISO 格式。睡眠数值用开始到结束的「获取日期之间的时间」分钟；步数 count，静息心率 bpm，HRV ms。无法读取来源/必要时间的样本不发送，不补默认值。</p>
+<p>5. 每个样本的字典字段：<code>metric</code>（sleep / steps / resting_heart_rate / hrv）、<code>value</code> 数字、<code>unit</code>（min / count / bpm / ms）、<code>startAt</code>、<code>endAt</code>、<code>source</code>。HRV 额外填 <code>measurementMethod: sdnn</code>，不可把未知算法冒称 SDNN。</p>
+<p>6. 把每个字典「添加到变量」samples；每满 100 条发送一批，再清空该批变量。最后不足 100 条也发送；0 条跳过并显示「未读取到样本」，不上传 0。每批一个新 requestId。</p>
+<p>7. 请求字典：<code>kind: health</code>，公共三字段，<code>samples</code> 数组。多个批次请间隔至少 3 秒，低于限流；日常同步最近 2 天可重叠，服务端按类型、算法、起止与来源去重。</p>
+<p>8. 快捷指令 → 自动化 → + → 特定时间，08:00，每天，选择「立即运行」（旧版为关闭运行前询问），运行 <code>QL健康同步</code>；再建立 21:00 自动化。健康隐私和锁屏条件可能阻止后台执行；首次手动运行确认，不能把自动化已创建当作已同步。</p>
+<p>9. 返回个人页查看最近同步时间。数据先到候选 SyncV2，再由同账号 App 拉取至现有 DeviceRepository。睡眠重叠使用现有区间并集，不等于已证明完整一夜；HRV 算法不混合。</p>
+
+<h2>5. QL日历同步</h2>
+
+<p>1. 新建 <code>QL日历同步</code>。「查找日历日程」（Find Calendar Events）：范围今天，从当天开始到次日开始，包含跨越当天的日程，选择你同意提供的日历。不要只取开始时间在今天的事件，以免漏掉跨夜占用。</p>
+<p>2. 「重复每一项 → 获取日历日程详细信息」读取标题、开始、结束、日历名称和全天标记。如果系统提供事件标识符，用它作为 id；没有标识符时用日历名 + 标题 + 开始日期组成稳定文本（仅缓存标识，不冒称系统事件 ID）。</p>
+<p>3. 每项字典：<code>id</code>、<code>calendarId</code>（可用日历名称作稳定缓存键）、<code>title</code>、<code>startAt</code>、<code>endAt</code>、<code>allDay</code> 布尔值。日期必须带时区，保留真实持续时长。仅同步 busy 占用；能读到空闲标记的事件排除。</p>
+<p>4. 请求字典：<code>kind: calendar</code>；公共三字段；<code>date</code> 用当前日期自定 <code>yyyy-MM-dd</code>；<code>events</code> 数组。无日程时也发送空数组，表示这次主动同步的当天缓存为空。</p>
+<p>5. 每天必须一次发送完整当天缓存，不分批覆盖；超过 100 个事件时停止并提示，不截断后假称完整。App 只显示/避让此只读缓存，不写系统日历，也不变成用户日程块。</p>
+<p>6. 在系统日历新建/移动/删除之后再次运行。调整建议只知道最近缓存，不保证系统日历实时状态。关闭权限不能解释为无冲突，无法读日历时停止发送，保留旧缓存并提醒重新授权。</p>
+
+<h2>验证范围与撤销</h2>
+
+<p>服务端逻辑、SQL 权限、撤销、限流、重复请求、账号隔离和删除用隔离内存 PostgreSQL 验证，不是设备验收。尚需用户实际配置并验证 iPhone / Apple Watch 操作及自动化。这里没有提供未经设备签名验证的 .shortcut 安装包。</p>
+
+<p>令牌泄露时先在个人页撤销，再生成并更新五个快捷指令中的发送项。不要为重试改变已有 requestId 的内容。卸载快捷指令不会删除云端数据；使用个人页明确删除入口。</p>
+
+<p>参考：Apple 官方 [API 请求](https://support.apple.com/guide/shortcuts/request-your-first-api-apd58d46713f/ios)、[Apple Watch 快捷指令](https://support.apple.com/guide/shortcuts/run-shortcuts-from-apple-watch-apd5888b0858/ios)。操作名以设备当前系统语言为准。</p>
+</main></html>

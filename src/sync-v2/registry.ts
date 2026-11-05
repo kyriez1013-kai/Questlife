@@ -71,12 +71,12 @@ const schemas: Record<EntityType, z.ZodType> = {
     plannedMinutes: number.nonnegative(),
     status: z.enum(["planned", "adjusted", "completed", "skipped"]),
   }),
-  rawCaptures: base.extend({
+  rawCaptures: z.union([base.extend({
     text,
     createdAt: stamp,
     parseStatus: z.literal("done"),
     parsed: z.object({ entriesDismissed: z.literal(true) }).passthrough(),
-  }),
+  }),base.extend({id:text.startsWith('inbox:capture:'),text,createdAt:stamp,parseStatus:z.enum(['pending','done','failed']),shortcutInbox:z.literal(true)})]),
   healthObservations: base.extend({
     schemaVersion: z.literal("questlife.health.observation.v1"),
     metric: z.enum([
@@ -96,7 +96,7 @@ const schemas: Record<EntityType, z.ZodType> = {
     availableAt: stamp,
     importedAt: stamp,
     externalId: text.min(1),
-    sourcePlatform: z.enum(["healthkit", "health_connect"]),
+    sourcePlatform: z.enum(["healthkit", "health_connect", "shortcut"]),
     provenance: z
       .object({ origin: z.literal("PASSIVE_IMPORTED") })
       .passthrough(),
@@ -174,7 +174,7 @@ export function appEntities(data: AppData): Entity[] {
   );
   return APP_ENTITY_TYPES.flatMap((entityType) =>
     (data[entityType] ?? []).flatMap((row) => {
-      if (entityType === "rawCaptures" && !confirmedIds.has(row.id)) return [];
+      if (entityType === "rawCaptures" && !confirmedIds.has(row.id) && !(row.id.startsWith('inbox:capture:') && 'shortcutInbox' in row && row.shortcutInbox === true)) return [];
       return validEntity(entityType, row.id, row)
         ? [{ entityType, entityId: row.id, payload: row as unknown as Payload }]
         : [];

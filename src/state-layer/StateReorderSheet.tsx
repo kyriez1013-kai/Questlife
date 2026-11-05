@@ -10,6 +10,7 @@ import { localYmd } from './signals';
 import { DEMANDS, type Demand, type StateTypeOrUnclear } from './types';
 import { errorReason, useStateLayerPlan, type AppliedPlan } from './useStateLayerActions';
 import type { DecisionPlanPatchV1 } from '../adaptive-decision/decisionEpisode';
+import { shortcutCalendarBlocks } from '../v5/shortcutCalendar';
 
 const WebView = View as any;
 const WebPressable = Pressable as any;
@@ -47,19 +48,26 @@ export default function StateReorderSheet({
   const locked = busy || confirmed !== null;
   const now = new Date();
   const date = localYmd(now);
-  const blocks = data.scheduleBlocks || [];
+  const blocks = useMemo(()=>[...(data.scheduleBlocks||[]),...shortcutCalendarBlocks(data.contextLogs,[date])],[data.scheduleBlocks,data.contextLogs,date]);
+  const effectiveOverrides=useMemo(()=>{
+    const values:Record<string,Demand>={};
+    const names:Record<string,Demand>={deep_focus:'deep',light:'shallow',physical:'physical',recovery:'recovery',social:'social'};
+    for(const block of data.scheduleBlocks||[]){const need=(data.skills||[]).find(s=>s.id===block.linkedSkillId)?.requiredState;if(need&&names[need])values[block.id]=names[need];}
+    return {...values,...overrides};
+  },[data.skills,data.scheduleBlocks,overrides]);
 
   const computed = useMemo(() => {
     if (!visible) return null;
-    const result = reorderToday({ type, date, now: new Date(), blocks, demandOverrides: overrides, preparationMinutes });
+    const result = reorderToday({ type, date, now: new Date(), blocks, demandOverrides: effectiveOverrides, preparationMinutes });
     if (result.kind !== 'reordered') return { result, patch: null, problem: null as string | null };
     try {
-      return { result, patch: plan.preview({ date, before: result.before, after: result.after }), problem: null };
+      const ids=new Set((data.scheduleBlocks||[]).map(b=>b.id));
+      return { result, patch: plan.preview({ date, before: result.before.filter(b=>ids.has(b.id)), after: result.after.filter(b=>ids.has(b.id)) }), problem: null };
     } catch (e) {
       return { result, patch: null, problem: errorReason(e) };
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, type, date, blocks, overrides, preparationMinutes]);
+  }, [visible, type, date, blocks, effectiveOverrides, preparationMinutes]);
 
   const rows = useMemo(() => {
     if (!computed) return [];
@@ -71,7 +79,7 @@ export default function StateReorderSheet({
       .map((b) => {
         const before = blocks.find((x) => x.id === b.id)!;
         const inferred = inferDemand(before);
-        const demand: Demand = overrides[b.id] ?? inferred.demand;
+        const demand: Demand = effectiveOverrides[b.id] ?? inferred.demand;
         return {
           id: b.id,
           title: b.title,
@@ -80,10 +88,10 @@ export default function StateReorderSheet({
           after: `${b.startTime}–${b.endTime}`,
           moved: before.startTime !== b.startTime,
           demand,
-          inferred: !overrides[b.id] && inferred.inferred,
+          inferred: !effectiveOverrides[b.id] && inferred.inferred,
         };
       });
-  }, [blocks, computed, date, overrides]);
+  }, [blocks, computed, date, effectiveOverrides]);
 
   const cycleDemand = (id: string, current: Demand) => {
     if (inFlight.current || confirmed) return;
@@ -147,6 +155,7 @@ export default function StateReorderSheet({
         <Text style={{ color: theme.text.secondary, fontSize: 12.5, lineHeight: 18 }}>
           {sl(lang, 'rpOrderBasis', { type: TYPE_NAME[lang][type], order: DEMAND_ORDER[type].map((d) => DEMAND_LABEL[lang][d]).join(' → ') })}
           {' · '}{sl(lang, 'rpFixedKept')}
+          {' · '}{lang==='zh'?'系统日历仅检查最近同步的占用；新增事件需先同步。':'System calendar checks use the latest synced availability; sync new events first.'}
         </Text>
         {message && !confirmed ? <Text style={{ color: theme.text.primary, fontSize: 14, lineHeight: 20 }}>{message}</Text> : null}
         {(confirmed?.rows ?? rows).map((r) => (

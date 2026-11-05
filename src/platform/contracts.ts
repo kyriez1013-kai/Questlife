@@ -7,7 +7,7 @@ export type HealthObservationV1 = {
   schemaVersion: 'questlife.health.observation.v1';
   id: string; metric: HealthMetric; value: number; unit: 'min' | 'count' | 'bpm' | 'ms' | 'kcal' | 'm';
   eventStartAt: string; eventEndAt: string; availableAt: string; importedAt: string; timezoneOffset: number | null;
-  sourcePlatform: 'healthkit' | 'health_connect'; sourceApp?: string; sourceDevice?: string;
+  sourcePlatform: 'healthkit' | 'health_connect' | 'shortcut'; sourceApp?: string; sourceDevice?: string;
   recordingMethod: 'automatic' | 'manual' | 'unknown'; externalId: string;
   sourceRecordId?: string;
   sourceModifiedAt?: string;

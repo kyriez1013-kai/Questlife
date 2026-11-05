@@ -12,6 +12,7 @@ import V11Stage2ProductionSheet from '../v11-stage2-rebaseline/V11Stage2Producti
 import { DurableSubmission } from '../utils/durableSubmission';
 import { stateDimensions } from './stateEvidence';
 import { v5t } from './copy';
+import { healthContextView } from '../platform/health/normalization';
 
 export function FiveChoices({label, labels, value, disabled, onChange}: {label:string;labels:string[];value?:number;disabled?:boolean;onChange:(n:Scale5)=>void}) {
   return <div className="v5-rail"><div><span>{label}</span><small className="v5-meta">{value ? labels[value-1] : ''}</small></div>
@@ -33,7 +34,8 @@ export default function StateStrip({lang,theme,reducedMotion}:{lang:Lang;theme:V
   const now=new Date();
   const row=latestStateLayerRow(data.stateCheckIns||[],localYmd(now));
   const state=row && effectiveType(row);
-  const signals=gatherPassiveSignals({now,contextLogs:data.contextLogs||[],health:device.data.observations||[],executionLogs:data.executionLogs||[],scheduleBlocks:data.scheduleBlocks||[]});
+  const health=healthContextView(device.data.observations||[]).map(p=>({metric:p.type==='sleep'?'sleep':p.label,value:Number(p.value),unit:p.unit,eventEndAt:p.dataProvenance?.eventEndAt??p.createdAt})).filter((p):p is {metric:string;value:number;unit:string;eventEndAt:string}=>!!p.metric&&!!p.unit&&!!p.eventEndAt&&Number.isFinite(p.value)).map(p=>({...p,metric:p.metric==='hrv_sdnn'?'hrv':p.metric}));
+  const signals=gatherPassiveSignals({now,contextLogs:data.contextLogs||[],health,executionLogs:data.executionLogs||[],scheduleBlocks:data.scheduleBlocks||[]});
   const save=async (write:()=>void,done=()=>undefined as void)=>{
     if(status==='saving') return;
     setStatus('saving'); afterSave.current=done;
