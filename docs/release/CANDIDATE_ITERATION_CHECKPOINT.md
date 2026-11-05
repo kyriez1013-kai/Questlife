@@ -509,7 +509,32 @@ they were corrected in the QA harness, not by weakening application assertions.
   created decision, NOT a verified hosted Quant-generated proposal. Logs:
   `core-normal-browser-{393,1280}`; screenshots `core-*-core-apply-retry-dark.png`.
   Visual inspection exposed untranslated state-layer keys and a UTC-based
-  tomorrow label in Core; fix that presentation boundary next.
+  tomorrow label in Core; corrected in the next presentation batch below.
+
+### November 5: resumed decision and saved-result language
+
+- Five red presentation tests reproduced internal state-layer keys and the wrong
+  Today/Tomorrow date near UTC midnight. Known system keys now have zh/en copy;
+  civil dates use the episode's existing timezone (or explicit date when invalid),
+  with DST-safe day comparison. No schedule time or domain calculation changed.
+  Red/green: `resumed-plan-presentation-{red,green}` logs at 03:38Z.
+- Saved Capture results now say Recorded under instead of Will record to and use
+  the existing duration translation. Two red metadata tests are preserved in
+  `saved-result-metadata-red` (03:40:06Z); all 21 copy tests passed. Existing
+  pending-confirmation labels and saved records are unchanged.
+- Full impacted regression: 127/127 passed, no skipped tests, in
+  `2026-11-05T03-44-23-983Z-candidate-focused-regression.log`. Includes real Store,
+  Core/state-layer receipts, Schedule, Capture/History and offline shell checks.
+  Typecheck: `decision-copy-final-tsc` (03:40:24Z); export: `decision-copy-build`
+  (03:40:53Z). Main bundle `index-34b155afc884487f2129f953c93b5478.js`.
+- Normal Core UI 375x667 light passed failure/retry/reload with translated text
+  and correct Today labels (`core-copy-browser-375`, 03:44:22Z;
+  `copy-375-core-apply-retry-light.png`). Capture History 1280x900 dark passed
+  zh/en reopen and unavailable-parser retry; its one execution stays unchanged
+  (`capture-copy-browser-valid-1280`, 03:50:15Z).
+- Backup shared-boundary regression: 6/6 passed (`backup-shared-boundary-regression`,
+  03:44:04Z), including auth callback trace scrubbing and failed-share temporary
+  file cleanup. This is local fake-data testing, not a device/cloud restore claim.
 
 - Device performance/HealthKit and expired Personal Team installation require
   coordinated owner action; no unattended device updates.

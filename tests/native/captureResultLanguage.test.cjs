@@ -42,6 +42,25 @@ function text(element) {
 }
 
 for (const lang of ['zh', 'en']) {
+  test(`saved destination and duration use translated completed-result copy (${lang})`, () => {
+    const pending = ts.createSourceFile('HomeCapturePending.tsx', fs.readFileSync(path.join(root, 'src/screens/HomeCapturePending.tsx'), 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+    let saved;
+    function walk(node) {
+      if (ts.isIfStatement(node) && node.expression.getText(pending) === 'logged') saved = node.thenStatement;
+      ts.forEachChild(node, walk);
+    }
+    walk(pending); assert.ok(saved);
+    const keys = [];
+    function collect(node) {
+      if (ts.isCallExpression(node) && node.expression.getText(pending) === 't' && ts.isStringLiteral(node.arguments[1])) keys.push(node.arguments[1].text);
+      ts.forEachChild(node, collect);
+    }
+    collect(saved);
+    assert.ok(!keys.includes('recordToPath'), 'a completed result must not say Will record to');
+    assert.ok(keys.includes('savedRecordPath'));
+    assert.notEqual(t(lang, 'savedRecordPath'), 'savedRecordPath');
+    for (const key of keys) assert.notEqual(t(lang, key), key, `missing translation: ${key}`);
+  });
   test(`saved result confirms recording without claiming a new progress signal (${lang})`, () => {
     assert.doesNotMatch(t(lang, 'savedFeedbackTitle'), /progress|signal|进步|线索/i);
     assert.match(t(lang, 'savedFeedbackTitle'), /saved|保存/i);

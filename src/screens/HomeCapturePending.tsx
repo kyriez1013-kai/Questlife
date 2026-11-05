@@ -1673,8 +1673,8 @@ export default function HomeCapturePending({ captureId, entries, onDismiss, onOp
                     {item.title}
                   </Text>
                   <Text style={[pendStyles.completionHint, { color: questTheme.colors.textMuted }]}>
-                    {t(lang, 'recordToPath')}: {path || t(lang, 'scEntryUnassigned')} · {t(lang, recordTypeKey[item.recordType])}
-                    {item.durationMinutes && item.durationMinutes > 0 ? ` · ${t(lang, 'duration')}: ${item.durationMinutes}${lang === 'zh' ? '分钟' : ' min'}` : ''}
+                    {t(lang, 'savedRecordPath')}: {path || t(lang, 'scEntryUnassigned')} · {t(lang, recordTypeKey[item.recordType])}
+                    {item.durationMinutes && item.durationMinutes > 0 ? ` · ${t(lang, 'scEntryDuration').replace('{n}', String(item.durationMinutes))}` : ''}
                     {item.qualityRating ? ` · ${t(lang, 'quality')}: ${item.qualityRating}/5` : ''}
                   </Text>
                   {item.comparison ? (

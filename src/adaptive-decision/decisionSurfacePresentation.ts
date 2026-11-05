@@ -89,8 +89,9 @@ function roundedEvidenceText(lang: Lang, item: DecisionEvidenceItemV1): string {
 
 function relativeDateLabel(lang: Lang, date: string, baseDate: string): string {
   if (date === baseDate) return adaptiveText(lang, 'today');
-  const current = new Date(`${baseDate}T12:00:00`);
-  const compared = new Date(`${date}T12:00:00`);
+  // Compare civil dates, not elapsed hours across a daylight-saving boundary.
+  const current = new Date(`${baseDate}T12:00:00Z`);
+  const compared = new Date(`${date}T12:00:00Z`);
   if (Number.isFinite(current.getTime()) && compared.getTime() - current.getTime() === 24 * 60 * 60 * 1000) {
     return adaptiveText(lang, 'adaptiveTomorrow');
   }
@@ -195,7 +196,16 @@ function actionPresentation(
   const evidence = relevantEvidence(episode, candidate);
   const readableEvidence = evidence.filter((item) => item.category !== 'joint_evidence');
   const reasonEvidence = readableEvidence.length >= 2 ? readableEvidence : evidence;
-  const baseDate = episode.contextSnapshot?.schedule.date ?? episode.time.asOf.slice(0, 10);
+  let baseDate = episode.contextSnapshot?.schedule.date;
+  if (!baseDate) {
+    try {
+      baseDate = new Intl.DateTimeFormat('en-CA', {
+        timeZone: episode.time.timezone, year: 'numeric', month: '2-digit', day: '2-digit',
+      }).format(new Date(episode.time.asOf));
+    } catch {
+      baseDate = ''; // Unknown zone/date: show explicit dates instead of guessing "today".
+    }
+  }
   const operations = candidate.planPatch.operations.map((operation) => operationChange(lang, operation, baseDate));
   const firstChange = operations[0];
   return {
@@ -291,7 +301,9 @@ export function buildDecisionSurfacePresentation(input: {
   const facts = chooseContextFacts(episode, activeCandidate);
 
   return {
-    question: episode.question.text ?? questionTypeLabel(lang, episode.question.type),
+    question: episode.question.text === 'state_layer' && episode.candidateActions.some(action => action.id === 'state-layer-plan')
+      ? adaptiveText(lang, 'stateLayerPlanQuestion')
+      : episode.question.text ?? questionTypeLabel(lang, episode.question.type),
     contextItems: facts.map((fact) => ({
       id: fact.id,
       label: contextFactLabel(lang, fact),
