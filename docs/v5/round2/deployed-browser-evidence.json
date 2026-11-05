@@ -2,11 +2,11 @@
   "url": "https://questlife-v1-release.vercel.app/",
   "version": {
     "product": "QuestLife V5 candidate",
-    "commit": "de2182e394bce43c8c18738cb1c5581e8571e284",
-    "builtAt": "2026-11-05T16:36:45.000Z",
+    "commit": "c8bfdb48b075f8e12350599240f6e07850809d4a",
+    "builtAt": "2026-11-05T17:09:45.024Z",
     "migration": "shortcut inbox requires manual candidate SQL installation"
   },
-  "startedAt": "2026-11-05T16:46:05.035Z",
+  "startedAt": "2026-11-05T17:16:40.322Z",
   "browser": "156.0.8078.80",
   "device": "Chrome desktop mobile viewport; not a physical iPhone",
   "data": "Fresh anonymous visitor; onboarding skipped; no seeded records",
@@ -95,9 +95,9 @@
       "measurements": [
         {
           "selector": ".v5-page-head",
-          "x": 15,
+          "x": 17,
           "y": 16,
-          "width": 363,
+          "width": 359,
           "height": 49,
           "padding": "0px",
           "radius": "0px",
@@ -107,10 +107,10 @@
         },
         {
           "selector": ".v5-segments",
-          "x": 15,
+          "x": 17,
           "y": 73,
-          "width": 363,
-          "height": 44,
+          "width": 359,
+          "height": 34,
           "padding": "3px",
           "radius": "14px",
           "shadow": "rgba(128, 153, 181, 0.125) 0px 1px 3px 0px inset, rgba(255, 255, 255, 0.8) 0px -1px 0px 0px inset",
@@ -119,9 +119,9 @@
         },
         {
           "selector": ".v5-empty",
-          "x": 15,
-          "y": 129,
-          "width": 363,
+          "x": 17,
+          "y": 119,
+          "width": 359,
           "height": 232.5,
           "padding": "24px 18px",
           "radius": "24px",
@@ -170,7 +170,7 @@
           "x": 14,
           "y": 62,
           "width": 365,
-          "height": 44,
+          "height": 34,
           "padding": "3px",
           "radius": "14px",
           "shadow": "rgba(128, 153, 181, 0.125) 0px 1px 3px 0px inset, rgba(255, 255, 255, 0.8) 0px -1px 0px 0px inset",
@@ -180,7 +180,7 @@
         {
           "selector": ".v5-week",
           "x": 14,
-          "y": 172,
+          "y": 162,
           "width": 365,
           "height": 48,
           "padding": "0px",
@@ -192,9 +192,9 @@
         {
           "selector": ".v5-timeline-card",
           "x": 14,
-          "y": 260.5,
+          "y": 249,
           "width": 365,
-          "height": 359.5,
+          "height": 349,
           "padding": "11px 10px 7px",
           "radius": "22px",
           "shadow": "rgb(255, 255, 255) 0px 1px 1px 0px inset, rgba(255, 255, 255, 0.7) 1px 0px 1px 0px inset, rgba(142, 171, 193, 0.204) 0px -1px 1px 0px inset, rgba(67, 91, 117, 0.125) 0px 9px 20px 0px, rgba(64, 91, 112, 0.063) 0px 2px 4px 0px",
@@ -203,12 +203,12 @@
         },
         {
           "selector": ".v5-unplaced",
-          "x": 14,
-          "y": 632,
-          "width": 365,
-          "height": 68,
-          "padding": "12px 14px",
-          "radius": "20px",
+          "x": 17,
+          "y": 608,
+          "width": 359,
+          "height": 64,
+          "padding": "10px 13px",
+          "radius": "17px",
           "shadow": "rgb(255, 255, 255) 0px 1px 1px 0px inset, rgba(255, 255, 255, 0.7) 1px 0px 1px 0px inset, rgba(142, 171, 193, 0.204) 0px -1px 1px 0px inset, rgba(67, 91, 117, 0.125) 0px 9px 20px 0px, rgba(64, 91, 112, 0.063) 0px 2px 4px 0px",
           "background": "linear-gradient(125deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.33) 24%, rgba(237, 244, 250, 0.21) 62%, rgba(255, 255, 255, 0.57))",
           "blur": "none"
@@ -239,10 +239,10 @@
       "measurements": [
         {
           "selector": ".v5-analysis-top",
-          "x": 15,
+          "x": 18,
           "y": 19,
-          "width": 363,
-          "height": 44,
+          "width": 357,
+          "height": 40,
           "padding": "0px",
           "radius": "0px",
           "shadow": "none",
@@ -251,20 +251,20 @@
         },
         {
           "selector": ".v5-segments",
-          "x": 14,
-          "y": 73,
-          "width": 365,
-          "height": 44,
-          "padding": "3px",
+          "x": 20,
+          "y": 67,
+          "width": 353,
+          "height": 32,
+          "padding": "0px",
           "radius": "14px",
-          "shadow": "rgba(128, 153, 181, 0.125) 0px 1px 3px 0px inset, rgba(255, 255, 255, 0.8) 0px -1px 0px 0px inset",
+          "shadow": "none",
           "background": "none",
           "blur": "none"
         },
         {
           "selector": ".v5-chart-panel",
           "x": 14,
-          "y": 129,
+          "y": 111,
           "width": 365,
           "height": 324,
           "padding": "9px 10px 7px",
@@ -276,7 +276,7 @@
         {
           "selector": ".v5-summary",
           "x": 14,
-          "y": 461,
+          "y": 443,
           "width": 365,
           "height": 67,
           "padding": "11px 9px",
@@ -288,7 +288,7 @@
         {
           "selector": ".v5-insight",
           "x": 14,
-          "y": 537,
+          "y": 519,
           "width": 365,
           "height": 132,
           "padding": "10px 12px",
@@ -300,7 +300,7 @@
         {
           "selector": ".v5-analysis-tools",
           "x": 16,
-          "y": 678,
+          "y": 660,
           "width": 361,
           "height": 67,
           "padding": "0px",
@@ -331,14 +331,14 @@
       "reference": "reference-Personal-first.png",
       "overflow": false,
       "containsQALabel": false,
-      "body": "你的 QuestLife\n\n账号尚未连接\n查看与管理数据来源\n\n账号\n记录与同步\n账号同步\n连接账号后跨设备同步\n未连接 ›\n记录与数据\n查看来源、导出与管理\n管理 ›\n健康与设备\nApple 健康\n\n通过 iOS 快捷指令同步睡眠、步数、静息心率与 HRV。健康上传需要独立同意。\n\n本设备尚未收到快捷指令健康数据\n\n健康云同步\n查看授权与同步状态\n管理 ›\n日历与手表\n五项快捷指令设置\n›\n偏好与隐私\n外观与语言\n浅色 ›\n通知与提醒\n管理 ›\n隐私与数据控制\n›\nQuestLife · 关于与版本 ›\n今日\n目标\n日程\n分析\n个人",
+      "body": "你的 QuestLife\n\n账号尚未连接\n查看与管理数据来源\n\n账号\n记录与同步\n账号同步\n连接账号后跨设备同步\n未连接 ›\n记录与数据\n导出、导入与恢复\n管理 ›\n健康与设备\nApple 健康\n\n通过 iOS 快捷指令同步睡眠、步数、静息心率与 HRV。健康上传需要独立同意。\n\n本设备尚未收到快捷指令健康数据\n\n健康云同步\n查看授权与同步状态\n管理 ›\n日历与手表\n五项快捷指令设置\n›\n偏好与隐私\n外观与语言\n浅色 ›\n通知与提醒\n管理 ›\n隐私与数据控制\n›\nQuestLife · 关于与版本 ›\n今日\n目标\n日程\n分析\n个人",
       "measurements": [
         {
           "selector": ".v5-profile",
           "x": 14,
           "y": 19,
           "width": 365,
-          "height": 94,
+          "height": 88,
           "padding": "15px",
           "radius": "23px",
           "shadow": "rgb(255, 255, 255) 0px 1px 1px 0px inset, rgba(255, 255, 255, 0.7) 1px 0px 1px 0px inset, rgba(142, 171, 193, 0.204) 0px -1px 1px 0px inset, rgba(67, 91, 117, 0.125) 0px 9px 20px 0px, rgba(64, 91, 112, 0.063) 0px 2px 4px 0px",
@@ -348,7 +348,7 @@
         {
           "selector": ".v5-personal-group",
           "x": 14,
-          "y": 152.5,
+          "y": 146.5,
           "width": 365,
           "height": 94,
           "padding": "0px 14px",
@@ -360,7 +360,7 @@
         {
           "selector": ".v5-health",
           "x": 14,
-          "y": 286,
+          "y": 280,
           "width": 365,
           "height": 221.5,
           "padding": "12px 15px",
@@ -392,7 +392,7 @@
     },
     {
       "type": "warning",
-      "message": "GoTrueClient@sb-gttcoocfkqwvsqfwxpyo-auth-token:0 (2.116.0) 2026-11-05T16:46:04.582Z The \"lock\" option is deprecated and will be removed in v3. The client now coordinates session refreshes without a lock, so most apps can drop the option. See https://github.com/supabase/supabase-js/blob/master/packages/core/auth-js/migrations/lockless-coordination.md"
+      "message": "GoTrueClient@sb-gttcoocfkqwvsqfwxpyo-auth-token:0 (2.116.0) 2026-11-05T17:16:39.890Z The \"lock\" option is deprecated and will be removed in v3. The client now coordinates session refreshes without a lock, so most apps can drop the option. See https://github.com/supabase/supabase-js/blob/master/packages/core/auth-js/migrations/lockless-coordination.md"
     },
     {
       "type": "warning",
@@ -424,10 +424,17 @@
     "screenshot": "after-Today-dark-empty.png",
     "reference": "No original dark frame exists. No false pixel comparison."
   },
+  "accountEntry": {
+    "url": "https://questlife-v1-release.vercel.app/?v5_section=account",
+    "emailInputVisible": true,
+    "submitted": false,
+    "overflow": false,
+    "closedBackToPersonal": true
+  },
   "rollback": {
     "url": "https://questlife-v1-release.vercel.app/?v5_ui=0",
     "v5ScheduleVisible": false,
-    "body": "2026-11-06 · 周五\n可视化你的时间和精力分配\n添加日程\n日\n周\n月\n年\n通过快捷指令同步日历\n现在 / 下一步\n03:46\n跳到现在\n当前日程: 当前没有安排\n可以添加一个轻任务。\n下一个日程: 暂无下一项\n今天还没有日程安排\n稍后日程\n今天还没有日程安排\n6:00\n7:00\n8:00\n9:00\n10:00\n11:00\n12:00\n13:00\n14:00\n15:00\n16:00\n17:00\n18:00\n19:00\n20:00\n21:00\n22:00\n23:00\n24:00\n今日\n目标\n日程\n洞察\n设置"
+    "body": "2026-11-06 · 周五\n可视化你的时间和精力分配\n添加日程\n日\n周\n月\n年\n通过快捷指令同步日历\n现在 / 下一步\n04:16\n跳到现在\n当前日程: 当前没有安排\n可以添加一个轻任务。\n下一个日程: 暂无下一项\n今天还没有日程安排\n稍后日程\n今天还没有日程安排\n6:00\n7:00\n8:00\n9:00\n10:00\n11:00\n12:00\n13:00\n14:00\n15:00\n16:00\n17:00\n18:00\n19:00\n20:00\n21:00\n22:00\n23:00\n24:00\n今日\n目标\n日程\n洞察\n设置"
   },
   "desktop": {
     "width": 1280,
@@ -435,5 +442,5 @@
     "overflow": false,
     "screenshot": "after-Schedule-desktop.png"
   },
-  "finishedAt": "2026-11-05T16:46:12.601Z"
+  "finishedAt": "2026-11-05T17:16:48.455Z"
 }

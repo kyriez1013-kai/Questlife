@@ -1,9 +1,8 @@
-COMMAND: node docs/v5/round2/capture-review.cjs
 {
   "version": {
     "product": "QuestLife V5 candidate",
-    "commit": "de2182e394bce43c8c18738cb1c5581e8571e284",
-    "builtAt": "2026-11-05T16:36:45.000Z",
+    "commit": "c8bfdb48b075f8e12350599240f6e07850809d4a",
+    "builtAt": "2026-11-05T17:09:45.024Z",
     "migration": "shortcut inbox requires manual candidate SQL installation"
   },
   "pages": [
@@ -36,7 +35,7 @@ COMMAND: node docs/v5/round2/capture-review.cjs
   "rollback": {
     "url": "https://questlife-v1-release.vercel.app/?v5_ui=0",
     "v5ScheduleVisible": false,
-    "body": "2026-11-06 · 周五\n可视化你的时间和精力分配\n添加日程\n日\n周\n月\n年\n通过快捷指令同步日历\n现在 / 下一步\n03:46\n跳到现在\n当前日程: 当前没有安排\n可以添加一个轻任务。\n下一个日程: 暂无下一项\n今天还没有日程安排\n稍后日程\n今天还没有日程安排\n6:00\n7:00\n8:00\n9:00\n10:00\n11:00\n12:00\n13:00\n14:00\n15:00\n16:00\n17:00\n18:00\n19:00\n20:00\n21:00\n22:00\n23:00\n24:00\n今日\n目标\n日程\n洞察\n设置"
+    "body": "2026-11-06 · 周五\n可视化你的时间和精力分配\n添加日程\n日\n周\n月\n年\n通过快捷指令同步日历\n现在 / 下一步\n04:16\n跳到现在\n当前日程: 当前没有安排\n可以添加一个轻任务。\n下一个日程: 暂无下一项\n今天还没有日程安排\n稍后日程\n今天还没有日程安排\n6:00\n7:00\n8:00\n9:00\n10:00\n11:00\n12:00\n13:00\n14:00\n15:00\n16:00\n17:00\n18:00\n19:00\n20:00\n21:00\n22:00\n23:00\n24:00\n今日\n目标\n日程\n洞察\n设置"
   },
   "errors": [],
   "warnings": [
@@ -46,7 +45,7 @@ COMMAND: node docs/v5/round2/capture-review.cjs
     },
     {
       "type": "warning",
-      "message": "GoTrueClient@sb-gttcoocfkqwvsqfwxpyo-auth-token:0 (2.116.0) 2026-11-05T16:46:04.582Z The \"lock\" option is deprecated and will be removed in v3. The client now coordinates session refreshes without a lock, so most apps can drop the option. See https://github.com/supabase/supabase-js/blob/master/packages/core/auth-js/migrations/lockless-coordination.md"
+      "message": "GoTrueClient@sb-gttcoocfkqwvsqfwxpyo-auth-token:0 (2.116.0) 2026-11-05T17:16:39.890Z The \"lock\" option is deprecated and will be removed in v3. The client now coordinates session refreshes without a lock, so most apps can drop the option. See https://github.com/supabase/supabase-js/blob/master/packages/core/auth-js/migrations/lockless-coordination.md"
     },
     {
       "type": "warning",
@@ -74,5 +73,3 @@ COMMAND: node docs/v5/round2/capture-review.cjs
     }
   ]
 }
-
-EXIT 0

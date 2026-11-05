@@ -1,0 +1,13 @@
+{
+  "at": "2026-11-05T17:24:42.016Z",
+  "original": "/Users/kyrie/Documents/Codex Questlife/QuestLife/.git/worktrees/questlife-frontend-v2/index",
+  "attemptedBackup": "/Users/kyrie/Documents/Codex Questlife/QuestLife/.git/worktrees/questlife-frontend-v2/index.pre-v5-round2-cloud-backup-20261106",
+  "attemptedBackupPresent": false,
+  "originalCloudIndexPreservation": "UNVERIFIED: rename returned without error, but the requested backup path is absent on later inspection; no delete was requested",
+  "recoveredBackup": "/var/folders/95/tb247_tj4wzbw6lw6c4gqq4m0000gn/T/questlife-v5-round2-git-I1Z3MK/index.recovered-c8bfdb4",
+  "recoveredIndexSha256": "14c9a9b8d78b6c03bb63da55e37f0b01748054b732106de53b85e4c61232c93a",
+  "firstStatusAfterCopy": "failed: index.lock write error: Operation timed out",
+  "nextOrdinaryStatus": "exit 0",
+  "currentFlags": "-rw-r--r--@ 1 kyrie  staff  hidden 181273 Nov  6 04:22 /Users/kyrie/Documents/Codex Questlife/QuestLife/.git/worktrees/questlife-frontend-v2/index",
+  "cloudSettingsChanged": false
+}

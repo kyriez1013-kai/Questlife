@@ -58,6 +58,13 @@ async function compare(reference,actual,name){
     await page.getByRole('tab',{name:'今日',exact:true}).click();
     await page.screenshot({path:path.join(out,'after-Today-dark-empty.png')});
     evidence.dark={source:'Real Personal appearance control',screenshot:'after-Today-dark-empty.png',reference:'No original dark frame exists. No false pixel comparison.'};
+    const account=await context.newPage();await account.goto(url+'?v5_section=account',{waitUntil:'domcontentloaded'});
+    const email=account.locator('input[inputmode="email"],input[type="email"]').first();
+    await email.waitFor({state:'visible'});
+    evidence.accountEntry={url:account.url(),emailInputVisible:true,submitted:false,overflow:await account.evaluate(()=>document.documentElement.scrollWidth>innerWidth)};
+    await account.getByRole('button',{name:'关闭',exact:true}).click();
+    evidence.accountEntry.closedBackToPersonal=await account.getByTestId('v5-personal').isVisible();
+    await account.close();
     const legacy=await context.newPage();await legacy.goto(url+'?v5_ui=0',{waitUntil:'domcontentloaded'});await legacy.getByRole('tab',{name:'日程',exact:true}).click();
     evidence.rollback={url:legacy.url(),v5ScheduleVisible:await legacy.getByTestId('v5-schedule').isVisible(),body:(await legacy.locator('body').innerText()).slice(0,1000)};
     await page.setViewportSize({width:1280,height:900});await page.getByRole('tab',{name:'日程',exact:true}).click();await page.screenshot({path:path.join(out,'after-Schedule-desktop.png')});

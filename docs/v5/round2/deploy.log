@@ -6,9 +6,9 @@
 > git branch --show-current
 feature/v5-ui
 > git rev-parse HEAD
-de2182e394bce43c8c18738cb1c5581e8571e284
+c8bfdb48b075f8e12350599240f6e07850809d4a
 > vercel project inspect questlife-v1-release --scope kyrie-z-s-projects --non-interactive
-> Found Project kyrie-z-s-projects/questlife-v1-release [2s]
+> Found Project kyrie-z-s-projects/questlife-v1-release [610ms]
 
   General
 
@@ -35,21 +35,11 @@ Verified candidate-only Supabase binding.
 > expo export --platform web
 
 Starting Metro Bundler
-| (node:90647) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (node:91622) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 | (Use `node --trace-warnings ...` to show where the warning was created)
-| (node:90651) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (node:91623) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 | (Use `node --trace-warnings ...` to show where the warning was created)
-| (node:90648) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
-| (Use `node --trace-warnings ...` to show where the warning was created)
-| (node:90652) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
-| (Use `node --trace-warnings ...` to show where the warning was created)
-| (node:90649) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
-| (Use `node --trace-warnings ...` to show where the warning was created)
-| (node:90653) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
-| (Use `node --trace-warnings ...` to show where the warning was created)
-| (node:90650) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
-| (Use `node --trace-warnings ...` to show where the warning was created)
-Web Bundled 1273ms index.ts (1405 modules)
+Web Bundled 763ms index.ts (1405 modules)
 
 › Assets (11):
 node_modules/@react-navigation/elements/lib/module/assets/back-icon-mask.0a328cd9c1afd0afe8e3b1ec5165b1b4.png (653 B)
@@ -64,7 +54,7 @@ _expo/static/css/insights-v3-c8ad1786d07006a10a70fe24231fc9a8.css (33 kB)
 _expo/static/css/personal-terminal-2069b8d7748b6c54c32d4ebedc8412d6.css (95.7 kB)
 _expo/static/css/personal-terminal-workspace-b74e7cca97f14b522eb52e446b8d07e9.css (50.9 kB)
 _expo/static/css/quant-terminal-f7a9b89554b504c1f7a1b063fe6a5bfc.css (11 kB)
-_expo/static/css/round2-d14853c00a51f4b2eb0697f7b1e27467.css (16.4 kB)
+_expo/static/css/round2-8429f8c2b1484e09311f343f0759d1a3.css (17.7 kB)
 _expo/static/css/state-layer-bb0d8709b2767865fe9cd774f9e0e7d5.css (3.95 kB)
 _expo/static/css/theme-overrides-de918ffa78216cd85c89cd2f661df563.css (7.58 kB)
 _expo/static/css/v11-components-b2e7432f43338f39e735c686df7401e7.css (4.23 kB)
@@ -80,7 +70,7 @@ _expo/static/js/web/driver_analysis_compact-3823af02640023c00124e886ba2124a8.js 
 _expo/static/js/web/forming_history_analysis_v1-6407c741959774a3d67eeddbde538db6.js (3.85 kB)
 _expo/static/js/web/forming_history_full-e194b7b5e4f90389f110bbec6467dd90.js (11.5 kB)
 _expo/static/js/web/goal_full-a8edff24dfba12216d11d88bbdce52e0.js (27.3 kB)
-_expo/static/js/web/index-05594c5013f5dd28302e69a7d275e2ba.js (4.74 MB)
+_expo/static/js/web/index-89a55e51ac008c34d42c1aed5c51603a.js (4.74 MB)
 _expo/static/js/web/InsightsV3Screen-3413c468be9951a99ceb0f4d20ecdc71.js (35.9 kB)
 _expo/static/js/web/lightweight-charts-bcd07c594b149e8ddde136cba3c09c1c.js (201 kB)
 _expo/static/js/web/mature_market_analysis_v1-f1ef034b224446becfee45aff012a403.js (1.18 MB)
@@ -109,7 +99,7 @@ index.html (5.16 kB)
 metadata.json (49 B)
 
 Exported: dist
-> git ls-tree -r --name-only de2182e394bce43c8c18738cb1c5581e8571e284 -- src api public assets plugins index.ts App.tsx App.web.tsx package.json package-lock.json app.json tsconfig.json react-native.config.js vercel.json .vercelignore scripts/patch-metro-image-input.cjs
+> git ls-tree -r --name-only c8bfdb48b075f8e12350599240f6e07850809d4a -- src api public assets plugins index.ts App.tsx App.web.tsx package.json package-lock.json app.json tsconfig.json react-native.config.js vercel.json .vercelignore scripts/patch-metro-image-input.cjs
 .vercelignore
 App.tsx
 App.web.tsx
@@ -728,11 +718,11 @@ src/v5/stateEvidence.ts
 src/v5/v5.css
 tsconfig.json
 vercel.json
-> git archive --format=tar --output=/var/folders/95/tb247_tj4wzbw6lw6c4gqq4m0000gn/T/questlife-v5-deploy-cApmpd/committed.tar de2182e394bce43c8c18738cb1c5581e8571e284 -- src api public assets plugins index.ts App.tsx App.web.tsx package.json package-lock.json app.json tsconfig.json react-native.config.js vercel.json .vercelignore scripts/patch-metro-image-input.cjs
-> tar -xf /var/folders/95/tb247_tj4wzbw6lw6c4gqq4m0000gn/T/questlife-v5-deploy-cApmpd/committed.tar -C /var/folders/95/tb247_tj4wzbw6lw6c4gqq4m0000gn/T/questlife-v5-deploy-cApmpd/source
+> git archive --format=tar --output=/var/folders/95/tb247_tj4wzbw6lw6c4gqq4m0000gn/T/questlife-v5-deploy-ta415Z/committed.tar c8bfdb48b075f8e12350599240f6e07850809d4a -- src api public assets plugins index.ts App.tsx App.web.tsx package.json package-lock.json app.json tsconfig.json react-native.config.js vercel.json .vercelignore scripts/patch-metro-image-input.cjs
+> tar -xf /var/folders/95/tb247_tj4wzbw6lw6c4gqq4m0000gn/T/questlife-v5-deploy-ta415Z/committed.tar -C /var/folders/95/tb247_tj4wzbw6lw6c4gqq4m0000gn/T/questlife-v5-deploy-ta415Z/source
 > vercel project inspect --scope kyrie-z-s-projects --non-interactive
 Retrieving project…
-> Found Project kyrie-z-s-projects/questlife-v1-release [1s]
+> Found Project kyrie-z-s-projects/questlife-v1-release [387ms]
 
   General
 
@@ -750,21 +740,21 @@ Retrieving project…
     Output Directory		`public` if it exists, or `.`
     Install Command		`yarn install`, `pnpm install`, `npm install`, or `bun install`
 
-> vercel deploy /var/folders/95/tb247_tj4wzbw6lw6c4gqq4m0000gn/T/questlife-v5-deploy-cApmpd/source --prod --yes --project prj_fVGFV7DzxfkLqbBpSo8P7NH9oqxX --scope kyrie-z-s-projects --meta sourceCommit=de2182e394bce43c8c18738cb1c5581e8571e284
+> vercel deploy /var/folders/95/tb247_tj4wzbw6lw6c4gqq4m0000gn/T/questlife-v5-deploy-ta415Z/source --prod --yes --project prj_fVGFV7DzxfkLqbBpSo8P7NH9oqxX --scope kyrie-z-s-projects --meta sourceCommit=c8bfdb48b075f8e12350599240f6e07850809d4a
 {
   "status": "ok",
   "deployment": {
-    "id": "dpl_7xCKZjtyDn5vZX5EW4dtWmXPzDZq",
-    "url": "https://questlife-v1-release-dmk3pz8s9-kyrie-z-s-projects.vercel.app",
-    "inspectorUrl": "https://vercel.com/kyrie-z-s-projects/questlife-v1-release/7xCKZjtyDn5vZX5EW4dtWmXPzDZq",
+    "id": "dpl_6XumeScWJTiYgo58DK86Vx1RgVNK",
+    "url": "https://questlife-v1-release-i6vbj0to9-kyrie-z-s-projects.vercel.app",
+    "inspectorUrl": "https://vercel.com/kyrie-z-s-projects/questlife-v1-release/6XumeScWJTiYgo58DK86Vx1RgVNK",
     "readyState": "READY",
     "target": "production",
-    "deploymentApiUrl": "https://api.vercel.com/v13/deployments/dpl_7xCKZjtyDn5vZX5EW4dtWmXPzDZq"
+    "deploymentApiUrl": "https://api.vercel.com/v13/deployments/dpl_6XumeScWJTiYgo58DK86Vx1RgVNK"
   },
-  "message": "Deployment questlife-v1-release-dmk3pz8s9-kyrie-z-s-projects.vercel.app ready.",
+  "message": "Deployment questlife-v1-release-i6vbj0to9-kyrie-z-s-projects.vercel.app ready.",
   "next": [
     {
-      "command": "vercel inspect questlife-v1-release-dmk3pz8s9-kyrie-z-s-projects.vercel.app --scope kyrie-z-s-projects",
+      "command": "vercel inspect questlife-v1-release-i6vbj0to9-kyrie-z-s-projects.vercel.app --scope kyrie-z-s-projects",
       "when": "Inspect deployment"
     },
     {
@@ -775,20 +765,20 @@ Retrieving project…
 }
 Retrieving project…
 Deploying kyrie-z-s-projects/questlife-v1-release
-Uploading [--------------------] (0.0B/198.9KB)
-Uploading [=====---------------] (51.2KB/198.9KB)
-Uploading [==========----------] (102.9KB/198.9KB)
-Uploading [===============-----] (150.9KB/198.9KB)
-Uploading [====================] (198.9KB/198.9KB)
-  Inspect     https://vercel.com/kyrie-z-s-projects/questlife-v1-release/7xCKZjtyDn5vZX5EW4dtWmXPzDZq
-▲ Production  https://questlife-v1-release-dmk3pz8s9-kyrie-z-s-projects.vercel.app
-Building…
+Uploading [--------------------] (0.0B/44.7KB)
+Uploading [=======-------------] (16.0KB/44.7KB)
+Uploading [==========----------] (24.5KB/44.7KB)
+Uploading [==================--] (40.5KB/44.7KB)
+Uploading [====================] (44.7KB/44.7KB)
+  Inspect     https://vercel.com/kyrie-z-s-projects/questlife-v1-release/6XumeScWJTiYgo58DK86Vx1RgVNK
+▲ Production  https://questlife-v1-release-i6vbj0to9-kyrie-z-s-projects.vercel.app
 Building…
 Running build in Washington, D.C., USA (East) – iad1
 Build machine configuration: 2 cores, 8 GB
 Retrieving list of deployment files...
+Retrieving list of deployment files...
 Downloading 619 deployment files...
-Restored build cache from previous deployment (4JpfEL8A1itwe1uN5CPHuSZkL9xK)
+Restored build cache from previous deployment (7xCKZjtyDn5vZX5EW4dtWmXPzDZq)
 Running "vercel build"
 Vercel CLI 65.11.0
 Installing dependencies...
@@ -803,37 +793,38 @@ Starting Metro Bundler
 Web ./index.ts ▓░░░░░░░░░░░░░░░  9.0% ( 23/163)
 Web ./index.ts ▓░░░░░░░░░░░░░░░  9.0% ( 36/214)
 Web ./index.ts ▓░░░░░░░░░░░░░░░  9.0% ( 42/288)
-Web ./index.ts ▓░░░░░░░░░░░░░░░  9.0% ( 54/322)
-Web ./index.ts ▓░░░░░░░░░░░░░░░  9.4% (128/417)
-Web ./index.ts ▓▓░░░░░░░░░░░░░░ 15.2% (190/488)
-Web ./index.ts ▓▓▓░░░░░░░░░░░░░ 19.8% (239/537)
-Web ./index.ts ▓▓▓░░░░░░░░░░░░░ 23.6% (265/546)
-Web ./index.ts ▓▓▓▓░░░░░░░░░░░░ 27.3% (293/561)
-Web ./index.ts ▓▓▓▓▓░░░░░░░░░░░ 32.9% (331/577)
-Web ./index.ts ▓▓▓▓▓░░░░░░░░░░░ 33.6% (349/610)
-Web ./index.ts ▓▓▓▓▓▓░░░░░░░░░░ 38.9% (425/688)
-Web ./index.ts ▓▓▓▓▓▓░░░░░░░░░░ 40.4% (500/835)
+Web ./index.ts ▓░░░░░░░░░░░░░░░  9.0% ( 51/319)
+Web ./index.ts ▓░░░░░░░░░░░░░░░  9.0% (113/409)
+Web ./index.ts ▓▓░░░░░░░░░░░░░░ 13.2% (177/488)
+Web ./index.ts ▓▓░░░░░░░░░░░░░░ 16.5% (207/509)
+Web ./index.ts ▓▓▓░░░░░░░░░░░░░ 21.8% (255/546)
+Web ./index.ts ▓▓▓░░░░░░░░░░░░░ 24.1% (269/551)
+Web ./index.ts ▓▓▓▓░░░░░░░░░░░░ 29.1% (303/562)
+Web ./index.ts ▓▓▓▓▓░░░░░░░░░░░ 33.6% (350/610)
+Web ./index.ts ▓▓▓▓▓▓░░░░░░░░░░ 38.9% (431/695)
+Web ./index.ts ▓▓▓▓▓▓░░░░░░░░░░ 40.4% (496/830)
 Web ./index.ts ▓▓▓▓▓▓░░░░░░░░░░ 40.4% (506/837)
-Web ./index.ts ▓▓▓▓▓▓░░░░░░░░░░ 41.2% (553/862)
-Web ./index.ts ▓▓▓▓▓▓▓░░░░░░░░░ 46.3% (596/876)
-Web ./index.ts ▓▓▓▓▓▓▓░░░░░░░░░ 48.7% (618/887)
-Web ./index.ts ▓▓▓▓▓▓▓▓░░░░░░░░ 53.0% (711/977)
-Web ./index.ts ▓▓▓▓▓▓▓▓▓░░░░░░░ 61.7% ( 816/1039)
+Web ./index.ts ▓▓▓▓▓▓░░░░░░░░░░ 40.4% (542/857)
+Web ./index.ts ▓▓▓▓▓▓▓░░░░░░░░░ 45.1% (588/876)
+Web ./index.ts ▓▓▓▓▓▓▓░░░░░░░░░ 48.4% (612/880)
+Web ./index.ts ▓▓▓▓▓▓▓░░░░░░░░░ 49.2% (656/971)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓░░░░░░░ 56.9% ( 755/1009)
 Web ./index.ts ▓▓▓▓▓▓▓▓▓░░░░░░░ 62.0% ( 818/1039)
-Web ./index.ts ▓▓▓▓▓▓▓▓▓▓░░░░░░ 62.9% ( 873/1104)
-Web ./index.ts ▓▓▓▓▓▓▓▓▓▓░░░░░░ 64.3% ( 889/1109)
-Web ./index.ts ▓▓▓▓▓▓▓▓▓▓░░░░░░ 64.7% ( 892/1109)
-Web ./index.ts ▓▓▓▓▓▓▓▓▓▓░░░░░░ 65.9% ( 900/1109)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓░░░░░░ 62.6% ( 869/1103)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓░░░░░░ 64.1% ( 888/1109)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓░░░░░░ 64.5% ( 891/1109)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓░░░░░░ 65.6% ( 898/1109)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓░░░░░░ 68.2% ( 916/1109)
 Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 68.8% ( 920/1109)
 Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 69.4% ( 924/1109)
-Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 74.0% ( 973/1131)
-Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 78.7% (1043/1185)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 75.6% ( 993/1143)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 78.7% (1047/1185)
 Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 83.6% (1109/1213)
-Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 89.2% (1170/1289)
-Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 89.2% (1223/1328)
-Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 93.6% (1285/1328)
-Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 97.8% (1361/1394)
-Web Bundled 133751ms index.ts (1405 modules)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 89.4% (1164/1238)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 89.4% (1223/1328)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 93.8% (1286/1328)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 97.8% (1346/1392)
+Web Bundled 138780ms index.ts (1405 modules)
 › Assets (11):
 node_modules/@react-navigation/elements/lib/module/assets/back-icon-mask.0a328cd9c1afd0afe8e3b1ec5165b1b4.png (653 B)
 node_modules/@react-navigation/elements/lib/module/assets/back-icon.35ba0eaec5a4f5ed12ca16fabeae451d.png (207 B)
@@ -846,7 +837,7 @@ _expo/static/css/insights-v3-c8ad1786d07006a10a70fe24231fc9a8.css (33 kB)
 _expo/static/css/personal-terminal-2069b8d7748b6c54c32d4ebedc8412d6.css (95.7 kB)
 _expo/static/css/personal-terminal-workspace-b74e7cca97f14b522eb52e446b8d07e9.css (50.9 kB)
 _expo/static/css/quant-terminal-f7a9b89554b504c1f7a1b063fe6a5bfc.css (11 kB)
-_expo/static/css/round2-d14853c00a51f4b2eb0697f7b1e27467.css (16.4 kB)
+_expo/static/css/round2-8429f8c2b1484e09311f343f0759d1a3.css (17.7 kB)
 _expo/static/css/state-layer-bb0d8709b2767865fe9cd774f9e0e7d5.css (3.95 kB)
 _expo/static/css/theme-overrides-de918ffa78216cd85c89cd2f661df563.css (7.58 kB)
 _expo/static/css/v11-components-b2e7432f43338f39e735c686df7401e7.css (4.23 kB)
@@ -862,7 +853,7 @@ _expo/static/js/web/driver_analysis_compact-3823af02640023c00124e886ba2124a8.js 
 _expo/static/js/web/forming_history_analysis_v1-6407c741959774a3d67eeddbde538db6.js (3.85 kB)
 _expo/static/js/web/forming_history_full-e194b7b5e4f90389f110bbec6467dd90.js (11.5 kB)
 _expo/static/js/web/goal_full-a8edff24dfba12216d11d88bbdce52e0.js (27.3 kB)
-_expo/static/js/web/index-9eaa310950fb17124839deca0e42bdc3.js (4.74 MB)
+_expo/static/js/web/index-a7bc146f392548e24dbab26a0fee3b67.js (4.74 MB)
 _expo/static/js/web/InsightsV3Screen-3413c468be9951a99ceb0f4d20ecdc71.js (35.9 kB)
 _expo/static/js/web/lightweight-charts-bcd07c594b149e8ddde136cba3c09c1c.js (201 kB)
 _expo/static/js/web/mature_market_analysis_v1-f1ef034b224446becfee45aff012a403.js (1.18 MB)
@@ -901,21 +892,21 @@ Build Completed in /vercel/output [3m]
 Deploying outputs...
 Deployment completed
 Creating build cache...
-[2K[1A[2K[G▲ Production  https://questlife-v1-release-dmk3pz8s9-kyrie-z-s-projects.vercel.app
+[2K[1A[2K[G▲ Production  https://questlife-v1-release-i6vbj0to9-kyrie-z-s-projects.vercel.app
 Completing…
 ▲ Aliased     https://questlife-v1-release.vercel.app
-> vercel inspect https://questlife-v1-release-dmk3pz8s9-kyrie-z-s-projects.vercel.app --scope kyrie-z-s-projects
-Fetching deployment "questlife-v1-release-dmk3pz8s9-kyrie-z-s-projects.vercel.app" in kyrie-z-s-projects
-> Fetched deployment "questlife-v1-release-dmk3pz8s9-kyrie-z-s-projects.vercel.app" in kyrie-z-s-projects [380ms]
+> vercel inspect https://questlife-v1-release-i6vbj0to9-kyrie-z-s-projects.vercel.app --scope kyrie-z-s-projects
+Fetching deployment "questlife-v1-release-i6vbj0to9-kyrie-z-s-projects.vercel.app" in kyrie-z-s-projects
+> Fetched deployment "questlife-v1-release-i6vbj0to9-kyrie-z-s-projects.vercel.app" in kyrie-z-s-projects [432ms]
 
   General
 
-    id		dpl_7xCKZjtyDn5vZX5EW4dtWmXPzDZq
+    id		dpl_6XumeScWJTiYgo58DK86Vx1RgVNK
     name	questlife-v1-release
     target	production
     status	● Ready
-    url		https://questlife-v1-release-dmk3pz8s9-kyrie-z-s-projects.vercel.app
-    created	Fri Nov 06 2026 03:36:53 GMT+1100 (Australian Eastern Daylight Time) [3m ago]
+    url		https://questlife-v1-release-i6vbj0to9-kyrie-z-s-projects.vercel.app
+    created	Fri Nov 06 2026 04:09:51 GMT+1100 (Australian Eastern Daylight Time) [3m ago]
 
 
   Aliases
@@ -937,12 +928,12 @@ Fetching deployment "questlife-v1-release-dmk3pz8s9-kyrie-z-s-projects.vercel.ap
 
 {
   "product": "QuestLife V5 candidate",
-  "commit": "de2182e394bce43c8c18738cb1c5581e8571e284",
-  "builtAt": "2026-11-05T16:36:45.000Z",
+  "commit": "c8bfdb48b075f8e12350599240f6e07850809d4a",
+  "builtAt": "2026-11-05T17:09:45.024Z",
   "migration": "shortcut inbox requires manual candidate SQL installation",
   "url": "https://questlife-v1-release.vercel.app",
-  "deployment": "https://questlife-v1-release-dmk3pz8s9-kyrie-z-s-projects.vercel.app",
-  "deploymentId": "dpl_7xCKZjtyDn5vZX5EW4dtWmXPzDZq",
-  "uploadManifest": "/var/folders/95/tb247_tj4wzbw6lw6c4gqq4m0000gn/T/questlife-v5-deploy-cApmpd/upload-manifest.txt"
+  "deployment": "https://questlife-v1-release-i6vbj0to9-kyrie-z-s-projects.vercel.app",
+  "deploymentId": "dpl_6XumeScWJTiYgo58DK86Vx1RgVNK",
+  "uploadManifest": "/var/folders/95/tb247_tj4wzbw6lw6c4gqq4m0000gn/T/questlife-v5-deploy-ta415Z/upload-manifest.txt"
 }
-Receipt: /var/folders/95/tb247_tj4wzbw6lw6c4gqq4m0000gn/T/questlife-v5-deploy-cApmpd/result.json
+Receipt: /var/folders/95/tb247_tj4wzbw6lw6c4gqq4m0000gn/T/questlife-v5-deploy-ta415Z/result.json
