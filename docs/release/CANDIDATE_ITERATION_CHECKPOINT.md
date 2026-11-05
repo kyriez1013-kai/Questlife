@@ -3,6 +3,66 @@
 Updated: 2026-11-05, Australia/Sydney. Autonomous candidate improvement requested;
 commercial readiness is the goal, not an acceptance claim.
 
+## Local Calendar read safety, November 5 15:51 Sydney
+
+Local-only commit `6ebe894` follows the current hosted candidate. No Preview,
+Production, native package or device was updated in this batch. The review URL,
+bundle and screenshots in the next section still represent `a965655`.
+
+- Reproduced five failures in the existing CalendarService using an isolated
+  memory repository and OS-driver doubles: revoked permission during a read
+  still returned events/reconnected; a permission check retained a live
+  connection; disconnect and newer refreshes silently returned stale results;
+  direct reads never rechecked permission. One existing empty/error case passed.
+- Reads now recheck OS permission and the existing connection revision before
+  exposing results. Obsolete reads explicitly reject as superseded. Sync does
+  not return an ignored snapshot as success, nor let a stale failure overwrite
+  a newer result. Current failures are recorded through the existing repository.
+- Revocation invalidates the connection and active export mappings, retaining
+  last-read provenance, selected calendars, exact owned-event mappings and
+  pending operations. It never writes/deletes a system Calendar event. Repeated
+  denial is idempotent; explicit successful reconnection clears the error.
+- The normal foreground integration no longer replaces a permission error or
+  cancelled read with a generic failure. Native Settings already exposes the
+  permission state, retained timestamps, connection/retry actions and errors.
+  No UI redesign, new schema, sync system, OS prompt or real source data access.
+
+Evidence under `/Users/kyrie/dev/questlife-review-20261105/`:
+
+- `2026-11-05T04-45-17-270Z-calendar-read-before.log`: 5/6 failures before edits.
+- `2026-11-05T04-50-15-258Z-calendar-device-regressions-final.log`: 134/134
+  fixtures each in UTC, Asia/Shanghai and America/New_York (402 executions,
+  not 402 distinct scenarios). Includes nine new read-safety checks and existing
+  ownership, write durability, cross-context, Health and notification checks.
+- `2026-11-05T04-48-59-081Z-calendar-foreground-and-settings-final.log`:
+  27 existing Settings UI checks plus three mounted foreground tests passed.
+  Those three were rerun after the final error-code correction in
+  `2026-11-05T04-50-17-016Z-calendar-foreground-final.log`.
+- `2026-11-05T04-50-06-264Z-calendar-typecheck-final.log`: typecheck exit 0.
+  `git diff --check` passed. React test-renderer deprecation remains.
+- The initial foreground harness failed because its mocked service export was
+  undefined at module import; corrected to a stable export object. The failed
+  harness logs remain. This is not counted as a product failure or device proof.
+- Two older race tests retain their storage assertions and now expect explicit
+  supersession rejection instead of silent success. No assertion was removed.
+
+Not verified: physical Calendar permissions/reads, iPhone performance, native
+installation, new browser screenshots (native integration only), or a new full
+export. Do not relabel this local service/component evidence as device evidence.
+The source checkout is still clean. Protected main checkout status still shows
+the same five tracked modifications and untracked protected contract; no contents
+there were changed or read. No push, external data write or alias operation.
+
+Next exact recovery point: Calendar read safety is complete, but **Core external
+occupancy is not**. `retainFeasibleOwnerCandidates` / `planPatch` and Store Apply/
+Undo still validate internal schedule blocks, not a fresh system-Calendar view.
+Continue with one shared ephemeral occupancy view for preview and a fresh read
+on Apply/Undo, preserving permission-denied/unavailable vs legitimately empty.
+Use existing CalendarService, DeviceRepository and patch conflict protections;
+do not persist external events as AppData blocks or alter third-party events.
+Cover newly inserted external conflicts, move/shorten/protect, undo, revoked
+permission and existing web/no-calendar behavior before connecting native UI.
+
 ## Latest review entry, November 5 15:37 Sydney
 
 - Product code: `a9656553d3e7605f932d6b8ae0d492b87e9b045f` on
