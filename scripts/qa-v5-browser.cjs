@@ -40,7 +40,7 @@ for(const theme of ['light','dark'])for(const s of ['S1','S2','S3','S4','S5']){
  results.push({scenario:s,theme,overflow,mainBottom:bounds.y+bounds.height,navTop:nav.y});
  if(s==='S1'){
   await page.getByRole('button',{name:'记一下',exact:true}).click();await page.getByRole('button',{name:/^精力 4 /}).click();await page.getByRole('button',{name:/^紧绷 2 /}).click();
-  await page.getByRole('button',{name:'不是这样',exact:true}).waitFor();await page.reload();await page.getByRole('button',{name:'不是这样',exact:true}).waitFor();results.push({flow:'3-click check-in and reload',passed:true});
+  await page.getByTestId('v5-state-strip').getByRole('group',{name:'精力',exact:true}).waitFor({state:'detached'});await page.reload();await page.getByRole('button',{name:'不是这样',exact:true}).waitFor();results.push({flow:'3-click check-in and reload',passed:true});
   for(const [tab,file] of [['目标','Goals'],['日程','Schedule'],['分析','Insights'],['个人','Personal']]){await page.getByRole('tab',{name:tab,exact:true}).click();await page.waitForTimeout(600);await page.screenshot({path:path.join(out,`${file}-${theme}.png`)});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${file} overflow`);}
   await page.getByRole('tab',{name:'今日',exact:true}).click();await page.getByRole('button',{name:'随手记一句…'}).click();await page.waitForTimeout(300);await page.screenshot({path:path.join(out,`Capture-${theme}.png`)});await page.keyboard.press('Escape');
  }
@@ -65,6 +65,17 @@ for(const theme of ['light','dark'])for(const s of ['S1','S2','S3','S4','S5']){
   const log=finished.executionLogs.find(l=>l.note==='隔离验收：保存实际执行与难度');
   assert.ok(log,'finish saved');assert.equal(log.durationMinutes,32);assert.equal(log.structuredData.calibration.subjectiveDifficulty,'same');
   await page.reload();assert.ok(await page.getByText('隔离验收：保存实际执行与难度',{exact:true}).count());results.push({flow:'start-finish-calibration-reload',passed:true});
+ }
+ if(s==='S2'&&theme==='dark'){
+  await page.getByRole('button',{name:'照原计划',exact:true}).click();await page.getByTestId('v5-main-action').getByRole('button',{name:'开始',exact:true}).waitFor();await page.reload();
+  assert.equal(await page.getByRole('button',{name:'按建议调整',exact:true}).count(),0);
+  const choices=await page.evaluate(()=>JSON.parse(localStorage.getItem('questlife.v1')).stateCheckIns[0].stateLayer.originalPlanChoices);
+  assert.equal(choices[0].taskId,'qa-block');results.push({flow:'original-plan-choice-reload',passed:true});
+ }
+ if(s==='S5'&&theme==='light'){
+  await page.getByTestId('v5-main-action').getByRole('button',{name:/^精力 3 /}).click();await page.waitForTimeout(400);await page.reload();
+  const followup=await page.evaluate(()=>JSON.parse(localStorage.getItem('questlife.v1')).stateCheckIns[0].stateLayer.choice.energyFollowUp);
+  assert.equal(followup.energy,3);assert.equal(followup.tension,undefined);assert.equal(await page.getByTestId('v5-main-action').getByRole('button',{name:/^精力 3 /}).count(),0);results.push({flow:'energy-only-followup-reload',passed:true});
  }
  await context.close();
 }

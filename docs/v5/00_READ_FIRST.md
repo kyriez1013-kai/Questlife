@@ -1,6 +1,6 @@
 # QuestLife 第五版 · 从这里开始
 
-**日用候选固定网址：https://questlife-v1-release.vercel.app/**。这是候选项目，不是旧 Owner 正式站；本轮不推 GitHub、不执行数据库迁移、不换主域名。部署 ID/源码：发布验证后补入本页。规则是起点假设，需本人至少 30 天记录校准，不是已验证的个体模型。
+**候选网址：https://questlife-v1-release.vercel.app/**。已部署源码 `3d59b3d`，ID `dpl_4JpfEL8A1itwe1uN5CPHuSZkL9xK`（[回执](deployment-receipt.json)）。旧正式站、主目录和数据库未作修改，未 push。状态规则需本人 30 天数据校准，不是已验证个体模型。
 
 | 页面 | 本轮落地与参考差异 | 第五版 vs 实现 |
 |---|---|---|
@@ -10,13 +10,13 @@
 | 分析 | 默认状态日历；原健康/执行分析仍在变量选择内，蜡烛去红绿、解读保留真实依据。 | [并排图](screenshots/Insights-comparison.png) |
 | 个人 | 账号保留；新增只写令牌、健康单独同意、撤销/删除、上次同步与设置指南。 | [并排图](screenshots/Personal-comparison.png) |
 
-参考有模拟系统栏及成熟合成数据，实现截图用隔离 QA 数据；不把这些记录写进你的账号。没有 HTML 原型，尺寸为截图估计；深色按现有语义主题映射，不宣称与未提供的深色图像素一致。 [S1–S5 明暗](screenshots/) / [1280 桌面](screenshots/Today-1280-zh-light.png) / [测试细节](03_验证范围.md)。
+截图是隔离 QA，不是本人/手机数据；没有 HTML 原型，尺寸按图估计，深色映射现有主题。[S1–S5 明暗](screenshots/) / [1280 桌面](screenshots/Today-1280-zh-light.png) / [验证范围](03_验证范围.md)。
 
 **首屏与操作：**390×844 不滚动可见日期、Capture、状态条、主行动、底栏。签到三次（打开/精力/紧绷），ACK 后折叠；S2 两次（建议/确认预览），ACK 后应用；刷新可撤销。完成记录保留可改分钟、难度和备注，完整字段仍可展开。`?v5_ui=0` 可回看既有界面；不清数据。
 
-**更新方法：**在 `feature/v5-ui` 提交全部改动后运行 `npm run deploy:candidate`：拒绝脏目录→类型检查→Web build→已提交 archive→受限文件/秘密检查→仅候选 production target→固定网址版本校验，输出部署 ID/源码与 `/tmp/questlife-v5-deploy-*/result.json`。不要运行 promote/rollback。本轮 G 只准备。
+**更新：**在 `feature/v5-ui` 提交后运行 `npm run deploy:candidate`：检查干净目录、类型/构建、archive 上传边界，发布候选并核验固定网址版本。本轮已实际运行。G 仅准备，不运行 promote/rollback。
 
-**快捷指令前置：**用户在候选 Supabase **`gttcoocfkqwvsqfwxpyo`** SQL Editor 执行 [202611050001_shortcut_inbox.sql](../../supabase/migrations/202611050001_shortcut_inbox.sql)，推荐先备份；不能在旧 Owner 库执行。迁移未安装前令牌服务不可用，界面显示错误/重试，不假装已连接。[五个快捷指令设置](../watch/快捷指令设置.md)；手机可从个人页打开在线 `/shortcuts.html`。需自己的账号登录、同意健康云同步；令牌只显示一次。**真机/手表授权与自动化尚未验证。**
+**快捷指令前置：**先备份候选库，再由你在 **`gttcoocfkqwvsqfwxpyo`** SQL Editor 执行 [迁移](../../supabase/migrations/202611050001_shortcut_inbox.sql)，不要在旧 Owner 库执行。本轮未执行，故令牌/健康链路尚不能算可用。[五项设置指南](../watch/快捷指令设置.md)也在个人页 `/shortcuts.html`；登录后生成令牌、单独同意健康同步。**真机/手表尚未验证。**
 
 **iPhone 安装：**Safari 打开固定网址→分享→添加到主屏幕→添加→从图标打开。不要安装原生包，不购买开发者会员。
 

@@ -1,0 +1,16 @@
+{
+  "environment": "Chrome isolated context; no account, no device proof",
+  "version": {
+    "product": "QuestLife V5 candidate",
+    "commit": "3d59b3dd3ac8c1c66b2bd1753089f805ccd83b99",
+    "builtAt": "2026-11-05T10:03:40.025Z",
+    "migration": "shortcut inbox requires manual candidate SQL installation"
+  },
+  "firstVisitOfflineBoot": true,
+  "offlineOnboarding": true,
+  "offlineCheckInReloadPreservesIds": true,
+  "onlineNoticeClears": true,
+  "rollbackFlag": true,
+  "apiCached": false,
+  "errors": []
+}

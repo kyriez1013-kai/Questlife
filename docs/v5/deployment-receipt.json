@@ -1,0 +1,10 @@
+{
+  "product": "QuestLife V5 candidate",
+  "commit": "3d59b3dd3ac8c1c66b2bd1753089f805ccd83b99",
+  "builtAt": "2026-11-05T10:03:40.025Z",
+  "migration": "shortcut inbox requires manual candidate SQL installation",
+  "url": "https://questlife-v1-release.vercel.app",
+  "deployment": "https://questlife-v1-release-hfibn80f5-kyrie-z-s-projects.vercel.app",
+  "deploymentId": "dpl_4JpfEL8A1itwe1uN5CPHuSZkL9xK",
+  "uploadManifest": "/var/folders/95/tb247_tj4wzbw6lw6c4gqq4m0000gn/T/questlife-v5-deploy-JKBOWs/upload-manifest.txt"
+}
