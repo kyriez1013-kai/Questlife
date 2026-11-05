@@ -12,7 +12,7 @@ const { create, act } = require(path.join(runtime, 'react-test-renderer'));
 global.IS_REACT_ACT_ENVIRONMENT = true;
 const host = name => props => React.createElement(name, props, props.children);
 const realLoad = Module._load;
-let events = [], platform = 'web';
+let events = [], platform = 'web', calendarEvents = [], calendarReads = 0, calendarFailure;
 Module._load = function(request, parent, main) {
   if (request === 'react') return React;
   if (request === 'react/jsx-runtime') return require(path.join(runtime, 'react/jsx-runtime'));
@@ -22,6 +22,9 @@ Module._load = function(request, parent, main) {
   if (request === './AdaptiveDecisionWorkspace' || request === './NativeDecisionWorkspace') return host('Workspace');
   if (request === './ownerQuantRuntime') return { loadOwnerQuantArtifacts: async () => { throw Error('NO_NETWORK_EXPECTED'); } };
   if (request === './telemetry') return { recordAdaptiveDecisionTelemetry: value => events.push(value) };
+  if (request.endsWith('/readPlanCalendar')) return { readPlanCalendar: async () => {
+    calendarReads++; if (calendarFailure) throw calendarFailure; return calendarEvents;
+  } };
   return realLoad.call(this, request, parent, main);
 };
 for (const ext of ['.ts', '.tsx']) require.extensions[ext] = (module, file) => module._compile(ts.transpileModule(fs.readFileSync(file, 'utf8'), {
@@ -32,6 +35,7 @@ const { createDecisionEpisode, transitionDecisionEpisode } = require('../../src/
 const { createDecisionPlanPatch, applyDecisionPlanPatch, undoDecisionPlanPatch } = require('../../src/adaptive-decision/planPatch.ts');
 const { decisionEpisodeToResult } = require('../../src/adaptive-decision/decisionEngine.ts');
 const Core = require('../../src/adaptive-decision/QuestLifeCoreOwnerSheet.tsx').default;
+const { CalendarPlanUnavailableError } = require('../../src/platform/calendar/planAvailability.ts');
 let tree, props, applied, undone, separateWrites, closed, waited, retried, wait, retry;
 const workspace = () => tree.root.findByType('Workspace').props;
 const deferred = () => { let resolve; const promise = new Promise(done => resolve = done); return { promise, resolve }; };
@@ -39,6 +43,7 @@ const theme = { mode: 'light', text: { primary: '#111', secondary: '#333', metad
 async function render(os = 'web') {
   platform = os;
   applied = undone = separateWrites = closed = waited = retried = 0; events = [];
+  calendarEvents = []; calendarReads = 0; calendarFailure = undefined;
   wait = retry = async () => {};
   const now = new Date().toISOString();
   const block = { id: 'TEST_BLOCK', title: 'TEST only', date: '2099-11-05', startTime: '09:00', endTime: '10:00', plannedMinutes: 60, taskType: 'deep_study', flexibility: 'movable', rigidity: 'medium', status: 'planned', source: 'manual', createdAt: 1 };
@@ -60,6 +65,60 @@ async function render(os = 'web') {
   assert.equal(workspace().episode.status, 'PROPOSED');
 }
 afterEach(async () => { if (tree) await act(async () => tree.unmount()); tree = undefined; });
+
+const occupied = (start = '11:00', end = '12:00') => ({
+  id: 'ISOLATED_SYSTEM_EVENT', externalEventId: 'ISOLATED_SYSTEM_EVENT', calendarId: 'ISOLATED_CALENDAR',
+  title: 'Isolated Calendar commitment', startAt: new Date(`2099-11-05T${start}:00`).toISOString(),
+  endAt: new Date(`2099-11-05T${end}:00`).toISOString(), ownership: 'external',
+  availability: 'busy', allDay: false, source: 'system_calendar', lastSyncedAt: new Date().toISOString(),
+});
+
+test('native Core rejects an external Calendar collision with no internal block at that time', async () => {
+  await render('ios'); calendarEvents = [occupied()];
+  await act(async () => workspace().onApply());
+  assert.equal(applied, 0); assert.equal(waited, 0);
+  assert.equal(workspace().episode.status, 'PROPOSED');
+  assert.match(workspace().error, /calendar/i);
+});
+
+test('native Core rechecks Calendar on Apply instead of trusting an earlier free preview', async () => {
+  await render('ios');
+  calendarEvents = [occupied()]; // Created externally after this preview was shown.
+  await act(async () => workspace().onApply());
+  assert.equal(applied, 0); assert.equal(calendarReads, 1);
+  calendarEvents = []; await act(async () => workspace().onApply());
+  assert.equal(applied, 1); assert.equal(calendarReads, 2);
+});
+
+test('native Core Undo refuses to restore a slot that became occupied externally', async () => {
+  await render('ios'); await act(async () => workspace().onApply());
+  await act(async () => tree.update(React.createElement(Core, props)));
+  calendarEvents = [occupied('09:00', '10:00')];
+  await act(async () => workspace().onUndo());
+  assert.equal(undone, 0); assert.equal(workspace().episode.status, 'APPLIED');
+  assert.match(workspace().error, /calendar/i);
+});
+
+test('native Core unavailable Calendar blocks Apply with a distinct actionable message and retry', async () => {
+  await render('ios'); calendarFailure = new CalendarPlanUnavailableError();
+  await act(async () => workspace().onApply());
+  assert.equal(applied, 0); assert.equal(waited, 0);
+  assert.match(workspace().error, /availability could not be confirmed/i);
+  assert.match(workspace().error, /Settings/);
+  assert.equal(workspace().busy, false);
+  calendarFailure = undefined; await act(async () => workspace().onApply());
+  assert.equal(applied, 1); assert.equal(workspace().episode.status, 'APPLIED');
+});
+
+test('an ACK-only retry cannot revalidate and apply the same decision a second time', async () => {
+  await render('ios'); wait = async () => { throw Error('ACK_LOST'); };
+  await act(async () => workspace().onApply());
+  assert.equal(calendarReads, 1); assert.equal(applied, 1);
+  calendarFailure = new CalendarPlanUnavailableError();
+  await act(async () => workspace().onApply());
+  assert.equal(calendarReads, 1); assert.equal(applied, 1); assert.equal(retried, 1);
+  assert.equal(workspace().episode.status, 'APPLIED');
+});
 
 test('Core does not show Applied or emit success until the local receipt arrives', async () => {
   await render(); const gate = deferred(); wait = () => gate.promise;

@@ -40,6 +40,8 @@ import { DecisionPlanPatchConflictError } from './planPatch';
 import { adaptiveText, candidateCopy, questionTypeLabel } from './presentation';
 import { recordAdaptiveDecisionTelemetry } from './telemetry';
 import { DurableSubmission } from '../utils/durableSubmission';
+import { readPlanCalendar } from '../platform/calendar/readPlanCalendar';
+import { assertPlanCalendarAvailable, planCalendarDates, CalendarPlanUnavailableError, CalendarPlanConflictError } from '../platform/calendar/planAvailability';
 
 type OwnerOutcome = Omit<DecisionFollowUpOutcomeV1, 'id' | 'recordedAt'>;
 type CoreView = 'loading' | 'decision' | 'follow_up' | 'memory';
@@ -138,6 +140,7 @@ export default function QuestLifeCoreOwnerSheet({
   const submission = useRef(new DurableSubmission<{ episode: DecisionEpisodeV1; view: CoreView; startedAt: number }>());
   const submitting = useRef(false);
   const [pendingKind, setPendingKind] = useState<SubmissionKind | null>(null);
+  const latestData = useRef(data); latestData.current = data;
 
   useEffect(() => {
     persistedEpisodeIdsRef.current = new Set(
@@ -180,14 +183,17 @@ export default function QuestLifeCoreOwnerSheet({
         : Math.max(0, (typeof performance !== 'undefined' ? performance.now() : Date.now()) - quantStarted);
       if (generation !== generationRef.current) return;
       artifactsRef.current = artifacts;
-      const proposed = retainFeasibleOwnerCandidates(proposeDecisionEpisode({
+      const generated = proposeDecisionEpisode({
         episode: draft,
         data,
         answers: nextAnswers,
         quantProduct: artifacts.status === 'available' ? artifacts.product : undefined,
         quantAnalysis: artifacts.status === 'available' ? artifacts.analysis : undefined,
         now: new Date().toISOString(),
-      }), data.scheduleBlocks || []);
+      });
+      const calendarEvents = await readPlanCalendar(generated.candidateActions.flatMap(candidate => planCalendarDates(candidate.planPatch)));
+      if (generation !== generationRef.current) return;
+      const proposed = retainFeasibleOwnerCandidates(generated, latestData.current.scheduleBlocks || [], calendarEvents);
       const resolved = {
         ...proposed,
         limitations: Array.from(new Set([
@@ -223,7 +229,7 @@ export default function QuestLifeCoreOwnerSheet({
       });
     } catch (caught) {
       if (generation !== generationRef.current) return;
-      setError(copy('adaptiveCoreRuntimeUnavailable'));
+      setError(copy(caught instanceof CalendarPlanUnavailableError ? 'adaptiveCalendarCheckFailed' : 'adaptiveCoreRuntimeUnavailable'));
     } finally {
       if (generation === generationRef.current) setBusy(false);
     }
@@ -324,7 +330,7 @@ export default function QuestLifeCoreOwnerSheet({
     });
   }, [busy, episode]);
 
-  const submit = useCallback(async (kind: SubmissionKind, create: () => DecisionEpisodeV1, nextView: (next: DecisionEpisodeV1) => CoreView) => {
+  const submit = useCallback(async (kind: SubmissionKind, create: () => DecisionEpisodeV1, nextView: (next: DecisionEpisodeV1) => CoreView, prepare?: () => Promise<void>) => {
     if (submitting.current || busy || (submission.current.hasPending && pendingKind !== kind)) return;
     submitting.current = true;
     setBusy(true);
@@ -346,11 +352,13 @@ export default function QuestLifeCoreOwnerSheet({
           ...(kind === 'apply' ? { operationCount: saved.appliedPlanPatch?.operations.length, planMutationLatencyMs: Math.max(0, Date.now() - startedAt) } : {}),
           ...(kind === 'outcome' ? { usefulness: saved.followUpOutcomes.at(-1)?.usefulness } : {}),
         });
-      });
+      }, prepare);
     } catch (caught) {
       const conflict = caught instanceof DecisionPlanPatchConflictError;
       setPlanChanged(conflict);
-      setError(copy(conflict ? 'adaptiveCorePlanChanged' : 'captureSaveRetry'));
+      setError(copy(caught instanceof CalendarPlanUnavailableError ? 'adaptiveCalendarCheckFailed'
+        : caught instanceof CalendarPlanConflictError ? 'adaptiveCalendarConflict'
+          : conflict ? 'adaptiveCorePlanChanged' : 'captureSaveRetry'));
     } finally {
       if (!submission.current.hasPending) setPendingKind(null);
       submitting.current = false;
@@ -366,7 +374,7 @@ export default function QuestLifeCoreOwnerSheet({
         : episode;
       const applied = applyAcceptedDecision({
         episode: accepted,
-        scheduleBlocks: data.scheduleBlocks || [],
+        scheduleBlocks: latestData.current.scheduleBlocks || [],
         appliedAt: new Date().toISOString(),
       });
       if (!applied.episode.appliedPlanPatch) throw new Error('Decision plan patch was not created.');
@@ -375,7 +383,12 @@ export default function QuestLifeCoreOwnerSheet({
       }));
       persistedEpisodeIdsRef.current.add(applied.episode.id);
       return applied.episode;
-    }, () => 'decision');
+    }, () => 'decision', async () => {
+      const patch = episode.candidateActions.find(candidate => candidate.id === activeActionId)?.planPatch;
+      if (!patch) throw new DecisionPlanPatchConflictError('decision_plan_missing');
+      const events = await readPlanCalendar(planCalendarDates(patch));
+      assertPlanCalendarAvailable(latestData.current.scheduleBlocks || [], patch, events);
+    });
   }, [activeActionId, data.scheduleBlocks, episode, lang, onApplySchedulePatch, submit]);
 
   const undo = useCallback(async () => {
@@ -383,13 +396,17 @@ export default function QuestLifeCoreOwnerSheet({
     await submit('undo', () => {
       const undone = undoAppliedDecision({
         episode,
-        scheduleBlocks: data.scheduleBlocks || [],
+        scheduleBlocks: latestData.current.scheduleBlocks || [],
         undoneAt: new Date().toISOString(),
-        executionLogs: data.executionLogs,
+        executionLogs: latestData.current.executionLogs,
       });
       onUndoSchedulePatch(episode.appliedPlanPatch!, undone.episode);
       return undone.episode;
-    }, () => 'decision');
+    }, () => 'decision', async () => {
+      const patch = episode.appliedPlanPatch!;
+      const events = await readPlanCalendar(planCalendarDates(patch));
+      assertPlanCalendarAvailable(latestData.current.scheduleBlocks || [], patch, events, 'undo');
+    });
   }, [data.executionLogs, data.scheduleBlocks, episode, onUndoSchedulePatch, submit]);
 
   const updateOutcome = useCallback((patch: Partial<OwnerOutcome>) => {

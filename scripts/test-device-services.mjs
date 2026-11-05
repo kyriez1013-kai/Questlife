@@ -7,6 +7,7 @@ const out = mkdtempSync(join(tmpdir(), 'questlife-device-services-'));
 const tests = ['tests/native/deviceServices.test.ts','tests/native/healthChanges.test.ts','tests/native/quietHours.test.ts','tests/native/notificationFollowUp.test.ts','tests/native/notificationClock.test.ts','tests/native/deviceRepositoryContexts.test.ts','tests/native/recordIntegrity.test.ts'];
 tests.push('tests/native/calendarDurability.test.ts');
 tests.push('tests/native/calendarReadSafety.test.ts');
+tests.push('tests/native/planCalendarAvailability.test.ts');
 const roots = [...tests, 'src/platform/health/HealthSource.ios.ts', 'src/platform/calendar/CalendarDriver.native.ts', 'src/platform/notifications/NotificationDriver.native.ts'];
 const compiled = spawnSync(process.execPath, ['node_modules/typescript/bin/tsc', '--module', 'commonjs', '--target', 'es2022', '--moduleResolution', 'node', '--jsx', 'react-jsx', '--resolveJsonModule', '--esModuleInterop', '--skipLibCheck', '--rootDir', '.', '--outDir', out, ...roots], { stdio: 'inherit' });
 if (compiled.status !== 0) process.exit(compiled.status ?? 1);

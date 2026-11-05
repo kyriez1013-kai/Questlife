@@ -5,10 +5,11 @@ export class DurableSubmission<T> {
 
   get hasPending() { return !!this.pending || !!this.active; }
 
-  run(create: () => T, wait: () => Promise<void>, retry: () => Promise<void>, finish: (value: T) => Promise<void>): Promise<T> {
+  run(create: () => T, wait: () => Promise<void>, retry: () => Promise<void>, finish: (value: T) => Promise<void>, prepare?: () => Promise<void>): Promise<T> {
     if (this.active) return this.active;
     const attempt = async () => {
       const previous = this.pending;
+      if (!previous && prepare) await prepare();
       const submission = previous ?? (this.pending = { value: create(), acknowledged: false });
       if (!submission.acknowledged) {
         await (previous ? retry() : wait());

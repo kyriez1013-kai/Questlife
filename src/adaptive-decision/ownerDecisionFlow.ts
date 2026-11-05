@@ -6,7 +6,8 @@ import type {
   DecisionQuestionType,
 } from './decisionEpisode';
 import { markDecisionFollowUpDue } from './followUp';
-import { applyDecisionPlanPatch } from './planPatch';
+import type { ExternalCommitment } from '../platform/contracts';
+import { assertPlanCalendarAvailable } from '../platform/calendar/planAvailability';
 
 export const OWNER_DECISION_FLOW_VERSION = 'questlife.owner-decision-flow.v1' as const;
 
@@ -97,9 +98,10 @@ export function inferOwnerDecisionIntent(input: {
 export function candidateHasFeasibleExactPatch(
   candidate: DecisionCandidateActionV1,
   scheduleBlocks: ScheduleBlock[],
+  calendarEvents: ExternalCommitment[] = [],
 ): boolean {
   try {
-    applyDecisionPlanPatch(scheduleBlocks, candidate.planPatch);
+    assertPlanCalendarAvailable(scheduleBlocks, candidate.planPatch, calendarEvents);
     return true;
   } catch {
     return false;
@@ -109,9 +111,10 @@ export function candidateHasFeasibleExactPatch(
 export function retainFeasibleOwnerCandidates(
   episode: DecisionEpisodeV1,
   scheduleBlocks: ScheduleBlock[],
+  calendarEvents: ExternalCommitment[] = [],
 ): DecisionEpisodeV1 {
   const candidateActions = episode.candidateActions.filter((candidate) => (
-    candidateHasFeasibleExactPatch(candidate, scheduleBlocks)
+    candidateHasFeasibleExactPatch(candidate, scheduleBlocks, calendarEvents)
   ));
   if (candidateActions.length === episode.candidateActions.length) return episode;
   return {
