@@ -5,13 +5,28 @@ const CACHE = 'questlife-shell-v1';
 const SHELL = ['/', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/apple-touch-icon.png'];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting()));
+  event.waitUntil((async () => {
+    const response = await fetch('/', { cache: 'reload' });
+    if (!response.ok) throw new Error('Offline shell unavailable');
+    const html = await response.clone().text();
+    // Expo's generated HTML lists the hashed entry script and styles. Cache only
+    // those boot assets, not lazy example datasets or authenticated API responses.
+    const assets = [...html.matchAll(/(?:src|href)="([^"]+)"/g)]
+      .map(match => new URL(match[1], self.location.origin))
+      .filter(url => url.origin === self.location.origin && url.pathname.startsWith('/_expo/static/') && /\.(js|css)$/.test(url.pathname))
+      .map(url => url.pathname);
+    if (!assets.some(url => url.endsWith('.js'))) throw new Error('Offline entry script missing');
+    const cache = await caches.open(CACHE);
+    await cache.addAll([...new Set([...SHELL.slice(1), ...assets])]);
+    await cache.put('/', response);
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key))))
+      .then((keys) => Promise.all(keys.filter((key) => key.startsWith('questlife-') && key !== CACHE).map((key) => caches.delete(key))))
       .then(() => self.clients.claim()),
   );
 });
@@ -26,8 +41,11 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE).then((cache) => cache.put('/', copy));
+          if (!response.ok) return caches.match('/').then(hit => hit || response);
+          if ((response.headers.get('content-type') || '').includes('text/html')) {
+            const copy = response.clone();
+            caches.open(CACHE).then((cache) => cache.put('/', copy));
+          }
           return response;
         })
         .catch(() => caches.match('/')),

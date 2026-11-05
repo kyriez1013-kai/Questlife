@@ -13,7 +13,9 @@ const html=await(await fetch(fixed)).text();const hosts=new Set();
 for(const match of html.matchAll(/<script[^>]+src="([^"]+)"/g)){const js=await(await fetch(new URL(match[1],fixed))).text();for(const h of js.matchAll(/https:\/\/([a-z0-9]+)\.supabase\.co/g))hosts.add(h[1]);}
 if(hosts.size!==1||!hosts.has('gttcoocfkqwvsqfwxpyo'))throw Error('Candidate public data binding mismatch; no deployment.');
 console.log('Verified candidate-only Supabase binding.');
-run('npx',['tsc','--noEmit']);run('npm',['run','build'],root,{...process.env,EXPO_NO_DOTENV:'1'});
+run('npx',['tsc','--noEmit']);
+run('npx',['tsc','--noEmit','--module','commonjs','--target','es2022','--moduleResolution','node','--esModuleInterop','--skipLibCheck','api/inbox.ts','api/inbox-token.ts']);
+run('npm',['run','build'],root,{...process.env,EXPO_NO_DOTENV:'1'});
 const scratch=mkdtempSync(path.join(tmpdir(),'questlife-v5-deploy-'));const upload=path.join(scratch,'source');mkdirSync(upload);
 const roots=['src','api','public','assets','plugins','index.ts','App.tsx','App.web.tsx','package.json','package-lock.json','app.json','tsconfig.json','react-native.config.js','vercel.json','.vercelignore','scripts/patch-metro-image-input.cjs'];
 const forbidden=p=>/(^|\/)\.env[^/]*|(^|\/)docs\/quant(\/|$)|QUESTLIFE_QUANT_UI_CONTRACT\.md|\.(p8|p12|jks|mobileprovision|keystore)$/.test(p);
