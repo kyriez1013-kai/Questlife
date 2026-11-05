@@ -3,6 +3,108 @@
 Updated: 2026-11-05, Australia/Sydney. Autonomous candidate improvement requested;
 commercial readiness is the goal, not an acceptance claim.
 
+## Latest review and Calendar integration, November 5 16:15 Sydney
+
+Product commit `28ae372e4c313f82c573bec363c5e89b9b4e9c8f` supersedes the older
+review entry below. `cb99baa` adds a test of the existing policy's actual protect
+proposal; it does not alter this bundle. Two functional commits:
+
+- `bdd207d`: shared temporary Calendar occupancy guard, Core proposal filtering,
+  and fresh preflight on Apply/Undo. Extends the existing DurableSubmission with
+  optional preparation before creating a mutation, never on ACK-only retries.
+- `28ae372`: the same guard on Today state-layer preview/Apply/Undo and scheduled
+  Brain dump. Preview has checking/error/retry states, does not apply on open,
+  and ignores obsolete replies when demands change or the sheet closes.
+
+READY Preview `dpl_4rZHLSJTXePvA3S1odk4728jSvAz` on the existing release project
+`prj_fVGFV7DzxfkLqbBpSo8P7NH9oqxX`, not a replacement project:
+https://questlife-v1-release-19lbsdvej-kyrie-z-s-projects.vercel.app/
+Direct review grant is outside Git at
+`/Users/kyrie/dev/questlife-review-20261105/preview-access-calendar.json`;
+expires November 6, 15:12 Sydney. Local current export: http://127.0.0.1:8141/ .
+Hosted bundle: `index-eb45964f69602919aa2d58e994dcea61.js`, offline shell
+`6f1f7c1cb5a70fc2` (16 entry assets). Local export has a different build hash.
+
+Deployment isolation rechecked before upload: authenticated CLI resolves the
+release project/team above; its nine configured service variables target ONLY
+Production, none Preview. No environment values were printed/copied. Thus this
+remains browser-local, with NO account/Supabase/AI/hosted-Quant integration. Do
+not label fallback parsing as AI or examples as personal results. No Git push,
+device installation, new service, fee or Production promotion. Sharing used the
+existing authenticated CLI after the MCP transport failed; protection remains
+enabled, the new grant is scoped to this one Preview and expires.
+
+Actual fix and verification boundaries:
+
+- Reproduced three mounted Core failures, then three state-layer failures:
+  external busy time did not block Apply; a new post-preview commitment was
+  ignored; Undo restored an externally occupied slot. All six now pass.
+- Native reads the selected, enabled Calendar through existing CalendarService
+  and DeviceRepository, rechecks permission/connection, and keeps the result
+  temporary. No Calendar record is inserted into AppData. No OS create/update/
+  delete calls are made by these checks. Denied/read failure is a distinct
+  actionable error, never an empty/free Calendar.
+- Only target operations are checked. Existing internal conflict, edit,
+  started/executed Undo protections and the joint schedule/episode WAL remain.
+  An exact owned export is not a self-conflict; an externally changed copy is.
+  Free events do not block, unknown availability is conservative. A Calendar
+  not enabled by the user/Web's absent provider does not fabricate a connection.
+- A write already queued before an ACK failure is retried as that same mutation
+  and episode. It does not re-Apply, re-Undo or create another confirmation.
+  This is durability recovery, not a second scheduling decision.
+- Web has no system Calendar provider. Hosted browser checks below demonstrate
+  normal UI/regression/durability, NOT actual iOS Calendar integration.
+
+Evidence root `/Users/kyrie/dev/questlife-review-20261105/`:
+
+- `2026-11-05T04-57-54-891Z-core-calendar-before.log` and
+  `2026-11-05T05-00-21-832Z-state-calendar-before.log`: each three reproduced
+  failures; seven existing cases passed in each file before its integration.
+- `2026-11-05T05-06-50-689Z-calendar-all-ui-final.log`: 72 affected mounted/
+  durable checks passed, including delayed preflight, failure/retry, one episode,
+  Core, state-layer, Brain dump, real Store/WAL recovery and legacy regression.
+- `2026-11-05T05-06-51-814Z-calendar-device-suite-final.log`: 144 distinct
+  fixtures passed in each of UTC/Shanghai/New York. The ten occupancy checks
+  also passed in Sydney. `2026-11-05T05-10-16-345Z-calendar-policy-protect.log`
+  adds the eleventh, with a real policy-generated protect/shorten proposal.
+- `2026-11-05T05-05-05-527Z-calendar-adaptive-domain.log`: existing adaptive
+  suite passed; `05-05-07-848Z-calendar-state-domain.log`: 157 state-layer checks.
+- `2026-11-05T05-07-49-667Z-calendar-final-typecheck.log`: noEmit exit 0.
+  `05-05-08-695Z-calendar-export.log`: Web build exit 0. No lint script exists.
+- Local browser plan flows passed at 375/light, 393/dark Core and 1280/dark;
+  their logs use `calendar-browser-*`. Normal UI creates records through forms,
+  injects a local write failure, retries Apply and Undo, then refreshes with
+  one stable DecisionEpisode and original schedule. No overflow/page errors.
+- The corresponding READY Preview flows passed in `calendar-preview-plan-375`,
+  `calendar-preview-core-393`, and `calendar-preview-plan-1280` timestamped logs.
+  Added `2026-11-05T05-14-01-605Z-calendar-preview-scheduled-brain-dump.log`:
+  normal form -> scheduled task -> save failure/retry -> refresh; exactly one
+  context, block and linked decision, same IDs. No cloud/Owner writes.
+- Screenshots `calendar-preview-375-plan-retry-light.png`,
+  `calendar-preview-393-core-apply-retry-dark.png`,
+  `calendar-preview-1280-plan-restored-dark.png`, and
+  `calendar-preview-375-scheduled-brain-dump.png`. Failure screenshots include
+  deliberately injected test-error text; they are evidence, not personal data.
+- Initial Store regression failed because three test callers still passed the
+  now-async preview Promise instead of its patch. Added `await` only; all prior
+  storage failure/restart assertions are retained and now pass. Failure log is
+  preserved as `2026-11-05T05-01-51-817Z-calendar-connected-ui-tests.log`.
+
+UNVERIFIED / not completed: physical iOS Calendar permissions/event reads;
+iPhone performance/HealthKit; any claim of a live cloud-enabled commercial
+release; OS changes after the final read (there is no atomic transaction with
+another Calendar app). Existing debug/legacy opt-in owner scheduling and manual
+Schedule editing have NOT gained this new fresh-read guard in this batch.
+Do not extend Core-specific protection claims to those paths. Legacy behavior
+was regression-tested only. Reduced-motion/visual style is unchanged.
+
+Next bounded work: close the same fresh-read gap in the old opt-in owner path
+and manual Schedule confirm/edit handlers, reproducing their failures first.
+Then return to the hosted-service isolation gate and actual native permissions/
+performance; never connect Owner services or install unattended. Preserve the
+approved Today visual and the protected source/main checkouts. Current live
+protected aliases still resolve to the previous IDs listed below.
+
 ## Local Calendar read safety, November 5 15:51 Sydney
 
 Local-only commit `6ebe894` follows the current hosted candidate. No Preview,

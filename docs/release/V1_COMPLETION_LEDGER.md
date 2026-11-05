@@ -4,6 +4,33 @@ Updated: 2026-10-15. This is the single current completion checklist and resume
 checkpoint for `QUESTLIFE_END_TO_END_COMPLETION.md`. Earlier phase reports are
 historical evidence, not completion claims for this candidate.
 
+## Candidate-only Update (2026-11-05)
+
+This supplemental checkpoint is on `candidate/commercial-readiness-20261105`
+in the isolated hardening worktree. It does not promote a release, modify the
+old Owner Production or replace physical-device acceptance.
+
+- Core and Today state-layer now share a temporary system-Calendar occupancy
+  check for preview and a fresh read before Apply/Undo; scheduled Brain dump
+  uses it too. Permission/read failure is not treated as free time. Existing
+  schedule/DecisionEpisode durability and same-mutation retry are retained.
+- Product commits `bdd207d`, `28ae372`; `cb99baa` adds actual policy-protect
+  coverage. Prior `6ebe894` fixes revoked/superseded Calendar reads. Schemas,
+  Quant, Sync architecture and approved Today visual are unchanged.
+- VERIFIED_LOCAL: reproduced Core/state-layer failures now pass; affected
+  component, Store/WAL and domain checks, tsc and Web build pass. Native OS
+  drivers use isolated doubles; this is NOT VERIFIED_DEVICE.
+- VERIFIED_REMOTE: Preview `dpl_4rZHLSJTXePvA3S1odk4728jSvAz` at product
+  `28ae372`, with 375/393/1280 normal UI plan Apply/Undo failure/retry/refresh,
+  plus scheduled Brain dump exact lineage after retry/refresh. Browser-local
+  data only. No Preview backend/account/provider configuration was introduced.
+- UNVERIFIED: real iPhone Calendar/HealthKit/performance and live isolated
+  account/AI/Quant end-to-end. Old opt-in owner and manual Schedule actions
+  still need equivalent fresh external-occupancy guards. No device updated.
+- Review grant, screenshots, exact commands/logs and the next recovery point:
+  `docs/release/CANDIDATE_ITERATION_CHECKPOINT.md`. Temporary QA browser contexts
+  are isolated from Owner data. No main/release push or Production alias change.
+
 ## Current Override: iOS-First Delivery (2026-10-15)
 
 The owner's iOS-First Full Product Delivery instruction supersedes Android
