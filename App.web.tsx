@@ -11,6 +11,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StoreProvider, useStore } from './src/store';
 import LocalPersistenceNotice from './src/components/LocalPersistenceNotice';
 import OfflineNotice, { registerServiceWorker } from './src/components/OfflineNotice';
+import RetryableScreen from './src/components/RetryableScreen';
 import { AiPreferencesCoordinator } from './src/services/AiSettingsSection';
 import { getLanguage, t } from './src/i18n';
 import { getQuestTheme, questLayout } from './src/design/tokens';
@@ -49,8 +50,8 @@ import { isV2UiEnabled } from './src/v2/featureFlag';
 
 const V2App = React.lazy(() => import('./src/v2/V2App'));
 
-const InsightsV3Screen = React.lazy(() => import('./src/insights-v3/InsightsV3Screen'));
-const V11InsightsScreen = React.lazy(() => import('./src/v11-insights/V11InsightsScreen'));
+const loadInsightsV3Screen = () => import('./src/insights-v3/InsightsV3Screen');
+const loadV11InsightsScreen = () => import('./src/v11-insights/V11InsightsScreen');
 
 const Tab = createBottomTabNavigator();
 const SkillsStack = createNativeStackNavigator();
@@ -310,9 +311,9 @@ function AppContent() {
           <Tab.Screen name="Insights" options={{ tabBarLabel: t(lang, 'insights'), tabBarIcon: ({ focused, color }) => <TabIcon name="barChart" focused={focused} color={color} /> }}>
             {() => (
               <FocusedTabSurface backgroundColor={questTheme.colors.background}>
-                <Suspense fallback={<ActivityIndicator color={accent} style={{ flex: 1 }} />}>
-                  {insightsV3Enabled ? <InsightsV3Screen /> : v11InsightsEnabled ? <V11InsightsScreen /> : <StatsScreen />}
-                </Suspense>
+                {insightsV3Enabled || v11InsightsEnabled
+                  ? <RetryableScreen load={insightsV3Enabled ? loadInsightsV3Screen : loadV11InsightsScreen} lang={lang} questTheme={questTheme} />
+                  : <StatsScreen />}
               </FocusedTabSurface>
             )}
           </Tab.Screen>

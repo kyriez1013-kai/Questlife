@@ -723,3 +723,22 @@ they were corrected in the QA harness, not by weakening application assertions.
   module download failure removing the entire page/navigation, not just the
   chart. `unvisited-insights-offline-red` (04:28:19Z). Next fix is scoped to this
   screen load/retry boundary; do not precache synthetic examples or change Quant.
+
+### November 5: recoverable Insights screen loading
+
+- Added a bounded screen error boundary using existing Quest controls/tokens.
+  Only the two existing lazy Insights screens are wrapped; the legacy Stats
+  route, Store, APIs and Quant are unchanged. Failed screen download no longer
+  unmounts navigation. A labelled Retry creates a fresh React.lazy attempt
+  because React retains a rejected lazy promise. No forced reload/data clear.
+- Four load/retry/integration tests and existing notice/Insights recovery checks
+  pass, 33 total (`retryable-screen-tests`, 04:30:23Z). Typecheck/export pass
+  at 04:30:24Z / 04:30:25Z. No dependency added.
+- Normal 375x667 light browser: first offline Insights visit -> explicit load
+  error -> Today remains usable -> reconnect -> retry -> actual empty personal
+  chart loads, persisted data unchanged and no uncaught page error.
+  `unvisited-insights-offline-green-durable-baseline` (04:31:25Z), screenshots
+  `unvisited-green-insights-load-{failure,recovered}.png`.
+  The first post-fix probe captured its baseline before onboarding's final
+  durable write (settings/skills/decisionResults still pending). The harness
+  now waits for `onboardingCompleted`; no product data rules were changed.
