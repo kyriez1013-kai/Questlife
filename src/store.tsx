@@ -42,7 +42,23 @@ import type { DecisionEpisodeV1, DecisionPlanPatchV1 } from './adaptive-decision
 import {
   applyDecisionPlanPatch as applyDecisionPlanPatchToBlocks,
   undoDecisionPlanPatch as undoDecisionPlanPatchFromBlocks,
+  DecisionPlanPatchConflictError,
 } from './adaptive-decision/planPatch';
+
+type DecisionResultInput = Omit<DecisionResult, 'id' | 'createdAt'> & { id?: string; createdAt?: string };
+
+function storedDecisionResult(input: DecisionResultInput): DecisionResult {
+  const createdAt = input.createdAt ?? new Date().toISOString();
+  return {
+    id: input.id ?? `decision-${uid()}`,
+    createdAt,
+    ...input,
+    dataProvenance: input.dataProvenance ?? buildDerivedProvenance({
+      captureMethod: 'decision_engine', recordedAt: createdAt,
+      fieldOrigins: { headlineInsight: 'derived', readinessBand: 'derived', readinessScore: 'derived', confidence: 'derived' },
+    }),
+  };
+}
 
 function metricTypeForAnalytics(skill?: Skill) {
   return skill?.metricConfig?.metricType ?? skill?.progressType;
@@ -135,10 +151,10 @@ interface Ctx {
   runIntegrityCheck: () => CoreFlowIntegrityResult;
   repairSafeIntegrityIssues: () => CoreFlowIntegrityResult;
   rebuildDerivedData: () => { effortUnitCount: number; contributionLinkCount: number };
-  addDecisionResult: (result: Omit<DecisionResult, 'id' | 'createdAt'> & { id?: string; createdAt?: string }) => DecisionResult;
+  addDecisionResult: (result: DecisionResultInput) => DecisionResult;
   updateDecisionEpisode: (id: string, episode: DecisionEpisodeV1) => void;
-  applyDecisionSchedulePatch: (patch: DecisionPlanPatchV1) => ScheduleBlock[];
-  undoDecisionSchedulePatch: (patch: DecisionPlanPatchV1) => ScheduleBlock[];
+  applyDecisionSchedulePatch: (patch: DecisionPlanPatchV1, result?: DecisionResult) => ScheduleBlock[];
+  undoDecisionSchedulePatch: (patch: DecisionPlanPatchV1, episode?: DecisionEpisodeV1) => ScheduleBlock[];
   updateDecisionResultFeedback: (id: string, rating: 'useful' | 'not_useful') => void;
   deleteDecisionResult: (id: string) => void;
   mergePatternMemoryCandidates: (candidates: PatternMemory[]) => PatternMemory[];
@@ -1465,22 +1481,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [data.executionLogs, mutate]);
 
   const addDecisionResult: Ctx['addDecisionResult'] = useCallback((input) => {
-    const createdAt = input.createdAt ?? new Date().toISOString();
-    const result: DecisionResult = {
-      id: input.id ?? `decision-${uid()}`,
-      createdAt,
-      ...input,
-      dataProvenance: input.dataProvenance ?? buildDerivedProvenance({
-        captureMethod: 'decision_engine',
-        recordedAt: createdAt,
-        fieldOrigins: {
-          headlineInsight: 'derived',
-          readinessBand: 'derived',
-          readinessScore: 'derived',
-          confidence: 'derived',
-        },
-      }),
-    };
+    const result = storedDecisionResult(input);
     mutate((d) => ({
       ...d,
       decisionResults: compactDecisionResults([result, ...(d.decisionResults || []).filter((item) => item.id !== result.id)]),
@@ -1497,20 +1498,35 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }), 'store.update_decision_episode');
   }, [mutate]);
 
-  const applyDecisionSchedulePatch: Ctx['applyDecisionSchedulePatch'] = useCallback((patch) => {
+  const applyDecisionSchedulePatch: Ctx['applyDecisionSchedulePatch'] = useCallback((patch, result) => {
+    if (result && (result.id !== result.decisionEpisode?.id
+      || result.decisionEpisode.status !== 'APPLIED' || result.decisionEpisode.appliedPlanPatch?.id !== patch.id)) {
+      throw new DecisionPlanPatchConflictError('Decision does not match the confirmed schedule patch.');
+    }
     let scheduleBlocks = dataRef.current.scheduleBlocks || [];
     mutate((d) => {
       scheduleBlocks = applyDecisionPlanPatchToBlocks(d.scheduleBlocks || [], patch);
-      return { ...d, scheduleBlocks };
+      if (!result) return { ...d, scheduleBlocks };
+      const existing = (d.decisionResults || []).find(row => row.id === result.id);
+      const recorded = existing ? { ...existing, decisionEpisode: result.decisionEpisode } : storedDecisionResult(result);
+      // One existing Store mutation produces one WAL containing both parts.
+      return { ...d, scheduleBlocks, decisionResults: compactDecisionResults([
+        recorded, ...(d.decisionResults || []).filter(row => row.id !== recorded.id),
+      ]) };
     }, 'store.apply_decision_schedule_patch');
     return scheduleBlocks;
   }, [mutate]);
 
-  const undoDecisionSchedulePatch: Ctx['undoDecisionSchedulePatch'] = useCallback((patch) => {
+  const undoDecisionSchedulePatch: Ctx['undoDecisionSchedulePatch'] = useCallback((patch, episode) => {
     let scheduleBlocks = dataRef.current.scheduleBlocks || [];
     mutate((d) => {
+      if (episode && !(d.decisionResults || []).some(row => row.id === episode.id && row.decisionEpisode?.appliedPlanPatch?.id === patch.id)) {
+        throw new DecisionPlanPatchConflictError('Decision changed after schedule apply.');
+      }
       scheduleBlocks = undoDecisionPlanPatchFromBlocks(d.scheduleBlocks || [], patch);
-      return { ...d, scheduleBlocks };
+      return { ...d, scheduleBlocks, ...(episode ? {
+        decisionResults: (d.decisionResults || []).map(row => row.id === episode.id ? { ...row, decisionEpisode: episode } : row),
+      } : {}) };
     }, 'store.undo_decision_schedule_patch');
     return scheduleBlocks;
   }, [mutate]);

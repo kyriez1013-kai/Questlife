@@ -467,6 +467,32 @@ they were corrected in the QA harness, not by weakening application assertions.
 
 ## Open gates
 
+### November 5 continuation: reliable plan writes and backup
+
+- Normal UI backup round trip passed in a disposable Chromium 375x667 context:
+  create goal and SQL 24-minute capture, export a real backup file, restore in a
+  new empty browser, cancel first then confirm, refresh, preserve the original
+  execution ID and measured duration. A nonempty destination refuses overwrite.
+  No cloud/Owner data used. Evidence: external QA
+  `2026-11-05T03-18-44-356Z-backup-ui-roundtrip-valid-waits.log` and
+  `browser-backup-before-375-light.json`; screenshots `375-backup-before-*.png`.
+  No application change was required. Initial null-storage/button-locator harness
+  failures remain in the logs, not counted as product defects.
+- Reproduced split plan/episode persistence using the actual Store and SyncEngine:
+  reject the decision's journal write, restart; the previous implementation left
+  the schedule moved with no decision/Undo record. Red evidence:
+  `2026-11-05T03-19-31-230Z-plan-atomic-red.log`.
+- State-layer Apply/Undo now send schedule and its DecisionEpisode in one existing
+  Store mutation/WAL. Existing domain conflict/started/execution guards retained.
+  No second persistence protocol or server transaction guarantee introduced.
+  Journal rejection, AppData write failure, retry with identical mutation IDs,
+  and restart recovery now retain both parts. Targeted regression: 40/40 passed,
+  `2026-11-05T03-24-51-742Z-plan-joint-recovery-tests.log`; typecheck passed,
+  `2026-11-05T03-25-02-025Z-plan-joint-tsc.log`.
+  Browser/export rerun remains due after the next bounded batch. Legacy Core
+  owner sheet still uses two independent mutations and needs the same receipt
+  integration; do not extrapolate the state-layer fix to it yet.
+
 - Device performance/HealthKit and expired Personal Team installation require
   coordinated owner action; no unattended device updates.
 - Durable schedule/episode atomicity and external Calendar conflict behavior

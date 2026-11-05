@@ -17,7 +17,7 @@ export type AppliedPlan = { episode: DecisionEpisodeV1; patch: DecisionPlanPatch
  * → store.applyDecisionSchedulePatch → ACK; undo via undoAppliedDecision + undoDecisionSchedulePatch.
  */
 export function useStateLayerPlan() {
-  const { data, addDecisionResult, applyDecisionSchedulePatch, undoDecisionSchedulePatch, updateDecisionEpisode, waitForLocalWrites, retryLocalWrites } = useStore();
+  const { data, applyDecisionSchedulePatch, undoDecisionSchedulePatch, waitForLocalWrites, retryLocalWrites } = useStore();
   const applying = useRef(new DurableSubmission<AppliedPlan>());
   const undoing = useRef(new DurableSubmission<void>());
 
@@ -55,24 +55,22 @@ export function useStateLayerPlan() {
       episode = { ...transitionDecisionEpisode(episode, 'PROPOSED', now), candidateActions: [candidate] };
       episode = selectDecisionAction(episode, candidate.id, now);
       const applied = applyAcceptedDecision({ episode, scheduleBlocks: data.scheduleBlocks || [], appliedAt: now }).episode;
-      applyDecisionSchedulePatch(applied.appliedPlanPatch!);
-      addDecisionResult(decisionEpisodeToResult({ episode: applied, headline: input.headline }));
+      applyDecisionSchedulePatch(applied.appliedPlanPatch!, decisionEpisodeToResult({ episode: applied, headline: input.headline }));
       return { episode: applied, patch: applied.appliedPlanPatch! };
     };
     // Brain dump owns the combined receipt for its plan and context record.
     if (input.skipWait) return create();
     return applying.current.run(create, waitForLocalWrites, retryLocalWrites, async () => {});
-  }, [addDecisionResult, applyDecisionSchedulePatch, data.scheduleBlocks, waitForLocalWrites, retryLocalWrites]);
+  }, [applyDecisionSchedulePatch, data.scheduleBlocks, waitForLocalWrites, retryLocalWrites]);
 
   const undo = useCallback(async (plan: AppliedPlan): Promise<void> => {
     await undoing.current.run(() => {
       const now = new Date().toISOString();
       // Throws when a moved block has started or already has an execution record.
       const result = undoAppliedDecision({ episode: plan.episode, scheduleBlocks: data.scheduleBlocks || [], undoneAt: now, executionLogs: data.executionLogs || [] });
-      undoDecisionSchedulePatch(plan.patch);
-      updateDecisionEpisode(plan.episode.id, result.episode);
+      undoDecisionSchedulePatch(plan.patch, result.episode);
     }, waitForLocalWrites, retryLocalWrites, async () => {});
-  }, [data.executionLogs, data.scheduleBlocks, undoDecisionSchedulePatch, updateDecisionEpisode, waitForLocalWrites, retryLocalWrites]);
+  }, [data.executionLogs, data.scheduleBlocks, undoDecisionSchedulePatch, waitForLocalWrites, retryLocalWrites]);
 
   return { preview, confirmAndApply, undo, get hasPendingApply() { return applying.current.hasPending; } };
 }

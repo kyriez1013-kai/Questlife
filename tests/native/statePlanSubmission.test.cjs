@@ -45,8 +45,10 @@ async function render(sheet = false) {
   store = {
     data: { scheduleBlocks: initial(), executionLogs: [], decisionResults: [] },
     waitForLocalWrites: () => wait(), retryLocalWrites: async () => { retryCount++; },
-    applyDecisionSchedulePatch: p => { applyCount++; store.data = { ...store.data, scheduleBlocks: applyDecisionPlanPatch(store.data.scheduleBlocks, p) }; },
-    undoDecisionSchedulePatch: p => { undoCount++; store.data = { ...store.data, scheduleBlocks: undoDecisionPlanPatch(store.data.scheduleBlocks, p) }; },
+    applyDecisionSchedulePatch: (p, result) => { applyCount++; store.data = { ...store.data, scheduleBlocks: applyDecisionPlanPatch(store.data.scheduleBlocks, p),
+      decisionResults: result ? [...store.data.decisionResults, result] : store.data.decisionResults }; },
+    undoDecisionSchedulePatch: (p, episode) => { undoCount++; if (episode) episodeCount++; store.data = { ...store.data, scheduleBlocks: undoDecisionPlanPatch(store.data.scheduleBlocks, p),
+      decisionResults: episode ? store.data.decisionResults.map(row => row.id === episode.id ? { ...row, decisionEpisode: episode } : row) : store.data.decisionResults }; },
     addDecisionResult: result => { store.data = { ...store.data, decisionResults: [...store.data.decisionResults, result] }; },
     updateDecisionEpisode: (id, episode) => { episodeCount++; store.data = { ...store.data, decisionResults: store.data.decisionResults.map(row => row.id === id ? { ...row, decisionEpisode: episode } : row) }; },
   };
