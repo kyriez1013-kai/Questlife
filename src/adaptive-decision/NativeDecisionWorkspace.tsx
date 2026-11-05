@@ -46,6 +46,7 @@ export default function NativeDecisionWorkspace({
             {question.options.map((option) => <Pressable
               accessibilityRole="radio"
               accessibilityState={{ checked: answers[question.id] === option.value, disabled: busy }}
+              disabled={busy}
               key={option.value}
               onPress={() => onAnswer(question.id, option.value)}
               style={control(answers[question.id] === option.value)}
@@ -70,14 +71,14 @@ export default function NativeDecisionWorkspace({
           <Text style={{ color: text, fontSize: 14 }}>{change.title}</Text>
           <Text style={{ color: muted, fontSize: 12 }}>{change.before} {change.kind === 'unchanged' ? '·' : '→'} {change.after}</Text>
         </View>)}
-        {applied ? <Pressable accessibilityRole="button" onPress={onUndo} style={control()}>
+        {applied ? <Pressable accessibilityRole="button" accessibilityState={{ disabled: busy }} disabled={busy} onPress={onUndo} style={control()}>
           <Text style={{ color: text, textAlign: 'center' }}>{copy('adaptiveSurfaceUndo')}</Text>
         </Pressable> : canApply ? <Pressable accessibilityRole="button" accessibilityState={{ disabled: busy }} disabled={busy} onPress={onApply} style={[control(true), { backgroundColor: theme.control.neutralAction }]}>
           <Text style={{ color: theme.control.neutralActionText, textAlign: 'center', fontWeight: '600' }}>{copy('adaptiveSurfaceApply')}</Text>
         </Pressable> : null}
         {!applied && view.alternatives.length > 0 ? <View style={{ gap: 8 }}>
           <Text style={{ color: muted, fontSize: 12 }}>{copy('adaptiveSurfaceOtherChoices')}</Text>
-          {view.alternatives.map((item) => <Pressable accessibilityRole="radio" accessibilityState={{ checked: activeActionId === item.id }} key={item.id} onPress={() => onSelectAction(item.id)} style={control(activeActionId === item.id)}>
+          {view.alternatives.map((item) => <Pressable accessibilityRole="radio" accessibilityState={{ checked: activeActionId === item.id, disabled: busy }} disabled={busy} key={item.id} onPress={() => onSelectAction(item.id)} style={control(activeActionId === item.id)}>
             <Text style={{ color: text, fontSize: 14 }}>{item.title}</Text>
             <Text style={{ color: muted, fontSize: 12 }}>{item.exactEffect}</Text>
           </Pressable>)}

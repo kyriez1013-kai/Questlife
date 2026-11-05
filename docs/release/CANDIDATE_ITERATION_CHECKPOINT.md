@@ -489,14 +489,32 @@ they were corrected in the QA harness, not by weakening application assertions.
   and restart recovery now retain both parts. Targeted regression: 40/40 passed,
   `2026-11-05T03-24-51-742Z-plan-joint-recovery-tests.log`; typecheck passed,
   `2026-11-05T03-25-02-025Z-plan-joint-tsc.log`.
-  Browser/export rerun remains due after the next bounded batch. Legacy Core
-  owner sheet still uses two independent mutations and needs the same receipt
-  integration; do not extrapolate the state-layer fix to it yet.
+  Normal UI 375x667 light Apply/Undo failure/retry/refresh passed against the new
+  exported bundle: `2026-11-05T03-33-56-475Z-joint-plan-browser-375.log`.
+- Core owner sheet separately reproduced premature Applied/Undo/outcome/skip
+  success: five failing receipt cases in `core-followup-valid-red.log` (03:28:54Z).
+  It now uses the same combined Store mutation and DurableSubmission receipt,
+  preserves one submission during retry, blocks dismissal/replacement while
+  unacknowledged, and emits success only after local ACK. Outcome and skip also
+  wait before leaving the form. Home passes its existing receipt callbacks.
+  Seven tests pass including iOS renderer branch, repeat taps and failed retry;
+  this is renderer verification, NOT a phone installation/device result.
+  Logs: `core-native-and-web-receipts` (03:36:42Z), `core-final-tsc` (03:33:09Z),
+  `core-domain-regression` (03:32:55Z), `joint-state-layer-regression` (157 checks),
+  `reliable-plans-build` (03:33:23Z). No lint script exists.
+- Normal UI at 393x852/1280x900 dark: create schedule + state-layer decision,
+  open existing Core entry with `questlife_core_v1=1`, fail Undo, retry, fail
+  re-Apply, retry, Undo again, refresh. Same decision ID and original schedule
+  retained; no page errors/horizontal overflow. This resumes a real locally
+  created decision, NOT a verified hosted Quant-generated proposal. Logs:
+  `core-normal-browser-{393,1280}`; screenshots `core-*-core-apply-retry-dark.png`.
+  Visual inspection exposed untranslated state-layer keys and a UTC-based
+  tomorrow label in Core; fix that presentation boundary next.
 
 - Device performance/HealthKit and expired Personal Team installation require
   coordinated owner action; no unattended device updates.
-- Durable schedule/episode atomicity and external Calendar conflict behavior
-  remain explicit risks until reproduced and tested. Do not claim them fixed
-  from UI-only tests.
+- State-layer and Core local schedule/episode atomicity are now covered above.
+  Legacy opt-in AdaptiveDecisionLoopOwnerSheet and external Calendar conflict
+  behavior remain open; no remote database transaction/device claim.
 - Installed signing, end-to-end hosted persistence and visual acceptance are
   NOT established by typecheck, browser fixtures or a successful export.

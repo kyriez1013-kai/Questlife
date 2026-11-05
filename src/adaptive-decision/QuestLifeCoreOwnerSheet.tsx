@@ -39,9 +39,11 @@ import { loadOwnerQuantArtifacts, type OwnerQuantRuntimeArtifacts } from './owne
 import { DecisionPlanPatchConflictError } from './planPatch';
 import { adaptiveText, candidateCopy, questionTypeLabel } from './presentation';
 import { recordAdaptiveDecisionTelemetry } from './telemetry';
+import { DurableSubmission } from '../utils/durableSubmission';
 
 type OwnerOutcome = Omit<DecisionFollowUpOutcomeV1, 'id' | 'recordedAt'>;
 type CoreView = 'loading' | 'decision' | 'follow_up' | 'memory';
+type SubmissionKind = 'apply' | 'undo' | 'outcome' | 'skip';
 
 function NativeDecisionSheet({ children, closeLabel, footer, onClose, theme, title, visible }: React.ComponentProps<typeof V11Stage2ProductionSheet>) {
   return <BottomSheetForm visible={visible} onClose={onClose} closeAccessibilityLabel={closeLabel} footer={footer}>
@@ -57,10 +59,12 @@ type Props = {
   decisionResults: DecisionResult[];
   lang: Lang;
   onAddDecisionResult: (result: ReturnType<typeof decisionEpisodeToResult>) => DecisionResult;
-  onApplySchedulePatch: (patch: NonNullable<DecisionEpisodeV1['appliedPlanPatch']>) => ScheduleBlock[];
+  onApplySchedulePatch: (patch: NonNullable<DecisionEpisodeV1['appliedPlanPatch']>, result: DecisionResult) => ScheduleBlock[];
   onClose: () => void;
-  onUndoSchedulePatch: (patch: NonNullable<DecisionEpisodeV1['appliedPlanPatch']>) => ScheduleBlock[];
+  onUndoSchedulePatch: (patch: NonNullable<DecisionEpisodeV1['appliedPlanPatch']>, episode: DecisionEpisodeV1) => ScheduleBlock[];
   onUpdateDecisionEpisode: (id: string, episode: DecisionEpisodeV1) => void;
+  waitForLocalWrites: () => Promise<void>;
+  retryLocalWrites: () => Promise<void>;
   reducedMotion: boolean;
   theme: V11ThemeTokens;
   visible: boolean;
@@ -109,6 +113,8 @@ export default function QuestLifeCoreOwnerSheet({
   onClose,
   onUndoSchedulePatch,
   onUpdateDecisionEpisode,
+  waitForLocalWrites,
+  retryLocalWrites,
   reducedMotion,
   theme,
   visible,
@@ -129,6 +135,9 @@ export default function QuestLifeCoreOwnerSheet({
   const initializedVisibleRef = useRef(false);
   const persistedEpisodeIdsRef = useRef(new Set<string>());
   const artifactsRef = useRef<OwnerQuantRuntimeArtifacts | null>(null);
+  const submission = useRef(new DurableSubmission<{ episode: DecisionEpisodeV1; view: CoreView; startedAt: number }>());
+  const submitting = useRef(false);
+  const [pendingKind, setPendingKind] = useState<SubmissionKind | null>(null);
 
   useEffect(() => {
     persistedEpisodeIdsRef.current = new Set(
@@ -221,6 +230,7 @@ export default function QuestLifeCoreOwnerSheet({
   }, [copy, data, persistEpisode]);
 
   const startNewDecision = useCallback(() => {
+    if (submission.current.hasPending || submitting.current) return;
     const generation = ++generationRef.current;
     artifactsRef.current = null;
     setView('loading');
@@ -296,31 +306,61 @@ export default function QuestLifeCoreOwnerSheet({
   }, [data.executionLogs, decisionResults, onUpdateDecisionEpisode, startNewDecision, visible]);
 
   const answerQuestion = useCallback((questionId: string, value: string) => {
-    if (!episode || episode.status !== 'NEEDS_INPUT') return;
+    if (!episode || episode.status !== 'NEEDS_INPUT' || busy || submission.current.hasPending) return;
     const nextAnswers = { ...answers, [questionId]: value };
     setAnswers(nextAnswers);
     if (episode.missingContext.some((question) => !nextAnswers[question.id])) return;
     const generation = ++generationRef.current;
     void propose(episode, nextAnswers, generation);
-  }, [answers, episode, propose]);
+  }, [answers, busy, episode, propose]);
 
   const selectAction = useCallback((actionId: string) => {
-    if (!episode?.candidateActions.some((candidate) => candidate.id === actionId)) return;
+    if (busy || submission.current.hasPending || !episode?.candidateActions.some((candidate) => candidate.id === actionId)) return;
     setActiveActionId(actionId);
     recordAdaptiveDecisionTelemetry({
       name: 'decision_proposal_selected',
       questionType: episode.question.type,
       fixtureOnly: false,
     });
-  }, [episode]);
+  }, [busy, episode]);
 
-  const apply = useCallback(() => {
-    if (!episode || !activeActionId || busy) return;
+  const submit = useCallback(async (kind: SubmissionKind, create: () => DecisionEpisodeV1, nextView: (next: DecisionEpisodeV1) => CoreView) => {
+    if (submitting.current || busy || (submission.current.hasPending && pendingKind !== kind)) return;
+    submitting.current = true;
     setBusy(true);
     setError('');
     setPlanChanged(false);
-    const started = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    setPendingKind(kind);
     try {
+      await submission.current.run(() => {
+        const startedAt = Date.now();
+        const next = create();
+        return { episode: next, view: nextView(next), startedAt };
+      }, waitForLocalWrites, retryLocalWrites, async ({ episode: saved, view: savedView, startedAt }) => {
+        setEpisode(saved);
+        setActiveActionId(saved.selectedActionId ?? saved.candidateActions[0]?.id);
+        setView(savedView);
+        const name = kind === 'apply' ? 'decision_plan_applied' : kind === 'undo' ? 'decision_undo_used' : kind === 'outcome' ? 'decision_follow_up_completed' : undefined;
+        if (name) recordAdaptiveDecisionTelemetry({
+          name, questionType: saved.question.type, fixtureOnly: false,
+          ...(kind === 'apply' ? { operationCount: saved.appliedPlanPatch?.operations.length, planMutationLatencyMs: Math.max(0, Date.now() - startedAt) } : {}),
+          ...(kind === 'outcome' ? { usefulness: saved.followUpOutcomes.at(-1)?.usefulness } : {}),
+        });
+      });
+    } catch (caught) {
+      const conflict = caught instanceof DecisionPlanPatchConflictError;
+      setPlanChanged(conflict);
+      setError(copy(conflict ? 'adaptiveCorePlanChanged' : 'captureSaveRetry'));
+    } finally {
+      if (!submission.current.hasPending) setPendingKind(null);
+      submitting.current = false;
+      setBusy(false);
+    }
+  }, [busy, copy, pendingKind, retryLocalWrites, waitForLocalWrites]);
+
+  const apply = useCallback(async () => {
+    if (!episode || !activeActionId) return;
+    await submit('apply', () => {
       const accepted = episode.status === 'PROPOSED'
         ? selectDecisionAction(episode, activeActionId, new Date().toISOString())
         : episode;
@@ -330,96 +370,56 @@ export default function QuestLifeCoreOwnerSheet({
         appliedAt: new Date().toISOString(),
       });
       if (!applied.episode.appliedPlanPatch) throw new Error('Decision plan patch was not created.');
-      onApplySchedulePatch(applied.episode.appliedPlanPatch);
-      persistEpisode(applied.episode);
-      setEpisode(applied.episode);
-      setActiveActionId(applied.episode.selectedActionId);
-      const planMutationLatencyMs = Math.max(
-        0,
-        (typeof performance !== 'undefined' ? performance.now() : Date.now()) - started,
-      );
-      recordAdaptiveDecisionTelemetry({
-        name: 'decision_plan_applied',
-        questionType: applied.episode.question.type,
-        operationCount: applied.episode.appliedPlanPatch.operations.length,
-        elapsedMs: planMutationLatencyMs,
-        planMutationLatencyMs,
-        fixtureOnly: false,
-      });
-    } catch (caught) {
-      const conflict = caught instanceof DecisionPlanPatchConflictError;
-      setPlanChanged(conflict);
-      setError(copy(conflict ? 'adaptiveCorePlanChanged' : 'adaptiveCorePlanUpdateFailed'));
-    } finally {
-      setBusy(false);
-    }
-  }, [activeActionId, busy, copy, data.scheduleBlocks, episode, onApplySchedulePatch, persistEpisode]);
+      onApplySchedulePatch(applied.episode.appliedPlanPatch, decisionEpisodeToResult({
+        episode: applied.episode, headline: applied.episode.question.text ?? questionTypeLabel(lang, applied.episode.question.type),
+      }));
+      persistedEpisodeIdsRef.current.add(applied.episode.id);
+      return applied.episode;
+    }, () => 'decision');
+  }, [activeActionId, data.scheduleBlocks, episode, lang, onApplySchedulePatch, submit]);
 
-  const undo = useCallback(() => {
-    if (!episode?.appliedPlanPatch || busy) return;
-    setBusy(true);
-    setError('');
-    setPlanChanged(false);
-    try {
+  const undo = useCallback(async () => {
+    if (!episode?.appliedPlanPatch) return;
+    await submit('undo', () => {
       const undone = undoAppliedDecision({
         episode,
         scheduleBlocks: data.scheduleBlocks || [],
         undoneAt: new Date().toISOString(),
         executionLogs: data.executionLogs,
       });
-      onUndoSchedulePatch(episode.appliedPlanPatch);
-      persistEpisode(undone.episode);
-      setEpisode(undone.episode);
-      setActiveActionId(undone.episode.candidateActions[0]?.id);
-      recordAdaptiveDecisionTelemetry({
-        name: 'decision_undo_used',
-        questionType: episode.question.type,
-        fixtureOnly: false,
-      });
-    } catch (caught) {
-      const conflict = caught instanceof DecisionPlanPatchConflictError;
-      setPlanChanged(conflict);
-      setError(copy(conflict ? 'adaptiveCorePlanChanged' : 'adaptiveCorePlanUpdateFailed'));
-    } finally {
-      setBusy(false);
-    }
-  }, [busy, copy, data.executionLogs, data.scheduleBlocks, episode, onUndoSchedulePatch, persistEpisode]);
+      onUndoSchedulePatch(episode.appliedPlanPatch!, undone.episode);
+      return undone.episode;
+    }, () => 'decision');
+  }, [data.executionLogs, data.scheduleBlocks, episode, onUndoSchedulePatch, submit]);
 
   const updateOutcome = useCallback((patch: Partial<OwnerOutcome>) => {
+    if (submitting.current || submission.current.hasPending) return;
     setOutcome((current) => ({ ...current, ...patch }));
     setError('');
   }, []);
 
-  const saveOutcome = useCallback(() => {
+  const saveOutcome = useCallback(async () => {
     if (!episode?.followUpPlan) return;
     const missing = validateDecisionOutcome(episode.followUpPlan, outcome);
     if (missing.length > 0) {
       setError(copy('adaptiveOutcomeMissing', { fields: missing.join(', ') }));
       return;
     }
-    try {
+    await submit('outcome', () => {
       const next = recordDecisionOutcome(episode, outcome, new Date().toISOString(), data.executionLogs);
       persistEpisode(next);
-      setEpisode(next);
-      setView('memory');
-      recordAdaptiveDecisionTelemetry({
-        name: 'decision_follow_up_completed',
-        questionType: next.question.type,
-        usefulness: outcome.usefulness,
-        fixtureOnly: false,
-      });
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
-    }
-  }, [copy, data.executionLogs, episode, outcome, persistEpisode]);
+      return next;
+    }, () => 'memory');
+  }, [copy, data.executionLogs, episode, outcome, persistEpisode, submit]);
 
-  const skipOutcome = useCallback(() => {
+  const skipOutcome = useCallback(async () => {
     if (!episode) return;
-    const next = skipDecisionFollowUp(episode, new Date().toISOString(), data.executionLogs);
-    persistEpisode(next);
-    setEpisode(next);
-    setView(next.status === 'CLOSED' ? 'memory' : 'decision');
-  }, [data.executionLogs, episode, persistEpisode]);
+    await submit('skip', () => {
+      const next = skipDecisionFollowUp(episode, new Date().toISOString(), data.executionLogs);
+      persistEpisode(next);
+      return next;
+    }, next => next.status === 'CLOSED' ? 'memory' : 'decision');
+  }, [data.executionLogs, episode, persistEpisode, submit]);
 
   const footer = useMemo(() => view === 'follow_up' ? (
     <V11StickySheetFooter
@@ -428,9 +428,11 @@ export default function QuestLifeCoreOwnerSheet({
       onSave={saveOutcome}
       saveLabel={copy('adaptiveSaveOutcome')}
       saving={busy}
+      cancelDisabled={busy || pendingKind === 'outcome'}
+      disabled={pendingKind === 'skip'}
       theme={theme}
     />
-  ) : undefined, [busy, copy, saveOutcome, skipOutcome, theme, view]);
+  ) : undefined, [busy, copy, pendingKind, saveOutcome, skipOutcome, theme, view]);
 
   const selectedAction = episode?.candidateActions.find((candidate) => candidate.id === episode.selectedActionId);
   const selectedCopy = selectedAction ? candidateCopy(lang, selectedAction) : null;
@@ -449,12 +451,14 @@ export default function QuestLifeCoreOwnerSheet({
       closeLabel={copy('cancel')}
       footer={footer}
       minHeight={500}
-      onClose={onClose}
+      onClose={() => { if (!busy && !submitting.current && !submission.current.hasPending) onClose(); }}
       reducedMotion={reducedMotion}
       theme={theme}
       title={copy('adaptiveOwnerSheetTitle')}
       visible={visible}
     >
+      {pendingKind && busy ? <Text accessibilityLiveRegion="polite" style={[styles.meta, { color: theme.text.secondary }]}>{copy('savingRecord')}</Text> : null}
+      {pendingKind && !busy ? <V11SheetButton label={copy('rebaselineRetry')} onPress={pendingKind === 'apply' ? apply : pendingKind === 'undo' ? undo : pendingKind === 'outcome' ? saveOutcome : skipOutcome} theme={theme} variant="secondary" /> : null}
       {view === 'loading' ? (
         <View accessibilityLiveRegion="polite" style={styles.loading}>
           <Text style={[styles.loadingTitle, { color: theme.text.primary }]}>{copy('adaptiveCoreLoadingTitle')}</Text>
@@ -469,7 +473,7 @@ export default function QuestLifeCoreOwnerSheet({
           <DecisionWorkspace
             activeActionId={activeActionId}
             answers={answers}
-            busy={busy}
+            busy={busy || pendingKind !== null}
             canApply={canApply}
             embedded
             episode={episode}
@@ -496,20 +500,20 @@ export default function QuestLifeCoreOwnerSheet({
           {required(episode, 'state') ? (
             <View style={styles.outcomeGroup}>
               <Text style={[styles.label, { color: theme.text.secondary }]}>{copy('adaptiveOutcomeState')}</Text>
-              <V11DiscreteNumericRail onChange={(state) => updateOutcome({ state })} options={[1, 2, 3, 4, 5].map((value) => ({ value, label: copy(`adaptiveState${value}`) }))} theme={theme} value={outcome.state ?? 0} />
+              <V11DiscreteNumericRail disabled={busy || pendingKind !== null} onChange={(state) => updateOutcome({ state })} options={[1, 2, 3, 4, 5].map((value) => ({ value, label: copy(`adaptiveState${value}`) }))} theme={theme} value={outcome.state ?? 0} />
             </View>
           ) : null}
           {required(episode, 'fatigue') ? (
             <View style={styles.outcomeGroup}>
               <Text style={[styles.label, { color: theme.text.secondary }]}>{copy('adaptiveOutcomeFatigue')}</Text>
-              <V11DiscreteNumericRail onChange={(fatigue) => updateOutcome({ fatigue })} options={[1, 2, 3, 4, 5].map((value) => ({ value, label: copy(`adaptiveState${value}`) }))} theme={theme} value={outcome.fatigue ?? 0} />
+              <V11DiscreteNumericRail disabled={busy || pendingKind !== null} onChange={(fatigue) => updateOutcome({ fatigue })} options={[1, 2, 3, 4, 5].map((value) => ({ value, label: copy(`adaptiveState${value}`) }))} theme={theme} value={outcome.fatigue ?? 0} />
             </View>
           ) : null}
           {required(episode, 'task_result') ? (
             <View style={styles.outcomeGroup}>
               <Text style={[styles.label, { color: theme.text.secondary }]}>{copy('adaptiveOutcomeTask')}</Text>
               <View style={styles.chipRow}>{(['completed', 'partially_completed', 'not_completed'] as const).map((value) => (
-                <V11CategoricalChip accessibilityRole="radio" key={value} label={copy(`adaptiveTaskResult_${value}`)} onPress={() => updateOutcome({ taskResult: value })} selected={outcome.taskResult === value} theme={theme} tone="neutral" />
+                <V11CategoricalChip accessibilityRole="radio" disabled={busy || pendingKind !== null} key={value} label={copy(`adaptiveTaskResult_${value}`)} onPress={() => updateOutcome({ taskResult: value })} selected={outcome.taskResult === value} theme={theme} tone="neutral" />
               ))}</View>
             </View>
           ) : null}
@@ -517,7 +521,7 @@ export default function QuestLifeCoreOwnerSheet({
             <View style={styles.outcomeGroup}>
               <Text style={[styles.label, { color: theme.text.secondary }]}>{copy('adaptiveOutcomeCarryover')}</Text>
               <View style={styles.chipRow}>{(['none', 'some', 'significant'] as const).map((value) => (
-                <V11CategoricalChip accessibilityRole="radio" key={value} label={copy(`adaptiveCarryover_${value}`)} onPress={() => updateOutcome({ carryover: value })} selected={outcome.carryover === value} theme={theme} tone="neutral" />
+                <V11CategoricalChip accessibilityRole="radio" disabled={busy || pendingKind !== null} key={value} label={copy(`adaptiveCarryover_${value}`)} onPress={() => updateOutcome({ carryover: value })} selected={outcome.carryover === value} theme={theme} tone="neutral" />
               ))}</View>
             </View>
           ) : null}
@@ -525,7 +529,7 @@ export default function QuestLifeCoreOwnerSheet({
             <View style={styles.outcomeGroup}>
               <Text style={[styles.label, { color: theme.text.secondary }]}>{copy('adaptiveOutcomeUseful')}</Text>
               <View style={styles.chipRow}>{(['helpful', 'uncertain', 'not_helpful'] as const).map((value) => (
-                <V11CategoricalChip accessibilityRole="radio" key={value} label={copy(`adaptiveUsefulness_${value}`)} onPress={() => updateOutcome({ usefulness: value })} selected={outcome.usefulness === value} theme={theme} tone="neutral" />
+                <V11CategoricalChip accessibilityRole="radio" disabled={busy || pendingKind !== null} key={value} label={copy(`adaptiveUsefulness_${value}`)} onPress={() => updateOutcome({ usefulness: value })} selected={outcome.usefulness === value} theme={theme} tone="neutral" />
               ))}</View>
             </View>
           ) : null}

@@ -176,7 +176,8 @@ export default function AdaptiveDecisionWorkspace({
                 {question.options.map((option) => (
                   <WebPressable
                     accessibilityRole="radio"
-                    accessibilityState={{ checked: answers[question.id] === option.value }}
+                    accessibilityState={{ checked: answers[question.id] === option.value, disabled: busy }}
+                    disabled={busy}
                     key={option.value}
                     onPress={() => onAnswer(question.id, option.value)}
                     uiClass={`adl2-answer${answers[question.id] === option.value ? ' is-selected' : ''}`}
@@ -231,7 +232,7 @@ export default function AdaptiveDecisionWorkspace({
                   ))}
                 </WebView>
                 <WebText uiClass="adl2-follow-up-note">{copy('adaptiveSurfaceFollowUpLater')}</WebText>
-                <WebPressable accessibilityRole="button" onPress={onUndo} uiClass="adl2-undo-button">
+                <WebPressable accessibilityRole="button" accessibilityState={{ disabled: busy }} disabled={busy} onPress={onUndo} uiClass="adl2-undo-button">
                   <WebText uiClass="adl2-undo-text">{copy('adaptiveSurfaceUndo')}</WebText>
                 </WebPressable>
               </WebView>
@@ -301,7 +302,8 @@ export default function AdaptiveDecisionWorkspace({
                 {presentation.alternatives.map((alternative) => (
                   <WebPressable
                     accessibilityRole="radio"
-                    accessibilityState={{ checked: activeActionId === alternative.id }}
+                    accessibilityState={{ checked: activeActionId === alternative.id, disabled: busy }}
+                    disabled={busy}
                     key={alternative.id}
                     onPress={() => onSelectAction(alternative.id)}
                     uiClass="adl2-alternative"
