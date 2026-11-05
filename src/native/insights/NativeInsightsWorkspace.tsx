@@ -26,7 +26,7 @@ import InsightsSourceWorkspace, { type InsightsSourceWorkspaceProps } from './In
 type Tool = InsightsDetailKind | 'watchlist' | 'range' | 'compare' | 'indicators' | 'samples' | 'analyst';
 export type NativeInsightsWorkspaceProps = Pick<InsightsSourceWorkspaceProps, 'onOpenSources' | 'onCreateRecord' | 'renderImport'> & {
   q: QuestTheme; lang: Lang; bundle: QuantProductBundleV1 | null; analysis?: QuantAnalysisExtensionV1 | null;
-  state: NativeInsightsLoadState; sample: boolean; sampleError?: boolean; deviceError?: boolean;
+  state: NativeInsightsLoadState; sample: boolean; sampleError?: boolean; sampleAnalysisError?: boolean; deviceError?: boolean;
   onRefresh: () => void; onSample: (id: InsightsV3FixtureId) => void; onExitSample: () => void;
   entityNames?: Record<string, string>;
 };
@@ -37,7 +37,7 @@ const details: Array<{ kind: InsightsDetailKind; copy: InsightsV3CopyKey; icon: 
   { kind: 'similar', copy: 'similar', icon: 'calendar' }, { kind: 'recovery', copy: 'recovery', icon: 'chart' }, { kind: 'scenario', copy: 'scenario', icon: 'decision' },
 ];
 
-export default function NativeInsightsWorkspace({ q, lang, bundle, analysis, state, sample, sampleError, deviceError, onRefresh, onSample, onExitSample, onOpenSources, onCreateRecord, renderImport, entityNames = {} }: NativeInsightsWorkspaceProps) {
+export default function NativeInsightsWorkspace({ q, lang, bundle, analysis, state, sample, sampleError, sampleAnalysisError, deviceError, onRefresh, onSample, onExitSample, onOpenSources, onCreateRecord, renderImport, entityNames = {} }: NativeInsightsWorkspaceProps) {
   const s = insightsStyles(q); const f = useMemo(() => getQuestVisualFoundation(q), [q]);
   const model = useMemo(() => bundle ? adaptQuantProductBundleV1(bundle) : null, [bundle]);
   const label = (row: Parameters<typeof instrumentLabel>[1] & { entityId?: string }) => instrumentLabel(lang, row, sample ? undefined : entityNames[row.entityId ?? '']);
@@ -93,7 +93,10 @@ export default function NativeInsightsWorkspace({ q, lang, bundle, analysis, sta
       <View style={s.row}><Text accessibilityRole="header" style={[s.title, s.grow]}>{ni(lang, 'title')}</Text>{!sample ? <InsightButton q={q} compact icon="reset" label={ni(lang, state.attempted ? 'refresh' : 'load')} busy={state.busy} onPress={onRefresh} /> : null}</View>
       {sample ? <View style={{ gap: q.spacing.xs }}><View style={s.row}><Text accessibilityRole="header" style={[s.heading, s.grow]}>{ni(lang, 'sample')}</Text><InsightButton q={q} compact icon="open" label={ni(lang, 'sampleExit')} onPress={onExitSample} /></View><Text style={s.meta}>{ni(lang, 'sampleBody')}</Text></View> : <Text style={s.meta}>{ni(lang, 'consent')}</Text>}
       {deviceError && !sample ? <Text accessibilityRole="alert" style={s.body}>{ni(lang, 'deviceReadError')}</Text> : null}
-      {sampleError ? <Text accessibilityRole="alert" style={s.body}>{ni(lang, 'sampleError')}</Text> : null}
+      {sample && (sampleError || sampleAnalysisError) ? <View style={{ gap: q.spacing.sm }}>
+        <Text accessibilityRole="alert" style={s.body}>{ni(lang, sampleError ? 'sampleError' : 'sampleAnalysisError')}</Text>
+        <InsightButton q={q} icon="reset" label={iv3(lang, 'retry')} busy={state.busy} onPress={onRefresh} />
+      </View> : null}
       {state.busy ? <View style={s.row}><ActivityIndicator color={q.colors.primary} /><Text accessibilityLiveRegion="polite" style={s.body}>{iv3(lang, 'loading')}</Text></View> : null}
       {state.failure && !sample ? <View style={{ gap: q.spacing.sm }}><Text accessibilityRole="alert" style={s.heading}>{ni(lang, failureKind)}</Text><Text style={s.body}>{ni(lang, `${failureKind}Body`)}</Text>{bundle ? <Text style={s.meta}>{ni(lang, 'retained')}</Text> : null}<InsightButton q={q} icon="reset" label={iv3(lang, 'retry')} busy={state.busy} onPress={onRefresh} /></View> : null}
       {!bundle && !state.failure && !state.busy && !sampleError && !sample ? <View style={{ gap: q.spacing.sm }}><Text style={s.body}>{ni(lang, state.attempted ? 'empty' : 'idle')}</Text><InsightButton q={q} icon="analyst" label={ni(lang, 'load')} onPress={onRefresh} /></View> : null}

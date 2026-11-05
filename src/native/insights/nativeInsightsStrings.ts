@@ -53,6 +53,7 @@ const strings = {
   sampleOpen: ['浏览示例', 'Explore examples'],
   sampleExit: ['返回个人数据', 'Return to my data'],
   sampleError: ['示例产物未能通过校验或加载失败', 'Example artifacts could not be validated or loaded'],
+  sampleAnalysisError: ['示例的附加分析加载或校验失败。基础观察仍可查看；可重试读取分析。', 'Additional example analysis could not load or validate. Base observations remain available; retry to load the analysis.'],
   single: ['单次观察', 'Single observation'],
   mature: ['较完整历史', 'Established history'],
   analysisMismatch: ['附加分析与当前数据不匹配，已隐藏；基础观察仍可用。', 'Additional analysis does not match this dataset and is hidden. Base observations remain available.'],

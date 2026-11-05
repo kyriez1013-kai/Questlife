@@ -10,7 +10,7 @@ const React = require(path.join(runtime, 'react'));
 const { create, act } = require(path.join(runtime, 'react-test-renderer'));
 global.IS_REACT_ACT_ENVIRONMENT = true;
 let data, focused, user, authListener, appListener, tree;
-let calls = [], jobs = [], sampleJob;
+let calls = [], jobs = [], sampleJob, analysisResult;
 const theme = { spacing: { sm: 8, xxl: 24 }, colors: { primary: '#555' } };
 const load = Module._load;
 Module._load = function(request, parent, isMain) {
@@ -32,7 +32,7 @@ Module._load = function(request, parent, isMain) {
     loadOwnerQuantArtifacts: args => { calls.push(args); const job = deferred(); jobs.push(job); return job.promise; },
   };
   if (/\/insightsV3Source$/.test(request)) return { hasInsightsV3DetailBundle: () => true, loadInsightsV3DetailBundle: () => sampleJob.promise };
-  if (/\/insightsV3AnalysisSource$/.test(request)) return { loadInsightsV3AnalysisExtension: async () => ({ ok: false }) };
+  if (/\/insightsV3AnalysisSource$/.test(request)) return { loadInsightsV3AnalysisExtension: async () => analysisResult };
   if (/\/RecordBackupActions$/.test(request)) return { __esModule: true, default: () => React.createElement('Backup') };
   if (/\/NativeInsightsWorkspace$/.test(request)) return { __esModule: true, default: props => React.createElement('Workspace', props) };
   if (/\/localChartAsset$/.test(request)) return { chartHtml: '<html></html>' };
@@ -48,8 +48,8 @@ function deferred() { let resolve, reject; const promise = new Promise((a, b) =>
 const available = id => ({ status: 'available', product: { metadata: { subject_id: user, bundle_id: id } }, eligibleObservationCount: 1, excludedObservationCount: 0, cacheHit: false, limitations: [] });
 const empty = () => ({ status: 'no_eligible_data', eligibleObservationCount: 0, excludedObservationCount: 0, cacheHit: false, limitations: [] });
 const props = () => tree.root.findByType('Workspace').props;
-const records = executions => ({ executions, settings: { selectedThemeId: 'cleanFocus', language: 'en' } });
-async function mount() { data = records([]); focused = true; user = 'isolated-recovery-a'; calls = []; jobs = []; sampleJob = deferred(); await act(async () => { tree = create(React.createElement(Experience)); }); }
+const records = executions => ({ executions, skills: [], categories: [], settings: { selectedThemeId: 'cleanFocus', language: 'en' } });
+async function mount() { data = records([]); focused = true; user = 'isolated-recovery-a'; calls = []; jobs = []; sampleJob = deferred(); analysisResult = { ok: false, code: 'NOT_AVAILABLE', issues: [], durationMs: 0 }; await act(async () => { tree = create(React.createElement(Experience)); }); }
 async function update() { await act(async () => tree.update(React.createElement(Experience))); }
 async function settle(job, result) { await act(async () => job.resolve(result)); }
 afterEach(async () => { if (tree) await act(async () => tree.unmount()); tree = undefined; });
@@ -89,6 +89,60 @@ test('sample mode never requests account analysis and leaving it refreshes curre
   assert.equal(props().sample, true); data = records([{ id: 'new-real-record' }]); await update(); assert.equal(jobs.length, 1);
   await act(async () => props().onExitSample()); assert.equal(jobs.length, 2); assert.deepEqual(calls[1].data, data);
   await settle(jobs[1], available('updated-owner')); assert.equal(props().sample, false);
+});
+test('failed extra example analysis retains the base observations and retries the same example, never owner analysis', async () => {
+  await mount(); await settle(jobs[0], empty());
+  analysisResult = { ok: false, code: 'LOAD_FAILED', issues: ['isolated interrupted download'], durationMs: 1 };
+  await act(async () => props().onSample('mature'));
+  await settle(sampleJob, { ok: true, bundle: { metadata: { subject_id: 'synthetic', bundle_id: 'sample' } } });
+  assert.equal(props().bundle.metadata.bundle_id, 'sample');
+  assert.equal(props().sampleAnalysisError, true, 'load failure must be explicit, not no analysis supplied');
+  analysisResult = { ok: true, extension: { base_bundle_id: 'sample' }, durationMs: 1 };
+  await act(async () => props().onRefresh());
+  assert.equal(props().sampleAnalysisError, false);
+  assert.equal(props().analysis.base_bundle_id, 'sample');
+  assert.equal(jobs.length, 1, 'sample retry does not call account runtime');
+  assert.deepEqual(data, records([]), 'read-only sample leaves Store input unchanged');
+});
+test('failed base example can be retried without exiting or choosing the example again', async () => {
+  await mount(); await settle(jobs[0], empty());
+  await act(async () => props().onSample('mature'));
+  await settle(sampleJob, { ok: false, code: 'LOAD_FAILED' });
+  assert.equal(props().sampleError, true); assert.equal(props().bundle, null);
+  sampleJob = deferred();
+  await act(async () => props().onRefresh());
+  assert.equal(props().state.busy, true, 'retry reloads the failed example');
+  await settle(sampleJob, { ok: true, bundle: { metadata: { subject_id: 'synthetic', bundle_id: 'retried' } } });
+  assert.equal(props().sampleError, false); assert.equal(props().bundle.metadata.bundle_id, 'retried');
+  assert.equal(jobs.length, 1);
+});
+test('an example without a registered extension is not a service error', async () => {
+  await mount(); await settle(jobs[0], empty());
+  await act(async () => props().onSample('recovery'));
+  await settle(sampleJob, { ok: true, bundle: { metadata: { subject_id: 'synthetic', bundle_id: 'no-extra' } } });
+  assert.equal(props().sampleError, false); assert.ok(!props().sampleAnalysisError);
+  assert.equal(props().analysis, null); assert.equal(props().bundle.metadata.bundle_id, 'no-extra');
+});
+for (const code of ['INVALID_CONTRACT', 'BASE_BUNDLE_MISMATCH', 'UNSAFE_PROVENANCE']) {
+  test(`rejected example analysis (${code}) stays hidden with a recoverable error`, async () => {
+    await mount(); await settle(jobs[0], empty());
+    analysisResult = { ok: false, code, issues: ['isolated rejection'], durationMs: 1 };
+    await act(async () => props().onSample('mature'));
+    await settle(sampleJob, { ok: true, bundle: { metadata: { subject_id: 'synthetic', bundle_id: 'safe-base' } } });
+    assert.equal(props().sampleAnalysisError, true); assert.equal(props().analysis, null);
+    assert.equal(props().bundle.metadata.bundle_id, 'safe-base'); assert.equal(jobs.length, 1);
+  });
+}
+test('returning to real data invalidates an interrupted example retry', async () => {
+  await mount(); await settle(jobs[0], empty());
+  await act(async () => props().onSample('mature'));
+  await settle(sampleJob, { ok: false, code: 'LOAD_FAILED' });
+  sampleJob = deferred();
+  await act(async () => props().onRefresh());
+  await act(async () => props().onExitSample());
+  await settle(sampleJob, { ok: true, bundle: { metadata: { subject_id: 'synthetic', bundle_id: 'too-late' } } });
+  assert.equal(props().sample, false); assert.equal(props().bundle, null);
+  await settle(jobs[1], available('personal')); assert.equal(props().bundle.metadata.bundle_id, 'personal');
 });
 test('unmounted Insights ignores a late runtime response', async () => {
   await mount(); const job = jobs[0]; await act(async () => tree.unmount()); tree = undefined;

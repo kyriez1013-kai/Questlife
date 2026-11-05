@@ -24,6 +24,8 @@ export default function NativeInsightsExperience(entrances: InsightsEntrances) {
   const [owner, setOwner] = useState(initialInsightsLoadState);
   const [example, setExample] = useState<{ bundle: QuantProductBundleV1; analysis: QuantAnalysisExtensionV1 | null } | null>(null);
   const [mode, setMode] = useState<'owner' | 'sample'>('owner'); const [exampleBusy, setExampleBusy] = useState(false); const [exampleError, setExampleError] = useState(false);
+  const [exampleAnalysisError, setExampleAnalysisError] = useState(false);
+  const exampleId = useRef<InsightsV3FixtureId | null>(null);
   const request = useRef(0); const exampleRequest = useRef(0); const pending = useRef(false);
   const latest = useRef(observations); latest.current = observations;
   const latestSnapshot = useRef(snapshot); latestSnapshot.current = snapshot;
@@ -70,22 +72,28 @@ export default function NativeInsightsExperience(entrances: InsightsEntrances) {
     void refresh();
     return () => { request.current += 1; pending.current = false; };
   }, [snapshot, userId, refresh]);
-  const sample = async (id: InsightsV3FixtureId) => {
+  const sample = async (id: InsightsV3FixtureId, retry = false) => {
     request.current += 1; const ticket = ++exampleRequest.current; pending.current = false;
-    setOwner(current => ({ ...current, busy: false })); setMode('sample'); setExample(null); setExampleBusy(true); setExampleError(false);
+    exampleId.current = id;
+    setOwner(current => ({ ...current, busy: false })); setMode('sample');
+    if (!retry) setExample(null);
+    setExampleBusy(true); setExampleError(false); setExampleAnalysisError(false);
     try {
       const result = hasInsightsV3DetailBundle(id) ? await loadInsightsV3DetailBundle(id) : await loadInsightsV3InitialBundle(id);
       if (!result.ok) throw new Error('example_rejected');
       const extension = await loadInsightsV3AnalysisExtension(id, result.bundle.metadata.bundle_id);
-      if (ticket === exampleRequest.current) setExample({ bundle: result.bundle, analysis: extension.ok ? extension.extension : null });
+      if (ticket === exampleRequest.current) {
+        setExample({ bundle: result.bundle, analysis: extension.ok ? extension.extension : null });
+        setExampleAnalysisError(!extension.ok && extension.code !== 'NOT_AVAILABLE');
+      }
     } catch { if (ticket === exampleRequest.current) setExampleError(true); }
     finally { if (ticket === exampleRequest.current) setExampleBusy(false); }
   };
-  const exit = () => { request.current += 1; exampleRequest.current += 1; pending.current = false; setExampleBusy(false); setExample(null); setExampleError(false); setMode('owner'); };
+  const exit = () => { request.current += 1; exampleRequest.current += 1; pending.current = false; exampleId.current = null; setExampleBusy(false); setExample(null); setExampleError(false); setExampleAnalysisError(false); setMode('owner'); };
   const bundle = mode === 'sample' ? example?.bundle ?? null : owner.result?.product ?? null;
   const entityNames = mode === 'sample' ? {} : Object.fromEntries([
     ...data.skills.map(row => [`skill:${row.id}`, row.name]),
     ...data.categories.map(row => [`goal:${row.id}`, row.name]),
   ]);
-  return <NativeInsightsWorkspace {...entrances} entityNames={entityNames} renderImport={() => <RecordBackupActions />} key={`${mode}:${bundle?.metadata.subject_id ?? 'empty'}`} q={q} lang={lang} bundle={bundle} analysis={mode === 'sample' ? example?.analysis : owner.result?.analysis} state={mode === 'sample' ? { ...initialInsightsLoadState, attempted: true, busy: exampleBusy } : owner} sample={mode === 'sample'} sampleError={exampleError} deviceError={device.error} onRefresh={() => void refresh()} onSample={id => void sample(id)} onExitSample={exit} />;
+  return <NativeInsightsWorkspace {...entrances} entityNames={entityNames} renderImport={() => <RecordBackupActions />} key={`${mode}:${bundle?.metadata.subject_id ?? 'empty'}`} q={q} lang={lang} bundle={bundle} analysis={mode === 'sample' ? example?.analysis : owner.result?.analysis} state={mode === 'sample' ? { ...initialInsightsLoadState, attempted: true, busy: exampleBusy } : owner} sample={mode === 'sample'} sampleError={exampleError} sampleAnalysisError={exampleAnalysisError} deviceError={device.error} onRefresh={() => { if (mode === 'sample' && exampleId.current) void sample(exampleId.current, true); else void refresh(); }} onSample={id => void sample(id)} onExitSample={exit} />;
 }
