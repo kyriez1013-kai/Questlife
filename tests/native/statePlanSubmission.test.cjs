@@ -17,13 +17,18 @@ global.Date = class extends RealDate {
 };
 const host = name => props => React.createElement(name, props, props.children);
 const originalLoad = Module._load;
+let calendarEvents = [], calendarFailure, calendarGate;
 Module._load = function(request, parent, isMain) {
   if (request === 'react') return React;
   if (request === 'react/jsx-runtime') return require(path.join(runtime, 'react/jsx-runtime'));
   if (request === 'react-native') return { Text: 'Text', View: 'View', Pressable: 'Pressable' };
   if (request === '../store') return { useStore: () => store };
   if (request.endsWith('/V11Stage2ProductionSheet')) return host('Sheet');
-  if (request.endsWith('/V11SheetControls')) return { V11StickySheetFooter: host('Footer') };
+  if (request.endsWith('/V11SheetControls')) return { V11StickySheetFooter: host('Footer'), V11SheetButton: host('Button') };
+  if (request.endsWith('/readPlanCalendar')) return { readPlanCalendar: async () => {
+    if (calendarGate) await calendarGate.promise;
+    if (calendarFailure) throw calendarFailure; return calendarEvents;
+  } };
   return originalLoad.call(this, request, parent, isMain);
 };
 for (const ext of ['.ts', '.tsx']) require.extensions[ext] = (module, file) => module._compile(ts.transpileModule(fs.readFileSync(file, 'utf8'), {
@@ -32,6 +37,7 @@ for (const ext of ['.ts', '.tsx']) require.extensions[ext] = (module, file) => m
 const { applyDecisionPlanPatch, undoDecisionPlanPatch } = require('../../src/adaptive-decision/planPatch.ts');
 const { useStateLayerPlan } = require('../../src/state-layer/useStateLayerActions.ts');
 const Reorder = require('../../src/state-layer/StateReorderSheet.tsx').default;
+const { CalendarPlanUnavailableError } = require('../../src/platform/calendar/planAvailability.ts');
 let tree, hook, store, applyCount, undoCount, retryCount, episodeCount, wait, closed, applied;
 const deferred = () => { let resolve; const promise = new Promise(done => resolve = done); return { promise, resolve }; };
 const block = (id, start, taskType) => ({ id, title: id, date: '2026-11-05', startTime: `${start}:00`, endTime: `${start + 1}:00`,
@@ -42,6 +48,7 @@ function Probe() { hook = useStateLayerPlan(); return null; }
 const footer = () => tree.root.findByType('Sheet').props.footer.props;
 async function render(sheet = false) {
   applyCount = undoCount = retryCount = episodeCount = closed = 0; applied = []; wait = async () => {};
+  calendarEvents = []; calendarFailure = undefined; calendarGate = undefined;
   store = {
     data: { scheduleBlocks: initial(), executionLogs: [], decisionResults: [] },
     waitForLocalWrites: () => wait(), retryLocalWrites: async () => { retryCount++; },
@@ -57,8 +64,62 @@ async function render(sheet = false) {
 }
 afterEach(async () => { if (tree) await act(async () => tree.unmount()); tree = null; });
 
+const occupied = (start = '20:00', end = '21:00') => ({
+  id: 'ISOLATED_EXTERNAL', externalEventId: 'ISOLATED_EXTERNAL', calendarId: 'ISOLATED_CALENDAR',
+  title: 'Isolated busy time', source: 'system_calendar', ownership: 'external', availability: 'busy', allDay: false,
+  startAt: new Date(`2026-11-05T${start}:00`).toISOString(), endAt: new Date(`2026-11-05T${end}:00`).toISOString(), lastSyncedAt: new Date().toISOString(),
+});
+test('state-layer preview rejects external Calendar occupancy', async () => {
+  await render(); calendarEvents = [occupied()];
+  await assert.rejects(async () => patch(), /calendar_plan_conflict/);
+  assert.equal(applyCount, 0);
+});
+test('state-layer Apply refreshes external occupancy after a free preview', async () => {
+  await render(); const p = await patch(); calendarEvents = [occupied()];
+  await assert.rejects(hook.confirmAndApply({ patch: p, headline: 'QA', ruleId: 'qa' }), /calendar_plan_conflict/);
+  assert.equal(applyCount, 0); assert.equal(store.data.decisionResults.length, 0);
+});
+test('state-layer Undo refreshes external occupancy before restoring the original plan', async () => {
+  await render(); const p = await patch(); const plan = await hook.confirmAndApply({ patch: p, headline: 'QA', ruleId: 'qa' });
+  await act(async () => tree.update(React.createElement(Probe))); calendarEvents = [occupied()];
+  await assert.rejects(hook.undo(plan), /calendar_plan_conflict/);
+  assert.equal(undoCount, 0);
+});
+
+test('preview read failure leaves a genuine Retry action and no enabled Apply', async () => {
+  await render(true); calendarFailure = new CalendarPlanUnavailableError();
+  // A new demand starts a new preview, exactly as the normal row control does.
+  await act(async () => tree.root.findAllByType('Pressable')[0].props.onPress());
+  assert.equal(footer().disabled, true);
+  assert.equal(applyCount, 0);
+  const content = tree.root.findAllByType('Text').map(row => row.children.join('')).join('|');
+  assert.match(content, /availability could not be confirmed/i);
+  calendarFailure = undefined;
+  await act(async () => tree.root.findByType('Button').props.onPress());
+  assert.equal(footer().disabled, false);
+});
+
+test('Calendar failure never creates a decision and a retry can use the original confirmed patch', async () => {
+  await render(); const p = await patch(); calendarFailure = new CalendarPlanUnavailableError();
+  await assert.rejects(hook.confirmAndApply({ patch: p, headline: 'QA', ruleId: 'qa' }), CalendarPlanUnavailableError);
+  assert.equal(applyCount, 0); assert.equal(hook.hasPendingApply, false);
+  calendarFailure = undefined;
+  await hook.confirmAndApply({ patch: p, headline: 'QA', ruleId: 'qa' });
+  assert.equal(applyCount, 1); assert.equal(store.data.decisionResults.length, 1);
+});
+
+test('slow Calendar preflight coalesces taps and performs no optimistic write before it finishes', async () => {
+  await render(); const input = { patch: await patch(), headline: 'QA', ruleId: 'qa' };
+  calendarGate = deferred();
+  const a = hook.confirmAndApply(input); const b = hook.confirmAndApply(input);
+  assert.equal(applyCount, 0); assert.equal(store.data.decisionResults.length, 0); assert.equal(hook.hasPendingApply, true);
+  calendarGate.resolve();
+  assert.equal((await a).episode.id, (await b).episode.id);
+  assert.equal(applyCount, 1); assert.equal(store.data.decisionResults.length, 1);
+});
+
 test('Apply ACK retry retains the same episode and never reapplies the schedule', async () => {
-  await render(); const input = { patch: patch(), headline: 'QA', ruleId: 'qa' };
+  await render(); const input = { patch: await patch(), headline: 'QA', ruleId: 'qa' };
   wait = async () => { throw Error('ACK_MISSING'); };
   await assert.rejects(hook.confirmAndApply(input), /ACK_MISSING/);
   const id = store.data.decisionResults[0].id;
@@ -69,14 +130,15 @@ test('Apply ACK retry retains the same episode and never reapplies the schedule'
 
 test('concurrent Apply calls share a single pending confirmation', async () => {
   await render(); const gate = deferred(); wait = () => gate.promise;
-  const input = { patch: patch(), headline: 'QA', ruleId: 'qa' };
+  const input = { patch: await patch(), headline: 'QA', ruleId: 'qa' };
   const a = hook.confirmAndApply(input); const b = hook.confirmAndApply(input);
+  await new Promise(resolve => setImmediate(resolve)); // Availability preflight precedes the mutation.
   assert.equal(applyCount, 1); assert.equal(store.data.decisionResults.length, 1);
   gate.resolve(); assert.equal((await a).episode.id, (await b).episode.id);
 });
 
 test('Undo ACK retry saves the original result without executing Undo twice', async () => {
-  await render(); const result = await hook.confirmAndApply({ patch: patch(), headline: 'QA', ruleId: 'qa' });
+  await render(); const result = await hook.confirmAndApply({ patch: await patch(), headline: 'QA', ruleId: 'qa' });
   await act(async () => tree.update(React.createElement(Probe)));
   wait = async () => { throw Error('UNDO_ACK_MISSING'); };
   await assert.rejects(hook.undo(result), /UNDO_ACK_MISSING/);
@@ -87,7 +149,7 @@ test('Undo ACK retry saves the original result without executing Undo twice', as
 });
 
 test('conflict at Apply rejects without writing any episode or schedule', async () => {
-  await render(); const input = { patch: patch(), headline: 'QA', ruleId: 'qa' };
+  await render(); const input = { patch: await patch(), headline: 'QA', ruleId: 'qa' };
   store.data = { ...store.data, scheduleBlocks: store.data.scheduleBlocks.map(b => ({ ...b, notes: 'new edit' })) };
   await act(async () => tree.update(React.createElement(Probe)));
   await assert.rejects(hook.confirmAndApply(input));
@@ -95,7 +157,7 @@ test('conflict at Apply rejects without writing any episode or schedule', async 
 });
 
 for (const change of ['edit', 'execution']) test(`Undo preserves intervening ${change}`, async () => {
-  await render(); const result = await hook.confirmAndApply({ patch: patch(), headline: 'QA', ruleId: 'qa' });
+  await render(); const result = await hook.confirmAndApply({ patch: await patch(), headline: 'QA', ruleId: 'qa' });
   store.data = change === 'edit'
     ? { ...store.data, scheduleBlocks: store.data.scheduleBlocks.map(b => ({ ...b, notes: 'new edit' })) }
     : { ...store.data, executionLogs: [{ id: 'qa-execution', linkedScheduleBlockId: 'qa-deep' }] };

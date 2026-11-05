@@ -1,9 +1,9 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useStore } from '../store';
 import type { V11ThemeTokens } from '../v11/tokens';
 import V11Stage2ProductionSheet from '../v11-stage2-rebaseline/V11Stage2ProductionSheet';
-import { V11StickySheetFooter } from '../v11/components/V11SheetControls';
+import { V11SheetButton, V11StickySheetFooter } from '../v11/components/V11SheetControls';
 import { DEMAND_LABEL, TYPE_NAME, sl, type Lang } from './copy';
 import { DEMAND_ORDER, inferDemand, reorderToday } from './reorder';
 import { localYmd } from './signals';
@@ -50,14 +50,23 @@ export default function StateReorderSheet({
   const computed = useMemo(() => {
     if (!visible) return null;
     const result = reorderToday({ type, date, now: new Date(), blocks, demandOverrides: overrides });
-    if (result.kind !== 'reordered') return { result, patch: null, problem: null as string | null };
-    try {
-      return { result, patch: plan.preview({ date, before: result.before, after: result.after }), problem: null };
-    } catch (e) {
-      return { result, patch: null, problem: errorReason(e) };
-    }
+    return { result };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, type, date, blocks, overrides]);
+  const [preview, setPreview] = useState<{ source: typeof computed; patch: DecisionPlanPatchV1 | null; problem: string | null } | null>(null);
+  const [previewAttempt, setPreviewAttempt] = useState(0);
+  const currentPreview = preview?.source === computed ? preview : null;
+  useEffect(() => {
+    let active = true;
+    if (computed?.result.kind !== 'reordered') { setPreview(null); return; }
+    setPreview(null);
+    void plan.preview({ date, before: computed.result.before, after: computed.result.after }).then(patch => {
+      if (active) setPreview({ source: computed, patch, problem: null });
+    }).catch(error => {
+      if (active) setPreview({ source: computed, patch: null, problem: errorReason(error, lang) });
+    });
+    return () => { active = false; };
+  }, [computed, date, lang, plan.preview, previewAttempt]);
 
   const rows = useMemo(() => {
     if (!computed) return [];
@@ -90,7 +99,7 @@ export default function StateReorderSheet({
   };
 
   const confirm = async () => {
-    const submission = confirmed ?? (computed?.patch ? { patch: computed.patch, rows } : null);
+    const submission = confirmed ?? (currentPreview?.patch ? { patch: currentPreview.patch, rows } : null);
     if (!submission || inFlight.current) return;
     inFlight.current = true;
     setConfirmed(submission);
@@ -103,7 +112,7 @@ export default function StateReorderSheet({
       onApplied(applied);
     } catch (e) {
       if (!plan.hasPendingApply) setConfirmed(null);
-      setError(sl(lang, 'rpApplyFailed', { reason: errorReason(e) }));
+      setError(sl(lang, 'rpApplyFailed', { reason: errorReason(e, lang) }));
     } finally {
       inFlight.current = false;
       setBusy(false);
@@ -114,7 +123,8 @@ export default function StateReorderSheet({
   const kind = computed?.result.kind;
   const message = kind === 'cant_fit' ? sl(lang, 'rpCantFit')
     : kind === 'unchanged' ? sl(lang, 'rpNothing')
-      : computed?.problem ? sl(lang, 'rpApplyFailed', { reason: computed.problem })
+      : currentPreview?.problem ? sl(lang, 'rpApplyFailed', { reason: currentPreview.problem })
+        : kind === 'reordered' && !currentPreview ? sl(lang, 'rpChecking')
         : null;
 
   return (
@@ -124,7 +134,7 @@ export default function StateReorderSheet({
         <V11StickySheetFooter
           cancelLabel={sl(lang, 'rpCancel')}
           cancelDisabled={locked}
-          disabled={(!confirmed && !computed?.patch) || busy}
+          disabled={(!confirmed && !currentPreview?.patch) || busy}
           message={error ?? undefined}
           messageStatus={error ? 'error' : 'default'}
           onCancel={close}
@@ -147,6 +157,7 @@ export default function StateReorderSheet({
           {' · '}{sl(lang, 'rpFixedKept')}
         </Text>
         {message && !confirmed ? <Text style={{ color: theme.text.primary, fontSize: 14, lineHeight: 20 }}>{message}</Text> : null}
+        {currentPreview?.problem && !confirmed ? <V11SheetButton label={sl(lang, 'retry')} theme={theme} variant="secondary" onPress={() => setPreviewAttempt(value => value + 1)} /> : null}
         {(confirmed?.rows ?? rows).map((r) => (
           <WebView dataSet={{ 'sl-role': 'plan-row', 'sl-moved': r.moved ? 'true' : 'false' }} key={r.id}>
             <WebView style={{ flex: 1, minWidth: 0 }}>

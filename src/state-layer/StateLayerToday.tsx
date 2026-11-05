@@ -201,7 +201,7 @@ export default function StateLayerToday({
       setStatus('idle');
     } catch (error) {
       setStatus('idle');
-      setNotice(sl(lang, 'rpUndoFailed', { reason: errorReason(error) }));
+      setNotice(sl(lang, 'rpUndoFailed', { reason: errorReason(error, lang) }));
     }
   }, [applied, lang, plan]);
 

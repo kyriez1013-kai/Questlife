@@ -97,7 +97,7 @@ export default function StateBrainDumpSheet({
         if (scheduled.length) {
           const added = scheduled.map((r) => brainDumpBlock({ id: r.scheduleBlockId!, date, title: r.text, time: r.time!, minutes: MINUTES, createdAt: stamp }));
           const dayBefore = blocks.filter((b) => b.date === date);
-          const patch = plan.preview({ date, before: dayBefore, after: [...dayBefore, ...added] });
+          const patch = await plan.preview({ date, before: dayBefore, after: [...dayBefore, ...added] });
           applied = await plan.confirmAndApply({ patch, headline: sl(lang, 'bdTitle'), ruleId, skipWait: true });
         }
         addContextLog({
@@ -121,7 +121,7 @@ export default function StateBrainDumpSheet({
       onDone(done.message, done.applied);
     } catch (e) {
       setFailedOnce(true);
-      setError(`${sl(lang, 'saveFailed')}：${errorReason(e)}`);
+      setError(`${sl(lang, 'saveFailed')}：${errorReason(e, lang)}`);
     } finally {
       inFlight.current = false;
       setBusy(false);

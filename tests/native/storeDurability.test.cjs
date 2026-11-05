@@ -88,7 +88,7 @@ test('state-layer schedule and episode cannot split across a failed journal writ
   let block;
   await act(async () => { block = store.addScheduleBlock({ ...plan, date: '2099-11-05' }); await store.waitForLocalWrites(); });
   const before = clone(disk.scheduleBlocks);
-  const patch = actions.preview({ date: block.date, before, after: [{ ...block, startTime: '11:00', endTime: '12:00' }] });
+  const patch = await actions.preview({ date: block.date, before, after: [{ ...block, startTime: '11:00', endTime: '12:00' }] });
   failJournal = state => state.pendingApply.some(change => change.entityType === 'decisionResults');
   await act(async () => { await assert.rejects(actions.confirmAndApply({ patch, headline: 'Isolated adjustment', ruleId: 'test-rule' }), /TEST_EPISODE_JOURNAL_FAILURE/); });
   await act(async () => tree.unmount()); tree = undefined;
@@ -106,7 +106,7 @@ for (const operation of ['apply', 'undo']) for (const recovery of ['retry', 'res
     await fresh(PlanObserver);
     let block, applied;
     await act(async () => { block = store.addScheduleBlock({ ...plan, date: '2099-11-05' }); await store.waitForLocalWrites(); });
-    const input = { patch: actions.preview({ date: block.date, before: [block], after: [{ ...block, startTime: '11:00', endTime: '12:00' }] }), headline: 'Isolated adjustment', ruleId: 'test-rule' };
+    const input = { patch: await actions.preview({ date: block.date, before: [block], after: [{ ...block, startTime: '11:00', endTime: '12:00' }] }), headline: 'Isolated adjustment', ruleId: 'test-rule' };
     if (operation === 'undo') await act(async () => { applied = await actions.confirmAndApply(input); });
     const before = clone(disk);
     failSave = true;
@@ -146,7 +146,7 @@ test('rejected Undo journal write leaves both applied schedule and Undo availabi
   function PlanObserver() { store = useStore(); actions = useStateLayerPlan(); return null; }
   await fresh(PlanObserver);
   await act(async () => { block = store.addScheduleBlock({ ...plan, date: '2099-11-05' }); await store.waitForLocalWrites(); });
-  const patch = actions.preview({ date: block.date, before: [block], after: [{ ...block, startTime: '11:00', endTime: '12:00' }] });
+  const patch = await actions.preview({ date: block.date, before: [block], after: [{ ...block, startTime: '11:00', endTime: '12:00' }] });
   await act(async () => { applied = await actions.confirmAndApply({ patch, headline: 'Isolated adjustment', ruleId: 'test-rule' }); });
   const before = clone(disk);
   failJournal = state => state.pendingApply.some(change => change.entityType === 'decisionResults');
