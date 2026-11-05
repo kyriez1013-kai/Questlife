@@ -606,3 +606,20 @@ they were corrected in the QA harness, not by weakening application assertions.
   conflict behavior remains open; no remote database transaction/device claim.
 - Installed signing, end-to-end hosted persistence and visual acceptance are
   NOT established by typecheck, browser fixtures or a successful export.
+
+### November 5: offline/save-notice theme consistency
+
+- Screenshot inspection caught the offline notice at only 1.02:1 contrast when
+  the existing review theme overrides the stored preference. The root was dark,
+  but both shared notices still requested light tokens; legacy CSS recolored the
+  text only. Browser red `offline-contrast-browser-red` (04:17:07Z); four renderer
+  cases failed in `notice-theme-red` (04:17:06Z).
+- Both notices now use the root's existing `getV11ProductThemeId` resolution.
+  Stored themes and native behavior are unchanged; no visual system replacement.
+  Nine theme cases plus twelve offline checks pass (`notice-theme-green`,
+  04:17:26Z). Typecheck and export pass at 04:17:26Z / 04:17:28Z.
+- Normal offline Capture/restart/reconnect/History passed again at 393x852 with
+  no page errors and the same execution ID. Measured notice contrast is 15.24:1
+  (`offline-contrast-browser-green`, 04:17:50Z), screenshot
+  `contrast-green-393-offline-record-restored-dark.png`. This is Chromium, not
+  physical iPhone or cloud-sync acceptance.

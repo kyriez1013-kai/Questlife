@@ -5,11 +5,12 @@ import { getLanguage } from '../i18n';
 import { useQuestTheme } from '../design/useQuestTheme';
 import QuestButton from './ui/QuestButton';
 import { nativeFormCopy } from '../native/nativeFormCopy';
+import { getV11ProductThemeId } from '../v11/featureFlag';
 
 /** Local durability is distinct from an offline, already durable sync outbox. */
 export default function LocalPersistenceNotice() {
   const { data, localPersistence, retryLocalWrites } = useStore();
-  const q = useQuestTheme(data.settings.selectedThemeId);
+  const q = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const lang = getLanguage(data.settings.language);
   const [retrying, setRetrying] = useState(false);
   if (!localPersistence.failed && !retrying) return null;

@@ -3,11 +3,12 @@ import { Platform, Text, View } from 'react-native';
 import { useStore } from '../store';
 import { getLanguage } from '../i18n';
 import { useQuestTheme } from '../design/useQuestTheme';
+import { getV11ProductThemeId } from '../v11/featureFlag';
 
 /** Web/PWA: says plainly that what is shown is this device's data and sync waits for the network. */
 export default function OfflineNotice() {
   const { data } = useStore();
-  const q = useQuestTheme(data.settings.selectedThemeId);
+  const q = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const lang = getLanguage(data.settings.language);
   const [offline, setOffline] = useState(() => Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.onLine === false);
   useEffect(() => {
