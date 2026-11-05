@@ -18,8 +18,10 @@ export class CalendarOperations {
     const permission=await this.driver.permission(request);
     if(permission!=='granted')await this.repo.update(data=>{
       const mappings=retainedMappings(data.calendar);
-      if(!mappings.some(mapping=>mapping.active))return data;
-      return {...data,calendar:{...data.calendar,exportMappings:mappings.map(mapping=>({...mapping,active:false}))}};
+      if(!data.calendar.connected && !mappings.some(mapping=>mapping.active))return data;
+      // Retain provenance and owned-event mappings, but never present revoked
+      // access as a live connection or let a pending read reconnect it.
+      return {...data,calendar:{...data.calendar,connected:false,connectionRevision:(data.calendar.connectionRevision??0)+1,error:'calendar_permission_required',exportMappings:mappings.map(mapping=>({...mapping,active:false}))}};
     });return permission;
   }
   private async writable(calendarId:string) {

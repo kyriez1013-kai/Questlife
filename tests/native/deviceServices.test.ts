@@ -163,7 +163,7 @@ test('calendar refuses to fabricate a missing OS event ID',async()=>{
 test('calendar sync cannot overwrite an event created while read was pending',async()=>{
   const x=calendar();let release!:(r:[])=>void;let ready!:()=>void;const started=new Promise<void>(r=>{ready=r;});
   x.driver.read=async()=>{ready();return new Promise<[]>(r=>{release=r;});};
-  const running=x.service.sync(['TEST_CAL'],draft.startAt,draft.endAt);await started;await x.service.create('TEST_CAL',draft,{confirmed:true});release([]);await running;assert.equal((await x.repo.read()).calendar.events.length,1);
+  const running=x.service.sync(['TEST_CAL'],draft.startAt,draft.endAt);await started;await x.service.create('TEST_CAL',draft,{confirmed:true});release([]);await assert.rejects(running,/calendar_read_superseded/);assert.equal((await x.repo.read()).calendar.events.length,1);
 });
 test('calendar read started during an OS write cannot overwrite its later local commit',async()=>{
   const x=calendar();let releaseCreate!:(id:string)=>void;let releaseRead!:(r:[])=>void;let created!:()=>void;let read!:()=>void;
@@ -173,7 +173,7 @@ test('calendar read started during an OS write cannot overwrite its later local 
   x.driver.read=async()=>{read();return new Promise<[]>(r=>{releaseRead=r;});};
   const write=x.service.create('TEST_CAL',draft,{confirmed:true});await creating;
   const sync=x.service.sync(['TEST_CAL'],draft.startAt,draft.endAt);await reading;
-  releaseCreate('TEST_EVENT');await write;releaseRead([]);await sync;assert.equal((await x.repo.read()).calendar.events.length,1);
+  releaseCreate('TEST_EVENT');await write;releaseRead([]);await assert.rejects(sync,/calendar_read_superseded/);assert.equal((await x.repo.read()).calendar.events.length,1);
 });
 test('free calendar events do not block capacity; unknown remains conservative',()=>{
   const e={...draft,id:'T',calendarId:'C',externalEventId:'E',allDay:false,ownership:'external',source:'system_calendar',lastSyncedAt:now.toISOString()} as ExternalCommitment;

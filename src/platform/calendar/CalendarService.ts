@@ -17,6 +17,9 @@ export interface CalendarDriver {
   operationId?(): string;
 }
 export type CalendarDriverEvent = Omit<ExternalCommitment,'ownership'|'lastSyncedAt'> & { recurring?: boolean };
+export class CalendarReadSupersededError extends Error {
+  constructor() { super('calendar_read_superseded'); this.name = 'CalendarReadSupersededError'; }
+}
 export class CalendarService implements CalendarSource {
   private revision = 0;
   private get operations() { return new CalendarOperations(this.driver,this.repo,this.now); }
@@ -25,12 +28,27 @@ export class CalendarService implements CalendarSource {
   permission() { return this.operations.permission(false); }
   requestPermission() { return this.operations.permission(true); }
   private async requirePermission() { if (await this.permission() !== 'granted') throw new Error('calendar_permission_required'); }
+  private async requireCurrentRead(revision: number, connectionRevision: number | undefined) {
+    const current = (await this.repo.read()).calendar;
+    if (revision !== this.revision || current.connectionRevision !== connectionRevision) throw new CalendarReadSupersededError();
+  }
   async listCalendars() { await this.requirePermission(); return this.driver.calendars(); }
   async readEvents(ids: string[], start: string, end: string) {
+    const revision = this.revision;
     await this.requirePermission();
     if (!Number.isFinite(Date.parse(start)) || !Number.isFinite(Date.parse(end)) || Date.parse(end) <= Date.parse(start)) throw new Error('calendar_invalid_range');
     const { calendar } = await this.repo.read();
-    const read = await this.driver.read(ids,start,end);
+    if (revision !== this.revision) throw new CalendarReadSupersededError();
+    let read: CalendarDriverEvent[];
+    try { read = await this.driver.read(ids,start,end); }
+    catch (error) {
+      await this.requirePermission();
+      await this.requireCurrentRead(revision, calendar.connectionRevision);
+      throw error;
+    }
+    // OS permission and the selected source can change while EventKit is reading.
+    await this.requirePermission();
+    await this.requireCurrentRead(revision, calendar.connectionRevision);
     if (read.some(row => !ids.includes(row.calendarId) || !row.externalEventId || !Number.isFinite(Date.parse(row.startAt)) || !Number.isFinite(Date.parse(row.endAt)) || Date.parse(row.endAt) <= Date.parse(row.startAt))) throw new Error('calendar_invalid_source_event');
     const mapped = read.map(row => {
       const prior = retainedMappings(calendar).find(mapping => !mapping.deleted && mapping.calendarId === row.calendarId && mapping.record.externalEventId === row.externalEventId);
@@ -42,9 +60,23 @@ export class CalendarService implements CalendarSource {
   async sync(ids: string[], start: string, end: string) {
     const revision = ++this.revision;
     const before=await this.repo.read();
-    const events = await this.readEvents(ids,start,end);
-    await this.repo.update(data => this.revision !== revision || data.calendar.connectionRevision!==before.calendar.connectionRevision ? data : ({ ...data, calendar: { ...data.calendar, connected: true, selectedIds: ids, events, exportMappings:retainedMappings(data.calendar).map(mapping=>({...mapping,active:!mapping.deleted && ids.includes(mapping.calendarId)})), lastSyncedAt: this.now(), error: undefined } }));
-    return events;
+    try {
+      const events = await this.readEvents(ids,start,end);
+      await this.repo.update(data => {
+        if (this.revision !== revision || data.calendar.connectionRevision !== before.calendar.connectionRevision) throw new CalendarReadSupersededError();
+        return { ...data, calendar: { ...data.calendar, connected: true, selectedIds: ids, events, exportMappings:retainedMappings(data.calendar).map(mapping=>({...mapping,active:!mapping.deleted && ids.includes(mapping.calendarId)})), lastSyncedAt: this.now(), error: undefined } };
+      });
+      return events;
+    } catch (error) {
+      // An obsolete request must not overwrite a newer refresh or disconnect,
+      // including when its OS read failed rather than returned late.
+      if (!(error instanceof CalendarReadSupersededError)) {
+        const code = error instanceof Error && error.message === 'calendar_permission_required' ? error.message : 'calendar_read_failed';
+        await this.repo.update(data => this.revision !== revision || data.calendar.connectionRevision !== before.calendar.connectionRevision
+          ? data : { ...data, calendar: { ...data.calendar, error: code } }).catch(() => undefined);
+      }
+      throw error;
+    }
   }
   async disconnect() {
     this.revision++;

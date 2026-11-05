@@ -15,7 +15,7 @@ export default function ForegroundSources() {
           const start=new Date(); start.setHours(0,0,0,0);
           const end=new Date(start); end.setDate(end.getDate()+7);
           try { await calendarSource.sync(state.calendar.selectedIds,start.toISOString(),end.toISOString()); }
-          catch { await deviceRepository.update(d=>({...d,calendar:{...d.calendar,error:'calendar_read_failed'}})); }
+          catch { /* CalendarService records current failures, never stale refreshes. */ }
         }
       } catch { /* Source settings displays repository/read failure without private logs. */ }
       finally { running=false; }
