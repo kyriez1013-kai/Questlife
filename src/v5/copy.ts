@@ -1,6 +1,7 @@
 import type { Lang } from '../i18n';
 
 const zh = {
+  analysis:'分析', personal:'个人', variable:'变量', stateVariable:'状态', metricsVariable:'健康与执行', overviewVariable:'记录概览',
   capture: '随手记一句…', state: '现在怎么样？', check: '记一下', supplement: '补充',
   now: '现在做什么', next: '接下来', suggest: '建议先做', recommend: '现在建议', running: '进行中',
   start: '开始', finish: '完成', log: '记录实际执行', more: '更多',
@@ -27,6 +28,7 @@ const zh = {
   firstAction:'先记下一件事', firstReason:'从一条真实记录开始', record:'记下一句',
 };
 const en: Record<keyof typeof zh,string> = {
+  analysis:'Analysis', personal:'Personal', variable:'Variable', stateVariable:'State', metricsVariable:'Health and execution', overviewVariable:'Record overview',
   firstAction:'Record one thing', firstReason:'Begin with one real observation', record:'Write a note',
   capture:'Write a quick note…',state:'How are you now?',check:'Check in',supplement:'Add context',
   now:'What to do now',next:'Up next',suggest:'Try this first',recommend:'Now suggested',running:'In progress',

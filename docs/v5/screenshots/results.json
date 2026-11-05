@@ -1,0 +1,108 @@
+{
+  "environment": "Chrome desktop emulation; isolated QA data; no device proof",
+  "results": [
+    {
+      "scenario": "S1",
+      "theme": "light",
+      "overflow": false,
+      "mainBottom": 589.390625,
+      "navTop": 772
+    },
+    {
+      "flow": "3-click check-in and reload",
+      "passed": true
+    },
+    {
+      "scenario": "S2",
+      "theme": "light",
+      "overflow": false,
+      "mainBottom": 589.390625,
+      "navTop": 772
+    },
+    {
+      "flow": "preview-confirm-apply",
+      "passed": true
+    },
+    {
+      "flow": "reload-undo-reload",
+      "passed": true
+    },
+    {
+      "scenario": "S3",
+      "theme": "light",
+      "overflow": false,
+      "mainBottom": 589.390625,
+      "navTop": 772
+    },
+    {
+      "scenario": "S4",
+      "theme": "light",
+      "overflow": false,
+      "mainBottom": 589.390625,
+      "navTop": 772
+    },
+    {
+      "flow": "start-finish-calibration-reload",
+      "passed": true
+    },
+    {
+      "scenario": "S5",
+      "theme": "light",
+      "overflow": false,
+      "mainBottom": 739.390625,
+      "navTop": 772
+    },
+    {
+      "scenario": "S1",
+      "theme": "dark",
+      "overflow": false,
+      "mainBottom": 589.390625,
+      "navTop": 772
+    },
+    {
+      "flow": "3-click check-in and reload",
+      "passed": true
+    },
+    {
+      "scenario": "S2",
+      "theme": "dark",
+      "overflow": false,
+      "mainBottom": 589.390625,
+      "navTop": 772
+    },
+    {
+      "scenario": "S3",
+      "theme": "dark",
+      "overflow": false,
+      "mainBottom": 589.390625,
+      "navTop": 772
+    },
+    {
+      "scenario": "S4",
+      "theme": "dark",
+      "overflow": false,
+      "mainBottom": 589.390625,
+      "navTop": 772
+    },
+    {
+      "scenario": "S5",
+      "theme": "dark",
+      "overflow": false,
+      "mainBottom": 739.390625,
+      "navTop": 772
+    },
+    {
+      "flow": "375x667 zh light five tabs",
+      "passed": true
+    },
+    {
+      "flow": "393x852 en dark five tabs",
+      "passed": true
+    },
+    {
+      "flow": "1280x900 zh light five tabs",
+      "passed": true
+    }
+  ],
+  "errors": []
+}

@@ -17,6 +17,7 @@ export type QuestIconName =
   | 'lifeBuoy'
   | 'play'
   | 'plus'
+  | 'person'
   | 'settings'
   | 'target'
   | 'tree'
@@ -34,7 +35,7 @@ export default function QuestIcon({ name, size = 22, color = '#111827', strokeWi
   const common = { stroke: color, strokeWidth, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, fill: 'none' };
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">
-      {name === 'home' ? (
+      {name === 'person' ? (<><Circle {...common} cx="12" cy="7" r="4"/><Path {...common} d="M5 22v-3a7 7 0 0 1 14 0v3"/></>) : name === 'home' ? (
         <>
           <Path {...common} d="M3 10.5 12 3l9 7.5" />
           <Path {...common} d="M5.5 9.5V21h13V9.5" />

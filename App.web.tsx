@@ -17,6 +17,7 @@ import { getQuestTheme, questLayout } from './src/design/tokens';
 import { getQuestVisualFoundation } from './src/design/visualFoundation';
 import { isDarkTheme } from './src/design/darkSurfaceGuard';
 import QuestIcon, { QuestIconName } from './src/components/ui/QuestIcon';
+import { v5t } from './src/v5/copy';
 import HomeScreen from './src/screens/HomeScreen';
 import GoalTreeScreen from './src/screens/GoalTreeScreen';
 import GoalDetailScreen from './src/screens/GoalDetailScreen';
@@ -213,8 +214,8 @@ function AppContent() {
     dark: false,
     colors: {
       ...DefaultTheme.colors,
-      background: questTheme.colors.background,
-      card: questTheme.colors.background,
+      background: v5Enabled ? 'transparent' : questTheme.colors.background,
+      card: v5Enabled ? 'transparent' : questTheme.colors.background,
       text: questTheme.colors.text,
       border: questTheme.colors.border,
       primary: accent,
@@ -260,7 +261,7 @@ function AppContent() {
             lazy: true,
             freezeOnBlur: true,
             sceneStyle: {
-              backgroundColor: questTheme.colors.background,
+              backgroundColor: v5Enabled ? 'transparent' : questTheme.colors.background,
               overflow: 'hidden',
             },
             tabBarActiveTintColor: questTheme.colors.navActive,
@@ -311,7 +312,7 @@ function AppContent() {
               </FocusedTabSurface>
             )}
           </Tab.Screen>
-          <Tab.Screen name="Insights" options={{ tabBarLabel: t(lang, 'insights'), tabBarIcon: ({ focused, color }) => <TabIcon name="barChart" focused={focused} color={color} /> }}>
+          <Tab.Screen name="Insights" options={{ tabBarLabel: v5Enabled?v5t(lang,'analysis'):t(lang, 'insights'), tabBarIcon: ({ focused, color }) => <TabIcon name="barChart" focused={focused} color={color} /> }}>
             {() => (
               <FocusedTabSurface backgroundColor={questTheme.colors.background}>
                 <Suspense fallback={<ActivityIndicator color={accent} style={{ flex: 1 }} />}>
@@ -320,7 +321,7 @@ function AppContent() {
               </FocusedTabSurface>
             )}
           </Tab.Screen>
-          <Tab.Screen name="Settings" options={{ tabBarLabel: t(lang, 'settings'), tabBarIcon: ({ focused, color }) => <TabIcon name="settings" focused={focused} color={color} /> }}>
+          <Tab.Screen name="Settings" options={{ tabBarLabel: v5Enabled?v5t(lang,'personal'):t(lang, 'settings'), tabBarIcon: ({ focused, color }) => <TabIcon name={v5Enabled?'person':'settings'} focused={focused} color={color} /> }}>
             {() => (
               <FocusedTabSurface backgroundColor={questTheme.colors.background}>
                 <SettingsScreen />

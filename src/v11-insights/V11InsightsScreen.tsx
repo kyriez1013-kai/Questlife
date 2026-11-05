@@ -6,6 +6,7 @@ import React, {
   useState,
 } from 'react';
 import {
+  Platform,
   Pressable,
   ScrollView,
   Text,
@@ -61,6 +62,7 @@ import V11PersonalTerminal from './personal-terminal/V11PersonalTerminal';
 import StateInsightsSection from '../state-layer/StateInsightsSection';
 import { isStateLayerEnabled } from '../state-layer/featureFlag';
 import { sl } from '../state-layer/copy';
+import { v5t } from '../v5/copy';
 import {
   buildPersonalTerminalPresentation,
   type PersonalTerminalModel,
@@ -556,7 +558,7 @@ export default function V11InsightsScreen() {
       : null;
     return (
       <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: theme.field.background }}>
-        <View style={{ flexDirection: 'row', gap: v11Spacing.xs, paddingHorizontal: v11Spacing.md, paddingVertical: v11Spacing.xs }}>
+        {Platform.OS==='web'&&isStateLayerEnabled()?<label className="ql-v5 v5-variable v5-glass" data-theme={theme.mode}>{v5t(language,'variable')}<select aria-label={v5t(language,'variable')} value={stateViewOpen?'state':ownerQuantOpen?'metrics':'overview'} onChange={e=>{ownerQuantChosen.current=true;setStateViewOpen(e.target.value==='state');setOwnerQuantOpen(e.target.value==='metrics');}}><option value="state">{v5t(language,'stateVariable')}</option><option value="metrics">{v5t(language,'metricsVariable')}</option><option value="overview">{v5t(language,'overviewVariable')}</option></select></label>:<View style={{ flexDirection: 'row', gap: v11Spacing.xs, paddingHorizontal: v11Spacing.md, paddingVertical: v11Spacing.xs }}>
           {([false, true] as const).map((live) => (
             <Pressable
               key={String(live)}
@@ -582,7 +584,7 @@ export default function V11InsightsScreen() {
               </Text>
             </Pressable>
           ) : null}
-        </View>
+        </View>}
         {stateViewOpen ? (
           <ScrollView style={{ flex: 1 }}>
             <StateInsightsSection lang={language === 'en' ? 'en' : 'zh'} theme={theme} />

@@ -107,10 +107,16 @@
 .v5-check { min-width:44px;min-height:44px;border:0;border-radius:12px;background:var(--v5-fill);font-size:22px!important;color:var(--v5-accent)!important; }
 .v5-hint { display:flex;align-items:center;gap:12px;font-size:12px;color:var(--v5-muted);margin-top:16px; }
 .v5-app #v11-home-screen,.v5-app #v11-goals-screen,.v5-app #v11-goal-detail-screen,.v5-app #v11-schedule-screen,.v5-app #v11-settings-screen { background:transparent!important; }
-.v5-app #v11-home-screen>div,.v5-app #v11-goals-screen>div { background:transparent!important; }
+.v5-app #v11-home-screen>div,.v5-app #v11-goals-screen>div,.v5-app #v11-settings-screen>div,.v5-app #v11-schedule-screen>div { background:transparent!important; }
+.v5-app div:has(>#v11-home-screen),.v5-app div:has(>#v11-goals-screen),.v5-app div:has(>#v11-settings-screen),.v5-app div:has(>#v11-schedule-screen) { background:transparent!important; }
 .v5-app .v5-today,.v5-app .v5-goals { background:transparent; }
 .v5-app [role="tablist"] { background:var(--v5-fill)!important;border:1px solid!important;border-color:var(--v5-rim) var(--v5-fade) var(--v5-fade) var(--v5-rim)!important;border-radius:32px!important;box-shadow:var(--v5-shadow)!important;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px); }
-.v5-app [role="tab"][aria-selected="true"] { background:var(--v5-fill);border-radius:22px;box-shadow:var(--v5-shadow); }
+.v5-app [role="tab"][aria-selected="true"] { background:var(--v5-fill)!important;border-radius:22px!important;box-shadow:var(--v5-shadow)!important; }
+.v5-app [role="tablist"] { padding:4px!important;overflow:visible!important; }
+.v5-app [role="tab"] { padding:2px!important;min-height:44px; }
+.v5-app [role="tab"]>[dir="auto"] { flex-shrink:0;min-height:13px; }
+.v5-variable { margin:16px;display:flex;align-items:center;gap:12px;padding:4px 16px;font:400 14px/1.5 system-ui; }
+.v5-variable select { min-height:44px;flex:1;min-width:0;background:transparent;border:0;color:var(--v5-ink); }
 .v5-app [data-quest-surface],.v5-app [data-sl-role="card"] { background:var(--v5-fill)!important;border:1px solid!important;border-color:var(--v5-rim) var(--v5-fade) var(--v5-fade) var(--v5-rim)!important;border-radius:24px!important;box-shadow:var(--v5-shadow)!important; }
 .v5-app .v11-settings-group,.v5-app .v11-schedule-now-next,.v5-app #v11-schedule-day-instrument,.v5-app .v11-goal-summary { background:var(--v5-fill)!important;border:1px solid!important;border-color:var(--v5-rim) var(--v5-fade) var(--v5-fade) var(--v5-rim)!important;border-radius:24px!important;box-shadow:var(--v5-shadow)!important; }
 @supports not (backdrop-filter:blur(1px)) { .ql-v5 .v5-glass { background:var(--v5-bg); } }

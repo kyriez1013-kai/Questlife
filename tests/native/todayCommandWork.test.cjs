@@ -119,7 +119,7 @@ test('input preserves the decision cache, while feedback expiry and clock change
   const data = { executionLogs: [{ id: 'qa-now', date: '2026-10-21', createdAt: new Date(clock - 29 * 60000 - 59500).toISOString() }] };
   const context = {
     data, todayStr: '2026-10-21', activeSession: null, latestStateCheckIn: undefined,
-    todayScheduleBlocks: [], result: undefined,
+    todayScheduleBlocks: [], result: undefined, v5TodayEnabled: false,
     Date: class extends Date {
       constructor(...args) { super(...(args.length ? args : [clock])); }
       static now() { return clock; }
@@ -143,6 +143,9 @@ test('input preserves the decision cache, while feedback expiry and clock change
   clock += 60000;
   render();
   assert.equal(builds, 3, 'time-sensitive schedule advice must refresh at a new minute');
+  context.v5TodayEnabled = true;
+  render();
+  assert.equal(builds, 4, 'changing the presentation flag must refresh its state-aware input');
 });
 
 if (process.env.TODAY_WORK_BENCHMARK === '1') {

@@ -64,13 +64,13 @@ export default function StateStrip({lang,theme,reducedMotion}:{lang:Lang;theme:V
         <button className="v5-link" onClick={()=>row&&!stale?setDetails(true):setEditing(true)}>
           {row&&state ? <><strong style={stale?{color:'var(--v5-meta)'}:undefined}>{stale?`${stamp} · `:''}{TYPE_NAME[lang][state]}</strong><span className="v5-meta">{stale?` · ${v5t(lang,'recheck')}`:` · ${stamp}`}</span></> : v5t(lang,'state')}
         </button>
+        {row&&!editing ? <button className="v5-link v5-meta" onClick={()=>{setOptional(true);setDetails(true);}}>{v5t(lang,'supplement')}</button>:null}
         <button className="v5-link" disabled={busy} onClick={()=>{if(row&&!stale){setCorrection(true);setDetails(true);}else setEditing(!editing);}}>{row&&!stale?v5t(lang,'update'):v5t(lang,'check')}</button>
       </div>
       {editing ? <>
         <FiveChoices label={sl(lang,'energy')} labels={ENERGY_SCALE[lang]} value={draft.energy} disabled={busy} onChange={n=>answer('energy',n)} />
         <FiveChoices label={sl(lang,'tension')} labels={TENSION_SCALE[lang]} value={draft.tension} disabled={busy} onChange={n=>answer('tension',n)} />
       </> : null}
-      {row&&!editing ? <button className="v5-link v5-meta" onClick={()=>{setOptional(true);setDetails(true);}}>{v5t(lang,'supplement')}</button>:null}
       {status==='saving'?<p role="status" className="v5-meta">{v5t(lang,'saving')}</p>:null}
       {status==='error'?<p role="alert" className="v5-error">{v5t(lang,'failed')} <button className="v5-link" onClick={()=>void save(()=>undefined,afterSave.current)}>{v5t(lang,'retry')}</button></p>:null}
     </section>

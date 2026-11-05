@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
+    "deploy:candidate": "node scripts/deploy-candidate.mjs",
+    "promote:main": "node scripts/promote-main.mjs promote",
+    "rollback:main": "node scripts/promote-main.mjs rollback",
     "postinstall": "node scripts/patch-metro-image-input.cjs",
     "start": "expo start",
     "ios": "node scripts/run-ios-candidate.mjs",

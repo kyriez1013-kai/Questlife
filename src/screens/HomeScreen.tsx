@@ -524,6 +524,7 @@ export default function HomeScreen() {
     updateScheduleBlock,
   } = useStore();
   const navigation = useNavigation<any>();
+  const v5TodayEnabled = Platform.OS === 'web' && typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('v5_ui') !== '0';
   const questTheme = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const accent = questTheme.colors.primary;
   const lang = getV11ProductLanguage(getLanguage(data.settings.language));
@@ -1210,7 +1211,7 @@ export default function HomeScreen() {
       actualMentalCost: mentalCost ? mentalCost * 20 : optionalNumber(schemaValues.mentalCost) != null ? optionalNumber(schemaValues.mentalCost)! * 20 : undefined,
       actualPhysicalCost: physicalCost ? physicalCost * 20 : optionalNumber(schemaValues.physicalCost) != null ? optionalNumber(schemaValues.physicalCost)! * 20 : undefined,
       actualEmotionalCost: emotionalCost ? emotionalCost * 20 : undefined,
-      structuredData: logSource === 'timer' && m != null && m > 0 ? {
+      structuredData: v5TodayEnabled && logSource === 'timer' && m != null && m > 0 ? {
         ...(hasDomainSchema ? schemaValues : {}),
         calibration: calibrationRecord(selectedBlock?.plannedMinutes, m, calibrationDifficulty),
       } : hasDomainSchema ? schemaValues : undefined,
@@ -1787,8 +1788,8 @@ export default function HomeScreen() {
     latestFeedback: latestFeedbackLog ? { executionLogId: latestFeedbackLog.id } : undefined,
     latestState: latestStateCheckIn,
     activeSession,
-    stateAware: typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('v5_ui') !== '0',
-  }), [activeSession, data, latestFeedbackLog, latestStateCheckIn, todayLogs, todayScheduleBlocks, todayCommandMinute]);
+    stateAware: v5TodayEnabled,
+  }), [activeSession, data, latestFeedbackLog, latestStateCheckIn, todayLogs, todayScheduleBlocks, todayCommandMinute, v5TodayEnabled]);
 
   const metacognitionSummary = useMemo(() => buildMetacognitionSummary({
     executionLogs: data.executionLogs || [],
@@ -2561,7 +2562,7 @@ export default function HomeScreen() {
   const TileGrid = View as any;
 
   return (
-    <SafeAreaView edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
+    <SafeAreaView nativeID="v11-home-screen" edges={['top']} style={[styles.safe, { backgroundColor: questTheme.colors.background }]}>
       <ScrollView
         ref={v11TodayScrollRef}
         nativeID={v11TodayEnabled ? 'v11-today-scroll' : undefined}
@@ -2581,7 +2582,7 @@ export default function HomeScreen() {
           alignSelf: 'center',
         }}
       >
-        {v11TodayEnabled && Platform.OS === 'web' && new URLSearchParams(window.location.search).get('v5_ui') !== '0' ? (
+        {v11TodayEnabled && v5TodayEnabled ? (
           <V5TodaySurface
             lang={lang} theme={v11ThemeTokens} reducedMotion={v11EffectiveReducedMotion}
             command={todayCommand} title={formatCommandCopy(todayCommand.titleKey,todayCommand.titleValues)}
@@ -3363,7 +3364,7 @@ export default function HomeScreen() {
           dataSet={v11TodayEnabled ? { 'v11-form': 'record', 'v11-rebaseline-role': 'today-sheet-form' } : undefined}
         >
 
-        {Platform.OS === 'web' && logSource === 'timer' && !fullFinish ? <V5FinishFields
+        {v5TodayEnabled && logSource === 'timer' && !fullFinish ? <V5FinishFields
           lang={lang} minutes={minutes} note={note} difficulty={calibrationDifficulty}
           disabled={recordSaving || recordDraftLocked} onMinutes={setMinutes} onNote={setNote}
           onDifficulty={setCalibrationDifficulty} onFull={()=>setFullFinish(true)}
