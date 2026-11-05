@@ -6,11 +6,12 @@ const vm = require('node:vm');
 const { test } = require('node:test');
 const source = fs.readFileSync(path.resolve(__dirname, '../../public/sw.js'), 'utf8');
 
-function worker({ network, cacheName = 'questlife-shell-v1' } = {}) {
+function worker({ network = async () => new Response('ASSET'), cacheName = 'questlife-shell-v1', entryAssets = [], buildCache } = {}) {
   const listeners = {};
+  let activated = false;
   const stores = new Map([[cacheName, new Map([['/', new Response('GOOD SHELL', { headers: { 'Content-Type': 'text/html' } })]])],
     ['unrelated-app-cache', new Map([['/', new Response('NOT OURS')]])]]);
-  const key = value => typeof value === 'string' ? value : value.url;
+  const key = value => { const url = new URL(typeof value === 'string' ? value : value.url, 'https://isolated.test'); return url.pathname + url.search; };
   const caches = {
     keys: async () => [...stores.keys()],
     delete: async name => stores.delete(name),
@@ -20,7 +21,14 @@ function worker({ network, cacheName = 'questlife-shell-v1' } = {}) {
       return {
         match: async request => store.get(key(request))?.clone(),
         put: async (request, response) => store.set(key(request), response),
-        addAll: async () => {},
+        addAll: async requests => {
+          const loaded = await Promise.all(requests.map(async request => {
+            const response = await network(request);
+            if (!response.ok) throw Error('precache failed');
+            return [key(request), response];
+          }));
+          loaded.forEach(([url, response]) => store.set(url, response));
+        },
       };
     },
     match: async request => {
@@ -28,7 +36,8 @@ function worker({ network, cacheName = 'questlife-shell-v1' } = {}) {
     },
   };
   const self = { location: { origin: 'https://isolated.test' }, addEventListener: (name, fn) => listeners[name] = fn,
-    skipWaiting: async () => {}, clients: { claim: async () => {} } };
+    __QUESTLIFE_ENTRY_ASSETS__: entryAssets, __QUESTLIFE_CACHE_VERSION__: buildCache,
+    skipWaiting: async () => { activated = true; }, clients: { claim: async () => {} } };
   vm.runInNewContext(source, { self, caches, fetch: network, URL, Response });
   async function dispatch(type, request) {
     const pending = [];
@@ -38,8 +47,24 @@ function worker({ network, cacheName = 'questlife-shell-v1' } = {}) {
     await Promise.all(pending);
     return result;
   }
-  return { stores, caches, dispatch };
+  return { stores, caches, dispatch, isActivated: () => activated };
 }
+
+test('initial worker install saves the actual entry scripts and styles before claiming offline readiness', async () => {
+  const entryAssets = ['/_expo/static/js/web/index-test.js', '/_expo/static/css/app-test.css'];
+  const w = worker({ entryAssets, buildCache: 'questlife-shell-build-test' });
+  await w.dispatch('install');
+  for (const asset of entryAssets) assert.ok(await (await w.caches.open('questlife-shell-build-test')).match(asset), `${asset} must exist before first offline reload`);
+  assert.equal(w.isActivated(), true);
+});
+
+test('incomplete new entry install cannot replace the prior offline release', async () => {
+  const w = worker({ entryAssets: ['/_expo/static/js/web/index-test.js'], buildCache: 'questlife-shell-build-test',
+    network: async url => new Response('ASSET', { status: url.endsWith('.js') ? 503 : 200 }) });
+  await assert.rejects(w.dispatch('install'), /precache failed/);
+  assert.equal(w.isActivated(), false);
+  assert.equal(await (await (await w.caches.open('questlife-shell-v1')).match('/')).text(), 'GOOD SHELL');
+});
 
 test('server failure keeps the last usable shell and offline reload remains usable', async () => {
   let offline = false;

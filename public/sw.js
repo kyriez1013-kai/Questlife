@@ -1,8 +1,9 @@
 /* QuestLife offline shell. Registered only by the production web build (never under the dev server).
    Navigation: network first, cached shell when offline. Hashed static files: cache first.
    Nothing cross-origin (sync / AI endpoints) is ever cached. */
-const CACHE = 'questlife-shell-v1';
-const SHELL = ['/', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/apple-touch-icon.png'];
+const CACHE = self.__QUESTLIFE_CACHE_VERSION__ || 'questlife-shell-v1';
+const SHELL = ['/', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/apple-touch-icon.png',
+  ...(self.__QUESTLIFE_ENTRY_ASSETS__ || [])];
 
 const usableShell = response => response?.ok
   && !response.redirected

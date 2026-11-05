@@ -384,7 +384,7 @@ they were corrected in the QA harness, not by weakening application assertions.
 - All `/api/*` requests deliberately return 503 locally. Settings correctly says
   account service is unconfigured. This is a LOCAL review, not a hosted/live-AI
   or cross-client sync acceptance.
-- Latest local export: main `index-7871841c9bbc78dc3b1c3da7facd5076.js`, Insights chunk
+- Latest local export: main `index-e5ec08eab3d36024c502d353dc3d1bc7.js`, Insights chunk
   `V11InsightsScreen-f7131852d03dd17dc3c568803dc080ea.js` (Capture result clarification).
 - `browser-workspaces-results.json`, `browser-plan-375-light-results.json`,
   `browser-plan-1280-dark-results.json`, `browser-brain-dump-results.json`, and
@@ -562,6 +562,42 @@ they were corrected in the QA harness, not by weakening application assertions.
   block remained byte-equivalent. `schedule-crud-browser-scoped-retry-375`
   (03:51:21Z). Initial harness mistook a loading label for a closed form and found
   both global and local Retry buttons; fixed the waits/scope, not product code.
+
+### November 5: first-visit offline boot gap
+
+- A fresh browser with no second online reload reproduced: Capture confirms and
+  saves offline, but the first offline restart renders an empty body. The worker
+  installed HTML/icons only, after the initial scripts/styles had already loaded.
+  Browser red: `offline-normal-capture-local` (04:01:52Z). Two worker installation
+  tests then failed (`first-visit-offline-entry-red`, 04:05:39Z).
+- The existing export now prepares a build-specific worker with only the 16
+  script/stylesheet URLs actually referenced by Expo's generated entry HTML.
+  It does not precache examples, lazy Quant chunks, API responses or user records.
+  Missing/out-of-bound assets fail the preparation step. The existing worker
+  installs the complete entry cache before activation; an incomplete install
+  retains the preceding release. This uses the existing Cache API, no new
+  dependencies/storage/sync framework. Local and Vercel builds run the same step.
+  Reference: https://developer.mozilla.org/en-US/docs/Web/API/Cache/addAll
+- Twelve worker/build tests pass (`first-visit-offline-entry-green`, 04:06:45Z).
+  Normal 393x852 fresh-browser offline Capture -> confirm -> first offline restart
+  -> reconnect -> History passed with the same execution ID and no duplicates
+  (`first-visit-offline-capture-green`, 04:07:06Z). 503 shell preservation,
+  unrelated cache retention and 375/393/1280 layouts also passed
+  (`versioned-shell-browser-regression`, 04:07:09Z).
+- That test also exposed an unconditional "sync when online" promise for an
+  unconfigured anonymous client (`offline-sync-claim-red`, 04:08:30Z). The zh/en
+  notice now distinguishes local saved records from account/sync status, with
+  an actual Settings next step. Typecheck/export passed (`offline-final-tsc`,
+  04:09:09Z / `offline-final-build`, 04:09:07Z). Local cache version
+  `questlife-shell-1b3faf35fad8079a`; no native/offline-cloud/device claim.
+  Final offline flow including zh/en via normal Settings passed
+  `offline-final-browser-language-settings` (04:10:30Z). The first language
+  harness used a screen debug query, which does not change the global persisted
+  language; the corrected harness changes Settings normally, without app changes.
+- Final pre-offline-code impacted suite passed 134/134 with no skipped tests:
+  `final-receipt-copy-regression` (04:02:37Z). The 12 worker/build checks above
+  cover the later cache change. React test renderer deprecation warnings remain;
+  no lint script exists.
 
 - Device performance/HealthKit and expired Personal Team installation require
   coordinated owner action; no unattended device updates.

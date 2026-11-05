@@ -22,8 +22,8 @@ export default function OfflineNotice() {
     <View nativeID="questlife-offline-notice" style={{ paddingHorizontal: q.spacing.md, paddingVertical: q.spacing.xs, backgroundColor: q.colors.surfaceElevated, borderBottomWidth: 1, borderBottomColor: q.colors.border }}>
       <Text accessibilityRole="alert" style={{ color: q.colors.text, fontSize: q.typography.captionSize }}>
         {lang === 'en'
-          ? 'Offline — showing what is saved on this device. New records stay here and sync when you are back online.'
-          : '离线中：显示的是这台设备上的数据。新记录先存在本机，联网后再同步。'}
+          ? 'Offline — showing this device’s saved data. New records stay here. Check Account and sync status in Settings after reconnecting.'
+          : '离线中：显示的是这台设备上的数据。新记录先存在本机；联网后请在设置检查账号和同步状态。'}
       </Text>
     </View>
   );
