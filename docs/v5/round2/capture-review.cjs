@@ -2,6 +2,7 @@
 const {createRequire}=require('node:module');
 const fs=require('node:fs/promises');
 const path=require('node:path');
+const {execFileSync}=require('node:child_process');
 const req=createRequire('/Users/kyrie/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/package.json');
 const {chromium}=req('playwright');
 const sharp=req('sharp');
@@ -21,10 +22,14 @@ async function compare(reference,actual,name){
 }
 
 (async()=>{
-  const browser=await chromium.launch({headless:true,channel:'chrome'});
+  const systemProxy=execFileSync('/usr/sbin/scutil',['--proxy'],{encoding:'utf8'});
+  const proxyHost=systemProxy.match(/HTTPSProxy\s*:\s*(\S+)/)?.[1];
+  const proxyPort=systemProxy.match(/HTTPSPort\s*:\s*(\d+)/)?.[1];
+  const proxy=/HTTPSEnable\s*:\s*1/.test(systemProxy)&&proxyHost&&proxyPort?{server:`http://${proxyHost}:${proxyPort}`,bypass:'localhost,127.0.0.1'}:undefined;
+  const browser=await chromium.launch({headless:true,channel:'chrome',proxy});
   try{
     const context=await browser.newContext({viewport:{width:393,height:852},locale:'zh-CN',timezoneId:'Australia/Sydney',colorScheme:'light'});
-    const page=await context.newPage();page.setDefaultTimeout(10000);
+    const page=await context.newPage();page.setDefaultTimeout(10000);page.setDefaultNavigationTimeout(45000);
     const errors=[],warnings=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(['warning','error'].includes(m.type()))warnings.push({type:m.type(),message:m.text()})});
     await page.goto(url,{waitUntil:'domcontentloaded'});
     await page.getByText('开始（约 30 秒）',{exact:true}).click();
@@ -39,7 +44,9 @@ async function compare(reference,actual,name){
       await page.getByTestId('v5-'+(name==='Insights'?'insights':id)).waitFor({state:'visible'});
       await page.waitForTimeout(name==='Insights'?3500:300);
       const actual=path.join(out,`after-${name}-empty.png`),ref=path.join(out,`reference-${name}-first.png`);
-      await page.screenshot({path:actual});await reference.locator('#'+id).screenshot({path:ref});
+      await page.screenshot({path:actual});
+      const frame=await reference.locator('#'+id).boundingBox();
+      await reference.screenshot({path:ref,clip:{x:Math.round(frame.x),y:Math.round(frame.y),width:393,height:852}});
       await compare(ref,actual,name+'-empty');
       const body=await page.locator('body').innerText();
       const measurements=await page.evaluate(ss=>ss.map(selector=>{const el=[...document.querySelectorAll(selector)].find(e=>e.getBoundingClientRect().width>0);if(!el)return {selector,missing:true};const r=el.getBoundingClientRect(),s=getComputedStyle(el);return {selector,x:r.x,y:r.y,width:r.width,height:r.height,padding:s.padding,radius:s.borderRadius,shadow:s.boxShadow,background:s.backgroundImage,blur:s.backdropFilter}}),selectors[name]);

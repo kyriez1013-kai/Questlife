@@ -102,7 +102,7 @@ function TabIcon({ name, focused, color }: { name: QuestIconName; focused: boole
         borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
-        opacity: focused ? 1 : 0.72,
+        opacity: focused || new URLSearchParams(window.location.search).get('v5_ui')!=='0' ? 1 : 0.72,
       }}
     >
       {new URLSearchParams(window.location.search).get('v5_ui')!=='0'?<V5Icon name={name} size={25} color={color}/>:<QuestIcon name={name} size={20} color={color} strokeWidth={focused ? 2.4 : 2} />}

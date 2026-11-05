@@ -1,0 +1,13 @@
+COMMAND: node docs/v5/round2/capture-review.cjs
+page.goto: Timeout 10000ms exceeded.
+Call log:
+[2m  - navigating to "https://questlife-v1-release.vercel.app/", waiting until "domcontentloaded"[22m
+
+    at /Users/kyrie/dev/questlife-frontend-v2/docs/v5/round2/capture-review.cjs:29:16 {
+  log: [
+    '  - navigating to "https://questlife-v1-release.vercel.app/", waiting until "domcontentloaded"'
+  ],
+  name: 'TimeoutError'
+}
+
+EXIT 1

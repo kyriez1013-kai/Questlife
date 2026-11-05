@@ -1,0 +1,439 @@
+{
+  "url": "https://questlife-v1-release.vercel.app/",
+  "version": {
+    "product": "QuestLife V5 candidate",
+    "commit": "de2182e394bce43c8c18738cb1c5581e8571e284",
+    "builtAt": "2026-11-05T16:36:45.000Z",
+    "migration": "shortcut inbox requires manual candidate SQL installation"
+  },
+  "startedAt": "2026-11-05T16:46:05.035Z",
+  "browser": "156.0.8078.80",
+  "device": "Chrome desktop mobile viewport; not a physical iPhone",
+  "data": "Fresh anonymous visitor; onboarding skipped; no seeded records",
+  "pages": [
+    {
+      "name": "Today",
+      "label": "今日",
+      "url": "https://questlife-v1-release.vercel.app/",
+      "screenshot": "after-Today-empty.png",
+      "reference": "reference-Today-first.png",
+      "overflow": false,
+      "containsQALabel": false,
+      "body": "NOV\n6\n星期五 · 上午\n2026年11月\n随手记一句…\n此刻状态\n未记录 · 记一下\n现在建议\n今天，从一件事开始\n\n先安排一项行动，或记录已经发生的事。\n\n安排一件事\n后续安排\n完整日程\n今天没有安排\n添加\n今日\n目标\n日程\n分析\n个人",
+      "measurements": [
+        {
+          "selector": ".v5-date",
+          "x": 20,
+          "y": 12,
+          "width": 353,
+          "height": 49,
+          "padding": "0px",
+          "radius": "0px",
+          "shadow": "none",
+          "background": "none",
+          "blur": "none"
+        },
+        {
+          "selector": ".v5-capture",
+          "x": 17,
+          "y": 69,
+          "width": 359,
+          "height": 46,
+          "padding": "0px 8px 0px 15px",
+          "radius": "24px",
+          "shadow": "rgb(255, 255, 255) 0px 1px 1px 0px inset, rgba(255, 255, 255, 0.7) 1px 0px 1px 0px inset, rgba(142, 171, 193, 0.204) 0px -1px 1px 0px inset, rgba(67, 91, 117, 0.125) 0px 9px 20px 0px, rgba(64, 91, 112, 0.063) 0px 2px 4px 0px",
+          "background": "linear-gradient(125deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.33) 24%, rgba(237, 244, 250, 0.21) 62%, rgba(255, 255, 255, 0.57))",
+          "blur": "none"
+        },
+        {
+          "selector": ".v5-strip",
+          "x": 17,
+          "y": 127,
+          "width": 359,
+          "height": 52,
+          "padding": "4px 14px",
+          "radius": "19px",
+          "shadow": "rgb(255, 255, 255) 0px 1px 1px 0px inset, rgba(255, 255, 255, 0.7) 1px 0px 1px 0px inset, rgba(142, 171, 193, 0.204) 0px -1px 1px 0px inset, rgba(67, 91, 117, 0.125) 0px 9px 20px 0px, rgba(64, 91, 112, 0.063) 0px 2px 4px 0px",
+          "background": "linear-gradient(125deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.33) 24%, rgba(237, 244, 250, 0.21) 62%, rgba(255, 255, 255, 0.57))",
+          "blur": "none"
+        },
+        {
+          "selector": ".v5-main",
+          "x": 17,
+          "y": 191,
+          "width": 359,
+          "height": 172.59375,
+          "padding": "13px 15px 12px",
+          "radius": "26px",
+          "shadow": "rgb(255, 255, 255) 0px 1px 1px 0px inset, rgb(255, 255, 255) 1px 0px 1px 0px inset, rgba(138, 172, 195, 0.31) -1px -1px 1px 0px inset, rgba(65, 96, 121, 0.137) 0px 15px 25px 0px, rgba(88, 112, 132, 0.08) 0px 2px 4px 0px",
+          "background": "radial-gradient(at 78% 10%, rgba(196, 226, 246, 0.42), rgba(0, 0, 0, 0) 60%), linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.48) 40%, rgba(220, 236, 247, 0.467) 85%, rgba(255, 255, 255, 0.796))",
+          "blur": "none"
+        },
+        {
+          "selector": "[role=tablist]",
+          "x": 0,
+          "y": 765,
+          "width": 393,
+          "height": 87,
+          "padding": "5px 13px 25px",
+          "radius": "42px 42px 0px 0px",
+          "shadow": "rgba(255, 255, 255, 0.533) 0px 1px 1px 0px inset, rgba(156, 177, 192, 0.08) 0px -8px 25px 0px",
+          "background": "linear-gradient(100deg, rgba(237, 244, 247, 0.93), rgba(248, 252, 255, 0.95) 48%, rgba(231, 239, 245, 0.92))",
+          "blur": "none"
+        }
+      ]
+    },
+    {
+      "name": "Goals",
+      "label": "目标",
+      "url": "https://questlife-v1-release.vercel.app/",
+      "screenshot": "after-Goals-empty.png",
+      "reference": "reference-Goals-first.png",
+      "overflow": false,
+      "containsQALabel": false,
+      "body": "目标\n全部方向\n进行中\n已完成\n给一个方向，定义结果\n\n先确定想达成什么，再关联需要练习的技能。\n\n创建目标\n今日\n目标\n日程\n分析\n个人",
+      "measurements": [
+        {
+          "selector": ".v5-page-head",
+          "x": 15,
+          "y": 16,
+          "width": 363,
+          "height": 49,
+          "padding": "0px",
+          "radius": "0px",
+          "shadow": "none",
+          "background": "none",
+          "blur": "none"
+        },
+        {
+          "selector": ".v5-segments",
+          "x": 15,
+          "y": 73,
+          "width": 363,
+          "height": 44,
+          "padding": "3px",
+          "radius": "14px",
+          "shadow": "rgba(128, 153, 181, 0.125) 0px 1px 3px 0px inset, rgba(255, 255, 255, 0.8) 0px -1px 0px 0px inset",
+          "background": "none",
+          "blur": "none"
+        },
+        {
+          "selector": ".v5-empty",
+          "x": 15,
+          "y": 129,
+          "width": 363,
+          "height": 232.5,
+          "padding": "24px 18px",
+          "radius": "24px",
+          "shadow": "rgb(255, 255, 255) 0px 1px 1px 0px inset, rgba(255, 255, 255, 0.7) 1px 0px 1px 0px inset, rgba(142, 171, 193, 0.204) 0px -1px 1px 0px inset, rgba(67, 91, 117, 0.125) 0px 9px 20px 0px, rgba(64, 91, 112, 0.063) 0px 2px 4px 0px",
+          "background": "linear-gradient(125deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.33) 24%, rgba(237, 244, 250, 0.21) 62%, rgba(255, 255, 255, 0.57))",
+          "blur": "none"
+        },
+        {
+          "selector": "[role=tablist]",
+          "x": 0,
+          "y": 765,
+          "width": 393,
+          "height": 87,
+          "padding": "5px 13px 25px",
+          "radius": "42px 42px 0px 0px",
+          "shadow": "rgba(255, 255, 255, 0.533) 0px 1px 1px 0px inset, rgba(156, 177, 192, 0.08) 0px -8px 25px 0px",
+          "background": "linear-gradient(100deg, rgba(237, 244, 247, 0.93), rgba(248, 252, 255, 0.95) 48%, rgba(231, 239, 245, 0.92))",
+          "blur": "none"
+        }
+      ]
+    },
+    {
+      "name": "Schedule",
+      "label": "日程",
+      "url": "https://questlife-v1-release.vercel.app/",
+      "screenshot": "after-Schedule-empty.png",
+      "reference": "reference-Schedule-first.png",
+      "overflow": false,
+      "containsQALabel": false,
+      "body": "2026年11月\n⌄\n日\n周\n月\n年\n日历同步\n一\n2\n二\n3\n三\n4\n四\n5\n五\n6\n六\n7\n日\n8\n11月6日周五\n暂无计划\n00:00\n01:00\n02:00\n03:00\n04:00\n05:00\n06:00\n07:00\n08:00\n09:00\n10:00\n11:00\n12:00\n13:00\n14:00\n15:00\n16:00\n17:00\n18:00\n19:00\n20:00\n21:00\n22:00\n23:00\n24:00\n现在\n今天还没有安排\n添加\n\n每格 1 小时 · 计划 ≠ 实际执行\n\n待安排事项\n\n为下一件事选择开始与结束时间\n\n添加\n今日\n目标\n日程\n分析\n个人",
+      "measurements": [
+        {
+          "selector": ".v5-schedule-head",
+          "x": 14,
+          "y": 12,
+          "width": 365,
+          "height": 44,
+          "padding": "0px",
+          "radius": "0px",
+          "shadow": "none",
+          "background": "none",
+          "blur": "none"
+        },
+        {
+          "selector": ".v5-segments",
+          "x": 14,
+          "y": 62,
+          "width": 365,
+          "height": 44,
+          "padding": "3px",
+          "radius": "14px",
+          "shadow": "rgba(128, 153, 181, 0.125) 0px 1px 3px 0px inset, rgba(255, 255, 255, 0.8) 0px -1px 0px 0px inset",
+          "background": "none",
+          "blur": "none"
+        },
+        {
+          "selector": ".v5-week",
+          "x": 14,
+          "y": 172,
+          "width": 365,
+          "height": 48,
+          "padding": "0px",
+          "radius": "0px",
+          "shadow": "none",
+          "background": "none",
+          "blur": "none"
+        },
+        {
+          "selector": ".v5-timeline-card",
+          "x": 14,
+          "y": 260.5,
+          "width": 365,
+          "height": 359.5,
+          "padding": "11px 10px 7px",
+          "radius": "22px",
+          "shadow": "rgb(255, 255, 255) 0px 1px 1px 0px inset, rgba(255, 255, 255, 0.7) 1px 0px 1px 0px inset, rgba(142, 171, 193, 0.204) 0px -1px 1px 0px inset, rgba(67, 91, 117, 0.125) 0px 9px 20px 0px, rgba(64, 91, 112, 0.063) 0px 2px 4px 0px",
+          "background": "linear-gradient(125deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.33) 24%, rgba(237, 244, 250, 0.21) 62%, rgba(255, 255, 255, 0.57))",
+          "blur": "none"
+        },
+        {
+          "selector": ".v5-unplaced",
+          "x": 14,
+          "y": 632,
+          "width": 365,
+          "height": 68,
+          "padding": "12px 14px",
+          "radius": "20px",
+          "shadow": "rgb(255, 255, 255) 0px 1px 1px 0px inset, rgba(255, 255, 255, 0.7) 1px 0px 1px 0px inset, rgba(142, 171, 193, 0.204) 0px -1px 1px 0px inset, rgba(67, 91, 117, 0.125) 0px 9px 20px 0px, rgba(64, 91, 112, 0.063) 0px 2px 4px 0px",
+          "background": "linear-gradient(125deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.33) 24%, rgba(237, 244, 250, 0.21) 62%, rgba(255, 255, 255, 0.57))",
+          "blur": "none"
+        },
+        {
+          "selector": "[role=tablist]",
+          "x": 0,
+          "y": 765,
+          "width": 393,
+          "height": 87,
+          "padding": "5px 13px 25px",
+          "radius": "42px 42px 0px 0px",
+          "shadow": "rgba(255, 255, 255, 0.533) 0px 1px 1px 0px inset, rgba(156, 177, 192, 0.08) 0px -8px 25px 0px",
+          "background": "linear-gradient(100deg, rgba(237, 244, 247, 0.93), rgba(248, 252, 255, 0.95) 48%, rgba(231, 239, 245, 0.92))",
+          "blur": "none"
+        }
+      ]
+    },
+    {
+      "name": "Insights",
+      "label": "分析",
+      "url": "https://questlife-v1-release.vercel.app/",
+      "screenshot": "after-Insights-empty.png",
+      "reference": "reference-Insights-first.png",
+      "overflow": false,
+      "containsQALabel": false,
+      "body": "状态\n最近 7 天\n最近 30 天\n最近 90 天\n最近 365 天\n趋势\n分布\n对比\n相关\n状态 · 签到日历\n查看记录 ↗\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\n31\n1\n2\n3\n4\n5\n6\n\n当前范围没有签到。记录当下感受，逐步建立自己的常态。\n\n7天\n30天\n90天\n1年\n—\n最近精力\n—\n最近紧绷\n—\n有记录天数\n—\n签到记录\n当前分析\n从一次真实签到开始\n\n依据来自你的签到；不把一次感受当成稳定趋势。\n\n登录后可读取账号的同步分析；当前签到保留在本设备。 登录 ↗\n\n比较\n其他变量\n指标\n已有结果\n分析方法\n资格与限制\n解读\n解读与依据\n历史与记录\n来源与观察\n今日\n目标\n日程\n分析\n个人",
+      "measurements": [
+        {
+          "selector": ".v5-analysis-top",
+          "x": 15,
+          "y": 19,
+          "width": 363,
+          "height": 44,
+          "padding": "0px",
+          "radius": "0px",
+          "shadow": "none",
+          "background": "none",
+          "blur": "none"
+        },
+        {
+          "selector": ".v5-segments",
+          "x": 14,
+          "y": 73,
+          "width": 365,
+          "height": 44,
+          "padding": "3px",
+          "radius": "14px",
+          "shadow": "rgba(128, 153, 181, 0.125) 0px 1px 3px 0px inset, rgba(255, 255, 255, 0.8) 0px -1px 0px 0px inset",
+          "background": "none",
+          "blur": "none"
+        },
+        {
+          "selector": ".v5-chart-panel",
+          "x": 14,
+          "y": 129,
+          "width": 365,
+          "height": 324,
+          "padding": "9px 10px 7px",
+          "radius": "18px",
+          "shadow": "rgb(255, 255, 255) 0px 1px 1px 0px inset, rgba(255, 255, 255, 0.7) 1px 0px 1px 0px inset, rgba(142, 171, 193, 0.204) 0px -1px 1px 0px inset, rgba(67, 91, 117, 0.125) 0px 9px 20px 0px, rgba(64, 91, 112, 0.063) 0px 2px 4px 0px",
+          "background": "linear-gradient(125deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.33) 24%, rgba(237, 244, 250, 0.21) 62%, rgba(255, 255, 255, 0.57))",
+          "blur": "none"
+        },
+        {
+          "selector": ".v5-summary",
+          "x": 14,
+          "y": 461,
+          "width": 365,
+          "height": 67,
+          "padding": "11px 9px",
+          "radius": "18px",
+          "shadow": "rgb(255, 255, 255) 0px 1px 1px 0px inset, rgba(255, 255, 255, 0.7) 1px 0px 1px 0px inset, rgba(142, 171, 193, 0.204) 0px -1px 1px 0px inset, rgba(67, 91, 117, 0.125) 0px 9px 20px 0px, rgba(64, 91, 112, 0.063) 0px 2px 4px 0px",
+          "background": "linear-gradient(125deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.33) 24%, rgba(237, 244, 250, 0.21) 62%, rgba(255, 255, 255, 0.57))",
+          "blur": "none"
+        },
+        {
+          "selector": ".v5-insight",
+          "x": 14,
+          "y": 537,
+          "width": 365,
+          "height": 132,
+          "padding": "10px 12px",
+          "radius": "18px",
+          "shadow": "rgb(255, 255, 255) 0px 1px 1px 0px inset, rgba(255, 255, 255, 0.7) 1px 0px 1px 0px inset, rgba(142, 171, 193, 0.204) 0px -1px 1px 0px inset, rgba(67, 91, 117, 0.125) 0px 9px 20px 0px, rgba(64, 91, 112, 0.063) 0px 2px 4px 0px",
+          "background": "linear-gradient(125deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.33) 24%, rgba(237, 244, 250, 0.21) 62%, rgba(255, 255, 255, 0.57))",
+          "blur": "none"
+        },
+        {
+          "selector": ".v5-analysis-tools",
+          "x": 16,
+          "y": 678,
+          "width": 361,
+          "height": 67,
+          "padding": "0px",
+          "radius": "0px",
+          "shadow": "none",
+          "background": "none",
+          "blur": "none"
+        },
+        {
+          "selector": "[role=tablist]",
+          "x": 0,
+          "y": 765,
+          "width": 393,
+          "height": 87,
+          "padding": "5px 13px 25px",
+          "radius": "42px 42px 0px 0px",
+          "shadow": "rgba(255, 255, 255, 0.533) 0px 1px 1px 0px inset, rgba(156, 177, 192, 0.08) 0px -8px 25px 0px",
+          "background": "linear-gradient(100deg, rgba(237, 244, 247, 0.93), rgba(248, 252, 255, 0.95) 48%, rgba(231, 239, 245, 0.92))",
+          "blur": "none"
+        }
+      ]
+    },
+    {
+      "name": "Personal",
+      "label": "个人",
+      "url": "https://questlife-v1-release.vercel.app/",
+      "screenshot": "after-Personal-empty.png",
+      "reference": "reference-Personal-first.png",
+      "overflow": false,
+      "containsQALabel": false,
+      "body": "你的 QuestLife\n\n账号尚未连接\n查看与管理数据来源\n\n账号\n记录与同步\n账号同步\n连接账号后跨设备同步\n未连接 ›\n记录与数据\n查看来源、导出与管理\n管理 ›\n健康与设备\nApple 健康\n\n通过 iOS 快捷指令同步睡眠、步数、静息心率与 HRV。健康上传需要独立同意。\n\n本设备尚未收到快捷指令健康数据\n\n健康云同步\n查看授权与同步状态\n管理 ›\n日历与手表\n五项快捷指令设置\n›\n偏好与隐私\n外观与语言\n浅色 ›\n通知与提醒\n管理 ›\n隐私与数据控制\n›\nQuestLife · 关于与版本 ›\n今日\n目标\n日程\n分析\n个人",
+      "measurements": [
+        {
+          "selector": ".v5-profile",
+          "x": 14,
+          "y": 19,
+          "width": 365,
+          "height": 94,
+          "padding": "15px",
+          "radius": "23px",
+          "shadow": "rgb(255, 255, 255) 0px 1px 1px 0px inset, rgba(255, 255, 255, 0.7) 1px 0px 1px 0px inset, rgba(142, 171, 193, 0.204) 0px -1px 1px 0px inset, rgba(67, 91, 117, 0.125) 0px 9px 20px 0px, rgba(64, 91, 112, 0.063) 0px 2px 4px 0px",
+          "background": "linear-gradient(125deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.33) 24%, rgba(237, 244, 250, 0.21) 62%, rgba(255, 255, 255, 0.57))",
+          "blur": "none"
+        },
+        {
+          "selector": ".v5-personal-group",
+          "x": 14,
+          "y": 152.5,
+          "width": 365,
+          "height": 94,
+          "padding": "0px 14px",
+          "radius": "19px",
+          "shadow": "rgb(255, 255, 255) 0px 1px 1px 0px inset, rgba(255, 255, 255, 0.7) 1px 0px 1px 0px inset, rgba(142, 171, 193, 0.204) 0px -1px 1px 0px inset, rgba(67, 91, 117, 0.125) 0px 9px 20px 0px, rgba(64, 91, 112, 0.063) 0px 2px 4px 0px",
+          "background": "linear-gradient(125deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.33) 24%, rgba(237, 244, 250, 0.21) 62%, rgba(255, 255, 255, 0.57))",
+          "blur": "none"
+        },
+        {
+          "selector": ".v5-health",
+          "x": 14,
+          "y": 286,
+          "width": 365,
+          "height": 221.5,
+          "padding": "12px 15px",
+          "radius": "22px",
+          "shadow": "rgb(255, 255, 255) 0px 1px 1px 0px inset, rgba(255, 255, 255, 0.7) 1px 0px 1px 0px inset, rgba(142, 171, 193, 0.204) 0px -1px 1px 0px inset, rgba(67, 91, 117, 0.125) 0px 9px 20px 0px, rgba(64, 91, 112, 0.063) 0px 2px 4px 0px",
+          "background": "linear-gradient(125deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.33) 24%, rgba(237, 244, 250, 0.21) 62%, rgba(255, 255, 255, 0.57))",
+          "blur": "none"
+        },
+        {
+          "selector": "[role=tablist]",
+          "x": 0,
+          "y": 765,
+          "width": 393,
+          "height": 87,
+          "padding": "5px 13px 25px",
+          "radius": "42px 42px 0px 0px",
+          "shadow": "rgba(255, 255, 255, 0.533) 0px 1px 1px 0px inset, rgba(156, 177, 192, 0.08) 0px -8px 25px 0px",
+          "background": "linear-gradient(100deg, rgba(237, 244, 247, 0.93), rgba(248, 252, 255, 0.95) 48%, rgba(231, 239, 245, 0.92))",
+          "blur": "none"
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "warnings": [
+    {
+      "type": "warning",
+      "message": "[expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect."
+    },
+    {
+      "type": "warning",
+      "message": "GoTrueClient@sb-gttcoocfkqwvsqfwxpyo-auth-token:0 (2.116.0) 2026-11-05T16:46:04.582Z The \"lock\" option is deprecated and will be removed in v3. The client now coordinates session refreshes without a lock, so most apps can drop the option. See https://github.com/supabase/supabase-js/blob/master/packages/core/auth-js/migrations/lockless-coordination.md"
+    },
+    {
+      "type": "warning",
+      "message": "Passing an object as the argument to 'navigate' is deprecated. Use 'navigate(name, params, options)' instead."
+    },
+    {
+      "type": "warning",
+      "message": "Passing an object as the argument to 'navigate' is deprecated. Use 'navigate(name, params, options)' instead."
+    },
+    {
+      "type": "warning",
+      "message": "Passing an object as the argument to 'navigate' is deprecated. Use 'navigate(name, params, options)' instead."
+    },
+    {
+      "type": "warning",
+      "message": "Passing an object as the argument to 'navigate' is deprecated. Use 'navigate(name, params, options)' instead."
+    },
+    {
+      "type": "warning",
+      "message": "Passing an object as the argument to 'navigate' is deprecated. Use 'navigate(name, params, options)' instead."
+    },
+    {
+      "type": "warning",
+      "message": "Passing an object as the argument to 'navigate' is deprecated. Use 'navigate(name, params, options)' instead."
+    }
+  ],
+  "dark": {
+    "source": "Real Personal appearance control",
+    "screenshot": "after-Today-dark-empty.png",
+    "reference": "No original dark frame exists. No false pixel comparison."
+  },
+  "rollback": {
+    "url": "https://questlife-v1-release.vercel.app/?v5_ui=0",
+    "v5ScheduleVisible": false,
+    "body": "2026-11-06 · 周五\n可视化你的时间和精力分配\n添加日程\n日\n周\n月\n年\n通过快捷指令同步日历\n现在 / 下一步\n03:46\n跳到现在\n当前日程: 当前没有安排\n可以添加一个轻任务。\n下一个日程: 暂无下一项\n今天还没有日程安排\n稍后日程\n今天还没有日程安排\n6:00\n7:00\n8:00\n9:00\n10:00\n11:00\n12:00\n13:00\n14:00\n15:00\n16:00\n17:00\n18:00\n19:00\n20:00\n21:00\n22:00\n23:00\n24:00\n今日\n目标\n日程\n洞察\n设置"
+  },
+  "desktop": {
+    "width": 1280,
+    "height": 900,
+    "overflow": false,
+    "screenshot": "after-Schedule-desktop.png"
+  },
+  "finishedAt": "2026-11-05T16:46:12.601Z"
+}

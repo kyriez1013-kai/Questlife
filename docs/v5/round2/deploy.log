@@ -1,0 +1,948 @@
+
+> questlife@1.0.0 deploy:candidate
+> node scripts/deploy-candidate.mjs
+
+> git status --porcelain
+> git branch --show-current
+feature/v5-ui
+> git rev-parse HEAD
+de2182e394bce43c8c18738cb1c5581e8571e284
+> vercel project inspect questlife-v1-release --scope kyrie-z-s-projects --non-interactive
+> Found Project kyrie-z-s-projects/questlife-v1-release [2s]
+
+  General
+
+    ID				prj_fVGFV7DzxfkLqbBpSo8P7NH9oqxX
+    Name			questlife-v1-release
+    Owner			KyrieZ's projects
+    Created At			20 September 2026 18:37:35 [46d ago]
+    Root Directory		.
+    Node.js Version		24.x
+
+  Framework Settings
+
+    Framework Preset		Other
+    Build Command		`npm run vercel-build` or `npm run build`
+    Output Directory		`public` if it exists, or `.`
+    Install Command		`yarn install`, `pnpm install`, `npm install`, or `bun install`
+
+Verified candidate-only Supabase binding.
+> npx tsc --noEmit
+> npx tsc --noEmit --module commonjs --target es2022 --moduleResolution node --esModuleInterop --skipLibCheck api/inbox.ts api/inbox-token.ts
+> npm run build
+
+> questlife@1.0.0 build
+> expo export --platform web
+
+Starting Metro Bundler
+| (node:90647) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:90651) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:90648) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:90652) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:90649) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:90653) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:90650) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+Web Bundled 1273ms index.ts (1405 modules)
+
+› Assets (11):
+node_modules/@react-navigation/elements/lib/module/assets/back-icon-mask.0a328cd9c1afd0afe8e3b1ec5165b1b4.png (653 B)
+node_modules/@react-navigation/elements/lib/module/assets/back-icon.35ba0eaec5a4f5ed12ca16fabeae451d.png (207 B)
+node_modules/@react-navigation/elements/lib/module/assets/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55.png (4 variations | 425 B)
+node_modules/@react-navigation/elements/lib/module/assets/close-icon.808e1b1b9b53114ec2838071a7e6daa7.png (4 variations | 235 B)
+node_modules/@react-navigation/elements/lib/module/assets/search-icon.286d67d3f74808a60a78d3ebf1a5fb57.png (928 B)
+
+› web bundles (43):
+_expo/static/css/adaptive-decision-surface-d9d7f86e9804da9f5f7f26883ecf57f1.css (14.7 kB)
+_expo/static/css/insights-v3-c8ad1786d07006a10a70fe24231fc9a8.css (33 kB)
+_expo/static/css/personal-terminal-2069b8d7748b6c54c32d4ebedc8412d6.css (95.7 kB)
+_expo/static/css/personal-terminal-workspace-b74e7cca97f14b522eb52e446b8d07e9.css (50.9 kB)
+_expo/static/css/quant-terminal-f7a9b89554b504c1f7a1b063fe6a5bfc.css (11 kB)
+_expo/static/css/round2-d14853c00a51f4b2eb0697f7b1e27467.css (16.4 kB)
+_expo/static/css/state-layer-bb0d8709b2767865fe9cd774f9e0e7d5.css (3.95 kB)
+_expo/static/css/theme-overrides-de918ffa78216cd85c89cd2f661df563.css (7.58 kB)
+_expo/static/css/v11-components-b2e7432f43338f39e735c686df7401e7.css (4.23 kB)
+_expo/static/css/v11-insights-606831aac854322cd0387f59dcbe67d6.css (19.3 kB)
+_expo/static/css/v11-product-4990e6bd3452e4a07e684a55b209609e.css (12.7 kB)
+_expo/static/css/v11-stage0-596d22bb56d0bb71d360000c9ffca011.css (7.62 kB)
+_expo/static/css/v11-stage1-94574616d8c90677c741f4a3a2adf183.css (4.84 kB)
+_expo/static/css/v11-stage2-rebaseline-883a523a9d1e8524c982943a7a7bb70a.css (55.9 kB)
+_expo/static/css/v5-67fdffb0c865335c8868cf0fe3d93b6f.css (10.3 kB)
+_expo/static/js/web/__common-4fdf9774d412c72602764e683402aeee.js (14.9 kB)
+_expo/static/js/web/__expo-metro-runtime-0c48b0beee2d3ce6030b475fcc5b1846.js (3.8 kB)
+_expo/static/js/web/driver_analysis_compact-3823af02640023c00124e886ba2124a8.js (21.1 kB)
+_expo/static/js/web/forming_history_analysis_v1-6407c741959774a3d67eeddbde538db6.js (3.85 kB)
+_expo/static/js/web/forming_history_full-e194b7b5e4f90389f110bbec6467dd90.js (11.5 kB)
+_expo/static/js/web/goal_full-a8edff24dfba12216d11d88bbdce52e0.js (27.3 kB)
+_expo/static/js/web/index-05594c5013f5dd28302e69a7d275e2ba.js (4.74 MB)
+_expo/static/js/web/InsightsV3Screen-3413c468be9951a99ceb0f4d20ecdc71.js (35.9 kB)
+_expo/static/js/web/lightweight-charts-bcd07c594b149e8ddde136cba3c09c1c.js (201 kB)
+_expo/static/js/web/mature_market_analysis_v1-f1ef034b224446becfee45aff012a403.js (1.18 MB)
+_expo/static/js/web/mature_market_compact-79bba4fec392f20fd649159b4672a719.js (93.5 kB)
+_expo/static/js/web/mature_market_full-244e6b872e8bd9fab69119bcbfd62ba5.js (1.38 MB)
+_expo/static/js/web/no_data_compact-a6eb68d56ce8a0215f27eba0aae484e5.js (2.28 kB)
+_expo/static/js/web/one_observation_analysis_v1-70fdbe7db4fdd74f8a1d66827f03ea18.js (2.57 kB)
+_expo/static/js/web/one_observation_full-0faea5a61fa646a62f5012e7269a86d6.js (8.33 kB)
+_expo/static/js/web/personalTerminalDebugFixture-3e43089526c0f045ba8d994fc2de3f55.js (17.6 MB)
+_expo/static/js/web/recovery_compact-1998c4a117ad76b95bd31f24554fbdd3.js (21.1 kB)
+_expo/static/js/web/recovery_full-643970640e90ef4453e9a1ffce479f26.js (178 kB)
+_expo/static/js/web/research_filtered_compact-afcc2a5a10f05c0550229fb2cbe10b94.js (93.5 kB)
+_expo/static/js/web/scenario_compact-d57208ec4dc1aab8a788801dabc4ebb6.js (21.1 kB)
+_expo/static/js/web/scenario_full-cce6e8934d0922459701143328da9a3c.js (177 kB)
+_expo/static/js/web/similar_periods_compact-0d86977c6f1f98ef83298fdfa72090ee.js (21.2 kB)
+_expo/static/js/web/similar_periods_full-f40f368e42b3e729bff0790bd5f919c9.js (178 kB)
+_expo/static/js/web/skill_full-c708991f62d3fe04903d5efbc72bde29.js (27.2 kB)
+_expo/static/js/web/ten_observations_full-878c0157905c8633113447c49077e034.js (14.9 kB)
+_expo/static/js/web/three_observations_full-ce1f51d98579e2f499d92779314c7fea.js (10.4 kB)
+_expo/static/js/web/V11InsightsScreen-44d2c768f5adc5d7b14c01ce6323a488.js (563 kB)
+_expo/static/js/web/V2App-a2841c0cfe8dad16d581148dad5da00b.js (90.8 kB)
+
+› Files (3):
+favicon.ico (14.5 kB)
+index.html (5.16 kB)
+metadata.json (49 B)
+
+Exported: dist
+> git ls-tree -r --name-only de2182e394bce43c8c18738cb1c5581e8571e284 -- src api public assets plugins index.ts App.tsx App.web.tsx package.json package-lock.json app.json tsconfig.json react-native.config.js vercel.json .vercelignore scripts/patch-metro-image-input.cjs
+.vercelignore
+App.tsx
+App.web.tsx
+api/_lib/aiBoundary.ts
+api/_lib/inbox.ts
+api/_lib/inboxRpc.ts
+api/_lib/supabaseAuth.ts
+api/brief.ts
+api/decision-quant.ts
+api/inbox-token.ts
+api/inbox.ts
+api/parse.ts
+api/push-test.ts
+api/sync.ts
+api/track.ts
+app.json
+assets/adaptive-icon.png
+assets/favicon.png
+assets/icon.png
+assets/splash-icon.png
+index.ts
+package-lock.json
+package.json
+plugins/questlife-ios/QuestLifeSceneDelegate.swift
+plugins/questlife-ios/QuestLifeShortcuts.swift
+plugins/questlife-ios/QuestLifeWidgets.swift
+plugins/questlife-ios/en.lproj/AppShortcuts.strings
+plugins/questlife-ios/en.lproj/QuestLifeEntries.strings
+plugins/questlife-ios/zh-Hans.lproj/AppShortcuts.strings
+plugins/questlife-ios/zh-Hans.lproj/QuestLifeEntries.strings
+plugins/with-questlife-ios-entries.js
+plugins/with-questlife-ios-scenes.js
+public/icons/apple-touch-icon.png
+public/icons/icon-192.png
+public/icons/icon-512.png
+public/icons/maskable-512.png
+public/index.html
+public/manifest.webmanifest
+public/shortcuts.html
+public/sw.js
+react-native.config.js
+scripts/patch-metro-image-input.cjs
+src/adaptive-decision/AdaptiveDecisionEvidenceSheet.tsx
+src/adaptive-decision/AdaptiveDecisionLoopDemoScreen.tsx
+src/adaptive-decision/AdaptiveDecisionLoopOwnerSheet.tsx
+src/adaptive-decision/AdaptiveDecisionSurfaceScreen.tsx
+src/adaptive-decision/AdaptiveDecisionWorkspace.tsx
+src/adaptive-decision/NativeDecisionWorkspace.tsx
+src/adaptive-decision/QuestLifeCoreOwnerSheet.tsx
+src/adaptive-decision/adaptive-decision-loop.css
+src/adaptive-decision/adaptive-decision-loop.styles.ts
+src/adaptive-decision/adaptive-decision-loop.styles.web.ts
+src/adaptive-decision/adaptive-decision-surface.css
+src/adaptive-decision/adaptive-decision-surface.styles.ts
+src/adaptive-decision/adaptive-decision-surface.styles.web.ts
+src/adaptive-decision/adaptiveDecisionE2E.test.ts
+src/adaptive-decision/contextAssembler.test.ts
+src/adaptive-decision/contextAssembler.ts
+src/adaptive-decision/decisionEngine.test.ts
+src/adaptive-decision/decisionEngine.ts
+src/adaptive-decision/decisionEpisode.test.ts
+src/adaptive-decision/decisionEpisode.ts
+src/adaptive-decision/decisionPolicy.test.ts
+src/adaptive-decision/decisionPolicy.ts
+src/adaptive-decision/decisionSurfaceFlow.test.ts
+src/adaptive-decision/decisionSurfaceFlow.ts
+src/adaptive-decision/decisionSurfacePresentation.test.ts
+src/adaptive-decision/decisionSurfacePresentation.ts
+src/adaptive-decision/demoFixtures.ts
+src/adaptive-decision/evidenceAdapter.test.ts
+src/adaptive-decision/evidenceAdapter.ts
+src/adaptive-decision/featureFlag.ts
+src/adaptive-decision/followUp.test.ts
+src/adaptive-decision/followUp.ts
+src/adaptive-decision/ownerDecisionFlow.test.ts
+src/adaptive-decision/ownerDecisionFlow.ts
+src/adaptive-decision/ownerDecisionIntegration.test.ts
+src/adaptive-decision/ownerQuantRuntime.test.ts
+src/adaptive-decision/ownerQuantRuntime.ts
+src/adaptive-decision/planPatch.test.ts
+src/adaptive-decision/planPatch.ts
+src/adaptive-decision/presentation.ts
+src/adaptive-decision/safetyGate.ts
+src/adaptive-decision/telemetry.test.ts
+src/adaptive-decision/telemetry.ts
+src/backup/RecordBackupActions.tsx
+src/backup/copy.ts
+src/backup/records.ts
+src/backup/validateAppData.cjs
+src/components/AsyncInteractionBoundary.tsx
+src/components/BottomSheetForm.native.tsx
+src/components/BottomSheetForm.tsx
+src/components/ColorPicker.tsx
+src/components/DashboardLayoutControls.tsx
+src/components/EmojiPicker.tsx
+src/components/GoalForm.tsx
+src/components/LocalPersistenceNotice.tsx
+src/components/OfflineNotice.tsx
+src/components/SkillForm.tsx
+src/components/TimePickerInput.native.tsx
+src/components/TimePickerInput.tsx
+src/components/capture/UniversalCaptureComposer.tsx
+src/components/capture/UniversalCaptureFixtureScreen.tsx
+src/components/dashboard/AddCardGallery.tsx
+src/components/dashboard/DashboardCardShell.tsx
+src/components/debug/PersistenceDebugPanel.tsx
+src/components/schedule/ScheduleProposalReview.tsx
+src/components/today/ActivityHistorySheet.tsx
+src/components/today/TodayDecisionDetailsSheet.tsx
+src/components/today/TodayDecisionSurface.tsx
+src/components/today/TodayRecentExecution.tsx
+src/components/today/TodayStateStrip.tsx
+src/components/today/V11ActivityHistorySheet.tsx
+src/components/today/V11RecordProgressForm.tsx
+src/components/ui/QuestButton.tsx
+src/components/ui/QuestCard.tsx
+src/components/ui/QuestEmptyState.tsx
+src/components/ui/QuestEntityIcon.tsx
+src/components/ui/QuestIcon.tsx
+src/components/ui/QuestInput.tsx
+src/components/ui/QuestPill.tsx
+src/components/ui/QuestPrimitives.tsx
+src/components/ui/QuestProgressBar.tsx
+src/components/ui/QuestSection.tsx
+src/components/ui/QuestSegmentedControl.tsx
+src/design/appearance.test.ts
+src/design/appearance.ts
+src/design/darkSurfaceGuard.ts
+src/design/entityIcons.ts
+src/design/motion.ts
+src/design/nativeFoundation.ts
+src/design/surfaces.ts
+src/design/systemIcons.ts
+src/design/tokens.ts
+src/design/useQuestTheme.ts
+src/design/visualFoundation.static.test.ts
+src/design/visualFoundation.ts
+src/domainTemplates.ts
+src/global.d.ts
+src/i18n.ts
+src/insights-v3/InsightsV3Analysis.tsx
+src/insights-v3/InsightsV3Chart.native.tsx
+src/insights-v3/InsightsV3Chart.tsx
+src/insights-v3/InsightsV3Screen.tsx
+src/insights-v3/InsightsV3Sheet.tsx
+src/insights-v3/InsightsV3Watchlist.tsx
+src/insights-v3/insights-v3.css
+src/insights-v3/insights-v3.styles.ts
+src/insights-v3/insights-v3.styles.web.ts
+src/insights-v3/insightsV3AnalysisSource.ts
+src/insights-v3/insightsV3I18n.ts
+src/insights-v3/insightsV3PersonalLayer.test.ts
+src/insights-v3/insightsV3Presentation.test.ts
+src/insights-v3/insightsV3Presentation.ts
+src/insights-v3/insightsV3Source.ts
+src/insights-v3/insightsV3Watchlist.test.ts
+src/insights-v3/insightsV3WatchlistPreferences.ts
+src/native/NativeApp.tsx
+src/native/NativeCalendarEditor.tsx
+src/native/NativeChartFixture.tsx
+src/native/NativeControls.tsx
+src/native/NativeDateTimeField.tsx
+src/native/NativeDayTimeline.tsx
+src/native/NativeFormDisclosure.tsx
+src/native/NativeInsightsScreen.tsx
+src/native/NativeLicensesScreen.tsx
+src/native/NativeNotificationPreferences.tsx
+src/native/NativeRecordActions.tsx
+src/native/NativeScheduleCalendarSheet.tsx
+src/native/NativeScheduleFields.tsx
+src/native/NativeSettings.test.cjs
+src/native/NativeSettingsRow.tsx
+src/native/NativeSettingsScreen.tsx
+src/native/NativeSettingsSheet.tsx
+src/native/accountSettingsBoundary.test.cjs
+src/native/entityForms.test.cjs
+src/native/insights/InsightsControls.tsx
+src/native/insights/InsightsDetails.tsx
+src/native/insights/InsightsRangeEditor.tsx
+src/native/insights/InsightsSourceWorkspace.tsx
+src/native/insights/NativeDateField.native.tsx
+src/native/insights/NativeDateField.tsx
+src/native/insights/NativeInsightsChart.native.tsx
+src/native/insights/NativeInsightsChart.tsx
+src/native/insights/NativeInsightsExperience.tsx
+src/native/insights/NativeInsightsWorkspace.tsx
+src/native/insights/__tests__/nativeInsights.test.ts
+src/native/insights/__tests__/preview.tsx
+src/native/insights/__tests__/run-tests.mjs
+src/native/insights/__tests__/serve-preview.mjs
+src/native/insights/nativeInsightsCatalog.ts
+src/native/insights/nativeInsightsChartModel.ts
+src/native/insights/nativeInsightsChartRuntime.ts
+src/native/insights/nativeInsightsPresentation.ts
+src/native/insights/nativeInsightsStrings.ts
+src/native/nativeDependencyNotices.ts
+src/native/nativeFormCopy.ts
+src/native/nativeRecordExport.ts
+src/native/nativeScheduleCopy.ts
+src/native/nativeWorkflowCopy.ts
+src/native/nativeWorkflowValidation.ts
+src/native/nativeWorkflows.test.cjs
+src/native/useDurableFormSave.ts
+src/notifications.native.ts
+src/notifications.ts
+src/onboarding/firstStart.test.ts
+src/onboarding/firstStart.ts
+src/onboarding/useFirstStart.ts
+src/platform/ForegroundSources.native.tsx
+src/platform/ForegroundSources.tsx
+src/platform/QuestLifeBackendConfig.ts
+src/platform/QuickCaptureSuggestions.native.tsx
+src/platform/QuickCaptureSuggestions.tsx
+src/platform/apiUrl.native.ts
+src/platform/apiUrl.ts
+src/platform/calendar/CalendarDriver.native.ts
+src/platform/calendar/CalendarDriver.ts
+src/platform/calendar/CalendarOperations.ts
+src/platform/calendar/CalendarService.ts
+src/platform/calendar/compilerBridge.ts
+src/platform/calendar/durability.ts
+src/platform/calendar/identity.ts
+src/platform/calendar/useExternalCalendarBlocks.native.ts
+src/platform/calendar/useExternalCalendarBlocks.ts
+src/platform/captureLayout.native.ts
+src/platform/captureLayout.ts
+src/platform/charts/QuantChart.native.tsx
+src/platform/charts/QuantChart.tsx
+src/platform/charts/contract.ts
+src/platform/charts/localChartAsset.ts
+src/platform/charts/renderer.js
+src/platform/contracts.ts
+src/platform/deviceRepository.ts
+src/platform/health/HealthCollection.ts
+src/platform/health/HealthSource.ios.ts
+src/platform/health/HealthSource.ts
+src/platform/health/HealthSync.ts
+src/platform/health/changes.ts
+src/platform/health/normalization.ts
+src/platform/health/openHealthPermissions.native.ts
+src/platform/health/openHealthPermissions.ts
+src/platform/nativeI18n.ts
+src/platform/notifications/NotificationCoordinator.native.tsx
+src/platform/notifications/NotificationCoordinator.tsx
+src/platform/notifications/NotificationDriver.native.ts
+src/platform/notifications/NotificationDriver.ts
+src/platform/notifications/NotificationService.ts
+src/platform/notifications/intentBus.ts
+src/platform/notifications/planner.ts
+src/platform/notifications/quietHours.ts
+src/platform/notifications/sessionBoundary.ts
+src/platform/notifications/useQuickActions.native.ts
+src/platform/notifications/useQuickActions.ts
+src/platform/quickCapture.ts
+src/platform/services.ts
+src/platform/shortcuts/ShortcutCoordinator.native.tsx
+src/platform/shortcuts/intent.ts
+src/platform/shortcuts/strings.ts
+src/platform/telemetryPermission.native.ts
+src/platform/telemetryPermission.ts
+src/platform/useDeviceData.ts
+src/progress.ts
+src/quant-product/fixtures/analysis_extension_v1.json
+src/quant-product/fixtures/driver_analysis_compact.json
+src/quant-product/fixtures/driver_analysis_full.json
+src/quant-product/fixtures/forming_history_analysis_v1.json
+src/quant-product/fixtures/forming_history_full.json
+src/quant-product/fixtures/goal_full.json
+src/quant-product/fixtures/manifest.json
+src/quant-product/fixtures/mature_market_analysis_v1.json
+src/quant-product/fixtures/mature_market_compact.json
+src/quant-product/fixtures/mature_market_full.json
+src/quant-product/fixtures/no_data_compact.json
+src/quant-product/fixtures/one_observation_analysis_v1.json
+src/quant-product/fixtures/one_observation_full.json
+src/quant-product/fixtures/recovery_compact.json
+src/quant-product/fixtures/recovery_full.json
+src/quant-product/fixtures/research_filtered_compact.json
+src/quant-product/fixtures/scenario_compact.json
+src/quant-product/fixtures/scenario_full.json
+src/quant-product/fixtures/similar_periods_compact.json
+src/quant-product/fixtures/similar_periods_full.json
+src/quant-product/fixtures/skill_full.json
+src/quant-product/fixtures/ten_observations_full.json
+src/quant-product/fixtures/three_observations_full.json
+src/quant-product/quantAnalysisContract.test.ts
+src/quant-product/quantAnalysisContract.ts
+src/quant-product/quantProductContract.test.ts
+src/quant-product/quantProductContract.ts
+src/quant-product/quantProductV1Adapter.ts
+src/scheduleAdjust.ts
+src/screens/GoalDetailScreen.tsx
+src/screens/GoalTreeScreen.tsx
+src/screens/HomeCapturePending.tsx
+src/screens/HomeScreen.tsx
+src/screens/HomeSmartCapture.tsx
+src/screens/OnboardingScreen.tsx
+src/screens/ScheduleScreen.tsx
+src/screens/SettingsScreen.tsx
+src/screens/SkillDetailScreen.tsx
+src/screens/SkillLibraryScreen.tsx
+src/screens/SkillsScreen.tsx
+src/screens/StatsScreen.tsx
+src/screens/StatsScreenInsights.tsx
+src/screens/settingsTruthfulness.test.cjs
+src/services/AiSettingsSection.tsx
+src/services/aiBriefPrivacy.ts
+src/services/aiPreferences.ts
+src/services/apiSync.test.ts
+src/services/authenticatedAi.ts
+src/services/decisionService.ts
+src/services/syncDeletionOutbox.test.ts
+src/services/syncDeletionOutbox.ts
+src/services/syncDeletionOutboxCore.ts
+src/services/syncService.ts
+src/state-layer/StateBrainDumpSheet.tsx
+src/state-layer/StateInsightsSection.tsx
+src/state-layer/StateLayerToday.tsx
+src/state-layer/StateReorderSheet.tsx
+src/state-layer/actions.ts
+src/state-layer/baseline.ts
+src/state-layer/brainDump.ts
+src/state-layer/calendar.ts
+src/state-layer/checkIn.ts
+src/state-layer/classifyState.ts
+src/state-layer/copy.ts
+src/state-layer/explain.ts
+src/state-layer/featureFlag.ts
+src/state-layer/outcomes.ts
+src/state-layer/reorder.ts
+src/state-layer/signals.ts
+src/state-layer/state-layer.css
+src/state-layer/state-layer.styles.ts
+src/state-layer/state-layer.styles.web.ts
+src/state-layer/stateLayer.test.ts
+src/state-layer/types.ts
+src/state-layer/useStateLayerActions.ts
+src/storage.ts
+src/store.tsx
+src/styles/theme-overrides.css
+src/sync-v2/AccountSyncSection.tsx
+src/sync-v2/auth.ts
+src/sync-v2/authLink.ts
+src/sync-v2/contracts.ts
+src/sync-v2/copy.ts
+src/sync-v2/device.ts
+src/sync-v2/engine.ts
+src/sync-v2/pkceCrypto.native.ts
+src/sync-v2/pkceCrypto.ts
+src/sync-v2/projection.ts
+src/sync-v2/publicConfig.ts
+src/sync-v2/pushRegistry.ts
+src/sync-v2/pushRegistryCore.test.ts
+src/sync-v2/pushRegistryCore.ts
+src/sync-v2/registry.ts
+src/sync-v2/runtime.ts
+src/sync-v2/sessionStorage.native.ts
+src/sync-v2/sessionStorage.ts
+src/sync-v2/supabase.ts
+src/sync-v2/transport.ts
+src/theme.ts
+src/types.ts
+src/utils/analytics.ts
+src/utils/captureCompletion.ts
+src/utils/captureFriction.test.ts
+src/utils/captureFriction.ts
+src/utils/confirm.ts
+src/utils/coreFlow.ts
+src/utils/coreLoop.ts
+src/utils/dailyOperatingBrief.ts
+src/utils/dashboardCards.ts
+src/utils/dataProvenance.test.ts
+src/utils/dataProvenance.ts
+src/utils/dataResidueAudit.ts
+src/utils/decisionBriefFallback.ts
+src/utils/decisionMemory.ts
+src/utils/decisionPayload.ts
+src/utils/decisionQuality.ts
+src/utils/decisionRealityAudit.ts
+src/utils/decisionTypes.ts
+src/utils/displayName.ts
+src/utils/durableSubmission.ts
+src/utils/effort.ts
+src/utils/executionDeletionProgress.ts
+src/utils/executionEdit.test.ts
+src/utils/executionEdit.ts
+src/utils/executionPersistence.ts
+src/utils/healthContextParser.ts
+src/utils/insightsEngine.ts
+src/utils/localMutationPersistence.test.ts
+src/utils/localMutationPersistence.ts
+src/utils/metacognition.ts
+src/utils/metrics.ts
+src/utils/objectiveContextBrief.ts
+src/utils/patternMemory.ts
+src/utils/persistenceConsistency.test.ts
+src/utils/persistenceConsistency.ts
+src/utils/persistenceLock.test.ts
+src/utils/persistenceLock.ts
+src/utils/persistenceTrace.ts
+src/utils/prediction.ts
+src/utils/progressFeedback.ts
+src/utils/recordSubmission.ts
+src/utils/scheduleCompiler.test.ts
+src/utils/scheduleCompiler.ts
+src/utils/scheduleProposal.ts
+src/utils/smartRouting.ts
+src/utils/stateSelection.ts
+src/utils/todayCommand.ts
+src/utils/todayDecisionPresentation.ts
+src/utils/universalCapture.ts
+src/v11-insights/V11InsightsAdvancedCanvas.tsx
+src/v11-insights/V11InsightsEvidenceSheet.tsx
+src/v11-insights/V11InsightsScreen.tsx
+src/v11-insights/V11InsightsVisuals.tsx
+src/v11-insights/V11QuantIntelligenceSurface.tsx
+src/v11-insights/insightsPresentation.test.ts
+src/v11-insights/insightsPresentation.ts
+src/v11-insights/personal-terminal/PersonalTerminalChart.tsx
+src/v11-insights/personal-terminal/PersonalTerminalIcon.tsx
+src/v11-insights/personal-terminal/PersonalTerminalInterpretation.tsx
+src/v11-insights/personal-terminal/PersonalTerminalInterpretationVisuals.tsx
+src/v11-insights/personal-terminal/PersonalTerminalRangeControl.tsx
+src/v11-insights/personal-terminal/PersonalTerminalSheet.tsx
+src/v11-insights/personal-terminal/PersonalTerminalWatchlist.tsx
+src/v11-insights/personal-terminal/PersonalTerminalWorkspaceSurface.tsx
+src/v11-insights/personal-terminal/V11PersonalMarketOverview.tsx
+src/v11-insights/personal-terminal/V11PersonalTerminal.tsx
+src/v11-insights/personal-terminal/interpretation-fixtures/accumulated_load.json
+src/v11-insights/personal-terminal/interpretation-fixtures/conflicting.json
+src/v11-insights/personal-terminal/interpretation-fixtures/exercise_branch.json
+src/v11-insights/personal-terminal/interpretation-fixtures/insufficient.json
+src/v11-insights/personal-terminal/interpretation-fixtures/manifest.json
+src/v11-insights/personal-terminal/interpretation-fixtures/rest_branch.json
+src/v11-insights/personal-terminal/interpretation-fixtures/sleep_disruption.json
+src/v11-insights/personal-terminal/personal-terminal-workspace.css
+src/v11-insights/personal-terminal/personal-terminal-workspace.styles.ts
+src/v11-insights/personal-terminal/personal-terminal-workspace.styles.web.ts
+src/v11-insights/personal-terminal/personal-terminal.css
+src/v11-insights/personal-terminal/personal-terminal.styles.ts
+src/v11-insights/personal-terminal/personal-terminal.styles.web.ts
+src/v11-insights/personal-terminal/personalTerminalDebugFixture.ts
+src/v11-insights/personal-terminal/personalTerminalExploration.test.ts
+src/v11-insights/personal-terminal/personalTerminalExploration.ts
+src/v11-insights/personal-terminal/personalTerminalFixtures.ts
+src/v11-insights/personal-terminal/personalTerminalPresentation.test.ts
+src/v11-insights/personal-terminal/personalTerminalPresentation.ts
+src/v11-insights/personal-terminal/personalTerminalValueMath.test.ts
+src/v11-insights/personal-terminal/personalTerminalValueMath.ts
+src/v11-insights/personal-terminal/personalTerminalWorkspace.test.ts
+src/v11-insights/personal-terminal/personalTerminalWorkspace.ts
+src/v11-insights/personal-terminal/quantInterpretation.ts
+src/v11-insights/personal-terminal/quantInterpretationAdapter.test.ts
+src/v11-insights/personal-terminal/quantInterpretationAdapter.ts
+src/v11-insights/personal-terminal/quantInterpretationFixtures.ts
+src/v11-insights/personal-terminal/quantInterpretationPresentation.test.ts
+src/v11-insights/personal-terminal/quantInterpretationPresentation.ts
+src/v11-insights/personal-terminal/quantV041Adapter.test.ts
+src/v11-insights/personal-terminal/quantV041Adapter.ts
+src/v11-insights/personal-terminal/quantV041Fixtures.ts
+src/v11-insights/personal-terminal/quantV042Adapter.test.ts
+src/v11-insights/personal-terminal/quantV042Adapter.ts
+src/v11-insights/personal-terminal/quantV042Fixtures.ts
+src/v11-insights/personal-terminal/v041-fixtures/day180.json
+src/v11-insights/personal-terminal/v041-fixtures/day30.json
+src/v11-insights/personal-terminal/v041-fixtures/day7.json
+src/v11-insights/personal-terminal/v041-fixtures/day90.json
+src/v11-insights/personal-terminal/v041-fixtures/goal.json
+src/v11-insights/personal-terminal/v041-fixtures/manifest.json
+src/v11-insights/personal-terminal/v041-fixtures/no-data.json
+src/v11-insights/personal-terminal/v041-fixtures/rich-passive.json
+src/v11-insights/personal-terminal/v041-fixtures/skill.json
+src/v11-insights/personal-terminal/v041-fixtures/sleep-only.json
+src/v11-insights/personal-terminal/v041-fixtures/steps-only.json
+src/v11-insights/personal-terminal/v042-fixtures/day180.json
+src/v11-insights/personal-terminal/v042-fixtures/day30.json
+src/v11-insights/personal-terminal/v042-fixtures/day90.json
+src/v11-insights/personal-terminal/v042-fixtures/execution_3_observations.json
+src/v11-insights/personal-terminal/v042-fixtures/execution_7_observations.json
+src/v11-insights/personal-terminal/v042-fixtures/focus_10_observations.json
+src/v11-insights/personal-terminal/v042-fixtures/focus_1_observation.json
+src/v11-insights/personal-terminal/v042-fixtures/focus_2_observations.json
+src/v11-insights/personal-terminal/v042-fixtures/focus_3_observations.json
+src/v11-insights/personal-terminal/v042-fixtures/focus_5_observations.json
+src/v11-insights/personal-terminal/v042-fixtures/goal.json
+src/v11-insights/personal-terminal/v042-fixtures/manifest.json
+src/v11-insights/personal-terminal/v042-fixtures/market_mixed_mature.json
+src/v11-insights/personal-terminal/v042-fixtures/market_questlife_only.json
+src/v11-insights/personal-terminal/v042-fixtures/market_rich_passive.json
+src/v11-insights/personal-terminal/v042-fixtures/market_steps_only.json
+src/v11-insights/personal-terminal/v042-fixtures/no_data.json
+src/v11-insights/personal-terminal/v042-fixtures/overview/day180.json
+src/v11-insights/personal-terminal/v042-fixtures/overview/day30.json
+src/v11-insights/personal-terminal/v042-fixtures/overview/day90.json
+src/v11-insights/personal-terminal/v042-fixtures/overview/execution_3_observations.json
+src/v11-insights/personal-terminal/v042-fixtures/overview/execution_7_observations.json
+src/v11-insights/personal-terminal/v042-fixtures/overview/focus_10_observations.json
+src/v11-insights/personal-terminal/v042-fixtures/overview/focus_1_observation.json
+src/v11-insights/personal-terminal/v042-fixtures/overview/focus_2_observations.json
+src/v11-insights/personal-terminal/v042-fixtures/overview/focus_3_observations.json
+src/v11-insights/personal-terminal/v042-fixtures/overview/focus_5_observations.json
+src/v11-insights/personal-terminal/v042-fixtures/overview/goal.json
+src/v11-insights/personal-terminal/v042-fixtures/overview/market_mixed_mature.json
+src/v11-insights/personal-terminal/v042-fixtures/overview/market_questlife_only.json
+src/v11-insights/personal-terminal/v042-fixtures/overview/market_rich_passive.json
+src/v11-insights/personal-terminal/v042-fixtures/overview/market_steps_only.json
+src/v11-insights/personal-terminal/v042-fixtures/overview/no_data.json
+src/v11-insights/personal-terminal/v042-fixtures/overview/skill.json
+src/v11-insights/personal-terminal/v042-fixtures/skill.json
+src/v11-insights/quant-terminal/QuantTerminalChart.tsx
+src/v11-insights/quant-terminal/V11QuantTerminal.tsx
+src/v11-insights/quant-terminal/V11QuantTerminalInspector.tsx
+src/v11-insights/quant-terminal/quant-terminal.css
+src/v11-insights/quant-terminal/quant-terminal.styles.ts
+src/v11-insights/quant-terminal/quant-terminal.styles.web.ts
+src/v11-insights/quant-terminal/quantTerminalFixtures.ts
+src/v11-insights/quant-terminal/quantTerminalPresentation.test.ts
+src/v11-insights/quant-terminal/quantTerminalPresentation.ts
+src/v11-insights/v11-insights.css
+src/v11-insights/v11-insights.styles.ts
+src/v11-insights/v11-insights.styles.web.ts
+src/v11-stage0/V11Stage0Screen.tsx
+src/v11-stage0/v11-stage0.css
+src/v11-stage0/v11-stage0.styles.ts
+src/v11-stage0/v11-stage0.styles.web.ts
+src/v11-stage1/V11Stage1Screen.tsx
+src/v11-stage1/v11-stage1.css
+src/v11-stage1/v11-stage1.styles.ts
+src/v11-stage1/v11-stage1.styles.web.ts
+src/v11-stage2-rebaseline/V11CalibrationRail.tsx
+src/v11-stage2-rebaseline/V11IntegratedTodaySurface.native.tsx
+src/v11-stage2-rebaseline/V11IntegratedTodaySurface.tsx
+src/v11-stage2-rebaseline/V11RebaselineIcon.tsx
+src/v11-stage2-rebaseline/V11SheetControlFixtureScreen.tsx
+src/v11-stage2-rebaseline/V11Stage2ProductionSheet.native.tsx
+src/v11-stage2-rebaseline/V11Stage2ProductionSheet.tsx
+src/v11-stage2-rebaseline/V11Stage2RebaselineScreen.tsx
+src/v11-stage2-rebaseline/V11Stage2RebaselineSheet.tsx
+src/v11-stage2-rebaseline/fixtures.ts
+src/v11-stage2-rebaseline/v11-stage2-rebaseline.css
+src/v11-stage2-rebaseline/v11-stage2-rebaseline.styles.ts
+src/v11-stage2-rebaseline/v11-stage2-rebaseline.styles.web.ts
+src/v11-stage2-rebaseline/v11SheetGeometry.ts
+src/v11-today/V11TodayOverlaySheet.tsx
+src/v11-today/V11TodaySurface.tsx
+src/v11-today/V11TodayUtilities.tsx
+src/v11-today/v11-today.css
+src/v11-today/v11-today.styles.ts
+src/v11-today/v11-today.styles.web.ts
+src/v11/components/V11DirectionalBorder.tsx
+src/v11/components/V11GlowOrb.tsx
+src/v11/components/V11Material.native.tsx
+src/v11/components/V11Material.tsx
+src/v11/components/V11MicroInstruments.tsx
+src/v11/components/V11NativeSheet.native.tsx
+src/v11/components/V11SheetControls.native.tsx
+src/v11/components/V11SheetControls.tsx
+src/v11/featureFlag.ts
+src/v11/featureSelection.test.ts
+src/v11/featureSelection.ts
+src/v11/sheetControlAudit.ts
+src/v11/todayPresentation.test.ts
+src/v11/todayPresentation.ts
+src/v11/tokens.ts
+src/v11/useV11ReducedMotion.ts
+src/v11/v11-components.css
+src/v11/v11-components.styles.ts
+src/v11/v11-components.styles.web.ts
+src/v11/v11-product.css
+src/v2/V2App.tsx
+src/v2/components/Sheet.tsx
+src/v2/components/feedback.tsx
+src/v2/components/inputs.tsx
+src/v2/components/primitives.tsx
+src/v2/copy.ts
+src/v2/featureFlag.ts
+src/v2/flagParse.ts
+src/v2/model/captureMachine.test.ts
+src/v2/model/captureMachine.ts
+src/v2/model/evidence.test.ts
+src/v2/model/evidence.ts
+src/v2/model/firstUse.ts
+src/v2/model/localParse.test.ts
+src/v2/model/localParse.ts
+src/v2/model/sample.ts
+src/v2/model/todayModel.test.ts
+src/v2/model/todayModel.ts
+src/v2/screens/CaptureSheet.tsx
+src/v2/screens/FirstUse.tsx
+src/v2/screens/SampleTour.tsx
+src/v2/screens/Skeletons.tsx
+src/v2/screens/TodayScreen.tsx
+src/v2/screens/TodayView.tsx
+src/v2/screens/useCapture.ts
+src/v2/storeBridge.tsx
+src/v2/theme.tsx
+src/v2/tokens.test.ts
+src/v2/tokens.ts
+src/v5/FinishFields.tsx
+src/v5/GoalWorkingHeader.tsx
+src/v5/GoalsSurface.tsx
+src/v5/InsightsSurface.tsx
+src/v5/PersonalSurface.tsx
+src/v5/PrototypeIcon.tsx
+src/v5/ScheduleSurface.tsx
+src/v5/ShortcutSettings.tsx
+src/v5/StateStrip.tsx
+src/v5/TodaySurface.tsx
+src/v5/copy.ts
+src/v5/goalPresentation.ts
+src/v5/round2.css
+src/v5/round2Presentation.ts
+src/v5/shortcutCalendar.ts
+src/v5/shortcutClient.ts
+src/v5/stateEvidence.ts
+src/v5/v5.css
+tsconfig.json
+vercel.json
+> git archive --format=tar --output=/var/folders/95/tb247_tj4wzbw6lw6c4gqq4m0000gn/T/questlife-v5-deploy-cApmpd/committed.tar de2182e394bce43c8c18738cb1c5581e8571e284 -- src api public assets plugins index.ts App.tsx App.web.tsx package.json package-lock.json app.json tsconfig.json react-native.config.js vercel.json .vercelignore scripts/patch-metro-image-input.cjs
+> tar -xf /var/folders/95/tb247_tj4wzbw6lw6c4gqq4m0000gn/T/questlife-v5-deploy-cApmpd/committed.tar -C /var/folders/95/tb247_tj4wzbw6lw6c4gqq4m0000gn/T/questlife-v5-deploy-cApmpd/source
+> vercel project inspect --scope kyrie-z-s-projects --non-interactive
+Retrieving project…
+> Found Project kyrie-z-s-projects/questlife-v1-release [1s]
+
+  General
+
+    ID				prj_fVGFV7DzxfkLqbBpSo8P7NH9oqxX
+    Name			questlife-v1-release
+    Owner			KyrieZ's projects
+    Created At			20 September 2026 18:37:35 [46d ago]
+    Root Directory		.
+    Node.js Version		24.x
+
+  Framework Settings
+
+    Framework Preset		Other
+    Build Command		`npm run vercel-build` or `npm run build`
+    Output Directory		`public` if it exists, or `.`
+    Install Command		`yarn install`, `pnpm install`, `npm install`, or `bun install`
+
+> vercel deploy /var/folders/95/tb247_tj4wzbw6lw6c4gqq4m0000gn/T/questlife-v5-deploy-cApmpd/source --prod --yes --project prj_fVGFV7DzxfkLqbBpSo8P7NH9oqxX --scope kyrie-z-s-projects --meta sourceCommit=de2182e394bce43c8c18738cb1c5581e8571e284
+{
+  "status": "ok",
+  "deployment": {
+    "id": "dpl_7xCKZjtyDn5vZX5EW4dtWmXPzDZq",
+    "url": "https://questlife-v1-release-dmk3pz8s9-kyrie-z-s-projects.vercel.app",
+    "inspectorUrl": "https://vercel.com/kyrie-z-s-projects/questlife-v1-release/7xCKZjtyDn5vZX5EW4dtWmXPzDZq",
+    "readyState": "READY",
+    "target": "production",
+    "deploymentApiUrl": "https://api.vercel.com/v13/deployments/dpl_7xCKZjtyDn5vZX5EW4dtWmXPzDZq"
+  },
+  "message": "Deployment questlife-v1-release-dmk3pz8s9-kyrie-z-s-projects.vercel.app ready.",
+  "next": [
+    {
+      "command": "vercel inspect questlife-v1-release-dmk3pz8s9-kyrie-z-s-projects.vercel.app --scope kyrie-z-s-projects",
+      "when": "Inspect deployment"
+    },
+    {
+      "command": "vercel deploy --prod --scope kyrie-z-s-projects",
+      "when": "Promote to production"
+    }
+  ]
+}
+Retrieving project…
+Deploying kyrie-z-s-projects/questlife-v1-release
+Uploading [--------------------] (0.0B/198.9KB)
+Uploading [=====---------------] (51.2KB/198.9KB)
+Uploading [==========----------] (102.9KB/198.9KB)
+Uploading [===============-----] (150.9KB/198.9KB)
+Uploading [====================] (198.9KB/198.9KB)
+  Inspect     https://vercel.com/kyrie-z-s-projects/questlife-v1-release/7xCKZjtyDn5vZX5EW4dtWmXPzDZq
+▲ Production  https://questlife-v1-release-dmk3pz8s9-kyrie-z-s-projects.vercel.app
+Building…
+Building…
+Running build in Washington, D.C., USA (East) – iad1
+Build machine configuration: 2 cores, 8 GB
+Retrieving list of deployment files...
+Downloading 619 deployment files...
+Restored build cache from previous deployment (4JpfEL8A1itwe1uN5CPHuSZkL9xK)
+Running "vercel build"
+Vercel CLI 65.11.0
+Installing dependencies...
+npm warn Unknown env config "cache-dir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+> questlife@1.0.0 postinstall
+> node scripts/patch-metro-image-input.cjs
+up to date in 2s
+101 packages are looking for funding
+run `npm fund` for details
+npm warn Unknown env config "cache-dir". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+Starting Metro Bundler
+Web ./index.ts ▓░░░░░░░░░░░░░░░  9.0% ( 23/163)
+Web ./index.ts ▓░░░░░░░░░░░░░░░  9.0% ( 36/214)
+Web ./index.ts ▓░░░░░░░░░░░░░░░  9.0% ( 42/288)
+Web ./index.ts ▓░░░░░░░░░░░░░░░  9.0% ( 54/322)
+Web ./index.ts ▓░░░░░░░░░░░░░░░  9.4% (128/417)
+Web ./index.ts ▓▓░░░░░░░░░░░░░░ 15.2% (190/488)
+Web ./index.ts ▓▓▓░░░░░░░░░░░░░ 19.8% (239/537)
+Web ./index.ts ▓▓▓░░░░░░░░░░░░░ 23.6% (265/546)
+Web ./index.ts ▓▓▓▓░░░░░░░░░░░░ 27.3% (293/561)
+Web ./index.ts ▓▓▓▓▓░░░░░░░░░░░ 32.9% (331/577)
+Web ./index.ts ▓▓▓▓▓░░░░░░░░░░░ 33.6% (349/610)
+Web ./index.ts ▓▓▓▓▓▓░░░░░░░░░░ 38.9% (425/688)
+Web ./index.ts ▓▓▓▓▓▓░░░░░░░░░░ 40.4% (500/835)
+Web ./index.ts ▓▓▓▓▓▓░░░░░░░░░░ 40.4% (506/837)
+Web ./index.ts ▓▓▓▓▓▓░░░░░░░░░░ 41.2% (553/862)
+Web ./index.ts ▓▓▓▓▓▓▓░░░░░░░░░ 46.3% (596/876)
+Web ./index.ts ▓▓▓▓▓▓▓░░░░░░░░░ 48.7% (618/887)
+Web ./index.ts ▓▓▓▓▓▓▓▓░░░░░░░░ 53.0% (711/977)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓░░░░░░░ 61.7% ( 816/1039)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓░░░░░░░ 62.0% ( 818/1039)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓░░░░░░ 62.9% ( 873/1104)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓░░░░░░ 64.3% ( 889/1109)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓░░░░░░ 64.7% ( 892/1109)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓░░░░░░ 65.9% ( 900/1109)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 68.8% ( 920/1109)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 69.4% ( 924/1109)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 74.0% ( 973/1131)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 78.7% (1043/1185)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 83.6% (1109/1213)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 89.2% (1170/1289)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 89.2% (1223/1328)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 93.6% (1285/1328)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 97.8% (1361/1394)
+Web Bundled 133751ms index.ts (1405 modules)
+› Assets (11):
+node_modules/@react-navigation/elements/lib/module/assets/back-icon-mask.0a328cd9c1afd0afe8e3b1ec5165b1b4.png (653 B)
+node_modules/@react-navigation/elements/lib/module/assets/back-icon.35ba0eaec5a4f5ed12ca16fabeae451d.png (207 B)
+node_modules/@react-navigation/elements/lib/module/assets/clear-icon.c94f6478e7ae0cdd9f15de1fcb9e5e55.png (4 variations | 425 B)
+node_modules/@react-navigation/elements/lib/module/assets/close-icon.808e1b1b9b53114ec2838071a7e6daa7.png (4 variations | 235 B)
+node_modules/@react-navigation/elements/lib/module/assets/search-icon.286d67d3f74808a60a78d3ebf1a5fb57.png (928 B)
+› web bundles (43):
+_expo/static/css/adaptive-decision-surface-d9d7f86e9804da9f5f7f26883ecf57f1.css (14.7 kB)
+_expo/static/css/insights-v3-c8ad1786d07006a10a70fe24231fc9a8.css (33 kB)
+_expo/static/css/personal-terminal-2069b8d7748b6c54c32d4ebedc8412d6.css (95.7 kB)
+_expo/static/css/personal-terminal-workspace-b74e7cca97f14b522eb52e446b8d07e9.css (50.9 kB)
+_expo/static/css/quant-terminal-f7a9b89554b504c1f7a1b063fe6a5bfc.css (11 kB)
+_expo/static/css/round2-d14853c00a51f4b2eb0697f7b1e27467.css (16.4 kB)
+_expo/static/css/state-layer-bb0d8709b2767865fe9cd774f9e0e7d5.css (3.95 kB)
+_expo/static/css/theme-overrides-de918ffa78216cd85c89cd2f661df563.css (7.58 kB)
+_expo/static/css/v11-components-b2e7432f43338f39e735c686df7401e7.css (4.23 kB)
+_expo/static/css/v11-insights-606831aac854322cd0387f59dcbe67d6.css (19.3 kB)
+_expo/static/css/v11-product-4990e6bd3452e4a07e684a55b209609e.css (12.7 kB)
+_expo/static/css/v11-stage0-596d22bb56d0bb71d360000c9ffca011.css (7.62 kB)
+_expo/static/css/v11-stage1-94574616d8c90677c741f4a3a2adf183.css (4.84 kB)
+_expo/static/css/v11-stage2-rebaseline-883a523a9d1e8524c982943a7a7bb70a.css (55.9 kB)
+_expo/static/css/v5-67fdffb0c865335c8868cf0fe3d93b6f.css (10.3 kB)
+_expo/static/js/web/__common-4fdf9774d412c72602764e683402aeee.js (14.9 kB)
+_expo/static/js/web/__expo-metro-runtime-0c48b0beee2d3ce6030b475fcc5b1846.js (3.8 kB)
+_expo/static/js/web/driver_analysis_compact-3823af02640023c00124e886ba2124a8.js (21.1 kB)
+_expo/static/js/web/forming_history_analysis_v1-6407c741959774a3d67eeddbde538db6.js (3.85 kB)
+_expo/static/js/web/forming_history_full-e194b7b5e4f90389f110bbec6467dd90.js (11.5 kB)
+_expo/static/js/web/goal_full-a8edff24dfba12216d11d88bbdce52e0.js (27.3 kB)
+_expo/static/js/web/index-9eaa310950fb17124839deca0e42bdc3.js (4.74 MB)
+_expo/static/js/web/InsightsV3Screen-3413c468be9951a99ceb0f4d20ecdc71.js (35.9 kB)
+_expo/static/js/web/lightweight-charts-bcd07c594b149e8ddde136cba3c09c1c.js (201 kB)
+_expo/static/js/web/mature_market_analysis_v1-f1ef034b224446becfee45aff012a403.js (1.18 MB)
+_expo/static/js/web/mature_market_compact-79bba4fec392f20fd649159b4672a719.js (93.5 kB)
+_expo/static/js/web/mature_market_full-244e6b872e8bd9fab69119bcbfd62ba5.js (1.38 MB)
+_expo/static/js/web/no_data_compact-a6eb68d56ce8a0215f27eba0aae484e5.js (2.28 kB)
+_expo/static/js/web/one_observation_analysis_v1-70fdbe7db4fdd74f8a1d66827f03ea18.js (2.57 kB)
+_expo/static/js/web/one_observation_full-0faea5a61fa646a62f5012e7269a86d6.js (8.33 kB)
+_expo/static/js/web/personalTerminalDebugFixture-3e43089526c0f045ba8d994fc2de3f55.js (17.6 MB)
+_expo/static/js/web/recovery_compact-1998c4a117ad76b95bd31f24554fbdd3.js (21.1 kB)
+_expo/static/js/web/recovery_full-643970640e90ef4453e9a1ffce479f26.js (178 kB)
+_expo/static/js/web/research_filtered_compact-afcc2a5a10f05c0550229fb2cbe10b94.js (93.5 kB)
+_expo/static/js/web/scenario_compact-d57208ec4dc1aab8a788801dabc4ebb6.js (21.1 kB)
+_expo/static/js/web/scenario_full-cce6e8934d0922459701143328da9a3c.js (177 kB)
+_expo/static/js/web/similar_periods_compact-0d86977c6f1f98ef83298fdfa72090ee.js (21.2 kB)
+_expo/static/js/web/similar_periods_full-f40f368e42b3e729bff0790bd5f919c9.js (178 kB)
+_expo/static/js/web/skill_full-c708991f62d3fe04903d5efbc72bde29.js (27.2 kB)
+_expo/static/js/web/ten_observations_full-878c0157905c8633113447c49077e034.js (14.9 kB)
+_expo/static/js/web/three_observations_full-ce1f51d98579e2f499d92779314c7fea.js (10.4 kB)
+_expo/static/js/web/V11InsightsScreen-44d2c768f5adc5d7b14c01ce6323a488.js (563 kB)
+_expo/static/js/web/V2App-a2841c0cfe8dad16d581148dad5da00b.js (90.8 kB)
+› Files (3):
+favicon.ico (14.5 kB)
+index.html (5.16 kB)
+metadata.json (49 B)
+Exported: dist
+Using TypeScript 5.9.3 (local user-provided)
+Using TypeScript 5.9.3 (local user-provided)
+Using TypeScript 5.9.3 (local user-provided)
+Using TypeScript 5.9.3 (local user-provided)
+Using TypeScript 5.9.3 (local user-provided)
+Using TypeScript 5.9.3 (local user-provided)
+Using TypeScript 5.9.3 (local user-provided)
+Using TypeScript 5.9.3 (local user-provided)
+Build Completed in /vercel/output [3m]
+Deploying outputs...
+Deployment completed
+Creating build cache...
+[2K[1A[2K[G▲ Production  https://questlife-v1-release-dmk3pz8s9-kyrie-z-s-projects.vercel.app
+Completing…
+▲ Aliased     https://questlife-v1-release.vercel.app
+> vercel inspect https://questlife-v1-release-dmk3pz8s9-kyrie-z-s-projects.vercel.app --scope kyrie-z-s-projects
+Fetching deployment "questlife-v1-release-dmk3pz8s9-kyrie-z-s-projects.vercel.app" in kyrie-z-s-projects
+> Fetched deployment "questlife-v1-release-dmk3pz8s9-kyrie-z-s-projects.vercel.app" in kyrie-z-s-projects [380ms]
+
+  General
+
+    id		dpl_7xCKZjtyDn5vZX5EW4dtWmXPzDZq
+    name	questlife-v1-release
+    target	production
+    status	● Ready
+    url		https://questlife-v1-release-dmk3pz8s9-kyrie-z-s-projects.vercel.app
+    created	Fri Nov 06 2026 03:36:53 GMT+1100 (Australian Eastern Daylight Time) [3m ago]
+
+
+  Aliases
+
+    ╶ https://questlife-v1-release.vercel.app
+    ╶ https://questlife-v1-release-kyrie-z-s-projects.vercel.app
+    
+
+  Builds
+
+    ┌ .        [0ms]
+    ├── λ api/brief (227.53KB) [iad1]
+    ├── λ api/decision-quant (197.01KB) [iad1]
+    ├── λ api/inbox (233KB) [iad1]
+    ├── λ api/inbox-token (232.99KB) [iad1]
+    ├── λ api/parse (27.52KB) [iad1]
+    └── 3 output items hidden
+    
+
+{
+  "product": "QuestLife V5 candidate",
+  "commit": "de2182e394bce43c8c18738cb1c5581e8571e284",
+  "builtAt": "2026-11-05T16:36:45.000Z",
+  "migration": "shortcut inbox requires manual candidate SQL installation",
+  "url": "https://questlife-v1-release.vercel.app",
+  "deployment": "https://questlife-v1-release-dmk3pz8s9-kyrie-z-s-projects.vercel.app",
+  "deploymentId": "dpl_7xCKZjtyDn5vZX5EW4dtWmXPzDZq",
+  "uploadManifest": "/var/folders/95/tb247_tj4wzbw6lw6c4gqq4m0000gn/T/questlife-v5-deploy-cApmpd/upload-manifest.txt"
+}
+Receipt: /var/folders/95/tb247_tj4wzbw6lw6c4gqq4m0000gn/T/questlife-v5-deploy-cApmpd/result.json

@@ -1,0 +1,6 @@
+COMMAND: node docs/v5/round2/capture-review.cjs
+Error: Unexpected screenshot geometry
+    at compare (/Users/kyrie/dev/questlife-frontend-v2/docs/v5/round2/capture-review.cjs:17:93)
+    at async /Users/kyrie/dev/questlife-frontend-v2/docs/v5/round2/capture-review.cjs:48:7
+
+EXIT 1
