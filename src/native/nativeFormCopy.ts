@@ -6,7 +6,7 @@ const copy = {
     validNumber: '请输入有效数字，或留空未记录的数值。',
     pending: '正在保存本机修改',
     failed: '本机修改尚未保存',
-    failedBody: '请保留应用开启并重试。已保存的离线记录会在联网后同步。',
+    failedBody: '请保留应用开启并重试。云端同步状态请在设置中单独确认。',
   },
   en: {
     saveFailed: 'Not saved on this device yet. Your changes are retained. Retry and keep the app open.',
@@ -15,7 +15,7 @@ const copy = {
     validNumber: 'Enter a valid number, or leave an unrecorded value empty.',
     pending: 'Saving device changes',
     failed: 'Device changes are not saved yet',
-    failedBody: 'Keep the app open and retry. Saved offline records will sync when connected.',
+    failedBody: 'Keep the app open and retry. Check Account and sync status in Settings separately.',
   },
 } as const;
 export const nativeFormCopy = (lang: 'zh' | 'en', key: keyof typeof copy.en) => copy[lang][key];

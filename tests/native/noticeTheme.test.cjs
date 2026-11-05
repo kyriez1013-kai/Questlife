@@ -27,6 +27,12 @@ for (const ext of ['.ts', '.tsx']) require.extensions[ext] = (module, file) => m
 const { questThemes } = require('../../src/design/tokens.ts');
 const OfflineNotice = require('../../src/components/OfflineNotice.tsx').default;
 const LocalPersistenceNotice = require('../../src/components/LocalPersistenceNotice.tsx').default;
+const { nativeFormCopy } = require('../../src/native/nativeFormCopy.ts');
+for (const lang of ['zh', 'en']) test(`local save failure does not promise cloud delivery (${lang})`, () => {
+  const body = nativeFormCopy(lang, 'failedBody');
+  assert.doesNotMatch(body, /will sync|会在联网后同步/i);
+  assert.match(body, lang === 'zh' ? /设置.*确认/ : /Settings/);
+});
 afterEach(async () => { if (tree) await act(async () => tree.unmount()); tree = undefined; });
 for (const [name, Component] of [['offline', OfflineNotice], ['local save error', LocalPersistenceNotice]]) {
   for (const [search, stored, expected] of [

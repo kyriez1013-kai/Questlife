@@ -3,6 +3,91 @@
 Updated: 2026-11-05, Australia/Sydney. Autonomous candidate improvement requested;
 commercial readiness is the goal, not an acceptance claim.
 
+## Latest review entry, November 5 15:25 Sydney
+
+- Product code: `0467be18bbf793f95ef70fffd5c1783cda2587e9` on
+  `candidate/commercial-readiness-20261105`. Later documentation-only commits
+  do not change this deployed bundle.
+- READY Preview: `dpl_GrWZnby9caCCC53W7jG3VBDd61W7`, release project
+  `prj_fVGFV7DzxfkLqbBpSo8P7NH9oqxX`. URL without the access grant:
+  https://questlife-v1-release-f2tm8xb1v-kyrie-z-s-projects.vercel.app/
+- The direct review grant is stored outside Git in
+  `/Users/kyrie/dev/questlife-review-20261105/preview-access-final.json`.
+  It expires November 6 at 14:19 Sydney. Deployment protection stays enabled;
+  no shared/production alias was assigned. The latest link was given in chat.
+- Local static review: http://127.0.0.1:8141/ . No Metro/native installation.
+- Hosted entry bundle: `index-603bc3f0b14bb60517a5c76f0ca75f9e.js`;
+  offline cache: `questlife-shell-992694ff6c04f833` with 16 entry assets.
+  Export includes the build-time precache preparation, unlike earlier Previews.
+- Earlier deployment references below are historical evidence, not current links.
+
+This is a browser-local candidate, NOT a complete live-service release. The
+Preview has no account, Supabase, model-provider or hosted Quant configuration.
+Do not import Owner data to compensate. AI parse explicitly returns unavailable;
+confirmed local parsing is labelled as such. Isolated analysis examples remain
+read-only examples. Local records are not shared between browsers/devices.
+
+Normal hosted UI verification (fresh isolated Chromium; no Owner data):
+
+- Zero observations -> create goal -> all five tabs -> first state check-in ->
+  corresponding chart point -> English/reload, at 375x667 light and 1280x900 dark.
+  No invented baseline/trend. Account-not-configured remains distinct from no data.
+- Create two schedule blocks -> state-based plan preview -> Apply failure/retry
+  -> Undo failure/retry -> refresh. Also resume the same decision in existing
+  opt-in Core at 393x852 dark. One episode and original schedules retained.
+  This is not a new hosted-Quant-generated proposal.
+- Schedule edit/move/conflict cancel/explicit confirmation/delete failure/retry
+  at 1280x900 dark; refresh preserves the unaffected block byte-for-byte.
+- Capture completion/history/reopen/zh-en/parse retry at 393x852 dark. Failed AI
+  retry does not mutate the already saved execution or mix current raw text.
+- Basketball entered as 42 custom minutes, bench 82.5 kg x 5 reps x 3 sets, and
+  SQL 40 minutes all confirmed through normal controls at 375x667 light. Exact
+  raw/execution lineage and units checked; bench volume 1237.5 kg-repetitions,
+  no fabricated duration. Delete only the middle bench capture plus linked log,
+  refresh, verify remaining logs unchanged. Local rule provenance, NOT live AI.
+- Selected example-analysis download failure -> explicit error -> retry ->
+  indicator access -> return to untouched personal data at 1280x900 dark/en.
+- Export actual local backup -> new empty browser -> cancel/confirm restore ->
+  refresh same IDs. Nonempty destination refuses overwrite. No account tokens.
+- First online visit -> offline Capture confirm -> first offline restart ->
+  reconnect -> same History ID, at 393x852 dark. Notice contrast 15.24:1; zh/en
+  change through normal Settings. No page errors/duplicates in these scenarios.
+
+Evidence: `/Users/kyrie/dev/questlife-review-20261105/preview-final-matrix.json`
+(ten complete normal-UI flows, all exit 0), timestamped `preview-final-*` logs,
+plus `2026-11-05T04-24-15-994Z-preview-final-capture-units.log`.
+Screenshots: `preview-final-375-workspace-today-light.png`,
+`preview-final-1280-insights-first-observation-dark.png`,
+`preview-final-393-core-apply-retry-dark.png`,
+`preview-final-393-offline-record-restored-dark.png`, and per-flow screenshots
+in the same external evidence directory. Screenshot inspection found and fixed
+the offline-notice contrast issue; visual/commercial acceptance is not claimed.
+
+Final source checks: typecheck and web export passed (04:17Z); 134 impacted
+checks passed before the last offline changes, followed by 21 worker/build/theme
+checks. No lint script exists. React test-renderer and Metro environment warnings
+remain; tested browser flows report no runtime page errors. No physical-device
+performance, HealthKit, cloud persistence or full release-security acceptance.
+
+Protected deployments rechecked after the final upload at 04:21Z:
+`questlife-v1-release.vercel.app` still `dpl_v5PKqGiwTphijQbeEJjtsYaPRJDk`;
+`ky11ai.com` / `questlife-alpha-orpin.vercel.app` still
+`dpl_8ccd7PRNezzkAwHJiKUrkAJGJPzq`. No Git push. Source checkout remains clean;
+the old main checkout retains the same five tracked modifications and protected
+untracked contract. Nothing there was changed/read beyond permitted status checks.
+
+Next bounded work, without re-auditing:
+
+1. Reuse the hosted evidence above; do not rerun unchanged flows just to accumulate
+   test counts. Refresh the scoped review link only when expired.
+2. Close external Calendar occupancy/revalidation gaps with the existing adapter,
+   isolated fixtures and actual permission-state handling before device claims.
+3. Hosted account/AI/Quant end-to-end requires a proved isolated backend target;
+   do not copy Production variables or call Owner services to make this Preview
+   look connected. Missing configuration is a real open gate, not low data.
+4. Native iPhone performance/HealthKit and installation need coordinated device
+   permission and signing. No unattended installation or Production promotion.
+
 ## Isolation and source
 
 - Work here only: `/Users/kyrie/.codex/worktrees/questlife-candidate-hardening/questlife-frontend-v2`.
@@ -623,3 +708,18 @@ they were corrected in the QA harness, not by weakening application assertions.
   (`offline-contrast-browser-green`, 04:17:50Z), screenshot
   `contrast-green-393-offline-record-restored-dark.png`. This is Chromium, not
   physical iPhone or cloud-sync acceptance.
+
+### November 5: save-failure copy correction
+
+- Hosted Capture failure/retry/after-state failure/retry/Done/History/reload passed
+  at 393x852 dark, retaining one execution and its energy-up/focus-down/mood-same
+  feedback (`preview-final-capture-feedback`, 04:24:49Z). This exposed the shared
+  save-failure body still promising sync to an anonymous/unconfigured client.
+- Two language tests failed (`save-notice-sync-claim-red`, 04:26:40Z). The body
+  now directs the user to verify Account/sync separately in Settings; durable
+  save behavior is unchanged. Eleven notice tests pass, typecheck/export pass
+  (`save-notice-sync-claim-green`, `save-notice-final-tsc`, `save-notice-final-build`).
+- Further offline first-visit testing reproduced an unhandled lazy Insights
+  module download failure removing the entire page/navigation, not just the
+  chart. `unvisited-insights-offline-red` (04:28:19Z). Next fix is scoped to this
+  screen load/retry boundary; do not precache synthetic examples or change Quant.
