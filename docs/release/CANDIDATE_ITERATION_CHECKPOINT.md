@@ -53,7 +53,7 @@ Source handoffs: `docs/frontend-v2/CODEX_HANDOFF.md`,
 4. Continue into normal Insights evidence reachability and existing Health
    preview gaps; never substitute examples for personal data.
 
-## Verified candidate changes, 13:36 Sydney
+## Verified candidate changes, 13:48 Sydney
 
 - `526c9ec`: PWA preserves the last usable HTML shell on network/503/non-HTML
   failures; does not delete other applications' caches. Before: 4/6 tests failed;
@@ -236,7 +236,7 @@ they were corrected in the QA harness, not by weakening application assertions.
 1. Normal Capture confirmation/after-state write failure and retry, refresh, and
    saved feedback reopening are now covered. Do not rerun the same scenarios
    without a relevant change. The local provenance/domain/history fixes are
-   now included in Preview 7da5969 below. Before any further publication, recheck
+   now included in Preview bea7e06 below. Before any further publication, recheck
    target metadata and isolation. Do not re-run these unchanged paths merely to
    increase test counts.
 2. Example interruption/retry/isolation now has normal UI evidence (e341449).
@@ -259,7 +259,41 @@ they were corrected in the QA harness, not by weakening application assertions.
 
 ## Preview access update
 
-- Latest isolated Preview, code commit `7da5969e9743d7432ae5abac6cc0a23dd8e7903c`:
+- Latest review Preview, source `bea7e06091c0c20c671685d5ed855399b8791d39`:
+  `https://questlife-v1-release-ke88590mo-kyrie-z-s-projects.vercel.app`.
+  Deployment `dpl_8az1n4pZJaJxe1TKVqq4QfSnqwgD`, inspected READY/preview.
+  Includes e341449 example retry and 9b9c4d5 disclosure corrections. The user
+  explicitly requested an accessible review link and preservation of production.
+  Re-inspected the release project and env metadata: all existing config is
+  production-scoped. No secret values copied, no backend configuration changed.
+  Temporary deployment-only 23-hour review access is in external
+  `preview-access-review.json`; project protection remains enabled.
+  Main bundle `index-1ccc4a400c4e4ac401fcc5be662e53e2.js`; Insights bundle
+  `V11InsightsScreen-f7131852d03dd17dc3c568803dc080ea.js`.
+- Verified through the hosted normal UI using fresh disposable Chromium contexts:
+  393x852 dark/zh Capture confirm -> injected failed local write -> existing retry
+  -> exactly one acknowledged execution -> refresh; 375x667 light/zh create two
+  schedule blocks -> state check-in -> proposal preview -> Apply failure/retry ->
+  Undo failure/retry -> original times and one episode after refresh; 1280x900
+  dark/en read-only example -> interrupted extra analysis -> retry -> indicators
+  -> return to personal data with identical local AppData and no API request.
+  Missing-account disclosure/import-history/settings route also passed remotely
+  at 375x667 light/zh. No page errors or horizontal overflow in these checks.
+  Explicit `/api/parse` probe still returns 503 `not_configured`. Therefore this
+  is a browser-local functional review, NOT live AI, cloud sync, personal Quant
+  backend, HealthKit, physical-device or commercial acceptance. Do not enter
+  irreplaceable longitudinal Owner data into this unconfigured unique origin.
+- Protected aliases were inspected before and after publication: release stable
+  remains `dpl_v5PKqGiwTphijQbeEJjtsYaPRJDk`; ky11ai.com/alpha remain
+  `dpl_8ccd7PRNezzkAwHJiKUrkAJGJPzq`. No Git push or production alias change.
+  External logs use `review-preview-{isolation,deploy,ready,access}`,
+  `review-hosted-{disclosure,samples,capture,schedule}`, and
+  `review-protected-{release,owner}-{before,after}`. Screenshots/results use
+  `preview-bea7e06-` (sample screenshots put it after `insights-sample-`).
+  Previous local checks are reused; no unnecessary full test rerun for this
+  deployment-only batch. Cloud export completed in the actual Vercel build.
+
+- Previous isolated Preview, code commit `7da5969e9743d7432ae5abac6cc0a23dd8e7903c`:
   `https://questlife-v1-release-anzhevk50-kyrie-z-s-projects.vercel.app`.
   Deployment `dpl_6RNRMF5SseJAuPKwtr2mCwmMPqJw`, target preview, READY. Created
   with an explicit project/scope/preview target, no Git push. It includes all
