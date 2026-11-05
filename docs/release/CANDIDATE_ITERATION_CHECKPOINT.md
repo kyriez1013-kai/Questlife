@@ -53,7 +53,7 @@ Source handoffs: `docs/frontend-v2/CODEX_HANDOFF.md`,
 4. Continue into normal Insights evidence reachability and existing Health
    preview gaps; never substitute examples for personal data.
 
-## Verified candidate changes, 13:11 Sydney
+## Verified candidate changes, 13:36 Sydney
 
 - `526c9ec`: PWA preserves the last usable HTML shell on network/503/non-HTML
   failures; does not delete other applications' caches. Before: 4/6 tests failed;
@@ -211,6 +211,26 @@ they were corrected in the QA harness, not by weakening application assertions.
   guessed indicator-label/case harness failures are retained in logs.
   This batch is LOCAL ONLY; the hosted Preview remains code 7da5969.
 
+- `9b9c4d5` data-use disclosure correction: two language regressions reproduced the
+  mismatch between "only when you click load/refresh" and the existing recovery
+  effect's automatic loads on entry, record changes and foreground restoration.
+  The personal-analysis notice and import-history explanation now disclose those
+  triggers and the account/health-cloud permission boundary. Only copy and its
+  regression tests changed; no consent policy, upload trigger or transport changed.
+  The existing `authenticatedRequest` reads the matching account's healthConsent
+  and `buildOwnerQuantSnapshot` excludes identified Health-source rows without it
+  [code-confirmed, not a new live-cloud authorization verification].
+  21 recovery/empty-chart tests passed, typecheck and web export passed. Existing
+  renderer/Metro warnings remain; no lint script. In fresh local Chromium at
+  375x667 light/zh and 1280x900 dark/en: normal Live Quant entry shows account not
+  configured (not no observations), Retry retains that honest failure, Import
+  history displays the corrected notice, and its account recovery action opens
+  Settings / Account & Sync. Local AppData is byte-identical and no API request
+  occurs. This verifies navigation and fail-closed local configuration only,
+  not account login, file restore, Health upload or Quant service execution.
+  An initial browser locator guessed "Account" instead of the actual "Account &
+  Sync" heading; its timeout logs are retained. The final corrected checks pass.
+
 ## Exact next work
 
 1. Normal Capture confirmation/after-state write failure and retry, refresh, and
@@ -220,11 +240,12 @@ they were corrected in the QA harness, not by weakening application assertions.
    target metadata and isolation. Do not re-run these unchanged paths merely to
    increase test counts.
 2. Example interruption/retry/isolation now has normal UI evidence (e341449).
-   Next check real-service unavailable navigation and remaining first-use paths.
-   The existing native Insights consent copy says requests happen only on manual
-   load/refresh, while its recovery effect also refreshes on tab/data/foreground
-   changes. Inspect the actual consent boundary before correcting that narrow
-   mismatch; do not change cloud consent policy or invent a second runtime.
+   Account-unconfigured -> Retry -> Import history -> Settings navigation now has
+   local UI evidence, and the automatic-refresh disclosure mismatch is corrected.
+   Do not mistake that for a configured service/health-upload check. Do not rerun
+   the same missing-config path just to increase counts. The next bounded batch
+   can address Capture result/history wording below; no cloud policy change or
+   replacement runtime is authorized by the disclosure correction.
    Evaluate concrete normal-entry
    gaps, not a new whole-product audit. History currently still displays the
    raw parse-failure/retry message next to a successfully manually saved result;
@@ -296,7 +317,7 @@ they were corrected in the QA harness, not by weakening application assertions.
   account service is unconfigured. This is a LOCAL review, not a hosted/live-AI
   or cross-client sync acceptance.
 - Latest local export: main `index-815546ef230a4d481450d1852f0967f3.js`, Insights chunk
-  `V11InsightsScreen-c73d03291b45fcad832cfa6996f84492.js` (e341449).
+  `V11InsightsScreen-f7131852d03dd17dc3c568803dc080ea.js` (disclosure correction).
 - `browser-workspaces-results.json`, `browser-plan-375-light-results.json`,
   `browser-plan-1280-dark-results.json`, `browser-brain-dump-results.json`, and
   `browser-offline-results.json` contain current isolated browser evidence.
@@ -348,6 +369,15 @@ they were corrected in the QA harness, not by weakening application assertions.
   `browser-insights-sample-base-after-1280-dark-en.json`.
   Screenshots: `{375,393}-insights-sample-after-{analysis-failed,recovered-indicators,personal-return}-*.png`
   and `1280-insights-sample-base-after-*.png`.
+- Disclosure evidence: `2026-11-05T02-32-39-540Z-insights-disclosure-red.log`;
+  `2026-11-05T02-33-09-509Z-insights-disclosure-green.log` (21 tests);
+  `2026-11-05T02-33-09-826Z-insights-disclosure-types.log`;
+  `2026-11-05T02-33-10-993Z-insights-disclosure-build.log`;
+  browser logs `2026-11-05T02-34-43-654Z-insights-disclosure-browser-final-375.log`
+  and `2026-11-05T02-34-44-814Z-insights-disclosure-browser-final-1280.log`.
+  JSON `browser-insights-disclosure-{375-light-zh,1280-dark-en}.json`;
+  screenshots `{375,1280}-insights-disclosure-{unconfigured,import,settings}-*.png`.
+  Both latest Insights fixes remain local; no additional deployment or push.
 - Main checkout still has its original five tracked modifications; source checkout
   `/Users/kyrie/dev/questlife-frontend-v2` remains clean. No push or production
   deployment; only the explicitly isolated Previews above were created.
