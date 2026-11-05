@@ -384,7 +384,7 @@ they were corrected in the QA harness, not by weakening application assertions.
 - All `/api/*` requests deliberately return 503 locally. Settings correctly says
   account service is unconfigured. This is a LOCAL review, not a hosted/live-AI
   or cross-client sync acceptance.
-- Latest local export: main `index-cea4287276efca320824764ff3b21f23.js`, Insights chunk
+- Latest local export: main `index-7871841c9bbc78dc3b1c3da7facd5076.js`, Insights chunk
   `V11InsightsScreen-f7131852d03dd17dc3c568803dc080ea.js` (Capture result clarification).
 - `browser-workspaces-results.json`, `browser-plan-375-light-results.json`,
   `browser-plan-1280-dark-results.json`, `browser-brain-dump-results.json`, and
@@ -536,10 +536,37 @@ they were corrected in the QA harness, not by weakening application assertions.
   03:44:04Z), including auth callback trace scrubbing and failed-share temporary
   file cleanup. This is local fake-data testing, not a device/cloud restore claim.
 
+### November 5: remaining opt-in decision receipt boundary
+
+- The old `adaptive_decision_loop=1` entry reproduced the same premature success
+  in five renderer cases (`legacy-owner-receipts-valid-red`, 03:53:14Z). It now
+  uses the existing DurableSubmission and combined Store mutation for Apply/Undo;
+  follow-up and skip wait for local ACK. Optimistic parent updates cannot replace
+  a pending submission; repeated clicks/retry preserve the same episode/patch.
+  Close/new-choice/outcome editing is guarded while a write is pending. No flag
+  defaults, domain rules, schema, server or visual system changed.
+- Seven final tests passed (`legacy-owner-copy-tests`, 03:58:25Z), including
+  intervening edit rejection and user-facing retry/question labels. Broader 53
+  receipt/Store/state/Core tests passed before the final copy-only assertion.
+  Typecheck passed (`legacy-owner-copy-tsc`, 03:58:58Z); export passed
+  (`legacy-owner-copy-build`, 03:58:26Z). No lint command exists.
+- Normal 375x667 light browser flow opens that existing flag entry, resumes the
+  state-layer decision, fails Undo, retries, reselects the proposal, fails Apply,
+  retries, undoes, refreshes and retains the original two schedules and exactly
+  one decision. Log `legacy-owner-browser-copy-fixed-375` (03:58:57Z), screenshot
+  `legacy-final-375-legacy-apply-retry-light.png`. Initial browser failure caught
+  an untranslated new Retry label; fixed before this pass, evidence retained.
+- Normal Schedule CRUD passed 375x667 light: edit title/time on the same ID,
+  refresh, cancel a conflicting creation without writes, explicitly confirm it,
+  fail deletion, retry and refresh. Only the confirmed ID was removed; the other
+  block remained byte-equivalent. `schedule-crud-browser-scoped-retry-375`
+  (03:51:21Z). Initial harness mistook a loading label for a closed form and found
+  both global and local Retry buttons; fixed the waits/scope, not product code.
+
 - Device performance/HealthKit and expired Personal Team installation require
   coordinated owner action; no unattended device updates.
 - State-layer and Core local schedule/episode atomicity are now covered above.
-  Legacy opt-in AdaptiveDecisionLoopOwnerSheet and external Calendar conflict
-  behavior remain open; no remote database transaction/device claim.
+  The legacy opt-in receipt boundary is also covered above. External Calendar
+  conflict behavior remains open; no remote database transaction/device claim.
 - Installed signing, end-to-end hosted persistence and visual acceptance are
   NOT established by typecheck, browser fixtures or a successful export.

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Pressable,
   StyleSheet,
@@ -50,9 +50,12 @@ import {
 } from './presentation';
 import { recordAdaptiveDecisionTelemetry } from './telemetry';
 import { dueOwnerDecisionEpisode } from './ownerDecisionFlow';
+import { DurableSubmission } from '../utils/durableSubmission';
+import { DecisionPlanPatchConflictError } from './planPatch';
 
 type OwnerView = 'entry' | 'question' | 'proposals' | 'preview' | 'receipt' | 'follow_up' | 'memory';
 type OwnerOutcome = Omit<DecisionFollowUpOutcomeV1, 'id' | 'recordedAt'>;
+type SubmissionKind = 'apply' | 'undo' | 'outcome' | 'skip';
 
 type Props = {
   data: DecisionEngineData;
@@ -61,10 +64,12 @@ type Props = {
   onAddDecisionResult: (
     result: ReturnType<typeof decisionEpisodeToResult>,
   ) => DecisionResult;
-  onApplySchedulePatch: (patch: NonNullable<DecisionEpisodeV1['appliedPlanPatch']>) => ScheduleBlock[];
+  onApplySchedulePatch: (patch: NonNullable<DecisionEpisodeV1['appliedPlanPatch']>, result: DecisionResult) => ScheduleBlock[];
   onClose: () => void;
-  onUndoSchedulePatch: (patch: NonNullable<DecisionEpisodeV1['appliedPlanPatch']>) => ScheduleBlock[];
+  onUndoSchedulePatch: (patch: NonNullable<DecisionEpisodeV1['appliedPlanPatch']>, episode: DecisionEpisodeV1) => ScheduleBlock[];
   onUpdateDecisionEpisode: (id: string, episode: DecisionEpisodeV1) => void;
+  waitForLocalWrites: () => Promise<void>;
+  retryLocalWrites: () => Promise<void>;
   reducedMotion: boolean;
   theme: V11ThemeTokens;
   visible: boolean;
@@ -151,6 +156,8 @@ export default function AdaptiveDecisionLoopOwnerSheet({
   onClose,
   onUndoSchedulePatch,
   onUpdateDecisionEpisode,
+  waitForLocalWrites,
+  retryLocalWrites,
   reducedMotion,
   theme,
   visible,
@@ -168,9 +175,15 @@ export default function AdaptiveDecisionLoopOwnerSheet({
   const [persistedEpisodeId, setPersistedEpisodeId] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const submission = useRef(new DurableSubmission<{ episode: DecisionEpisodeV1; view: OwnerView; startedAt: number }>());
+  const submitting = useRef(false);
+  const [pendingKind, setPendingKind] = useState<SubmissionKind | null>(null);
+  const close = useCallback(() => {
+    if (!submission.current.hasPending && !submitting.current) onClose();
+  }, [onClose]);
 
   useEffect(() => {
-    if (!visible) return;
+    if (!visible || submission.current.hasPending || submitting.current) return;
     const now = new Date().toISOString();
     const latest = dueOwnerDecisionEpisode(decisionResults, now, data.executionLogs) ?? latestOwnerEpisode(decisionResults);
     if (!latest) {
@@ -193,6 +206,9 @@ export default function AdaptiveDecisionLoopOwnerSheet({
   const selectedAction = episode?.candidateActions.find((candidate) => candidate.id === episode.selectedActionId);
   const selectedCopy = selectedAction ? candidateCopy(lang, selectedAction) : null;
   const evidence = episode?.evidencePacket;
+  const questionText = episode?.question.text === 'state_layer' && episode.candidateActions.some(action => action.id === 'state-layer-plan')
+    ? copy('stateLayerPlanQuestion')
+    : episode?.question.text ?? (episode ? questionTypeLabel(lang, episode.question.type) : '');
 
   const persistEpisode = useCallback((next: DecisionEpisodeV1) => {
     if (persistedEpisodeId === next.id || decisionResults.some((result) => result.id === next.id)) {
@@ -207,6 +223,7 @@ export default function AdaptiveDecisionLoopOwnerSheet({
   }, [decisionResults, lang, onAddDecisionResult, onUpdateDecisionEpisode, persistedEpisodeId]);
 
   const resetToEntry = useCallback(() => {
+    if (submission.current.hasPending || submitting.current) return;
     setEpisode(null);
     setView('entry');
     setAnswers({});
@@ -218,6 +235,7 @@ export default function AdaptiveDecisionLoopOwnerSheet({
   }, []);
 
   const runProposal = useCallback((draft: DecisionEpisodeV1, nextAnswers: Record<string, string>) => {
+    if (submission.current.hasPending || submitting.current) return;
     setBusy(true);
     setError('');
     const started = typeof performance !== 'undefined' ? performance.now() : Date.now();
@@ -283,7 +301,7 @@ export default function AdaptiveDecisionLoopOwnerSheet({
   }, [answers, episode, runProposal]);
 
   const chooseProposal = useCallback((id: string) => {
-    if (!episode) return;
+    if (!episode || submission.current.hasPending || submitting.current) return;
     try {
       const next = selectDecisionAction(episode, id, new Date().toISOString());
       persistEpisode(next);
@@ -296,7 +314,7 @@ export default function AdaptiveDecisionLoopOwnerSheet({
   }, [episode, persistEpisode]);
 
   const backToProposals = useCallback(() => {
-    if (!episode || episode.status !== 'ACCEPTED') return;
+    if (!episode || episode.status !== 'ACCEPTED' || submission.current.hasPending || submitting.current) return;
     const next = {
       ...transitionDecisionEpisode(episode, 'PROPOSED', new Date().toISOString()),
       selectedActionId: undefined,
@@ -307,94 +325,96 @@ export default function AdaptiveDecisionLoopOwnerSheet({
     setView('proposals');
   }, [episode, persistEpisode]);
 
-  const applyPlan = useCallback(() => {
-    if (!episode) return;
+  const submit = useCallback(async (kind: SubmissionKind, create: () => DecisionEpisodeV1, nextView: (next: DecisionEpisodeV1) => OwnerView) => {
+    if (submitting.current || busy || (submission.current.hasPending && pendingKind !== kind)) return;
+    submitting.current = true;
     setBusy(true);
     setError('');
-    const started = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    setPendingKind(kind);
     try {
+      await submission.current.run(() => {
+        const startedAt = Date.now();
+        const next = create();
+        return { episode: next, view: nextView(next), startedAt };
+      }, waitForLocalWrites, retryLocalWrites, async ({ episode: saved, view: savedView, startedAt }) => {
+        setEpisode(saved);
+        setPersistedEpisodeId(saved.id);
+        setView(savedView);
+        const name = kind === 'apply' ? 'decision_plan_applied' : kind === 'undo' ? 'decision_undo_used' : kind === 'outcome' ? 'decision_follow_up_completed' : undefined;
+        if (name) recordAdaptiveDecisionTelemetry({
+          name, questionType: saved.question.type, fixtureOnly: false,
+          ...(kind === 'apply' ? { operationCount: saved.appliedPlanPatch?.operations.length, elapsedMs: Math.max(0, Date.now() - startedAt) } : {}),
+          ...(kind === 'outcome' ? { usefulness: saved.followUpOutcomes.at(-1)?.usefulness } : {}),
+        });
+      });
+    } catch (caught) {
+      setError(copy(caught instanceof DecisionPlanPatchConflictError ? 'adaptiveCorePlanChanged' : 'captureSaveRetry'));
+    } finally {
+      if (!submission.current.hasPending) setPendingKind(null);
+      submitting.current = false;
+      setBusy(false);
+    }
+  }, [busy, copy, pendingKind, retryLocalWrites, waitForLocalWrites]);
+
+  const applyPlan = useCallback(async () => {
+    if (!episode) return;
+    await submit('apply', () => {
       const applied = applyAcceptedDecision({
         episode,
         scheduleBlocks: data.scheduleBlocks,
         appliedAt: new Date().toISOString(),
       });
       if (!applied.episode.appliedPlanPatch) throw new Error('Decision plan patch was not created.');
-      onApplySchedulePatch(applied.episode.appliedPlanPatch);
-      persistEpisode(applied.episode);
-      setEpisode(applied.episode);
-      setView('receipt');
-      recordAdaptiveDecisionTelemetry({
-        name: 'decision_plan_applied',
-        questionType: applied.episode.question.type,
-        operationCount: applied.episode.appliedPlanPatch.operations.length,
-        elapsedMs: Math.max(0, (typeof performance !== 'undefined' ? performance.now() : Date.now()) - started),
-        fixtureOnly: false,
-      });
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
-    } finally {
-      setBusy(false);
-    }
-  }, [data.scheduleBlocks, episode, onApplySchedulePatch, persistEpisode]);
+      onApplySchedulePatch(applied.episode.appliedPlanPatch, decisionEpisodeToResult({
+        episode: applied.episode, headline: applied.episode.question.text ?? questionTypeLabel(lang, applied.episode.question.type),
+      }));
+      return applied.episode;
+    }, () => 'receipt');
+  }, [data.scheduleBlocks, episode, lang, onApplySchedulePatch, submit]);
 
-  const undoPlan = useCallback(() => {
+  const undoPlan = useCallback(async () => {
     if (!episode?.appliedPlanPatch) return;
-    setBusy(true);
-    setError('');
-    try {
+    const patch = episode.appliedPlanPatch;
+    await submit('undo', () => {
       const undone = undoAppliedDecision({
         episode,
         scheduleBlocks: data.scheduleBlocks,
         undoneAt: new Date().toISOString(),
         executionLogs: data.executionLogs,
       });
-      onUndoSchedulePatch(episode.appliedPlanPatch);
-      persistEpisode(undone.episode);
-      setEpisode(undone.episode);
-      setView('proposals');
-      recordAdaptiveDecisionTelemetry({ name: 'decision_undo_used', questionType: episode.question.type, fixtureOnly: false });
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
-    } finally {
-      setBusy(false);
-    }
-  }, [data.executionLogs, data.scheduleBlocks, episode, onUndoSchedulePatch, persistEpisode]);
+      onUndoSchedulePatch(patch, undone.episode);
+      return undone.episode;
+    }, () => 'proposals');
+  }, [data.executionLogs, data.scheduleBlocks, episode, onUndoSchedulePatch, submit]);
 
   const updateOutcome = useCallback((patch: Partial<OwnerOutcome>) => {
+    if (submission.current.hasPending || submitting.current) return;
     setOutcome((current) => ({ ...current, ...patch }));
     setError('');
   }, []);
 
-  const saveOutcome = useCallback(() => {
+  const saveOutcome = useCallback(async () => {
     if (!episode?.followUpPlan) return;
     const missing = validateDecisionOutcome(episode.followUpPlan, outcome);
     if (missing.length > 0) {
       setError(copy('adaptiveOutcomeMissing', { fields: missing.join(', ') }));
       return;
     }
-    try {
+    await submit('outcome', () => {
       const next = recordDecisionOutcome(episode, outcome, new Date().toISOString(), data.executionLogs);
       persistEpisode(next);
-      setEpisode(next);
-      setView('memory');
-      recordAdaptiveDecisionTelemetry({
-        name: 'decision_follow_up_completed',
-        questionType: next.question.type,
-        usefulness: outcome.usefulness,
-        fixtureOnly: false,
-      });
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
-    }
-  }, [copy, data.executionLogs, episode, outcome, persistEpisode]);
+      return next;
+    }, () => 'memory');
+  }, [copy, data.executionLogs, episode, outcome, persistEpisode, submit]);
 
-  const skipOutcome = useCallback(() => {
+  const skipOutcome = useCallback(async () => {
     if (!episode) return;
-    const next = skipDecisionFollowUp(episode, new Date().toISOString(), data.executionLogs);
-    persistEpisode(next);
-    setEpisode(next);
-    setView(next.status === 'CLOSED' ? 'memory' : viewForEpisode(next));
-  }, [data.executionLogs, episode, persistEpisode]);
+    await submit('skip', () => {
+      const next = skipDecisionFollowUp(episode, new Date().toISOString(), data.executionLogs);
+      persistEpisode(next);
+      return next;
+    }, next => next.status === 'CLOSED' ? 'memory' : viewForEpisode(next));
+  }, [data.executionLogs, episode, persistEpisode, submit]);
 
   const footer = useMemo(() => {
     if (view === 'question') {
@@ -402,7 +422,7 @@ export default function AdaptiveDecisionLoopOwnerSheet({
         <V11StickySheetFooter
           cancelLabel={copy('cancel')}
           disabled={!episode || episode.missingContext.some((question) => !answers[question.id])}
-          onCancel={onClose}
+          onCancel={close}
           onSave={submitAnswers}
           saveLabel={copy('adaptiveShowProposals')}
           saving={busy}
@@ -414,6 +434,7 @@ export default function AdaptiveDecisionLoopOwnerSheet({
       return (
         <V11StickySheetFooter
           cancelLabel={copy('adaptiveBackToOptions')}
+          cancelDisabled={busy || pendingKind !== null}
           onCancel={backToProposals}
           onSave={applyPlan}
           saveLabel={copy('adaptiveConfirmAndApply')}
@@ -426,9 +447,10 @@ export default function AdaptiveDecisionLoopOwnerSheet({
       return (
         <V11StickySheetFooter
           cancelLabel={copy('adaptiveUndoExactChange')}
-          disabled={!episode?.undoState.available}
+          cancelDisabled={busy || !episode?.undoState.available}
+          disabled={pendingKind !== null}
           onCancel={undoPlan}
-          onSave={onClose}
+          onSave={close}
           saveLabel={copy('adaptiveOwnerClose')}
           saving={busy}
           theme={theme}
@@ -439,6 +461,8 @@ export default function AdaptiveDecisionLoopOwnerSheet({
       return (
         <V11StickySheetFooter
           cancelLabel={copy('adaptiveSkipFollowUp')}
+          cancelDisabled={busy || (pendingKind !== null && pendingKind !== 'skip')}
+          disabled={pendingKind === 'skip'}
           onCancel={skipOutcome}
           onSave={saveOutcome}
           saveLabel={copy('adaptiveSaveOutcome')}
@@ -448,7 +472,7 @@ export default function AdaptiveDecisionLoopOwnerSheet({
       );
     }
     return undefined;
-  }, [answers, applyPlan, backToProposals, busy, copy, episode, onClose, saveOutcome, skipOutcome, submitAnswers, theme, undoPlan, view]);
+  }, [answers, applyPlan, backToProposals, busy, close, copy, episode, pendingKind, saveOutcome, skipOutcome, submitAnswers, theme, undoPlan, view]);
 
   const sectionStyle = {
     backgroundColor: theme.control.neutralSurface,
@@ -465,7 +489,7 @@ export default function AdaptiveDecisionLoopOwnerSheet({
       closeLabel={copy('cancel')}
       footer={footer}
       minHeight={500}
-      onClose={onClose}
+      onClose={close}
       reducedMotion={reducedMotion}
       theme={theme}
       title={copy('adaptiveOwnerSheetTitle')}
@@ -517,7 +541,7 @@ export default function AdaptiveDecisionLoopOwnerSheet({
           <View style={styles.stack}>
             <View style={styles.headingBlock}>
               <Text style={[styles.sectionLabel, { color: theme.text.metadata }]}>{questionTypeLabel(lang, episode.question.type)}</Text>
-              <Text style={[styles.heading, { color: theme.text.primary }]}>{episode.question.text ?? questionTypeLabel(lang, episode.question.type)}</Text>
+              <Text style={[styles.heading, { color: theme.text.primary }]}>{questionText}</Text>
               <Text style={[styles.note, { color: theme.text.metadata }]}>{copy('adaptiveAsOf', { value: compactDateTime(episode.time.asOf, lang) })}</Text>
             </View>
 
@@ -583,7 +607,8 @@ export default function AdaptiveDecisionLoopOwnerSheet({
               return (
                 <Pressable
                   accessibilityRole="radio"
-                  accessibilityState={{ checked: selected }}
+                  accessibilityState={{ checked: selected, disabled: busy || pendingKind !== null }}
+                  disabled={busy || pendingKind !== null}
                   key={candidate.id}
                   onPress={() => chooseProposal(candidate.id)}
                   style={[
@@ -676,19 +701,19 @@ export default function AdaptiveDecisionLoopOwnerSheet({
             <Text style={[styles.sectionLabel, { color: theme.text.metadata }]}>{copy('adaptiveFollowUpDue')}</Text>
             <Text style={[styles.heading, { color: theme.text.primary }]}>{copy('adaptiveHowDidAdjustmentGo')}</Text>
             {required(episode, 'state') ? (
-              <V11DiscreteNumericRail label={copy('adaptiveOutcomeState')} onChange={(state) => updateOutcome({ state })} options={[1, 2, 3, 4, 5].map((value) => ({ value, label: copy(`adaptiveState${value}`) }))} theme={theme} value={outcome.state ?? 3} />
+              <V11DiscreteNumericRail disabled={busy || pendingKind !== null} label={copy('adaptiveOutcomeState')} onChange={(state) => updateOutcome({ state })} options={[1, 2, 3, 4, 5].map((value) => ({ value, label: copy(`adaptiveState${value}`) }))} theme={theme} value={outcome.state ?? 3} />
             ) : null}
             {required(episode, 'fatigue') ? (
-              <V11DiscreteNumericRail label={copy('adaptiveOutcomeFatigue')} onChange={(fatigue) => updateOutcome({ fatigue })} options={[1, 2, 3, 4, 5].map((value) => ({ value, label: copy(`adaptiveState${value}`) }))} theme={theme} value={outcome.fatigue ?? 3} />
+              <V11DiscreteNumericRail disabled={busy || pendingKind !== null} label={copy('adaptiveOutcomeFatigue')} onChange={(fatigue) => updateOutcome({ fatigue })} options={[1, 2, 3, 4, 5].map((value) => ({ value, label: copy(`adaptiveState${value}`) }))} theme={theme} value={outcome.fatigue ?? 3} />
             ) : null}
             {required(episode, 'task_result') ? (
-              <View style={styles.outcomeGroup}><Text style={[styles.factLabel, { color: theme.text.secondary }]}>{copy('adaptiveOutcomeTask')}</Text><View style={styles.chipRow}>{(['completed', 'partially_completed', 'not_completed'] as const).map((value) => <V11CategoricalChip accessibilityRole="radio" key={value} label={copy(`adaptiveTaskResult_${value}`)} onPress={() => updateOutcome({ taskResult: value })} selected={outcome.taskResult === value} theme={theme} tone="neutral" />)}</View></View>
+              <View style={styles.outcomeGroup}><Text style={[styles.factLabel, { color: theme.text.secondary }]}>{copy('adaptiveOutcomeTask')}</Text><View style={styles.chipRow}>{(['completed', 'partially_completed', 'not_completed'] as const).map((value) => <V11CategoricalChip disabled={busy || pendingKind !== null} accessibilityRole="radio" key={value} label={copy(`adaptiveTaskResult_${value}`)} onPress={() => updateOutcome({ taskResult: value })} selected={outcome.taskResult === value} theme={theme} tone="neutral" />)}</View></View>
             ) : null}
             {required(episode, 'carryover') ? (
-              <View style={styles.outcomeGroup}><Text style={[styles.factLabel, { color: theme.text.secondary }]}>{copy('adaptiveOutcomeCarryover')}</Text><View style={styles.chipRow}>{(['none', 'some', 'significant'] as const).map((value) => <V11CategoricalChip accessibilityRole="radio" key={value} label={copy(`adaptiveCarryover_${value}`)} onPress={() => updateOutcome({ carryover: value })} selected={outcome.carryover === value} theme={theme} tone="neutral" />)}</View></View>
+              <View style={styles.outcomeGroup}><Text style={[styles.factLabel, { color: theme.text.secondary }]}>{copy('adaptiveOutcomeCarryover')}</Text><View style={styles.chipRow}>{(['none', 'some', 'significant'] as const).map((value) => <V11CategoricalChip disabled={busy || pendingKind !== null} accessibilityRole="radio" key={value} label={copy(`adaptiveCarryover_${value}`)} onPress={() => updateOutcome({ carryover: value })} selected={outcome.carryover === value} theme={theme} tone="neutral" />)}</View></View>
             ) : null}
             {required(episode, 'usefulness') ? (
-              <View style={styles.outcomeGroup}><Text style={[styles.factLabel, { color: theme.text.secondary }]}>{copy('adaptiveOutcomeUseful')}</Text><View style={styles.chipRow}>{(['helpful', 'uncertain', 'not_helpful'] as const).map((value) => <V11CategoricalChip accessibilityRole="radio" key={value} label={copy(`adaptiveUsefulness_${value}`)} onPress={() => updateOutcome({ usefulness: value })} selected={outcome.usefulness === value} theme={theme} tone="neutral" />)}</View></View>
+              <View style={styles.outcomeGroup}><Text style={[styles.factLabel, { color: theme.text.secondary }]}>{copy('adaptiveOutcomeUseful')}</Text><View style={styles.chipRow}>{(['helpful', 'uncertain', 'not_helpful'] as const).map((value) => <V11CategoricalChip disabled={busy || pendingKind !== null} accessibilityRole="radio" key={value} label={copy(`adaptiveUsefulness_${value}`)} onPress={() => updateOutcome({ usefulness: value })} selected={outcome.usefulness === value} theme={theme} tone="neutral" />)}</View></View>
             ) : null}
           </View>
         ) : null}
@@ -698,7 +723,7 @@ export default function AdaptiveDecisionLoopOwnerSheet({
             <Text style={[styles.sectionLabel, { color: theme.text.metadata }]}>{copy('adaptiveDecisionMemory')}</Text>
             <Text style={[styles.heading, { color: theme.text.primary }]}>{copy('adaptiveEpisodeRemembered')}</Text>
             {[
-              [copy('adaptiveMemoryQuestion'), episode.question.text ?? questionTypeLabel(lang, episode.question.type)],
+              [copy('adaptiveMemoryQuestion'), questionText],
               [copy('adaptiveMemoryChoice'), selectedCopy?.title ?? '—'],
               [copy('adaptiveMemoryPlan'), copy('adaptiveOperationCount', { count: episode.appliedPlanPatch?.operations.length ?? 0 })],
               [copy('adaptiveMemoryOutcome'), episode.followUpOutcomes.length > 0 ? copy('adaptiveOutcomeRecorded') : copy('adaptiveSkipFollowUp')],
@@ -715,6 +740,13 @@ export default function AdaptiveDecisionLoopOwnerSheet({
         ) : null}
 
         {error ? <Text accessibilityRole="alert" style={[styles.error, { color: theme.control.error }]}>{error}</Text> : null}
+        {pendingKind ? <V11SheetButton
+          label={copy(busy ? 'fsSaving' : 'rebaselineRetry')}
+          loading={busy}
+          onPress={() => { void ({ apply: applyPlan, undo: undoPlan, outcome: saveOutcome, skip: skipOutcome }[pendingKind])(); }}
+          theme={theme}
+          variant="secondary"
+        /> : null}
       </View>
     </V11Stage2ProductionSheet>
   );

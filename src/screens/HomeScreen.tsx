@@ -3247,6 +3247,8 @@ export default function HomeScreen() {
             onClose={closeAdaptiveDecision}
             onUndoSchedulePatch={undoDecisionSchedulePatch}
             onUpdateDecisionEpisode={updateDecisionEpisode}
+            waitForLocalWrites={waitForLocalWrites}
+            retryLocalWrites={retryLocalWrites}
             reducedMotion={v11EffectiveReducedMotion}
             theme={v11ThemeTokens}
             visible={adaptiveDecisionOpen}
