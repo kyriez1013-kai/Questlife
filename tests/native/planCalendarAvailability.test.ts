@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import { createDecisionPlanPatch } from '../../src/adaptive-decision/planPatch';
 import { assertPlanCalendarAvailable, readCalendarOccupancy, planCalendarDates, CalendarPlanUnavailableError, CalendarPlanConflictError } from '../../src/platform/calendar/planAvailability';
 import { candidateHasFeasibleExactPatch } from '../../src/adaptive-decision/ownerDecisionFlow';
+import { generateDecisionProposals } from '../../src/adaptive-decision/decisionPolicy';
+import { evaluateDecisionSafety } from '../../src/adaptive-decision/safetyGate';
+import type { DecisionContextSnapshotV1, DecisionEvidencePacketV1 } from '../../src/adaptive-decision/decisionEpisode';
 import { CalendarService, type CalendarDriver } from '../../src/platform/calendar/CalendarService';
 import { DeviceRepository } from '../../src/platform/deviceRepository';
 import type { ExternalCommitment, PermissionState } from '../../src/platform/contracts';
@@ -34,6 +37,25 @@ test('candidate preview uses the same external conflict check as Apply', () => {
   const candidate = { planPatch: patch } as Parameters<typeof candidateHasFeasibleExactPatch>[0];
   assert.equal(candidateHasFeasibleExactPatch(candidate, [block], [busy()]), false);
   assert.equal(candidateHasFeasibleExactPatch(candidate, [block], []), true);
+});
+
+test('the existing policy-generated protect proposal retains fixed blocks and is checked against Calendar', () => {
+  const fixed = { ...block, id: 'ISOLATED_FIXED', startTime: '15:00', endTime: '16:00', flexibility: 'fixed' as const };
+  const context: DecisionContextSnapshotV1 = {
+    assembledAt: busy().lastSyncedAt, asOf: busy().lastSyncedAt, facts: [],
+    currentState: { overall: 2, observedAt: busy().lastSyncedAt, sourceId: 'ISOLATED_STATE' },
+    schedule: { date, blocks: [block, fixed], fixedCount: 1, flexibleCount: 1, remainingPlannedMinutes: 120, openWindows: [] },
+    direction: {}, sourceRefs: [], missingness: [], limitations: [],
+  };
+  const evidence: DecisionEvidencePacketV1 = { contractVersion: 'questlife.decision.evidence.v1', target: 'market:state.overall', asOf: busy().lastSyncedAt,
+    eligibility: 'eligible', availableLevels: ['A'], highestEvidenceLevel: 'A', items: [], similarPeriods: [], scenarioBranches: [], missingness: [], limitations: [], sourceArtifactIds: [] };
+  const proposals = generateDecisionProposals({ episodeId: 'ISOLATED_EPISODE', questionType: 'overloaded_day', context, evidence,
+    safety: evaluateDecisionSafety({ questionText: 'Overloaded day', context }).status, generatedAt: busy().lastSyncedAt });
+  const protect = proposals.find(candidate => candidate.kind === 'protect')!;
+  assert.ok(protect); assert.equal(protect.exactEffectKey, 'adaptiveEffectShorten');
+  assert.equal(protect.planPatch.operations.some(op => op.blockId === fixed.id), false);
+  assert.equal(candidateHasFeasibleExactPatch(protect, [block, fixed], [busy('09:00', '09:15')]), false);
+  assert.equal(candidateHasFeasibleExactPatch(protect, [block, fixed], []), true);
 });
 
 test('free events and touching endpoints do not block; unknown availability does', () => {
