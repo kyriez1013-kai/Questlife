@@ -3,21 +3,21 @@
 Updated: 2026-11-05, Australia/Sydney. Autonomous candidate improvement requested;
 commercial readiness is the goal, not an acceptance claim.
 
-## Latest review entry, November 5 15:25 Sydney
+## Latest review entry, November 5 15:37 Sydney
 
-- Product code: `0467be18bbf793f95ef70fffd5c1783cda2587e9` on
+- Product code: `a9656553d3e7605f932d6b8ae0d492b87e9b045f` on
   `candidate/commercial-readiness-20261105`. Later documentation-only commits
   do not change this deployed bundle.
-- READY Preview: `dpl_GrWZnby9caCCC53W7jG3VBDd61W7`, release project
+- READY Preview: `dpl_BErSw9T18NNPfTHQzfL6gxJSXQo9`, release project
   `prj_fVGFV7DzxfkLqbBpSo8P7NH9oqxX`. URL without the access grant:
-  https://questlife-v1-release-f2tm8xb1v-kyrie-z-s-projects.vercel.app/
+  https://questlife-v1-release-a1i3e5nys-kyrie-z-s-projects.vercel.app/
 - The direct review grant is stored outside Git in
-  `/Users/kyrie/dev/questlife-review-20261105/preview-access-final.json`.
-  It expires November 6 at 14:19 Sydney. Deployment protection stays enabled;
+  `/Users/kyrie/dev/questlife-review-20261105/preview-access-recovery.json`.
+  It expires November 6 at 14:33 Sydney. Deployment protection stays enabled;
   no shared/production alias was assigned. The latest link was given in chat.
 - Local static review: http://127.0.0.1:8141/ . No Metro/native installation.
-- Hosted entry bundle: `index-603bc3f0b14bb60517a5c76f0ca75f9e.js`;
-  offline cache: `questlife-shell-992694ff6c04f833` with 16 entry assets.
+- Hosted entry bundle: `index-3ea40f7af0ed6332f07db7e036b273a6.js`;
+  offline cache: `questlife-shell-06e5858f652ab7c1` with 16 entry assets.
   Export includes the build-time precache preparation, unlike earlier Previews.
 - Earlier deployment references below are historical evidence, not current links.
 
@@ -27,7 +27,10 @@ Do not import Owner data to compensate. AI parse explicitly returns unavailable;
 confirmed local parsing is labelled as such. Isolated analysis examples remain
 read-only examples. Local records are not shared between browsers/devices.
 
-Normal hosted UI verification (fresh isolated Chromium; no Owner data):
+Normal hosted UI verification (fresh isolated Chromium; no Owner data). The ten
+flow matrix at `0467be1` and added units/feedback checks remain valid for unchanged
+paths. The latest `a965655` only adds save-failure copy and Insights load recovery;
+six affected hosted flows were rerun successfully at 04:35Z:
 
 - Zero observations -> create goal -> all five tabs -> first state check-in ->
   corresponding chart point -> English/reload, at 375x667 light and 1280x900 dark.
@@ -52,24 +55,37 @@ Normal hosted UI verification (fresh isolated Chromium; no Owner data):
 - First online visit -> offline Capture confirm -> first offline restart ->
   reconnect -> same History ID, at 393x852 dark. Notice contrast 15.24:1; zh/en
   change through normal Settings. No page errors/duplicates in these scenarios.
+- First offline visit to an unvisited Insights screen with the actual service
+  worker enabled -> visible error with navigation intact -> Today works ->
+  reconnect/retry -> personal chart loads, saved data unchanged. This fixes a
+  separately reproduced total blank page; failed network requests are expected
+  in this injected case, not hidden as insufficient personal data.
 
 Evidence: `/Users/kyrie/dev/questlife-review-20261105/preview-final-matrix.json`
 (ten complete normal-UI flows, all exit 0), timestamped `preview-final-*` logs,
-plus `2026-11-05T04-24-15-994Z-preview-final-capture-units.log`.
+plus `2026-11-05T04-24-15-994Z-preview-final-capture-units.log` and
+`2026-11-05T04-24-49-519Z-preview-final-capture-feedback.log`.
+Latest six-flow results: `preview-recovery-matrix.json`, all exit 0, 04:35Z.
+Includes 375/light and 1280/dark all-workspace checks, sample analysis failure/
+retry, 393/dark Capture/after-state failure/retry, actual-worker screen recovery,
+and first offline Capture/restart. These checks never wrote remote/Owner data.
 Screenshots: `preview-final-375-workspace-today-light.png`,
 `preview-final-1280-insights-first-observation-dark.png`,
 `preview-final-393-core-apply-retry-dark.png`,
 `preview-final-393-offline-record-restored-dark.png`, and per-flow screenshots
 in the same external evidence directory. Screenshot inspection found and fixed
 the offline-notice contrast issue; visual/commercial acceptance is not claimed.
+Latest screenshots have the `preview-recovery-` prefix, including
+`preview-recovery-insights-load-failure.png` / `insights-load-recovered.png`.
 
-Final source checks: typecheck and web export passed (04:17Z); 134 impacted
-checks passed before the last offline changes, followed by 21 worker/build/theme
-checks. No lint script exists. React test-renderer and Metro environment warnings
+Final source checks: typecheck and web export passed (04:30Z); 134 impacted
+checks passed before the last offline changes, followed by worker/build/theme
+checks and 33 load-recovery/notice/Insights tests at 04:30Z. No lint script exists.
+React test-renderer and Metro environment warnings
 remain; tested browser flows report no runtime page errors. No physical-device
 performance, HealthKit, cloud persistence or full release-security acceptance.
 
-Protected deployments rechecked after the final upload at 04:21Z:
+Protected deployments rechecked after the final upload at 04:36Z:
 `questlife-v1-release.vercel.app` still `dpl_v5PKqGiwTphijQbeEJjtsYaPRJDk`;
 `ky11ai.com` / `questlife-alpha-orpin.vercel.app` still
 `dpl_8ccd7PRNezzkAwHJiKUrkAJGJPzq`. No Git push. Source checkout remains clean;
