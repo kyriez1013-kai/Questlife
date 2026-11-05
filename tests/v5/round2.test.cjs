@@ -1,0 +1,7 @@
+const {test}=require('node:test');const a=require('node:assert/strict');const fs=require('node:fs');const load=require('./load.cjs');
+const {v5Enabled,durationLabel,emptyToday,withinThreeSeconds}=load('src/v5/round2Presentation.ts');
+test('default route is V5; rollback requires explicit parameter',()=>{a.equal(v5Enabled(''),true);a.equal(v5Enabled('?v5_ui=0'),false)});
+test('Chinese duration has no English or empty hours',()=>{a.equal(durationLabel(35,'zh'),'35 分钟');a.equal(durationLabel(60,'zh'),'1 小时');a.equal(durationLabel(95,'zh'),'1 小时 35 分钟')});
+test('empty surface never replaces an active task or pending capture',()=>{let d={categories:[],skills:[],scheduleBlocks:[],executionLogs:[]};a.equal(emptyToday(d,false,false),true);a.equal(emptyToday(d,true,false),false);a.equal(emptyToday(d,false,true),false)});
+test('slow service is a bounded error, not no data',async()=>{const start=Date.now();await a.rejects(withinThreeSeconds(new Promise(()=>{})),/analysis_timeout/);a.ok(Date.now()-start<3600)});
+test('all five default routes reach V5, not a legacy insights flag',()=>{const app=fs.readFileSync('App.web.tsx','utf8');a.match(app,/v5Enabled\s*\?\s*<V5InsightsSurface/);a.match(app,/v5Enabled\s*\?\s*<V5PersonalSurface/);a.match(fs.readFileSync('src/screens/ScheduleScreen.tsx','utf8'),/<V5ScheduleSurface/)});

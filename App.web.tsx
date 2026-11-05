@@ -18,6 +18,9 @@ import { getQuestVisualFoundation } from './src/design/visualFoundation';
 import { isDarkTheme } from './src/design/darkSurfaceGuard';
 import QuestIcon, { QuestIconName } from './src/components/ui/QuestIcon';
 import { v5t } from './src/v5/copy';
+import V5InsightsSurface from './src/v5/InsightsSurface';
+import V5PersonalSurface from './src/v5/PersonalSurface';
+import V5Icon from './src/v5/PrototypeIcon';
 import HomeScreen from './src/screens/HomeScreen';
 import GoalTreeScreen from './src/screens/GoalTreeScreen';
 import GoalDetailScreen from './src/screens/GoalDetailScreen';
@@ -47,6 +50,7 @@ import {
 import PersistenceDebugPanel from './src/components/debug/PersistenceDebugPanel';
 import AdaptiveDecisionSurfaceScreen from './src/adaptive-decision/AdaptiveDecisionSurfaceScreen';
 import { isV2UiEnabled } from './src/v2/featureFlag';
+import './src/v5/round2.css';
 
 const V2App = React.lazy(() => import('./src/v2/V2App'));
 
@@ -72,14 +76,16 @@ function hasAdaptiveDecisionLoopDemoRoute(): boolean {
 
 function FocusedTabSurface({ children, backgroundColor }: { children: React.ReactNode; backgroundColor: string }) {
   const focused = useIsFocused();
+  const v5 = new URLSearchParams(window.location.search).get('v5_ui') !== '0';
 
   return (
     <View
+      testID={v5 ? 'v5-host' : undefined}
       pointerEvents={focused ? 'auto' : 'none'}
       style={{
         flex: 1,
         display: focused ? 'flex' : 'none',
-        backgroundColor,
+        backgroundColor: v5 ? 'transparent' : backgroundColor,
       }}
     >
       {children}
@@ -99,7 +105,7 @@ function TabIcon({ name, focused, color }: { name: QuestIconName; focused: boole
         opacity: focused ? 1 : 0.72,
       }}
     >
-      <QuestIcon name={name} size={20} color={color} strokeWidth={focused ? 2.4 : 2} />
+      {new URLSearchParams(window.location.search).get('v5_ui')!=='0'?<V5Icon name={name} size={25} color={color}/>:<QuestIcon name={name} size={20} color={color} strokeWidth={focused ? 2.4 : 2} />}
     </View>
   );
 }
@@ -255,7 +261,7 @@ function AppContent() {
       <NavigationContainer theme={navTheme}>
         <Tab.Navigator
           detachInactiveScreens={Platform.OS !== 'web'}
-          initialRouteName={new URLSearchParams(window.location.search).get('v5_section')==='shortcuts'?'Settings':v11InsightsEnabled && !isV11MarathonEnabled() ? 'Insights' : 'Today'}
+          initialRouteName={['shortcuts','account'].includes(new URLSearchParams(window.location.search).get('v5_section')??'')?'Settings':v11InsightsEnabled && !isV11MarathonEnabled() ? 'Insights' : 'Today'}
           screenOptions={{
             headerShown: false,
             lazy: true,
@@ -268,23 +274,23 @@ function AppContent() {
             tabBarInactiveTintColor: questTheme.colors.navInactive,
             tabBarStyle: {
               position: 'absolute',
-              width: v5Enabled ? 'calc(100% - 24px)' as any : questLayout.navWidthPercent,
-              maxWidth: questLayout.navMaxWidth,
+              width: v5Enabled ? '100%' : questLayout.navWidthPercent,
+              maxWidth: v5Enabled ? 720 : questLayout.navMaxWidth,
               left: '50%',
               transform: 'translateX(-50%)' as any,
-              bottom: v5Enabled ? 12 : questLayout.navBottomInset,
-              height: v5Enabled ? 64 : questLayout.navHeight,
-              paddingBottom: 4,
-              paddingTop: 4,
+              bottom: v5Enabled ? 0 : questLayout.navBottomInset,
+              height: v5Enabled ? 87 : questLayout.navHeight,
+              paddingBottom: v5Enabled ? 0 : 4,
+              paddingTop: v5Enabled ? 0 : 4,
               backgroundColor: v5Enabled ? 'transparent' : questTheme.colors.navBackground,
               borderTopWidth: v5Enabled ? 0 : 1,
               borderTopColor: questTheme.colors.border,
-              borderRadius: questLayout.navRadius,
+              borderRadius: v5Enabled ? 0 : questLayout.navRadius,
               shadowColor: questTheme.colors.cardShadow,
-              shadowOpacity: 0.06,
+              shadowOpacity: v5Enabled ? 0 : 0.06,
               shadowOffset: { width: 0, height: -4 },
               shadowRadius: 10,
-              elevation: 2,
+              elevation: v5Enabled ? 0 : 2,
             },
             tabBarItemStyle: { borderRadius: questLayout.navItemRadius },
             tabBarIconStyle: { marginBottom: 0 },
@@ -316,7 +322,7 @@ function AppContent() {
             {() => (
               <FocusedTabSurface backgroundColor={questTheme.colors.background}>
                 <Suspense fallback={<ActivityIndicator color={accent} style={{ flex: 1 }} />}>
-                  {insightsV3Enabled ? <InsightsV3Screen /> : v11InsightsEnabled ? <V11InsightsScreen /> : <StatsScreen />}
+                  {v5Enabled ? <V5InsightsSurface /> : insightsV3Enabled ? <InsightsV3Screen /> : v11InsightsEnabled ? <V11InsightsScreen /> : <StatsScreen />}
                 </Suspense>
               </FocusedTabSurface>
             )}
@@ -324,7 +330,7 @@ function AppContent() {
           <Tab.Screen name="Settings" options={{ tabBarLabel: v5Enabled?v5t(lang,'personal'):t(lang, 'settings'), tabBarIcon: ({ focused, color }) => <TabIcon name={v5Enabled?'person':'settings'} focused={focused} color={color} /> }}>
             {() => (
               <FocusedTabSurface backgroundColor={questTheme.colors.background}>
-                <SettingsScreen />
+                {v5Enabled ? <V5PersonalSurface /> : <SettingsScreen />}
               </FocusedTabSurface>
             )}
           </Tab.Screen>

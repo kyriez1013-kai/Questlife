@@ -1,4 +1,4 @@
-/* V5 approved screenshot measurements (390px estimates), scoped to this candidate. */
+/* Legacy base declarations retained for secondary forms; round2 overrides follow via component import. */
 .ql-v5 {
   --v5-bg:#e6eef2; --v5-ink:#14243a; --v5-muted:#526f89; --v5-meta:#607c94; --v5-accent:#1686ef;
   --v5-fill:linear-gradient(135deg,rgba(255,255,255,.78),rgba(230,243,252,.38));

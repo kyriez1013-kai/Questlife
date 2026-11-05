@@ -1,0 +1,39 @@
+COMMAND: node --test tests/v5/inbox.test.cjs tests/v5/presentation.test.cjs tests/v5/round2.test.cjs tests/v5/serviceWorker.test.cjs tests/v5/stateCommand.test.cjs
+✔ only one write token header is accepted; malformed and duplicate auth rejected (0.540208ms)
+✔ owner spoofing, invalid units, missing source and huge capture are rejected (1.688667ms)
+✔ watch check-in has real answers and local date, no invented focus or passive fields (1.331584ms)
+✔ capture stays pending; inbox origin can sync; ordinary pending capture remains excluded (0.462417ms)
+✔ health converts units and deduplicates source/time/metric; different sources remain separate (26.976542ms)
+✔ invalid intervals/future samples fail, not silently skipped (0.119583ms)
+✔ follow-up targets exact existing choice with revision; cannot touch another account row (0.080875ms)
+✔ calendar is read-only context, never schedule blocks; invalid local day rejected (0.276792ms)
+✔ missing dimensions never invent scores or zeros (0.375917ms)
+✔ raw state values stay raw; cognitive switches are a bounded distinct-goal proxy (0.1095ms)
+✔ calibration validates actual duration, keeps missing planned absent (0.36575ms)
+✔ calibration exposes only ten real paired logs, never deleted or unpaired entries (0.119667ms)
+✔ goal evidence counts a linked execution once and manual criteria only (0.142458ms)
+✔ default route is V5; rollback requires explicit parameter (0.324458ms)
+✔ Chinese duration has no English or empty hours (0.069792ms)
+✔ empty surface never replaces an active task or pending capture (0.051875ms)
+✔ slow service is a bounded error, not no data (3002.796417ms)
+✔ all five default routes reach V5, not a legacy insights flag (5.70675ms)
+✔ first install caches entry JS and CSS before activation; excludes API and cross-origin data (22.100584ms)
+✔ incomplete boot assets reject install, not a false offline-ready shell (0.900833ms)
+✔ activation prunes only older QuestLife caches (1.11275ms)
+✔ API, non-GET and cross-origin requests bypass worker cache entirely (0.358333ms)
+✔ all 36 combinations match the approved table (0.346166ms)
+✔ without a check-in, V5 returns the exact legacy command (0.306667ms)
+✔ overload changes the same command, retaining target links and planned duration (0.177959ms)
+✔ original plan choice suppresses this task only (0.068667ms)
+✔ correction wins; unknown requirement and yesterday do not imply mismatch (0.080292ms)
+✔ running session and pending confirmation remain protected (0.062083ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 28
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3191.144541
+
+EXIT: 0

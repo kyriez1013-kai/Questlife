@@ -26,6 +26,7 @@ import QuestInput from '../components/ui/QuestInput';
 import QuestPill from '../components/ui/QuestPill';
 import QuestSegmentedControl from '../components/ui/QuestSegmentedControl';
 import ScheduleProposalReview from '../components/schedule/ScheduleProposalReview';
+import V5ScheduleSurface from '../v5/ScheduleSurface';
 import { confirmAction } from '../utils/confirm';
 import {
   buildScheduleProposalPatch,
@@ -657,7 +658,7 @@ export default function ScheduleScreen() {
           alignSelf: 'center',
         }}
       >
-        <QuestContextBar
+        {Platform.OS==='web'&&new URLSearchParams(window.location.search).get('v5_ui')!=='0'?<V5ScheduleSurface data={data} lang={lang} dark={questTheme.id==='deepWork'} date={selectedDate} onDate={setSelectedDate} view={view} onView={setView} blocks={allBlocks} onAdd={openCreateBlock} onSelect={b=>{setScheduleNotice(undefined);setActionBlock(b);}} hasProposals={scheduleProposals.length>0} onCalendar={()=>window.location.assign('/?v5_section=shortcuts')} proposals={<ScheduleProposalReview questTheme={questTheme} language={lang} proposals={scheduleProposals} scheduleBlocks={data.scheduleBlocks} canApply={canApplyScheduleProposal} onApply={applyScheduleProposal} onDismiss={dismissScheduleProposal} canUndo={!!proposalUndo&&saveState==='idle'} onUndo={undoScheduleProposal}/>} />:<><QuestContextBar
           questTheme={questTheme}
           primary={dateWithWeekday(selectedDate, lang)}
           secondary={t(lang, 'scheduleSubtitle')}
@@ -851,6 +852,8 @@ export default function ScheduleScreen() {
             onSelect={(nextDate) => { setSelectedDate(nextDate); setView('month'); }}
           />
         )}
+        </>}
+        {scheduleNotice&&Platform.OS==='web'&&new URLSearchParams(window.location.search).get('v5_ui')!=='0'?<View style={{gap:questTheme.spacing.sm}}><Text accessibilityRole="alert" style={{color:questTheme.colors.text}}>{scheduleNotice}</Text>{pendingScheduleWrite.current&&!open&&!actionBlock?<QuestButton questTheme={questTheme} label={scheduleCopy(lang,'retry')} onPress={()=>void retryScheduleWrite()}/>:null}</View>:null}
       </ScrollView>
 
       <BottomSheetForm visible={open} onClose={() => { if (!saveRunning.current && !pendingScheduleWrite.current) { setOpen(false); setEditingBlockId(null); } }}
@@ -879,7 +882,7 @@ export default function ScheduleScreen() {
           </View>
         </View>
         </>}
-        <Text style={[styles.calc, { color: questTheme.colors.textMuted }]}>{t(lang, 'planned')}: {minutesBetween(startTime, endTime)}m</Text>
+        <Text style={[styles.calc, { color: questTheme.colors.textMuted }]}>{t(lang, 'planned')}: {minutesBetween(startTime, endTime)} {t(lang, 'minutes')}</Text>
         {Platform.OS !== 'web' ? <Text style={{ color: questTheme.colors.textMuted, fontSize: questTheme.typography.captionSize }}>{scheduleCopy(lang, 'calendarCoverage')}</Text> : null}
 
         <ChipGroup questTheme={questTheme} title={t(lang, 'taskType')} values={TASK_TYPES} labels={Object.fromEntries(TASK_TYPES.map((v) => [v, taskTypeLabel(lang, v)]))} value={taskType} onChange={(v) => v && setTaskType(v)} accent={accent} />

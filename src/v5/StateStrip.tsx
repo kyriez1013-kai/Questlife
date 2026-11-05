@@ -61,11 +61,10 @@ export default function StateStrip({lang,theme,reducedMotion}:{lang:Lang;theme:V
   return <>
     <section className="v5-strip v5-glass" aria-label={v5t(lang,'state')} data-testid="v5-state-strip">
       <div className="v5-strip-head">
-        <button className="v5-link" onClick={()=>row&&!stale?setDetails(true):setEditing(true)}>
-          {row&&state ? <><strong style={stale?{color:'var(--v5-meta)'}:undefined}>{stale?`${stamp} · `:''}{TYPE_NAME[lang][state]}</strong><span className="v5-meta">{stale?` · ${v5t(lang,'recheck')}`:` · ${stamp}`}</span></> : v5t(lang,'state')}
+        <button className="v5-state-body" onClick={()=>row&&!stale?setDetails(true):setEditing(true)}>
+          <strong>{lang==='zh'?'此刻状态':'Current state'}</strong>{row&&state ? <span className="v5-meta">{stale?`${stamp} · `:''}{TYPE_NAME[lang][state]}{row.stateLayer?.openLoops==='many'?` · ${OPEN_LOOPS_LABEL[lang].many}`:''}{stale?` · ${v5t(lang,'recheck')}`:` · ${stamp}`}</span> : null}
         </button>
-        {row&&!editing ? <button className="v5-link v5-meta" onClick={()=>{setOptional(true);setDetails(true);}}>{v5t(lang,'supplement')}</button>:null}
-        <button className="v5-link" disabled={busy} onClick={()=>{if(row&&!stale){setCorrection(true);setDetails(true);}else setEditing(!editing);}}>{row&&!stale?v5t(lang,'update'):v5t(lang,'check')}</button>
+        <button className="v5-state-update" disabled={busy} aria-label={row&&!stale?v5t(lang,'update'):v5t(lang,'check')} onClick={()=>{if(row&&!stale){setCorrection(true);setDetails(true);}else setEditing(!editing);}}>{row?(stale?v5t(lang,'recheck'):v5t(lang,'update')):`${lang==='zh'?'未记录':'Not recorded'} · ${v5t(lang,'check')}`}</button>
       </div>
       {editing ? <>
         <FiveChoices label={sl(lang,'energy')} labels={ENERGY_SCALE[lang]} value={draft.energy} disabled={busy} onChange={n=>answer('energy',n)} />

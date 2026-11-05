@@ -1,0 +1,30 @@
+COMMAND: node --test tests/v5/round2.test.cjs tests/v5/presentation.test.cjs tests/v5/stateCommand.test.cjs tests/v5/serviceWorker.test.cjs
+EXIT: 0
+✔ missing dimensions never invent scores or zeros (0.345333ms)
+✔ raw state values stay raw; cognitive switches are a bounded distinct-goal proxy (0.108291ms)
+✔ calibration validates actual duration, keeps missing planned absent (0.350125ms)
+✔ calibration exposes only ten real paired logs, never deleted or unpaired entries (0.111208ms)
+✔ goal evidence counts a linked execution once and manual criteria only (0.13075ms)
+✔ default route is V5; rollback requires explicit parameter (0.311208ms)
+✔ Chinese duration has no English or empty hours (0.067958ms)
+✔ empty surface never replaces an active task or pending capture (0.052375ms)
+✔ slow service is a bounded error, not no data (3001.982584ms)
+✔ all five default routes reach V5, not a legacy insights flag (3.970708ms)
+✔ first install caches entry JS and CSS before activation; excludes API and cross-origin data (16.845833ms)
+✔ incomplete boot assets reject install, not a false offline-ready shell (0.6565ms)
+✔ activation prunes only older QuestLife caches (0.865583ms)
+✔ API, non-GET and cross-origin requests bypass worker cache entirely (0.328083ms)
+✔ all 36 combinations match the approved table (0.334917ms)
+✔ without a check-in, V5 returns the exact legacy command (0.313541ms)
+✔ overload changes the same command, retaining target links and planned duration (0.18675ms)
+✔ original plan choice suppresses this task only (0.071584ms)
+✔ correction wins; unknown requirement and yesterday do not imply mismatch (0.088917ms)
+✔ running session and pending confirmation remain protected (0.065959ms)
+ℹ tests 20
+ℹ suites 0
+ℹ pass 20
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3165.945042
