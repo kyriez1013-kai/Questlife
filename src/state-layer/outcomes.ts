@@ -10,6 +10,7 @@ export type OutcomeCell = {
   /** Picks that have a follow-up answer. */
   n: number;
   randomizedN: number;
+  tensionN: number;
   energyUp: number; energySame: number; energyDown: number;
   tensionDown: number; tensionSame: number; tensionUp: number;
   nextDone: number; nextNotDone: number; nextUnanswered: number;
@@ -34,22 +35,25 @@ export function summarizeOutcomes(rows: StateCheckIn[]): OutcomeCell[] {
     if (!choice || !type) continue;
     const key = `${type}|${choice.actionId}`;
     const cell = cells.get(key) ?? {
-      type, actionId: choice.actionId, n: 0, randomizedN: 0,
+      type, actionId: choice.actionId, n: 0, randomizedN: 0, tensionN: 0,
       energyUp: 0, energySame: 0, energyDown: 0, tensionDown: 0, tensionSame: 0, tensionUp: 0,
       nextDone: 0, nextNotDone: 0, nextUnanswered: 0, pendingOrDismissed: 0,
     };
     const fu = followUps.get(r.id);
     const e0 = r.energy; const t0 = r.stateLayer?.tension;
-    const e1 = fu?.energy; const t1 = fu?.stateLayer?.tension;
-    if (!fu || e0 === undefined || t0 === undefined || e1 === undefined || t1 === undefined) {
+    const e1 = fu?.energy ?? choice.energyFollowUp?.energy; const t1 = fu?.stateLayer?.tension;
+    if (e0 === undefined || e1 === undefined) {
       cell.pendingOrDismissed += 1;
     } else {
       cell.n += 1;
       if (choice.randomized) cell.randomizedN += 1;
       if (e1 > e0) cell.energyUp += 1; else if (e1 < e0) cell.energyDown += 1; else cell.energySame += 1;
-      if (t1 < t0) cell.tensionDown += 1; else if (t1 > t0) cell.tensionUp += 1; else cell.tensionSame += 1;
-      if (fu.stateLayer?.nextDone === true) cell.nextDone += 1;
-      else if (fu.stateLayer?.nextDone === false) cell.nextNotDone += 1;
+      if (t0 !== undefined && t1 !== undefined) {
+        cell.tensionN += 1;
+        if (t1 < t0) cell.tensionDown += 1; else if (t1 > t0) cell.tensionUp += 1; else cell.tensionSame += 1;
+      }
+      if (fu?.stateLayer?.nextDone === true) cell.nextDone += 1;
+      else if (fu?.stateLayer?.nextDone === false) cell.nextNotDone += 1;
       else cell.nextUnanswered += 1;
     }
     cells.set(key, cell);
@@ -65,7 +69,7 @@ export function outcomeFor(cells: OutcomeCell[], type: StateTypeOrUnclear, actio
 export function pendingFollowUp(rows: StateCheckIn[], now: Date, isDue: (at: string, now: Date) => boolean): StateCheckIn | undefined {
   const answered = new Set(rows.map((r) => (r.stateLayer?.kind === 'follow_up' ? r.stateLayer.followUpOf : undefined)).filter(Boolean));
   return rows
-    .filter((r) => !r.dataProvenance?.deleted && r.stateLayer?.choice && !r.stateLayer.choice.followUpDismissedAt && !answered.has(r.id))
+    .filter((r) => !r.dataProvenance?.deleted && r.stateLayer?.choice && !r.stateLayer.choice.followUpDismissedAt && !r.stateLayer.choice.energyFollowUp && !answered.has(r.id))
     .filter((r) => isDue(r.stateLayer!.choice!.at, now))
     .sort((a, b) => b.stateLayer!.choice!.at.localeCompare(a.stateLayer!.choice!.at))[0];
 }

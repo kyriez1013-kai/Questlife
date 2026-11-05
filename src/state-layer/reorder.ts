@@ -46,6 +46,7 @@ export function reorderToday(input: {
   now: Date;
   blocks: ScheduleBlock[];
   demandOverrides?: Record<string, Demand>;
+  preparationMinutes?: number;
 }): ReorderResult {
   if (input.type === 'unclear') return { kind: 'not_applicable' };
   const order = DEMAND_ORDER[input.type];
@@ -74,7 +75,7 @@ export function reorderToday(input: {
   const slotStarts = movable.map((b) => toMin(b.startTime));
   const tryPlace = (limit: number): Map<string, [number, number]> | null => {
     const placed = new Map<string, [number, number]>();
-    let cursor = nowMin;
+    let cursor = nowMin + Math.max(0, input.preparationMinutes ?? 0);
     // The i-th block in the new order starts no earlier than the i-th original start, so gaps the
     // person left are kept and an already-good order comes back unchanged.
     for (const [i, b] of sorted.entries()) {

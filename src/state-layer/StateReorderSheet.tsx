@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useStore } from '../store';
 import type { V11ThemeTokens } from '../v11/tokens';
@@ -9,9 +9,11 @@ import { DEMAND_ORDER, inferDemand, reorderToday } from './reorder';
 import { localYmd } from './signals';
 import { DEMANDS, type Demand, type StateTypeOrUnclear } from './types';
 import { errorReason, useStateLayerPlan, type AppliedPlan } from './useStateLayerActions';
+import type { DecisionPlanPatchV1 } from '../adaptive-decision/decisionEpisode';
 
 const WebView = View as any;
 const WebPressable = Pressable as any;
+type PreviewRow = { id: string; title: string; fixed: boolean; before: string; after: string; moved: boolean; demand: Demand; inferred: boolean };
 
 /** Preview → explicit confirm → apply (undo lives on the state card). Nothing is applied on open. */
 export default function StateReorderSheet({
@@ -23,6 +25,7 @@ export default function StateReorderSheet({
   theme,
   type,
   visible,
+  preparationMinutes,
 }: {
   lang: Lang;
   onApplied: (plan: AppliedPlan) => void;
@@ -32,19 +35,23 @@ export default function StateReorderSheet({
   theme: V11ThemeTokens;
   type: Exclude<StateTypeOrUnclear, 'unclear'>;
   visible: boolean;
+  preparationMinutes?: number;
 }) {
   const { data } = useStore();
   const plan = useStateLayerPlan();
   const [overrides, setOverrides] = useState<Record<string, Demand>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmed, setConfirmed] = useState<{ patch: DecisionPlanPatchV1; rows: PreviewRow[] } | null>(null);
+  const inFlight = useRef(false);
+  const locked = busy || confirmed !== null;
   const now = new Date();
   const date = localYmd(now);
   const blocks = data.scheduleBlocks || [];
 
   const computed = useMemo(() => {
     if (!visible) return null;
-    const result = reorderToday({ type, date, now: new Date(), blocks, demandOverrides: overrides });
+    const result = reorderToday({ type, date, now: new Date(), blocks, demandOverrides: overrides, preparationMinutes });
     if (result.kind !== 'reordered') return { result, patch: null, problem: null as string | null };
     try {
       return { result, patch: plan.preview({ date, before: result.before, after: result.after }), problem: null };
@@ -52,7 +59,7 @@ export default function StateReorderSheet({
       return { result, patch: null, problem: errorReason(e) };
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, type, date, blocks, overrides]);
+  }, [visible, type, date, blocks, overrides, preparationMinutes]);
 
   const rows = useMemo(() => {
     if (!computed) return [];
@@ -79,24 +86,32 @@ export default function StateReorderSheet({
   }, [blocks, computed, date, overrides]);
 
   const cycleDemand = (id: string, current: Demand) => {
+    if (inFlight.current || confirmed) return;
     const next = DEMANDS[(DEMANDS.indexOf(current) + 1) % DEMANDS.length];
     setOverrides({ ...overrides, [id]: next });
   };
 
   const confirm = async () => {
-    if (!computed?.patch) return;
+    const submission = confirmed ?? (computed?.patch ? { patch: computed.patch, rows } : null);
+    if (!submission || inFlight.current) return;
+    inFlight.current = true;
+    setConfirmed(submission);
     setBusy(true);
     setError(null);
     try {
-      const applied = await plan.confirmAndApply({ patch: computed.patch, headline: `${sl(lang, 'reorder')} · ${TYPE_NAME[lang][type]}`, ruleId });
+      const applied = await plan.confirmAndApply({ patch: submission.patch, headline: `${sl(lang, 'reorder')} · ${TYPE_NAME[lang][type]}`, ruleId });
+      setConfirmed(null);
       setOverrides({});
       onApplied(applied);
     } catch (e) {
+      if (!plan.hasPendingApply) setConfirmed(null);
       setError(sl(lang, 'rpApplyFailed', { reason: errorReason(e) }));
     } finally {
+      inFlight.current = false;
       setBusy(false);
     }
   };
+  const close = () => { if (!inFlight.current && !confirmed) onClose(); };
 
   const kind = computed?.result.kind;
   const message = kind === 'cant_fit' ? sl(lang, 'rpCantFit')
@@ -110,18 +125,19 @@ export default function StateReorderSheet({
       footer={(
         <V11StickySheetFooter
           cancelLabel={sl(lang, 'rpCancel')}
-          disabled={!computed?.patch || busy}
+          cancelDisabled={locked}
+          disabled={(!confirmed && !computed?.patch) || busy}
           message={error ?? undefined}
           messageStatus={error ? 'error' : 'default'}
-          onCancel={onClose}
+          onCancel={close}
           onSave={() => { void confirm(); }}
-          saveLabel={sl(lang, 'rpConfirm')}
+          saveLabel={sl(lang, confirmed && error ? 'retry' : 'rpConfirm')}
           saving={busy}
           theme={theme}
         />
       )}
       minHeight={300}
-      onClose={onClose}
+      onClose={close}
       reducedMotion={reducedMotion}
       theme={theme}
       title={sl(lang, 'rpTitle')}
@@ -132,8 +148,8 @@ export default function StateReorderSheet({
           {sl(lang, 'rpOrderBasis', { type: TYPE_NAME[lang][type], order: DEMAND_ORDER[type].map((d) => DEMAND_LABEL[lang][d]).join(' → ') })}
           {' · '}{sl(lang, 'rpFixedKept')}
         </Text>
-        {message ? <Text style={{ color: theme.text.primary, fontSize: 14, lineHeight: 20 }}>{message}</Text> : null}
-        {rows.map((r) => (
+        {message && !confirmed ? <Text style={{ color: theme.text.primary, fontSize: 14, lineHeight: 20 }}>{message}</Text> : null}
+        {(confirmed?.rows ?? rows).map((r) => (
           <WebView dataSet={{ 'sl-role': 'plan-row', 'sl-moved': r.moved ? 'true' : 'false' }} key={r.id}>
             <WebView style={{ flex: 1, minWidth: 0 }}>
               <Text numberOfLines={1} style={{ color: theme.text.primary, fontSize: 14, lineHeight: 19, fontWeight: '500' }}>{r.title}</Text>
@@ -146,6 +162,8 @@ export default function StateReorderSheet({
               <WebPressable
                 accessibilityLabel={`${DEMAND_LABEL[lang][r.demand]}`}
                 accessibilityRole="button"
+                accessibilityState={{ disabled: locked }}
+                disabled={locked}
                 dataSet={{ 'v11-control': 'categorical-chip', 'v11-control-file': 'src/state-layer/StateReorderSheet.tsx', 'v11-density': 'compact', 'v11-selected': 'false', 'sl-role': 'demand-chip' }}
                 onPress={() => cycleDemand(r.id, r.demand)}
               >

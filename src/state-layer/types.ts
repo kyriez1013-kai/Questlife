@@ -52,12 +52,17 @@ export type StateLayerPayload = {
   pull?: Pull;
   classification?: StateClassification;
   correction?: { type: StateType; at: string };
+  /** Choosing the original plan suppresses only this task on this check-in date. */
+  originalPlanChoices?: { taskId: string; at: string }[];
+  source?: 'phone' | 'watch_shortcut';
   choice?: {
     actionId: StateActionId;
     slot: 'primary' | 'alternate';
     randomized: boolean;
     at: string;
     followUpDismissedAt?: string;
+    /** V5 quick follow-up asks energy only; no tension value is fabricated. */
+    energyFollowUp?: { energy: Scale5; at: string };
   };
   followUpOf?: string;
   nextDone?: boolean;

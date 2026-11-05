@@ -1,4 +1,16 @@
-import { AppData, ExecutionLog, ScheduleBlock, StateCheckIn } from '../types';
+import { AppData, ExecutionLog, ScheduleBlock, StateCheckIn, Skill } from '../types';
+import type { StateTypeOrUnclear } from '../state-layer/types';
+
+export type StateTaskMatch = 'match' | 'unknown' | 'recover' | 'brain_dump' | 'probe_5';
+
+/** V5's published decision table. Unknown demand never becomes an inferred mismatch. */
+export function matchStateToTask(state: StateTypeOrUnclear | undefined, required?: Skill['requiredState']): StateTaskMatch {
+  if (!state || state === 'unclear' || !required || required === 'unknown') return 'unknown';
+  if (state === 'low_fuel' && (required === 'deep_focus' || required === 'physical')) return 'recover';
+  if (state === 'overload' && (required === 'deep_focus' || required === 'social')) return 'brain_dump';
+  if (state === 'low_arousal' && required === 'deep_focus') return 'probe_5';
+  return 'match';
+}
 
 export type TodayCommandType =
   | 'continue_plan'
@@ -31,6 +43,8 @@ export type TodayCommand = {
   scheduleBlockId?: string;
   plannedMinutes?: number;
   confidence: 'high' | 'medium' | 'low';
+  /** Presentation and execution both consume this one command; no second suggestion authority. */
+  stateAdvice?: { kind: 'recover' | 'brain_dump' | 'probe_5'; state: StateTypeOrUnclear; checkInId: string; taskTitle: string };
 };
 
 type BuildTodayCommandInput = {
@@ -41,6 +55,7 @@ type BuildTodayCommandInput = {
   latestFeedback?: { executionLogId?: string } | null;
   latestState?: StateCheckIn | null;
   activeSession?: { linkedSkillId?: string; linkedGoalId?: string; linkedModuleId?: string; linkedScheduleBlockId?: string; title: string } | null;
+  stateAware?: boolean;
 };
 
 function minuteOfDay(time: string) {
@@ -93,7 +108,17 @@ export function buildTodayCommand({
   latestFeedback,
   latestState,
   activeSession,
+  stateAware,
 }: BuildTodayCommandInput): TodayCommand {
+  const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const stateRow = stateAware ? (data.stateCheckIns || []).filter(r => r.date === date && r.stateLayer && !r.dataProvenance?.deleted && r.timestamp <= now.toISOString()).sort((a, b) => b.timestamp.localeCompare(a.timestamp))[0] : undefined;
+  // A running action cannot be replaced by another recommendation. Legacy/no-check-in order is unchanged.
+  if (stateRow && activeSession) return {
+    type: 'continue_plan', titleKey: 'continueTodayPlan', titleValues: { title: activeSession.title },
+    reasonKey: 'basedOnYourPlan', primaryAction: 'start', secondaryActions: ['log'], confidence: 'high',
+    linkedSkillId: activeSession.linkedSkillId, linkedGoalId: activeSession.linkedGoalId,
+    linkedModuleId: activeSession.linkedModuleId, scheduleBlockId: activeSession.linkedScheduleBlockId,
+  };
   if (hasPendingCapture(data)) {
     return {
       type: 'finish_pending_capture',
@@ -105,7 +130,7 @@ export function buildTodayCommand({
     };
   }
 
-  if (isLowState(latestState)) {
+  if (!stateRow && isLowState(latestState)) {
     return {
       type: 'rescue',
       titleKey: 'rescueTwoMinutes',
@@ -140,6 +165,10 @@ export function buildTodayCommand({
   const nextBlock = currentBlock ?? scheduleBlocks.find((block) => block.status !== 'completed');
 
   if (nextBlock) {
+    const state = stateRow?.stateLayer?.correction?.type ?? stateRow?.stateLayer?.classification?.type;
+    const required = data.skills.find(skill => skill.id === nextBlock.linkedSkillId)?.requiredState;
+    const dismissed = (data.stateCheckIns || []).some(r => r.date === date && r.stateLayer?.originalPlanChoices?.some(choice => choice.taskId === nextBlock.id));
+    const match = dismissed ? 'match' : matchStateToTask(state, required);
     return {
       type: 'continue_plan',
       titleKey: 'continueTodayPlan',
@@ -151,8 +180,11 @@ export function buildTodayCommand({
       linkedGoalId: nextBlock.linkedGoalId,
       linkedSkillId: nextBlock.linkedSkillId,
       scheduleBlockId: nextBlock.id,
-      plannedMinutes: nextBlock.plannedMinutes,
+      plannedMinutes: match === 'probe_5' ? 5 : nextBlock.plannedMinutes,
       confidence: currentBlock ? 'high' : 'medium',
+      ...(stateRow && state && ['recover', 'brain_dump', 'probe_5'].includes(match) ? {
+        stateAdvice: { kind: match as 'recover' | 'brain_dump' | 'probe_5', state, checkInId: stateRow.id, taskTitle: nextBlock.title },
+      } : {}),
     };
   }
 

@@ -93,6 +93,7 @@ import type {
 } from '../v11-stage2-rebaseline/V11IntegratedTodaySurface';
 import V11Stage2ProductionSheet from '../v11-stage2-rebaseline/V11Stage2ProductionSheet';
 import V11RecordProgressForm from '../components/today/V11RecordProgressForm';
+import V5FinishFields from '../v5/FinishFields';
 import V11ActivityHistorySheet, { V11ActivityRecord } from '../components/today/V11ActivityHistorySheet';
 import { getV11ThemeTokens } from '../v11/tokens';
 import { buildPostSaveFeedback } from '../utils/progressFeedback';
@@ -105,6 +106,9 @@ import {
 import AdaptiveDecisionLoopOwnerSheet from '../adaptive-decision/AdaptiveDecisionLoopOwnerSheet';
 import QuestLifeCoreOwnerSheet from '../adaptive-decision/QuestLifeCoreOwnerSheet';
 import StateLayerToday from '../state-layer/StateLayerToday';
+import V5TodaySurface from '../v5/TodaySurface';
+import { v5t } from '../v5/copy';
+import { calibrationRecord } from '../v5/stateEvidence';
 import { isStateLayerEnabled } from '../state-layer/featureFlag';
 import {
   isAdaptiveDecisionLoopOwnerEnabled,
@@ -620,6 +624,8 @@ export default function HomeScreen() {
   const [lastPredictionDelta, setLastPredictionDelta] = useState<{ durationDeltaMinutes?: number; qualityDelta?: number } | null>(null);
   const [quality, setQuality] = useState<Quality | null>(null);
   const [difficulty, setDifficulty] = useState<Quality | null>(null);
+  const [calibrationDifficulty, setCalibrationDifficulty] = useState<'easier'|'same'|'harder'>();
+  const [fullFinish, setFullFinish] = useState(false);
   const [mentalCost, setMentalCost] = useState<Quality | null>(null);
   const [physicalCost, setPhysicalCost] = useState<Quality | null>(null);
   const [emotionalCost, setEmotionalCost] = useState<Quality | null>(null);
@@ -915,6 +921,8 @@ export default function HomeScreen() {
     setNote('');
     setQuality(null);
     setDifficulty(null);
+    setCalibrationDifficulty(undefined);
+    setFullFinish(false);
     setMentalCost(null);
     setPhysicalCost(null);
     setEmotionalCost(null);
@@ -1202,7 +1210,10 @@ export default function HomeScreen() {
       actualMentalCost: mentalCost ? mentalCost * 20 : optionalNumber(schemaValues.mentalCost) != null ? optionalNumber(schemaValues.mentalCost)! * 20 : undefined,
       actualPhysicalCost: physicalCost ? physicalCost * 20 : optionalNumber(schemaValues.physicalCost) != null ? optionalNumber(schemaValues.physicalCost)! * 20 : undefined,
       actualEmotionalCost: emotionalCost ? emotionalCost * 20 : undefined,
-      structuredData: hasDomainSchema ? schemaValues : undefined,
+      structuredData: logSource === 'timer' && m != null && m > 0 ? {
+        ...(hasDomainSchema ? schemaValues : {}),
+        calibration: calibrationRecord(selectedBlock?.plannedMinutes, m, calibrationDifficulty),
+      } : hasDomainSchema ? schemaValues : undefined,
       domainTemplateId: skill?.domainTemplateId,
       domain: catOf(skill?.id)?.domain,
       stateSnapshot: effectiveCurrentState ? {
@@ -1776,6 +1787,7 @@ export default function HomeScreen() {
     latestFeedback: latestFeedbackLog ? { executionLogId: latestFeedbackLog.id } : undefined,
     latestState: latestStateCheckIn,
     activeSession,
+    stateAware: typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('v5_ui') !== '0',
   }), [activeSession, data, latestFeedbackLog, latestStateCheckIn, todayLogs, todayScheduleBlocks, todayCommandMinute]);
 
   const metacognitionSummary = useMemo(() => buildMetacognitionSummary({
@@ -2569,7 +2581,22 @@ export default function HomeScreen() {
           alignSelf: 'center',
         }}
       >
-        {v11TodayEnabled ? (
+        {v11TodayEnabled && Platform.OS === 'web' && new URLSearchParams(window.location.search).get('v5_ui') !== '0' ? (
+          <V5TodaySurface
+            lang={lang} theme={v11ThemeTokens} reducedMotion={v11EffectiveReducedMotion}
+            command={todayCommand} title={formatCommandCopy(todayCommand.titleKey,todayCommand.titleValues)}
+            reason={formatCommandCopy(todayCommand.reasonKey,todayCommand.reasonValues)}
+            active={activeSession} onCapture={openV11Capture} onPrimary={runV11PrimaryCommand}
+            onLog={openV11DirectLog} onFinish={finishV11Session} onDetails={openV11DecisionDetails}
+            onSchedule={() => navigation.navigate('Schedule')}
+            onHistory={(id) => { openV11ActivityHistory(); setV11ActivityRecordId(id ?? null); }}
+            planRows={v11PlanRows} utilities={v11UtilityActions}
+            instantRead={<View>
+              <Text style={{color:v11ThemeTokens.text.secondary}}>{instantDecisionBrief?.headline_insight ?? t(lang,instantDecisionStatus==='loading'?'generatingInstantRead':'instantReadUnavailable')}</Text>
+              {instantDecisionBrief ? <View style={{flexDirection:'row',gap:12}}>{(['useful','not_useful'] as const).map(value => <TouchableOpacity key={value} accessibilityRole="button" accessibilityState={{selected:instantDecisionFeedback===value}} disabled={instantFeedbackStatus==='saving'} onPress={()=>markInstantDecisionFeedback(value)} style={{minHeight:44,justifyContent:'center'}}><Text style={{color:v11ThemeTokens.text.primary,fontWeight:instantDecisionFeedback===value?'700':'400'}}>{t(lang,value==='useful'?'useful':'notUseful')}</Text></TouchableOpacity>)}</View>:null}
+            </View>}
+          />
+        ) : v11TodayEnabled ? (
           <V11IntegratedTodaySurface
             capturePlaceholder={t(lang, 'scPlaceholder')}
             contextDate={todayContextPrimary}
@@ -3336,7 +3363,11 @@ export default function HomeScreen() {
           dataSet={v11TodayEnabled ? { 'v11-form': 'record', 'v11-rebaseline-role': 'today-sheet-form' } : undefined}
         >
 
-        <V11RecordProgressForm
+        {Platform.OS === 'web' && logSource === 'timer' && !fullFinish ? <V5FinishFields
+          lang={lang} minutes={minutes} note={note} difficulty={calibrationDifficulty}
+          disabled={recordSaving || recordDraftLocked} onMinutes={setMinutes} onNote={setNote}
+          onDifficulty={setCalibrationDifficulty} onFull={()=>setFullFinish(true)}
+        /> : <V11RecordProgressForm
           readOnly={recordSaving || recordDraftLocked}
           accent={accent}
           amountAdded={amountAdded}
@@ -3433,7 +3464,7 @@ export default function HomeScreen() {
           strengthWeight={strengthWeight}
           todayScheduleBlocks={todayScheduleBlocks}
           useV11={v11TodayEnabled}
-        />
+        />}
 
         </WebView>
       </TodaySheetForm>

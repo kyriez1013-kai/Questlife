@@ -50,7 +50,7 @@ export default function StateBrainDumpSheet({
   const blocks = data.scheduleBlocks || [];
 
   const reset = () => { setText(''); setItems(null); setError(null); setBusy(false); setFailedOnce(false); };
-  const close = () => { reset(); onClose(); };
+  const close = () => { if (busy || written.current) return; reset(); onClose(); };
 
   const timeOf = (d: Draft) => d.time ?? (d.custom && validClock(d.custom) ? d.custom : undefined);
   const takenExcept = (index: number) => (items ?? []).flatMap((d, i) => (i !== index && d.choice === 'schedule' && timeOf(d) ? [timeOf(d)!] : []));
@@ -124,7 +124,7 @@ export default function StateBrainDumpSheet({
       footer={(
         <V11StickySheetFooter
           cancelLabel={listStep ? (lang === 'zh' ? '上一步' : 'Back') : sl(lang, 'cancel')}
-          cancelDisabled={busy}
+          cancelDisabled={busy || !!written.current}
           disabled={busy || (!listStep && !splitBrainDump(text).length)}
           message={error ?? undefined}
           messageStatus={error ? 'error' : 'default'}

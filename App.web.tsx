@@ -145,14 +145,18 @@ function AppContent() {
   );
   const foundation = getQuestVisualFoundation(questTheme);
   const darkTheme = isDarkTheme(questTheme);
-  const RootView = View as any;
-  const rootClassName = `questlife-root ${darkTheme ? 'questlife-theme-dark' : 'questlife-theme-light'}${v11ProductEnabled ? ' questlife-v11-product' : ''}`;
+  const v5Enabled=new URLSearchParams(window.location.search).get('v5_ui')!=='0';
+  const RootView = 'div' as const;
+  const rootClassName = `questlife-root ${darkTheme ? 'questlife-theme-dark' : 'questlife-theme-light'}${v11ProductEnabled ? ' questlife-v11-product' : ''}${new URLSearchParams(window.location.search).get('v5_ui')!=='0'?' ql-v5 v5-app':''}`;
   const rootProps = {
     className: rootClassName,
     'data-theme': darkTheme ? 'dark' : questTheme.id,
     'data-v11-product': v11ProductEnabled ? 'true' : undefined,
   };
   const rootStyle = {
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 0,
     flex: 1,
     backgroundColor: foundation.environment.canvas,
     '--ql-bg': foundation.environment.canvas,
@@ -221,7 +225,7 @@ function AppContent() {
   // AsyncStorage 读取完成前显示最简 splash，防止老用户闪过 onboarding
   if (loading) {
     return (
-      <RootView {...rootProps} style={[rootStyle, { alignItems: 'center', justifyContent: 'center' }]}>
+      <RootView {...rootProps} style={{...rootStyle, alignItems: 'center', justifyContent: 'center'}}>
         <QuestIcon name="target" size={42} color={accent} strokeWidth={2.4} />
         <ActivityIndicator color={accent} />
       </RootView>
@@ -263,16 +267,16 @@ function AppContent() {
             tabBarInactiveTintColor: questTheme.colors.navInactive,
             tabBarStyle: {
               position: 'absolute',
-              width: questLayout.navWidthPercent,
+              width: v5Enabled ? 'calc(100% - 24px)' as any : questLayout.navWidthPercent,
               maxWidth: questLayout.navMaxWidth,
               left: '50%',
               transform: 'translateX(-50%)' as any,
-              bottom: questLayout.navBottomInset,
-              height: questLayout.navHeight,
+              bottom: v5Enabled ? 12 : questLayout.navBottomInset,
+              height: v5Enabled ? 64 : questLayout.navHeight,
               paddingBottom: 4,
               paddingTop: 4,
-              backgroundColor: questTheme.colors.navBackground,
-              borderTopWidth: 1,
+              backgroundColor: v5Enabled ? 'transparent' : questTheme.colors.navBackground,
+              borderTopWidth: v5Enabled ? 0 : 1,
               borderTopColor: questTheme.colors.border,
               borderRadius: questLayout.navRadius,
               shadowColor: questTheme.colors.cardShadow,

@@ -12,6 +12,7 @@ import { GENERAL_SHORT_SLEEP_MIN, localYmd, sleepMinutesByDate } from './signals
 import { STATE_TYPES } from './types';
 import { typeColor } from './StateLayerToday';
 import './state-layer.styles';
+import { calibrationSummary } from '../v5/stateEvidence';
 
 const WebView = View as any;
 
@@ -34,6 +35,7 @@ export default function StateInsightsSection({ lang, theme }: { lang: Lang; them
   const [range, setRange] = useState<'30' | '90'>('30');
   const days = Number(range);
   const rows = data.stateCheckIns || [];
+  const calibration=calibrationSummary(data.executionLogs||[]);
   const today = localYmd(new Date());
   const cal = useMemo(() => stateCalendar(rows, today, days), [rows, today, days]);
   const summary = calendarSummary(cal);
@@ -92,6 +94,7 @@ export default function StateInsightsSection({ lang, theme }: { lang: Lang; them
         {p(lang === 'zh' ? '空格 = 那天没签到，不补。' : 'Empty = no check-in that day; never filled in.', true)}
       </WebView>
 
+      {calibration?<WebView dataSet={{'sl-role':'card'}}>{h(lang==='zh'?'预估与实际':'Planned and actual')}{p(lang==='zh'?`${calibration.n} 次有成对时长的执行：计划 ${Math.round(calibration.planned)} 分钟，实际 ${Math.round(calibration.actual)} 分钟。${calibration.answered} 次填写难度，其中 ${calibration.harder} 次更难。`:`${calibration.n} paired executions: ${Math.round(calibration.planned)} planned minutes, ${Math.round(calibration.actual)} actual. ${calibration.answered} difficulty answers, ${calibration.harder} harder.`)}</WebView>:null}
       <WebView dataSet={{ 'sl-role': 'card' }}>
         {h(sl(lang, 'insOutcomes'))}
         {outcomes.length ? outcomes.map((c) => (
@@ -100,7 +103,7 @@ export default function StateInsightsSection({ lang, theme }: { lang: Lang; them
               {TYPE_NAME[lang][c.type]} → {ACTION_COPY[lang][c.actionId].title}
             </Text>
             {p(c.n >= MIN_OUTCOME_N
-              ? sl(lang, 'personalSummary', { n: c.n, up: c.energyUp, down: c.tensionDown })
+              ? (lang==='zh'?`${c.n} 次回访，${c.energyUp} 次精力提高；${c.tensionN} 次记录紧绷，其中 ${c.tensionDown} 次下降。`:`${c.n} follow-ups; energy rose in ${c.energyUp}. Tension recorded in ${c.tensionN}, lower in ${c.tensionDown}.`)
               : sl(lang, 'personalCount', { n: c.n }) + (lang === 'zh' ? '（满 5 次才显示结果）' : ' (results shown from 5)'))}
             {c.randomizedN ? p(sl(lang, 'randomCount', { n: c.randomizedN }), true) : null}
             {c.pendingOrDismissed ? p(lang === 'zh' ? `另有 ${c.pendingOrDismissed} 次没有回访，不计入` : `${c.pendingOrDismissed} more without a follow-up, not counted`, true) : null}

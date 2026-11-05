@@ -10,7 +10,7 @@ if (!runtime) throw Error('QUESTLIFE_UI_TEST_RUNTIME is required');
 const React = require(path.join(runtime, 'react'));
 const { create, act } = require(path.join(runtime, 'react-test-renderer'));
 global.IS_REACT_ACT_ENVIRONMENT = true;
-let disk, journal, engine, store, tree, sequence, commitCalls, failSave, failBeforeCommit, gate, project;
+let disk, journal, engine, store, tree, sequence, commitCalls, failSave, failBeforeCommit, gate, project, failJournal;
 const clone = value => structuredClone(value);
 const original = Module._load;
 Module._load = function(request, parent, main) {
@@ -62,17 +62,101 @@ const { StoreProvider, useStore } = require('../../src/store.tsx');
 const { DurableSubmission } = require('../../src/utils/durableSubmission.ts');
 const Observer = () => { store = useStore(); return null; };
 const deferred = () => { let resolve; const promise = new Promise(done => { resolve = done; }); return { promise, resolve }; };
-async function mount() { await act(async () => { tree = create(React.createElement(StoreProvider, {}, React.createElement(Observer))); }); }
-async function fresh() {
-  disk = clone(DEFAULT_DATA); journal = emptySyncState(); sequence = 0; commitCalls = 0; failSave = false; failBeforeCommit = false; gate = undefined;
-  engine = new SyncEngineV2({ read: async () => clone(journal), write: async state => { journal = clone(state); },
+async function mount(observer = Observer) { await act(async () => { tree = create(React.createElement(StoreProvider, {}, React.createElement(observer))); }); }
+function restartEngine() {
+  engine = new SyncEngineV2({ read: async () => clone(journal), write: async state => {
+    if (failJournal?.(state)) throw Error('TEST_EPISODE_JOURNAL_FAILURE');
+    journal = clone(state);
+  },
     apply: async changes => { await project(changes); } },
   { push: async () => { throw Error('NO_NETWORK_ALLOWED'); }, pull: async () => { throw Error('NO_NETWORK_ALLOWED'); } }, 'TEST_DEVICE', () => `TEST_OP_${++sequence}`);
-  await mount(); assert.equal(store.loading, false);
+}
+async function fresh(observer = Observer) {
+  disk = clone(DEFAULT_DATA); journal = emptySyncState(); sequence = 0; commitCalls = 0; failSave = false; failBeforeCommit = false; gate = undefined; failJournal = undefined;
+  restartEngine();
+  await mount(observer); assert.equal(store.loading, false);
 }
 afterEach(async () => { if (tree) await act(async () => tree.unmount()); tree = undefined; });
 const plan = { title: 'TEST plan', date: '2026-09-22', startTime: '09:00', endTime: '10:00', plannedMinutes: 60,
   taskType: 'deep_study', flexibility: 'flexible', rigidity: 'medium', status: 'planned', source: 'manual' };
+
+test('state-layer schedule and episode cannot split across a failed journal write and restart', async () => {
+  const { useStateLayerPlan } = require('../../src/state-layer/useStateLayerActions.ts');
+  let actions;
+  function PlanObserver() { store = useStore(); actions = useStateLayerPlan(); return null; }
+  await fresh(PlanObserver);
+  let block;
+  await act(async () => { block = store.addScheduleBlock({ ...plan, date: '2099-11-05' }); await store.waitForLocalWrites(); });
+  const before = clone(disk.scheduleBlocks);
+  const patch = actions.preview({ date: block.date, before, after: [{ ...block, startTime: '11:00', endTime: '12:00' }] });
+  failJournal = state => state.pendingApply.some(change => change.entityType === 'decisionResults');
+  await act(async () => { await assert.rejects(actions.confirmAndApply({ patch, headline: 'Isolated adjustment', ruleId: 'test-rule' }), /TEST_EPISODE_JOURNAL_FAILURE/); });
+  await act(async () => tree.unmount()); tree = undefined;
+  failJournal = undefined; restartEngine(); await mount();
+  await act(async () => engine.recover());
+  assert.deepEqual(store.data.scheduleBlocks, before, 'a rejected joint write must not leave the schedule changed without its decision/Undo record');
+  assert.equal(store.data.decisionResults.length, 0);
+});
+
+for (const operation of ['apply', 'undo']) for (const recovery of ['retry', 'restart']) {
+  test(`joint ${operation} recovers schedule and episode after disk failure via ${recovery}`, async () => {
+    const { useStateLayerPlan } = require('../../src/state-layer/useStateLayerActions.ts');
+    let actions;
+    function PlanObserver() { store = useStore(); actions = useStateLayerPlan(); return null; }
+    await fresh(PlanObserver);
+    let block, applied;
+    await act(async () => { block = store.addScheduleBlock({ ...plan, date: '2099-11-05' }); await store.waitForLocalWrites(); });
+    const input = { patch: actions.preview({ date: block.date, before: [block], after: [{ ...block, startTime: '11:00', endTime: '12:00' }] }), headline: 'Isolated adjustment', ruleId: 'test-rule' };
+    if (operation === 'undo') await act(async () => { applied = await actions.confirmAndApply(input); });
+    const before = clone(disk);
+    failSave = true;
+    await act(async () => {
+      await assert.rejects(operation === 'apply' ? actions.confirmAndApply(input) : actions.undo(applied), /DISK_FULL/);
+    });
+    const expected = clone(store.data);
+    const mutationIds = journal.outbox.map(row => row.mutationId);
+    assert.deepEqual(disk.scheduleBlocks, before.scheduleBlocks);
+    assert.deepEqual(disk.decisionResults, before.decisionResults);
+    assert.deepEqual(new Set(journal.pendingApply.map(row => row.entityType)), new Set(['scheduleBlocks', 'decisionResults']));
+    if (recovery === 'restart') {
+      await act(async () => tree.unmount()); tree = undefined;
+      restartEngine(); await mount(PlanObserver);
+      await act(async () => engine.recover());
+    } else {
+      await act(async () => { await (operation === 'apply' ? actions.confirmAndApply(input) : actions.undo(applied)); });
+    }
+    assert.deepEqual(disk.scheduleBlocks, expected.scheduleBlocks);
+    assert.deepEqual(disk.decisionResults, expected.decisionResults);
+    assert.deepEqual(journal.outbox.map(row => row.mutationId), mutationIds, 'recovery cannot enqueue another operation');
+    assert.equal(journal.pendingApply.length, 0);
+    assert.equal(disk.decisionResults.length, 1);
+    const episode = disk.decisionResults[0].decisionEpisode;
+    assert.equal(episode.status, operation === 'apply' ? 'APPLIED' : 'PROPOSED');
+    assert.equal(episode.undoState.available, operation === 'apply');
+    await act(async () => tree.unmount()); tree = undefined;
+    restartEngine(); await mount(); await act(async () => engine.recover());
+    assert.deepEqual(store.data.scheduleBlocks, expected.scheduleBlocks);
+    assert.deepEqual(store.data.decisionResults, expected.decisionResults);
+  });
+}
+
+test('rejected Undo journal write leaves both applied schedule and Undo availability intact after restart', async () => {
+  const { useStateLayerPlan } = require('../../src/state-layer/useStateLayerActions.ts');
+  let actions, applied, block;
+  function PlanObserver() { store = useStore(); actions = useStateLayerPlan(); return null; }
+  await fresh(PlanObserver);
+  await act(async () => { block = store.addScheduleBlock({ ...plan, date: '2099-11-05' }); await store.waitForLocalWrites(); });
+  const patch = actions.preview({ date: block.date, before: [block], after: [{ ...block, startTime: '11:00', endTime: '12:00' }] });
+  await act(async () => { applied = await actions.confirmAndApply({ patch, headline: 'Isolated adjustment', ruleId: 'test-rule' }); });
+  const before = clone(disk);
+  failJournal = state => state.pendingApply.some(change => change.entityType === 'decisionResults');
+  await act(async () => assert.rejects(actions.undo(applied), /TEST_EPISODE_JOURNAL_FAILURE/));
+  await act(async () => tree.unmount()); tree = undefined;
+  failJournal = undefined; restartEngine(); await mount(); await act(async () => engine.recover());
+  assert.deepEqual(store.data.scheduleBlocks, before.scheduleBlocks);
+  assert.deepEqual(store.data.decisionResults, before.decisionResults);
+  assert.equal(store.data.decisionResults[0].decisionEpisode.undoState.available, true);
+});
 
 // Execute the actual callback body without loading every Today visual dependency.
 function homeCallback(name, bindings, screen = 'HomeScreen') {

@@ -214,6 +214,8 @@ export interface PerformanceData {
 export interface Skill {
   id: string;
   name: string;
+  /** Explicitly confirmed by the user; absence means unknown, never inferred at execution. */
+  requiredState?: 'deep_focus' | 'light' | 'physical' | 'recovery' | 'social' | 'unknown';
   icon?: string;              // emoji
   color: string;
   totalXP: number;            // 累计 = 累计分钟 (派生但缓存)
