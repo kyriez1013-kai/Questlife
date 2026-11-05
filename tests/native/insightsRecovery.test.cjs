@@ -44,6 +44,7 @@ for (const extension of ['.ts', '.tsx']) require.extensions[extension] = (module
 };
 const Experience = require('../../src/native/insights/NativeInsightsExperience.tsx').default;
 const Chart = require('../../src/native/insights/NativeInsightsChart.native.tsx').default;
+const { ni } = require('../../src/native/insights/nativeInsightsStrings.ts');
 function deferred() { let resolve, reject; const promise = new Promise((a, b) => { resolve = a; reject = b; }); return { promise, resolve, reject }; }
 const available = id => ({ status: 'available', product: { metadata: { subject_id: user, bundle_id: id } }, eligibleObservationCount: 1, excludedObservationCount: 0, cacheHit: false, limitations: [] });
 const empty = () => ({ status: 'no_eligible_data', eligibleObservationCount: 0, excludedObservationCount: 0, cacheHit: false, limitations: [] });
@@ -58,6 +59,24 @@ test('normal Insights entry automatically uses the existing runtime without a de
   await mount(); assert.equal(calls.length, 1); assert.equal(props().state.busy, true);
   await settle(jobs[0], available('first')); assert.equal(props().bundle.metadata.bundle_id, 'first');
 });
+for (const lang of ['zh', 'en']) {
+  test(`${lang} data-use notice discloses automatic analysis on entry, changes and return`, async () => {
+    await mount(); await settle(jobs[0], empty());
+    data = records([{ id: 'isolated-new-observation' }]); await update();
+    await settle(jobs[1], empty());
+    await act(async () => appListener('background'));
+    await act(async () => appListener('active'));
+    assert.equal(jobs.length, 3, 'these are automatic loads, with no manual refresh');
+    const notice = ni(lang, 'consent');
+    assert.doesNotMatch(notice, lang === 'zh' ? /仅在你点击/ : /only when you load or refresh/i,
+      'the data-use notice must not promise manual-only requests while the screen auto-loads');
+    assert.match(notice, lang === 'zh' ? /自动/ : /automatically/i);
+    assert.match(notice, lang === 'zh' ? /健康.*另行同意/ : /health.*separate.*consent/i);
+    const importNotice = ni(lang, 'importScope');
+    assert.doesNotMatch(importNotice, lang === 'zh' ? /不会自动运行分析/ : /analysis does not run automatically/i,
+      'an imported snapshot change can trigger the same recovery effect');
+  });
+}
 test('synced record changes recompute, reject the superseded result and clear deletion-derived analysis', async () => {
   await mount(); const previous = jobs[0];
   data = records([{ id: 'isolated-record', durationMinutes: 9 }]); await update();

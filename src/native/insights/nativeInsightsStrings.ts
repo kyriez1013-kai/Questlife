@@ -5,7 +5,7 @@ const strings = {
   load: ['读取个人分析', 'Load my analysis'],
   refresh: ['刷新分析', 'Refresh analysis'],
   idle: ['个人分析尚未读取', 'Your analysis has not been loaded'],
-  consent: ['仅在你点击读取或刷新时，将合格观察发送到已配置的 QuestLife 分析服务。', 'Eligible observations are sent to the configured QuestLife analysis service only when you load or refresh.'],
+  consent: ['进入此页、记录变化或返回应用时会自动刷新。发送合格观察需已配置服务并登录；健康数据需另行同意云端使用。', 'Analysis refreshes automatically when you open this view, records change or you return to the app. Sending eligible observations requires a configured service and sign-in; health data requires separate cloud consent.'],
   empty: ['暂无合格的个人观察', 'No eligible personal observations yet'],
   emptyBody: ['已有记录保持不变。可继续在今日记录状态与实际执行，或在设置中连接来源。', 'Existing records are unchanged. Record state and actual execution in Today, or connect sources in Settings.'],
   serviceError: ['分析服务未能返回可用结果', 'The analysis service could not return a usable result'],
@@ -88,7 +88,7 @@ const strings = {
   recordActivity: ['记录实际执行', 'Record an activity'],
   recordState: ['记录当前状态', 'Record current state'],
   accountSync: ['通过账户同步恢复', 'Restore through account sync'],
-  importScope: ['导入 QuestLife 备份中的原始记录，或登录原账户同步恢复。不导入示例，也不会自动运行分析。', 'Restore original records from a QuestLife backup, or sign in to the original account to recover through sync. Examples are never imported, and analysis does not run automatically.'],
+  importScope: ['导入 QuestLife 备份中的原始记录，或登录原账户同步恢复，不导入示例。在个人分析页中，记录变化会触发自动刷新；数据发送遵循账户与健康云端授权。', 'Restore original records from a QuestLife backup, or sign in to the original account to recover through sync. Examples are never imported. Record changes trigger automatic refresh in personal analysis; sending data follows account and health cloud permissions.'],
   month: ['月', 'Month'], quarter: ['季度', 'Quarter'], halfYear: ['半年', 'Half year'], year: ['年', 'Year'],
   deviceReadError: ['设备来源读取失败；本次仅使用当前可读取的数据。', 'Device sources could not be read; only currently readable data is used.'],
 } as const;
