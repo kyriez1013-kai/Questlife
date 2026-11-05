@@ -254,7 +254,7 @@ function AppContent() {
       <NavigationContainer theme={navTheme}>
         <Tab.Navigator
           detachInactiveScreens={Platform.OS !== 'web'}
-          initialRouteName={v11InsightsEnabled && !isV11MarathonEnabled() ? 'Insights' : 'Today'}
+          initialRouteName={new URLSearchParams(window.location.search).get('v5_section')==='shortcuts'?'Settings':v11InsightsEnabled && !isV11MarathonEnabled() ? 'Insights' : 'Today'}
           screenOptions={{
             headerShown: false,
             lazy: true,

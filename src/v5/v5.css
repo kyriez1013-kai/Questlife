@@ -106,6 +106,7 @@
 .v5-app .v5-today,.v5-app .v5-goals { background:transparent; }
 .v5-app [role="tablist"] { background:var(--v5-fill)!important;border:1px solid!important;border-color:var(--v5-rim) var(--v5-fade) var(--v5-fade) var(--v5-rim)!important;border-radius:32px!important;box-shadow:var(--v5-shadow)!important;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px); }
 .v5-app [role="tab"][aria-selected="true"] { background:var(--v5-fill);border-radius:22px;box-shadow:var(--v5-shadow); }
+.v5-app [data-quest-surface],.v5-app [data-sl-role="card"] { background:var(--v5-fill)!important;border:1px solid!important;border-color:var(--v5-rim) var(--v5-fade) var(--v5-fade) var(--v5-rim)!important;border-radius:24px!important;box-shadow:var(--v5-shadow)!important; }
 .v5-app .v11-settings-group,.v5-app .v11-schedule-now-next,.v5-app #v11-schedule-day-instrument,.v5-app .v11-goal-summary { background:var(--v5-fill)!important;border:1px solid!important;border-color:var(--v5-rim) var(--v5-fade) var(--v5-fade) var(--v5-rim)!important;border-radius:24px!important;box-shadow:var(--v5-shadow)!important; }
 @supports not (backdrop-filter:blur(1px)) { .ql-v5 .v5-glass { background:var(--v5-bg); } }
 @media(min-width:900px) { .v5-today { padding:32px; } }

@@ -444,7 +444,7 @@ export default function SettingsScreen() {
             questTheme={questTheme}
             divider
             title={t(lang, 'healthDataSource')}
-            body={t(lang, Platform.OS === 'web' ? 'healthDataSourceUnavailable' : 'nativeSourceStatus')}
+            body={Platform.OS === 'web' ? (lang==='zh'?'通过 iOS 快捷指令同步（睡眠、步数、静息心率、HRV）。原生 App 可另行授权读取。':'Sync sleep, steps, resting heart rate and HRV with iOS Shortcuts. Native permission is separate.') : t(lang,'nativeSourceStatus')}
             trailing={Platform.OS === 'web' ? <QuestPill questTheme={questTheme} variant="muted" label={t(lang, 'sourceUnavailable')} /> : undefined}
           />
           <QuestCompactRow
@@ -458,7 +458,7 @@ export default function SettingsScreen() {
             questTheme={questTheme}
             divider
             title={t(lang, 'calendarDataSource')}
-            body={t(lang, Platform.OS === 'web' ? 'calendarDataSourceUnavailable' : 'nativeSourceStatus')}
+            body={Platform.OS === 'web' ? (lang==='zh'?'通过快捷指令同步日历，只读取占用，不修改系统日程。':'Sync read-only calendar availability with Shortcuts.') : t(lang,'nativeSourceStatus')}
             trailing={Platform.OS === 'web' ? <QuestPill questTheme={questTheme} variant="muted" label={t(lang, 'sourceUnavailable')} /> : undefined}
           />
         </QuestGroupedSurface>

@@ -221,7 +221,7 @@ const InsightsV3Chart = forwardRef<InsightsV3ChartHandle, {
       const renderCandle = chartKind === 'candle' && candles.length > 0;
       if (renderCandle) {
         primary = chart.addSeries(library.CandlestickSeries, {
-          upColor: 'transparent',
+          upColor: observed,
           downColor: 'transparent',
           borderUpColor: observed,
           borderDownColor: observed,

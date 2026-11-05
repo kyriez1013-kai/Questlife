@@ -301,7 +301,7 @@ export default function V11InsightsScreen() {
   const [terminalInspectorOpen, setTerminalInspectorOpen] = useState(false);
   const [personalTerminalSheetOpen, setPersonalTerminalSheetOpen] = useState(false);
   const [ownerQuantOpen, setOwnerQuantOpen] = useState(false);
-  const [stateViewOpen, setStateViewOpen] = useState(query().get('insightsView') === 'state');
+  const [stateViewOpen, setStateViewOpen] = useState(query().get('insightsView') !== 'metrics' && isStateLayerEnabled());
   const ownerQuantChosen = useRef(false);
   useEffect(() => {
     let active = true;

@@ -346,8 +346,8 @@ const PersonalTerminalChart = forwardRef<PersonalTerminalChartHandle, {
       if (chartKind === 'candle' && series.supportsCandle && viewData.candles.length > 0) {
         primary = chart.addSeries(library.CandlestickSeries, {
           ...boundedOrdinalScale,
-          upColor: 'transparent',
-          downColor: theme.glow.primary,
+          upColor: theme.text.secondary,
+          downColor: 'transparent',
           borderUpColor: theme.glow.primary,
           borderDownColor: theme.glow.primary,
           wickUpColor: theme.text.secondary,

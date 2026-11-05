@@ -160,7 +160,7 @@ export function QuestGroupedSurface({ children, elevated, className, questTheme,
     className,
   ].filter(Boolean).join(' ');
   return (
-    <Surface className={webClassName} style={[{
+    <Surface className={webClassName} dataSet={{'quest-surface':webClassName}} style={[{
       backgroundColor: elevated ? q.colors.surfaceElevated : q.colors.surface,
       borderRadius: q.radius.lg,
       borderWidth: 1,

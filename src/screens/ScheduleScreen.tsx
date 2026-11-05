@@ -672,6 +672,7 @@ export default function ScheduleScreen() {
           accessibilityLabel={t(lang, 'schedule')}
           style={styles.switcher}
         />
+        {Platform.OS==='web'?<QuestButton questTheme={questTheme} variant="ghost" icon="calendar" label={lang==='zh'?'通过快捷指令同步日历':'Sync calendar with Shortcuts'} onPress={()=>{window.location.assign('/?v5_section=shortcuts');}} />:null}
         {Platform.OS !== 'web' ? <NativeDateTimeField theme={questTheme} lang={lang} mode="date" label={t(lang, 'date')}
           value={new Date(`${selectedDate}T12:00:00`)} onChange={value => setSelectedDate(localDateValue(value))} /> : null}
         {scheduleNotice ? <View style={{ gap: questTheme.spacing.sm }}>
