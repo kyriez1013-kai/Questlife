@@ -53,7 +53,7 @@ Source handoffs: `docs/frontend-v2/CODEX_HANDOFF.md`,
 4. Continue into normal Insights evidence reachability and existing Health
    preview gaps; never substitute examples for personal data.
 
-## Verified candidate changes, 06:16 Sydney
+## Verified candidate changes, 13:11 Sydney
 
 - `526c9ec`: PWA preserves the last usable HTML shell on network/503/non-HTML
   failures; does not delete other applications' caches. Before: 4/6 tests failed;
@@ -181,6 +181,36 @@ Store durability/Schedule UI tests (in-memory Store and SyncEngine, NOT devices)
 Initial test-runtime environment error and browser locator errors remain in logs;
 they were corrected in the QA harness, not by weakening application assertions.
 
+- `e341449`: Insights read-only examples distinguish an interrupted/rejected extra
+  analysis artifact from an analysis that genuinely was not supplied. The normal
+  Insights -> Live Quant -> Explore examples -> Established history path was
+  reproduced with only its analysis chunk blocked: the base chart loaded but the
+  failure was silently hidden. Two new recovery cases failed before the change.
+  The workspace now retains base observations, explains the failure, and offers
+  direct Retry for both base and extra-analysis failures. Retry uses the same
+  example, never the owner runtime; exiting invalidates late example results.
+  NOT_AVAILABLE remains a normal absence, while invalid contract, mismatched base
+  and unsafe provenance remain hidden with an explicit recoverable error.
+  No Quant, Store, schemas, API or existing Today visuals changed.
+- Seven added cases plus prior recovery/empty-chart cases: 19/19 passed. The
+  existing recovery harness had omitted skills/categories now consumed by the
+  real screen; its first run failed in setup. Those empty collections were added
+  before recording the two meaningful red failures. Existing Insights V3 product,
+  personal layer, watchlist, analysis-boundary and feature-selection checks passed.
+  Typecheck and web export passed. No lint script exists. Existing renderer,
+  Node module-type and Metro environment warnings remain, not newly resolved.
+- Normal local Chromium verification: 375x667 light/zh, 393x852 dark/zh,
+  1280x900 dark/en. Interrupt analysis download -> explicit error -> Retry ->
+  restored step-indicator layers -> return to personal zero-data view passed.
+  A separately interrupted base bundle -> Retry -> restored full example also
+  passed at 1280. No horizontal overflow or page errors in those paths. The
+  persisted AppData string was identical before/after sample exploration and no
+  API request occurred; fresh disposable contexts were closed. This is synthetic
+  read-only example acceptance, not a personal-model/cloud/device claim.
+  Screenshots now wait for sheet animation; initial invisible-sheet shots and
+  guessed indicator-label/case harness failures are retained in logs.
+  This batch is LOCAL ONLY; the hosted Preview remains code 7da5969.
+
 ## Exact next work
 
 1. Normal Capture confirmation/after-state write failure and retry, refresh, and
@@ -189,8 +219,13 @@ they were corrected in the QA harness, not by weakening application assertions.
    now included in Preview 7da5969 below. Before any further publication, recheck
    target metadata and isolation. Do not re-run these unchanged paths merely to
    increase test counts.
-2. Check Insights examples/real-service unavailable navigation and remaining
-   first-use paths. Preserve example isolation. Evaluate concrete normal-entry
+2. Example interruption/retry/isolation now has normal UI evidence (e341449).
+   Next check real-service unavailable navigation and remaining first-use paths.
+   The existing native Insights consent copy says requests happen only on manual
+   load/refresh, while its recovery effect also refreshes on tab/data/foreground
+   changes. Inspect the actual consent boundary before correcting that narrow
+   mismatch; do not change cloud consent policy or invent a second runtime.
+   Evaluate concrete normal-entry
    gaps, not a new whole-product audit. History currently still displays the
    raw parse-failure/retry message next to a successfully manually saved result;
    assess this wording/state interaction without masking the service failure.
@@ -261,7 +296,7 @@ they were corrected in the QA harness, not by weakening application assertions.
   account service is unconfigured. This is a LOCAL review, not a hosted/live-AI
   or cross-client sync acceptance.
 - Latest local export: main `index-815546ef230a4d481450d1852f0967f3.js`, Insights chunk
-  `V11InsightsScreen-2ac4481636545a129cc1866d0780bfc3.js`.
+  `V11InsightsScreen-c73d03291b45fcad832cfa6996f84492.js` (e341449).
 - `browser-workspaces-results.json`, `browser-plan-375-light-results.json`,
   `browser-plan-1280-dark-results.json`, `browser-brain-dump-results.json`, and
   `browser-offline-results.json` contain current isolated browser evidence.
@@ -300,6 +335,19 @@ they were corrected in the QA harness, not by weakening application assertions.
   rejects `--project` on inspect/env commands; the retained failed attempts were
   followed by documented positional inspect and existing safe metadata helper.
 - No tests used saved browser profiles, Owner records, credentials or health data.
+- Latest example recovery evidence in the external QA directory:
+  `2026-11-05T02-06-18-687Z-insights-sample-browser-red.log`;
+  `2026-11-05T02-06-29-921Z-insights-sample-red-valid-fixture.log`;
+  `2026-11-05T02-09-53-574Z-insights-sample-final-regression.log` (19 tests);
+  `2026-11-05T02-07-08-888Z-insights-sample-types.log`;
+  `2026-11-05T02-07-10-053Z-insights-sample-build.log`;
+  `2026-11-05T02-07-31-896Z-insights-sample-contracts.log`.
+  Successful browser logs use `insights-sample-browser-final-1280`,
+  `insights-sample-browser-visible-{375,393}` and `insights-sample-base-browser-1280`.
+  JSON: `browser-insights-sample-after-{375-light-zh,393-dark-zh,1280-dark-en}.json`,
+  `browser-insights-sample-base-after-1280-dark-en.json`.
+  Screenshots: `{375,393}-insights-sample-after-{analysis-failed,recovered-indicators,personal-return}-*.png`
+  and `1280-insights-sample-base-after-*.png`.
 - Main checkout still has its original five tracked modifications; source checkout
   `/Users/kyrie/dev/questlife-frontend-v2` remains clean. No push or production
   deployment; only the explicitly isolated Previews above were created.
