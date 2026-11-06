@@ -183,6 +183,17 @@ export function formatDateTime(lang: Lang, value: string, includeTime = false) {
     : { year: 'numeric', month: 'short', day: 'numeric' }).format(date);
 }
 
+export function formatChartTick(lang: Lang, value: string, tickType: number) {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return '';
+  if (tickType === 0) return String(date.getFullYear());
+  if (tickType === 1) return date.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-AU', { month: 'short' });
+  if (tickType === 2) return String(date.getDate());
+  const parts = [date.getHours(), date.getMinutes()];
+  if (tickType === 4) parts.push(date.getSeconds());
+  return parts.map(part => String(part).padStart(2, '0')).join(':');
+}
+
 export function buildPersonalContext(
   lang: Lang,
   instrument: QuantProductConsumerInstrument,

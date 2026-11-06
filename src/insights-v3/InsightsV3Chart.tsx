@@ -5,6 +5,7 @@ import type { QuestVisualFoundation } from '../design/visualFoundation';
 import type { QuantIndicatorSeriesV1 } from '../quant-product/quantAnalysisContract';
 import type { QuantProductSeriesV1 } from '../quant-product/quantProductContract';
 import {
+  formatChartTick,
   formatDateTime,
   formatQuantValue,
   selectSeriesCandles,
@@ -196,7 +197,13 @@ const InsightsV3Chart = forwardRef<InsightsV3ChartHandle, {
         handleScale: { axisDoubleClickReset: true, axisPressedMouseMove: true, mouseWheel: true, pinch: true },
         leftPriceScale: { visible: comparisonSeries.length > 0, borderVisible: false, scaleMargins: { top: 0.12, bottom: 0.12 } },
         rightPriceScale: { visible: hasComparablePrimaryRange, borderVisible: false, scaleMargins: { top: 0.12, bottom: 0.12 } },
-        timeScale: { borderVisible: false, rightOffset: 2, minBarSpacing: 2, timeVisible: true, secondsVisible: false },
+        timeScale: {
+          borderVisible: false, rightOffset: 2, minBarSpacing: 2, timeVisible: true, secondsVisible: false,
+          tickMarkFormatter: (value: unknown, type: number) => {
+            const key = Number(timeKey(value));
+            return Number.isFinite(key) ? formatChartTick(lang, new Date(key * 1000).toISOString(), type) : '';
+          },
+        },
         localization: {
           priceFormatter: (value: number) => formatQuantValue(value, series.unit, lang),
           timeFormatter: (value: unknown) => {
