@@ -1,0 +1,8 @@
+{
+  "command": "git fsck --full",
+  "originalRefs": "/Users/kyrie/Documents/Codex Questlife/QuestLife-Quant",
+  "objects": "/tmp/questlife-v5-round3-safety/quant/materialized-objects",
+  "objectsByteVerified": 1391,
+  "exit": 0,
+  "error": null
+}

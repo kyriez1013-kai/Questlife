@@ -1,0 +1,109 @@
+{
+  "source": "/Users/kyrie/Documents/Codex Questlife/QuestLife",
+  "destination": "/Users/kyrie/dev/QuestLife",
+  "kind": "app",
+  "branches": [
+    {
+      "sha": "3c21ae84313bc4920b888c008a24b988a666e962",
+      "branch": "candidate/commercial-readiness-20261105"
+    },
+    {
+      "sha": "46aaedb5df79ed6bf800cd74cfec9d45f64e674a",
+      "branch": "data/real-data-foundation-v1"
+    },
+    {
+      "sha": "046ab2d8cc01419a88b13d99371a45bef0df5219",
+      "branch": "demo/interview-20260825"
+    },
+    {
+      "sha": "9c24c16ca3529c36a26299707ad7e3b80d2f2d1d",
+      "branch": "design/frontend-v2"
+    },
+    {
+      "sha": "b5d87549f2b8c4f767dc6292589d8fb6479da833",
+      "branch": "design/global-theme-cleanup"
+    },
+    {
+      "sha": "dce618783be0c6a552a7b3ada6347c406621c53e",
+      "branch": "design/questlife-product-v2"
+    },
+    {
+      "sha": "ce2deaa460ddd4ebeccea4141368e6bdd77c1e11",
+      "branch": "feature/state-layer-v0"
+    },
+    {
+      "sha": "e7080a0ed0c8503aba96f921ce719a126f16f139",
+      "branch": "feature/v5-ui"
+    },
+    {
+      "sha": "c83b903cb0e9c7eac889731b83b0d406e0d252ff",
+      "branch": "integration/quant-product-layer-v1"
+    },
+    {
+      "sha": "c8c4387f302af5ef7dd05eaab2d177f6a000447b",
+      "branch": "main"
+    },
+    {
+      "sha": "8718123ed3ccc793ce81e65dbfb936be0585f242",
+      "branch": "product/adaptive-decision-loop-v1"
+    },
+    {
+      "sha": "e440d4a613edb3d26f710b4027693fd8655b4252",
+      "branch": "product/adaptive-decision-surface-v2"
+    },
+    {
+      "sha": "8169824b79499288a9eb0df8e66f08db504a7576",
+      "branch": "product/decision-surface-v3"
+    },
+    {
+      "sha": "e321389ef4d650b78cfe506b7a7556e1287b9c35",
+      "branch": "product/insights-final-lock"
+    },
+    {
+      "sha": "2c2349d80f77ca0dd901784203852cc4895cbdd0",
+      "branch": "product/insights-presentation-reconstruction"
+    },
+    {
+      "sha": "056a133cdf450c0bf6704306af901dc8325b5e78",
+      "branch": "product/insights-quant-terminal-v4"
+    },
+    {
+      "sha": "0f9ea6bf54b7d947f73f6398fc3dd143eaa1500e",
+      "branch": "product/insights-v3"
+    },
+    {
+      "sha": "8d2352cc5847b4ea1b824d9f1428009a924a47e2",
+      "branch": "product/insights-v3-personal-layer"
+    },
+    {
+      "sha": "2e4ee394c53b94116974422f5d945272695228c8",
+      "branch": "product/insights-v5-canonical-shell"
+    },
+    {
+      "sha": "125915ab85ba6b16659f01c577e931082c255746",
+      "branch": "product/installable-mobile-shell-v1"
+    },
+    {
+      "sha": "9caf7203d39a044266e51ae28261032161a223a3",
+      "branch": "product/questlife-core-v1"
+    },
+    {
+      "sha": "a0c932d5adfa9f173c605e6abce5cb50f404316f",
+      "branch": "product/schedule-v3"
+    },
+    {
+      "sha": "65490de6d079f70bd533fafd88680bcca21e45be",
+      "branch": "release/questlife-v1"
+    },
+    {
+      "sha": "7b10a1741058c7488543dfe1d244d651a01f47b5",
+      "branch": "wip/today-perf"
+    }
+  ],
+  "head": "e7080a0ed0c8503aba96f921ce719a126f16f139",
+  "branch": "feature/v5-ui",
+  "fsckExit": 0,
+  "status": "?? \"docs/v5/CODEX_v5\\347\\254\\254\\344\\270\\211\\350\\275\\256_\\344\\273\\212\\346\\227\\245\\351\\207\\215\\345\\201\\232\\344\\270\\216\\346\\224\\266\\345\\260\\276.md\"\n",
+  "remote": "https://github.com/kyriez1013-kai/Questlife.git",
+  "completedAt": "2026-11-06T09:31:25.270Z"
+}

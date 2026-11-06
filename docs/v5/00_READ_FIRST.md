@@ -1,5 +1,9 @@
 # QuestLife 第五版 · 从这里开始
 
+## 当前开发位置（第三轮）
+
+使用 `/Users/kyrie/dev/QuestLife` 的 `feature/v5-ui`；Quant 使用 `/Users/kyrie/dev/QuestLife-Quant`。旧目录保留，不再用于本轮开发。在新应用目录提交后运行 `npm run deploy:candidate`。见 [第三轮仓库安全](round3/01_仓库安全.md)。以下内容为前两轮历史记录，不代表第三轮最终验收。
+
 **候选网址：https://questlife-v1-release.vercel.app/**。已部署源码 `3d59b3d`，ID `dpl_4JpfEL8A1itwe1uN5CPHuSZkL9xK`（[回执](deployment-receipt.json)）。旧正式站、主目录和数据库未作修改，未 push。状态规则需本人 30 天数据校准，不是已验证个体模型。
 
 | 页面 | 本轮落地与参考差异 | 第五版 vs 实现 |

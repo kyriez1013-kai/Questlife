@@ -1,0 +1,53 @@
+{
+  "source": "/Users/kyrie/Documents/Codex Questlife/QuestLife-Quant",
+  "materializedSource": "/tmp/questlife-v5-round3-safety/quant/repository.git",
+  "destination": "/Users/kyrie/dev/QuestLife-Quant",
+  "branches": [
+    {
+      "sha": "6e08674c7f672ffaa6dd2f4288d985e88cc53a51",
+      "branch": "integration/multivariate-driver-v1"
+    },
+    {
+      "sha": "cdf866fc3f07ad2660cc8e1e80f3cb72f836240d",
+      "branch": "integration/product-layer-v1"
+    },
+    {
+      "sha": "5204c8b3c4287ec821ad38c73f6708b5593b84ff",
+      "branch": "integration/real-data-readiness-v1"
+    },
+    {
+      "sha": "994c6b39866290fc5268fb10e970addc09a97d1b",
+      "branch": "main"
+    },
+    {
+      "sha": "3c16c20d9846f849088cdb46f484067537e2edb6",
+      "branch": "product/questlife-core-v1-runtime"
+    },
+    {
+      "sha": "01fb689e8e61e19b4e6f126c886b9dc2d8d8efeb",
+      "branch": "research/v0.2-ingestion-analysis"
+    },
+    {
+      "sha": "cbc32974a2ff874d6c3e4bec5c42bd81d6c92468",
+      "branch": "research/v0.3-observation-ledger"
+    },
+    {
+      "sha": "ce27a91617493d83982c9972371a3487987045fe",
+      "branch": "research/v0.4-cold-start-personal-market"
+    },
+    {
+      "sha": "2f2d2fbc592b9bdf545025be6af5dd9a03cdd9b6",
+      "branch": "research/v0.4.1-materialized-terminal"
+    },
+    {
+      "sha": "479780a9886c8649e688eb0eb65ad20fcbeaf133",
+      "branch": "research/v1-personal-intelligence"
+    }
+  ],
+  "head": "6e08674c7f672ffaa6dd2f4288d985e88cc53a51",
+  "branch": "integration/multivariate-driver-v1",
+  "fsckExit": 0,
+  "status": "",
+  "remote": "none",
+  "completedAt": "2026-11-06T09:50:00.105Z"
+}
