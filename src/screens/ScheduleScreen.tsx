@@ -141,6 +141,7 @@ function blocksOverlap(block: ScheduleBlock, all: ScheduleBlock[]) {
 }
 
 export default function ScheduleScreen() {
+  const v5Web = Platform.OS === 'web' && new URLSearchParams(window.location.search).get('v5_ui') !== '0';
   const { data, addScheduleBlock, createExecutionLog, waitForExecutionLog, waitForLocalWrites, retryLocalWrites, updateScheduleBlock, deleteScheduleBlock } = useStore();
   const route = useRoute<any>();
   const lang = getV11ProductLanguage(getLanguage(data.settings.language));
@@ -899,7 +900,7 @@ export default function ScheduleScreen() {
         </View>
       </BottomSheetForm>
 
-      {Platform.OS !== 'web' && actionBlock ? <BottomSheetForm visible onClose={() => { if (!saveRunning.current && !pendingScheduleWrite.current) setActionBlock(null); }} footer={saveState === 'failed' && pendingScheduleWrite.current ? <QuestButton questTheme={questTheme} label={scheduleCopy(lang, 'retry')} onPress={() => void retryScheduleWrite()} /> : undefined}>
+      {(Platform.OS !== 'web' || v5Web) && actionBlock ? <BottomSheetForm visible onClose={() => { if (!saveRunning.current && !pendingScheduleWrite.current) setActionBlock(null); }} footer={saveState === 'failed' && pendingScheduleWrite.current ? <QuestButton questTheme={questTheme} label={scheduleCopy(lang, 'retry')} onPress={() => void retryScheduleWrite()} /> : undefined}>
         <View style={{ gap: questTheme.spacing.sm }}>
           <Text accessibilityRole="header" style={{ color: questTheme.colors.text, fontSize: questTheme.typography.sectionTitleSize }}>{selectedActionBlock?.title ?? actionBlock.title}</Text>
           {scheduleNotice ? <Text accessibilityRole="alert" style={{ color: questTheme.colors.text, fontSize: questTheme.typography.bodySize }}>{scheduleNotice}</Text> : null}
@@ -913,7 +914,7 @@ export default function ScheduleScreen() {
               {data.scheduleBlocks.some(block => block.id === selectedActionBlock.id) ? <>
                 <QuestButton questTheme={questTheme} variant="secondary" label={t(lang, 'edit')} onPress={() => openEditBlock(selectedActionBlock)} />
                 {canMoveScheduleBlock(selectedActionBlock) ? <QuestButton questTheme={questTheme} variant="secondary" icon="calendar" label={scheduleCopy(lang, 'move')} onPress={() => { openEditBlock(selectedActionBlock); setMoving(true); }} /> : <Text style={{ color: questTheme.colors.textMuted, fontSize: questTheme.typography.captionSize }}>{scheduleCopy(lang, ['completed', 'skipped'].includes(selectedActionBlock.status) ? 'historical' : 'locked')}</Text>}
-                <QuestButton questTheme={questTheme} variant="secondary" icon="calendar" label={nativeCopy(lang, 'calendar')} onPress={() => { setActionBlock(null); setCalendarBlockId(selectedActionBlock.id); }} />
+                {Platform.OS !== 'web' ? <QuestButton questTheme={questTheme} variant="secondary" icon="calendar" label={nativeCopy(lang, 'calendar')} onPress={() => { setActionBlock(null); setCalendarBlockId(selectedActionBlock.id); }} /> : null}
                 <QuestButton questTheme={questTheme} variant="danger" label={t(lang, 'delete')} onPress={() => requestDeleteBlock(selectedActionBlock)} />
               </> : <Text style={{ color: questTheme.colors.textMuted, fontSize: questTheme.typography.captionSize }}>{scheduleCopy(lang, 'generated')}</Text>}
             </>}
