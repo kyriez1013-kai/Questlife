@@ -56,6 +56,12 @@ function evidenceBasisKey(value: TodayDecisionPresentation['details']['confidenc
   return 'basedOnContextAndHistory';
 }
 
+function evidenceDisplay(value: string, language: 'zh' | 'en') {
+  return value
+    .replace(/^state_score:/, language === 'zh' ? '状态记录：' : 'Recorded state: ')
+    .replace(/^sleep_minutes:/, language === 'zh' ? '睡眠分钟：' : 'Sleep minutes: ');
+}
+
 export default function TodayDecisionDetailsSheet({
   visible,
   onClose,
@@ -185,7 +191,7 @@ export default function TodayDecisionDetailsSheet({
           <View style={{ marginTop: questTheme.spacing.xs }}>
             {details.evidence.map((item, index) => (
               <React.Fragment key={item.id}>
-                {renderEvidenceRow(t(language, evidenceLabelKey(item.type)), formatCopy(item.copy), index < details.evidence.length - 1)}
+                {renderEvidenceRow(t(language, evidenceLabelKey(item.type)), evidenceDisplay(formatCopy(item.copy), language), index < details.evidence.length - 1)}
               </React.Fragment>
             ))}
           </View>

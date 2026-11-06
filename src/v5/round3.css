@@ -9,6 +9,7 @@
 .v5-working-row .v5-pill {flex:none;min-width:44px;}
 .v5-pill,.v5-button,.v5-button.secondary {color:var(--v5-accent)!important;}
 .v5-today-compact .v5-section {margin:9px 0 0;}
+.v5-today-compact .v5-date-stamp b {font-size:17px;}
 .v5-today-compact .v5-section-head {height:36px;}
 .v5-today-compact .v5-section-head h2 {font-size:11px;}
 .v5-today-compact .v5-section-head .v5-link {display:flex;align-items:center;gap:4px;min-height:36px;}

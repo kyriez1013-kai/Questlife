@@ -417,6 +417,7 @@ function UniversalEntry({
   entry: UniversalCaptureEntryView;
 }) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const title = entry.title === 'state_checkin_candidate' ? entry.domainLabel : entry.title;
   const valueLabels = useMemo(() => ({
     1: '1',
     2: '2',
@@ -430,7 +431,7 @@ function UniversalEntry({
       <WebView dataSet={{ 'universal-capture-role': 'entry-heading' }}>
         {entry.recordable ? (
           <V11CheckboxControl
-            accessibilityLabel={entry.title}
+            accessibilityLabel={title}
             checked={entry.active}
             onPress={() => onToggleEntry(entry.index)}
             theme={theme}
@@ -440,7 +441,7 @@ function UniversalEntry({
           <V11RebaselineIcon name="activity" size={18} color={theme.text.secondary} />
         )}
         <WebView dataSet={{ 'universal-capture-role': 'entry-copy' }}>
-          <Text style={{ color: theme.text.primary, ...v11Typography.body }}>{entry.title}</Text>
+          <Text style={{ color: theme.text.primary, ...v11Typography.body }}>{title}</Text>
           <Text style={{ color: theme.text.secondary, ...v11Typography.metadata }}>
             {entry.domainLabel} · {entry.existing ? labels.existing : labels.newEntry}
             {entry.summary ? ` · ${entry.summary}` : ''}
