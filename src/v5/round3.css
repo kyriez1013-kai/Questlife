@@ -117,6 +117,12 @@ body[data-v5-ui="true"] :is([data-sl-role="sheet-body"],[data-v11-record-role="f
 .v5-app :is(.v11-goal-summary,.v11-module-group,.v11-goal-evidence-list,.quest-card) {background:var(--v5-fill)!important;box-shadow:var(--v5-shadow)!important;border:0!important;border-radius:20px!important;}
 .v5-app :is(.quest-card .quest-card,[data-quest-surface] [data-quest-surface]) {background:none!important;box-shadow:none!important;border:0!important;}
 .v5-app #v11-goal-detail-screen {background:transparent!important;}
+.v5-app #v11-goal-detail-screen::before {content:none!important;}
+body[data-v5-ui="true"] [data-quest-surface] {background:var(--v5-fill)!important;box-shadow:var(--v5-shadow)!important;border:0!important;border-radius:20px!important;}
+body[data-v5-ui="true"] [data-quest-surface] [dir="auto"] {color:var(--v5-ink)!important;font-weight:400!important;}
+body[data-v5-ui="true"] [data-quest-surface] [role="button"] [dir="auto"] {color:var(--v5-accent)!important;font-weight:500!important;}
+body[data-v5-ui="true"] [data-quest-surface] [data-quest-surface] {background:none!important;box-shadow:none!important;border-radius:0!important;}
+body[data-v5-ui="true"] [data-quest-component="bottom-sheet"] :is(input,textarea) {color:var(--v5-ink)!important;background:var(--v5-fill)!important;border-color:var(--v5-line)!important;}
 body[data-v5-ui="true"] .v11-onboarding {background:var(--v5-field)!important;}
 body[data-v5-ui="true"] [data-v11-rebaseline-role="onboarding-root"] {background:var(--v5-field)!important;}
 body[data-v5-ui="true"] [data-v11-rebaseline-role="onboarding-root"] [role="heading"] {font-size:20px!important;line-height:28px!important;font-weight:550!important;color:var(--v5-ink)!important;}
