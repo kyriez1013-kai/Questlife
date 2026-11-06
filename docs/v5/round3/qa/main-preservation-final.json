@@ -1,0 +1,36 @@
+{
+  "at": "2026-11-06T11:00:30.005Z",
+  "root": "/Users/kyrie/Documents/Codex Questlife/QuestLife-v1",
+  "entries": [
+    {
+      "path": "docs/release/V1_COMPLETION_LEDGER.md",
+      "sha256": "b790c337cfdb22c9191e09f0c09bb2a4f5fdf1219669f877e36fd40debdb93c2",
+      "afterSha256": "b790c337cfdb22c9191e09f0c09bb2a4f5fdf1219669f877e36fd40debdb93c2",
+      "unchanged": true
+    },
+    {
+      "path": "src/native/NativeSettings.test.cjs",
+      "sha256": "d1982fdbd37aafae8ebc51d938b118d4ab34b3b9231e0e650b373170f6be71d9",
+      "afterSha256": "d1982fdbd37aafae8ebc51d938b118d4ab34b3b9231e0e650b373170f6be71d9",
+      "unchanged": true
+    },
+    {
+      "path": "src/screens/HomeScreen.tsx",
+      "sha256": "4f5020204b0059af4dfc602cb277d17e943db35e8da3e6d5ca4afb5f478bc729",
+      "afterSha256": "4f5020204b0059af4dfc602cb277d17e943db35e8da3e6d5ca4afb5f478bc729",
+      "unchanged": true
+    },
+    {
+      "path": "src/utils/todayCommand.ts",
+      "sha256": "2da6a93f1fbc7f93c25d458917c5d1636dd2c9e4490857760227803b83f43ad5",
+      "afterSha256": "2da6a93f1fbc7f93c25d458917c5d1636dd2c9e4490857760227803b83f43ad5",
+      "unchanged": true
+    },
+    {
+      "path": "tests/native/todayCommandWork.test.cjs",
+      "sha256": "73b5288bcf93624cca0860b08fd237381301100f646f8582b6687cfd4135e250",
+      "afterSha256": "73b5288bcf93624cca0860b08fd237381301100f646f8582b6687cfd4135e250",
+      "unchanged": true
+    }
+  ]
+}

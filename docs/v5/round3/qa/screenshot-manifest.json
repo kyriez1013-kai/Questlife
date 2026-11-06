@@ -1,0 +1,1179 @@
+[
+  {
+    "name": "01-onboarding",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:19:29.051Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "02-onboarding-state",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:19:29.151Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "03-empty-today",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:19:29.303Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "04-empty-goals",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:19:29.393Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "05-empty-schedule",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:19:29.522Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "06-empty-insights",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:19:30.435Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "07-empty-personal",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:19:30.542Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "08-state-inline",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:19:41.576Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "09-today-normal",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:19:41.738Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "10-today-overload",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:19:52.382Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "11-adjust-preview",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:19:57.000Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "12-today-running",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:21:46.518Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "13-execution-finish",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:21:46.815Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "14-execution-feedback",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:22:21.780Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "15-activity-history",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:22:37.817Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "16-direct-log",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:22:38.230Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "17-direct-log-complete",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:23:18.426Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "18-insights-real-energy",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:23:27.076Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "19-insights-compare",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:23:35.880Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "20-insights-indicators",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:23:36.307Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "21-insights-methods",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:23:36.707Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "22-insights-analyst",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:23:37.105Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "23-insights-history",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:23:37.505Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "24-insights-variables",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:23:37.905Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "25-insights-tension",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:23:46.573Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "26-insights-focus-example",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:23:47.325Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "27-insights-steps-example",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:23:48.875Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "28-insights-sleep-example",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:23:49.641Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "29-insights-heart-example",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:23:50.410Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "30-insights-duration",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:23:51.174Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "31-insights-quality",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:23:51.942Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "32-insights-fullscreen",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:24:00.499Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "33-insights-distribution",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:24:00.873Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "34-insights-relationship",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:24:01.273Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "35-personal",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:24:01.672Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "36-personal-account",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:24:09.755Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "37-personal-records",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:24:10.151Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "38-personal-health",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:24:10.575Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "39-personal-appearance",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:24:10.955Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "40-personal-notifications",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:24:11.389Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "41-personal-privacy",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:24:11.792Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "42-personal-preferences",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:24:12.185Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "43-personal-about",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:24:12.587Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "44-goals-populated",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:25:10.243Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "45-goal-create",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:25:10.608Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "46-goal-detail",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:25:11.017Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "47-goal-edit",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:25:11.374Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "48-goal-criteria",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:25:22.868Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "49-module-create",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:25:23.493Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "50-skill-create",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:25:23.875Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "51-skill-detail",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:25:24.453Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "52-skill-edit",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:25:24.810Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "53-schedule-actions",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:25:47.498Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "54-schedule-edit",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:26:17.533Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "55-schedule-create",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:26:18.224Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "56-schedule-week",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:26:18.697Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "57-schedule-month",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:26:19.038Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "58-schedule-year",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:26:19.377Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "59-schedule-day",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:26:19.706Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "60-capture-composer",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:26:27.957Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "61-capture-signin-required",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:27:14.677Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "62-state-evidence",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:27:15.067Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "63-state-correction",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:27:23.688Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "64-brain-dump",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:28:01.540Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "65-brain-dump-decisions",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:28:35.712Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "66-decision-details",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:28:53.467Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "67-adjust-confirmable",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:30:29.739Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "68-adjust-applied",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:30:36.667Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "69-adjust-undone",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:30:42.034Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "70-shortcuts-guide",
+    "url": "https://questlife-v1-release.vercel.app/shortcuts.html",
+    "at": "2026-11-06T10:31:43.460Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "71-offline",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:32:03.830Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "72-today-dark",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:32:45.130Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "73-capture-dark",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:32:45.448Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "74-insights-dark",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:32:46.107Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "75-capture-loading",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:33:58.121Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "76-capture-state-confirmation",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:34:54.077Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "77-followup-due",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:49:52.821Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "78-followup-saved",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:50:10.315Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "79-capture-confirmation-readable",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:50:51.828Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "80-today-dark-final",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:51:20.444Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "81-decision-details-readable",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:51:27.616Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "82-followups-persisted",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:52:11.766Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "83-today-english",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:52:34.511Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "84-today-375",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:52:34.787Z",
+    "viewport": {
+      "width": 375,
+      "height": 667
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "85-capture-english-375",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:52:47.766Z",
+    "viewport": {
+      "width": 375,
+      "height": 667
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "86-today-bottom-375",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:53:42.969Z",
+    "viewport": {
+      "width": 375,
+      "height": 667
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "87-preferences-final",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:53:44.054Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "88-account-final",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:54:09.437Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "89-schedule-unscheduled",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:54:09.878Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "Earlier round3 build; see screenshot sequence in report"
+  },
+  {
+    "name": "90-final-today",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:54:29.637Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "9e38be03aa4011ca4ac48df845b7f6fbb20592b9"
+  },
+  {
+    "name": "91-final-goals",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:54:30.004Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "9e38be03aa4011ca4ac48df845b7f6fbb20592b9"
+  },
+  {
+    "name": "92-final-personal",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:54:30.363Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "9e38be03aa4011ca4ac48df845b7f6fbb20592b9"
+  },
+  {
+    "name": "93-final-schedule",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:54:30.706Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "9e38be03aa4011ca4ac48df845b7f6fbb20592b9"
+  },
+  {
+    "name": "94-final-real-energy",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:54:32.288Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "9e38be03aa4011ca4ac48df845b7f6fbb20592b9"
+  },
+  {
+    "name": "95-desktop-insights",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:55:00.501Z",
+    "viewport": {
+      "width": 1280,
+      "height": 900
+    },
+    "overflow": false,
+    "source": "9e38be03aa4011ca4ac48df845b7f6fbb20592b9"
+  },
+  {
+    "name": "96-desktop-today",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:55:00.944Z",
+    "viewport": {
+      "width": 1280,
+      "height": 900
+    },
+    "overflow": false,
+    "source": "9e38be03aa4011ca4ac48df845b7f6fbb20592b9"
+  },
+  {
+    "name": "97-desktop-capture",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:55:01.356Z",
+    "viewport": {
+      "width": 1280,
+      "height": 900
+    },
+    "overflow": false,
+    "source": "9e38be03aa4011ca4ac48df845b7f6fbb20592b9"
+  },
+  {
+    "name": "98-final-dark-today",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:55:02.388Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "9e38be03aa4011ca4ac48df845b7f6fbb20592b9"
+  },
+  {
+    "name": "99-final-dark-insights",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:55:02.714Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "9e38be03aa4011ca4ac48df845b7f6fbb20592b9"
+  },
+  {
+    "name": "100-reduced-motion-full-chart",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:55:03.068Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "9e38be03aa4011ca4ac48df845b7f6fbb20592b9"
+  },
+  {
+    "name": "101-final-first-use",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:55:42.613Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "9e38be03aa4011ca4ac48df845b7f6fbb20592b9"
+  },
+  {
+    "name": "102-final-first-use-state",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:55:42.978Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "9e38be03aa4011ca4ac48df845b7f6fbb20592b9"
+  },
+  {
+    "name": "103-final-empty-today",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:55:53.345Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "9e38be03aa4011ca4ac48df845b7f6fbb20592b9"
+  },
+  {
+    "name": "104-final-empty-goals",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:55:54.068Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "9e38be03aa4011ca4ac48df845b7f6fbb20592b9"
+  },
+  {
+    "name": "105-final-empty-schedule",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:55:54.833Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "9e38be03aa4011ca4ac48df845b7f6fbb20592b9"
+  },
+  {
+    "name": "106-final-empty-insights",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:55:55.576Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "9e38be03aa4011ca4ac48df845b7f6fbb20592b9"
+  },
+  {
+    "name": "107-final-empty-personal",
+    "url": "https://questlife-v1-release.vercel.app/",
+    "at": "2026-11-06T10:55:56.330Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "overflow": false,
+    "source": "9e38be03aa4011ca4ac48df845b7f6fbb20592b9"
+  }
+]

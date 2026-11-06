@@ -1,0 +1,171 @@
+{
+  "source": {
+    "product": "QuestLife V5 candidate",
+    "commit": "9e38be03aa4011ca4ac48df845b7f6fbb20592b9",
+    "builtAt": "2026-11-06T10:51:22.678Z",
+    "migration": "shortcut inbox requires manual candidate SQL installation"
+  },
+  "environment": {
+    "browser": "156.0.8078.81",
+    "platform": "macOS headless Chrome, not a physical device",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "timezone": "Australia/Sydney",
+    "identity": "Fresh anonymous context; UI-entered QA records only",
+    "dataInjected": false,
+    "dataImported": false,
+    "authenticated": false
+  },
+  "persisted": {
+    "goals": [
+      {
+        "id": "mw4tlmrdg1qhd0",
+        "name": "V5 交付项目"
+      },
+      {
+        "id": "mw4tmd30nf9bn7",
+        "name": "每周持续练习"
+      }
+    ],
+    "plans": [
+      {
+        "id": "mw4tnqdhf0lphh",
+        "title": "原型设计",
+        "start": "22:00",
+        "end": "22:45"
+      },
+      {
+        "id": "mw4to229oesv49",
+        "title": "轻量复习",
+        "start": "22:50",
+        "end": "23:10"
+      },
+      {
+        "id": "mw4to2pxpsgyy3",
+        "title": "恢复走动",
+        "start": "23:10",
+        "end": "23:30"
+      }
+    ],
+    "states": [
+      {
+        "id": "mw4toxj3vr68tp",
+        "time": "2026-11-06T10:19:41.631Z",
+        "energy": 4,
+        "tension": 2
+      },
+      {
+        "id": "mw4tp5qxb6ji7s",
+        "time": "2026-11-06T10:19:52.281Z",
+        "energy": 2,
+        "tension": 5
+      },
+      {
+        "id": "mw4trllrx5ngde",
+        "time": "2026-11-06T10:21:46.143Z",
+        "energy": 5,
+        "tension": 1,
+        "followup": {
+          "energy": 4,
+          "at": "2026-11-06T10:50:09.245Z"
+        }
+      },
+      {
+        "id": "mw4u2tb2xfside",
+        "time": "2026-11-06T10:30:29.342Z",
+        "energy": 2,
+        "tension": 5,
+        "followup": {
+          "energy": 3,
+          "at": "2026-11-06T10:52:10.638Z"
+        }
+      }
+    ],
+    "logs": [
+      {
+        "id": "execution-session-1793960506210",
+        "title": "原型设计",
+        "duration": 25
+      },
+      {
+        "id": "mw4tspjq4v7nis",
+        "title": "隔离验收：恢复活动与简单复盘",
+        "duration": 20,
+        "quality": 4
+      }
+    ],
+    "captures": []
+  },
+  "followups": [
+    {
+      "id": "mw4trllrx5ngde",
+      "choice": {
+        "actionId": "brain_dump",
+        "at": "2026-11-06T10:28:01.246Z",
+        "slot": "primary",
+        "randomized": false,
+        "energyFollowUp": {
+          "energy": 4,
+          "at": "2026-11-06T10:50:09.245Z"
+        }
+      }
+    },
+    {
+      "id": "mw4u2tb2xfside",
+      "choice": {
+        "actionId": "brain_dump",
+        "at": "2026-11-06T10:30:36.347Z",
+        "slot": "primary",
+        "randomized": false,
+        "energyFollowUp": {
+          "energy": 3,
+          "at": "2026-11-06T10:52:10.638Z"
+        }
+      }
+    }
+  ],
+  "console": [
+    {
+      "type": "warning",
+      "text": "[expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect."
+    },
+    {
+      "type": "warning",
+      "text": "GoTrueClient@sb-gttcoocfkqwvsqfwxpyo-auth-token:0 (2.116.0) 2026-11-06T10:55:30.964Z The \"lock\" option is deprecated and will be removed in v3. The client now coordinates session refreshes without a lock, so most apps can drop the option. See https://github.com/supabase/supabase-js/blob/master/packages/core/auth-js/migrations/lockless-coordination.md"
+    },
+    {
+      "type": "warning",
+      "text": "Passing an object as the argument to 'navigate' is deprecated. Use 'navigate(name, params, options)' instead."
+    },
+    {
+      "type": "warning",
+      "text": "Passing an object as the argument to 'navigate' is deprecated. Use 'navigate(name, params, options)' instead."
+    },
+    {
+      "type": "warning",
+      "text": "Passing an object as the argument to 'navigate' is deprecated. Use 'navigate(name, params, options)' instead."
+    },
+    {
+      "type": "warning",
+      "text": "Passing an object as the argument to 'navigate' is deprecated. Use 'navigate(name, params, options)' instead."
+    },
+    {
+      "type": "warning",
+      "text": "[expo-notifications] Listening to push token changes is not yet fully supported on web. Adding a listener will have no effect."
+    },
+    {
+      "type": "warning",
+      "text": "GoTrueClient@sb-gttcoocfkqwvsqfwxpyo-auth-token:0 (2.116.0) 2026-11-06T10:55:56.649Z The \"lock\" option is deprecated and will be removed in v3. The client now coordinates session refreshes without a lock, so most apps can drop the option. See https://github.com/supabase/supabase-js/blob/master/packages/core/auth-js/migrations/lockless-coordination.md"
+    },
+    {
+      "type": "warning",
+      "text": "Passing an object as the argument to 'navigate' is deprecated. Use 'navigate(name, params, options)' instead."
+    }
+  ],
+  "pageErrors": [],
+  "httpFailures": [],
+  "overflowScreens": [],
+  "timelineNowOffsetPx": 55.796875
+}

@@ -1,0 +1,137 @@
+✔ a concrete sport is selectable without becoming a strength measurement (0.810916ms)
+✔ known strength actions and explicit strength fields retain the weight-set workflow (0.591291ms)
+✔ strength provenance handles scalar and array parser contracts without calling array methods on numbers (37.71ms)
+✔ unknown or incomplete exercise data does not manufacture strength values (0.473584ms)
+✔ known activity labels localize and deduplicate without renaming custom entries (0.218084ms)
+✔ confirmation writes the existing duration kind for activities and strength kind for lifts (32.397542ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ capacity uses merged compiler windows, not duration sums or skipped time (2.806791ms)
+✔ move authority excludes fixed, locked, completed and skipped blocks (0.225541ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ web current and next exclude completed blocks without removing history (84.152667ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ web current and next exclude skipped blocks without removing history (4.429ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ ios current and next exclude completed blocks without removing history (6.965875ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ ios current and next exclude skipped blocks without removing history (7.828084ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ native create footer stays outside fields and waits for durable ACK (14.545917ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ failed create retries the original persistence operation without a second block (16.159667ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ web conflict requires explicit confirmation and cancel writes nothing (12.442625ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ web create keeps the form on persistence failure and retries without duplicate (16.7665ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ web edit preserves source and status instead of resetting the existing block (11.874458ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ web delete waits for persistence and offers retry without repeating the deletion (10.424208ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ native edit preserves source, fixed authority, lock and completed status (12.65625ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ native block actions are contextual; day rows do not repeat edit/delete controls (1.407792ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ external constraints never expose app edit, move, delete or execution writes (1.348708ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ move destination shows actual conflict details and requires confirmation (3.816833ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ confirmation rejects a remote edit or a changed conflict set (3.108042ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ stale editor cannot overwrite a remote status transition (6.279542ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ delete keeps sheet and original operation on persistence failure (2.745542ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ record duration starts unknown; failed record retries without recreating execution (4.78875ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ web execution log keeps its sheet until both local and record receipts resolve (2.035333ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ web execution log failure exposes a reachable retry and keeps the submitted record (3.183ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ web legacy Apply and Undo report success only after ACK and guard repeated actions (1.87475ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ web legacy Apply and Undo retry persistence without repeating either mutation (2.071792ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ web legacy Undo refuses an intervening block edit (1.294292ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ web legacy Undo refuses an intervening block delete (1.261625ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ web legacy Undo checks the original slot without rejecting unrelated changes (2.049167ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ web real Store record failure/retry keeps one identity and survives provider reload (8.421208ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ web real Store proposal failure/retry and Undo preserve newer edits across reload (4.720792ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ ios execution log keeps its sheet until both local and record receipts resolve (3.429959ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ ios execution log failure exposes a reachable retry and keeps the submitted record (4.178292ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ ios legacy Apply and Undo report success only after ACK and guard repeated actions (2.779917ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ ios legacy Apply and Undo retry persistence without repeating either mutation (3.7545ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ ios legacy Undo refuses an intervening block edit (2.114917ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ ios legacy Undo refuses an intervening block delete (2.117125ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ ios legacy Undo checks the original slot without rejecting unrelated changes (3.129416ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ ios real Store record failure/retry keeps one identity and survives provider reload (8.550417ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ ios real Store proposal failure/retry and Undo preserve newer edits across reload (6.604542ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ schedule duration rejects partial numbers and explains when actual time is required (3.806041ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ strength schedule records keep unentered duration and set count unknown (4.071958ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ native week has seven full-width 44-point day targets and real free-time context (1.625792ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ early-morning blocks are not relabelled as six oclock or given proportional now overlays (0.756125ms)
+✔ timeline keeps blank time, real duration and non-overlapping minimum targets (0.161292ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ calendar sheet pins close, names calendar and exact plan in OS-write confirmation (1.998458ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ calendar refresh failures do not leave a writable stale status (0.865709ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ native date fields keep midnight end as 24:00 and never silently repair reversed ranges (0.352584ms)
+✔ Chinese and dark native context renders translated UI without changing stored blocks (1.004292ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ new synced calendar occupancy after preview blocks Apply without persisting external blocks (18.567792ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ Undo checks newly synced occupancy as well as internal edits (1.50975ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ Apply ACK retry retains the same episode and never reapplies the schedule (0.922917ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ concurrent Apply calls share a single pending confirmation (0.618542ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ Undo ACK retry saves the original result without executing Undo twice (2.128791ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ conflict at Apply rejects without writing any episode or schedule (0.800417ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ Undo preserves intervening edit (0.613667ms)
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+✔ Undo preserves intervening execution (0.865875ms)
+✔ reorder sheet retains the confirmed preview and retry after optimistic schedule changes (7.629917ms)
+✔ pending-capture lookup preserves existing lineage and legacy prefix semantics (6.130375ms)
+✔ confirmed history is not rescanned once per capture on each Today calculation (0.968375ms)
+✔ editing an unsaved field reuses Today records rather than invalidating the decision chain (7.446583ms)
+✔ real record changes, deletion and day changes invalidate Today selection (1.041917ms)
+✔ input preserves the decision cache, while feedback expiry and clock changes still refresh it (4.174875ms)
+✔ cross-day records keep the existing history handler reachable without a Today record (2.475042ms)
+✔ empty or removed history does not leave an orphaned history action (0.623833ms)
+✔ history does not replace existing finish, proposal or rescue actions (0.532125ms)
+✔ both Today platform surfaces render the same utility-action callbacks (0.684833ms)
+✔ Web feedback buttons expose the persisted distinct choice as pressed (13.136958ms)
+ℹ tests 72
+ℹ suites 0
+ℹ pass 72
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 746.684584

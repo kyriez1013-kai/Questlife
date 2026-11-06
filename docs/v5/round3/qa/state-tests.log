@@ -1,0 +1,5 @@
+
+> questlife@1.0.0 test:state-layer
+> rm -rf /tmp/questlife-state-layer-test && tsc --module commonjs --target es2022 --moduleResolution node --esModuleInterop --resolveJsonModule --skipLibCheck --rootDir src --outDir /tmp/questlife-state-layer-test src/state-layer/stateLayer.test.ts && mkdir -p /tmp/questlife-state-layer-test/backup && cp src/backup/validateAppData.cjs /tmp/questlife-state-layer-test/backup/ && NODE_PATH=$PWD/node_modules node /tmp/questlife-state-layer-test/state-layer/stateLayer.test.js
+
+state-layer ok (157 checks)

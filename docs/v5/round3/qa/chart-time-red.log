@@ -1,0 +1,32 @@
+✖ chart ticks use the same local clock as the recorded observation (1.097792ms)
+✖ calendar ticks follow the local date without changing the observation timestamp (0.403333ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 182.778084
+
+✖ failing tests:
+
+test at tests/v5/chartTime.test.cjs:6:1
+✖ chart ticks use the same local clock as the recorded observation (1.097792ms)
+  TypeError: formatChartTick is not a function
+      at TestContext.<anonymous> (/Users/kyrie/dev/QuestLife/tests/v5/chartTime.test.cjs:10:18)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.start (node:internal/test_runner/test:1015:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17)
+
+test at tests/v5/chartTime.test.cjs:20:1
+✖ calendar ticks follow the local date without changing the observation timestamp (0.403333ms)
+  TypeError: formatChartTick is not a function
+      at TestContext.<anonymous> (/Users/kyrie/dev/QuestLife/tests/v5/chartTime.test.cjs:25:18)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3)

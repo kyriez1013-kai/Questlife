@@ -1,0 +1,47 @@
+✔ chart ticks use the same local clock as the recorded observation (1.180084ms)
+✔ calendar ticks follow the local date without changing the observation timestamp (0.403334ms)
+✔ only one write token header is accepted; malformed and duplicate auth rejected (0.623709ms)
+✔ owner spoofing, invalid units, missing source and huge capture are rejected (1.834333ms)
+✔ watch check-in has real answers and local date, no invented focus or passive fields (1.387584ms)
+✔ capture stays pending; inbox origin can sync; ordinary pending capture remains excluded (0.457792ms)
+✔ health converts units and deduplicates source/time/metric; different sources remain separate (9.021791ms)
+✔ invalid intervals/future samples fail, not silently skipped (0.146917ms)
+✔ follow-up targets exact existing choice with revision; cannot touch another account row (0.0855ms)
+✔ calendar is read-only context, never schedule blocks; invalid local day rejected (0.294792ms)
+✔ zero observations defaults to energy; example stays separate and never mutates records (6.836417ms)
+✔ one or two real points render without a qualification gate, baseline or synthetic points (0.536458ms)
+✔ deleted, future, absent or invalid observations are not zero-filled (0.081666ms)
+✔ maximum real observation count selects steps; explicit source, IDs and unit retained (0.125708ms)
+✔ ambiguous context units do not become invented sleep durations (0.068292ms)
+✔ execution quality uses the recorded qualityRating field, never a default (0.080667ms)
+✔ newer local observations cannot be hidden by an earlier artifact and examples never mix (0.127458ms)
+✔ missing dimensions never invent scores or zeros (0.436333ms)
+✔ raw state values stay raw; cognitive switches are a bounded distinct-goal proxy (0.274916ms)
+✔ calibration validates actual duration, keeps missing planned absent (0.639958ms)
+✔ calibration exposes only ten real paired logs, never deleted or unpaired entries (0.130584ms)
+✔ goal evidence counts a linked execution once and manual criteria only (0.140792ms)
+✔ default route is V5; rollback requires explicit parameter (0.333416ms)
+✔ Chinese duration has no English or empty hours (0.078208ms)
+✔ empty surface never replaces an active task or pending capture (0.88425ms)
+✔ slow service is a bounded error, not no data (3002.460416ms)
+✔ all five default routes reach V5, not a legacy insights flag (0.701625ms)
+✔ V5 web timeline selection reaches the existing action sheet (0.216041ms)
+✔ Today confirmation, feedback and rescue have translated labels (7.114667ms)
+✔ first install caches entry JS and CSS before activation; excludes API and cross-origin data (25.650291ms)
+✔ incomplete boot assets reject install, not a false offline-ready shell (1.162ms)
+✔ activation prunes only older QuestLife caches (1.599583ms)
+✔ API, non-GET and cross-origin requests bypass worker cache entirely (0.827792ms)
+✔ all 36 combinations match the approved table (0.350958ms)
+✔ without a check-in, V5 returns the exact legacy command (0.324584ms)
+✔ overload changes the same command, retaining target links and planned duration (0.195292ms)
+✔ original plan choice suppresses this task only (0.070625ms)
+✔ correction wins; unknown requirement and yesterday do not imply mismatch (0.084875ms)
+✔ running session and pending confirmation remain protected (0.0625ms)
+ℹ tests 39
+ℹ suites 0
+ℹ pass 39
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3236.639958
