@@ -90,6 +90,13 @@ body[data-v5-ui="true"] [data-quest-component][aria-disabled="true"] {opacity:.5
 .v5-form-disclosure summary small {display:block;font-size:11px;color:var(--v5-muted);}
 body[data-v5-ui="true"] [data-quest-component="sheet-scroll"]>div>div>div[style*="border-color"] {background:none!important;border:0!important;border-radius:0!important;padding-left:0;padding-right:0;box-shadow:none!important;}
 body[data-v5-ui="true"] [data-v11-component="material-frame"][data-v11-variant="sheet"] {box-shadow:var(--v5-hero-shadow)!important;}
+body[data-v5-ui="true"] [data-v11-component="material-clip"][data-v11-variant="sheet"] {background:var(--v5-field)!important;}
+body[data-v5-ui="true"] [data-v11-component="material-frame"][data-v11-variant="sheet"]>[data-v11-component="directional-border"] {opacity:.45;}
+body[data-v5-ui="true"] :is([data-v11-control="sheet-button"],[data-v11-control="compact-value-option"],[data-v11-control="numeric-option"],[data-v11-control="icon-button"]) {background:var(--v5-button-fill)!important;box-shadow:var(--v5-button-shadow)!important;border:0!important;color:var(--v5-accent)!important;min-height:44px;}
+body[data-v5-ui="true"] [data-v11-control="sheet-button"] {border-radius:18px!important;}
+body[data-v5-ui="true"] [data-v11-control="sheet-button"] [dir="auto"] {color:var(--v5-accent)!important;font-size:13px!important;font-weight:500!important;}
+body[data-v5-ui="true"] [data-v11-control="sticky-sheet-footer"] {background:none!important;}
+body[data-v5-ui="true"] [data-v11-geometry-node="sheet-title"] {color:var(--v5-ink)!important;}
 body[data-v5-ui="true"] [data-v11-component="material-light-field"][data-v11-variant="sheet"] {display:none;}
 body[data-v5-ui="true"] [data-v11-rebaseline-role="production-sheet-content"] {background:none;}
 body[data-v5-ui="true"] [data-v11-geometry-node="sheet-title"] {font-size:18px!important;font-weight:550!important;}

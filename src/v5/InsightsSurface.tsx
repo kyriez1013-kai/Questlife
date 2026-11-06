@@ -30,6 +30,7 @@ export default function V5InsightsSurface() {
   const [compareIds,setCompareIds]=useState<string[]>([]),[trim,setTrim]=useState<[number,number]>([0,100]);
   const [layers,setLayers]=useState({observations:true,reference:true,range:false,events:true,short:false,long:false});
   const chart=useRef<InsightsV3ChartHandle>(null);
+  const chartPanel=useRef<HTMLElement>(null);
   const [kind,setKind]=useState<InsightsV3ChartKind>('line'),[tool,setTool]=useState<string|null>(null),[full,setFull]=useState(false);
   const [result,setResult]=useState<OwnerQuantRuntimeArtifacts|null>(null),[busy,setBusy]=useState(false),[failed,setFailed]=useState(false),[account,setAccount]=useState<string|null>(null);
   const [exampleBundle,setExampleBundle]=useState<QuantProductBundleV1|null>(null);
@@ -72,11 +73,26 @@ export default function V5InsightsSurface() {
   const needsLogin=result?.limitations.includes('QUANT_AUTH_REQUIRED')??false;
   const detailKind:InsightsDetailKind=tool==='history'?'history':tool==='correlation'||tool==='joint-analysis'?'jointAnalysis':(['drivers','similar','recovery','scenario'].includes(tool??'')?tool as InsightsDetailKind:'evidence');
   const analysisText=example?text('这是展示用序列，不是你的个人结论。','An illustrative series, not a personal conclusion.'):personal?.summary??text(`记录覆盖 ${observedDays} 天，先看走势，暂不下结论。`,`${observedDays} recorded days. View the observations without a trend conclusion.`);
-  useEffect(()=>{if(!full)return;const key=(e:KeyboardEvent)=>{if(e.key==='Escape')setFull(false);};document.addEventListener('keydown',key);return()=>document.removeEventListener('keydown',key);},[full]);
+  useEffect(()=>{
+    if(!full)return;
+    const previous=document.activeElement as HTMLElement|null;
+    const controls=()=>Array.from(chartPanel.current?.querySelectorAll<HTMLElement>('button:not(:disabled),select:not(:disabled),input:not(:disabled),a[href]')??[]);
+    controls()[0]?.focus();
+    const key=(e:KeyboardEvent)=>{
+      if(e.key==='Escape'){e.preventDefault();setFull(false);}
+      if(e.key==='Tab'){
+        const items=controls(),first=items[0],last=items.at(-1);
+        if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}
+        else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}
+      }
+    };
+    document.addEventListener('keydown',key);
+    return()=>{document.removeEventListener('keydown',key);previous?.focus();};
+  },[full]);
   return <div className="v5-scroll"><main className="ql-v5 v5-page" data-theme={dark?'dark':'light'} data-testid="v5-insights">
     <div className="v5-analysis-top"><button className="v5-glass v5-variable-trigger" onClick={()=>setTool('variables')}><QuestIcon name="barChart" size={17}/><span>{label}</span><span>⌄</span></button><label className="v5-glass"><QuestIcon name="calendar" size={17}/><select aria-label={text('日期范围','Date range')} value={range.kind==='contract'?range.key:'custom'} onChange={e=>changeRange(e.target.value)}>{range.kind!=='contract'?<option value="custom">{rangeLabel(lang,range)}</option>:null}{series.supported_ranges.filter(r=>['7D','30D','90D','1Y','ALL'].includes(r.key)).map(r=><option key={r.key} value={r.key}>{r.key==='ALL'?text('全部','All'):r.key==='1Y'?text('最近 1 年','Last year'):text(`最近 ${r.count} 天`,`Last ${r.count} days`)}</option>)}</select></label></div>
     <div className="v5-segments" role="group" aria-label={text('分析视图','Analysis view')}>{['trend','distribution','compare','correlation'].map((v,i)=><button key={v} aria-pressed={tool===v||(!tool&&v==='trend')} onClick={()=>setTool(v==='trend'?null:v)}>{text(['趋势','分布','对比','相关'][i],['Trend','Distribution','Compare','Relationships'][i])}</button>)}</div>
-    <section className={`v5-chart-panel v5-glass${full?' v5-chart-fullscreen':''}`} role={full?'dialog':undefined} aria-modal={full||undefined} aria-label={full?label:undefined}>
+    <section ref={chartPanel} className={`v5-chart-panel v5-glass${full?' v5-chart-fullscreen':''}`} role={full?'dialog':undefined} aria-modal={full||undefined} aria-label={full?label:undefined}>
       <div className="v5-chart-title"><strong>{label} · {text('观察走势','Observations')}</strong>{example?<span className="v5-example">{text('示例','Example')}</span>:null}<select aria-label={text('图表类型','Chart type')} value={renderedKind} onChange={e=>setKind(e.target.value as InsightsV3ChartKind)}>{chartKinds.map(k=><option key={k} value={k}>{text(k==='candle'?'K 线':k==='bar'?'条形':k==='point'?'单点':'折线',k)}</option>)}</select><button className="v5-chart-expand" aria-label={text(full?'退出全屏':'全屏图表',full?'Exit full screen':'Full screen chart')} onClick={()=>setFull(!full)}>{full?'↙':'↗'}</button></div>
       {shown.length?<InsightsV3Chart ref={chart} asOf={chartAsOf} chartKind={renderedKind} foundation={foundation} lang={lang} range={range} series={renderedSeries} targetLabel={label} comparisonSeries={comparisons} indicatorSeries={indicators} showEvents={layers.events} showRawObservations={layers.observations} showReference={!example&&layers.reference} showReferenceRange={!example&&layers.range}/>:<div className="v5-empty"><span>{needsExample?text('正在载入独立示例…','Loading the isolated example…'):text('这段时间尚无记录','No records in this interval')}</span>{!needsExample?<button className="v5-link" onClick={()=>changeRange('ALL')}>{text('查看全部记录','View all records')}</button>:null}</div>}
       <div className="v5-chart-actions">{example?<a className="v5-link" href="/">{text('开始记录','Start recording')} ↗</a>:<button className="v5-link" onClick={()=>setTool('history')}>{text('查看依据','View evidence')}</button>}<button aria-label={text('缩小','Zoom out')} onClick={()=>chart.current?.zoomOut()}>−</button><button aria-label={text('复位图表','Reset chart')} onClick={()=>{setTrim([0,100]);chart.current?.fit();}}>{text('复位','Reset')}</button><button aria-label={text('放大','Zoom in')} onClick={()=>chart.current?.zoomIn()}>＋</button></div>
