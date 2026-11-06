@@ -302,8 +302,8 @@ export default function SettingsScreen() {
           alignSelf: 'center',
         }}
       >
-        <AccountSyncSection />
-        {Platform.OS==='web'?<ShortcutSettings lang={lang} dark={isDarkTheme(questTheme)}/>:null}
+        <View {...{dataSet:{'settings-section':'account'}} as any}><AccountSyncSection /></View>
+        {Platform.OS==='web'?<View {...{dataSet:{'settings-section':'shortcuts'}} as any}><ShortcutSettings lang={lang} dark={isDarkTheme(questTheme)}/></View>:null}
         <AiSettingsSection />
         <QuestSectionHeader
           questTheme={questTheme}

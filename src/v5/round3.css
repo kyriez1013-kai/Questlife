@@ -101,6 +101,11 @@ body[data-v5-ui="true"] [data-v11-component="material-light-field"][data-v11-var
 body[data-v5-ui="true"] [data-v11-rebaseline-role="production-sheet-content"] {background:none;}
 body[data-v5-ui="true"] [data-v11-geometry-node="sheet-title"] {font-size:18px!important;font-weight:550!important;}
 .v5-settings-secondary #v11-settings-screen {background:transparent!important;}
+.v5-settings-secondary #v11-settings-screen>div {background:transparent!important;}
+.v5-settings-secondary :is([data-settings-section="account"],[data-settings-section="shortcuts"]) {display:none;}
+body[data-v5-ui="true"] .v5-sheet-content [data-quest-surface] {background:none!important;box-shadow:none!important;border:0!important;border-radius:0!important;}
+body[data-v5-ui="true"] .v5-sheet-content [data-quest-component="section-header"] {margin-top:12px!important;}
+body[data-v5-ui="true"] .v5-sheet-content [data-quest-component="section-header"] [dir="auto"] {font-size:14px!important;font-weight:500!important;}
 .v5-settings-secondary #v11-settings-screen::before {content:none!important;}
 .v5-settings-secondary #v11-settings-screen [role="tablist"] {background:none!important;}
 .v5-settings-secondary .v11-settings-group,.v5-sheet-content .quest-grouped-surface {background:none!important;box-shadow:none!important;border:0!important;border-bottom:1px solid var(--v5-line)!important;border-radius:0!important;}

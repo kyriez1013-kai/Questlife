@@ -141,7 +141,7 @@ function blocksOverlap(block: ScheduleBlock, all: ScheduleBlock[]) {
 }
 
 export default function ScheduleScreen() {
-  const v5Web = Platform.OS === 'web' && new URLSearchParams(window.location.search).get('v5_ui') !== '0';
+  const v5Web = Platform.OS === 'web' && typeof window !== 'undefined' && !!window.location && new URLSearchParams(window.location.search).get('v5_ui') !== '0';
   const { data, addScheduleBlock, createExecutionLog, waitForExecutionLog, waitForLocalWrites, retryLocalWrites, updateScheduleBlock, deleteScheduleBlock } = useStore();
   const route = useRoute<any>();
   const lang = getV11ProductLanguage(getLanguage(data.settings.language));
@@ -659,7 +659,7 @@ export default function ScheduleScreen() {
           alignSelf: 'center',
         }}
       >
-        {Platform.OS==='web'&&new URLSearchParams(window.location.search).get('v5_ui')!=='0'?<V5ScheduleSurface data={data} lang={lang} dark={questTheme.id==='deepWork'} date={selectedDate} onDate={setSelectedDate} view={view} onView={setView} blocks={allBlocks} onAdd={openCreateBlock} onSelect={b=>{setScheduleNotice(undefined);setActionBlock(b);}} hasProposals={scheduleProposals.length>0} onCalendar={()=>window.location.assign('/?v5_section=shortcuts')} proposals={<ScheduleProposalReview questTheme={questTheme} language={lang} proposals={scheduleProposals} scheduleBlocks={data.scheduleBlocks} canApply={canApplyScheduleProposal} onApply={applyScheduleProposal} onDismiss={dismissScheduleProposal} canUndo={!!proposalUndo&&saveState==='idle'} onUndo={undoScheduleProposal}/>} />:<><QuestContextBar
+        {v5Web?<V5ScheduleSurface data={data} lang={lang} dark={questTheme.id==='deepWork'} date={selectedDate} onDate={setSelectedDate} view={view} onView={setView} blocks={allBlocks} onAdd={openCreateBlock} onSelect={b=>{setScheduleNotice(undefined);setActionBlock(b);}} hasProposals={scheduleProposals.length>0} onCalendar={()=>window.location.assign('/?v5_section=shortcuts')} proposals={<ScheduleProposalReview questTheme={questTheme} language={lang} proposals={scheduleProposals} scheduleBlocks={data.scheduleBlocks} canApply={canApplyScheduleProposal} onApply={applyScheduleProposal} onDismiss={dismissScheduleProposal} canUndo={!!proposalUndo&&saveState==='idle'} onUndo={undoScheduleProposal}/>} />:<><QuestContextBar
           questTheme={questTheme}
           primary={dateWithWeekday(selectedDate, lang)}
           secondary={t(lang, 'scheduleSubtitle')}
@@ -854,7 +854,7 @@ export default function ScheduleScreen() {
           />
         )}
         </>}
-        {scheduleNotice&&Platform.OS==='web'&&new URLSearchParams(window.location.search).get('v5_ui')!=='0'?<View style={{gap:questTheme.spacing.sm}}><Text accessibilityRole="alert" style={{color:questTheme.colors.text}}>{scheduleNotice}</Text>{pendingScheduleWrite.current&&!open&&!actionBlock?<QuestButton questTheme={questTheme} label={scheduleCopy(lang,'retry')} onPress={()=>void retryScheduleWrite()}/>:null}</View>:null}
+        {scheduleNotice&&v5Web?<View style={{gap:questTheme.spacing.sm}}><Text accessibilityRole="alert" style={{color:questTheme.colors.text}}>{scheduleNotice}</Text>{pendingScheduleWrite.current&&!open&&!actionBlock?<QuestButton questTheme={questTheme} label={scheduleCopy(lang,'retry')} onPress={()=>void retryScheduleWrite()}/>:null}</View>:null}
       </ScrollView>
 
       <BottomSheetForm visible={open} onClose={() => { if (!saveRunning.current && !pendingScheduleWrite.current) { setOpen(false); setEditingBlockId(null); } }}

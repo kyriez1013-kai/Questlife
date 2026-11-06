@@ -111,7 +111,7 @@ export function QuestSectionHeader({ title, subtitle, trailing, questTheme, styl
   const q = questTheme ?? getQuestTheme();
   const Header = View as any;
   return (
-    <Header className="quest-section-header" style={[{
+    <Header className="quest-section-header" dataSet={{'quest-component':'section-header'}} style={[{
       flexDirection: 'row',
       alignItems: 'flex-end',
       justifyContent: 'space-between',
