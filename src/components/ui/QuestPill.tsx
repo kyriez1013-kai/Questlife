@@ -24,6 +24,7 @@ export default function QuestPill({ label, active, variant = 'default', questThe
   return (
     <Pill
       className="quest-pill quest-interactive"
+      dataSet={{ 'quest-component': 'pill', selected: String(Boolean(active)) }}
       accessibilityRole={onPress ? 'button' : 'text'}
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ selected: Boolean(active), disabled: Boolean(disabled) }}

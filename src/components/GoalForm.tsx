@@ -28,9 +28,10 @@ export interface GoalFormProps {
   visible: boolean;
   onClose: () => void;
   initial?: Category;
+  preset?: 'project' | 'habit';
 }
 
-export default function GoalForm({ visible, onClose, initial }: GoalFormProps) {
+export default function GoalForm({ visible, onClose, initial, preset }: GoalFormProps) {
   const { data, addCategory, updateCategory, applyDomainTemplateToGoal, waitForLocalWrites, retryLocalWrites } = useStore();
   const questTheme = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const accent = questTheme.colors.primary;
@@ -46,6 +47,7 @@ export default function GoalForm({ visible, onClose, initial }: GoalFormProps) {
   const [useTemplate, setUseTemplate] = useState(false);
   const saveState = useDurableFormSave({ visible, wait: waitForLocalWrites, retry: retryLocalWrites, onSaved: onClose });
   const close = () => { if (!saveState.locked) onClose(); };
+  const stickyActions = Platform.OS !== 'web' || (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('v5_ui') !== '0');
 
   useEffect(() => {
     if (!visible) return;
@@ -60,17 +62,17 @@ export default function GoalForm({ visible, onClose, initial }: GoalFormProps) {
       setCustomIcon(Boolean(initial.emoji));
       setUseTemplate(false);
     } else {
-      setName('');
+      setName(preset ? (lang==='zh' ? (preset==='project'?'完成一个项目':'保持一个习惯') : (preset==='project'?'Complete a project':'Keep a habit')) : '');
       setEmoji('');
       setDesc('');
-      setGoalType('custom');
+      setGoalType(preset==='project'?'project':preset==='habit'?'health':'custom');
       setVision('');
       setTargetDate('');
       setProgressModel('criteria_weighted');
       setCustomIcon(false);
       setUseTemplate(false);
     }
-  }, [visible, initial?.id]);
+  }, [visible, initial?.id, preset]);
 
   useEffect(() => {
     if (!customIcon) setEmoji('');
@@ -129,7 +131,7 @@ export default function GoalForm({ visible, onClose, initial }: GoalFormProps) {
   </View>;
 
   return (
-    <BottomSheetForm visible={visible} onClose={close} footer={Platform.OS !== 'web' ? <>{saveState.status === 'error' ? <Text accessibilityRole="alert" style={{ color: questTheme.colors.text, marginBottom: questTheme.spacing.sm }}>{nativeFormCopy(lang, 'saveFailed')}</Text> : null}{actions}</> : undefined}>
+    <BottomSheetForm visible={visible} onClose={close} footer={stickyActions ? <>{saveState.status === 'error' ? <Text accessibilityRole="alert" style={{ color: questTheme.colors.text, marginBottom: questTheme.spacing.sm }}>{nativeFormCopy(lang, 'saveFailed')}</Text> : null}{actions}</> : undefined}>
       <View pointerEvents={saveState.locked ? 'none' : 'auto'} accessibilityElementsHidden={saveState.status === 'saving'}>
       <Text style={[styles.h2, { color: questTheme.colors.text }]}>{initial ? t(lang, 'edit') : t(lang, 'addQuest')}</Text>
 
@@ -252,8 +254,8 @@ export default function GoalForm({ visible, onClose, initial }: GoalFormProps) {
 
       </NativeFormDisclosure>
       </View>
-      {Platform.OS === 'web' && saveState.status === 'error' ? <Text accessibilityRole="alert" style={{ color: questTheme.colors.text }}>{nativeFormCopy(lang, 'saveFailed')}</Text> : null}
-      {Platform.OS === 'web' ? <View style={{ marginTop: questTheme.spacing.md }}>{actions}</View> : null}
+      {!stickyActions && saveState.status === 'error' ? <Text accessibilityRole="alert" style={{ color: questTheme.colors.text }}>{nativeFormCopy(lang, 'saveFailed')}</Text> : null}
+      {!stickyActions ? <View style={{ marginTop: questTheme.spacing.md }}>{actions}</View> : null}
     </BottomSheetForm>
   );
 }

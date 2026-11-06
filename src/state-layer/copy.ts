@@ -12,7 +12,7 @@ const zh = {
   saving: '保存中…', saveFailed: '没保存上', retry: '重试',
   stateNow: '现在的状态', ruleTag: '规则判断', generalTag: '通用依据', personalTag: '你的记录',
   notThis: '不是这样', pickType: '你觉得更像哪种？', corrected: '已按你的改正',
-  alternate: '备选', reorder: '重排今天', recheck: '重新签到', coinFlip: '随机选一个',
+  alternate: '备选', reorder: '重排今天', recheck: '重新记录状态', coinFlip: '随机选一个',
   coinFlipNote: '随机分配，用来比较两种做法对你的效果',
   chosen: '已选', chosenRandom: '随机选中',
   noBaseline: '还没有你的基线（{n}/7 次）',
@@ -38,7 +38,7 @@ const zh = {
   close: '关闭', cancel: '取消',
   // insights
   insTitle: '状态', insRange30: '30 天', insRange90: '90 天',
-  insSummary: '过去 {days} 天：{parts}，记录了 {logged} 天', insNone: '这段时间还没有状态签到',
+  insSummary: '过去 {days} 天：{parts}，记录了 {logged} 天', insNone: '这段时间还没有状态记录',
   insOutcomes: '动作结果（对你来说）', insOutcomesEmpty: '选过动作并回访后，这里会出现计数',
   insLag: '睡眠低于常态的次日', insLagLine: '睡眠低于常态的 {lowN} 个次日里，{lowFuel} 天是燃料不足；其余 {normN} 个次日里，{normFuel} 天',
   insLagNeedMore: '需要至少 10 组「前一晚睡眠 + 次日状态」才显示（现在 {n} 组）',

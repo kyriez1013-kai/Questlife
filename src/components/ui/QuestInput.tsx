@@ -27,6 +27,7 @@ export default function QuestInput({
   return (
     <Input
       className="quest-input"
+      dataSet={{ 'quest-component': 'input', state: status === 'default' ? (focused ? 'focused' : 'idle') : status }}
       data-state={status === 'default' ? (focused ? 'focused' : 'idle') : status}
       {...props}
       accessibilityLabel={props.accessibilityLabel ?? props.placeholder}

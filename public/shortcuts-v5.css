@@ -1,0 +1,15 @@
+/* Same colour and material values as the approved V5 prototype. */
+html body{font:13px/1.7 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;color:#101b31;background:linear-gradient(117deg,#f1f4f6 2%,#f8f8f5 32%,#e6edf3 69%,#e6edf2);min-height:100vh;letter-spacing:0}
+body main{box-sizing:border-box;max-width:680px;padding:18px 18px 48px;margin:auto}
+body h1{font-size:19px;font-weight:600;margin:12px 0}
+body h2{font-size:15px;font-weight:500;margin:20px 0 8px}
+body p{font-size:12px;color:#596f90}
+body code{font-size:12px;color:#101b31;overflow-wrap:anywhere}
+body a{color:#3d718e;min-height:44px;display:inline-flex;align-items:center}
+body details{margin:12px 0;padding:0 14px;border-radius:20px;background:linear-gradient(125deg,#ffffffb8,#ffffff54 24%,#edf4fa36 62%,#ffffff91);box-shadow:inset 0 1px 1px white,inset 1px 0 1px #ffffffb3,0 9px 20px #435b7520}
+body summary{min-height:56px;display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:500;list-style:none;cursor:pointer}
+body summary::after{content:'+';font-size:18px;color:#3d718e}
+body details[open]{padding-bottom:12px}
+body details[open]>summary::after{content:'−'}
+body summary:focus-visible,body a:focus-visible{outline:2px solid #3d718e;outline-offset:3px}
+@media(prefers-color-scheme:dark){html body{color:#eaf2f8;background:linear-gradient(117deg,#15232d,#1b2e40)}body p{color:#b1c6d8}body code{color:#eaf2f8}body a,body summary::after{color:#a4cfe7}body details{background:linear-gradient(127deg,#d3eeff18,#b7d4ef09 51%,#b3d9ff19);box-shadow:inset 0 1px 1px #e6f6ff30,0 9px 24px #00000014}}

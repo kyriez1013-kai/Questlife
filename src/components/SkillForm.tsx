@@ -104,6 +104,7 @@ export interface SkillFormProps {
 export default function SkillForm({ visible, onClose, initial, presetCategoryId, presetModuleId, linkOnCreate }: SkillFormProps) {
   const { data, addSkill, updateSkill, createSkillAndAttachToModule, waitForLocalWrites, retryLocalWrites } = useStore();
   const lang = getV11ProductLanguage(getLanguage(data.settings.language));
+  const compactForm = Platform.OS !== 'web' || (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('v5_ui') !== '0');
   const questTheme = useQuestTheme(getV11ProductThemeId(data.settings.selectedThemeId));
   const accent = questTheme.colors.primary;
   const themedInputStyle = { backgroundColor: questTheme.colors.surface, borderColor: questTheme.colors.border, color: questTheme.colors.text };
@@ -385,10 +386,10 @@ export default function SkillForm({ visible, onClose, initial, presetCategoryId,
   </>;
 
   return (
-    <BottomSheetForm visible={visible} onClose={close} footer={Platform.OS !== 'web' ? <>{saveState.status === 'error' ? <Text accessibilityRole="alert" style={{ color: questTheme.colors.text, marginBottom: questTheme.spacing.sm }}>{nativeFormCopy(lang, 'saveFailed')}</Text> : null}{actions}</> : undefined}>
+    <BottomSheetForm visible={visible} onClose={close} footer={compactForm ? <>{saveState.status === 'error' ? <Text accessibilityRole="alert" style={{ color: questTheme.colors.text, marginBottom: questTheme.spacing.sm }}>{nativeFormCopy(lang, 'saveFailed')}</Text> : null}{actions}</> : undefined}>
       <View pointerEvents={saveState.locked ? 'none' : 'auto'} accessibilityElementsHidden={saveState.status === 'saving'}>
       <Text style={[styles.h2, { color: questTheme.colors.text }]}>{initial ? t(lang, 'editSkill') : t(lang, 'newSkill')}</Text>
-      {Platform.OS !== 'web' ? nameField : null}
+      {compactForm ? nameField : null}
       <NativeFormDisclosure key={`links-${visible}`} q={questTheme} title={t(lang, 'linkedGoals')}
         summary={data.categories.filter(category => linkedGoalIds.includes(category.id)).map(category => category.name).join(' · ')}>
       <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'linkedGoals')}</Text>
@@ -431,7 +432,7 @@ export default function SkillForm({ visible, onClose, initial, presetCategoryId,
         </>
       ) : null}
       </NativeFormDisclosure>
-      {Platform.OS === 'web' ? nameField : null}
+      {!compactForm ? nameField : null}
       <NativeFormDisclosure key={`appearance-${visible}`} q={questTheme} title={t(lang, 'icon')} summary={customIcon ? icon : t(lang, 'autoIcon')}>
       <Text style={[styles.label, { color: questTheme.colors.textMuted }]}>{t(lang, 'color')}</Text>
       <ColorPicker colors={theme.palette} value={color} onChange={setColor} />
@@ -785,8 +786,8 @@ export default function SkillForm({ visible, onClose, initial, presetCategoryId,
       )}
       </NativeFormDisclosure>
       </View>
-      {Platform.OS === 'web' && saveState.status === 'error' ? <Text accessibilityRole="alert" style={{ color: questTheme.colors.text }}>{nativeFormCopy(lang, 'saveFailed')}</Text> : null}
-      {Platform.OS === 'web' ? <View style={{ marginTop: questTheme.spacing.md }}>{actions}</View> : null}
+      {!compactForm && saveState.status === 'error' ? <Text accessibilityRole="alert" style={{ color: questTheme.colors.text }}>{nativeFormCopy(lang, 'saveFailed')}</Text> : null}
+      {!compactForm ? <View style={{ marginTop: questTheme.spacing.md }}>{actions}</View> : null}
     </BottomSheetForm>
   );
 }

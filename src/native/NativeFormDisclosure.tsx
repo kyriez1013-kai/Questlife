@@ -9,7 +9,10 @@ export default function NativeFormDisclosure({ title, summary, q, children }: {
   title: string; summary?: string; q: QuestTheme; children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
-  if (Platform.OS === 'web') return <>{children}</>;
+  if (Platform.OS === 'web') {
+    if (typeof window === 'undefined' || new URLSearchParams(window.location.search).get('v5_ui') === '0') return <>{children}</>;
+    return <details className="v5-form-disclosure"><summary><span>{title}<small>{summary}</small></span><span aria-hidden>⌄</span></summary>{children}</details>;
+  }
   return <View style={{ borderTopWidth: 1, borderTopColor: q.colors.border, marginTop: q.spacing.md }}>
     <Pressable accessibilityRole="button" accessibilityLabel={title} accessibilityState={{ expanded: open }}
       onPress={() => setOpen(value => !value)} style={({ pressed }) => ({

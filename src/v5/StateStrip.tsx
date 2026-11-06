@@ -13,6 +13,8 @@ import { DurableSubmission } from '../utils/durableSubmission';
 import { stateDimensions } from './stateEvidence';
 import { v5t } from './copy';
 import { healthContextView } from '../platform/health/normalization';
+import QuestIcon from './PrototypeIcon';
+import V11Icon from '../v11-stage2-rebaseline/V11RebaselineIcon';
 
 export function FiveChoices({label, labels, value, disabled, onChange}: {label:string;labels:string[];value?:number;disabled?:boolean;onChange:(n:Scale5)=>void}) {
   return <div className="v5-rail"><div><span>{label}</span><small className="v5-meta">{value ? labels[value-1] : ''}</small></div>
@@ -59,12 +61,13 @@ export default function StateStrip({lang,theme,reducedMotion}:{lang:Lang;theme:V
   const reason=row?.stateLayer?.classification ? reasonLine({energy:row.energy as Scale5,tension:row.stateLayer.tension,openLoops:row.stateLayer.openLoops,pull:row.stateLayer.pull,classification:row.stateLayer.classification,signals},lang) : '';
   const busy=status!=='idle';
   return <>
-    <section className="v5-strip v5-glass" aria-label={v5t(lang,'state')} data-testid="v5-state-strip">
+    <section className="v5-strip v5-compact-state" aria-label={v5t(lang,'recordState')} data-testid="v5-state-strip">
       <div className="v5-strip-head">
-        <button className="v5-state-body" onClick={()=>row&&!stale?setDetails(true):setEditing(true)}>
-          <strong>{lang==='zh'?'此刻状态':'Current state'}</strong>{row&&state ? <span className="v5-meta">{stale?`${stamp} · `:''}{TYPE_NAME[lang][state]}{row.stateLayer?.openLoops==='many'?` · ${OPEN_LOOPS_LABEL[lang].many}`:''}{stale?` · ${v5t(lang,'recheck')}`:` · ${stamp}`}</span> : null}
+        <QuestIcon name="heartPulse" size={20}/>
+        <button className="v5-state-body" aria-label={v5t(lang,'recordState')} aria-expanded={editing} disabled={busy} onClick={()=>setEditing(!editing)}>
+          <strong>{lang==='zh'?'此刻状态':'Current state'}</strong>{row&&state ? <span className="v5-meta" data-stale={stale}>{stale?`${stamp} · `:''}{TYPE_NAME[lang][state]}{row.stateLayer?.openLoops==='many'?` · ${OPEN_LOOPS_LABEL[lang].many}`:''}{stale?` · ${v5t(lang,'recheck')}`:` · ${stamp}`}</span> : <span className="v5-meta">{v5t(lang,'statePrompt')}</span>}
         </button>
-        <button className="v5-state-update" disabled={busy} aria-label={row&&!stale?v5t(lang,'update'):v5t(lang,'check')} onClick={()=>{if(row&&!stale){setCorrection(true);setDetails(true);}else setEditing(!editing);}}>{row?(stale?v5t(lang,'recheck'):v5t(lang,'update')):`${lang==='zh'?'未记录':'Not recorded'} · ${v5t(lang,'check')}`}</button>
+        <button className="v5-state-update" disabled={busy} aria-label={row?v5t(lang,'evidence'):v5t(lang,'recordState')} onClick={()=>row?setDetails(true):setEditing(!editing)}>{row?<V11Icon name="arrow" size={18} color="currentColor"/>:v5t(lang,'check')}</button>
       </div>
       {editing ? <>
         <FiveChoices label={sl(lang,'energy')} labels={ENERGY_SCALE[lang]} value={draft.energy} disabled={busy} onChange={n=>answer('energy',n)} />

@@ -54,6 +54,7 @@ export default function QuestButton({
   return (
     <Button
       className="quest-button quest-interactive"
+      dataSet={{ 'quest-component': 'button', state: loading ? 'loading' : isDisabled ? 'disabled' : status }}
       data-state={isDisabled ? 'disabled' : loading ? 'loading' : status}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}

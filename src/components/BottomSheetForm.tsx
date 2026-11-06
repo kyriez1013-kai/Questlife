@@ -68,6 +68,7 @@ export default function BottomSheetForm({ visible, onClose, children, footer, cl
         {/* sheet 本身: 底部对齐, 圆角, 最大 92% */}
         <SheetView
           className={`bottom-sheet-form${v11ProductEnabled ? ' v11-product-sheet' : ''}`}
+          dataSet={{ 'quest-component': 'bottom-sheet' }}
           style={[
             styles.sheet,
             {
@@ -80,7 +81,7 @@ export default function BottomSheetForm({ visible, onClose, children, footer, cl
           accessibilityRole="dialog"
           accessibilityViewIsModal
         >
-          <ChromeView className="bottom-sheet-chrome" style={styles.chrome}>
+          <ChromeView className="bottom-sheet-chrome" dataSet={{ 'quest-component': 'sheet-header' }} style={styles.chrome}>
             <View style={[styles.handle, { backgroundColor: questTheme.colors.borderStrong }]} />
             <Pressable
               accessibilityLabel={closeAccessibilityLabel ?? t(language, 'close')}
@@ -98,6 +99,7 @@ export default function BottomSheetForm({ visible, onClose, children, footer, cl
           </ChromeView>
           <BodyScrollView
             className="bottom-sheet-scroll"
+            dataSet={{ 'quest-component': 'sheet-scroll' }}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
             contentContainerStyle={[styles.content, footer ? styles.contentWithFooter : null]}
@@ -110,6 +112,7 @@ export default function BottomSheetForm({ visible, onClose, children, footer, cl
           {footer ? (
             <FooterView
               className="bottom-sheet-footer"
+              dataSet={{ 'quest-component': 'sheet-footer' }}
               style={[
                 styles.footer,
                 {

@@ -36,6 +36,7 @@ export default function GoalTreeScreen() {
   const compactHeader = width < questLayout.contentMaxWidth;
 
   const [creating, setCreating] = useState(false);
+  const [v5Preset, setV5Preset] = useState<'project'|'habit'|undefined>();
 
   const goDetail = (categoryId: string) => nav.navigate('GoalDetail', { categoryId });
 
@@ -75,7 +76,7 @@ export default function GoalTreeScreen() {
           alignSelf: 'center',
         }}
       >
-        {Platform.OS==='web' && new URLSearchParams(window.location.search).get('v5_ui')!=='0' ? <V5GoalsSurface data={data} lang={lang} dark={isDarkTheme(questTheme)} onAdd={()=>setCreating(true)} onOpen={goDetail} onLibrary={()=>nav.navigate('SkillLibrary')} onDelete={askDelete}/> : <><QuestContextBar
+        {Platform.OS==='web' && new URLSearchParams(window.location.search).get('v5_ui')!=='0' ? <V5GoalsSurface data={data} lang={lang} dark={isDarkTheme(questTheme)} onAdd={preset=>{setV5Preset(preset);setCreating(true);}} onOpen={goDetail} onLibrary={()=>nav.navigate('SkillLibrary')} onDelete={askDelete}/> : <><QuestContextBar
           questTheme={questTheme}
           primary={`${data.categories.length} ${t(lang, 'quest')} · ${data.skills.length} ${t(lang, 'skillCount')}`}
           secondary={t(lang, 'questSubtitle')}
@@ -135,7 +136,7 @@ export default function GoalTreeScreen() {
       </ScrollView>
 
       {/* 仅用于创建; 编辑在 GoalDetailScreen 内 */}
-      <GoalForm visible={creating} onClose={() => setCreating(false)} />
+      <GoalForm visible={creating} preset={v5Preset} onClose={() => {setCreating(false);setV5Preset(undefined);}} />
     </SafeAreaView>
   );
 }

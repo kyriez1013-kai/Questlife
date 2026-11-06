@@ -1,6 +1,7 @@
 import type { Lang } from '../i18n';
 
 const zh = {
+  nowGroup:'现在', todayGroup:'今天', recentGroup:'最近', emptyAction:'记一句现在在做什么', emptyActionReason:'从眼前的一件事开始', quickNote:'记一句', statePrompt:'点两下：精力和紧绷', recordState:'记录状态', adjustShort:'调整', remindFollowup:'25 分钟后提醒回访',
   analysis:'分析', personal:'个人', variable:'变量', stateVariable:'状态', metricsVariable:'健康与执行', overviewVariable:'记录概览',
   capture: '随手记一句…', state: '现在怎么样？', check: '记一下', supplement: '补充',
   now: '现在做什么', next: '接下来', suggest: '建议先做', recommend: '现在建议', running: '进行中',
@@ -15,7 +16,7 @@ const zh = {
   alertness: '清醒度', cognitive: '认知负荷', emotional: '情绪压力', recovery: '身体恢复',
   sufficient: '依据充分', limited: '依据不足', missing: '没有数据', proxy: '目标切换是代理指标，不是直接测量',
   switches: '过去 3 小时的不同目标', used: '用到的信号', unused: '未用到的信号',
-  originalReason: '规则原判保留；后续统计采用你的改正。', time: '签到时间',
+  originalReason: '规则原判保留；后续统计采用你的改正。', time: '记录时间',
   easier: '轻松', same: '差不多', harder: '更难', difficulty: '比预想', actualMinutes: '实际分钟', note: '可选一句备注',
   fields: '展开完整字段', required: '需要的状态', unknown: '未标注', deep_focus: '深度', light: '轻量', physical: '体力', recoveryDemand: '恢复', social: '社交',
   nextPlan: '下一次计划', criteria: '完成条件', weekly: '本周投入', project: '项目方向', ongoing: '持续方向',
@@ -28,6 +29,7 @@ const zh = {
   firstAction:'先记下一件事', firstReason:'从一条真实记录开始', record:'记下一句',
 };
 const en: Record<keyof typeof zh,string> = {
+  nowGroup:'Now',todayGroup:'Today',recentGroup:'Recent',emptyAction:'Record what you are doing',emptyActionReason:'Begin with the task in front of you',quickNote:'Write',statePrompt:'Two choices: energy and tension',recordState:'Record state',adjustShort:'Adjust',remindFollowup:'Remind me in 25 minutes',
   analysis:'Analysis', personal:'Personal', variable:'Variable', stateVariable:'State', metricsVariable:'Health and execution', overviewVariable:'Record overview',
   firstAction:'Record one thing', firstReason:'Begin with one real observation', record:'Write a note',
   capture:'Write a quick note…',state:'How are you now?',check:'Check in',supplement:'Add context',

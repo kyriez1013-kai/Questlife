@@ -51,6 +51,7 @@ import PersistenceDebugPanel from './src/components/debug/PersistenceDebugPanel'
 import AdaptiveDecisionSurfaceScreen from './src/adaptive-decision/AdaptiveDecisionSurfaceScreen';
 import { isV2UiEnabled } from './src/v2/featureFlag';
 import './src/v5/round2.css';
+import './src/v5/round3.css';
 
 const V2App = React.lazy(() => import('./src/v2/V2App'));
 
@@ -199,6 +200,8 @@ function AppContent() {
     if (typeof document === 'undefined') return;
     const targets = [document.documentElement, document.body].filter(Boolean);
     targets.forEach((target) => {
+      target.classList.toggle('ql-v5', v5Enabled);
+      target.setAttribute('data-v5-ui', String(v5Enabled));
       target.classList.toggle('questlife-theme-dark', darkTheme);
       target.classList.toggle('questlife-theme-light', !darkTheme);
       target.setAttribute('data-theme', darkTheme ? 'dark' : questTheme.id);
@@ -214,7 +217,7 @@ function AppContent() {
       target.style.setProperty('--ql-accent', foundation.interaction.accent);
       target.style.setProperty('--ql-overlay', foundation.material.overlay);
     });
-  }, [darkTheme, foundation, questTheme]);
+  }, [darkTheme, foundation, questTheme, v5Enabled]);
   const navTheme = {
     ...DefaultTheme,
     dark: false,
